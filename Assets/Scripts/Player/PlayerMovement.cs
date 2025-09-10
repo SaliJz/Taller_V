@@ -12,6 +12,8 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 moveDirection;
     private float yVelocity;
     private Transform mainCameraTransform;
+
+    private bool canMove = true;
     #endregion
 
     #region Unity Methods
@@ -23,7 +25,10 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        HandleMovementInput();
+        if (canMove)
+        {
+            HandleMovementInput();
+        }
         ApplyGravity();
     }
 
@@ -69,6 +74,15 @@ public class PlayerMovement : MonoBehaviour
             yVelocity = -0.5f;
         }
         yVelocity += gravity * Time.deltaTime;
+    }
+
+    public void SetCanMove(bool state)
+    {
+        canMove = state;
+        if (!state)
+        {
+            moveDirection = Vector3.zero;
+        }
     }
     #endregion
 }
