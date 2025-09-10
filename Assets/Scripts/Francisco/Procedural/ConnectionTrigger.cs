@@ -4,6 +4,7 @@ public class ConnectionTrigger : MonoBehaviour
 {
     private DungeonGenerator dungeonGenerator;
     private ConnectionPoint connectionPoint;
+    private bool hasTriggered = false;
 
     void Start()
     {
@@ -13,10 +14,37 @@ public class ConnectionTrigger : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player") && !connectionPoint.isConnected)
+        if (hasTriggered ||
+            connectionPoint == null ||
+            connectionPoint.isConnected ||
+            dungeonGenerator == null ||
+            !other.CompareTag("Player"))
         {
-            dungeonGenerator.StartCoroutine(dungeonGenerator.TransitionToNextRoom(connectionPoint, other.transform));
-            GetComponent<BoxCollider>().enabled = false;
+            return;
+        }
+
+        hasTriggered = true;
+
+        BoxCollider boxCollider = GetComponent<BoxCollider>();
+        if (boxCollider != null)
+        {
+            boxCollider.enabled = false;
+        }
+
+        dungeonGenerator.StartCoroutine(
+            dungeonGenerator.TransitionToNextRoom(connectionPoint, other.transform)
+        );
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player") && hasTriggered)
+        {
+            BoxCollider boxCollider = GetComponent<BoxCollider>();
+            if (boxCollider != null)
+            {
+                boxCollider.enabled = false;
+            }
         }
     }
 }

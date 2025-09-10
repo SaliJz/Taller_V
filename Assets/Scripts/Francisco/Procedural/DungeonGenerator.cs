@@ -1,6 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+
+[System.Serializable]
+public class RoomData
+{
+    public Room prefab;
+    [HideInInspector]
+    public int repetitionCount = 0;
+    [HideInInspector]
+    public float weight = 1.0f;
+}
 
 public class DungeonGenerator : MonoBehaviour
 {
@@ -10,22 +21,31 @@ public class DungeonGenerator : MonoBehaviour
     public Room[] normalRoomPrefabs;
 
     [Header("Generation Settings")]
-    [Tooltip("El número mínimo de habitaciones normales antes del final.")]
-    public int minRooms = 4;
-    [Tooltip("El número máximo de habitaciones normales antes del final.")]
-    public int maxRooms = 10;
-    public int maxRoomAttempts = 10;
+    public int minRooms = 8;
+    public int maxRooms = 12;
+    public int maxRoomAttempts = 15;
+    [Range(0.1f, 2.0f)]
+    public float repetitionPenalty = 0.8f;
+    [Range(0.1f, 1.0f)]
+    public float weightDecay = 0.7f;
 
     private List<Room> generatedRooms = new List<Room>();
-    private int roomsGenerated = 0;
-    private string lastRoomPrefabName;
-    private int finalRoomCount;
+    private int roomsGenerated = 0; 
+    private int targetRoomCount;
+
+    private List<RoomData> normalRoomData = new List<RoomData>();
 
     public PlayerMovement playerMovement;
 
     void Start()
     {
-        finalRoomCount = Random.Range(minRooms, maxRooms + 1);
+        foreach (var prefab in normalRoomPrefabs)
+        {
+            normalRoomData.Add(new RoomData { prefab = prefab, weight = 1.0f });
+        }
+
+        targetRoomCount = Random.Range(minRooms, maxRooms + 1);
+
         GenerateInitialRoom();
         playerMovement = FindAnyObjectByType<PlayerMovement>();
     }
@@ -50,12 +70,16 @@ public class DungeonGenerator : MonoBehaviour
                 connectionPoint.gameObject.AddComponent<ConnectionTrigger>();
             }
         }
-        lastRoomPrefabName = initialRoom.name;
     }
 
     public void GenerateNextRoom(ConnectionPoint entrancePoint)
     {
-        if (roomsGenerated >= finalRoomCount)
+        if (entrancePoint.isConnected)
+        {
+            return;
+        }
+
+        if (roomsGenerated >= targetRoomCount)
         {
             PlaceEndRoom(entrancePoint);
             return;
@@ -66,38 +90,55 @@ public class DungeonGenerator : MonoBehaviour
 
         while (attempts < maxRoomAttempts && !roomPlaced)
         {
-            Room newRoomPrefab = GetRandomRoomPrefab();
+            if (entrancePoint.isConnected)
+            {
+                return;
+            }
+
+            RoomData newRoomData = GetRandomRoomData();
+            Room newRoomPrefab = newRoomData.prefab;
             Room newRoom = Instantiate(newRoomPrefab);
 
-            ConnectionPoint exitPoint = GetMatchingConnectionPoint(newRoom, entrancePoint);
+            List<ConnectionPoint> exitPoints = GetAllMatchingConnectionPoints(newRoom, entrancePoint);
 
-            if (exitPoint != null)
+            if (exitPoints.Count > 0)
             {
+                ConnectionPoint exitPoint = exitPoints[Random.Range(0, exitPoints.Count)];
+
                 Vector3 offset = exitPoint.transform.position - newRoom.transform.position;
                 Vector3 finalPosition = entrancePoint.transform.position - offset;
 
-                newRoom.transform.position = finalPosition;
-
-                exitPoint.isConnected = true;
-                exitPoint.connectedTo = entrancePoint.transform;
-                entrancePoint.isConnected = true;
-                entrancePoint.connectedTo = exitPoint.transform;
-
-                generatedRooms.Add(newRoom);
-                roomsGenerated++;
-                lastRoomPrefabName = newRoomPrefab.name;
-
-                foreach (ConnectionPoint connectionPoint in newRoom.connectionPoints)
+                if (IsPositionValid(finalPosition, newRoom))
                 {
-                    if (connectionPoint.GetComponent<BoxCollider>() == null)
+                    newRoom.transform.position = finalPosition;
+                    newRoom.name = $"Room_{roomsGenerated + 1}_{newRoomPrefab.name}";
+
+                    exitPoint.isConnected = true;
+                    exitPoint.connectedTo = entrancePoint.transform;
+                    entrancePoint.isConnected = true;
+                    entrancePoint.connectedTo = exitPoint.transform;
+
+                    generatedRooms.Add(newRoom);
+                    roomsGenerated++; 
+                    roomPlaced = true;
+
+                    UpdateRoomWeights(newRoomData);
+
+                    foreach (ConnectionPoint connectionPoint in newRoom.connectionPoints)
                     {
-                        BoxCollider collider = connectionPoint.gameObject.AddComponent<BoxCollider>();
-                        collider.isTrigger = true;
-                        collider.size = Vector3.one * 1f;
-                        connectionPoint.gameObject.AddComponent<ConnectionTrigger>();
+                        if (!connectionPoint.isConnected && connectionPoint.GetComponent<BoxCollider>() == null)
+                        {
+                            BoxCollider collider = connectionPoint.gameObject.AddComponent<BoxCollider>();
+                            collider.isTrigger = true;
+                            collider.size = Vector3.one * 1f;
+                            connectionPoint.gameObject.AddComponent<ConnectionTrigger>();
+                        }
                     }
                 }
-                roomPlaced = true;
+                else
+                {
+                    Destroy(newRoom.gameObject);
+                }
             }
             else
             {
@@ -105,6 +146,21 @@ public class DungeonGenerator : MonoBehaviour
             }
             attempts++;
         }
+    }
+
+    bool IsPositionValid(Vector3 position, Room newRoom)
+    {
+        float minDistance = 5f; 
+
+        foreach (Room existingRoom in generatedRooms)
+        {
+            if (existingRoom != null && Vector3.Distance(position, existingRoom.transform.position) < minDistance)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     void PlaceEndRoom(ConnectionPoint entrancePoint)
@@ -119,13 +175,16 @@ public class DungeonGenerator : MonoBehaviour
             Room endRoomPrefab = endRoomPrefabs[Random.Range(0, endRoomPrefabs.Length)];
             Room endRoom = Instantiate(endRoomPrefab);
 
-            ConnectionPoint exitPoint = GetMatchingConnectionPoint(endRoom, entrancePoint);
-            if (exitPoint != null)
+            List<ConnectionPoint> exitPoints = GetAllMatchingConnectionPoints(endRoom, entrancePoint);
+            if (exitPoints.Count > 0)
             {
+                ConnectionPoint exitPoint = exitPoints[Random.Range(0, exitPoints.Count)];
+
                 Vector3 offset = exitPoint.transform.position - endRoom.transform.position;
                 Vector3 finalPosition = entrancePoint.transform.position - offset;
 
                 endRoom.transform.position = finalPosition;
+                endRoom.name = "EndRoom";
 
                 exitPoint.isConnected = true;
                 exitPoint.connectedTo = entrancePoint.transform;
@@ -144,51 +203,79 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
-    Room GetRandomRoomPrefab()
+    RoomData GetRandomRoomData()
     {
-        Room newPrefab = null;
-        int maxRetries = 10;
-        int retries = 0;
+        float totalWeight = normalRoomData.Sum(data => data.weight);
 
-        while (retries < maxRetries)
+        if (totalWeight <= 0)
         {
-            newPrefab = normalRoomPrefabs[Random.Range(0, normalRoomPrefabs.Length)];
-            if (newPrefab.name != lastRoomPrefabName)
-            {
-                return newPrefab;
-            }
-            retries++;
+            ResetAllWeights();
+            totalWeight = normalRoomData.Sum(data => data.weight);
         }
-        return newPrefab;
+
+        float randomValue = Random.Range(0f, totalWeight);
+        float currentSum = 0f;
+
+        foreach (var data in normalRoomData)
+        {
+            currentSum += data.weight;
+            if (randomValue <= currentSum)
+            {
+                return data;
+            }
+        }
+
+        return normalRoomData[Random.Range(0, normalRoomData.Count)];
     }
 
-    ConnectionPoint GetMatchingConnectionPoint(Room room, ConnectionPoint targetPoint)
+    void UpdateRoomWeights(RoomData usedRoom)
     {
-        foreach (ConnectionPoint conn in room.connectionPoints)
-        {
-            ConnectionType requiredType = ConnectionType.North;
-            switch (targetPoint.connectionType)
-            {
-                case ConnectionType.North:
-                    requiredType = ConnectionType.South;
-                    break;
-                case ConnectionType.South:
-                    requiredType = ConnectionType.North;
-                    break;
-                case ConnectionType.East:
-                    requiredType = ConnectionType.West;
-                    break;
-                case ConnectionType.West:
-                    requiredType = ConnectionType.East;
-                    break;
-            }
+        usedRoom.repetitionCount++;
 
-            if (conn.connectionType == requiredType && !conn.isConnected)
+        usedRoom.weight = 1.0f / (1.0f + usedRoom.repetitionCount * repetitionPenalty);
+
+        foreach (var data in normalRoomData)
+        {
+            if (data != usedRoom)
             {
-                return conn;
+                data.weight = Mathf.Min(1.0f, data.weight * (1.0f + weightDecay * 0.1f));
             }
         }
-        return null;
+    }
+
+    void ResetAllWeights()
+    {
+        foreach (var data in normalRoomData)
+        {
+            data.weight = 1.0f / (1.0f + data.repetitionCount * repetitionPenalty * 0.5f);
+        }
+    }
+
+    List<ConnectionPoint> GetAllMatchingConnectionPoints(Room room, ConnectionPoint targetPoint)
+    {
+        List<ConnectionPoint> matchingConnections = new List<ConnectionPoint>();
+        ConnectionType requiredType = GetOppositeConnectionType(targetPoint.connectionType);
+
+        foreach (ConnectionPoint conn in room.connectionPoints)
+        {
+            if (conn.connectionType == requiredType && !conn.isConnected)
+            {
+                matchingConnections.Add(conn);
+            }
+        }
+        return matchingConnections;
+    }
+
+    ConnectionType GetOppositeConnectionType(ConnectionType type)
+    {
+        switch (type)
+        {
+            case ConnectionType.North: return ConnectionType.South;
+            case ConnectionType.South: return ConnectionType.North;
+            case ConnectionType.East: return ConnectionType.West;
+            case ConnectionType.West: return ConnectionType.East;
+            default: return ConnectionType.North;
+        }
     }
 
     public IEnumerator TransitionToNextRoom(ConnectionPoint entrancePoint, Transform playerTransform)
@@ -216,7 +303,7 @@ public class DungeonGenerator : MonoBehaviour
                 }
                 if (exitPoint != null)
                 {
-                    Vector3 movePosition = exitPoint.transform.position;
+                    Vector3 movePosition = exitPoint.transform.position + exitPoint.transform.forward * 2f;
                     playerTransform.position = movePosition;
                 }
             }
