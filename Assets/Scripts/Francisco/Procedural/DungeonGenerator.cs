@@ -28,9 +28,11 @@ public class DungeonGenerator : MonoBehaviour
     public float repetitionPenalty = 0.8f;
     [Range(0.1f, 1.0f)]
     public float weightDecay = 0.7f;
+    [Range(5f, 100f)]
+    public float roomDistance = 20f;
 
     private List<Room> generatedRooms = new List<Room>();
-    private int roomsGenerated = 0; 
+    private int roomsGenerated = 0;
     private int targetRoomCount;
 
     private List<RoomData> normalRoomData = new List<RoomData>();
@@ -72,6 +74,18 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
+    Vector3 GetDirectionFromConnectionType(ConnectionType connectionType)
+    {
+        switch (connectionType)
+        {
+            case ConnectionType.North: return Vector3.forward;  
+            case ConnectionType.South: return Vector3.back;    
+            case ConnectionType.East: return Vector3.left;     
+            case ConnectionType.West: return Vector3.right;    
+            default: return Vector3.forward;
+        }
+    }
+
     public void GenerateNextRoom(ConnectionPoint entrancePoint)
     {
         if (entrancePoint.isConnected)
@@ -106,7 +120,9 @@ public class DungeonGenerator : MonoBehaviour
                 ConnectionPoint exitPoint = exitPoints[Random.Range(0, exitPoints.Count)];
 
                 Vector3 offset = exitPoint.transform.position - newRoom.transform.position;
-                Vector3 finalPosition = entrancePoint.transform.position - offset;
+
+                Vector3 connectionDirection = GetDirectionFromConnectionType(entrancePoint.connectionType);
+                Vector3 finalPosition = entrancePoint.transform.position - offset + (connectionDirection * roomDistance);
 
                 if (IsPositionValid(finalPosition, newRoom))
                 {
@@ -119,7 +135,7 @@ public class DungeonGenerator : MonoBehaviour
                     entrancePoint.connectedTo = exitPoint.transform;
 
                     generatedRooms.Add(newRoom);
-                    roomsGenerated++; 
+                    roomsGenerated++;
                     roomPlaced = true;
 
                     UpdateRoomWeights(newRoomData);
@@ -150,7 +166,7 @@ public class DungeonGenerator : MonoBehaviour
 
     bool IsPositionValid(Vector3 position, Room newRoom)
     {
-        float minDistance = 5f; 
+        float minDistance = 5f;
 
         foreach (Room existingRoom in generatedRooms)
         {
@@ -181,7 +197,9 @@ public class DungeonGenerator : MonoBehaviour
                 ConnectionPoint exitPoint = exitPoints[Random.Range(0, exitPoints.Count)];
 
                 Vector3 offset = exitPoint.transform.position - endRoom.transform.position;
-                Vector3 finalPosition = entrancePoint.transform.position - offset;
+
+                Vector3 connectionDirection = GetDirectionFromConnectionType(entrancePoint.connectionType);
+                Vector3 finalPosition = entrancePoint.transform.position - offset + (connectionDirection * roomDistance);
 
                 endRoom.transform.position = finalPosition;
                 endRoom.name = "EndRoom";
@@ -280,41 +298,147 @@ public class DungeonGenerator : MonoBehaviour
 
     public IEnumerator TransitionToNextRoom(ConnectionPoint entrancePoint, Transform playerTransform)
     {
+        if (playerMovement == null)
+        {
+            playerMovement = FindAnyObjectByType<PlayerMovement>();
+        }
+
+        float originalPlayerY = playerTransform.position.y;
+
         if (playerMovement != null)
         {
             playerMovement.SetCanMove(false);
         }
 
-        yield return FadeController.Instance.FadeOut(() =>
-        {
-            GenerateNextRoom(entrancePoint);
+        GenerateNextRoom(entrancePoint);
 
-            Room newRoom = entrancePoint.connectedTo.GetComponentInParent<Room>();
-            if (newRoom != null)
+        Vector3 entranceDirection = GetDirectionFromConnectionType(entrancePoint.connectionType);
+
+        yield return FadeController.Instance.FadeOut(
+            onStart: () =>
             {
+                Vector3 targetPosition = playerTransform.position + new Vector3(entranceDirection.x * 3f, 0f, entranceDirection.z * 3f);
+                targetPosition.y = originalPlayerY; 
+                StartCoroutine(MovePlayerWithController(playerTransform, targetPosition, 0.5f));
+            },
+            onComplete: () =>
+            {
+                Room newRoom = null;
                 ConnectionPoint exitPoint = null;
-                foreach (ConnectionPoint conn in newRoom.connectionPoints)
+
+                if (entrancePoint.connectedTo != null)
                 {
-                    if (conn.isConnected && conn.connectedTo == entrancePoint.transform)
+                    newRoom = entrancePoint.connectedTo.GetComponentInParent<Room>();
+                    if (newRoom != null)
                     {
-                        exitPoint = conn;
-                        break;
+                        foreach (ConnectionPoint conn in newRoom.connectionPoints)
+                        {
+                            if (conn.isConnected && conn.connectedTo == entrancePoint.transform)
+                            {
+                                exitPoint = conn;
+                                break;
+                            }
+                        }
                     }
                 }
+
                 if (exitPoint != null)
                 {
-                    Vector3 movePosition = exitPoint.transform.position + exitPoint.transform.forward * 2f;
-                    playerTransform.position = movePosition;
+                    Vector3 spawnPosition = new Vector3(exitPoint.transform.position.x, originalPlayerY, exitPoint.transform.position.z);
+
+                    if (playerMovement != null)
+                    {
+                        playerMovement.TeleportTo(spawnPosition);
+                    }
+                    else
+                    {
+                        playerTransform.position = spawnPosition;
+                    }
                 }
             }
-        });
+        );
 
-        yield return new WaitForSeconds(0.5f);
-        yield return FadeController.Instance.FadeIn();
+        yield return FadeController.Instance.FadeIn(
+            onStart: () =>
+            {
+                Room newRoom = null;
+                ConnectionPoint exitPoint = null;
+
+                if (entrancePoint.connectedTo != null)
+                {
+                    newRoom = entrancePoint.connectedTo.GetComponentInParent<Room>();
+                    if (newRoom != null)
+                    {
+                        foreach (ConnectionPoint conn in newRoom.connectionPoints)
+                        {
+                            if (conn.isConnected && conn.connectedTo == entrancePoint.transform)
+                            {
+                                exitPoint = conn;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (exitPoint != null)
+                {
+                    Vector3 exitDirection = GetDirectionFromConnectionType(exitPoint.connectionType);
+                    Vector3 oppositeDirection = -exitDirection;
+                    Vector3 targetPosition = playerTransform.position + new Vector3(oppositeDirection.x * 3f, 0f, oppositeDirection.z * 3f);
+                    targetPosition.y = originalPlayerY;
+                    StartCoroutine(MovePlayerWithController(playerTransform, targetPosition, 0.5f));
+                }
+            },
+            onComplete: () =>
+            {
+                if (playerMovement != null)
+                {
+                    playerMovement.SetCanMove(true);
+                }
+            }
+        );
+    }
+
+    private IEnumerator MovePlayerWithController(Transform playerTransform, Vector3 targetPosition, float duration)
+    {
+        Vector3 startPosition = playerTransform.position;
+
+        float originalY = startPosition.y;
+        targetPosition.y = originalY;
+
+        float elapsedTime = 0f;
+
+        while (elapsedTime < duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / duration;
+            t = Mathf.SmoothStep(0f, 1f, t);
+
+            Vector3 newPosition = Vector3.Lerp(startPosition, targetPosition, t);
+            newPosition.y = originalY; 
+
+            if (playerMovement != null)
+            {
+                playerMovement.TeleportTo(newPosition);
+            }
+            else
+            {
+                playerTransform.position = newPosition;
+            }
+
+            yield return null;
+        }
+
+        Vector3 finalPos = targetPosition;
+        finalPos.y = originalY;
 
         if (playerMovement != null)
         {
-            playerMovement.SetCanMove(true);
+            playerMovement.TeleportTo(finalPos);
+        }
+        else
+        {
+            playerTransform.position = finalPos;
         }
     }
 }
