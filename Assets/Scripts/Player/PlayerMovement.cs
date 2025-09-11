@@ -12,7 +12,6 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 moveDirection;
     private float yVelocity;
     private Transform mainCameraTransform;
-
     private bool canMove = true;
     #endregion
 
@@ -29,14 +28,23 @@ public class PlayerMovement : MonoBehaviour
         {
             HandleMovementInput();
         }
+        else
+        {
+            moveDirection = Vector3.zero;
+            //if (playerAnimator != null) playerAnimator.SetBool("IsMoving", false);
+        }
+
         ApplyGravity();
     }
 
     void FixedUpdate()
     {
-        Vector3 finalMove = moveDirection * moveSpeed;
-        finalMove.y = yVelocity;
-        controller.Move(finalMove * Time.fixedDeltaTime);
+        if (controller.enabled)
+        {
+            Vector3 finalMove = moveDirection * moveSpeed;
+            finalMove.y = yVelocity;
+            controller.Move(finalMove * Time.fixedDeltaTime);
+        }
     }
     #endregion
 
@@ -59,21 +67,24 @@ public class PlayerMovement : MonoBehaviour
         if (moveDirection != Vector3.zero)
         {
             transform.rotation = Quaternion.LookRotation(moveDirection);
-            //playerAnimator.SetBool("IsMoving", true);
+            //if (playerAnimator != null) playerAnimator.SetBool("IsMoving", true);
         }
         else
         {
-            //playerAnimator.SetBool("IsMoving", false);
+            //if (playerAnimator != null) playerAnimator.SetBool("IsMoving", false);
         }
     }
 
     void ApplyGravity()
     {
-        if (controller.isGrounded)
+        if (controller.enabled && controller.isGrounded)
         {
             yVelocity = -0.5f;
         }
-        yVelocity += gravity * Time.deltaTime;
+        else if (controller.enabled)
+        {
+            yVelocity += gravity * Time.deltaTime;
+        }
     }
 
     public void SetCanMove(bool state)
@@ -82,7 +93,18 @@ public class PlayerMovement : MonoBehaviour
         if (!state)
         {
             moveDirection = Vector3.zero;
+            //if (playerAnimator != null) playerAnimator.SetBool("IsMoving", false);
         }
+    }
+
+    public void TeleportTo(Vector3 position)
+    {
+        controller.enabled = false;
+        transform.position = position;
+        controller.enabled = true;
+
+        yVelocity = -0.5f;
+        moveDirection = Vector3.zero;
     }
     #endregion
 }
