@@ -1,6 +1,9 @@
 using UnityEngine;
 using System.Collections;
 
+/// <summary>
+/// Clase que maneja el comportamiento del escudo lanzado por el jugador.
+/// </summary>
 public class Shield : MonoBehaviour
 {
     [Header("Stats")]
@@ -19,7 +22,7 @@ public class Shield : MonoBehaviour
     private int maxRebounds = 1;
 
     /// <summary>
-    /// Está función es llamada por el PlayerShieldController para lanzar el escudo.
+    /// Función que es llamada por el PlayerShieldController para lanzar el escudo.
     /// </summary>
     /// <param name="owner"> Referencia al controlador del jugador </param>
     /// <param name="direction"> Orientación del escudo en la dirección del lanzamiento </param>

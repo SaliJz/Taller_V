@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Clase que maneja el pool de escudos para optimizar el rendimiento.
+/// </summary> 
 public class ShieldPooler : MonoBehaviour
 {
     public static ShieldPooler Instance;
@@ -34,6 +37,10 @@ public class ShieldPooler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Función que devuelve un escudo inactivo del pool
+    /// </summary>
+    /// <returns></returns>
     public GameObject GetPooledObject()
     {
         foreach (GameObject obj in pooledObjects)

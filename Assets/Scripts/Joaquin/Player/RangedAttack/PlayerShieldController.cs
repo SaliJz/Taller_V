@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// Clase que maneja el lanzamiento y recuperación del escudo del jugador.
+/// </summary>
 public class PlayerShieldController : MonoBehaviour
 {
     [Header("Referencias")]
@@ -20,7 +23,7 @@ public class PlayerShieldController : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0) && hasShield)
+        if (Input.GetMouseButtonDown(1) && hasShield)
         {
             // if (playerTime.CurrentTime >= timeCostToThrow)
             // {
@@ -31,35 +34,30 @@ public class PlayerShieldController : MonoBehaviour
     }
 
     /// <summary>
-    /// // Lanza el escudo en la dirección del mouse y lo instancia en el punto y altura del spawn point.
+    /// Función que Lanza el escudo en la dirección del mouse y lo instancia en el punto y altura del spawn point.
     /// </summary>
     private void ThrowShield()
     {
         hasShield = false;
 
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out RaycastHit hitInfo, Mathf.Infinity))
+        Plane plane = new Plane(Vector3.up, shieldSpawnPoint.position);
+
+        if (plane.Raycast(ray, out float enter))
         {
-            // 1. Pide un escudo al pool en lugar de instanciar uno nuevo
+            Vector3 targetPoint = ray.GetPoint(enter);
+            Vector3 direction = (targetPoint - shieldSpawnPoint.position).normalized;
+
             GameObject shieldInstance = ShieldPooler.Instance.GetPooledObject();
 
             if (shieldInstance != null)
             {
-                // 2. Calcula la dirección y posición
-                Vector3 targetPoint = hitInfo.point;
-                targetPoint.y = shieldSpawnPoint.position.y; // Mantiene la altura del spawn point
-                Vector3 direction = (targetPoint - shieldSpawnPoint.position).normalized;
-
-                // 3. Posiciona y activa el escudo
                 shieldInstance.transform.position = shieldSpawnPoint.position;
                 shieldInstance.transform.rotation = Quaternion.LookRotation(direction);
-
-                // 4. Lanza el escudo
                 shieldInstance.GetComponent<Shield>().Throw(this, direction);
             }
             else
             {
-                // Si el pool no pudo darnos un escudo, recuperamos el nuestro para no quedarnos sin él
                 hasShield = true;
             }
         }
