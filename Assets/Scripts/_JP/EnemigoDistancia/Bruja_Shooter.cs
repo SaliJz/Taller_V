@@ -1,158 +1,3 @@
-//using System.Collections;
-//using UnityEngine;
-
-//public class Bruja_Shooter : MonoBehaviour
-//{
-//    public Transform player;
-//    public Transform firePoint;              // punto desde donde salen los proyectiles
-//    public GameObject projectilePrefab;
-//    public float projectileSpeed = 12f;
-
-//    [Header("Ciclo de ataque")]
-//    public float windupTime = 0.6f;          // tiempo de carga antes de disparar (se puede interrumpir)
-//    public int shotsPerAttack = 3;
-//    public float timeBetweenShots = 0.25f;
-//    public float attackCooldown = 1.2f;      // tiempo entre ataques completos
-
-//    Coroutine attackRoutine;
-//    bool isAttacking = false;
-//    bool cancelAttack = false;
-
-//    void Awake()
-//    {
-//        if (player == null)
-//        {
-//            GameObject p = GameObject.FindGameObjectWithTag("Player");
-//            if (p) player = p.transform;
-//        }
-//        if (firePoint == null) firePoint = transform;
-//    }
-
-//    void Update()
-//    {
-//        // orientarse siempre hacia el player para tener direccion de disparo
-//        if (player != null)
-//        {
-//            Vector3 dir = player.position - transform.position;
-//            dir.y = 0f;
-//            if (dir.sqrMagnitude > 0.001f)
-//            {
-//                Quaternion target = Quaternion.LookRotation(dir);
-//                transform.rotation = Quaternion.Slerp(transform.rotation, target, 8f * Time.deltaTime);
-//            }
-//        }
-//    }
-
-//    public void StartAttackCycle()
-//    {
-//        if (attackRoutine == null)
-//        {
-//            attackRoutine = StartCoroutine(AttackCycle());
-//        }
-//    }
-
-//    public void StopAttackCycle()
-//    {
-//        cancelAttack = true;
-//        if (attackRoutine != null)
-//        {
-//            StopCoroutine(attackRoutine);
-//            attackRoutine = null;
-//        }
-//        isAttacking = false;
-//        cancelAttack = false;
-//    }
-
-//    public void CancelCurrentAttack()
-//    {
-//        // llamada externa para interrumpir ataque (por ejemplo al recibir danio)
-//        cancelAttack = true;
-//    }
-
-//    IEnumerator AttackCycle()
-//    {
-//        while (true)
-//        {
-//            isAttacking = true;
-//            cancelAttack = false;
-
-//            // windup (se puede cancelar)
-//            float t = 0f;
-//            while (t < windupTime)
-//            {
-//                if (cancelAttack)
-//                {
-//                    isAttacking = false;
-//                    cancelAttack = false;
-//                    attackRoutine = null;
-//                    yield break;
-//                }
-//                t += Time.deltaTime;
-//                yield return null;
-//            }
-
-//            // disparos
-//            for (int i = 0; i < shotsPerAttack; i++)
-//            {
-//                if (cancelAttack)
-//                {
-//                    isAttacking = false;
-//                    cancelAttack = false;
-//                    attackRoutine = null;
-//                    yield break;
-//                }
-
-//                ShootOnce();
-//                yield return new WaitForSeconds(timeBetweenShots);
-//            }
-
-//            isAttacking = false;
-
-//            // cooldown antes del siguiente ataque
-//            float cd = 0f;
-//            while (cd < attackCooldown)
-//            {
-//                if (cancelAttack)
-//                {
-//                    cancelAttack = false;
-//                    attackRoutine = null;
-//                    yield break;
-//                }
-//                cd += Time.deltaTime;
-//                yield return null;
-//            }
-//        }
-//    }
-
-//    void ShootOnce()
-//    {
-//        if (projectilePrefab == null || firePoint == null || player == null) return;
-
-//        Vector3 dir = (player.position - firePoint.position);
-//        dir.y = 0f;
-//        dir.Normalize();
-
-//        GameObject proj = Instantiate(projectilePrefab, firePoint.position, Quaternion.LookRotation(dir));
-//        Rigidbody rb = proj.GetComponent<Rigidbody>();
-//        if (rb != null)
-//        {
-//            rb.velocity = dir * projectileSpeed;
-//        }
-
-//        // si el proyectil tiene script propio, configurarlo
-//        Bruja_Projectile pscript = proj.GetComponent<Bruja_Projectile>();
-//        if (pscript != null)
-//        {
-//            pscript.SetDirection(dir);
-//        }
-//    }
-
-//    public bool IsAttacking()
-//    {
-//        return isAttacking;
-//    }
-//}
-// Bruja_Shooter.cs
 using System.Collections;
 using UnityEngine;
 
@@ -165,10 +10,12 @@ public class Bruja_Shooter : MonoBehaviour
 
     [Header("Ciclo de ataque")]
     public float windupTime = 0.6f;          // tiempo de carga antes de disparar (se puede interrumpir)
-    public int shotsPerAttack = 3;
     public float timeBetweenShots = 0.25f;
     public float attackCooldown = 1.2f;      // tiempo entre ataques completos
-    public float maxAttackRange = 12f;       // rango maximo para considerar ataque
+    public float maxAttackRange = 12f;       // rango maximo para considerar ataque (horizontal)
+
+    [Header("Ráfaga")]
+    public int burstCount = 3;               // número de proyectiles por ráfaga (ahora configurable)
 
     [Header("Busqueda de direccion al obviar paredes")]
     public int sampleAngleSteps = 12;        // cuantas direcciones probar alrededor del jugador
@@ -176,9 +23,16 @@ public class Bruja_Shooter : MonoBehaviour
     public float sampleRadiusMax = 2.2f;
     public int sampleRadiusSteps = 2;
 
+    // Referencia opcional al componente de movimiento para pausar/reanudar
+    public Bruja_Movement movement;
+
     Coroutine attackRoutine;
     bool isAttacking = false;
     bool cancelAttack = false;
+
+    // Distancia para "sacar" el spawn del proyectil fuera del collider del shooter
+    [Header("Ajustes de spawn")]
+    public float spawnOffset = 0.6f;
 
     void Awake()
     {
@@ -188,15 +42,20 @@ public class Bruja_Shooter : MonoBehaviour
             if (p) player = p.transform;
         }
         if (firePoint == null) firePoint = transform;
+
+        // Auto-resuelva la referencia a Bruja_Movement si está en el mismo GameObject
+        if (movement == null)
+        {
+            movement = GetComponent<Bruja_Movement>();
+        }
     }
 
     void Update()
     {
-        // orientacion pasiva: mantenemos una rotacion suave hacia el player (para que el firePoint apunte bien)
+        // orientacion pasiva: mantenemos una rotacion suave hacia el player en el plano horizontal
         if (player != null)
         {
-            Vector3 dir = player.position - transform.position;
-            dir.y = 0f;
+            Vector3 dir = new Vector3(player.position.x - transform.position.x, 0f, player.position.z - transform.position.z);
             if (dir.sqrMagnitude > 0.001f)
             {
                 Quaternion target = Quaternion.LookRotation(dir);
@@ -223,12 +82,17 @@ public class Bruja_Shooter : MonoBehaviour
         }
         isAttacking = false;
         cancelAttack = false;
+
+        // Asegurar que el movimiento se restaure si lo pausamos
+        movement?.ResumeMovement();
     }
 
     public void CancelCurrentAttack()
     {
         // llamada externa para interrumpir ataque (por ejemplo al recibir danio)
         cancelAttack = true;
+        // reanudar movimiento inmediatamente
+        movement?.ResumeMovement();
     }
 
     IEnumerator AttackCycle()
@@ -238,15 +102,19 @@ public class Bruja_Shooter : MonoBehaviour
             isAttacking = true;
             cancelAttack = false;
 
-            // comprobar que hay una direccion valida antes del windup
+            // comprobar que hay una direccion valida antes del windup (horizontal)
             Vector3 chosenDir = FindBestAimDirection();
             if (chosenDir == Vector3.zero)
             {
                 // no hay direccion valida (pared bloqueando) -> no atacar ahora
                 isAttacking = false;
                 attackRoutine = null;
+                movement?.ResumeMovement();
                 yield break;
             }
+
+            // ----- PAUSAR MOVIMIENTO ANTES DEL WINDUP/DISPAROS -----
+            movement?.PauseMovement();
 
             // windup (se puede cancelar)
             float t = 0f;
@@ -257,26 +125,18 @@ public class Bruja_Shooter : MonoBehaviour
                     isAttacking = false;
                     cancelAttack = false;
                     attackRoutine = null;
+                    movement?.ResumeMovement();
                     yield break;
                 }
                 t += Time.deltaTime;
                 yield return null;
             }
 
-            // disparos: usamos la direccion elegida (si durante los disparos la direccion se bloquea, no cambiamos)
-            for (int i = 0; i < shotsPerAttack; i++)
-            {
-                if (cancelAttack)
-                {
-                    isAttacking = false;
-                    cancelAttack = false;
-                    attackRoutine = null;
-                    yield break;
-                }
+            // Ejecutar UNA ráfaga usando la variable burstCount y esperar a que termine (puede ser interrumpida)
+            yield return StartCoroutine(ShootBurst(chosenDir, Mathf.Max(1, burstCount)));
 
-                ShootOnce(chosenDir);
-                yield return new WaitForSeconds(timeBetweenShots);
-            }
+            // ----- TERMINÓ DE DISPARAR -> reanudar movimiento -----
+            movement?.ResumeMovement();
 
             isAttacking = false;
 
@@ -288,53 +148,117 @@ public class Bruja_Shooter : MonoBehaviour
                 {
                     cancelAttack = false;
                     attackRoutine = null;
+                    movement?.ResumeMovement();
                     yield break;
                 }
                 cd += Time.deltaTime;
                 yield return null;
             }
+            // mantener attackRoutine activo para continuar el ciclo
         }
     }
 
-    // Disparar una vez en una direccion dada (direccion normalizada)
-    void ShootOnce(Vector3 direction)
+    // Corrutina que dispara una ráfaga de `burstCount` proyectiles en la misma dirección horizontal.
+    IEnumerator ShootBurst(Vector3 direction, int burstCountLocal)
     {
-        if (projectilePrefab == null || firePoint == null || player == null) return;
-        if (direction.sqrMagnitude < 0.0001f) return;
+        if (projectilePrefab == null || firePoint == null || player == null) yield break;
+        if (direction.sqrMagnitude < 0.0001f) yield break;
 
-        GameObject proj = Instantiate(projectilePrefab, firePoint.position, Quaternion.LookRotation(direction));
+        for (int i = 0; i < burstCountLocal; i++)
+        {
+            if (cancelAttack)
+            {
+                // si se cancela, salir inmediatamente
+                cancelAttack = false;
+                yield break;
+            }
+
+            SpawnProjectile(direction);
+
+            // si es el último de la ráfaga, no esperar
+            if (i < burstCountLocal - 1)
+            {
+                // esperar entre disparos de la ráfaga
+                float wait = 0f;
+                while (wait < timeBetweenShots)
+                {
+                    if (cancelAttack)
+                    {
+                        cancelAttack = false;
+                        yield break;
+                    }
+                    wait += Time.deltaTime;
+                    yield return null;
+                }
+            }
+        }
+    }
+
+    // Crea un proyectil único y le aplica velocidad; también ignora colisiones contra el shooter para evitar autodestrucción.
+    void SpawnProjectile(Vector3 direction)
+    {
+        // direction ya es horizontal (y == 0). Asegurar spawn con la misma Y del firePoint.
+        Vector3 horizontalDir = direction.normalized;
+        Vector3 spawnPos = new Vector3(firePoint.position.x, firePoint.position.y, firePoint.position.z) + horizontalDir * spawnOffset;
+
+        GameObject proj = Instantiate(projectilePrefab, spawnPos, Quaternion.LookRotation(horizontalDir));
+        // buscar Rigidbody tanto en root como en hijos (más robusto)
         Rigidbody rb = proj.GetComponent<Rigidbody>();
+        if (rb == null) rb = proj.GetComponentInChildren<Rigidbody>();
+
         if (rb != null)
         {
-            rb.velocity = direction * projectileSpeed;
+            // evitar que la gravedad haga caer la bala (si quieres gravedad, cambia a true)
+            rb.useGravity = false;
+            // velocidad solo en plano horizontal
+            Vector3 vel = new Vector3(horizontalDir.x, 0f, horizontalDir.z) * projectileSpeed;
+            rb.velocity = vel;
         }
 
         Bruja_Projectile pscript = proj.GetComponent<Bruja_Projectile>();
         if (pscript != null)
         {
-            pscript.SetDirection(direction);
+            // mantener dirección horizontal
+            pscript.SetDirection(new Vector3(horizontalDir.x, 0f, horizontalDir.z));
         }
+
+        // IGNORAR colisiones entre la bala y el shooter (evita que la bala choque al nacer si tiene isTrigger/colisiones)
+        Collider[] myCols = GetComponentsInChildren<Collider>();
+        Collider[] projCols = proj.GetComponentsInChildren<Collider>();
+        foreach (var pc in projCols)
+        {
+            if (pc == null) continue;
+            foreach (var mc in myCols)
+            {
+                if (mc == null) continue;
+                Physics.IgnoreCollision(pc, mc, true);
+            }
+        }
+
+        // Nota: si usas pooling, reemplaza Instantiate por tu sistema de pool y re-aplica la ignoración de colisión según convenga.
     }
 
-    // Comprueba si desde el firePoint actual hay linea de vista directa al player
+    // Comprueba si desde el firePoint actual hay linea de vista directa al player (en plano horizontal)
     public bool HasLineOfSight()
     {
         if (player == null || firePoint == null) return false;
         return HasLineOfSightFrom(firePoint.position);
     }
 
-    // Comprueba linea de vista desde una posicion arbitraria
+    // Comprueba linea de vista desde una posicion arbitraria (usa Y del origin para mantener plano)
     public bool HasLineOfSightFrom(Vector3 origin)
     {
         if (player == null) return false;
-        Vector3 dir = player.position - origin;
+
+        Vector3 originFlat = new Vector3(origin.x, origin.y, origin.z);
+        Vector3 playerFlat = new Vector3(player.position.x, origin.y, player.position.z); // misma Y del origin
+        Vector3 dir = playerFlat - originFlat;
         float dist = dir.magnitude;
         if (dist < 0.01f) return true;
 
         RaycastHit hit;
-        if (Physics.Raycast(origin, dir.normalized, out hit, dist))
+        if (Physics.Raycast(originFlat, dir.normalized, out hit, dist))
         {
-            // si el primer hit es parte del player -> hay vision. Usamos IsChildOf para compatibilidad con colliders hijos.
             if (hit.transform == player || hit.transform.IsChildOf(player))
             {
                 return true;
@@ -342,7 +266,6 @@ public class Bruja_Shooter : MonoBehaviour
             return false; // algo bloquea antes del player (pared u otro obstaculo)
         }
 
-        // no golpeo nada - considerar visible
         return true;
     }
 
@@ -352,14 +275,14 @@ public class Bruja_Shooter : MonoBehaviour
     {
         if (player == null || firePoint == null) return Vector3.zero;
 
-        // primer intento: direccion directa
-        Vector3 directDir = (player.position - firePoint.position);
+        // primer intento: direccion directa en plano horizontal
+        Vector3 directDir = new Vector3(player.position.x - firePoint.position.x, 0f, player.position.z - firePoint.position.z);
         if (directDir.magnitude <= maxAttackRange && HasLineOfSightFrom(firePoint.position))
         {
             return directDir.normalized;
         }
 
-        // samplear puntos alrededor del player para encontrar un punto de su area visible
+        // samplear puntos alrededor del player para encontrar un punto de su area visible (todos con la misma Y del firePoint)
         for (int r = 0; r < sampleRadiusSteps; r++)
         {
             float radius = Mathf.Lerp(sampleRadiusMin, sampleRadiusMax, (float)r / Mathf.Max(1, sampleRadiusSteps - 1));
@@ -367,26 +290,24 @@ public class Bruja_Shooter : MonoBehaviour
             {
                 float angle = (360f / sampleAngleSteps) * i;
                 Vector3 offset = new Vector3(Mathf.Cos(angle * Mathf.Deg2Rad), 0f, Mathf.Sin(angle * Mathf.Deg2Rad)) * radius;
-                Vector3 candidatePoint = player.position + offset;
+                Vector3 candidatePoint = new Vector3(player.position.x + offset.x, firePoint.position.y, player.position.z + offset.z);
 
-                // limitar rango: solo aceptar si el candidato esta razonablemente cerca (antes de disparar no queremos que sea muy lejano)
-                float candDist = Vector3.Distance(firePoint.position, candidatePoint);
+                // limitar rango: solo aceptar si el candidato esta razonablemente cerca (horizontalmente)
+                float candDist = Vector3.Distance(new Vector3(firePoint.position.x, firePoint.position.y, firePoint.position.z), candidatePoint);
                 if (candDist > maxAttackRange * 1.2f) continue;
 
-                // raycast desde firePoint hacia el punto candidato
-                Vector3 dirToCandidate = candidatePoint - firePoint.position;
+                Vector3 dirToCandidate = candidatePoint - new Vector3(firePoint.position.x, firePoint.position.y, firePoint.position.z);
                 float dist = dirToCandidate.magnitude;
                 if (dist < 0.01f) continue;
 
                 RaycastHit hit;
-                if (Physics.Raycast(firePoint.position, dirToCandidate.normalized, out hit, dist))
+                if (Physics.Raycast(new Vector3(firePoint.position.x, firePoint.position.y, firePoint.position.z), dirToCandidate.normalized, out hit, dist))
                 {
-                    // si el primer hit es parte del player (o childs) -> aceptamos
                     if (hit.transform == player || hit.transform.IsChildOf(player))
                     {
                         return dirToCandidate.normalized;
                     }
-                    // sino, este candidato esta bloqueado; seguir probando
+                    // bloqueado -> seguir probando
                 }
                 else
                 {
@@ -405,5 +326,6 @@ public class Bruja_Shooter : MonoBehaviour
         return isAttacking;
     }
 }
+
 
 

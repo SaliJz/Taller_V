@@ -1,4 +1,4 @@
-// Bruja_Movement.cs
+// Bruja_Movement.cs (versión mejorada para evitar "jitter" al llegar)
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
@@ -17,10 +17,20 @@ public class Bruja_Movement : MonoBehaviour
     public float retreatDistance = 6f; // distancia objetivo al alejarse
     public float navSampleMaxDistance = 2f;
 
+    [Header("Ajustes de llegada")]
+    [Tooltip("Tolerancia (m) para considerar que el agente llegó y dejar de moverse (evita jitter).")]
+    public float arrivalTolerance = 0.18f;
+
     Vector3 firePointOffset = Vector3.zero; // offset local desde transform hasta firePoint (si se usa)
 
     Coroutine retreatCoroutine;
     float originalSpeed;
+    bool isAtDestination = false;
+
+    // ----- Nuevas variables para pausar / reanudar movimiento -----
+    bool isPaused = false;
+    bool hadPathBeforePause = false;
+    Vector3 lastDestination = Vector3.zero;
 
     void Awake()
     {
@@ -34,6 +44,35 @@ public class Bruja_Movement : MonoBehaviour
         }
     }
 
+    void LateUpdate()
+    {
+        // Comprueba llegada al destino para evitar que el agente siga corrigiendo su posición (jitter)
+        if (agent == null) return;
+
+        // Si ya está detenido por nosotros, garantizar velocity = 0
+        if (agent.isStopped && isAtDestination)
+        {
+            agent.velocity = Vector3.zero;
+            return;
+        }
+
+        if (agent.pathPending) return;
+
+        // Si no hay path y no estamos moviéndonos, nada que comprobar
+        if (!agent.hasPath) return;
+
+        float remaining = agent.remainingDistance;
+        // remainingDistance puede ser 0 cuando llega; considerar arrivalTolerance
+        if (remaining <= arrivalTolerance || (agent.velocity.sqrMagnitude < 0.01f && remaining <= navSampleMaxDistance))
+        {
+            // Llegó: parar y limpiar path para evitar microajustes
+            agent.isStopped = true;
+            agent.ResetPath();
+            agent.velocity = Vector3.zero;
+            isAtDestination = true;
+        }
+    }
+
     // Setear offset para simulaciones de line of sight cuando se prueban posiciones futuras
     public void SetFirePointOffset(Vector3 offset)
     {
@@ -44,6 +83,7 @@ public class Bruja_Movement : MonoBehaviour
     public void MoveTowardsPlayer()
     {
         if (player == null || agent == null) return;
+        isAtDestination = false;
         agent.isStopped = false;
         agent.speed = moveSpeed;
         agent.SetDestination(player.position);
@@ -53,6 +93,7 @@ public class Bruja_Movement : MonoBehaviour
     public void MoveToPosition(Vector3 position)
     {
         if (agent == null) return;
+        isAtDestination = false;
         agent.isStopped = false;
         agent.speed = moveSpeed;
         agent.SetDestination(position);
@@ -62,6 +103,7 @@ public class Bruja_Movement : MonoBehaviour
     public void MoveAwayFromPlayer()
     {
         if (player == null || agent == null) return;
+        isAtDestination = false;
         Vector3 dir = (transform.position - player.position);
         dir.y = 0f;
         if (dir.sqrMagnitude < 0.01f) dir = transform.forward; // fallback
@@ -76,19 +118,64 @@ public class Bruja_Movement : MonoBehaviour
         }
         else
         {
-            // si no encuentra muestra, intenta moverse en la direccion directa con la distancia pedida
             agent.isStopped = false;
             agent.speed = retreatSpeed;
             agent.SetDestination(desired);
         }
     }
 
-    // Detener movimiento inmediatamente
+    // Detener movimiento inmediatamente (usar para que no haya jitter)
     public void StopMoving()
     {
         if (agent == null) return;
         agent.isStopped = true;
+        agent.ResetPath();          // limpia path para evitar correcciones constantes
         agent.velocity = Vector3.zero;
+        isAtDestination = true;
+    }
+
+    // ----- Nuevos métodos: pausar y reanudar movimiento -----
+    // Pausa el agente guardando su destino actual (si lo tenía)
+    public void PauseMovement()
+    {
+        if (agent == null) return;
+        if (isPaused) return; // ya pausado, ignorar
+        isPaused = true;
+
+        // Guardar estado previo si existía un path activo
+        hadPathBeforePause = agent.hasPath && !agent.isStopped;
+        if (hadPathBeforePause)
+        {
+            lastDestination = agent.destination;
+        }
+
+        // Detener inmediatamente
+        StopMoving();
+    }
+
+    // Reanuda el movimiento restaurando el destino previo si existía,
+    // o dirigiéndose al player si no había destino.
+    public void ResumeMovement()
+    {
+        if (agent == null) return;
+        if (!isPaused) return; // no estaba pausado
+
+        isPaused = false;
+        isAtDestination = false;
+        agent.isStopped = false;
+
+        if (hadPathBeforePause)
+        {
+            agent.SetDestination(lastDestination);
+        }
+        else if (player != null)
+        {
+            // comportamiento por defecto: volver a perseguir al player
+            agent.SetDestination(player.position);
+        }
+        // limpiar flags temporales
+        hadPathBeforePause = false;
+        lastDestination = Vector3.zero;
     }
 
     // Retirada rapida por interrupcion: alejarse un tiempo determinado
@@ -129,7 +216,7 @@ public class Bruja_Movement : MonoBehaviour
         if (player == null) return float.MaxValue;
         return Vector3.Distance(transform.position, player.position);
     }
-     
+
     // Devuelve true si una posicion dada es navegable (samplea el navmesh)
     public bool IsNavPositionReachable(Vector3 position, out Vector3 navPos)
     {
@@ -145,99 +232,3 @@ public class Bruja_Movement : MonoBehaviour
 }
 
 
-//using System.Collections;
-//using UnityEngine;
-
-//[RequireComponent(typeof(Rigidbody))]
-//public class Bruja_Movement : MonoBehaviour
-//{
-//    public Transform player;
-//    Rigidbody rb;
-
-//    [Header("Velocidades")]
-//    public float moveSpeed = 4f;
-//    public float retreatSpeed = 6f;
-
-//    [Header("Distancias")]
-//    public float minSafeDistance = 5f;   // si el player esta por debajo de esto, la bruja se aleja
-//    public float attackDistance = 10f;   // distancia target para poder disparar / orientarse
-
-//    Coroutine retreatCoroutine;
-
-//    void Awake()
-//    {
-//        rb = GetComponent<Rigidbody>();
-//        if (player == null)
-//        {
-//            GameObject p = GameObject.FindGameObjectWithTag("Player");
-//            if (p) player = p.transform;
-//        }
-//    }
-
-//    void FixedUpdate()
-//    {
-//        // el movimiento real generalmente es manejado por las llamadas a MoveTowards/MoveAway/Stop
-//        // dejamos el Update en el controlador para decidir que hacer.
-//    }
-
-//    public void MoveTowardsPlayer(float speedMultiplier = 1f)
-//    {
-//        if (player == null) return;
-//        Vector3 dir = (player.position - transform.position);
-//        dir.y = 0f;
-//        dir.Normalize();
-//        Vector3 newPos = transform.position + dir * moveSpeed * speedMultiplier * Time.fixedDeltaTime;
-//        rb.MovePosition(newPos);
-//    }
-
-//    public void MoveAwayFromPlayer(float speedMultiplier = 1f)
-//    {
-//        if (player == null) return;
-//        Vector3 dir = (transform.position - player.position);
-//        dir.y = 0f;
-//        dir.Normalize();
-//        Vector3 newPos = transform.position + dir * retreatSpeed * speedMultiplier * Time.fixedDeltaTime;
-//        rb.MovePosition(newPos);
-//    }
-
-//    public void StopMoving()
-//    {
-//        rb.velocity = Vector3.zero;
-//    }
-
-//    // Retirada rapida por interrupcion: alejarse un tiempo determinado
-//    public void RetreatForSeconds(float seconds, float extraMultiplier = 1f)
-//    {
-//        if (retreatCoroutine != null) StopCoroutine(retreatCoroutine);
-//        retreatCoroutine = StartCoroutine(RetreatRoutine(seconds, extraMultiplier));
-//    }
-
-//    IEnumerator RetreatRoutine(float seconds, float extraMultiplier)
-//    {
-//        float t = 0f;
-//        while (t < seconds)
-//        {
-//            MoveAwayFromPlayer(extraMultiplier);
-//            t += Time.fixedDeltaTime;
-//            yield return new WaitForFixedUpdate();
-//        }
-//    }
-
-//    // opcion util: mantener orientacion hacia player (para disparo)
-//    public void FacePlayer()
-//    {
-//        if (player == null) return;
-//        Vector3 dir = player.position - transform.position;
-//        dir.y = 0f;
-//        if (dir.sqrMagnitude < 0.0001f) return;
-//        Quaternion targetRot = Quaternion.LookRotation(dir);
-//        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 10f * Time.deltaTime);
-//    }
-
-//    // distancia actual al player
-//    public float DistanceToPlayer()
-//    {
-//        if (player == null) return float.MaxValue;
-//        return Vector3.Distance(transform.position, player.position);
-//    }
-//}

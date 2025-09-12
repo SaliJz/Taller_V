@@ -1,3 +1,5 @@
+
+
 using UnityEngine;
 
 public class Bruja_Projectile : MonoBehaviour
@@ -31,17 +33,17 @@ public class Bruja_Projectile : MonoBehaviour
         // suponer que el player tiene tag "Player" y un script que maneja recibo de danio
         if (other.CompareTag("Player"))
         {
-            // intentar mandar mensaje al player
-            other.SendMessage("TakeDamage", damage, SendMessageOptions.DontRequireReceiver);
+            //// intentar mandar mensaje al player
+            //other.SendMessage("TakeDamage", damage, SendMessageOptions.DontRequireReceiver);
             Destroy(gameObject);
         }
-        else
-        {
-            // si golpea algo solido, destruir
-            if (!other.isTrigger)
-            {
-                Destroy(gameObject);
-            }
-        }
+        //else
+        //{
+        //    // si golpea algo solido, destruir
+        //    if (!other.isTrigger)
+        //    {
+        //        Destroy(gameObject);
+        //    }
+        //}
     }
 }
