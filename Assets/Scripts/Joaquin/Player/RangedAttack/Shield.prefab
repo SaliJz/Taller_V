@@ -102,7 +102,7 @@ BoxCollider:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 256
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
@@ -122,9 +122,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1766dbbc853925c4d9fed9519a3e08ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  attackDamage: 10
   speed: 25
   maxDistance: 15
-  canRebound: 0
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 192
+  canRebound: 1
+  reboundCount: 0
+  maxRebounds: 2
+  reboundDetectionRadius: 15
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!54 &8686822032995205116
 Rigidbody:
   m_ObjectHideFlags: 0

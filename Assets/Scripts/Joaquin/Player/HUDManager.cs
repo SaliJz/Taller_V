@@ -30,6 +30,11 @@ public class HUDManager : MonoBehaviour
         PlayerHealth.OnHealthChanged -= UpdateHealthBar;
     }
 
+    /// <summary>
+    /// Función que actualiza la barra de salud en el HUD.
+    /// </summary>
+    /// <param name="currentHealth"> Vida actual del jugador </param>
+    /// <param name="maxHealth"> Vida máxima del jugador </param>
     private void UpdateHealthBar(float currentHealth, float maxHealth)
     {
         if (healthBar != null)

@@ -1,5 +1,6 @@
-using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
 /// <summary>
 /// Clase que maneja el comportamiento del escudo lanzado por el jugador.
@@ -7,36 +8,52 @@ using System.Collections;
 public class Shield : MonoBehaviour
 {
     [Header("Stats")]
+    [SerializeField] private int attackDamage = 10;
     [SerializeField] private float speed = 25f;
     [SerializeField] private float maxDistance = 30f;
-    [SerializeField] private bool canRebound = false;
+    [SerializeField] private LayerMask collisionLayers;
 
-    private enum ShieldState { Thrown, Returning, Inactive }
+    [Header("Rebound Settings")]
+    [SerializeField] private bool canRebound = true;
+    [SerializeField] private int reboundCount = 0;
+    [SerializeField] private int maxRebounds = 2;
+    [SerializeField] private float reboundDetectionRadius = 15f;
+    [SerializeField] private LayerMask enemyLayer;
+
+    private enum ShieldState { Inactive, Thrown, Returning, Rebounding }
     private ShieldState currentState = ShieldState.Inactive;
 
     private Vector3 startPosition;
     private Transform returnTarget;
-    private PlayerShieldController owner;
+    private Transform currentTarget;
+    private List<Transform> hitTargets = new List<Transform>();
 
-    private int reboundCount = 0;
-    private int maxRebounds = 1;
+    private PlayerShieldController owner;
 
     /// <summary>
     /// Función que es llamada por el PlayerShieldController para lanzar el escudo.
     /// </summary>
     /// <param name="owner"> Referencia al controlador del jugador </param>
     /// <param name="direction"> Orientación del escudo en la dirección del lanzamiento </param>
-    public void Throw(PlayerShieldController owner, Vector3 direction)
+    /// <param name="canRebound"> Indica si el escudo puede rebotar entre enemigos </param>
+    public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound)
     {
         this.owner = owner;
         this.returnTarget = owner.transform;
         transform.forward = direction;
         startPosition = transform.position;
+
+        this.canRebound = canRebound;
+        reboundCount = 0;
+        hitTargets.Clear();
+
         currentState = ShieldState.Thrown;
         gameObject.SetActive(true);
-        reboundCount = 0;
     }
 
+    /// <summary>
+    /// Función que maneja el movimiento y estado del escudo en cada frame.
+    /// </summary>
     private void Update()
     {
         if (currentState == ShieldState.Inactive) return;
@@ -48,6 +65,23 @@ public class Shield : MonoBehaviour
             if (Vector3.Distance(startPosition, transform.position) >= maxDistance)
             {
                 StartReturning();
+            }
+        }
+        else if (currentState == ShieldState.Rebounding)
+        {
+            if (currentTarget == null)
+            {
+                StartReturning();
+                return;
+            }
+
+            Vector3 directionToTarget = (currentTarget.position - transform.position).normalized;
+            transform.position += directionToTarget * speed * Time.deltaTime;
+            transform.forward = directionToTarget;
+
+            if (Vector3.Distance(transform.position, currentTarget.position) < 1.0f)
+            {
+                ProcessHit(currentTarget);
             }
         }
         else if (currentState == ShieldState.Returning)
@@ -64,31 +98,84 @@ public class Shield : MonoBehaviour
         }
     }
 
+    // Detecta colisiones con enemigos u otros objetos en las capas especificadas
     private void OnTriggerEnter(Collider other)
     {
         if (currentState != ShieldState.Thrown) return;
 
-        // Si golpea un enemigo
-        if (other.CompareTag("Enemy"))
+        if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
         {
-            // Lógica de daño al enemigo
-            // other.GetComponent<EnemyHealth>().TakeDamage(damageAmount);
-
-            if (canRebound && reboundCount < maxRebounds)
-            {
-                reboundCount++;
-                StartReturning();
-            }
-            else
-            {
-                StartReturning();
-            }
+            ProcessHit(other.transform);
         }
-        // Si golpea un obstáculo
-        else if (other.CompareTag("Wall"))
+    }
+
+    /// <summary>
+    /// Función que maneja la lógica cuando el escudo golpea un objetivo.
+    /// </summary>
+    /// <param name="hitTransform"> Transform del objetivo golpeado </param>
+    private void ProcessHit(Transform hitTransform)
+    {
+        if (!hitTargets.Contains(hitTransform))
+        {
+            hitTargets.Add(hitTransform);
+        }
+
+        // Lógica de aplicar daño
+        // hitTransform.GetComponent<EnemyHealth>()?.TakeDamage(attackDamage);
+        Debug.Log("Shield hit " + hitTransform.name + " for " + attackDamage + " damage.");
+
+        Transform nextTarget = FindNextReboundTarget();
+
+        if (nextTarget != null)
+        {
+            reboundCount++;
+            currentTarget = nextTarget;
+            currentState = ShieldState.Rebounding;
+        }
+        else
         {
             StartReturning();
         }
+    }
+
+    /// <summary>
+    /// Función que encuentra el siguiente objetivo para rebotar.
+    /// </summary>
+    private Transform FindNextReboundTarget()
+    {
+        if (!canRebound || reboundCount >= maxRebounds)
+        {
+            return null;
+        }
+
+        Collider[] potentialTargets = Physics.OverlapSphere(transform.position, reboundDetectionRadius, enemyLayer);
+
+        Transform bestTarget = null;
+        float closestDistance = float.MaxValue;
+
+        // Filtrar y encontrar el mejor objetivo
+        foreach (Collider targetCollider in potentialTargets)
+        {
+            // Omitir enemigos que ya han sido golpeados en esta secuencia
+            if (hitTargets.Contains(targetCollider.transform))
+            {
+                continue;
+            }
+
+            float distanceToTarget = Vector3.Distance(transform.position, targetCollider.transform.position);
+            float distanceToPlayer = Vector3.Distance(transform.position, returnTarget.position);
+
+            // El rebote es válido solo si el enemigo está más cerca que el jugador
+            if (distanceToTarget < distanceToPlayer)
+            {
+                if (distanceToTarget < closestDistance)
+                {
+                    closestDistance = distanceToTarget;
+                    bestTarget = targetCollider.transform;
+                }
+            }
+        }
+        return bestTarget;
     }
 
     // Inicia el retorno del escudo al jugador

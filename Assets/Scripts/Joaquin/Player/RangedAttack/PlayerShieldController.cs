@@ -9,10 +9,16 @@ public class PlayerShieldController : MonoBehaviour
     [SerializeField] private GameObject shieldPrefab;
     [SerializeField] private Transform shieldSpawnPoint;
 
+    [Header("Stats")]
+    [SerializeField] private bool canRebound = true;
+    
+    public bool CanRebound => canRebound;
+
     [Header("Costes")]
     //[SerializeField] private float timeCostToThrow = 5f;
 
     private bool hasShield = true;
+    
     // private PlayerTimeResource playerTime;
 
     private void Awake()
@@ -54,7 +60,7 @@ public class PlayerShieldController : MonoBehaviour
             {
                 shieldInstance.transform.position = shieldSpawnPoint.position;
                 shieldInstance.transform.rotation = Quaternion.LookRotation(direction);
-                shieldInstance.GetComponent<Shield>().Throw(this, direction);
+                shieldInstance.GetComponent<Shield>().Throw(this, direction, canRebound);
             }
             else
             {
@@ -64,8 +70,8 @@ public class PlayerShieldController : MonoBehaviour
     }
 
     // El escudo llama a esta función cuando regresa
-    public void CatchShield()
-    {
-        hasShield = true;
-    }
+    public void CatchShield() => hasShield = true;
+
+    // Permite cambiar si el escudo puede rebotar o no
+    public void SetRebound(bool value) => canRebound = value;
 }

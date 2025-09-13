@@ -44,6 +44,8 @@ public class PlayerMovement : MonoBehaviour
             Vector3 finalMove = moveDirection * moveSpeed;
             finalMove.y = yVelocity;
             controller.Move(finalMove * Time.fixedDeltaTime);
+
+            RotateTowardsMovement();
         }
     }
     #endregion
@@ -66,12 +68,21 @@ public class PlayerMovement : MonoBehaviour
 
         if (moveDirection != Vector3.zero)
         {
-            transform.rotation = Quaternion.LookRotation(moveDirection);
             //if (playerAnimator != null) playerAnimator.SetBool("IsMoving", true);
         }
         else
         {
             //if (playerAnimator != null) playerAnimator.SetBool("IsMoving", false);
+        }
+    }
+
+    private void RotateTowardsMovement()
+    {
+        Vector3 direction = new Vector3(moveDirection.x, 0, moveDirection.z);
+        if (direction.magnitude > 0.01f)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 12f * Time.fixedDeltaTime);
         }
     }
 
