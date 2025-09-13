@@ -407,7 +407,7 @@ RectTransform:
   m_Father: {fileID: 291325574}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -903,7 +903,7 @@ RectTransform:
   m_Father: {fileID: 737767028}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -2716,6 +2716,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shieldPrefab: {fileID: 97364978854938720, guid: 63062dad4adee9e48bc2714414765908, type: 3}
   shieldSpawnPoint: {fileID: 2089447938}
+  canRebound: 1
 --- !u!114 &1715676781
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2962,7 +2963,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!195 &1908167156
 NavMeshAgent:
   m_ObjectHideFlags: 0
