@@ -169,9 +169,10 @@ GameObject:
   - component: {fileID: 6513067048474585268}
   - component: {fileID: 3969475074129823003}
   - component: {fileID: 4042070195231734354}
+  - component: {fileID: 6278890588688025907}
   m_Layer: 0
   m_Name: EnemigoBruja
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -981,6 +982,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1030991004554866998, guid: 25545b856c0998341ac6c5c48a59d0c8, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
     - target: {fileID: 3356285256207201704, guid: 25545b856c0998341ac6c5c48a59d0c8, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.030000687
@@ -1040,5 +1045,20 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1030991004554866998, guid: 25545b856c0998341ac6c5c48a59d0c8, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6278890588688025907}
   m_SourcePrefab: {fileID: 100100000, guid: 25545b856c0998341ac6c5c48a59d0c8, type: 3}
+--- !u!114 &6278890588688025907
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 974493437380566973}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e1e398882498b1449c445c72078dad2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

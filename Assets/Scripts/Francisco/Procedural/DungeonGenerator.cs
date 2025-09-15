@@ -20,6 +20,9 @@ public class DungeonGenerator : MonoBehaviour
     public Room[] endRoomPrefabs;
     public Room[] normalRoomPrefabs;
 
+    [Header("Enemy Prefabs")]
+    public GameObject[] enemyPrefabs;
+
     [Header("Generation Settings")]
     public int minRooms = 8;
     public int maxRooms = 12;
@@ -78,10 +81,10 @@ public class DungeonGenerator : MonoBehaviour
     {
         switch (connectionType)
         {
-            case ConnectionType.North: return Vector3.forward;  
-            case ConnectionType.South: return Vector3.back;    
-            case ConnectionType.East: return Vector3.left;     
-            case ConnectionType.West: return Vector3.right;    
+            case ConnectionType.North: return Vector3.forward;
+            case ConnectionType.South: return Vector3.back;
+            case ConnectionType.East: return Vector3.left;
+            case ConnectionType.West: return Vector3.right;
             default: return Vector3.forward;
         }
     }
@@ -139,6 +142,23 @@ public class DungeonGenerator : MonoBehaviour
                     roomPlaced = true;
 
                     UpdateRoomWeights(newRoomData);
+
+                    if (newRoom.roomType == RoomType.Combat)
+                    {
+                        var enemyManager = newRoom.gameObject.AddComponent<EnemyManager>();
+                        enemyManager.dungeonGenerator = this;
+                        enemyManager.parentRoom = newRoom;
+                        enemyManager.enemyPrefabs = this.enemyPrefabs;
+                        newRoom.InitializeEnemyManager(enemyManager);
+                    }
+
+                    foreach (var door in newRoom.connectionDoors)
+                    {
+                        if (door != null)
+                        {
+                            door.SetActive(true);
+                        }
+                    }
 
                     foreach (ConnectionPoint connectionPoint in newRoom.connectionPoints)
                     {
@@ -212,6 +232,14 @@ public class DungeonGenerator : MonoBehaviour
                 endRoom.isEndRoom = true;
                 generatedRooms.Add(endRoom);
                 roomPlaced = true;
+
+                foreach (var door in endRoom.connectionDoors)
+                {
+                    if (door != null)
+                    {
+                        door.SetActive(true);
+                    }
+                }
             }
             else
             {
@@ -304,7 +332,6 @@ public class DungeonGenerator : MonoBehaviour
         }
 
         float originalPlayerY = playerTransform.position.y;
-
         if (playerMovement != null)
         {
             playerMovement.SetCanMove(false);
@@ -318,7 +345,7 @@ public class DungeonGenerator : MonoBehaviour
             onStart: () =>
             {
                 Vector3 targetPosition = playerTransform.position + new Vector3(entranceDirection.x * 3f, 0f, entranceDirection.z * 3f);
-                targetPosition.y = originalPlayerY; 
+                targetPosition.y = originalPlayerY;
                 StartCoroutine(MovePlayerWithController(playerTransform, targetPosition, 0.5f));
             },
             onComplete: () =>
@@ -345,7 +372,6 @@ public class DungeonGenerator : MonoBehaviour
                 if (exitPoint != null)
                 {
                     Vector3 spawnPosition = new Vector3(exitPoint.transform.position.x, originalPlayerY, exitPoint.transform.position.z);
-
                     if (playerMovement != null)
                     {
                         playerMovement.TeleportTo(spawnPosition);
@@ -353,6 +379,12 @@ public class DungeonGenerator : MonoBehaviour
                     else
                     {
                         playerTransform.position = spawnPosition;
+                    }
+
+                    int index = System.Array.IndexOf(newRoom.connectionPoints, exitPoint);
+                    if (index != -1 && newRoom.connectionDoors.Length > index && newRoom.connectionDoors[index] != null)
+                    {
+                        newRoom.connectionDoors[index].SetActive(false);
                     }
                 }
             }
@@ -363,7 +395,6 @@ public class DungeonGenerator : MonoBehaviour
             {
                 Room newRoom = null;
                 ConnectionPoint exitPoint = null;
-
                 if (entrancePoint.connectedTo != null)
                 {
                     newRoom = entrancePoint.connectedTo.GetComponentInParent<Room>();
@@ -384,13 +415,35 @@ public class DungeonGenerator : MonoBehaviour
                 {
                     Vector3 exitDirection = GetDirectionFromConnectionType(exitPoint.connectionType);
                     Vector3 oppositeDirection = -exitDirection;
-                    Vector3 targetPosition = playerTransform.position + new Vector3(oppositeDirection.x * 3f, 0f, oppositeDirection.z * 3f);
+                    Vector3 targetPosition = playerTransform.position + new Vector3(oppositeDirection.x * 5f, 0f, oppositeDirection.z * 5f);
                     targetPosition.y = originalPlayerY;
+
                     StartCoroutine(MovePlayerWithController(playerTransform, targetPosition, 0.5f));
                 }
             },
             onComplete: () =>
             {
+                Room newRoom = entrancePoint.connectedTo.GetComponentInParent<Room>();
+                Room oldRoom = entrancePoint.GetComponentInParent<Room>();
+
+                if (oldRoom != null)
+                {
+                    int index = System.Array.IndexOf(oldRoom.connectionPoints, entrancePoint);
+                    if (index != -1 && oldRoom.connectionDoors.Length > index && oldRoom.connectionDoors[index] != null)
+                    {
+                        oldRoom.connectionDoors[index].SetActive(true);
+                    }
+                }
+
+                if (newRoom != null && newRoom.roomType == RoomType.Combat)
+                {
+                    var enemyManager = newRoom.GetComponent<EnemyManager>();
+                    if (enemyManager != null)
+                    {
+                        StartCoroutine(enemyManager.StartCombatEncounter(entrancePoint));
+                    }
+                }
+
                 if (playerMovement != null)
                 {
                     playerMovement.SetCanMove(true);
@@ -415,7 +468,7 @@ public class DungeonGenerator : MonoBehaviour
             t = Mathf.SmoothStep(0f, 1f, t);
 
             Vector3 newPosition = Vector3.Lerp(startPosition, targetPosition, t);
-            newPosition.y = originalY; 
+            newPosition.y = originalY;
 
             if (playerMovement != null)
             {

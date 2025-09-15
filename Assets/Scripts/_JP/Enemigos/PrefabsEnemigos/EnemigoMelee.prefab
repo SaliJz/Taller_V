@@ -552,9 +552,10 @@ GameObject:
   - component: {fileID: 2182417724540445189}
   - component: {fileID: 5288187523557899713}
   - component: {fileID: 991702491690522718}
+  - component: {fileID: 4439023944143831375}
   m_Layer: 0
   m_Name: EnemIgoMelee
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -924,6 +925,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1714787143524643575, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
     - target: {fileID: 3325393681154366128, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.0005044937
@@ -979,5 +984,20 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1714787143524643575, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4439023944143831375}
   m_SourcePrefab: {fileID: 100100000, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+--- !u!114 &4439023944143831375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8225316006678984527}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e1e398882498b1449c445c72078dad2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
