@@ -11,7 +11,7 @@ public class EnemyManager : MonoBehaviour
     public GameObject[] enemyPrefabs;
 
     [Header("Wave Settings")]
-    public int maxWaves = 1;
+    public int maxWaves = 3;
     public int enemiesPerWave = 3;
     public float timeBetweenWaves = 5f;
 
