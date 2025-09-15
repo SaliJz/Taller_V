@@ -21,8 +21,8 @@ public struct SmashKeyframe
 
 public class AstarothController : MonoBehaviour
 {
-    #region Public Enums and State
-    public enum BossState
+    #region Public Enums and State
+    public enum BossState
     {
         Moving,
         Attacking
@@ -30,19 +30,19 @@ public class AstarothController : MonoBehaviour
 
     [Header("Boss State")]
     [SerializeField] private BossState _currentState = BossState.Moving;
-    #endregion
+    #endregion
 
-    #region General Settings
-    [Header("Player Settings")]
+    #region General Settings
+    [Header("Player Settings")]
     [SerializeField] private Transform _player;
     [Header("Movement Settings")]
     [SerializeField] private float _stoppingDistance = 15f;
     private NavMeshAgent _navMeshAgent;
     private Animator _animator;
-    #endregion
+    #endregion
 
-    #region Attack 1: Whip Attack
-    [Header("Attack 1: Latigazo Desgarrador")]
+    #region Attack 1: Whip Attack
+    [Header("Attack 1: Latigazo Desgarrador")]
     [SerializeField] private Transform _whipVisualTransform;
     [SerializeField] private WhipKeyframe[] _whipAnimationKeyframes;
     [SerializeField] private float _attack1Cooldown = 7f;
@@ -56,10 +56,10 @@ public class AstarothController : MonoBehaviour
     private bool _showWhipRaycastGizmo;
     private bool _showWhipImpactGizmo;
     private Vector3 _whipImpactPoint;
-    #endregion
+    #endregion
 
-    #region Attack 2: Smash Attack
-    [Header("Attack 2: Latigazo Demoledor")]
+    #region Attack 2: Smash Attack
+    [Header("Attack 2: Latigazo Demoledor")]
     [SerializeField] private Transform _smashVisualTransform;
     [SerializeField] private SmashKeyframe[] _smashAnimationKeyframes;
     [SerializeField] private float _attack2Cooldown = 12f;
@@ -73,16 +73,26 @@ public class AstarothController : MonoBehaviour
     private Vector3 _lastSmashOverlapCenter;
     private float _lastSmashOverlapRadius;
     private bool _showSmashOverlapGizmo;
-    #endregion
+    #endregion
 
-    #region Unity Lifecycle Methods
-    void Start()
+    #region VFX
+    [Header("VFX")]
+    [SerializeField] private TrailRenderer _trailRenderer;
+    #endregion
+
+    #region Unity Lifecycle Methods
+    void Start()
     {
         _navMeshAgent = GetComponent<NavMeshAgent>();
         _animator = GetComponent<Animator>();
         _navMeshAgent.updateRotation = false;
         _attack1Timer = _attack1Cooldown;
         _attack2Timer = _attack2Cooldown;
+        if (_trailRenderer != null)
+        {
+            _trailRenderer.enabled = false;
+        }
+
         if (_player == null)
         {
             GameObject playerGO = GameObject.FindWithTag("Player");
@@ -139,51 +149,50 @@ public class AstarothController : MonoBehaviour
             Gizmos.DrawWireSphere(transform.position, _smashDetectionRadius);
         }
     }
-    #endregion
+    #endregion
 
-    #region State Logic
-    private void HandleMovement()
+    #region State Logic
+    private void HandleMovement()
     {
         float distanceToPlayer = Vector3.Distance(transform.position, _player.position);
         _navMeshAgent.updateRotation = true;
-        if (distanceToPlayer > _stoppingDistance)
+
+        _attack1Timer -= Time.deltaTime;
+        _attack2Timer -= Time.deltaTime;
+
+        if (_attack1Timer <= 0 && distanceToPlayer <= _whipRange)
         {
-            _navMeshAgent.SetDestination(_player.position);
+            _currentState = BossState.Attacking;
+            StartCoroutine(WhipAttackSequence());
+            _attack1Timer = _attack1Cooldown;
+        }
+        else if (_attack2Timer <= 0 && distanceToPlayer <= _smashDetectionRadius)
+        {
+            _currentState = BossState.Attacking;
+            StartCoroutine(SmashAttackSequence());
+            _attack2Timer = _attack2Cooldown;
         }
         else
         {
-            _navMeshAgent.SetDestination(transform.position);
-            _currentState = BossState.Attacking;
+            if (distanceToPlayer > _stoppingDistance)
+            {
+                _navMeshAgent.isStopped = false;
+                _navMeshAgent.SetDestination(_player.position);
+            }
+            else
+            {
+                _navMeshAgent.isStopped = true;
+                LookAtPlayer();
+            }
         }
     }
 
     private void HandleAttacks()
     {
-        float distanceToPlayer = Vector3.Distance(transform.position, _player.position);
-        if (distanceToPlayer > _stoppingDistance)
-        {
-            _currentState = BossState.Moving;
-            return;
-        }
-        _navMeshAgent.updateRotation = false;
-
-        _attack1Timer -= Time.deltaTime;
-        _attack2Timer -= Time.deltaTime;
-
         if (!_isAttackingWithWhip && !_isSmashing)
         {
-            if (distanceToPlayer <= _smashDetectionRadius && _attack2Timer <= 0)
-            {
-                StartCoroutine(SmashAttackSequence());
-                _attack2Timer = _attack2Cooldown;
-                return;
-            }
-            if (_attack1Timer <= 0)
-            {
-                StartCoroutine(WhipAttackSequence());
-                _attack1Timer = _attack1Cooldown;
-                return;
-            }
+            _navMeshAgent.isStopped = false;
+            _currentState = BossState.Moving;
         }
     }
 
@@ -194,13 +203,21 @@ public class AstarothController : MonoBehaviour
         Quaternion lookRotation = Quaternion.LookRotation(direction);
         transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * _navMeshAgent.angularSpeed);
     }
-    #endregion
+    #endregion
 
-    #region Attack 1 Logic
-    private IEnumerator WhipAttackSequence()
+    #region Attack 1 Logic
+    private IEnumerator WhipAttackSequence()
     {
         _isAttackingWithWhip = true;
         _showWhipImpactGizmo = false;
+        _navMeshAgent.isStopped = true;
+
+        if (_trailRenderer != null)
+        {
+            _trailRenderer.Clear();
+            _trailRenderer.enabled = true;
+        }
+
         for (int i = 0; i < _whipAttackCount; i++)
         {
             LookAtPlayer();
@@ -260,18 +277,24 @@ public class AstarothController : MonoBehaviour
 
             yield return new WaitForSeconds(0.5f);
         }
+
+        if (_trailRenderer != null)
+        {
+            _trailRenderer.enabled = false;
+        }
         _isAttackingWithWhip = false;
         _showWhipRaycastGizmo = false;
         _showWhipImpactGizmo = false;
         _whipVisualTransform.localPosition = _whipAnimationKeyframes[0].Position;
     }
-    #endregion
+    #endregion
 
-    #region Attack 2 Logic
-    private IEnumerator SmashAttackSequence()
+    #region Attack 2 Logic
+    private IEnumerator SmashAttackSequence()
     {
         _isSmashing = true;
         _showSmashOverlapGizmo = false;
+        _navMeshAgent.isStopped = true;
 
         float rotationTime = 0f;
         while (rotationTime < _smashDelay)
@@ -340,14 +363,14 @@ public class AstarothController : MonoBehaviour
             StartCoroutine(ExpandSmashRadius(visualEffect.transform, _smashRadius));
         }
 
-        Collider[] hitColliders = Physics.OverlapSphere(damageCenter, _smashRadius);
-        foreach (var hitCollider in hitColliders)
-        {
-            if (hitCollider.CompareTag("Player"))
-            {
-                Debug.Log("Player hit by Smash Attack!");
-            }
-        }
+        //Collider[] hitColliders = Physics.OverlapSphere(damageCenter, _smashRadius); 
+        //foreach (var hitCollider in hitColliders)
+        //{
+        //    if (hitCollider.CompareTag("Player"))
+        //    {
+        //        Debug.Log("Player hit by Smash Attack!");
+        //    }
+        //} 
         Invoke("DisableSmashOverlapGizmo", 1f);
     }
 
@@ -373,5 +396,5 @@ public class AstarothController : MonoBehaviour
 
         Destroy(effectTransform.gameObject, 0.5f);
     }
-    #endregion
+    #endregion
 }
