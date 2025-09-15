@@ -273,18 +273,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   connectionPoints:
-  - {fileID: 1459129392199982141}
   - {fileID: 1177994441634125383}
+  - {fileID: 1459129392199982141}
   - {fileID: 2903480354445693126}
   roomType: 1
   isStartRoom: 0
   isEndRoom: 0
   connectionDoors:
-  - {fileID: 733727056002714387}
   - {fileID: 7312089467317235851}
+  - {fileID: 733727056002714387}
   - {fileID: 2038818070466584491}
-  spawnAreas:
-  - {fileID: 2353577647623943397}
 --- !u!1 &2038818070466584491
 GameObject:
   m_ObjectHideFlags: 0
@@ -404,6 +402,7 @@ GameObject:
   - component: {fileID: 202463275021690375}
   - component: {fileID: 1459129392199982141}
   - component: {fileID: 3980077864047808125}
+  - component: {fileID: 4710295503670328326}
   m_Layer: 0
   m_Name: ConnectionPoint
   m_TagString: ConnectionPoint
@@ -455,6 +454,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c01b47383a8c104fa87193ff595b9b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!65 &4710295503670328326
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2252609278576375497}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 10, y: 1, z: 5}
+  m_Center: {x: 0, y: 0, z: -2}
 --- !u!1 &3130548216721733597
 GameObject:
   m_ObjectHideFlags: 0
@@ -628,6 +648,7 @@ GameObject:
   - component: {fileID: 2865760416122113407}
   - component: {fileID: 2903480354445693126}
   - component: {fileID: 8928948037615216054}
+  - component: {fileID: 7181360345124083489}
   m_Layer: 0
   m_Name: ConnectionPoint (2)
   m_TagString: ConnectionPoint
@@ -679,6 +700,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c01b47383a8c104fa87193ff595b9b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!65 &7181360345124083489
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3388714575936784689}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 5, y: 1, z: 10}
+  m_Center: {x: -2, y: 0, z: 0}
 --- !u!1 &3489366398222199506
 GameObject:
   m_ObjectHideFlags: 0
@@ -1232,6 +1274,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1643127751106837842}
   - component: {fileID: 1177994441634125383}
+  - component: {fileID: 172892444263927972}
   m_Layer: 0
   m_Name: ConnectionPoint (1)
   m_TagString: ConnectionPoint
@@ -1271,6 +1314,27 @@ MonoBehaviour:
   isConnected: 0
   connectedTo: {fileID: 0}
   connectionType: 1
+--- !u!65 &172892444263927972
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6161317458644620924}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 10, y: 1, z: 5}
+  m_Center: {x: 0, y: 0, z: 2}
 --- !u!1 &6430631497903495697
 GameObject:
   m_ObjectHideFlags: 0

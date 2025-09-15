@@ -56,9 +56,8 @@ MonoBehaviour:
   roomType: 0
   isStartRoom: 1
   isEndRoom: 0
-  connectionDoors:
-  - {fileID: 2053862538451913189}
-  enemySpawnPoints: []
+  connectionDoors: []
+  spawnAreas: []
 --- !u!1 &2053862538451913189
 GameObject:
   m_ObjectHideFlags: 0
@@ -77,7 +76,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &9214821650545126299
 Transform:
   m_ObjectHideFlags: 0
@@ -720,6 +719,7 @@ GameObject:
   - component: {fileID: 1643127751106837842}
   - component: {fileID: 1284229535717600004}
   - component: {fileID: 3409805265157858405}
+  - component: {fileID: 7095382826525009506}
   m_Layer: 0
   m_Name: ConnectionPoint (1)
   m_TagString: ConnectionPoint
@@ -771,6 +771,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c01b47383a8c104fa87193ff595b9b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!65 &7095382826525009506
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6161317458644620924}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 5, y: 1, z: 10}
+  m_Center: {x: -2, y: 0, z: 0.5}
 --- !u!1 &7887588944291331081
 GameObject:
   m_ObjectHideFlags: 0

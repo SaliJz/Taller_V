@@ -2,12 +2,18 @@ using UnityEngine;
 
 public class Room : MonoBehaviour
 {
+    [Header("Connection Points")]
     public ConnectionPoint[] connectionPoints;
+
+    [Header("Room Properties")]
     public RoomType roomType = RoomType.Normal;
     public bool isStartRoom = false;
     public bool isEndRoom = false;
+
+    [Header("Room Components")]
     public GameObject[] connectionDoors;
     public BoxCollider[] spawnAreas;
+
     private EnemyManager enemyManager;
 
     public void InitializeEnemyManager(EnemyManager manager)
@@ -17,6 +23,8 @@ public class Room : MonoBehaviour
 
     public void LockAllDoors()
     {
+        if (connectionDoors == null || connectionDoors.Length == 0) return;
+
         for (int i = 0; i < connectionDoors.Length; i++)
         {
             if (connectionDoors[i] != null)
@@ -26,28 +34,13 @@ public class Room : MonoBehaviour
         }
     }
 
-    public void UnlockAllDoors()
-    {
-        foreach (var door in connectionDoors)
-        {
-            if (door != null)
-            {
-                door.SetActive(false);
-            }
-        }
-    }
-
     public void UnlockExitDoors(ConnectionPoint entrancePoint)
     {
-        for (int i = 0; i < connectionPoints.Length; i++)
+        if (connectionDoors == null) return;
+
+        for (int i = 1; i < connectionPoints.Length; i++)
         {
-            if (connectionPoints[i] != entrancePoint && connectionPoints[i].isConnected)
-            {
-                if (connectionDoors[i] != null)
-                {
-                    connectionDoors[i].SetActive(false);
-                }
-            }
+            connectionDoors[i].SetActive(false);
         }
     }
 }

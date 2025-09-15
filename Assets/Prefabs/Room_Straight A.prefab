@@ -163,14 +163,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   connectionPoints:
-  - {fileID: 7037698060704286295}
   - {fileID: 1076471652189438700}
+  - {fileID: 7037698060704286295}
   roomType: 1
   isStartRoom: 0
   isEndRoom: 0
   connectionDoors:
-  - {fileID: 7606879247260195148}
   - {fileID: 7060705642496101006}
+  - {fileID: 7606879247260195148}
   spawnAreas:
   - {fileID: 544000117812721397}
 --- !u!1 &2500853621817858297
@@ -888,6 +888,7 @@ GameObject:
   - component: {fileID: 1643127751106837842}
   - component: {fileID: 7037698060704286295}
   - component: {fileID: 6767232970873079874}
+  - component: {fileID: 38821816203148902}
   m_Layer: 0
   m_Name: ConnectionPoint (1)
   m_TagString: ConnectionPoint
@@ -939,6 +940,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c01b47383a8c104fa87193ff595b9b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!65 &38821816203148902
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6161317458644620924}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 5, y: 1, z: 10}
+  m_Center: {x: -2, y: 0, z: 0}
 --- !u!1 &7060705642496101006
 GameObject:
   m_ObjectHideFlags: 0
@@ -1273,6 +1295,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1011657627502236842}
   - component: {fileID: 1076471652189438700}
+  - component: {fileID: 6872664019416804911}
   m_Layer: 0
   m_Name: ConnectionPoint (2)
   m_TagString: ConnectionPoint
@@ -1312,6 +1335,27 @@ MonoBehaviour:
   isConnected: 0
   connectedTo: {fileID: 0}
   connectionType: 2
+--- !u!65 &6872664019416804911
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7456444769695763434}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 5, y: 1, z: 10}
+  m_Center: {x: 2, y: 0, z: 0}
 --- !u!1 &7606879247260195148
 GameObject:
   m_ObjectHideFlags: 0

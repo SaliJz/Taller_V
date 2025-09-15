@@ -382,7 +382,7 @@ MonoBehaviour:
   isEndRoom: 1
   connectionDoors:
   - {fileID: 3007611682195907186}
-  enemySpawnPoints: []
+  spawnAreas: []
 --- !u!1 &3007611682195907186
 GameObject:
   m_ObjectHideFlags: 0
@@ -719,6 +719,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1643127751106837842}
   - component: {fileID: 1284229535717600004}
+  - component: {fileID: 4169422773440302715}
   m_Layer: 0
   m_Name: ConnectionPoint (1)
   m_TagString: ConnectionPoint
@@ -758,6 +759,27 @@ MonoBehaviour:
   isConnected: 0
   connectedTo: {fileID: 0}
   connectionType: 1
+--- !u!65 &4169422773440302715
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6161317458644620924}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 10, y: 1, z: 5}
+  m_Center: {x: 0, y: 0, z: 2}
 --- !u!1 &8895173221712135465
 GameObject:
   m_ObjectHideFlags: 0

@@ -11,17 +11,24 @@ public class EnemyController : MonoBehaviour
         healthController = GetComponent<HealthController>();
         if (healthController != null)
         {
-            healthController.OnDamaged += () => Debug.Log("Enemy took damage!");
+            healthController.OnDamaged += () => { };
         }
-    }
-
-    void OnDisable()
-    {
-        OnDeath?.Invoke();
     }
 
     void OnDestroy()
     {
         OnDeath?.Invoke();
+        if (transform.parent != null)
+        {
+            Destroy(transform.parent.gameObject);
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (transform.parent != null)
+        {
+            Destroy(transform.parent.gameObject);
+        }
     }
 }
