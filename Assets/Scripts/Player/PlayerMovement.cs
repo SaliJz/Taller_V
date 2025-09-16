@@ -3,6 +3,10 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     #region Variables
+
+    [Header("References")]
+    [SerializeField] private PlayerStats PlayerStats;
+
     [Header("Stats")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float gravity = -9.81f;
@@ -20,6 +24,12 @@ public class PlayerMovement : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         mainCameraTransform = Camera.main.transform;
+
+        if (PlayerStats != null)
+        {
+            moveSpeed = PlayerStats.moveSpeed;
+            gravity = PlayerStats.gravity;
+        }
     }
 
     void Update()

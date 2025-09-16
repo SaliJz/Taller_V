@@ -7,6 +7,9 @@ using UnityEngine;
 /// </summary>
 public class Shield : MonoBehaviour
 {
+    [Header("References")]
+    [SerializeField] private PlayerStats PlayerStats;
+
     [Header("Stats")]
     [SerializeField] private int attackDamage = 10;
     [SerializeField] private float speed = 25f;
@@ -49,6 +52,18 @@ public class Shield : MonoBehaviour
 
         currentState = ShieldState.Thrown;
         gameObject.SetActive(true);
+    }
+
+    private void Start()
+    {
+        if (PlayerStats != null)
+        {
+            attackDamage = PlayerStats.shieldAttackDamage;
+            speed = PlayerStats.shieldSpeed;
+            maxDistance = PlayerStats.shieldMaxDistance;
+            maxRebounds = PlayerStats.shieldMaxRebounds;
+            reboundDetectionRadius = PlayerStats.shieldReboundRadius;
+        }
     }
 
     /// <summary>

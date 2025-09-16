@@ -272,7 +272,8 @@ public class Bruja_Shooter : MonoBehaviour
         }
 
         // fallback clásico (funcionará en versiones donde velocity aún existe)
-        rb.velocity = velocity;
+        // rb.velocity = velocity; // <-- LÍNEA OBSOLETA
+        rb.linearVelocity = velocity; // <-- USAR LA NUEVA PROPIEDAD
     }
 
     // Comprueba si desde el firePoint actual hay linea de vista directa al player (en plano horizontal)

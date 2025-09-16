@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour
 {
+    [Header("References")]
+    [SerializeField] private PlayerStats PlayerStats;
+
     [Header("Configuración de Vida")]
     [SerializeField] private float maxHealth = 100;
     [SerializeField] private float currentHealth;
@@ -11,6 +14,11 @@ public class PlayerHealth : MonoBehaviour
 
     void Start()
     {
+        if (PlayerStats != null)
+        {
+            maxHealth = PlayerStats.maxHealth;
+        }
+
         currentHealth = maxHealth;
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }

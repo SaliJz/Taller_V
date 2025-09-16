@@ -6,6 +6,9 @@ using System.Collections;
 /// </summary>
 public class PlayerMeleeAttack : MonoBehaviour
 {
+    [Header("References")]
+    [SerializeField] private PlayerStats PlayerStats;
+
     [Header("Configuración de Ataque")]
     [SerializeField] private Transform hitPoint;
     [SerializeField] private float hitRadius = 0.8f;
@@ -19,6 +22,14 @@ public class PlayerMeleeAttack : MonoBehaviour
     private void Start()
     {
         //animator = GetComponent<Animator>();
+
+        showGizmo = false;
+
+        if (PlayerStats != null)
+        {
+            attackDamage = PlayerStats.meleeAttackDamage;
+            hitRadius = PlayerStats.meleeRadius;
+        }
     }
 
     private void Update()
