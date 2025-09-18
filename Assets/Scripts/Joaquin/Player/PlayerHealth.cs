@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using System.Collections;
 
 /// <summary>
 /// Clase que maneja la salud del jugador, incluyendo daño, curación y etapas de vida.
@@ -22,7 +23,14 @@ public class PlayerHealth : MonoBehaviour
     [HideInInspector] private float fallbackMaxHealth = 100;
     [SerializeField] private float currentHealth;
 
+    [Header("Mejora de Escudo")]
+    [SerializeField] private float shieldBlockCooldown = 18f;
+    private bool isShieldBlockReady = true;
+
+    public bool HasShieldBlockUpgrade { get; private set; } = false;
+    public bool IsInvulnerable { get; set; } = false;
     public LifeStage CurrentLifeStage { get; private set; }
+
     public static event Action<float, float> OnHealthChanged;
     public static event Action<LifeStage> OnLifeStageChanged;
 
@@ -75,6 +83,24 @@ public class PlayerHealth : MonoBehaviour
     /// <param name="damageAmount"> Cantidad de daño a aplicar. </param>
     public void TakeDamage(float damageAmount)
     {
+        if (IsInvulnerable)
+        {
+            ReportDebug("El jugador es invulnerable y no recibe daño.", 1);
+            return;
+        }
+
+        if (HasShieldBlockUpgrade)
+        {
+            if (isShieldBlockReady)
+            {
+                isShieldBlockReady = false; // El bloqueo se consume
+                ReportDebug("El escudo ha bloqueado el daño entrante.", 1);
+
+                StartCoroutine(ShieldBlockCooldownRoutine());
+                return;
+            }
+        }
+
         float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
 
         currentHealth -= damageAmount;
@@ -87,6 +113,16 @@ public class PlayerHealth : MonoBehaviour
         if (currentHealth <= 0) Die();
         
         if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageAmount} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);
+    }
+
+    // Función que maneja el cooldown del bloqueo del escudo.
+    private IEnumerator ShieldBlockCooldownRoutine()
+    {
+        ReportDebug($"El escudo bloqueará de nuevo en {shieldBlockCooldown} segundos.", 1);
+        yield return new WaitForSeconds(shieldBlockCooldown);
+
+        isShieldBlockReady = true;
+        ReportDebug("El escudo está listo para bloquear de nuevo.", 1);
     }
 
     /// <summary>

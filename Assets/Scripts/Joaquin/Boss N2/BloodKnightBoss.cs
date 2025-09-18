@@ -20,7 +20,7 @@ public class BloodKnightBoss : MonoBehaviour
 
     [Header("Attack 2 - Apocalipsis")]
     [SerializeField] private float apocalipsisDamage = 7f;
-    [SerializeField] private float apocalipsisSpeed = 8f;
+    //[SerializeField] private float apocalipsisSpeed = 8f;
     [SerializeField] private int apocalipsisAttacks = 10;
     [SerializeField] private float attackInterval = 1f;
 

@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -6,20 +7,40 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private PlayerStatsManager statsManager;
+    [SerializeField] private CharacterController controller;
+    [SerializeField] private Transform mainCameraTransform;
+    //[SerializeField] private Animator playerAnimator;
+    //[SerializeField] private AudioSource audioSource;
+    [SerializeField] private TrailRenderer trailRenderer;
+    [SerializeField] private PlayerHealth playerHealth;
 
-    [Header("Stats")]
+    [Header("Movimiento")]
     [Tooltip("Velocidad de movimiento por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackMoveSpeed = 5f;
     [SerializeField] private float moveSpeed = 5f;
     [Tooltip("Gravedad por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackGravity = -9.81f;
     [SerializeField] private float gravity = -9.81f;
-    //public Animator playerAnimator;
 
-    private CharacterController controller;
+    [Header("Dash")]
+    [SerializeField] private float dashSpeed = 15f;
+    [SerializeField] private float dashDuration = 0.2f;
+    [SerializeField] private float dashCooldown = 1f;
+    [Tooltip("Capas que el jugador puede atravesar durante el Dash.")]
+    [SerializeField] private LayerMask traversableLayers;
+
+    [Header("Efectos")]
+    //[SerializeField] private AudioClip dashStartSound;
+    //[SerializeField] private AudioClip dashImpactSound;
+    [SerializeField] private GameObject afterimagePrefab;
+
+    private int playerLayer;
+    private int enemyLayer;
+    private float dashCooldownTimer = 0f;
+    public bool IsDashing { get; private set; }
+
     private Vector3 moveDirection;
     private float yVelocity;
-    private Transform mainCameraTransform;
     private bool canMove = true;
 
     #endregion
@@ -43,7 +64,14 @@ public class PlayerMovement : MonoBehaviour
 
         controller = GetComponent<CharacterController>();
         mainCameraTransform = Camera.main.transform;
-        
+        //playerAnimator = GetComponent<Animator>();
+        //audioSource = GetComponentInChildren<AudioSource>();
+        //trailRenderer = GetComponentInChildren<TrailRenderer>();
+        playerHealth = GetComponent<PlayerHealth>();
+
+        playerLayer = LayerMask.NameToLayer("Player");
+        enemyLayer = LayerMask.NameToLayer("Enemy");
+
         float moveSpeedStat = statsManager != null ? statsManager.GetStat(StatType.MoveSpeed) : fallbackMoveSpeed;
         moveSpeed = moveSpeedStat;
 
@@ -71,7 +99,12 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        if (canMove)
+        if (dashCooldownTimer > 0)
+        {
+            dashCooldownTimer -= Time.deltaTime;
+        }
+
+        if (canMove && !IsDashing)
         {
             HandleMovementInput();
         }
@@ -82,6 +115,11 @@ public class PlayerMovement : MonoBehaviour
         }
 
         ApplyGravity();
+
+        if (Input.GetKeyDown(KeyCode.LeftShift) && dashCooldownTimer <= 0 && !IsDashing)
+        {
+            StartCoroutine(DashRoutine());
+        }
     }
 
     private void FixedUpdate()
@@ -135,6 +173,84 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private IEnumerator DashRoutine()
+    {
+        IsDashing = true;
+        dashCooldownTimer = dashCooldown;
+        // if (playerAnimator != null) playerAnimator.SetTrigger("Dash");
+        //if (audioSource != null && dashStartSound != null) audioSource.PlayOneShot(dashStartSound);
+
+        if (playerHealth != null) playerHealth.IsInvulnerable = true;
+        ToggleLayerCollisions(true);
+        if (trailRenderer != null) trailRenderer.emitting = true;
+        if (afterimagePrefab != null) StartCoroutine(AfterimageRoutine());
+
+        float startTime = Time.time;
+        Vector3 dashDirection = moveDirection.magnitude > 0.1f ? moveDirection : transform.forward;
+
+        if (Physics.Raycast(transform.position, dashDirection, out RaycastHit hit, dashSpeed * dashDuration, ~traversableLayers))
+        {
+            float distanceToWall = hit.distance - controller.radius;
+            if (distanceToWall > 0)
+            {
+                StartCoroutine(PerformDash(dashDirection, (distanceToWall / dashSpeed)));
+            }
+        }
+        else
+        {
+            StartCoroutine(PerformDash(dashDirection, dashDuration));
+        }
+
+        yield return new WaitForSeconds(dashDuration);
+
+        if (trailRenderer != null) trailRenderer.emitting = false;
+        if (playerHealth != null) playerHealth.IsInvulnerable = false;
+        ToggleLayerCollisions(false);
+        IsDashing = false;
+    }
+
+    private IEnumerator PerformDash(Vector3 direction, float duration)
+    {
+        float startTime = Time.time;
+        while (Time.time < startTime + duration)
+        {
+            controller.Move(direction * dashSpeed * Time.deltaTime);
+            yield return null;
+        }
+    }
+
+    /// <summary>
+    /// Activa o desactiva las colisiones entre el jugador y las capas definidas en 'traversableLayers'.
+    /// </summary>
+    private void ToggleLayerCollisions(bool ignore)
+    {
+        for (int i = 0; i < 32; i++)
+        {
+            // Verifica si la capa i está en el LayerMask traversableLayers
+            if (traversableLayers == (traversableLayers | (1 << i)))
+            {
+                Physics.IgnoreLayerCollision(playerLayer, i, ignore);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Crea afterimages del jugador a intervalos regulares mientras está dashing.
+    /// </summary>
+    private IEnumerator AfterimageRoutine()
+    {
+        float interval = 0.05f;
+        while (IsDashing)
+        {
+            if (afterimagePrefab != null)
+            {
+                GameObject afterimage = Instantiate(afterimagePrefab, transform.position, transform.rotation);
+                Destroy(afterimage, 0.5f);
+            }
+            yield return new WaitForSeconds(interval);
+        }
+    }
+
     private void ApplyGravity()
     {
         if (controller.enabled && controller.isGrounded)
@@ -168,6 +284,28 @@ public class PlayerMovement : MonoBehaviour
     }
 
     #endregion
+
+    /// <summary>
+    /// Dibuja la trayectoria y el posible punto de impacto del Dash en el editor.
+    /// </summary>
+    private void OnDrawGizmos()
+    {
+        if (!Application.isPlaying) return; // Solo mostrar en modo juego para tener datos reales
+
+        Gizmos.color = Color.cyan;
+        Vector3 dashDirection = moveDirection.magnitude > 0.1f ? moveDirection.normalized : transform.forward;
+        float dashDistance = dashSpeed * dashDuration;
+
+        // Dibuja la línea de la trayectoria
+        Gizmos.DrawRay(transform.position, dashDirection * dashDistance);
+
+        // Dibuja una esfera en el punto de impacto si se detecta una pared
+        if (Physics.Raycast(transform.position, dashDirection, out RaycastHit hit, dashDistance, ~traversableLayers))
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(hit.point, 0.5f);
+        }
+    }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     /// <summary> 
