@@ -7,11 +7,15 @@ using System.Collections;
 public class PlayerMeleeAttack : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private PlayerStats PlayerStats;
+    [SerializeField] private PlayerStatsManager statsManager;
 
     [Header("Configuración de Ataque")]
     [SerializeField] private Transform hitPoint;
+    [Tooltip("Radio de golpe por defecto si no se encuentra PlayerStatsManager.")]
+    [HideInInspector] private float fallbackHitRadius = 0.8f;
     [SerializeField] private float hitRadius = 0.8f;
+    [Tooltip("Daño de ataque por defecto si no se encuentra PlayerStatsManager.")]
+    [HideInInspector] private float fallbackAttackDamage = 10;
     [SerializeField] private int attackDamage = 10;
     [SerializeField] private LayerMask enemyLayer;
 
@@ -19,17 +23,49 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private float gizmoDuration = 0.2f;
     //private Animator animator;
 
+    private void OnEnable()
+    {
+        PlayerStatsManager.OnStatChanged += HandleStatChanged;
+    }
+
+    private void OnDisable()
+    {
+        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
+    }
+
     private void Start()
     {
+        statsManager = GetComponent<PlayerStatsManager>();
+        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMeleeAttack. Usando valores de de fallback.", 2);
+
         //animator = GetComponent<Animator>();
 
         showGizmo = false;
 
-        if (PlayerStats != null)
+        float hitRadiusStat = statsManager != null ? statsManager.GetStat(StatType.MeleeRadius) : fallbackHitRadius;
+        hitRadius = hitRadiusStat;
+
+        float attackDamageStat = statsManager != null ? statsManager.GetStat(StatType.MeleeAttackDamage) : fallbackAttackDamage;
+        attackDamage = Mathf.RoundToInt(attackDamageStat);
+    }
+
+    /// <summary>
+    /// Maneja los cambios de stats.
+    /// </summary>
+    /// <param name="statType">Tipo de estadística que ha cambiado.</param>
+    /// <param name="newValue">Nuevo valor de la estadística.</param>
+    private void HandleStatChanged(StatType statType, float newValue)
+    {
+        if (statType == StatType.MeleeAttackDamage)
         {
-            attackDamage = PlayerStats.meleeAttackDamage;
-            hitRadius = PlayerStats.meleeRadius;
+            attackDamage = Mathf.RoundToInt(newValue);
         }
+        else if (statType == StatType.MeleeRadius)
+        {
+            hitRadius = newValue;
+        }
+
+        ReportDebug($"Estadística {statType} actualizada a {newValue}.", 1);
     }
 
     private void Update()
@@ -40,6 +76,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
+    // Función que inicia el ataque cuerpo a cuerpo.
     private void Attack()
     {
         //animator.SetTrigger("Attack");
@@ -56,15 +93,13 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         foreach (Collider enemy in hitEnemies)
         {
-            /*
-            EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
-            if (enemyHealth != null)
+            HealthController healthController = enemy.GetComponent<HealthController>();
+            if (healthController != null)
             {
-                enemyHealth.TakeDamage(attackDamage);
-            }
-            */
+                healthController.TakeDamage(attackDamage);
 
-            Debug.Log("Golpeaste a " + enemy.name + " por " + attackDamage + " de daño.");
+                ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de daño.", 1);
+            }
         }
 
         StartCoroutine(ShowGizmoCoroutine());
@@ -82,5 +117,30 @@ public class PlayerMeleeAttack : MonoBehaviour
         if (hitPoint == null || !showGizmo) return;
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(hitPoint.position, hitRadius);
+    }
+
+    [System.Diagnostics.Conditional("UNITY_EDITOR")]
+    /// <summary> 
+    /// Función de depuración para reportar mensajes en la consola de Unity. 
+    /// </summary> 
+    /// <<param name="message">Mensaje a reportar.</param> >
+    /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
+    private static void ReportDebug(string message, int reportPriorityLevel)
+    {
+        switch (reportPriorityLevel)
+        {
+            case 1:
+                Debug.Log($"[PlayerMeleeAttack] {message}");
+                break;
+            case 2:
+                Debug.LogWarning($"[PlayerMeleeAttack] {message}");
+                break;
+            case 3:
+                Debug.LogError($"[PlayerMeleeAttack] {message}");
+                break;
+            default:
+                Debug.Log($"[PlayerMeleeAttack] {message}");
+                break;
+        }
     }
 }

@@ -277,16 +277,16 @@ public class HealthController : MonoBehaviour /*, IDamageable*/ // Descomenta ",
         }
     }
 
-    // Trigger para detectar objetos con tag "Escudo" (igual que antes)
-    void OnTriggerEnter(Collider other)
-    {
-        if (other == null) return;
-        if (other.CompareTag("Escudo"))
-        {
-            TakeDamage(escudoDamage);
-            Debug.Log($"{name} recibió {escudoDamage} de daño por Escudo (3D). Vida total ahora: {GetTotalLife()}");
-        }
-    }
+    //// Trigger para detectar objetos con tag "Escudo" (igual que antes)
+    //void OnTriggerEnter(Collider other)
+    //{
+    //    if (other == null) return;
+    //    if (other.CompareTag("Escudo"))
+    //    {
+    //        TakeDamage(escudoDamage);
+    //        Debug.Log($"{name} recibió {escudoDamage} de daño por Escudo (3D). Vida total ahora: {GetTotalLife()}");
+    //    }
+    //}
 
     // Métodos públicos de utilidad (si necesitas exponerlos a otros scripts)
     public void Heal(int amount)

@@ -5,10 +5,14 @@ public class PlayerMovement : MonoBehaviour
     #region Variables
 
     [Header("References")]
-    [SerializeField] private PlayerStats PlayerStats;
+    [SerializeField] private PlayerStatsManager statsManager;
 
     [Header("Stats")]
+    [Tooltip("Velocidad de movimiento por defecto si no se encuentra PlayerStatsManager.")]
+    [HideInInspector] private float fallbackMoveSpeed = 5f;
     [SerializeField] private float moveSpeed = 5f;
+    [Tooltip("Gravedad por defecto si no se encuentra PlayerStatsManager.")]
+    [HideInInspector] private float fallbackGravity = -9.81f;
     [SerializeField] private float gravity = -9.81f;
     //public Animator playerAnimator;
 
@@ -17,22 +21,55 @@ public class PlayerMovement : MonoBehaviour
     private float yVelocity;
     private Transform mainCameraTransform;
     private bool canMove = true;
+
     #endregion
 
     #region Unity Methods
-    void Start()
-    {
-        controller = GetComponent<CharacterController>();
-        mainCameraTransform = Camera.main.transform;
 
-        if (PlayerStats != null)
-        {
-            moveSpeed = PlayerStats.moveSpeed;
-            gravity = PlayerStats.gravity;
-        }
+    private void OnEnable()
+    {
+        PlayerStatsManager.OnStatChanged += HandleStatChanged;
     }
 
-    void Update()
+    private void OnDisable()
+    {
+        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
+    }
+
+    private void Start()
+    {
+        statsManager = GetComponent<PlayerStatsManager>();
+        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMovement. Usando valores de fallback.", 2);
+
+        controller = GetComponent<CharacterController>();
+        mainCameraTransform = Camera.main.transform;
+        
+        float moveSpeedStat = statsManager != null ? statsManager.GetStat(StatType.MoveSpeed) : fallbackMoveSpeed;
+        moveSpeed = moveSpeedStat;
+
+        float gravityStat = statsManager != null ? statsManager.GetStat(StatType.Gravity) : fallbackGravity;
+    }
+
+    /// <summary>
+    /// Maneja los cambios de stats.
+    /// </summary>
+    /// <param name="statType">Tipo de estadística que ha cambiado.</param>
+    /// <param name="newValue">Nuevo valor de la estadística.</param>
+    private void HandleStatChanged(StatType statType, float newValue)
+    {
+        if (statType == StatType.MoveSpeed)
+        {
+            moveSpeed = newValue;
+        }
+        else if (statType == StatType.Gravity)
+        {
+            gravity = newValue;
+        }
+
+        ReportDebug($"Stat {statType} cambiado a {newValue}.", 1);
+    }
+
+    private void Update()
     {
         if (canMove)
         {
@@ -47,7 +84,7 @@ public class PlayerMovement : MonoBehaviour
         ApplyGravity();
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
         if (controller.enabled)
         {
@@ -58,10 +95,12 @@ public class PlayerMovement : MonoBehaviour
             RotateTowardsMovement();
         }
     }
+
     #endregion
 
     #region Custom Methods
-    void HandleMovementInput()
+
+    private void HandleMovementInput()
     {
         float moveX = Input.GetAxisRaw("Horizontal");
         float moveY = Input.GetAxisRaw("Vertical");
@@ -96,7 +135,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    void ApplyGravity()
+    private void ApplyGravity()
     {
         if (controller.enabled && controller.isGrounded)
         {
@@ -127,5 +166,31 @@ public class PlayerMovement : MonoBehaviour
         yVelocity = -0.5f;
         moveDirection = Vector3.zero;
     }
+
     #endregion
+
+    [System.Diagnostics.Conditional("UNITY_EDITOR")]
+    /// <summary> 
+    /// Función de depuración para reportar mensajes en la consola de Unity. 
+    /// </summary> 
+    /// <<param name="message">Mensaje a reportar.</param> >
+    /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
+    private static void ReportDebug(string message, int reportPriorityLevel)
+    {
+        switch (reportPriorityLevel)
+        {
+            case 1:
+                Debug.Log($"[PlayerMovement] {message}");
+                break;
+            case 2:
+                Debug.LogWarning($"[PlayerMovement] {message}");
+                break;
+            case 3:
+                Debug.LogError($"[PlayerMovement] {message}");
+                break;
+            default:
+                Debug.Log($"[PlayerMovement] {message}");
+                break;
+        }
+    }
 }
