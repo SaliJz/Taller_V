@@ -12,8 +12,8 @@ GameObject:
   - component: {fileID: 6091307731556076450}
   - component: {fileID: 8771812243377568586}
   - component: {fileID: 3713415233814957619}
-  - component: {fileID: 3416400601459276787}
   - component: {fileID: 8686822032995205116}
+  - component: {fileID: 3416400601459276787}
   m_Layer: 0
   m_Name: Shield
   m_TagString: Escudo
@@ -110,32 +110,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &3416400601459276787
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 97364978854938720}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1766dbbc853925c4d9fed9519a3e08ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  PlayerStats: {fileID: 11400000, guid: b65a601da78ceb44ebdffd854bf8cada, type: 2}
-  attackDamage: 10
-  speed: 25
-  maxDistance: 15
-  collisionLayers:
-    serializedVersion: 2
-    m_Bits: 192
-  canRebound: 1
-  reboundCount: 0
-  maxRebounds: 2
-  reboundDetectionRadius: 15
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 128
 --- !u!54 &8686822032995205116
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -163,3 +137,29 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &3416400601459276787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 97364978854938720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1766dbbc853925c4d9fed9519a3e08ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  PlayerStats: {fileID: 11400000, guid: b65a601da78ceb44ebdffd854bf8cada, type: 2}
+  attackDamage: 10
+  speed: 25
+  maxDistance: 15
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 192
+  canRebound: 1
+  reboundCount: 0
+  maxRebounds: 2
+  reboundDetectionRadius: 15
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 128

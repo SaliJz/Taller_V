@@ -7,9 +7,6 @@ using UnityEngine;
 /// </summary>
 public class Shield : MonoBehaviour
 {
-    [Header("References")]
-    [SerializeField] private PlayerStats PlayerStats;
-
     [Header("Stats")]
     [SerializeField] private int attackDamage = 10;
     [SerializeField] private float speed = 25f;
@@ -39,31 +36,25 @@ public class Shield : MonoBehaviour
     /// <param name="owner"> Referencia al controlador del jugador </param>
     /// <param name="direction"> Orientación del escudo en la dirección del lanzamiento </param>
     /// <param name="canRebound"> Indica si el escudo puede rebotar entre enemigos </param>
-    public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound)
+    public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds, float reboundDetectionRadius, int attackDamage, float speed, float distance)
     {
         this.owner = owner;
         this.returnTarget = owner.transform;
         transform.forward = direction;
         startPosition = transform.position;
 
-        this.canRebound = canRebound;
+        this.attackDamage = attackDamage;
+        this.speed = speed;
+        this.maxDistance = distance;
+
         reboundCount = 0;
+        this.canRebound = canRebound;
+        this.maxRebounds = maxRebounds;
+        this.reboundDetectionRadius = reboundDetectionRadius;
         hitTargets.Clear();
 
         currentState = ShieldState.Thrown;
         gameObject.SetActive(true);
-    }
-
-    private void Start()
-    {
-        if (PlayerStats != null)
-        {
-            attackDamage = PlayerStats.shieldAttackDamage;
-            speed = PlayerStats.shieldSpeed;
-            maxDistance = PlayerStats.shieldMaxDistance;
-            maxRebounds = PlayerStats.shieldMaxRebounds;
-            reboundDetectionRadius = PlayerStats.shieldReboundRadius;
-        }
     }
 
     /// <summary>
@@ -136,8 +127,8 @@ public class Shield : MonoBehaviour
         }
 
         // Lógica de aplicar daño
-        // hitTransform.GetComponent<EnemyHealth>()?.TakeDamage(attackDamage);
-        Debug.Log("Shield hit " + hitTransform.name + " for " + attackDamage + " damage.");
+        hitTransform.GetComponent<HealthController>()?.TakeDamage(attackDamage);
+        ReportDebug("El escudo golpeó a " + hitTransform.name + " por " + attackDamage + " de daño.", 1);
 
         Transform nextTarget = FindNextReboundTarget();
 
@@ -160,6 +151,7 @@ public class Shield : MonoBehaviour
     {
         if (!canRebound || reboundCount >= maxRebounds)
         {
+            ReportDebug("Maximo de rebotes alcanzado o rebotes desactivados.", 1);
             return null;
         }
 
@@ -187,6 +179,7 @@ public class Shield : MonoBehaviour
                 {
                     closestDistance = distanceToTarget;
                     bestTarget = targetCollider.transform;
+                    ReportDebug("Siguiente objetivo de rebote encontrado: " + bestTarget.name, 1);
                 }
             }
         }
@@ -197,5 +190,30 @@ public class Shield : MonoBehaviour
     private void StartReturning()
     {
         currentState = ShieldState.Returning;
+    }
+
+    [System.Diagnostics.Conditional("UNITY_EDITOR")]
+    /// <summary> 
+    /// Función de depuración para reportar mensajes en la consola de Unity. 
+    /// </summary> 
+    /// <<param name="message">Mensaje a reportar.</param> >
+    /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
+    private static void ReportDebug(string message, int reportPriorityLevel)
+    {
+        switch (reportPriorityLevel)
+        {
+            case 1:
+                Debug.Log($"[Shield] {message}");
+                break;
+            case 2:
+                Debug.LogWarning($"[Shield] {message}");
+                break;
+            case 3:
+                Debug.LogError($"[Shield] {message}");
+                break;
+            default:
+                Debug.Log($"[Shield] {message}");
+                break;
+        }
     }
 }
