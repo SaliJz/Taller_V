@@ -36,11 +36,18 @@ public class Room : MonoBehaviour
 
     public void UnlockExitDoors(ConnectionPoint entrancePoint)
     {
-        if (connectionDoors == null) return;
-
-        for (int i = 1; i < connectionPoints.Length; i++)
+        if (connectionDoors != null && connectionDoors.Length > 0)
         {
-            connectionDoors[i].SetActive(false);
+            for (int i = 0; i < connectionPoints.Length; i++)
+            {
+                if (i < connectionDoors.Length)
+                {
+                    if (connectionPoints[i] != entrancePoint && connectionDoors[i] != null)
+                    {
+                        connectionDoors[i].SetActive(false);
+                    }
+                }
+            }
         }
     }
 }

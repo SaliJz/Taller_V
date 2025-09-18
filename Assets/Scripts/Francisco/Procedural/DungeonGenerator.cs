@@ -4,6 +4,37 @@ using System.Linq;
 using UnityEngine;
 
 [System.Serializable]
+public class RoomProgressionRule
+{
+    public RoomType roomType;
+    public int minRoomNumber = 1;
+    public int maxRoomNumber = 10;
+    public bool isMandatory;
+    public bool isProbableMandatory;
+    public bool generateOnce;
+    [Range(0f, 100f)]
+    public float probability = 0;
+}
+
+[System.Serializable]
+public class RoomGenerationRule
+{
+    public RoomType currentRoomType;
+    public RoomType[] allowedNextRoomTypes;
+}
+
+[System.Serializable]
+public class RoomTypeProbability
+{
+    public RoomType roomType;
+    [Range(0f, 100f)]
+    public float probability = 0;
+    public Room[] roomPrefabs;
+    [HideInInspector]
+    public List<RoomData> roomDataList = new List<RoomData>();
+}
+
+[System.Serializable]
 public class RoomData
 {
     public Room prefab;
@@ -18,7 +49,15 @@ public class DungeonGenerator : MonoBehaviour
     [Header("Room Prefabs")]
     public Room startRoomPrefab;
     public Room[] endRoomPrefabs;
-    public Room[] normalRoomPrefabs;
+
+    [Header("Room Type Probabilities")]
+    public RoomTypeProbability[] roomTypeProbabilities;
+
+    [Header("Room Generation Rules")]
+    public RoomGenerationRule[] generationRules;
+
+    [Header("Room Progression Rules")]
+    public RoomProgressionRule[] progressionRules;
 
     [Header("Enemy Prefabs")]
     public GameObject[] enemyPrefabs;
@@ -48,21 +87,60 @@ public class DungeonGenerator : MonoBehaviour
     private int roomsGenerated = 0;
     private int targetRoomCount;
 
-    private List<RoomData> normalRoomData = new List<RoomData>();
+    private Dictionary<RoomType, List<RoomData>> roomDataDictionary = new Dictionary<RoomType, List<RoomData>>();
+    private Dictionary<RoomType, RoomType[]> generationRuleDictionary = new Dictionary<RoomType, RoomType[]>();
+    private Dictionary<RoomType, RoomProgressionRule> progressionRuleDictionary = new Dictionary<RoomType, RoomProgressionRule>();
+
+    private RoomProgressionRule mandatoryRoomToPlace;
+    private int mandatoryRoomNumber = -1;
+    private RoomProgressionRule probableMandatoryToPlace;
+    private bool hasProbableMandatoryBeenGenerated = false; 
 
     public PlayerMovement playerMovement;
 
     void Start()
     {
-        foreach (var prefab in normalRoomPrefabs)
+        foreach (var roomProb in roomTypeProbabilities)
         {
-            normalRoomData.Add(new RoomData { prefab = prefab, weight = 1.0f });
+            roomDataDictionary[roomProb.roomType] = new List<RoomData>();
+            foreach (var prefab in roomProb.roomPrefabs)
+            {
+                roomDataDictionary[roomProb.roomType].Add(new RoomData { prefab = prefab, weight = 1.0f });
+            }
+        }
+
+        foreach (var rule in generationRules)
+        {
+            generationRuleDictionary[rule.currentRoomType] = rule.allowedNextRoomTypes;
+        }
+
+        foreach (var rule in progressionRules)
+        {
+            progressionRuleDictionary[rule.roomType] = rule;
         }
 
         targetRoomCount = Random.Range(minRooms, maxRooms + 1);
 
+        PlanMandatoryRoom();
+
         GenerateInitialRoom();
         playerMovement = FindAnyObjectByType<PlayerMovement>();
+    }
+
+    void PlanMandatoryRoom()
+    {
+        var mandatoryRules = progressionRules.Where(r => r.isMandatory).ToList();
+        if (mandatoryRules.Any())
+        {
+            mandatoryRoomToPlace = mandatoryRules.First();
+            mandatoryRoomNumber = Random.Range(mandatoryRoomToPlace.minRoomNumber, mandatoryRoomToPlace.maxRoomNumber + 1);
+        }
+
+        var probableMandatoryRules = progressionRules.Where(r => r.isProbableMandatory).ToList();
+        if (probableMandatoryRules.Any())
+        {
+            probableMandatoryToPlace = probableMandatoryRules.First();
+        }
     }
 
     void GenerateInitialRoom()
@@ -113,8 +191,17 @@ public class DungeonGenerator : MonoBehaviour
             return;
         }
 
+        if (mandatoryRoomToPlace != null && roomsGenerated + 1 == mandatoryRoomNumber)
+        {
+            Room newRoomPrefab = roomDataDictionary[mandatoryRoomToPlace.roomType].First().prefab;
+            PlaceRoom(newRoomPrefab, entrancePoint);
+            return;
+        }
+
         int attempts = 0;
         bool roomPlaced = false;
+
+        RoomType previousRoomType = entrancePoint.GetComponentInParent<Room>().roomType;
 
         while (attempts < maxRoomAttempts && !roomPlaced)
         {
@@ -123,66 +210,84 @@ public class DungeonGenerator : MonoBehaviour
                 return;
             }
 
-            RoomData newRoomData = GetRandomRoomData();
-            Room newRoomPrefab = newRoomData.prefab;
-            Room newRoom = Instantiate(newRoomPrefab);
-
-            List<ConnectionPoint> exitPoints = GetAllMatchingConnectionPoints(newRoom, entrancePoint);
-
-            if (exitPoints.Count > 0)
+            RoomData newRoomData = GetRandomRoomData(previousRoomType, roomsGenerated + 1);
+            if (newRoomData == null)
             {
-                ConnectionPoint exitPoint = exitPoints[Random.Range(0, exitPoints.Count)];
+                attempts++;
+                continue;
+            }
 
-                Vector3 offset = exitPoint.transform.position - newRoom.transform.position;
-
-                Vector3 connectionDirection = GetDirectionFromConnectionType(entrancePoint.connectionType);
-                Vector3 finalPosition = entrancePoint.transform.position - offset + (connectionDirection * roomDistance);
-
-                if (IsPositionValid(finalPosition, newRoom))
+            roomPlaced = PlaceRoom(newRoomData.prefab, entrancePoint);
+            if (roomPlaced)
+            {
+                UpdateRoomWeights(newRoomData);
+                if (probableMandatoryToPlace != null && newRoomData.prefab.roomType == probableMandatoryToPlace.roomType)
                 {
-                    newRoom.transform.position = finalPosition;
-                    newRoom.name = $"Room_{roomsGenerated + 1}_{newRoomPrefab.name}";
+                    hasProbableMandatoryBeenGenerated = true;
+                }
+            }
+            attempts++;
+        }
+    }
 
-                    exitPoint.isConnected = true;
-                    exitPoint.connectedTo = entrancePoint.transform;
-                    entrancePoint.isConnected = true;
-                    entrancePoint.connectedTo = exitPoint.transform;
+    bool PlaceRoom(Room newRoomPrefab, ConnectionPoint entrancePoint)
+    {
+        Room newRoom = Instantiate(newRoomPrefab);
 
-                    generatedRooms.Add(newRoom);
-                    roomsGenerated++;
-                    roomPlaced = true;
+        List<ConnectionPoint> exitPoints = GetAllMatchingConnectionPoints(newRoom, entrancePoint);
 
-                    UpdateRoomWeights(newRoomData);
+        if (exitPoints.Count > 0)
+        {
+            ConnectionPoint exitPoint = exitPoints[Random.Range(0, exitPoints.Count)];
 
-                    if (newRoom.roomType == RoomType.Combat)
+            Vector3 offset = exitPoint.transform.position - newRoom.transform.position;
+
+            Vector3 connectionDirection = GetDirectionFromConnectionType(entrancePoint.connectionType);
+            Vector3 finalPosition = entrancePoint.transform.position - offset + (connectionDirection * roomDistance);
+
+            if (IsPositionValid(finalPosition, newRoom))
+            {
+                newRoom.transform.position = finalPosition;
+                newRoom.name = $"Room_{roomsGenerated + 1}_{newRoomPrefab.name}";
+
+                exitPoint.isConnected = true;
+                exitPoint.connectedTo = entrancePoint.transform;
+                entrancePoint.isConnected = true;
+                entrancePoint.connectedTo = exitPoint.transform;
+
+                generatedRooms.Add(newRoom);
+                roomsGenerated++;
+
+                if (newRoom.roomType == RoomType.Combat)
+                {
+                    var enemyManager = newRoom.gameObject.AddComponent<EnemyManager>();
+                    enemyManager.dungeonGenerator = this;
+                    enemyManager.parentRoom = newRoom;
+                    enemyManager.enemyPrefabs = this.enemyPrefabs;
+                }
+
+                foreach (ConnectionPoint connectionPoint in newRoom.connectionPoints)
+                {
+                    if (!connectionPoint.isConnected && connectionPoint.GetComponent<BoxCollider>() == null)
                     {
-                        var enemyManager = newRoom.gameObject.AddComponent<EnemyManager>();
-                        enemyManager.dungeonGenerator = this;
-                        enemyManager.parentRoom = newRoom;
-                        enemyManager.enemyPrefabs = this.enemyPrefabs;
-                    }
-
-                    foreach (ConnectionPoint connectionPoint in newRoom.connectionPoints)
-                    {
-                        if (!connectionPoint.isConnected && connectionPoint.GetComponent<BoxCollider>() == null)
-                        {
-                            BoxCollider collider = connectionPoint.gameObject.AddComponent<BoxCollider>();
-                            collider.isTrigger = true;
-                            collider.size = Vector3.one * 1f;
-                            connectionPoint.gameObject.AddComponent<ConnectionTrigger>();
-                        }
+                        BoxCollider collider = connectionPoint.gameObject.AddComponent<BoxCollider>();
+                        collider.isTrigger = true;
+                        collider.size = Vector3.one * 1f;
+                        connectionPoint.gameObject.AddComponent<ConnectionTrigger>();
                     }
                 }
-                else
-                {
-                    Destroy(newRoom.gameObject);
-                }
+                return true;
             }
             else
             {
                 Destroy(newRoom.gameObject);
+                return false;
             }
-            attempts++;
+        }
+        else
+        {
+            Destroy(newRoom.gameObject);
+            return false;
         }
     }
 
@@ -243,51 +348,141 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
-    RoomData GetRandomRoomData()
+    RoomData GetRandomRoomData(RoomType previousRoomType, int currentRoomNumber)
     {
-        float totalWeight = normalRoomData.Sum(data => data.weight);
+        if (probableMandatoryToPlace != null &&
+            !hasProbableMandatoryBeenGenerated && 
+            currentRoomNumber >= probableMandatoryToPlace.minRoomNumber &&
+            currentRoomNumber <= probableMandatoryToPlace.maxRoomNumber)
+        {
+            if (Random.Range(0f, 100f) < probableMandatoryToPlace.probability)
+            {
+                return roomDataDictionary[probableMandatoryToPlace.roomType][Random.Range(0, roomDataDictionary[probableMandatoryToPlace.roomType].Count)];
+            }
+        }
+
+        var progressionAllowedTypes = progressionRules.Where(rule =>
+            currentRoomNumber >= rule.minRoomNumber &&
+            currentRoomNumber <= rule.maxRoomNumber
+        ).ToList();
+
+        RoomType[] generationAllowedTypes;
+        if (!generationRuleDictionary.TryGetValue(previousRoomType, out generationAllowedTypes))
+        {
+            generationAllowedTypes = roomDataDictionary.Keys.ToArray();
+        }
+
+        var validRoomTypes = new List<RoomType>();
+
+        if (progressionAllowedTypes.Any())
+        {
+            validRoomTypes = progressionAllowedTypes
+                .Select(p => p.roomType)
+                .Intersect(generationAllowedTypes)
+                .ToList();
+        }
+        else
+        {
+            validRoomTypes = generationAllowedTypes.ToList();
+        }
+
+        validRoomTypes = validRoomTypes.Where(rt => {
+            if (progressionRuleDictionary.ContainsKey(rt))
+            {
+                var rule = progressionRuleDictionary[rt];
+                return !rule.isMandatory && !rule.isProbableMandatory;
+            }
+            return true;
+        }).ToList();
+
+        if (!validRoomTypes.Any())
+        {
+            return null;
+        }
+
+        var filteredProbabilities = roomTypeProbabilities
+            .Where(p => validRoomTypes.Contains(p.roomType))
+            .ToList();
+
+        float totalProbability = filteredProbabilities.Sum(p => p.probability);
+        if (totalProbability <= 0)
+        {
+            return GetRandomRoomDataFromList(roomDataDictionary, validRoomTypes);
+        }
+
+        float randomValue = Random.Range(0f, totalProbability);
+        float currentSum = 0f;
+        RoomType selectedType = RoomType.Normal;
+
+        foreach (var roomProb in filteredProbabilities)
+        {
+            currentSum += roomProb.probability;
+            if (randomValue <= currentSum)
+            {
+                selectedType = roomProb.roomType;
+                break;
+            }
+        }
+
+        var roomDataList = roomDataDictionary[selectedType];
+        float totalWeight = roomDataList.Sum(data => data.weight);
 
         if (totalWeight <= 0)
         {
-            ResetAllWeights();
-            totalWeight = normalRoomData.Sum(data => data.weight);
+            ResetRoomWeights(selectedType);
+            totalWeight = roomDataList.Sum(data => data.weight);
+            if (totalWeight <= 0) return null;
         }
 
-        float randomValue = Random.Range(0f, totalWeight);
-        float currentSum = 0f;
+        float randomWeightValue = Random.Range(0f, totalWeight);
+        float currentWeightSum = 0f;
 
-        foreach (var data in normalRoomData)
+        foreach (var data in roomDataList)
         {
-            currentSum += data.weight;
-            if (randomValue <= currentSum)
+            currentWeightSum += data.weight;
+            if (randomWeightValue <= currentWeightSum)
             {
                 return data;
             }
         }
 
-        return normalRoomData[Random.Range(0, normalRoomData.Count)];
+        return roomDataList[Random.Range(0, roomDataList.Count)];
+    }
+
+    private RoomData GetRandomRoomDataFromList(Dictionary<RoomType, List<RoomData>> roomDict, List<RoomType> validTypes)
+    {
+        if (!validTypes.Any()) return null;
+        RoomType randomType = validTypes[Random.Range(0, validTypes.Count)];
+        var roomDataList = roomDict[randomType];
+        return roomDataList[Random.Range(0, roomDataList.Count)];
     }
 
     void UpdateRoomWeights(RoomData usedRoom)
     {
         usedRoom.repetitionCount++;
-
         usedRoom.weight = 1.0f / (1.0f + usedRoom.repetitionCount * repetitionPenalty);
+        RoomType usedRoomType = usedRoom.prefab.roomType;
 
-        foreach (var data in normalRoomData)
+        if (roomDataDictionary.ContainsKey(usedRoomType))
         {
-            if (data != usedRoom)
+            foreach (var data in roomDataDictionary[usedRoomType])
             {
-                data.weight = Mathf.Min(1.0f, data.weight * (1.0f + weightDecay * 0.1f));
+                if (data != usedRoom)
+                {
+                    data.weight = Mathf.Min(1.0f, data.weight * (1.0f + weightDecay * 0.1f));
+                }
             }
         }
     }
 
-    void ResetAllWeights()
+    void ResetRoomWeights(RoomType type)
     {
-        foreach (var data in normalRoomData)
+        if (roomDataDictionary.ContainsKey(type))
         {
-            data.weight = 1.0f / (1.0f + data.repetitionCount * repetitionPenalty * 0.5f);
+            foreach (var data in roomDataDictionary[type])
+            {
+                data.weight = 1.0f / (1.0f + data.repetitionCount * repetitionPenalty * 0.5f);
+            }
         }
     }
 
@@ -326,7 +521,6 @@ public class DungeonGenerator : MonoBehaviour
         }
 
         float originalPlayerY = playerTransform.position.y;
-
         if (playerMovement != null)
         {
             playerMovement.SetCanMove(false);
