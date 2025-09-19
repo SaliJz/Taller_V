@@ -21,7 +21,7 @@ public class PlayerHealth : MonoBehaviour
     [Header("Configuración de Vida")]
     [Tooltip("Vida máxima por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackMaxHealth = 100;
-    [SerializeField] public float currentHealth;
+    [SerializeField] private float currentHealth;
 
     [Header("Mejora de Escudo")]
     [SerializeField] private float shieldBlockCooldown = 18f;
@@ -106,11 +106,11 @@ public class PlayerHealth : MonoBehaviour
         currentHealth -= damageAmount;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
+        if (currentHealth <= 0) Die();
+
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
         UpdateLifeStage();
-
-        if (currentHealth <= 0) Die();
         
         if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageAmount} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);
     }

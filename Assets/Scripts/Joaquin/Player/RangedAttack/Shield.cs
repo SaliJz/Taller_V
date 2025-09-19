@@ -87,7 +87,7 @@ public class Shield : MonoBehaviour
 
             if (Vector3.Distance(transform.position, currentTarget.position) < 1.0f)
             {
-                ProcessHit(currentTarget);
+                PerformHitDetection(currentTarget);
             }
         }
         else if (currentState == ShieldState.Returning)
@@ -111,7 +111,7 @@ public class Shield : MonoBehaviour
 
         if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
         {
-            ProcessHit(other.transform);
+            PerformHitDetection(other.transform);
         }
     }
 
@@ -119,16 +119,45 @@ public class Shield : MonoBehaviour
     /// Función que maneja la lógica cuando el escudo golpea un objetivo.
     /// </summary>
     /// <param name="hitTransform"> Transform del objetivo golpeado </param>
-    private void ProcessHit(Transform hitTransform)
+    private void PerformHitDetection(Transform hitTransform)
     {
-        if (!hitTargets.Contains(hitTransform))
-        {
-            hitTargets.Add(hitTransform);
-        }
+        Collider[] hitEnemies = Physics.OverlapSphere(hitTransform.position, 0.5f, enemyLayer);
 
-        // Lógica de aplicar daño
-        hitTransform.GetComponent<HealthController>()?.TakeDamage(attackDamage);
-        ReportDebug("El escudo golpeó a " + hitTransform.name + " por " + attackDamage + " de daño.", 1);
+        foreach (Collider enemy in hitEnemies)
+        {
+            HealthController healthController = enemy.GetComponent<HealthController>();
+            if (healthController != null)
+            {
+                if (!hitTargets.Contains(hitTransform))
+                {
+                    hitTargets.Add(hitTransform);
+                }
+
+                bool isCritical;
+                float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, out isCritical);
+
+                healthController.TakeDamage(attackDamage);
+
+                ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de daño.", 1);
+            }
+
+            BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
+            if (bloodKnight != null)
+            {
+                if (!hitTargets.Contains(hitTransform))
+                {
+                    hitTargets.Add(hitTransform);
+                }
+
+                bool isCritical;
+                float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, out isCritical);
+
+                bloodKnight.TakeDamage(finalDamage, isCritical);
+                bloodKnight.OnPlayerCounterAttack();
+
+                ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
+            }
+        }
 
         Transform nextTarget = FindNextReboundTarget();
 

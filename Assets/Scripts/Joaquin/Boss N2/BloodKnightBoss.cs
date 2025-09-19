@@ -1,5 +1,7 @@
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
+using UnityEngine.AI;
+using UnityEngine.UI;
 
 public class BloodKnightBoss : MonoBehaviour
 {
@@ -9,7 +11,6 @@ public class BloodKnightBoss : MonoBehaviour
     [SerializeField] private float maxHealth = 300f;
     [SerializeField] private float currentHealth;
     [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float rotationSpeed = 720f;
 
     [Header("Attack 1 - Sodoma y Gomorra")]
     [SerializeField] private float sodomaDamage = 35f;
@@ -20,7 +21,6 @@ public class BloodKnightBoss : MonoBehaviour
 
     [Header("Attack 2 - Apocalipsis")]
     [SerializeField] private float apocalipsisDamage = 7f;
-    //[SerializeField] private float apocalipsisSpeed = 8f;
     [SerializeField] private int apocalipsisAttacks = 10;
     [SerializeField] private float attackInterval = 1f;
 
@@ -33,6 +33,14 @@ public class BloodKnightBoss : MonoBehaviour
     [SerializeField] private AudioClip sodomaChargeSound;
     [SerializeField] private AudioClip sodomaAttackSound;
     [SerializeField] private AudioClip apocalipsisSound;
+    [SerializeField] private AudioClip critDmgSound;
+    [SerializeField] private AudioClip normalDmgSound;
+    [SerializeField] private AudioClip deathSound;
+    [SerializeField] private AudioClip stunnedSound;
+
+    [Header("UI - Sliders (opcional)")]
+    [SerializeField] private Slider firstLifeSlider;
+    [SerializeField] private Image firstFillImage;
 
     #endregion
 
@@ -41,28 +49,20 @@ public class BloodKnightBoss : MonoBehaviour
     private enum BossState
     {
         Idle,
-        Moving,
-        ChargingSodoma,
-        ExecutingSodoma,
-        ExecutingApocalipsis,
-        Stunned,
-        Recovery
+        Chasing,
+        Attacking,
+        Stunned
     }
 
     private BossState currentState = BossState.Idle;
-    private float stateTimer;
+    private NavMeshAgent agent;
     private float lastAttackTime;
     private bool isVulnerableToCounter = false;
-    private int consecutiveApocalipsisAttacks;
-
-    private Vector3 targetPosition;
-    private bool isMoving = false;
-
-    private Vector3[] diagonalDirections = new Vector3[8];
-    private int currentDiagonalIndex = 0;
 
     private PlayerHealth playerHealth;
     private Coroutine currentAttackCoroutine;
+    //private Coroutine currentStunCoroutine;
+    private Coroutine currentCriticalDamageCoroutine;
 
     #endregion
 
@@ -70,41 +70,35 @@ public class BloodKnightBoss : MonoBehaviour
 
     private void Start()
     {
+        if (firstLifeSlider != null)
+        {
+            firstLifeSlider.maxValue = Mathf.Max(1, maxHealth);
+            firstLifeSlider.minValue = 0;
+            firstLifeSlider.value = Mathf.Clamp(currentHealth, 0, maxHealth);
+            if (!firstLifeSlider.gameObject.activeSelf) firstLifeSlider.gameObject.SetActive(true);
+        }
+
+        if (firstFillImage != null)
+        {
+            firstFillImage.color = new Color(0.5f, 0f, 1f);
+            if (!firstFillImage.gameObject.activeSelf) firstFillImage.gameObject.SetActive(true);
+        }
+
         InitializeBoss();
+        UpdateSlidersSafely();
     }
 
     private void InitializeBoss()
     {
         currentHealth = maxHealth;
+        agent = GetComponent<NavMeshAgent>();
+        agent.speed = moveSpeed;
+        agent.stoppingDistance = sodomaRange - 1f;
 
         if (player == null) player = GameObject.FindGameObjectWithTag("Player")?.transform;
-
-        playerHealth = player?.GetComponent<PlayerHealth>();
-
-        InitializeDiagonalDirections();
+        if (player != null) playerHealth = player.GetComponent<PlayerHealth>();
 
         StartCoroutine(BossAI());
-    }
-
-    private void InitializeDiagonalDirections()
-    {
-        float angle = 0f;
-        for (int i = 0; i < 8; i++)
-        {
-            diagonalDirections[i] = new Vector3(Mathf.Cos(angle * Mathf.Deg2Rad), 0, Mathf.Sin(angle * Mathf.Deg2Rad));
-            angle += 45f;
-        }
-    }
-
-    #endregion
-
-    #region Unity Callbacks
-
-    private void Update()
-    {
-        stateTimer += Time.deltaTime;
-        HandleMovement();
-        HandleCounterAttackWindow();
     }
 
     #endregion
@@ -115,364 +109,283 @@ public class BloodKnightBoss : MonoBehaviour
     {
         while (currentHealth > 0)
         {
-            yield return new WaitForSeconds(0.5f);
-
-            if (currentState == BossState.Idle || currentState == BossState.Recovery)
+            if (currentState == BossState.Stunned)
             {
-                DecideNextAction();
-            }
-        }
-    }
-
-    private void DecideNextAction()
-    {
-        if (Time.time - lastAttackTime < 2f) return;
-
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-        float randomValue = Random.Range(0f, 1f);
-
-        if (ShouldUseSodoma(distanceToPlayer, randomValue))
-        {
-            StartSodomaYGomorra();
-        }
-        else if (ShouldUseApocalipsis(distanceToPlayer, randomValue))
-        {
-            StartApocalipsis();
-        }
-        else
-        {
-            MoveTowardsPlayer();
-        }
-    }
-
-    private bool ShouldUseSodoma(float distance, float randomValue) => distance > 6f && randomValue < 0.7f;
-    private bool ShouldUseApocalipsis(float distance, float randomValue) => distance <= 6f && randomValue < 0.6f;
-
-    #endregion
-
-    #region Movement System
-
-    private void HandleMovement()
-    {
-        if (isMoving && currentState == BossState.Moving)
-        {
-            Vector3 direction = (targetPosition - transform.position).normalized;
-            transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
-
-            if (direction != Vector3.zero)
-            {
-                Quaternion targetRotation = Quaternion.LookRotation(direction);
-                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-            }
-
-            if (Vector3.Distance(transform.position, targetPosition) < 0.5f)
-            {
-                isMoving = false;
-                currentState = BossState.Idle;
-            }
-        }
-    }
-
-    private void MoveTowardsPlayer()
-    {
-        Vector3 directionToPlayer = (player.position - transform.position).normalized;
-        targetPosition = player.position - directionToPlayer * 4f;
-
-        isMoving = true;
-        currentState = BossState.Moving;
-        animator.SetBool("IsMoving", true);
-    }
-
-    #endregion
-
-    #region Attack 1 - Sodoma y Gomorra
-
-    private void StartSodomaYGomorra()
-    {
-        if (Time.time - lastAttackTime < sodomaCooldown) return;
-
-        if (currentAttackCoroutine != null) StopCoroutine(currentAttackCoroutine);
-
-        currentAttackCoroutine = StartCoroutine(ExecuteSodomaYGomorra());
-    }
-
-    private IEnumerator ExecuteSodomaYGomorra()
-    {
-        currentState = BossState.ChargingSodoma;
-        animator.SetBool("IsMoving", false);
-
-        // Paso 1: Deslíza hacia atrás y agacha
-        Vector3 backwardDirection = -transform.forward;
-        Vector3 startPosition = transform.position;
-        Vector3 backwardPosition = startPosition + backwardDirection * 2f;
-
-        float slideTime = 0.8f;
-        float elapsedTime = 0f;
-
-        while (elapsedTime < slideTime)
-        {
-            transform.position = Vector3.Lerp(startPosition, backwardPosition, elapsedTime / slideTime);
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-
-        // Paso 2: Animación de carga y brillo de la armadura
-        animator.SetTrigger("ChargeSodoma");
-        armorGlowEffect.Play();
-        audioSource.PlayOneShot(sodomaChargeSound);
-
-        isVulnerableToCounter = true;
-
-        yield return new WaitForSeconds(1.5f);
-
-        if (currentState != BossState.Stunned)
-        {
-            // Paso 3: Ejecuta el ataque
-            currentState = BossState.ExecutingSodoma;
-            isVulnerableToCounter = false;
-
-            // Mira hacia el jugador
-            Vector3 directionToPlayer = (player.position - transform.position).normalized;
-            transform.rotation = Quaternion.LookRotation(directionToPlayer);
-
-            // Dash hacia el jugador
-            Vector3 dashTarget = player.position;
-            float dashTime = 0.5f;
-            elapsedTime = 0f;
-            startPosition = transform.position;
-
-            animator.SetTrigger("ExecuteSodoma");
-            audioSource.PlayOneShot(sodomaAttackSound);
-            fireTrailEffect.Play();
-
-            while (elapsedTime < dashTime)
-            {
-                transform.position = Vector3.Lerp(startPosition, dashTarget, elapsedTime / dashTime);
-                elapsedTime += Time.deltaTime;
                 yield return null;
+                continue;
             }
 
-            // Ejecuta el ataque de arco de 180°
-            DealSodomaDamage();
+            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
 
-            // Mantiene activa la ruta de fuego
-            StartCoroutine(FireTrailDamage());
-
-            yield return new WaitForSeconds(1f);
-        }
-
-        // Recovery
-        currentState = BossState.Recovery;
-        armorGlowEffect.Stop();
-        lastAttackTime = Time.time;
-
-        yield return new WaitForSeconds(2f);
-
-        currentState = BossState.Idle;
-    }
-
-    private void DealSodomaDamage()
-    {
-        // Compruebe si el jugador está delante del ataque en arco de 180 ° del jefe
-        Vector3 directionToPlayer = (player.position - transform.position).normalized;
-        float dotProduct = Vector3.Dot(transform.forward, directionToPlayer);
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-
-        if (dotProduct > 0 && distanceToPlayer <= sodomaRange) // El jugador está delante del arco frontal y en alcance.
-        {
-            if (playerHealth != null)
+            if (distanceToPlayer > agent.stoppingDistance)
             {
-                playerHealth.TakeDamage(sodomaDamage);
+                ChasePlayer();
             }
-        }
-    }
-
-    private IEnumerator FireTrailDamage()
-    {
-        float trailDuration = 3f;
-        float damageInterval = 1f;
-        float elapsed = 0f;
-
-        while (elapsed < trailDuration)
-        {
-            // Check if player is near the fire trail
-            if (Vector3.Distance(transform.position, player.position) <= 3f)
+            else
             {
-                if (playerHealth != null)
+                if (agent.velocity.magnitude > 0.1f)
                 {
-                    playerHealth.TakeDamage(fireTrailDamage);
+                    agent.ResetPath();
+                    if (animator != null) animator.SetBool("IsMoving", false);
+                }
+
+                if (Time.time > lastAttackTime + sodomaCooldown)
+                {
+                    currentAttackCoroutine = StartCoroutine(ExecuteSodomaYGomorra());
+                    yield return currentAttackCoroutine;
+                }
+                else
+                {
+                    currentAttackCoroutine = StartCoroutine(ExecuteApocalipsis());
+                    yield return currentAttackCoroutine;
                 }
             }
 
-            yield return new WaitForSeconds(damageInterval);
-            elapsed += damageInterval;
+            yield return new WaitForSeconds(0.2f);
         }
+    }
 
-        fireTrailEffect.Stop();
+    private void ChasePlayer()
+    {
+        currentState = BossState.Chasing;
+        agent.isStopped = false;
+        agent.SetDestination(player.position);
+        if (animator != null) animator.SetBool("IsMoving", true);
     }
 
     #endregion
 
-    #region Attack 2 - Apocalipsis
+    #region Attacks
 
-    private void StartApocalipsis()
+    private IEnumerator ExecuteSodomaYGomorra()
     {
-        if (currentAttackCoroutine != null) StopCoroutine(currentAttackCoroutine);
+        ReportDebug("El Blood Knight está ejecutando 'Sodoma y Gomorra'.", 1);
 
-        currentAttackCoroutine = StartCoroutine(ExecuteApocalipsis());
+        currentState = BossState.Attacking;
+        agent.isStopped = true;
+        lastAttackTime = Time.time;
+
+        Vector3 directionToPlayer = (player.position - transform.position).normalized;
+        transform.rotation = Quaternion.LookRotation(new Vector3(directionToPlayer.x, 0, directionToPlayer.z));
+
+        Vector3 backwardPos = transform.position - transform.forward * 3f;
+        float slideDuration = 0.5f;
+        yield return MoveToPosition(backwardPos, slideDuration);
+
+        if (animator != null) animator.SetTrigger("ChargeSodoma");
+        if (armorGlowEffect != null) armorGlowEffect.Play();
+        if (audioSource != null && sodomaChargeSound != null) audioSource.PlayOneShot(sodomaChargeSound);
+
+        isVulnerableToCounter = true;
+        yield return new WaitForSeconds(1.5f);
+        isVulnerableToCounter = false;
+
+        ReportDebug("El Blood Knight ha terminado de cargar 'Sodoma y Gomorra'.", 1);
+
+        if (currentState == BossState.Stunned) yield break;
+
+        if (animator != null) animator.SetTrigger("ExecuteSodoma");
+        if (audioSource != null && sodomaAttackSound != null) audioSource.PlayOneShot(sodomaAttackSound);
+        if (fireTrailEffect != null) fireTrailEffect.Play();
+
+        yield return MoveToPosition(player.position, 0.4f);
+
+        float distance = Vector3.Distance(transform.position, player.position);
+        Vector3 dirToPlayer = (player.position - transform.position).normalized;
+        float angle = Vector3.Angle(transform.forward, dirToPlayer);
+
+        if (distance < sodomaRange && angle < 90f)
+        {
+            if (playerHealth != null) playerHealth.TakeDamage(sodomaDamage);
+        }
+
+        StartCoroutine(FireTrailRoutine());
+
+        yield return new WaitForSeconds(2f);
+        currentState = BossState.Idle;
+        agent.isStopped = false;
+
+        ReportDebug("El Blood Knight ha terminado 'Sodoma y Gomorra'.", 1);
     }
 
     private IEnumerator ExecuteApocalipsis()
     {
-        currentState = BossState.ExecutingApocalipsis;
-        animator.SetBool("IsMoving", false);
-        animator.SetTrigger("StartApocalipsis");
+        ReportDebug("El Blood Knight está ejecutando 'Apocalipsis'.", 1);
 
-        audioSource.PlayOneShot(apocalipsisSound);
+        currentState = BossState.Attacking;
+        agent.isStopped = true;
+        lastAttackTime = Time.time;
 
-        consecutiveApocalipsisAttacks = 0;
+        if (animator != null) animator.SetTrigger("StartApocalipsis");
+        if (audioSource != null && apocalipsisSound != null) audioSource.PlayOneShot(apocalipsisSound);
 
         for (int i = 0; i < apocalipsisAttacks; i++)
         {
-            yield return StartCoroutine(ExecuteDiagonalAttack());
-            consecutiveApocalipsisAttacks++;
-        }
+            Vector3 targetPos = player.position + (Quaternion.Euler(0, Random.Range(0, 360), 0) * Vector3.forward * 5f);
 
-        // Recovery
-        currentState = BossState.Recovery;
-        lastAttackTime = Time.time;
+            yield return MoveToPosition(targetPos, 0.3f);
+
+            Vector3 directionToPlayer = (player.position - transform.position).normalized;
+            transform.rotation = Quaternion.LookRotation(new Vector3(directionToPlayer.x, 0, directionToPlayer.z));
+
+            if (animator != null) animator.SetTrigger(i % 2 == 0 ? "Thrust" : "Slash");
+
+            if (Vector3.Distance(transform.position, player.position) < 4f)
+            {
+                if (playerHealth != null) playerHealth.TakeDamage(apocalipsisDamage);
+            }
+
+            yield return new WaitForSeconds(attackInterval);
+        }
 
         yield return new WaitForSeconds(1.5f);
-
         currentState = BossState.Idle;
-    }
+        agent.isStopped = false;
 
-    private IEnumerator ExecuteDiagonalAttack()
-    {
-        // Choose diagonal direction around player
-        Vector3 playerPosition = player.position;
-        Vector3 diagonalDirection = diagonalDirections[currentDiagonalIndex];
-        currentDiagonalIndex = (currentDiagonalIndex + 1) % 8;
-
-        // Calculate slide target position
-        Vector3 slideTarget = playerPosition + diagonalDirection * 4f;
-        Vector3 startPosition = transform.position;
-
-        // Slide diagonally
-        float slideTime = 0.8f;
-        float elapsedTime = 0f;
-
-        // Look towards player
-        Vector3 directionToPlayer = (player.position - transform.position).normalized;
-        transform.rotation = Quaternion.LookRotation(directionToPlayer);
-
-        while (elapsedTime < slideTime)
-        {
-            transform.position = Vector3.Lerp(startPosition, slideTarget, elapsedTime / slideTime);
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-
-        // Execute attack (slash or thrust based on distance)
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-
-        if (distanceToPlayer <= 2.5f) // Close range - slash
-        {
-            animator.SetTrigger("Slash");
-            yield return new WaitForSeconds(0.2f);
-            DealApocalipsisDamage(2.5f); // Slash range
-        }
-        else if (distanceToPlayer <= 4f) // Medium range - thrust
-        {
-            animator.SetTrigger("Thrust");
-            yield return new WaitForSeconds(0.3f);
-            DealApocalipsisDamage(4f); // Thrust range
-        }
-
-        yield return new WaitForSeconds(attackInterval - 0.5f); // Remaining time to complete 1 second interval
-    }
-
-    private void DealApocalipsisDamage(float range)
-    {
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-
-        if (distanceToPlayer <= range)
-        {
-            if (playerHealth != null)
-            {
-                playerHealth.TakeDamage(apocalipsisDamage);
-            }
-        }
+        ReportDebug("El Blood Knight ha terminado 'Apocalipsis'.", 1);
     }
 
     #endregion
 
-    #region Counter Attack System
+    #region Utility Coroutines & Counter-Attack
 
-    private void HandleCounterAttackWindow()
+    private IEnumerator MoveToPosition(Vector3 target, float duration)
     {
-        // This method should be called when player attacks during vulnerable window
-        if (isVulnerableToCounter && currentState == BossState.ChargingSodoma)
+        float time = 0;
+        Vector3 startPosition = transform.position;
+        while (time < duration)
         {
-            // Check if player is attacking (this would be triggered by player's attack system)
-            // For now, we'll use a placeholder - in your game, you'd check for player input/attack
-            if (Input.GetKeyDown(KeyCode.Space)) // Placeholder for player attack
-            {
-                StartCoroutine(GetStunned());
-            }
+            transform.position = Vector3.Lerp(startPosition, target, time / duration);
+            time += Time.deltaTime;
+            yield return null;
         }
+
+        transform.position = target;
+    }
+
+    private IEnumerator FireTrailRoutine()
+    {
+        float duration = 4f;
+        while (duration > 0)
+        {
+            if (Vector3.Distance(player.position, transform.position) < 2f)
+            {
+                if (playerHealth != null) playerHealth.TakeDamage(fireTrailDamage * Time.deltaTime);
+            }
+            duration -= Time.deltaTime;
+            yield return null;
+        }
+
+        if (fireTrailEffect != null) fireTrailEffect.Stop();
     }
 
     public void OnPlayerCounterAttack()
     {
-        if (isVulnerableToCounter && currentState == BossState.ChargingSodoma)
+        if (isVulnerableToCounter)
         {
+            if (currentAttackCoroutine != null) StopCoroutine(currentAttackCoroutine);
             StartCoroutine(GetStunned());
+
+            ReportDebug("El Blood Knight ha sido contraatacado y está aturdido.", 1);
         }
     }
 
     private IEnumerator GetStunned()
     {
-        StopAllCoroutines(); // Stop current attack
+        ReportDebug("¡El Blood Knight ha sido aturdido por el contraataque del jugador!", 1);
+
+        if (audioSource != null && stunnedSound != null) audioSource.PlayOneShot(stunnedSound);
 
         currentState = BossState.Stunned;
         isVulnerableToCounter = false;
+        agent.isStopped = true;
 
-        animator.SetTrigger("Stunned");
-        armorGlowEffect.Stop();
-        fireTrailEffect.Stop();
-
-        // Visual feedback for stun
-        // Add screen shake, particle effects, etc.
+        if (animator != null) animator.SetTrigger("Stunned");
+        if (armorGlowEffect != null) armorGlowEffect.Stop();
+        if (fireTrailEffect != null) fireTrailEffect.Stop();
 
         yield return new WaitForSeconds(stunDuration);
 
         currentState = BossState.Idle;
-        StartCoroutine(BossAI()); // Restart AI
+        lastAttackTime = Time.time;
+
+        ReportDebug("El Blood Knight se ha recuperado del aturdimiento.", 1);
     }
 
     #endregion
 
     #region Health System
 
-    public void TakeDamage(float damage)
+    public void TakeDamage(float damageAmount, bool isCritical = false)
     {
-        currentHealth -= damage;
-
-        if (currentHealth <= 0)
+        if (audioSource != null)
         {
-            Die();
+            if (isCritical && critDmgSound != null) audioSource.PlayOneShot(critDmgSound);
+            else if (normalDmgSound != null) audioSource.PlayOneShot(normalDmgSound);
+        }
+
+        currentHealth -= damageAmount;
+
+        if (currentHealth <= 0) Die();
+
+        UpdateSlidersSafely();
+
+        if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageAmount} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);
+
+        var bloodKnightVisualEffects = GetComponent<BloodKnightVisualEffects>();
+
+        if (bloodKnightVisualEffects != null)
+        {
+            bloodKnightVisualEffects.ShowDamageNumber(transform.position + Vector3.up * 4f, damageAmount, isCritical);
+
+            if (isCritical)
+            {
+                ReportDebug("El Blood Knight ha recibido daño crítico.", 1);
+
+                bloodKnightVisualEffects.StartArmorGlow();
+                if (currentCriticalDamageCoroutine != null) StopCoroutine(currentCriticalDamageCoroutine);
+                currentCriticalDamageCoroutine = StartCoroutine(StopGlowAfterDelay(2f));
+            }
+        }
+    }
+
+    private IEnumerator StopGlowAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        var bloodKnightVisualEffects = GetComponent<BloodKnightVisualEffects>();
+        if (bloodKnightVisualEffects != null)
+        {
+            bloodKnightVisualEffects.StopArmorGlow();
+        }
+    }
+
+    void UpdateSlidersSafely()
+    {
+        if (firstLifeSlider != null)
+        {
+            firstLifeSlider.maxValue = Mathf.Max(1, maxHealth);
+            firstLifeSlider.value = Mathf.Clamp(currentHealth, 0, maxHealth);
+            if (!firstLifeSlider.gameObject.activeSelf) firstLifeSlider.gameObject.SetActive(true);
+        }
+        if (firstFillImage != null)
+        {
+            if (!firstFillImage.gameObject.activeSelf) firstFillImage.gameObject.SetActive(true);
+            firstFillImage.color = new Color(0.5f, 0f, 1f);
         }
     }
 
     private void Die()
     {
+        if (audioSource != null && deathSound != null) audioSource.PlayOneShot(deathSound);
+
         StopAllCoroutines();
-        animator.SetTrigger("Death");
+        currentState = BossState.Idle;
+        agent.isStopped = true;
+        if (animator != null) animator.SetTrigger("Death");
+        Destroy(gameObject, 5f);
 
-        // Add death effects, drop loot, etc.
-
-        Destroy(gameObject, 3f);
+        ReportDebug("El Blood Knight ha sido derrotado.", 1);
     }
 
     #endregion
@@ -481,16 +394,46 @@ public class BloodKnightBoss : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        // Draw attack ranges
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, sodomaRange);
+        Gizmos.DrawWireSphere(transform.position, sodomaRange); // Sodoma y Gomorra range
 
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, 4f); // Apocalipsis thrust range
+        Gizmos.DrawWireSphere(transform.position, 4f); // Apocalipsis range
 
-        Gizmos.color = new Color(1f, 0.5f, 0f); // Orange color (RGB: 255, 128, 0)
-        Gizmos.DrawWireSphere(transform.position, 2.5f); // Apocalipsis slash range
+        Gizmos.color = new Color(1f, 0.5f, 0f);
+        Gizmos.DrawWireSphere(transform.position, 2.5f); // Close range for Apocalipsis damage
+
+        Gizmos.color = Color.blue;
+        Gizmos.DrawLine(transform.position, transform.position + Vector3.up * 4f); // Line to show height for damage numbers
+
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawRay(transform.position, transform.forward * 3f); // Forward direction
     }
 
     #endregion
+
+    [System.Diagnostics.Conditional("UNITY_EDITOR")]
+    /// <summary> 
+    /// Función de depuración para reportar mensajes en la consola de Unity. 
+    /// </summary> 
+    /// <<param name="message">Mensaje a reportar.</param> >
+    /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
+    private static void ReportDebug(string message, int reportPriorityLevel)
+    {
+        switch (reportPriorityLevel)
+        {
+            case 1:
+                Debug.Log($"[BloodKnightBoss] {message}");
+                break;
+            case 2:
+                Debug.LogWarning($"[BloodKnightBoss] {message}");
+                break;
+            case 3:
+                Debug.LogError($"[BloodKnightBoss] {message}");
+                break;
+            default:
+                Debug.Log($"[BloodKnightBoss] {message}");
+                break;
+        }
+    }
 }

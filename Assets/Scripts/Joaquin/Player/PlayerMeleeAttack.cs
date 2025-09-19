@@ -16,11 +16,17 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private float hitRadius = 0.8f;
     [Tooltip("Daño de ataque por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackAttackDamage = 10;
-    [SerializeField] public int attackDamage = 10;
+    [SerializeField] private int attackDamage = 10;
     [SerializeField] private LayerMask enemyLayer;
 
     [SerializeField] private bool showGizmo = false;
     [SerializeField] private float gizmoDuration = 0.2f;
+    
+    public int AttackDamage
+    {
+        get { return attackDamage; }
+        set { attackDamage = value; }
+    }
     //private Animator animator;
 
     private void OnEnable()
@@ -96,9 +102,24 @@ public class PlayerMeleeAttack : MonoBehaviour
             HealthController healthController = enemy.GetComponent<HealthController>();
             if (healthController != null)
             {
+                bool isCritical;
+                float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, out isCritical);
+
                 healthController.TakeDamage(attackDamage);
 
                 ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de daño.", 1);
+            }
+
+            BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
+            if (bloodKnight != null)
+            {
+                bool isCritical;
+                float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, out isCritical);
+
+                bloodKnight.TakeDamage(finalDamage, isCritical);
+                bloodKnight.OnPlayerCounterAttack();
+
+                ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
             }
         }
 

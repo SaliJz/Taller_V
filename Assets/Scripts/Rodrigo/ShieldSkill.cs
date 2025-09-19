@@ -29,9 +29,9 @@ public class ShieldSkill : MonoBehaviour
 
         SkillActive = false;
 
-        BaseAttackMelee = PMA.attackDamage;
-        BaseAttackShield = PSC.shieldDamage;
-        BaseSpeed = PM.moveSpeed;
+        BaseAttackMelee = PMA.AttackDamage;
+        BaseAttackShield = PSC.ShieldDamage;
+        BaseSpeed = PM.MoveSpeed;
     }
 
     void Update()
@@ -75,18 +75,18 @@ public class ShieldSkill : MonoBehaviour
         {
             if (Timer >= 1f)
             {
-                PH.currentHealth -= lifeDrain;
+                if (PH != null) PH.TakeDamage(lifeDrain);
                 Timer = 0f;
             }
-            PMA.attackDamage = Mathf.RoundToInt(BaseAttackMelee * attackBuff);
-            PSC.shieldDamage = Mathf.RoundToInt(BaseAttackShield * attackBuff);
-            PM.moveSpeed = Mathf.RoundToInt(BaseSpeed * moveBuff);
+            PMA.AttackDamage = Mathf.RoundToInt(BaseAttackMelee * attackBuff);
+            PSC.ShieldDamage = Mathf.RoundToInt(BaseAttackShield * attackBuff);
+            PM.MoveSpeed = Mathf.RoundToInt(BaseSpeed * moveBuff);
         }
         else
         {
-            PMA.attackDamage = Mathf.RoundToInt(BaseAttackMelee);
-            PSC.shieldDamage = Mathf.RoundToInt(BaseAttackShield);
-            PM.moveSpeed = Mathf.RoundToInt(BaseSpeed);
+            PMA.AttackDamage = Mathf.RoundToInt(BaseAttackMelee);
+            PSC.ShieldDamage = Mathf.RoundToInt(BaseAttackShield);
+            PM.MoveSpeed = Mathf.RoundToInt(BaseSpeed);
 
             Timer = 0f;
         }

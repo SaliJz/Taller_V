@@ -1,5 +1,6 @@
-using UnityEngine;
 using System.Collections;
+using Unity.VisualScripting;
+using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -9,15 +10,15 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private PlayerStatsManager statsManager;
     [SerializeField] private CharacterController controller;
     [SerializeField] private Transform mainCameraTransform;
-    //[SerializeField] private Animator playerAnimator;
+    [SerializeField] private Animator playerAnimator;
     //[SerializeField] private AudioSource audioSource;
-    [SerializeField] private TrailRenderer trailRenderer;
+    //[SerializeField] private TrailRenderer trailRenderer;
     [SerializeField] private PlayerHealth playerHealth;
 
     [Header("Movimiento")]
     [Tooltip("Velocidad de movimiento por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackMoveSpeed = 5f;
-    [SerializeField] public float moveSpeed = 5f;
+    [SerializeField] private float moveSpeed = 5f;
     [Tooltip("Gravedad por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackGravity = -9.81f;
     [SerializeField] private float gravity = -9.81f;
@@ -35,13 +36,20 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private GameObject afterimagePrefab;
 
     private int playerLayer;
-    private int enemyLayer;
+    //private int enemyLayer;
     private float dashCooldownTimer = 0f;
     public bool IsDashing { get; private set; }
+    public float MoveSpeed
+    {         
+        get { return moveSpeed; }
+        set { moveSpeed = value; }
+    }
 
     private Vector3 moveDirection;
     private float yVelocity;
     private bool canMove = true;
+    private float lastMoveX;
+    private float lastMoveY;
 
     #endregion
 
@@ -50,11 +58,13 @@ public class PlayerMovement : MonoBehaviour
     private void OnEnable()
     {
         PlayerStatsManager.OnStatChanged += HandleStatChanged;
+        PlayerHealth.OnLifeStageChanged += HandleLifeStageChanged;
     }
 
     private void OnDisable()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
+        PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
     }
 
     private void Start()
@@ -64,18 +74,22 @@ public class PlayerMovement : MonoBehaviour
 
         controller = GetComponent<CharacterController>();
         mainCameraTransform = Camera.main.transform;
-        //playerAnimator = GetComponent<Animator>();
+        playerAnimator = GetComponentInChildren<Animator>();
         //audioSource = GetComponentInChildren<AudioSource>();
         //trailRenderer = GetComponentInChildren<TrailRenderer>();
         playerHealth = GetComponent<PlayerHealth>();
 
         playerLayer = LayerMask.NameToLayer("Player");
-        enemyLayer = LayerMask.NameToLayer("Enemy");
+        //enemyLayer = LayerMask.NameToLayer("Enemy");
 
         float moveSpeedStat = statsManager != null ? statsManager.GetStat(StatType.MoveSpeed) : fallbackMoveSpeed;
         moveSpeed = moveSpeedStat;
 
         float gravityStat = statsManager != null ? statsManager.GetStat(StatType.Gravity) : fallbackGravity;
+        gravity = gravityStat;
+
+        lastMoveY = -1;
+        lastMoveX = 0;
     }
 
     /// <summary>
@@ -97,6 +111,31 @@ public class PlayerMovement : MonoBehaviour
         ReportDebug($"Stat {statType} cambiado a {newValue}.", 1);
     }
 
+    /// <summary>
+    /// Se ejecuta cuando el evento OnLifeStageChanged es invocado desde PlayerHealth.
+    /// Actualiza el parámetro "AgeStage" del Animator.
+    /// </summary>
+    /// <param name="newStage">La nueva etapa de vida del jugador.</param>
+    private void HandleLifeStageChanged(PlayerHealth.LifeStage newStage)
+    {
+        int ageStageValue = 0;
+        switch (newStage)
+        {
+            case PlayerHealth.LifeStage.Young:
+                ageStageValue = 0;
+                break;
+            case PlayerHealth.LifeStage.Adult:
+                ageStageValue = 1;
+                break;
+            case PlayerHealth.LifeStage.Elder:
+                ageStageValue = 2;
+                break;
+        }
+
+        if (playerAnimator != null) playerAnimator.SetInteger("AgeStage", ageStageValue);
+        ReportDebug($"Etapa de vida cambiada a {newStage}. Animator AgeStage seteado a {ageStageValue}.", 1);
+    }
+
     private void Update()
     {
         if (dashCooldownTimer > 0)
@@ -111,7 +150,7 @@ public class PlayerMovement : MonoBehaviour
         else
         {
             moveDirection = Vector3.zero;
-            //if (playerAnimator != null) playerAnimator.SetBool("IsMoving", false);
+            if (playerAnimator != null) playerAnimator.SetBool("Running", false);
         }
 
         ApplyGravity();
@@ -138,6 +177,7 @@ public class PlayerMovement : MonoBehaviour
 
     #region Custom Methods
 
+    // Maneja la entrada de movimiento del jugador y actualiza las animaciones.
     private void HandleMovementInput()
     {
         float moveX = Input.GetAxisRaw("Horizontal");
@@ -151,18 +191,22 @@ public class PlayerMovement : MonoBehaviour
         cameraForward.Normalize();
         cameraRight.Normalize();
 
-        moveDirection = cameraForward * moveY + cameraRight * moveX;
+        moveDirection = (cameraForward * moveY + cameraRight * moveX).normalized;
 
-        if (moveDirection != Vector3.zero)
+        bool isMoving = moveDirection.magnitude > 0.1f;
+        if (playerAnimator != null) playerAnimator.SetBool("Running", isMoving);
+
+        if (isMoving)
         {
-            //if (playerAnimator != null) playerAnimator.SetBool("IsMoving", true);
+            lastMoveX = moveX;
+            lastMoveY = moveY;
         }
-        else
-        {
-            //if (playerAnimator != null) playerAnimator.SetBool("IsMoving", false);
-        }
+
+        if (playerAnimator != null) playerAnimator.SetFloat("Xaxis", lastMoveX);
+        if (playerAnimator != null) playerAnimator.SetFloat("Yaxis", lastMoveY);
     }
 
+    // Alinea al jugador en la dirección del movimiento.
     private void RotateTowardsMovement()
     {
         Vector3 direction = new Vector3(moveDirection.x, 0, moveDirection.z);
@@ -173,6 +217,12 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Función que maneja la lógica del dash, incluyendo invulnerabilidad, efectos visuales y colisiones.
+    /// Además, inicia la corrutina que mueve al jugador en la dirección del dash.
+    /// Para evitar atravesar paredes, se realiza un raycast en la dirección del dash.
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator DashRoutine()
     {
         IsDashing = true;
@@ -182,7 +232,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (playerHealth != null) playerHealth.IsInvulnerable = true;
         ToggleLayerCollisions(true);
-        if (trailRenderer != null) trailRenderer.emitting = true;
+        //if (trailRenderer != null) trailRenderer.emitting = true;
         if (afterimagePrefab != null) StartCoroutine(AfterimageRoutine());
 
         float startTime = Time.time;
@@ -203,12 +253,17 @@ public class PlayerMovement : MonoBehaviour
 
         yield return new WaitForSeconds(dashDuration);
 
-        if (trailRenderer != null) trailRenderer.emitting = false;
+        //if (trailRenderer != null) trailRenderer.emitting = false;
         if (playerHealth != null) playerHealth.IsInvulnerable = false;
         ToggleLayerCollisions(false);
         IsDashing = false;
     }
 
+    /// <summary>
+    /// Función que mueve al jugador en la dirección especificada durante la duración dada.
+    /// </summary>
+    /// <param name="direction">Dirección del dash.</param>
+    /// <param name="duration">Duración del dash en segundos.</param>
     private IEnumerator PerformDash(Vector3 direction, float duration)
     {
         float startTime = Time.time;
@@ -251,6 +306,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    // Aplica la gravedad al jugador.
     private void ApplyGravity()
     {
         if (controller.enabled && controller.isGrounded)
@@ -263,6 +319,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    // Activa o desactiva la capacidad de movimiento del jugador.
     public void SetCanMove(bool state)
     {
         canMove = state;
