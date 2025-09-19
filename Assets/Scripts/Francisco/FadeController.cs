@@ -20,6 +20,11 @@ public class FadeController : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        StartCoroutine(FadeIn());
+    }
+
     public IEnumerator FadeOut(Action onStart = null, Action<float> onUpdate = null, Action onComplete = null)
     {
         onStart?.Invoke();

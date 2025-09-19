@@ -1,6 +1,7 @@
 using System;
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Clase que maneja la salud del jugador, incluyendo daño, curación y etapas de vida.
@@ -34,6 +35,10 @@ public class PlayerHealth : MonoBehaviour
     public static event Action<float, float> OnHealthChanged;
     public static event Action<LifeStage> OnLifeStageChanged;
 
+    private PlayerMovement playerMovement;
+    private PlayerMeleeAttack playerMeleeAttack;
+    private PlayerShieldController playerShieldController;
+
     private void OnEnable()
     {
         PlayerStatsManager.OnStatChanged += HandleStatChanged;
@@ -48,6 +53,10 @@ public class PlayerHealth : MonoBehaviour
     {
         statsManager = GetComponent<PlayerStatsManager>();
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerHealth. Usando vida máxima de fallback.", 2);
+
+        playerMovement = GetComponent<PlayerMovement>();
+        playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
+        playerShieldController = GetComponent<PlayerShieldController>();
 
         float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
         currentHealth = maxHealth;
@@ -167,7 +176,23 @@ public class PlayerHealth : MonoBehaviour
     {
         ReportDebug("El jugador ha muerto.", 1);
         statsManager.ResetStats();
+
+        if (playerMovement != null) playerMovement.enabled = false;
+        if (playerMeleeAttack != null) playerMeleeAttack.enabled = false;
+        if (playerShieldController != null) playerShieldController.enabled = false;
+
+        if (FadeController.Instance != null)
+        {
+            StartCoroutine(FadeController.Instance.FadeOut(onComplete: () => {
+                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            }));
+        }
+        else
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
     }
+
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     /// <summary> 
