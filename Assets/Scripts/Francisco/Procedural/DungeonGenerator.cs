@@ -62,6 +62,9 @@ public class DungeonGenerator : MonoBehaviour
     [Header("Enemy Prefabs")]
     public GameObject[] enemyPrefabs;
 
+    [Header("Visual Effects")]
+    public GameObject spawnEffectPrefab; 
+
     [Header("Generation Settings")]
     public int minRooms = 8;
     public int maxRooms = 12;
@@ -94,7 +97,8 @@ public class DungeonGenerator : MonoBehaviour
     private RoomProgressionRule mandatoryRoomToPlace;
     private int mandatoryRoomNumber = -1;
     private RoomProgressionRule probableMandatoryToPlace;
-    private bool hasProbableMandatoryBeenGenerated = false; 
+    private bool hasProbableMandatoryBeenGenerated = false;
+    private float currentProbableMandatoryProbability;
 
     public PlayerMovement playerMovement;
 
@@ -121,8 +125,12 @@ public class DungeonGenerator : MonoBehaviour
 
         targetRoomCount = Random.Range(minRooms, maxRooms + 1);
 
-        PlanMandatoryRoom();
+        if (probableMandatoryToPlace != null)
+        {
+            currentProbableMandatoryProbability = probableMandatoryToPlace.probability;
+        }
 
+        PlanMandatoryRoom();
         GenerateInitialRoom();
         playerMovement = FindAnyObjectByType<PlayerMovement>();
     }
@@ -142,6 +150,7 @@ public class DungeonGenerator : MonoBehaviour
             probableMandatoryToPlace = probableMandatoryRules.First();
         }
     }
+
 
     void GenerateInitialRoom()
     {
@@ -178,6 +187,19 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
+    float GetEscalatingProbability(int currentRoomNumber)
+    {
+        if (probableMandatoryToPlace == null) return 0f;
+
+        float roomRange = probableMandatoryToPlace.maxRoomNumber - probableMandatoryToPlace.minRoomNumber;
+        if (roomRange <= 0) return probableMandatoryToPlace.probability;
+
+        float roomProgress = (currentRoomNumber - probableMandatoryToPlace.minRoomNumber) / roomRange;
+        float scalingFactor = 1f + (roomProgress * 2f);
+
+        return Mathf.Min(100f, probableMandatoryToPlace.probability * scalingFactor);
+    }
+
     public void GenerateNextRoom(ConnectionPoint entrancePoint)
     {
         if (entrancePoint.isConnected)
@@ -193,7 +215,8 @@ public class DungeonGenerator : MonoBehaviour
 
         if (mandatoryRoomToPlace != null && roomsGenerated + 1 == mandatoryRoomNumber)
         {
-            Room newRoomPrefab = roomDataDictionary[mandatoryRoomToPlace.roomType].First().prefab;
+            List<RoomData> mandatoryRoomPrefabs = roomDataDictionary[mandatoryRoomToPlace.roomType];
+            Room newRoomPrefab = mandatoryRoomPrefabs[Random.Range(0, mandatoryRoomPrefabs.Count)].prefab;
             PlaceRoom(newRoomPrefab, entrancePoint);
             return;
         }
@@ -264,6 +287,7 @@ public class DungeonGenerator : MonoBehaviour
                     enemyManager.dungeonGenerator = this;
                     enemyManager.parentRoom = newRoom;
                     enemyManager.enemyPrefabs = this.enemyPrefabs;
+                    enemyManager.spawnEffectPrefab = this.spawnEffectPrefab; 
                 }
 
                 foreach (ConnectionPoint connectionPoint in newRoom.connectionPoints)
@@ -350,21 +374,35 @@ public class DungeonGenerator : MonoBehaviour
 
     RoomData GetRandomRoomData(RoomType previousRoomType, int currentRoomNumber)
     {
-        if (probableMandatoryToPlace != null &&
-            !hasProbableMandatoryBeenGenerated && 
-            currentRoomNumber >= probableMandatoryToPlace.minRoomNumber &&
-            currentRoomNumber <= probableMandatoryToPlace.maxRoomNumber)
+        if (mandatoryRoomToPlace != null && roomsGenerated + 1 == mandatoryRoomNumber)
         {
-            if (Random.Range(0f, 100f) < probableMandatoryToPlace.probability)
+            if (generationRuleDictionary.ContainsKey(previousRoomType) && !generationRuleDictionary[previousRoomType].Contains(mandatoryRoomToPlace.roomType))
             {
-                return roomDataDictionary[probableMandatoryToPlace.roomType][Random.Range(0, roomDataDictionary[probableMandatoryToPlace.roomType].Count)];
+                return null;
+            }
+            return roomDataDictionary[mandatoryRoomToPlace.roomType][Random.Range(0, roomDataDictionary[mandatoryRoomToPlace.roomType].Count)];
+        }
+
+        var probableMandatoryRules = progressionRules
+            .Where(r => r.isProbableMandatory &&
+                        currentRoomNumber >= r.minRoomNumber &&
+                        currentRoomNumber <= r.maxRoomNumber &&
+                        (!r.generateOnce || !hasProbableMandatoryBeenGenerated))
+            .ToList();
+
+        foreach (var rule in probableMandatoryRules)
+        {
+            float escalatingProbability = GetEscalatingProbability(currentRoomNumber);
+            if (Random.Range(0f, 100f) < escalatingProbability)
+            {
+                return roomDataDictionary[rule.roomType][Random.Range(0, roomDataDictionary[rule.roomType].Count)];
             }
         }
 
         var progressionAllowedTypes = progressionRules.Where(rule =>
-            currentRoomNumber >= rule.minRoomNumber &&
-            currentRoomNumber <= rule.maxRoomNumber
-        ).ToList();
+                currentRoomNumber >= rule.minRoomNumber &&
+                currentRoomNumber <= rule.maxRoomNumber
+            ).Select(p => p.roomType).ToList();
 
         RoomType[] generationAllowedTypes;
         if (!generationRuleDictionary.TryGetValue(previousRoomType, out generationAllowedTypes))
@@ -373,36 +411,21 @@ public class DungeonGenerator : MonoBehaviour
         }
 
         var validRoomTypes = new List<RoomType>();
-
         if (progressionAllowedTypes.Any())
         {
-            validRoomTypes = progressionAllowedTypes
-                .Select(p => p.roomType)
-                .Intersect(generationAllowedTypes)
-                .ToList();
+            validRoomTypes = progressionAllowedTypes.Intersect(generationAllowedTypes).ToList();
         }
         else
         {
             validRoomTypes = generationAllowedTypes.ToList();
         }
 
-        validRoomTypes = validRoomTypes.Where(rt => {
-            if (progressionRuleDictionary.ContainsKey(rt))
-            {
-                var rule = progressionRuleDictionary[rt];
-                return !rule.isMandatory && !rule.isProbableMandatory;
-            }
-            return true;
-        }).ToList();
-
         if (!validRoomTypes.Any())
         {
             return null;
         }
 
-        var filteredProbabilities = roomTypeProbabilities
-            .Where(p => validRoomTypes.Contains(p.roomType))
-            .ToList();
+        var filteredProbabilities = roomTypeProbabilities.Where(p => validRoomTypes.Contains(p.roomType)).ToList();
 
         float totalProbability = filteredProbabilities.Sum(p => p.probability);
         if (totalProbability <= 0)
@@ -608,7 +631,7 @@ public class DungeonGenerator : MonoBehaviour
                     var enemyManager = newRoom.GetComponent<EnemyManager>();
                     if (enemyManager != null)
                     {
-                        StartCoroutine(enemyManager.StartCombatEncounter(exitPoint, this));
+                        StartCoroutine(enemyManager.StartCombatEncounter(exitPoint, this, spawnEffectPrefab));
                     }
                 }
                 else
