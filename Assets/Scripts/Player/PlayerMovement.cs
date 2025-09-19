@@ -17,7 +17,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Movimiento")]
     [Tooltip("Velocidad de movimiento por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackMoveSpeed = 5f;
-    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] public float moveSpeed = 5f;
     [Tooltip("Gravedad por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackGravity = -9.81f;
     [SerializeField] private float gravity = -9.81f;

@@ -21,7 +21,7 @@ public class PlayerHealth : MonoBehaviour
     [Header("Configuración de Vida")]
     [Tooltip("Vida máxima por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackMaxHealth = 100;
-    [SerializeField] private float currentHealth;
+    [SerializeField] public float currentHealth;
 
     [Header("Mejora de Escudo")]
     [SerializeField] private float shieldBlockCooldown = 18f;

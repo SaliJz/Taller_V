@@ -13,7 +13,7 @@ public class PlayerShieldController : MonoBehaviour
     [Header("Stats")]
     [Tooltip("Daño de ataque por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private int fallbackshieldDamage = 10;
-    [SerializeField] private int shieldDamage = 10;
+    [SerializeField] public int shieldDamage = 10;
     [Tooltip("Velocidad del escudo por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackshieldSpeed = 25f;
     [SerializeField] private float shieldSpeed = 25f;

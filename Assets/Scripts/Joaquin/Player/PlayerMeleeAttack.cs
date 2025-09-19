@@ -16,7 +16,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private float hitRadius = 0.8f;
     [Tooltip("Daño de ataque por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackAttackDamage = 10;
-    [SerializeField] private int attackDamage = 10;
+    [SerializeField] public int attackDamage = 10;
     [SerializeField] private LayerMask enemyLayer;
 
     [SerializeField] private bool showGizmo = false;
