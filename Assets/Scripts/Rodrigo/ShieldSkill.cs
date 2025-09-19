@@ -39,9 +39,28 @@ public class ShieldSkill : MonoBehaviour
         Timer += Time.deltaTime;
 
         if (Input.GetKeyDown(KeyCode.Q))
+        {
             SkillActive = !SkillActive;
+            if (SkillActive)
+            {
+                if (PH.CurrentLifeStage == PlayerHealth.LifeStage.Young)
+                {
+                    Debug.Log("Joven :buffo 20% mas de velocidad, 10% mas de fuerza aumentados y redondeados");
+                }
+                else if (PH.CurrentLifeStage == PlayerHealth.LifeStage.Adult)
+                {
+                    Debug.Log("adulto :buffo 20% mas de fuerza, 10% mas de velocidad aumentados y redondeados");
+                }
+                else if (PH.CurrentLifeStage == PlayerHealth.LifeStage.Elder)
+                {
+                    Debug.Log("Viejo :buffo 15% mas de fuerza y velocidad aumentados y redondeados");
+                }
+            }
+        }
+            
 
         ApplyBuff();
+
     }
     /// <summary>
     /// aplica el las estadisticas para el buffo de la habilidad
