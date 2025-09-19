@@ -395,9 +395,14 @@ public class DungeonGenerator : MonoBehaviour
             float escalatingProbability = GetEscalatingProbability(currentRoomNumber);
             if (Random.Range(0f, 100f) < escalatingProbability)
             {
+                if (rule.generateOnce)
+                {
+                    hasProbableMandatoryBeenGenerated = true;
+                }
                 return roomDataDictionary[rule.roomType][Random.Range(0, roomDataDictionary[rule.roomType].Count)];
             }
         }
+
 
         var progressionAllowedTypes = progressionRules.Where(rule =>
                 currentRoomNumber >= rule.minRoomNumber &&

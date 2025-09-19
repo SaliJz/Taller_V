@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class SceneController : MonoBehaviour
 {
@@ -10,7 +11,6 @@ public class SceneController : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -22,15 +22,27 @@ public class SceneController : MonoBehaviour
     {
         if (string.IsNullOrEmpty(sceneName))
         {
-            Debug.LogError("El nombre de la escena no puede ser nulo o vacío.");
+            Debug.LogError("The scene name cannot be null or empty.");
             return;
         }
 
-        SceneManager.LoadScene(sceneName);
+        StartCoroutine(LoadSceneWithFade(sceneName));
     }
 
     public void ReloadCurrentScene()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        StartCoroutine(LoadSceneWithFade(SceneManager.GetActiveScene().name));
+    }
+
+    public void QuitGame()
+    {
+        Application.Quit();
+    }
+
+    private IEnumerator LoadSceneWithFade(string sceneName)
+    {
+        yield return FadeController.Instance.FadeOut();
+
+        SceneManager.LoadScene(sceneName);
     }
 }
