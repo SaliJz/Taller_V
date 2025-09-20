@@ -6,7 +6,6 @@ public class ShopItemDisplay : MonoBehaviour
     public ShopItem shopItemData;
 
     private ShopManager shopManager;
-    private bool isPlayerInZone;
 
     private void Awake()
     {
@@ -17,24 +16,16 @@ public class ShopItemDisplay : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            isPlayerInZone = true;
-        }
-    }
-
     private void OnTriggerStay(Collider other)
     {
-        if (other.CompareTag("Player") && isPlayerInZone)
+        if (other.CompareTag("Player"))
         {
             if (shopManager != null)
             {
                 shopManager.UpdateCostBar(shopItemData.cost);
             }
 
-            if (Input.GetKeyDown(KeyCode.E))
+            if (Input.GetKey(KeyCode.E))
             {
                 bool purchaseSuccessful = shopManager.PurchaseItem(shopItemData);
                 if (shopManager != null)
@@ -53,7 +44,6 @@ public class ShopItemDisplay : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            isPlayerInZone = false;
             if (shopManager != null)
             {
                 shopManager.UpdateCostBar(0);
