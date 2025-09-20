@@ -193,11 +193,6 @@ public class ShopManager : MonoBehaviour
             itemNameText.text = $"Nombre: {itemData.itemName}";
             itemCostText.text = $"Costo: {itemData.cost} HP";
             itemDescriptionText.text = $"Descripción: {itemData.description}";
-
-            if (costBar != null)
-            {
-                costBar.gameObject.SetActive(showCostBar);
-            }
         }
     }
 

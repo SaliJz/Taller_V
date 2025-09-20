@@ -213,18 +213,35 @@ public class DungeonGenerator : MonoBehaviour
             return;
         }
 
-        if (mandatoryRoomToPlace != null && roomsGenerated + 1 == mandatoryRoomNumber)
-        {
-            List<RoomData> mandatoryRoomPrefabs = roomDataDictionary[mandatoryRoomToPlace.roomType];
-            Room newRoomPrefab = mandatoryRoomPrefabs[Random.Range(0, mandatoryRoomPrefabs.Count)].prefab;
-            PlaceRoom(newRoomPrefab, entrancePoint);
-            return;
-        }
-
         int attempts = 0;
         bool roomPlaced = false;
 
         RoomType previousRoomType = entrancePoint.GetComponentInParent<Room>().roomType;
+
+        if (mandatoryRoomToPlace != null && roomsGenerated + 1 == mandatoryRoomNumber)
+        {
+            List<RoomData> mandatoryRoomPrefabs = roomDataDictionary[mandatoryRoomToPlace.roomType];
+
+            mandatoryRoomPrefabs = mandatoryRoomPrefabs.OrderBy(x => Random.value).ToList();
+
+            foreach (var roomData in mandatoryRoomPrefabs)
+            {
+                if (attempts >= maxRoomAttempts) break;
+
+                if (PlaceRoom(roomData.prefab, entrancePoint))
+                {
+                    roomPlaced = true;
+                    UpdateRoomWeights(roomData);
+                    break;
+                }
+                attempts++;
+            }
+
+            if (roomPlaced)
+            {
+                return;
+            }
+        }
 
         while (attempts < maxRoomAttempts && !roomPlaced)
         {
@@ -380,7 +397,11 @@ public class DungeonGenerator : MonoBehaviour
             {
                 return null;
             }
-            return roomDataDictionary[mandatoryRoomToPlace.roomType][Random.Range(0, roomDataDictionary[mandatoryRoomToPlace.roomType].Count)];
+            var mandatoryRoomPrefabs = roomDataDictionary[mandatoryRoomToPlace.roomType];
+            if (mandatoryRoomPrefabs != null && mandatoryRoomPrefabs.Count > 0)
+            {
+                return mandatoryRoomPrefabs[Random.Range(0, mandatoryRoomPrefabs.Count)];
+            }
         }
 
         var probableMandatoryRules = progressionRules
@@ -395,11 +416,19 @@ public class DungeonGenerator : MonoBehaviour
             float escalatingProbability = GetEscalatingProbability(currentRoomNumber);
             if (Random.Range(0f, 100f) < escalatingProbability)
             {
-                if (rule.generateOnce)
+                if (generationRuleDictionary.ContainsKey(previousRoomType) && !generationRuleDictionary[previousRoomType].Contains(rule.roomType))
                 {
-                    hasProbableMandatoryBeenGenerated = true;
+                    continue;
                 }
-                return roomDataDictionary[rule.roomType][Random.Range(0, roomDataDictionary[rule.roomType].Count)];
+                var probableRoomPrefabs = roomDataDictionary[rule.roomType];
+                if (probableRoomPrefabs != null && probableRoomPrefabs.Count > 0)
+                {
+                    if (rule.generateOnce)
+                    {
+                        hasProbableMandatoryBeenGenerated = true;
+                    }
+                    return probableRoomPrefabs[Random.Range(0, probableRoomPrefabs.Count)];
+                }
             }
         }
 
