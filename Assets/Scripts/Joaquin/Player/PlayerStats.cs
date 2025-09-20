@@ -13,8 +13,13 @@ public class PlayerStats : ScriptableObject
     public float moveSpeed = 5f;
     public float gravity = -9.81f;
 
+    [Header("Ataque General")]
+    public float attackDamage = 1.0f;
+    public float attackSpeed = 1.0f;
+
     [Header("Ataque melee")]
     public int meleeAttackDamage = 10;
+    public float meleeSpeed = 1f;
     public float meleeRadius = 0.8f;
 
     [Header("Ataque a distancia")]

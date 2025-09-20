@@ -35,6 +35,9 @@ public class PlayerShieldController : MonoBehaviour
 
     private bool hasShield = true;
 
+    private int currentShieldDamage;
+    private float currentShieldSpeed;
+
     public int ShieldDamage
     {
         get { return shieldDamage; }
@@ -42,6 +45,12 @@ public class PlayerShieldController : MonoBehaviour
     }
 
     // private PlayerTimeResource playerTime;
+
+    private void Awake()
+    {
+        statsManager = GetComponent<PlayerStatsManager>();
+        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMeleeAttack. Usando valores de de fallback.", 2);
+    }
 
     private void OnEnable()
     {
@@ -55,8 +64,7 @@ public class PlayerShieldController : MonoBehaviour
 
     private void Start()
     {
-        statsManager = GetComponent<PlayerStatsManager>();
-        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerShieldController. Usando valores de fallback.", 2);
+        CalculateShieldStats();
 
         float shieldDamageStat = statsManager != null ? statsManager.GetStat(StatType.ShieldAttackDamage) : fallbackshieldDamage;
         shieldDamage = Mathf.RoundToInt(shieldDamageStat);
@@ -89,15 +97,35 @@ public class PlayerShieldController : MonoBehaviour
         }
     }
 
+    private void CalculateShieldStats()
+    {
+        if (statsManager == null)
+        {
+            ReportDebug("StatsManager no asignado. Usando valores de fallback.", 2);
+            currentShieldDamage = fallbackshieldDamage;
+            currentShieldSpeed = fallbackshieldSpeed;
+            return;
+        }
+
+        float baseDamage = statsManager.GetStat(StatType.ShieldAttackDamage);
+        float baseSpeed = statsManager.GetStat(StatType.ShieldSpeed);
+
+        float damageMultiplier = statsManager.GetStat(StatType.AttackDamage);
+        float speedMultiplier = statsManager.GetStat(StatType.AttackSpeed);
+
+        currentShieldDamage = (int)(baseDamage * damageMultiplier);
+        currentShieldSpeed = baseSpeed * speedMultiplier;
+
+        ReportDebug($"Daño final del escudo: {currentShieldDamage}", 1);
+        ReportDebug($"Velocidad final del escudo: {currentShieldSpeed}", 1);
+    }
+
     private void HandleStatChanged(StatType statType, float newValue)
     {
-        if (statType == StatType.ShieldAttackDamage)
+        if (statType == StatType.ShieldAttackDamage || statType == StatType.AttackDamage ||
+            statType == StatType.ShieldSpeed || statType == StatType.AttackSpeed)
         {
-            shieldDamage = Mathf.RoundToInt(newValue);
-        }
-        else if (statType == StatType.ShieldSpeed)
-        {
-            shieldSpeed = newValue;
+            CalculateShieldStats();
         }
         else if (statType == StatType.ShieldMaxDistance)
         {
@@ -136,7 +164,7 @@ public class PlayerShieldController : MonoBehaviour
             {
                 shieldInstance.transform.position = shieldSpawnPoint.position;
                 shieldInstance.transform.rotation = Quaternion.LookRotation(direction);
-                shieldInstance.GetComponent<Shield>().Throw(this, direction, canShieldRebound, shieldMaxRebounds, shieldReboundRadius, shieldDamage, shieldSpeed, shieldMaxDistance);
+                shieldInstance.GetComponent<Shield>().Throw(this, direction, canShieldRebound, shieldMaxRebounds, shieldReboundRadius, currentShieldDamage, currentShieldSpeed, shieldMaxDistance);
             }
             else
             {

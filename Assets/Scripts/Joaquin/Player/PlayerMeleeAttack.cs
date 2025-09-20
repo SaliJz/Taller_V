@@ -22,12 +22,22 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private bool showGizmo = false;
     [SerializeField] private float gizmoDuration = 0.2f;
 
+    private int finalDamage;
+    private float finalAttackSpeed;
+    // private float currentCooldown = 0f;
+
     public int AttackDamage
     {
         get { return attackDamage; }
         set { attackDamage = value; }
     }
     //private Animator animator;
+
+    private void Awake()
+    {
+        statsManager = GetComponent<PlayerStatsManager>();
+        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMeleeAttack. Usando valores de de fallback.", 2);
+    }
 
     private void OnEnable()
     {
@@ -39,10 +49,10 @@ public class PlayerMeleeAttack : MonoBehaviour
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
     }
 
+
     private void Start()
     {
-        statsManager = GetComponent<PlayerStatsManager>();
-        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMeleeAttack. Usando valores de de fallback.", 2);
+        CalculateStats();
 
         //animator = GetComponent<Animator>();
 
@@ -62,9 +72,9 @@ public class PlayerMeleeAttack : MonoBehaviour
     /// <param name="newValue">Nuevo valor de la estadística.</param>
     private void HandleStatChanged(StatType statType, float newValue)
     {
-        if (statType == StatType.MeleeAttackDamage)
+        if (statType == StatType.MeleeAttackDamage || statType == StatType.AttackDamage || statType == StatType.AttackSpeed)
         {
-            attackDamage = Mathf.RoundToInt(newValue);
+            CalculateStats();
         }
         else if (statType == StatType.MeleeRadius)
         {
@@ -89,6 +99,20 @@ public class PlayerMeleeAttack : MonoBehaviour
         PerformHitDetection();
     }
 
+    private void CalculateStats()
+    {
+        float baseDamage = statsManager.GetStat(StatType.MeleeAttackDamage);
+        float damageMultiplier = statsManager.GetStat(StatType.AttackDamage);
+
+        finalDamage = (int)(baseDamage * damageMultiplier);
+
+        ReportDebug($"Daño final de ataque melee: {finalDamage}", 1);
+
+        float baseSpeed = 1f;
+        float speedMultiplier = statsManager.GetStat(StatType.AttackSpeed);
+        finalAttackSpeed = baseSpeed / speedMultiplier;
+    }
+
     // FUNCIÓN LLAMADA POR UN ANIMATION EVENT
     /// <summary>
     /// Función que realiza la detección de golpes en un área definida alrededor del punto de impacto.
@@ -103,9 +127,9 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (healthController != null)
             {
                 bool isCritical;
-                float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, out isCritical);
+                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalDamage, out isCritical);
 
-                healthController.TakeDamage(attackDamage);
+                healthController.TakeDamage(finalDamage);
 
                 ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de daño.", 1);
             }
@@ -114,12 +138,12 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (bloodKnight != null)
             {
                 bool isCritical;
-                float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, out isCritical);
+                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalDamage, out isCritical);
 
-                bloodKnight.TakeDamage(finalDamage, isCritical);
+                bloodKnight.TakeDamage(finalDamageWithCrit, isCritical);
                 bloodKnight.OnPlayerCounterAttack();
 
-                ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
+                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daño.", 1);
             }
         }
 

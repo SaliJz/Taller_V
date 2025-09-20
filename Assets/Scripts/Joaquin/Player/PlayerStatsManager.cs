@@ -12,12 +12,17 @@ public enum StatType
     MoveSpeed,
     Gravity,
     MeleeAttackDamage,
+    MeleeAttackSpeed,
     MeleeRadius,
     ShieldAttackDamage,
     ShieldSpeed,
     ShieldMaxDistance,
     ShieldMaxRebounds,
     ShieldReboundRadius,
+    AttackDamage,
+    AttackSpeed,
+    ShieldBlockUpgrade,
+    DamageTaken,
     HealthDrainAmount,
 }
 
@@ -33,17 +38,33 @@ public class PlayerStatsManager : MonoBehaviour
 
     public static event Action<StatType, float> OnStatChanged;
 
+    private PlayerHealth playerHealth;
+
+    private void Awake()
+    {
+        // Se asegura de que los diccionarios estén inicializados antes de Start
+        InitializeStats();
+    }
+
     private void Start()
     {
-        if (playerStats != null) ResetStats(); 
+        playerHealth = FindAnyObjectByType<PlayerHealth>();
+        if (playerStats != null) ResetStats();
         else ReportDebug("PlayerStats no está asignado en PlayerStatsManager.", 3);
     }
 
     /// <summary>
-    /// Función que reinicia todas las estadísticas a sus valores base definidos en PlayerStats.
-    /// </summary> 
-    public void ResetStats()
+    /// Inicializa las estadísticas base del jugador a partir de un ScriptableObject.
+    /// Se llama en Awake para asegurar que siempre haya valores.
+    /// </summary>
+    private void InitializeStats()
     {
+        if (playerStats == null)
+        {
+            ReportDebug("PlayerStats no está asignado en el Inspector. No se pueden inicializar las estadísticas.", 3);
+            return;
+        }
+
         baseStats[StatType.MaxHealth] = playerStats.maxHealth;
         baseStats[StatType.MoveSpeed] = playerStats.moveSpeed;
         baseStats[StatType.Gravity] = playerStats.gravity;
@@ -54,9 +75,27 @@ public class PlayerStatsManager : MonoBehaviour
         baseStats[StatType.ShieldMaxDistance] = playerStats.shieldMaxDistance;
         baseStats[StatType.ShieldMaxRebounds] = playerStats.shieldMaxRebounds;
         baseStats[StatType.ShieldReboundRadius] = playerStats.shieldReboundRadius;
+        baseStats[StatType.AttackDamage] = playerStats.attackDamage;
+        baseStats[StatType.AttackSpeed] = playerStats.attackSpeed;
+        baseStats[StatType.MeleeAttackSpeed] = playerStats.meleeSpeed;
         baseStats[StatType.HealthDrainAmount] = playerStats.HealthDrainAmount;
+        baseStats[StatType.DamageTaken] = 0f;
+        baseStats[StatType.ShieldBlockUpgrade] = 0f; // Valor booleano como flotante: 0f = false, 1f = true
+    }
 
-        foreach (var kvp in baseStats) currentStats[kvp.Key] = kvp.Value;
+    /// <summary>
+    /// Función que reinicia todas las estadísticas a sus valores base definidos en PlayerStats.
+    /// </summary> 
+    public void ResetStats()
+    {
+        foreach (var kvp in baseStats)
+        {
+            currentStats[kvp.Key] = kvp.Value;
+            OnStatChanged?.Invoke(kvp.Key, kvp.Value);
+        }
+
+        // Se elimina la llamada a playerHealth.DisableShieldBlockUpgrade(), ya que PlayerHealth
+        // ahora leerá directamente el valor de ShieldBlockUpgrade de este script.
 
         ReportDebug("Estadísticas del jugador reiniciadas a los valores base.", 1);
     }
@@ -75,15 +114,28 @@ public class PlayerStatsManager : MonoBehaviour
     /// <param name="roomsDuration">Cantidad de salas/habitaciones/enfrentamientos que debe durar.</param>
     public void ApplyModifier(StatType type, float amount, float duration = 0f, bool isPercentage = false, bool isTemporary = false, bool isByRooms = false, int roomsDuration = 0)
     {
-        float baseValue = baseStats[type];
-        float modifierValue = isPercentage ? baseValue * amount : amount;
+        // Se asegura de que el StatType exista para evitar KeyNotFoundException
+        if (!baseStats.ContainsKey(type))
+        {
+            ReportDebug($"Intento de aplicar un modificador a un StatType no inicializado: {type}", 2);
+            return;
+        }
+
+        float modifierValue = amount;
+
+        // Se calcula el valor del modificador si es un porcentaje.
+        // Se excluyen explícitamente los stats booleanos (como ShieldBlockUpgrade) para evitar cálculos incorrectos.
+        if (isPercentage && type != StatType.ShieldBlockUpgrade)
+        {
+            modifierValue = baseStats[type] * amount;
+        }
 
         currentStats[type] += modifierValue;
         OnStatChanged?.Invoke(type, currentStats[type]);
 
         ReportDebug($"[{type}] {(amount >= 0 ? "Buff" : "Debuff")} aplicado: " +
-                  $"{(isPercentage ? amount * 100 + "%" : amount.ToString())}. " +
-                  $"Nuevo valor: {currentStats[type]}", 1);
+                    $"{(isPercentage ? amount * 100 + "%" : amount.ToString())}. " +
+                    $"Nuevo valor: {currentStats[type]}", 1);
 
         if (!isTemporary) return; // Buff permanente => no se remueve automáticamente
 
@@ -119,6 +171,17 @@ public class PlayerStatsManager : MonoBehaviour
         ReportDebug($"[{type}] buff/debuff terminó tras {rooms} salas. Valor actual: {currentStats[type]}", 1);
     }
 
+    public float GetCurrentStat(StatType type)
+    {
+        if (currentStats.ContainsKey(type))
+        {
+            return currentStats[type];
+        }
+
+        ReportDebug($"Intento de obtener una estadística no inicializada: {type}", 2);
+        return 0f;
+    }
+
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     /// <summary> 
     /// Función de depuración para reportar mensajes en la consola de Unity. 
@@ -129,11 +192,11 @@ public class PlayerStatsManager : MonoBehaviour
     {
         switch (reportPriorityLevel)
         {
-            case 1: Debug.Log($"[PlayerStatsManager] {message}"); 
+            case 1: Debug.Log($"[PlayerStatsManager] {message}");
                 break;
-            case 2: Debug.LogWarning($"[PlayerStatsManager] {message}"); 
+            case 2: Debug.LogWarning($"[PlayerStatsManager] {message}");
                 break;
-            case 3: Debug.LogError($"[PlayerStatsManager] {message}"); 
+            case 3: Debug.LogError($"[PlayerStatsManager] {message}");
                 break;
             default: Debug.Log($"[PlayerStatsManager] {message}");
                 break;

@@ -39,14 +39,14 @@ public class Shield : MonoBehaviour
     /// <param name="owner"> Referencia al controlador del jugador </param>
     /// <param name="direction"> Orientación del escudo en la dirección del lanzamiento </param>
     /// <param name="canRebound"> Indica si el escudo puede rebotar entre enemigos </param>
-    public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds, float reboundDetectionRadius, int attackDamage, float speed, float distance)
+    public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds, float reboundDetectionRadius, float damage, float speed, float distance)
     {
         this.owner = owner;
         this.returnTarget = owner.transform;
         transform.forward = direction;
         startPosition = transform.position;
 
-        this.attackDamage = attackDamage;
+        this.attackDamage = (int)damage;
         this.baseSpeed = speed;
         this.maxDistance = distance;
         currentSpeed = baseSpeed;

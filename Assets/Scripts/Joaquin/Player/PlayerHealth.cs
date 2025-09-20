@@ -9,11 +9,11 @@ using UnityEngine.SceneManagement;
 public class PlayerHealth : MonoBehaviour
 {
     // Tipos de etapas de vida del jugador.
-    public enum LifeStage 
-    { 
-        Young, 
-        Adult, 
-        Elder 
+    public enum LifeStage
+    {
+        Young,
+        Adult,
+        Elder
     }
 
     [Header("References")]
@@ -39,18 +39,9 @@ public class PlayerHealth : MonoBehaviour
     private PlayerMeleeAttack playerMeleeAttack;
     private PlayerShieldController playerShieldController;
 
-    private void OnEnable()
+    private void Awake()
     {
-        PlayerStatsManager.OnStatChanged += HandleStatChanged;
-    }
-
-    private void OnDisable()
-    {
-        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
-    }
-
-    private void Start()
-    {
+        // Se asegura de que la referencia se obtenga antes de que se ejecute cualquier Start()
         statsManager = GetComponent<PlayerStatsManager>();
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerHealth. Usando vida máxima de fallback.", 2);
 
@@ -58,11 +49,22 @@ public class PlayerHealth : MonoBehaviour
         playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
         playerShieldController = GetComponent<PlayerShieldController>();
 
+        // Suscripción al evento en Awake para que siempre esté listo
+        PlayerStatsManager.OnStatChanged += HandleStatChanged;
+    }
+
+    private void Start()
+    {
         float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
         currentHealth = maxHealth;
 
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         UpdateLifeStage(true);
+    }
+
+    private void OnDisable()
+    {
+        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
     }
 
     /// <summary>
@@ -75,7 +77,7 @@ public class PlayerHealth : MonoBehaviour
         if (statType == StatType.MaxHealth)
         {
             float oldMaxHealth = Mathf.Max(1, statsManager.GetStat(StatType.MaxHealth));
-            float percentage = currentHealth / oldMaxHealth; 
+            float percentage = currentHealth / oldMaxHealth;
 
             currentHealth = Mathf.Clamp(newValue * percentage, 0, newValue);
             OnHealthChanged?.Invoke(currentHealth, newValue);
@@ -120,7 +122,7 @@ public class PlayerHealth : MonoBehaviour
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
         UpdateLifeStage();
-        
+
         if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageAmount} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);
     }
 
@@ -193,6 +195,23 @@ public class PlayerHealth : MonoBehaviour
         {
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
+    }
+
+    public float GetCurrentHealth()
+    {
+        return currentHealth;
+    }
+
+    public void EnableShieldBlockUpgrade()
+    {
+        HasShieldBlockUpgrade = true;
+        ReportDebug("La mejora de bloqueo de escudo ha sido activada.", 1);
+    }
+
+    public void DisableShieldBlockUpgrade()
+    {
+        HasShieldBlockUpgrade = false;
+        ReportDebug("La mejora de bloqueo de escudo ha sido desactivada.", 1);
     }
 
 
