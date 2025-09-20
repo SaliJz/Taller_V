@@ -44,13 +44,12 @@ public class PlayerStatsManager : MonoBehaviour
     {
         // Se asegura de que los diccionarios estén inicializados antes de Start
         InitializeStats();
+        if (playerStats != null) ResetStats();
     }
 
     private void Start()
     {
         playerHealth = FindAnyObjectByType<PlayerHealth>();
-        if (playerStats != null) ResetStats();
-        else ReportDebug("PlayerStats no está asignado en PlayerStatsManager.", 3);
     }
 
     /// <summary>
@@ -61,7 +60,6 @@ public class PlayerStatsManager : MonoBehaviour
     {
         if (playerStats == null)
         {
-            ReportDebug("PlayerStats no está asignado en el Inspector. No se pueden inicializar las estadísticas.", 3);
             return;
         }
 
@@ -93,11 +91,6 @@ public class PlayerStatsManager : MonoBehaviour
             currentStats[kvp.Key] = kvp.Value;
             OnStatChanged?.Invoke(kvp.Key, kvp.Value);
         }
-
-        // Se elimina la llamada a playerHealth.DisableShieldBlockUpgrade(), ya que PlayerHealth
-        // ahora leerá directamente el valor de ShieldBlockUpgrade de este script.
-
-        ReportDebug("Estadísticas del jugador reiniciadas a los valores base.", 1);
     }
 
     public float GetStat(StatType type) => currentStats.TryGetValue(type, out var value) ? value : 0;
@@ -117,7 +110,6 @@ public class PlayerStatsManager : MonoBehaviour
         // Se asegura de que el StatType exista para evitar KeyNotFoundException
         if (!baseStats.ContainsKey(type))
         {
-            ReportDebug($"Intento de aplicar un modificador a un StatType no inicializado: {type}", 2);
             return;
         }
 
@@ -133,10 +125,6 @@ public class PlayerStatsManager : MonoBehaviour
         currentStats[type] += modifierValue;
         OnStatChanged?.Invoke(type, currentStats[type]);
 
-        ReportDebug($"[{type}] {(amount >= 0 ? "Buff" : "Debuff")} aplicado: " +
-                    $"{(isPercentage ? amount * 100 + "%" : amount.ToString())}. " +
-                    $"Nuevo valor: {currentStats[type]}", 1);
-
         if (!isTemporary) return; // Buff permanente => no se remueve automáticamente
 
         if (isByRooms) StartCoroutine(RemoveModifierAfterRooms(type, modifierValue, roomsDuration));
@@ -149,8 +137,6 @@ public class PlayerStatsManager : MonoBehaviour
 
         currentStats[type] -= modifierValue;
         OnStatChanged?.Invoke(type, currentStats[type]);
-
-        ReportDebug($"[{type}] buff/debuff temporal terminó después de {duration} segundos. Valor actual: {currentStats[type]}", 1);
     }
 
     private IEnumerator RemoveModifierAfterRooms(StatType type, float modifierValue, int rooms)
@@ -167,8 +153,6 @@ public class PlayerStatsManager : MonoBehaviour
 
         currentStats[type] -= modifierValue;
         OnStatChanged?.Invoke(type, currentStats[type]);
-
-        ReportDebug($"[{type}] buff/debuff terminó tras {rooms} salas. Valor actual: {currentStats[type]}", 1);
     }
 
     public float GetCurrentStat(StatType type)
@@ -178,28 +162,6 @@ public class PlayerStatsManager : MonoBehaviour
             return currentStats[type];
         }
 
-        ReportDebug($"Intento de obtener una estadística no inicializada: {type}", 2);
         return 0f;
-    }
-
-    [System.Diagnostics.Conditional("UNITY_EDITOR")]
-    /// <summary> 
-    /// Función de depuración para reportar mensajes en la consola de Unity. 
-    /// </summary> 
-    /// <<param name="message">Mensaje a reportar.</param> >
-    /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
-    private static void ReportDebug(string message, int reportPriorityLevel)
-    {
-        switch (reportPriorityLevel)
-        {
-            case 1: Debug.Log($"[PlayerStatsManager] {message}");
-                break;
-            case 2: Debug.LogWarning($"[PlayerStatsManager] {message}");
-                break;
-            case 3: Debug.LogError($"[PlayerStatsManager] {message}");
-                break;
-            default: Debug.Log($"[PlayerStatsManager] {message}");
-                break;
-        }
     }
 }
