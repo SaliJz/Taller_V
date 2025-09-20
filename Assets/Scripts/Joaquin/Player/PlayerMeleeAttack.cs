@@ -21,7 +21,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     [SerializeField] private bool showGizmo = false;
     [SerializeField] private float gizmoDuration = 0.2f;
-    
+
     public int AttackDamage
     {
         get { return attackDamage; }

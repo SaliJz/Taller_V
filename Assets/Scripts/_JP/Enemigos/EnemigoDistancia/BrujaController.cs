@@ -13,7 +13,7 @@ public class Bruja_Controller : MonoBehaviour
     [Header("Parametros de IA")]
     public float maxAttackRange = 12f;         // distancia maxima desde donde la bruja quiere disparar
     public float keepDistance = 7f;            // distancia que intenta mantener (si el player se acerca, se aleja)
-    public float retreatOnInterruptTime = 0.9f;
+    public float retreatOnInterruptTime = 0.9f; // 
     public float postRecoveredRetreatTime = 1.2f;
 
     [Header("Busqueda de posicion de flanqueo")]

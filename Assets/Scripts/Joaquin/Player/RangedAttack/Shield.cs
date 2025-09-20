@@ -9,7 +9,9 @@ public class Shield : MonoBehaviour
 {
     [Header("Stats")]
     [SerializeField] private int attackDamage = 10;
-    [SerializeField] private float speed = 25f;
+    [SerializeField] private float baseSpeed = 25f;
+    [SerializeField] private float maxSpeed = 100f;
+    [SerializeField] private float acceleration = 5f;
     [SerializeField] private float maxDistance = 30f;
     [SerializeField] private LayerMask collisionLayers;
 
@@ -23,6 +25,7 @@ public class Shield : MonoBehaviour
     private enum ShieldState { Inactive, Thrown, Returning, Rebounding }
     private ShieldState currentState = ShieldState.Inactive;
 
+    private float currentSpeed;
     private Vector3 startPosition;
     private Transform returnTarget;
     private Transform currentTarget;
@@ -44,8 +47,9 @@ public class Shield : MonoBehaviour
         startPosition = transform.position;
 
         this.attackDamage = attackDamage;
-        this.speed = speed;
+        this.baseSpeed = speed;
         this.maxDistance = distance;
+        currentSpeed = baseSpeed;
 
         reboundCount = 0;
         this.canRebound = canRebound;
@@ -64,9 +68,11 @@ public class Shield : MonoBehaviour
     {
         if (currentState == ShieldState.Inactive) return;
 
+        currentSpeed = Mathf.Min(currentSpeed + acceleration * Time.deltaTime, maxSpeed);
+
         if (currentState == ShieldState.Thrown)
         {
-            transform.position += transform.forward * speed * Time.deltaTime;
+            transform.position += transform.forward * currentSpeed * Time.deltaTime;
 
             if (Vector3.Distance(startPosition, transform.position) >= maxDistance)
             {
@@ -82,7 +88,7 @@ public class Shield : MonoBehaviour
             }
 
             Vector3 directionToTarget = (currentTarget.position - transform.position).normalized;
-            transform.position += directionToTarget * speed * Time.deltaTime;
+            transform.position += directionToTarget * currentSpeed * Time.deltaTime;
             transform.forward = directionToTarget;
 
             if (Vector3.Distance(transform.position, currentTarget.position) < 1.0f)
@@ -93,7 +99,7 @@ public class Shield : MonoBehaviour
         else if (currentState == ShieldState.Returning)
         {
             Vector3 directionToTarget = (returnTarget.position - transform.position).normalized;
-            transform.position += directionToTarget * speed * 1.5f * Time.deltaTime;
+            transform.position += directionToTarget * currentSpeed * Time.deltaTime;
 
             if (Vector3.Distance(transform.position, returnTarget.position) < 1.0f)
             {
@@ -137,6 +143,7 @@ public class Shield : MonoBehaviour
                 float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, out isCritical);
 
                 healthController.TakeDamage(attackDamage);
+
 
                 ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de daño.", 1);
             }

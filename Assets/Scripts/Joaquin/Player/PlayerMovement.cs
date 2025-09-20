@@ -155,7 +155,7 @@ public class PlayerMovement : MonoBehaviour
 
         ApplyGravity();
 
-        if (Input.GetKeyDown(KeyCode.LeftShift) && dashCooldownTimer <= 0 && !IsDashing)
+        if (Input.GetKeyDown(KeyCode.Space) && dashCooldownTimer <= 0 && !IsDashing)
         {
             StartCoroutine(DashRoutine());
         }

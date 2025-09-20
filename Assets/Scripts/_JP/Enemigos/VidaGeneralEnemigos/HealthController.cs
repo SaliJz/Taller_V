@@ -50,6 +50,9 @@ public class HealthController : MonoBehaviour /*, IDamageable*/ // Descomenta ",
     public Image firstFillImage;      // opcional: imagen del fill para colorear (azul)
     public Image secondFillImage;     // opcional: imagen del fill para colorear (roja)
 
+    [Header("Robo de vida al jugador (opcional)")]
+    [SerializeField] private float healthStealAmount = 0f;
+
     // Callbacks
     public Action OnDamaged;
     public Action OnInterrupted;
@@ -66,8 +69,12 @@ public class HealthController : MonoBehaviour /*, IDamageable*/ // Descomenta ",
     public int MaxHealth { get { return Mathf.Max(0, firstMaxLife) + Mathf.Max(0, secondMaxLife); } }
     public int CurrentHealth { get { return Mathf.Max(0, firstCurrent) + Mathf.Max(0, secondCurrent); } }
 
+    private PlayerHealth playerHealth;
+
     void Awake()
     {
+        playerHealth = GameObject.FindWithTag("Player")?.GetComponent<PlayerHealth>(); 
+
         // Inicializa valores
         firstCurrent = Mathf.Clamp(firstMaxLife, 0, int.MaxValue);
         secondCurrent = Mathf.Clamp(secondMaxLife, 0, int.MaxValue);
@@ -221,6 +228,15 @@ public class HealthController : MonoBehaviour /*, IDamageable*/ // Descomenta ",
         else
         {
             Destroy(gameObject);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (playerHealth != null && healthStealAmount > 0f)
+        {
+            playerHealth.Heal(healthStealAmount);
+            Debug.Log($"El jugador ha robado {healthStealAmount} de vida al enemigo.");
         }
     }
 

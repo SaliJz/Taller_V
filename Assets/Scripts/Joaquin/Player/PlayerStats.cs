@@ -23,4 +23,7 @@ public class PlayerStats : ScriptableObject
     public float shieldMaxDistance = 30f;
     public int shieldMaxRebounds = 2;
     public float shieldReboundRadius = 15f;
+
+    [Header("Habilidades")]
+    public float HealthDrainAmount = 2f;
 }

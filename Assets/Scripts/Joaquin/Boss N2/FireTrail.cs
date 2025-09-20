@@ -1,0 +1,59 @@
+using UnityEngine;
+
+public class FireTrail : MonoBehaviour
+{
+    [SerializeField] private float damagePerSecond;
+    [SerializeField] private float lifetime = 5f;
+    [SerializeField] private float groundOffset = 0.01f;
+
+    public float DamagePerSecond
+    {
+        get { return damagePerSecond; }
+        set { damagePerSecond = value; }
+    }
+
+    private void Start()
+    {
+        AlignToGround();
+        Destroy(gameObject, lifetime);
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            PlayerHealth playerHealth = other.GetComponent<PlayerHealth>();
+            if (playerHealth != null)
+            {
+                playerHealth.TakeDamage(damagePerSecond * Time.deltaTime);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Realiza un Raycast hacia abajo para alinear el objeto con el suelo.
+    /// El suelo debe estar en la capa "Ground".
+    /// </summary>
+    private void AlignToGround()
+    {
+        Ray ray = new Ray(transform.position + Vector3.up * 5f, Vector3.down); // lanza desde un poco más arriba por seguridad
+        RaycastHit hit;
+
+        int groundLayer = LayerMask.GetMask("Ground");
+
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity, groundLayer))
+        {
+            transform.position = hit.point + Vector3.up * groundOffset;
+        }
+        else
+        {
+            Debug.LogWarning("[FireTrail] No se encontró suelo debajo del objeto. Revisa la capa 'Ground'.");
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawRay(transform.position + Vector3.up * 5f, Vector3.down * 10f);
+    }
+}

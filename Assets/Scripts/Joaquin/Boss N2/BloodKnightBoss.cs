@@ -1,4 +1,6 @@
 using System.Collections;
+using TMPro;
+using UnityEditor.Search;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.UI;
@@ -27,7 +29,7 @@ public class BloodKnightBoss : MonoBehaviour
     [Header("References")]
     [SerializeField] private Transform player;
     [SerializeField] private Animator animator;
-    [SerializeField] private ParticleSystem fireTrailEffect;
+    [SerializeField] private GameObject fireTrailPrefab;
     [SerializeField] private ParticleSystem armorGlowEffect;
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip sodomaChargeSound;
@@ -41,6 +43,12 @@ public class BloodKnightBoss : MonoBehaviour
     [Header("UI - Sliders (opcional)")]
     [SerializeField] private Slider firstLifeSlider;
     [SerializeField] private Image firstFillImage;
+
+    [Header("Robo de vida para el jugador")]
+    [SerializeField] private float healthStealAmount = 0f;
+
+    [Header("Debug Options")]
+    [SerializeField] private bool showDetailsOptions = false;
 
     #endregion
 
@@ -165,6 +173,8 @@ public class BloodKnightBoss : MonoBehaviour
         agent.isStopped = true;
         lastAttackTime = Time.time;
 
+        Vector3 startDashPosition =  transform.position;
+
         Vector3 directionToPlayer = (player.position - transform.position).normalized;
         transform.rotation = Quaternion.LookRotation(new Vector3(directionToPlayer.x, 0, directionToPlayer.z));
 
@@ -180,15 +190,21 @@ public class BloodKnightBoss : MonoBehaviour
         yield return new WaitForSeconds(1.5f);
         isVulnerableToCounter = false;
 
+        if (armorGlowEffect != null) armorGlowEffect.Stop();
+
         ReportDebug("El Blood Knight ha terminado de cargar 'Sodoma y Gomorra'.", 1);
 
         if (currentState == BossState.Stunned) yield break;
 
         if (animator != null) animator.SetTrigger("ExecuteSodoma");
         if (audioSource != null && sodomaAttackSound != null) audioSource.PlayOneShot(sodomaAttackSound);
-        if (fireTrailEffect != null) fireTrailEffect.Play();
 
-        yield return MoveToPosition(player.position, 0.4f);
+        Vector3 endDashPosition = player.position;
+        endDashPosition.y = transform.position.y;
+
+        yield return MoveToPosition(endDashPosition, 0.4f);
+
+        SpawnFireTrail(startDashPosition, endDashPosition);
 
         float distance = Vector3.Distance(transform.position, player.position);
         Vector3 dirToPlayer = (player.position - transform.position).normalized;
@@ -198,8 +214,6 @@ public class BloodKnightBoss : MonoBehaviour
         {
             if (playerHealth != null) playerHealth.TakeDamage(sodomaDamage);
         }
-
-        StartCoroutine(FireTrailRoutine());
 
         yield return new WaitForSeconds(2f);
         currentState = BossState.Idle;
@@ -217,11 +231,11 @@ public class BloodKnightBoss : MonoBehaviour
         lastAttackTime = Time.time;
 
         if (animator != null) animator.SetTrigger("StartApocalipsis");
-        if (audioSource != null && apocalipsisSound != null) audioSource.PlayOneShot(apocalipsisSound);
 
         for (int i = 0; i < apocalipsisAttacks; i++)
         {
             Vector3 targetPos = player.position + (Quaternion.Euler(0, Random.Range(0, 360), 0) * Vector3.forward * 5f);
+            targetPos.y = transform.position.y;
 
             yield return MoveToPosition(targetPos, 0.3f);
 
@@ -229,6 +243,7 @@ public class BloodKnightBoss : MonoBehaviour
             transform.rotation = Quaternion.LookRotation(new Vector3(directionToPlayer.x, 0, directionToPlayer.z));
 
             if (animator != null) animator.SetTrigger(i % 2 == 0 ? "Thrust" : "Slash");
+            if (audioSource != null && apocalipsisSound != null) audioSource.PlayOneShot(apocalipsisSound);
 
             if (Vector3.Distance(transform.position, player.position) < 4f)
             {
@@ -263,20 +278,24 @@ public class BloodKnightBoss : MonoBehaviour
         transform.position = target;
     }
 
-    private IEnumerator FireTrailRoutine()
+    private void SpawnFireTrail(Vector3 startPoint, Vector3 endPoint)
     {
-        float duration = 4f;
-        while (duration > 0)
-        {
-            if (Vector3.Distance(player.position, transform.position) < 2f)
-            {
-                if (playerHealth != null) playerHealth.TakeDamage(fireTrailDamage * Time.deltaTime);
-            }
-            duration -= Time.deltaTime;
-            yield return null;
-        }
+        GameObject trailObject = Instantiate(fireTrailPrefab, startPoint, Quaternion.identity);
 
-        if (fireTrailEffect != null) fireTrailEffect.Stop();
+        Vector3 centerPoint = (startPoint + endPoint) / 2f;
+        trailObject.transform.position = centerPoint;
+
+        Vector3 direction = endPoint - startPoint;
+        trailObject.transform.rotation = Quaternion.LookRotation(direction);
+
+        float distance = direction.magnitude;
+        trailObject.transform.localScale = new Vector3(trailObject.transform.localScale.x, trailObject.transform.localScale.y, distance);
+
+        FireTrail fireTrailScript = trailObject.GetComponent<FireTrail>();
+        if (fireTrailScript != null)
+        {
+            fireTrailScript.DamagePerSecond = fireTrailDamage;
+        }
     }
 
     public void OnPlayerCounterAttack()
@@ -285,7 +304,6 @@ public class BloodKnightBoss : MonoBehaviour
         {
             if (currentAttackCoroutine != null) StopCoroutine(currentAttackCoroutine);
             StartCoroutine(GetStunned());
-
             ReportDebug("El Blood Knight ha sido contraatacado y está aturdido.", 1);
         }
     }
@@ -293,6 +311,8 @@ public class BloodKnightBoss : MonoBehaviour
     private IEnumerator GetStunned()
     {
         ReportDebug("¡El Blood Knight ha sido aturdido por el contraataque del jugador!", 1);
+
+        if (currentAttackCoroutine != null) StopCoroutine(currentAttackCoroutine);
 
         if (audioSource != null && stunnedSound != null) audioSource.PlayOneShot(stunnedSound);
 
@@ -302,7 +322,6 @@ public class BloodKnightBoss : MonoBehaviour
 
         if (animator != null) animator.SetTrigger("Stunned");
         if (armorGlowEffect != null) armorGlowEffect.Stop();
-        if (fireTrailEffect != null) fireTrailEffect.Stop();
 
         yield return new WaitForSeconds(stunDuration);
 
@@ -388,6 +407,15 @@ public class BloodKnightBoss : MonoBehaviour
         ReportDebug("El Blood Knight ha sido derrotado.", 1);
     }
 
+    private void OnDestroy()
+    {
+        if (playerHealth != null && healthStealAmount > 0f)
+        {
+            playerHealth.Heal(healthStealAmount);
+            ReportDebug($"El jugador ha robado {healthStealAmount} de vida al enemigo.", 1);
+        }
+    }
+
     #endregion
 
     #region Debug
@@ -408,6 +436,36 @@ public class BloodKnightBoss : MonoBehaviour
 
         Gizmos.color = Color.magenta;
         Gizmos.DrawRay(transform.position, transform.forward * 3f); // Forward direction
+    }
+
+    private void OnGUI()
+    {
+        if (!showDetailsOptions) return;
+
+        GUI.Label(new Rect(10, 10, 300, 20), $"Estado Actual: {currentState}");
+        GUI.Label(new Rect(10, 30, 300, 20), $"Vida Actual: {currentHealth}/{maxHealth}");
+        GUI.Label(new Rect(10, 50, 300, 20), $"Vulnerable a Contraataque: {isVulnerableToCounter}");
+        if (currentState == BossState.Attacking && currentAttackCoroutine != null)
+        {
+            GUI.Label(new Rect(10, 70, 300, 20), $"Atacando...");
+        }
+        else
+        {
+            GUI.Label(new Rect(10, 70, 300, 20), $"No Atacando");
+        }
+
+        if (currentState == BossState.Stunned)
+        {
+            GUI.Label(new Rect(10, 90, 300, 20), $"Aturdido");
+        }
+        else
+        {
+            GUI.Label(new Rect(10, 90, 300, 20), $"No Aturdido");
+        }
+
+        GUI.Label(new Rect(10, 110, 300, 20), $"Último Ataque: {lastAttackTime:F2}s");
+
+        GUI.Label(new Rect(10, 130, 300, 20), $"Distancia al Jugador: {Vector3.Distance(transform.position, player.position):F2} unidades");
     }
 
     #endregion

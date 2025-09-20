@@ -6,6 +6,10 @@ using UnityEngine;
 public class ShieldSkill : MonoBehaviour
 {
     #region Variables
+
+    [Header("References")]
+    [SerializeField] private PlayerStatsManager statsManager;
+
     [HideInInspector] private PlayerMeleeAttack PMA;
     [HideInInspector] private PlayerShieldController PSC;
     [HideInInspector] private PlayerHealth PH;
@@ -16,10 +20,23 @@ public class ShieldSkill : MonoBehaviour
     private float BaseAttackMelee;
     private float BaseAttackShield;
     private float BaseSpeed;
-
+    private float healthDrainAmount;
     private float Timer;
+
     #endregion
+
     #region Logica
+
+    private void OnEnable()
+    {
+        PlayerStatsManager.OnStatChanged += HandleStatChanged;
+    }
+
+    private void OnDisable()
+    {
+        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
+    }
+
     void Start()
     {
         PMA = GetComponent<PlayerMeleeAttack>();
@@ -32,6 +49,19 @@ public class ShieldSkill : MonoBehaviour
         BaseAttackMelee = PMA.AttackDamage;
         BaseAttackShield = PSC.ShieldDamage;
         BaseSpeed = PM.MoveSpeed;
+    }
+
+    /// <summary>
+    /// Maneja los cambios de stats.
+    /// </summary>
+    /// <param name="statType">Tipo de estadística que ha cambiado.</param>
+    /// <param name="newValue">Nuevo valor de la estadística.</param>
+    private void HandleStatChanged(StatType statType, float newValue)
+    {
+        if (statType == StatType.HealthDrainAmount)
+        {
+            healthDrainAmount = newValue;
+        }
     }
 
     void Update()
@@ -69,24 +99,27 @@ public class ShieldSkill : MonoBehaviour
     {
         float moveBuff = 1f;
         float attackBuff = 1f;
-        int lifeDrain = 0;
+        int healthDrainBase = 0;
 
         switch (PH.CurrentLifeStage)
         {
             case PlayerHealth.LifeStage.Young:
                 moveBuff = 1.2f;
                 attackBuff = 1.1f;
-                lifeDrain = 2;
+                healthDrainBase = 2;
+                healthDrainAmount = healthDrainBase;
                 break;
             case PlayerHealth.LifeStage.Adult:
                 moveBuff = 1.1f;
                 attackBuff = 1.2f;
-                lifeDrain = 2;
+                healthDrainBase = 2;
+                healthDrainAmount = healthDrainBase;
                 break;
             case PlayerHealth.LifeStage.Elder:
                 moveBuff = 1.15f;
                 attackBuff = 1.15f;
-                lifeDrain = 1;
+                healthDrainBase = 1;
+                healthDrainAmount = healthDrainBase;
                 break;
         }
 
@@ -94,7 +127,7 @@ public class ShieldSkill : MonoBehaviour
         {
             if (Timer >= 1f)
             {
-                if (PH != null) PH.TakeDamage(lifeDrain);
+                if (PH != null) PH.TakeDamage(healthDrainAmount);
                 Timer = 0f;
             }
             PMA.AttackDamage = Mathf.RoundToInt(BaseAttackMelee * attackBuff);

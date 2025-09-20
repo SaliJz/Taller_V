@@ -17,7 +17,8 @@ public enum StatType
     ShieldSpeed,
     ShieldMaxDistance,
     ShieldMaxRebounds,
-    ShieldReboundRadius
+    ShieldReboundRadius,
+    HealthDrainAmount,
 }
 
 /// <summary>
@@ -53,6 +54,7 @@ public class PlayerStatsManager : MonoBehaviour
         baseStats[StatType.ShieldMaxDistance] = playerStats.shieldMaxDistance;
         baseStats[StatType.ShieldMaxRebounds] = playerStats.shieldMaxRebounds;
         baseStats[StatType.ShieldReboundRadius] = playerStats.shieldReboundRadius;
+        baseStats[StatType.HealthDrainAmount] = playerStats.HealthDrainAmount;
 
         foreach (var kvp in baseStats) currentStats[kvp.Key] = kvp.Value;
 
