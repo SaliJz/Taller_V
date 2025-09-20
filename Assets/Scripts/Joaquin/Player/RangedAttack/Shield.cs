@@ -36,15 +36,21 @@ public class Shield : MonoBehaviour
     /// <param name="owner"> Referencia al controlador del jugador </param>
     /// <param name="direction"> Orientación del escudo en la dirección del lanzamiento </param>
     /// <param name="canRebound"> Indica si el escudo puede rebotar entre enemigos </param>
-    public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound)
+    public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds, float reboundDetectionRadius, int attackDamage, float speed, float distance)
     {
         this.owner = owner;
         this.returnTarget = owner.transform;
         transform.forward = direction;
         startPosition = transform.position;
 
-        this.canRebound = canRebound;
+        this.attackDamage = attackDamage;
+        this.speed = speed;
+        this.maxDistance = distance;
+
         reboundCount = 0;
+        this.canRebound = canRebound;
+        this.maxRebounds = maxRebounds;
+        this.reboundDetectionRadius = reboundDetectionRadius;
         hitTargets.Clear();
 
         currentState = ShieldState.Thrown;
@@ -81,7 +87,7 @@ public class Shield : MonoBehaviour
 
             if (Vector3.Distance(transform.position, currentTarget.position) < 1.0f)
             {
-                ProcessHit(currentTarget);
+                PerformHitDetection(currentTarget);
             }
         }
         else if (currentState == ShieldState.Returning)
@@ -105,7 +111,7 @@ public class Shield : MonoBehaviour
 
         if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
         {
-            ProcessHit(other.transform);
+            PerformHitDetection(other.transform);
         }
     }
 
@@ -113,16 +119,45 @@ public class Shield : MonoBehaviour
     /// Función que maneja la lógica cuando el escudo golpea un objetivo.
     /// </summary>
     /// <param name="hitTransform"> Transform del objetivo golpeado </param>
-    private void ProcessHit(Transform hitTransform)
+    private void PerformHitDetection(Transform hitTransform)
     {
-        if (!hitTargets.Contains(hitTransform))
-        {
-            hitTargets.Add(hitTransform);
-        }
+        Collider[] hitEnemies = Physics.OverlapSphere(hitTransform.position, 0.5f, enemyLayer);
 
-        // Lógica de aplicar daño
-        // hitTransform.GetComponent<EnemyHealth>()?.TakeDamage(attackDamage);
-        Debug.Log("Shield hit " + hitTransform.name + " for " + attackDamage + " damage.");
+        foreach (Collider enemy in hitEnemies)
+        {
+            HealthController healthController = enemy.GetComponent<HealthController>();
+            if (healthController != null)
+            {
+                if (!hitTargets.Contains(hitTransform))
+                {
+                    hitTargets.Add(hitTransform);
+                }
+
+                bool isCritical;
+                float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, out isCritical);
+
+                healthController.TakeDamage(attackDamage);
+
+                ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de daño.", 1);
+            }
+
+            BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
+            if (bloodKnight != null)
+            {
+                if (!hitTargets.Contains(hitTransform))
+                {
+                    hitTargets.Add(hitTransform);
+                }
+
+                bool isCritical;
+                float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, out isCritical);
+
+                bloodKnight.TakeDamage(finalDamage, isCritical);
+                bloodKnight.OnPlayerCounterAttack();
+
+                ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
+            }
+        }
 
         Transform nextTarget = FindNextReboundTarget();
 
@@ -145,6 +180,7 @@ public class Shield : MonoBehaviour
     {
         if (!canRebound || reboundCount >= maxRebounds)
         {
+            ReportDebug("Maximo de rebotes alcanzado o rebotes desactivados.", 1);
             return null;
         }
 
@@ -172,6 +208,7 @@ public class Shield : MonoBehaviour
                 {
                     closestDistance = distanceToTarget;
                     bestTarget = targetCollider.transform;
+                    ReportDebug("Siguiente objetivo de rebote encontrado: " + bestTarget.name, 1);
                 }
             }
         }
@@ -182,5 +219,30 @@ public class Shield : MonoBehaviour
     private void StartReturning()
     {
         currentState = ShieldState.Returning;
+    }
+
+    [System.Diagnostics.Conditional("UNITY_EDITOR")]
+    /// <summary> 
+    /// Función de depuración para reportar mensajes en la consola de Unity. 
+    /// </summary> 
+    /// <<param name="message">Mensaje a reportar.</param> >
+    /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
+    private static void ReportDebug(string message, int reportPriorityLevel)
+    {
+        switch (reportPriorityLevel)
+        {
+            case 1:
+                Debug.Log($"[Shield] {message}");
+                break;
+            case 2:
+                Debug.LogWarning($"[Shield] {message}");
+                break;
+            case 3:
+                Debug.LogError($"[Shield] {message}");
+                break;
+            default:
+                Debug.Log($"[Shield] {message}");
+                break;
+        }
     }
 }

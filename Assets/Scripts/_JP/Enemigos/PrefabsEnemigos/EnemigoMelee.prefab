@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5954661627126369010}
   - component: {fileID: 7741207826711292087}
   - component: {fileID: 4096042943503863657}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: rojo
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -85,7 +85,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8346763215969808101}
   - component: {fileID: 3262052534920063936}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: SliderAzul
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -175,7 +175,7 @@ GameObject:
   - component: {fileID: 7436972781880345818}
   - component: {fileID: 6575919699622992448}
   - component: {fileID: 794333589837632350}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -248,7 +248,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6667469504236280567}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Fill Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -284,7 +284,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 495979016254774230}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: EnemigoMelee
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -319,7 +319,7 @@ GameObject:
   - component: {fileID: 482705378505404175}
   - component: {fileID: 2339683556590341775}
   - component: {fileID: 8939381282607121200}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -419,7 +419,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7409598725333050735}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Fill Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -456,7 +456,7 @@ GameObject:
   m_Component:
   - component: {fileID: 285737346479579854}
   - component: {fileID: 3978673199001606229}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: SliderRojo
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -552,9 +552,10 @@ GameObject:
   - component: {fileID: 2182417724540445189}
   - component: {fileID: 5288187523557899713}
   - component: {fileID: 991702491690522718}
-  m_Layer: 0
+  - component: {fileID: 4439023944143831375}
+  m_Layer: 7
   m_Name: EnemIgoMelee
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -761,7 +762,7 @@ GameObject:
   - component: {fileID: 7120001609018734209}
   - component: {fileID: 1270537222525631943}
   - component: {fileID: 6253209668633286711}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -836,7 +837,7 @@ GameObject:
   - component: {fileID: 2712654002960941879}
   - component: {fileID: 6679531215580596521}
   - component: {fileID: 3871310906048142265}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Azul
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -916,13 +917,33 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1190499053514161481, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 1714787143524643575, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
       propertyPath: m_Name
       value: EnemIgoMelee
       objectReference: {fileID: 0}
     - target: {fileID: 1714787143524643575, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1714787143524643575, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1714787143524643575, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
+    - target: {fileID: 2621632048972071671, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 3133463440418600215, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 3325393681154366128, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
       propertyPath: m_LocalPosition.x
@@ -964,6 +985,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4107998687517833847, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 4550881902405593534, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -972,6 +997,26 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6275619863373506623, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 6504265791982338739, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 6533524261974925522, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 7244498113728084098, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 8011516043504525757, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 8061952906269839428, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
       propertyPath: attackDamage
       value: 20
@@ -979,5 +1024,20 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1714787143524643575, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4439023944143831375}
   m_SourcePrefab: {fileID: 100100000, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+--- !u!114 &4439023944143831375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8225316006678984527}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e1e398882498b1449c445c72078dad2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

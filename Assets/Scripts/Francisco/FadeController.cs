@@ -20,6 +20,11 @@ public class FadeController : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        StartCoroutine(FadeIn());
+    }
+
     public IEnumerator FadeOut(Action onStart = null, Action<float> onUpdate = null, Action onComplete = null)
     {
         onStart?.Invoke();
@@ -27,7 +32,7 @@ public class FadeController : MonoBehaviour
         float timer = 0f;
         while (timer < fadeDuration)
         {
-            timer += Time.deltaTime;
+            timer += Time.unscaledDeltaTime;
             float alpha = Mathf.Lerp(0f, 1f, timer / fadeDuration);
             fade.alpha = alpha;
             onUpdate?.Invoke(alpha);
@@ -45,7 +50,7 @@ public class FadeController : MonoBehaviour
         float timer = 0f;
         while (timer < fadeDuration)
         {
-            timer += Time.deltaTime;
+            timer += Time.unscaledDeltaTime;
             float alpha = Mathf.Lerp(1f, 0f, timer / fadeDuration);
             fade.alpha = alpha;
             onUpdate?.Invoke(alpha);
