@@ -1,10 +1,15 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Events;
 using System.Collections;
 
 public class SceneController : MonoBehaviour
 {
     public static SceneController Instance;
+
+    [SerializeField] private KeyCode _inputKey;
+
+    public UnityEvent OnKeyPressed;
 
     private void Awake()
     {
@@ -15,6 +20,14 @@ public class SceneController : MonoBehaviour
         else
         {
             Destroy(gameObject);
+        }
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(_inputKey))
+        {
+            OnKeyPressed.Invoke();
         }
     }
 

@@ -18,11 +18,13 @@ public class PlayerHealth : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private PlayerStatsManager statsManager;
+    [SerializeField] private SpriteRenderer playerSpriteRenderer;
 
     [Header("Configuración de Vida")]
     [Tooltip("Vida máxima por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackMaxHealth = 100;
     [SerializeField] private float currentHealth;
+    [SerializeField] private float damageInvulnerabilityTime = 0.5f;
 
     [Header("Mejora de Escudo")]
     [SerializeField] private float shieldBlockCooldown = 18f;
@@ -30,6 +32,7 @@ public class PlayerHealth : MonoBehaviour
 
     public bool HasShieldBlockUpgrade { get; private set; } = false;
     public bool IsInvulnerable { get; set; } = false;
+    private bool isDamageInvulnerable = false;
     public LifeStage CurrentLifeStage { get; private set; }
 
     public static event Action<float, float> OnHealthChanged;
@@ -94,7 +97,7 @@ public class PlayerHealth : MonoBehaviour
     /// <param name="damageAmount"> Cantidad de daño a aplicar. </param>
     public void TakeDamage(float damageAmount)
     {
-        if (IsInvulnerable)
+        if (isDamageInvulnerable || IsInvulnerable)
         {
             ReportDebug("El jugador es invulnerable y no recibe daño.", 1);
             return;
@@ -110,20 +113,47 @@ public class PlayerHealth : MonoBehaviour
                 StartCoroutine(ShieldBlockCooldownRoutine());
                 return;
             }
-        }
+        } 
 
         float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
 
         currentHealth -= damageAmount;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
+        isDamageInvulnerable = true;
+        StartCoroutine(DamageInvulnerabilityRoutine());
+
         if (currentHealth <= 0) Die();
 
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
-
         UpdateLifeStage();
 
         if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageAmount} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);
+    }
+
+    private IEnumerator DamageInvulnerabilityRoutine()
+    {
+        isDamageInvulnerable = true;
+        ReportDebug($"El jugador es invulnerable por daño continuo durante {damageInvulnerabilityTime} segundos.", 1);
+
+        float blinkInterval = 0.1f;
+        float timer = 0f;
+
+        while (timer < damageInvulnerabilityTime)
+        {
+            playerSpriteRenderer.color = new Color(1f, 1f, 1f, 0.5f);
+            yield return new WaitForSeconds(blinkInterval);
+
+            playerSpriteRenderer.color = Color.white;
+            yield return new WaitForSeconds(blinkInterval);
+
+            timer += blinkInterval * 2; 
+        }
+
+        isDamageInvulnerable = false;
+        ReportDebug("La invulnerabilidad por daño ha terminado.", 1);
+
+        playerSpriteRenderer.color = Color.white;
     }
 
     // Función que maneja el cooldown del bloqueo del escudo.

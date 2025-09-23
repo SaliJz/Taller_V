@@ -256,7 +256,6 @@ MonoBehaviour:
   controller: {fileID: 0}
   mainCameraTransform: {fileID: 0}
   playerAnimator: {fileID: 0}
-  trailRenderer: {fileID: 0}
   playerHealth: {fileID: 0}
   moveSpeed: 5
   gravity: -9.81
@@ -280,7 +279,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   statsManager: {fileID: 0}
+  playerSpriteRenderer: {fileID: 853946800129297378}
   currentHealth: 0
+  damageInvulnerabilityTime: 0.5
   shieldBlockCooldown: 18
 --- !u!114 &3158206734398763717
 MonoBehaviour:
