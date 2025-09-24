@@ -5,6 +5,7 @@ public class Bruja_Projectile : MonoBehaviour
     public float speed = 12f;
     public int damage = 1;
     public float lifeTime = 5f;
+    public LayerMask collisionLayers;
     Vector3 direction;
 
     void Start()
@@ -28,6 +29,12 @@ public class Bruja_Projectile : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         if (other.CompareTag("Player"))
         {
             // Intentamos obtener PlayerHealth directamente o en los padres
