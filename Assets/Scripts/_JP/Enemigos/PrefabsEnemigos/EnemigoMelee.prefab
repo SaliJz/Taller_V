@@ -751,6 +751,7 @@ MonoBehaviour:
   secondLifeSlider: {fileID: 3978673199001606229}
   firstFillImage: {fileID: 3871310906048142265}
   secondFillImage: {fileID: 4096042943503863657}
+  healthStealAmount: 10
 --- !u!1 &8444995596670355130
 GameObject:
   m_ObjectHideFlags: 0
@@ -984,6 +985,10 @@ PrefabInstance:
     - target: {fileID: 3325393681154366128, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3387565927121833922, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
+      propertyPath: healthStealAmount
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 4107998687517833847, guid: fbdf8e31c9ddd574586a6d0a5c976d45, type: 3}
       propertyPath: m_Layer

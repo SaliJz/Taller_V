@@ -66,9 +66,11 @@ public class BloodKnightBoss : MonoBehaviour
     private bool isVulnerableToCounter = false;
 
     private PlayerHealth playerHealth;
+    private Coroutine bossAICoroutine;
+    private Coroutine stunCoroutine;
     private Coroutine currentAttackCoroutine;
-    //private Coroutine currentStunCoroutine;
     private Coroutine currentCriticalDamageCoroutine;
+    private Coroutine ensurePathCoroutine;
 
     #endregion
 
@@ -94,6 +96,15 @@ public class BloodKnightBoss : MonoBehaviour
         UpdateSlidersSafely();
     }
 
+    private void Update()
+    {
+        if (bossAICoroutine == null && currentHealth > 0f)
+        {
+            bossAICoroutine = StartCoroutine(BossAI());
+            ReportDebug("BossAI re-lanzada desde Update (auto-recover).", 2);
+        }
+    }
+
     private void InitializeBoss()
     {
         currentHealth = maxHealth;
@@ -104,7 +115,7 @@ public class BloodKnightBoss : MonoBehaviour
         if (player == null) player = GameObject.FindGameObjectWithTag("Player")?.transform;
         if (player != null) playerHealth = player.GetComponent<PlayerHealth>();
 
-        StartCoroutine(BossAI());
+        if (bossAICoroutine == null) bossAICoroutine = StartCoroutine(BossAI());
     }
 
     #endregion
@@ -121,6 +132,19 @@ public class BloodKnightBoss : MonoBehaviour
                 continue;
             }
 
+            if (player == null)
+            {
+                if (GameObject.FindGameObjectWithTag("Player") != null)
+                {
+                    player = GameObject.FindGameObjectWithTag("Player").transform;
+                }
+                else
+                {
+                    yield return new WaitForSeconds(0.5f);
+                    continue;
+                }
+            }
+
             float distanceToPlayer = Vector3.Distance(transform.position, player.position);
 
             if (distanceToPlayer > agent.stoppingDistance)
@@ -135,15 +159,18 @@ public class BloodKnightBoss : MonoBehaviour
                     if (animator != null) animator.SetBool("IsMoving", false);
                 }
 
-                if (Time.time > lastAttackTime + sodomaCooldown)
+                if (currentState != BossState.Attacking)
                 {
-                    currentAttackCoroutine = StartCoroutine(ExecuteSodomaYGomorra());
-                    yield return currentAttackCoroutine;
-                }
-                else
-                {
-                    currentAttackCoroutine = StartCoroutine(ExecuteApocalipsis());
-                    yield return currentAttackCoroutine;
+                    if (Time.time > lastAttackTime + sodomaCooldown)
+                    {
+                        currentAttackCoroutine = StartCoroutine(ExecuteSodomaYGomorra());
+                        yield return currentAttackCoroutine;
+                    }
+                    else
+                    {
+                        currentAttackCoroutine = StartCoroutine(ExecuteApocalipsis());
+                        yield return currentAttackCoroutine;
+                    }
                 }
             }
 
@@ -163,6 +190,23 @@ public class BloodKnightBoss : MonoBehaviour
 
     #region Attacks
 
+    private void StopCurrentAttackCoroutine()
+    {
+        if (currentAttackCoroutine != null)
+        {
+            try
+            {
+                StopCoroutine(currentAttackCoroutine);
+            }
+            catch
+            { 
+                /* defensivo: en caso de que ya esté detenido */ 
+            }
+            
+            currentAttackCoroutine = null;
+        }
+    }
+
     private IEnumerator ExecuteSodomaYGomorra()
     {
         ReportDebug("El Blood Knight está ejecutando 'Sodoma y Gomorra'.", 1);
@@ -171,21 +215,24 @@ public class BloodKnightBoss : MonoBehaviour
         agent.isStopped = true;
         lastAttackTime = Time.time;
 
-        Vector3 startDashPosition =  transform.position;
+        Vector3 startDashPosition = transform.position;
 
         Vector3 directionToPlayer = (player.position - transform.position).normalized;
         transform.rotation = Quaternion.LookRotation(new Vector3(directionToPlayer.x, 0, directionToPlayer.z));
 
         Vector3 backwardPos = transform.position - transform.forward * 3f;
-        float slideDuration = 0.5f;
-        yield return MoveToPosition(backwardPos, slideDuration);
+        float startSlideDuration = 0.5f;
+
+        yield return MoveToPosition(backwardPos, startSlideDuration);
 
         if (animator != null) animator.SetTrigger("ChargeSodoma");
         if (armorGlowEffect != null) armorGlowEffect.Play();
         if (audioSource != null && sodomaChargeSound != null) audioSource.PlayOneShot(sodomaChargeSound);
 
         isVulnerableToCounter = true;
+
         yield return new WaitForSeconds(1.5f);
+
         isVulnerableToCounter = false;
 
         if (armorGlowEffect != null) armorGlowEffect.Stop();
@@ -199,8 +246,9 @@ public class BloodKnightBoss : MonoBehaviour
 
         Vector3 endDashPosition = player.position;
         endDashPosition.y = transform.position.y;
+        float endDashDuration = 0.5f;
 
-        yield return MoveToPosition(endDashPosition, 0.4f);
+        yield return MoveToPosition(endDashPosition, endDashDuration);
 
         SpawnFireTrail(startDashPosition, endDashPosition);
 
@@ -264,16 +312,20 @@ public class BloodKnightBoss : MonoBehaviour
 
     private IEnumerator MoveToPosition(Vector3 target, float duration)
     {
+        agent.enabled = false;
+
         float time = 0;
         Vector3 startPosition = transform.position;
+
         while (time < duration)
         {
             transform.position = Vector3.Lerp(startPosition, target, time / duration);
             time += Time.deltaTime;
             yield return null;
         }
-
         transform.position = target;
+
+        ResynchronizeAgent();
     }
 
     private void SpawnFireTrail(Vector3 startPoint, Vector3 endPoint)
@@ -298,35 +350,74 @@ public class BloodKnightBoss : MonoBehaviour
 
     public void OnPlayerCounterAttack()
     {
-        if (isVulnerableToCounter)
+        if (!isVulnerableToCounter) return;
+        if (stunCoroutine != null)
         {
-            if (currentAttackCoroutine != null) StopCoroutine(currentAttackCoroutine);
-            StartCoroutine(GetStunned());
-            ReportDebug("El Blood Knight ha sido contraatacado y está aturdido.", 1);
+            ReportDebug("Stun ya en progreso: ignorando nuevo stun.", 1);
+            return;
         }
+
+        stunCoroutine = StartCoroutine(GetStunned());
+
+        ReportDebug("El Blood Knight ha sido contraatacado y se intentará aturdir.", 1);
     }
 
     private IEnumerator GetStunned()
     {
+        DumpState("EnterStun");
+        DumpPathInfo("EnterStun");
         ReportDebug("¡El Blood Knight ha sido aturdido por el contraataque del jugador!", 1);
 
-        if (currentAttackCoroutine != null) StopCoroutine(currentAttackCoroutine);
+        //currentState = BossState.Stunned;
+        //isVulnerableToCounter = false;
 
-        if (audioSource != null && stunnedSound != null) audioSource.PlayOneShot(stunnedSound);
+        //StopCurrentAttackCoroutine();
 
-        currentState = BossState.Stunned;
-        isVulnerableToCounter = false;
-        agent.isStopped = true;
+        //if (agent.enabled) agent.isStopped = true;
 
         if (animator != null) animator.SetTrigger("Stunned");
         if (armorGlowEffect != null) armorGlowEffect.Stop();
+        if (audioSource != null && stunnedSound != null) audioSource.PlayOneShot(stunnedSound);
 
-        yield return new WaitForSeconds(stunDuration);
+        float timer = 0f;
+        while (timer < stunDuration)
+        {
+            if (currentHealth <= 0f) break;
+            timer += Time.deltaTime;
+            yield return null;
+        }
 
-        currentState = BossState.Idle;
-        lastAttackTime = Time.time;
+        //if (bossAICoroutine == null) bossAICoroutinse = StartCoroutine(BossAI());
+
+        //ResynchronizeAgent();
+        //currentState = BossState.Idle;
+        //lastAttackTime = Time.time;
+
+        DumpState("ExitStun");
+        DumpPathInfo("ExitStun");
+        stunCoroutine = null;
 
         ReportDebug("El Blood Knight se ha recuperado del aturdimiento.", 1);
+    }
+
+    private void ResynchronizeAgent()
+    {
+        Vector3 samplePosition = transform.position - new Vector3(0, agent.baseOffset, 0);
+
+        if (NavMesh.SamplePosition(samplePosition, out NavMeshHit hit, 2.0f, NavMesh.AllAreas))
+        {
+            if (!agent.enabled) agent.enabled = true;
+
+            agent.Warp(hit.position);
+            agent.isStopped = false;
+            agent.ResetPath();
+
+            ReportDebug($"Agente resincronizado en NavMesh en la posición {hit.position}", 1);
+        }
+        else
+        {
+            ReportDebug($"FALLO CRÍTICO: No se encontró NavMesh cerca de {transform.position} para resincronizar.", 3);
+        }
     }
 
     #endregion
@@ -377,7 +468,7 @@ public class BloodKnightBoss : MonoBehaviour
         }
     }
 
-    void UpdateSlidersSafely()
+    private void UpdateSlidersSafely()
     {
         if (firstLifeSlider != null)
         {
@@ -417,6 +508,23 @@ public class BloodKnightBoss : MonoBehaviour
     #endregion
 
     #region Debug
+
+    private void DumpState(string context)
+    {
+        float dist = player != null ? Vector3.Distance(transform.position, player.position) : -1f;
+        ReportDebug($"{context} | state:{currentState} | bossAICoroutine:{bossAICoroutine != null} | stunCoroutine:{stunCoroutine != null} | agent.enabled:{(agent != null ? agent.enabled : false)} | hasPath:{(agent != null ? agent.hasPath : false)} | isStopped:{(agent != null ? agent.isStopped : false)} | vel:{(agent != null ? agent.velocity.magnitude : 0f)} | dist:{dist:F2}", 1);
+    }
+
+    private void DumpPathInfo(string context)
+    {
+        if (agent == null)
+        {
+            ReportDebug($"{context} | agent null", 1);
+            return;
+        }
+
+        ReportDebug($"{context} | hasPath:{agent.hasPath} | pathPending:{agent.pathPending} | pathStatus:{agent.pathStatus} | remaining:{agent.remainingDistance:F2} | nextPos:{agent.nextPosition} | baseOffset:{agent.baseOffset}", 1);
+    }
 
     private void OnDrawGizmos()
     {

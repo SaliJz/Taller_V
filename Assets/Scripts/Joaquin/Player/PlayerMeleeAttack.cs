@@ -117,7 +117,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     /// <summary>
     /// Función que realiza la detección de golpes en un área definida alrededor del punto de impacto.
     /// </summary>
-    public void PerformHitDetection()
+    public void PerformHitDetection()   
     {
         Collider[] hitEnemies = Physics.OverlapSphere(hitPoint.position, hitRadius, enemyLayer);
 
@@ -127,7 +127,7 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (healthController != null)
             {
                 bool isCritical;
-                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalDamage, out isCritical);
+                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
 
                 healthController.TakeDamage(finalDamage);
 
@@ -138,7 +138,7 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (bloodKnight != null)
             {
                 bool isCritical;
-                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalDamage, out isCritical);
+                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
 
                 bloodKnight.TakeDamage(finalDamageWithCrit, isCritical);
                 bloodKnight.OnPlayerCounterAttack();

@@ -13,6 +13,17 @@ public class BloodKnightVisualEffects : MonoBehaviour
     [SerializeField] private GameObject damageNumberPrefab;
     [SerializeField] private Transform damageNumberParent;
 
+    private void Start()
+    {
+        foreach (Renderer renderer in armorPieces)
+        {
+            if (renderer != null && normalMaterial != null)
+            {
+                renderer.material = normalMaterial;
+            }
+        }
+    }
+
     public void StartArmorGlow()
     {
         foreach (Renderer renderer in armorPieces)

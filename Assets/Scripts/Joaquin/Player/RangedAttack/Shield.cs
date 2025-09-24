@@ -140,10 +140,9 @@ public class Shield : MonoBehaviour
                 }
 
                 bool isCritical;
-                float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, out isCritical);
+                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
 
                 healthController.TakeDamage(attackDamage);
-
 
                 ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de daño.", 1);
             }
@@ -157,12 +156,12 @@ public class Shield : MonoBehaviour
                 }
 
                 bool isCritical;
-                float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, out isCritical);
+                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
 
-                bloodKnight.TakeDamage(finalDamage, isCritical);
+                bloodKnight.TakeDamage(finalDamageWithCrit, isCritical);
                 bloodKnight.OnPlayerCounterAttack();
 
-                ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
+                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daño.", 1);
             }
         }
 
