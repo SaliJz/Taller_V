@@ -21,8 +21,14 @@ public class Bruja_Controller : MonoBehaviour
     public float flankDistance = 9f;           // distancia objetivo alrededor del player para flanquear
     public float flankSampleRadius = 2f;       // variacion para buscar posiciones navegables
 
+    // Nueva variable para el retardo
+    [Header("Retardo de reaccion")]
+    public float retreatReactionDelay = 0.5f;
+
     bool isOverwhelmed = false;
     Coroutine aiRoutine;
+
+    private float timePlayerBecameTooClose = -1f;
 
     void Start()
     {
@@ -92,26 +98,37 @@ public class Bruja_Controller : MonoBehaviour
             {
                 if (shooter != null) shooter.StopAttackCycle();
 
-                // Solo pedir alejamiento si no estamos ya navegando hacia una posición que nos aleje.
-                Vector3 desiredAway = transform.position;
-                if (playerT != null)
+                if (timePlayerBecameTooClose < 0f)
                 {
-                    Vector3 awayDir = (transform.position - playerT.position).normalized;
-                    if (awayDir.sqrMagnitude < 0.001f) awayDir = transform.forward;
-                    desiredAway = transform.position + awayDir * (movimiento != null ? movimiento.retreatDistance : 1f);
+                    timePlayerBecameTooClose = Time.time;
                 }
-                // Si no sabemos la posicion del player, igual pedimos el movimiento normal de alejamiento
-                if (movimiento != null && !movimiento.IsNavigatingTo(desiredAway, 0.7f))
+
+                if (Time.time >= timePlayerBecameTooClose + retreatReactionDelay)
                 {
-                    movimiento.MoveAwayFromPlayer();
-                }
-                else if (movimiento != null && playerT == null)
-                {
-                    movimiento.MoveAwayFromPlayer();
+                    // Solo pedir alejamiento si no estamos ya navegando hacia una posición que nos aleje.
+                    Vector3 desiredAway = transform.position;
+                    if (playerT != null)
+                    {
+                        Vector3 awayDir = (transform.position - playerT.position).normalized;
+                        if (awayDir.sqrMagnitude < 0.001f) awayDir = transform.forward;
+                        desiredAway = transform.position + awayDir * (movimiento != null ? movimiento.retreatDistance : 1f);
+                    }
+                    // Si no sabemos la posicion del player, igual pedimos el movimiento normal de alejamiento
+                    if (movimiento != null && !movimiento.IsNavigatingTo(desiredAway, 0.7f))
+                    {
+                        movimiento.MoveAwayFromPlayer();
+                    }
+                    else if (movimiento != null && playerT == null)
+                    {
+                        movimiento.MoveAwayFromPlayer();
+                    }
                 }
             }
             else
             {
+                // si el player se aleja, reseteamos el tiempo
+                timePlayerBecameTooClose = -1f;
+
                 // fuera de keepDistance
                 if (dist > maxAttackRange)
                 {
@@ -142,7 +159,6 @@ public class Bruja_Controller : MonoBehaviour
                     else
                     {
                         if (shooter != null) shooter.StopAttackCycle();
-
                         Vector3 flankPos;
                         if (FindFlankPosition(out flankPos))
                         {
@@ -170,7 +186,6 @@ public class Bruja_Controller : MonoBehaviour
                     }
                 }
             }
-
             yield return new WaitForFixedUpdate();
         }
     }
@@ -185,30 +200,22 @@ public class Bruja_Controller : MonoBehaviour
 
         Vector3 fireOffset = (shooter.firePoint != null) ? (shooter.firePoint.position - transform.position) : Vector3.zero;
 
+        // Búsqueda de posiciones de flanqueo en un círculo alrededor del player
         for (int i = 0; i < flankAngleSteps; i++)
         {
             float angle = (360f / flankAngleSteps) * i;
-            Vector3 dir = new Vector3(Mathf.Cos(angle * Mathf.Deg2Rad), 0f, Mathf.Sin(angle * Mathf.Deg2Rad));
-            Vector3 candidate = playerTransform.position + dir * flankDistance;
+            Vector3 desiredFlankDir = Quaternion.Euler(0, angle, 0) * (playerTransform.position - transform.position).normalized;
+            Vector3 desiredFlankPos = playerTransform.position + desiredFlankDir * flankDistance;
 
-            // samplear navmesh cerca del candidato
-            NavMeshHit hit;
-            if (NavMesh.SamplePosition(candidate, out hit, flankSampleRadius, NavMesh.AllAreas))
+            Vector3 navFlankPos;
+            if (movimiento.IsNavPositionReachable(desiredFlankPos, out navFlankPos))
             {
-                Vector3 navPos = hit.position;
-
-                // simular desde esa posicion si la bruja (mas el offset del firepoint) tendria LOS
-                Vector3 simulatedFirePos = navPos + fireOffset;
-
-                if (Vector3.Distance(simulatedFirePos, playerTransform.position) > maxAttackRange * 1.2f)
-                {
-                    // si desde alli esta demasiado lejos, ignorar
-                    continue;
-                }
-
+                // simular la posicion con el offset del firepoint
+                Vector3 simulatedFirePos = navFlankPos + fireOffset;
+                // si desde alli tendria LOS
                 if (shooter.HasLineOfSightFrom(simulatedFirePos))
                 {
-                    result = navPos;
+                    result = navFlankPos;
                     return true;
                 }
             }
@@ -246,7 +253,36 @@ public class Bruja_Controller : MonoBehaviour
     void HandleRecovered()
     {
         isOverwhelmed = false;
-        if (movimiento != null) movimiento.RetreatForSeconds(postRecoveredRetreatTime, 1.1f);
+        if (movimiento != null)
+        {
+            movimiento.RetreatForSeconds(postRecoveredRetreatTime, 1f);
+        }
+        // si la IA esta en ciclo de ataque, se reanuda
+        if (shooter != null) shooter.StartAttackCycle();
+    }
+
+    void OnDrawGizmos()
+    {
+        if (movimiento != null && movimiento.player != null)
+        {
+            // dibujar linea de KeepDistance
+            Color c = Color.yellow;
+            c.a = 0.5f;
+            Gizmos.color = c;
+            Gizmos.DrawWireSphere(movimiento.player.position, keepDistance);
+
+            // dibujar linea de MaxAttackRange
+            c = Color.red;
+            c.a = 0.5f;
+            Gizmos.color = c;
+            Gizmos.DrawWireSphere(movimiento.player.position, maxAttackRange);
+
+            // dibujar linea de FlankDistance
+            c = Color.cyan;
+            c.a = 0.5f;
+            Gizmos.color = c;
+            Gizmos.DrawWireSphere(movimiento.player.position, flankDistance);
+        }
     }
 }
 

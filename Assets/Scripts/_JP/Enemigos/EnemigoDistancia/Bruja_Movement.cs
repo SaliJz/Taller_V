@@ -101,13 +101,11 @@ public class Bruja_Movement : MonoBehaviour
     }
 
     // Conversor seguro: intenta samplear navmesh y devuelve true si encontró una posición navegable
-    bool TryGetNavPosition(Vector3 worldPoint, out Vector3 navPos, float sampleRadius = -1f)
+    public bool IsNavPositionReachable(Vector3 position, out Vector3 navPos)
     {
-        navPos = worldPoint;
-        if (agent == null) return false;
-        float radius = (sampleRadius > 0f) ? sampleRadius : navSampleMaxDistance;
+        navPos = transform.position;
         NavMeshHit hit;
-        if (NavMesh.SamplePosition(worldPoint, out hit, radius, NavMesh.AllAreas))
+        if (NavMesh.SamplePosition(position, out hit, navSampleMaxDistance, NavMesh.AllAreas))
         {
             navPos = hit.position;
             return true;
@@ -122,7 +120,7 @@ public class Bruja_Movement : MonoBehaviour
 
         Vector3 navPos;
         // 1) intento directo
-        if (TryGetNavPosition(worldTarget, out navPos, sampleRadius))
+        if (IsNavPositionReachable(worldTarget, out navPos))
         {
             if (!IsNavigatingTo(navPos, 0.1f))
             {
@@ -140,7 +138,7 @@ public class Bruja_Movement : MonoBehaviour
             float ang = (360f / fallbackSamples) * i;
             Vector3 offset = new Vector3(Mathf.Cos(ang * Mathf.Deg2Rad), 0f, Mathf.Sin(ang * Mathf.Deg2Rad)) * fallbackRadius;
             Vector3 alt = worldTarget + offset;
-            if (TryGetNavPosition(alt, out navPos, sampleRadius))
+            if (IsNavPositionReachable(alt, out navPos))
             {
                 if (!IsNavigatingTo(navPos, 0.1f))
                 {
@@ -189,14 +187,11 @@ public class Bruja_Movement : MonoBehaviour
     public void MoveToPosition(Vector3 position)
     {
         if (agent == null) return;
-
         // Evitamos reasignar si ya vamos a esa posición
         if (IsNavigatingTo(position, 0.5f)) return;
-
         isAtDestination = false;
         agent.isStopped = false;
         agent.speed = moveSpeed;
-
         TrySetNavDestination(position, navSampleMaxDistance);
     }
 
@@ -206,63 +201,46 @@ public class Bruja_Movement : MonoBehaviour
         if (player == null || agent == null) return;
         isAtDestination = false;
 
-        Vector3 dir = (transform.position - player.position);
-        dir.y = 0f;
-        if (dir.sqrMagnitude < 0.01f) dir = transform.forward;
+        // 1) Calcular la dirección para alejarse del player
+        Vector3 awayDirection = (transform.position - player.position).normalized;
+        Vector3 desiredPosition = transform.position + awayDirection * retreatDistance;
 
-        Vector3 desired = transform.position + dir.normalized * retreatDistance;
-
-        // Intento encontrar posición navegable cerca de "desired"
         Vector3 navPos;
-        bool found = TryGetNavPosition(desired, out navPos, Mathf.Max(navSampleMaxDistance, retreatDistance * 0.5f));
+        bool found = false;
+        float currentDist = Vector3.Distance(transform.position, player.position);
 
-        if (!found)
+        // 2) Intentar encontrar una posición navegable directamente en la dirección de retirada
+        if (IsNavPositionReachable(desiredPosition, out navPos))
         {
-            // si el punto directo no es navegable, pruebo a lo largo de la dirección en pasos decrecientes
-            const int steps = 6;
-            for (int s = 1; s <= steps && !found; s++)
-            {
-                float factor = 1f - (s / (float)(steps + 1));
-                Vector3 test = transform.position + dir.normalized * (retreatDistance * factor);
-                if (TryGetNavPosition(test, out navPos, Mathf.Max(navSampleMaxDistance, 1f)))
-                {
-                    found = true;
-                    break;
-                }
-            }
+            found = true;
         }
-
-        // Si se encontró una posición navegable, verificamos que (aproximadamente) aumente la distancia al player,
-        // si no, intentamos muestrear puntos alrededor para buscar uno que sí aumente la distancia.
-        if (found)
+        else
         {
-            float currentDist = Vector3.Distance(transform.position, player.position);
-            float newDist = Vector3.Distance(navPos, player.position);
-
-            if (newDist < currentDist + 0.2f) // no aumentó lo suficiente
+            // 3) Si el punto directo no es navegable, intentar encontrar un punto en un semicírculo detrás de la bruja
+            const int samples = 10;
+            float maxAngle = 100f; // ángulo para el semicírculo de búsqueda
+            for (int i = 0; i < samples; i++)
             {
-                // fallback: samplear en un anillo alrededor del player buscando puntos navegables y más lejanos
-                for (int i = 0; i < fallbackSamples; i++)
+                float angle = -maxAngle + (maxAngle * 2f / samples) * i;
+                Quaternion rotation = Quaternion.Euler(0, angle, 0);
+                Vector3 testDirection = rotation * awayDirection;
+                Vector3 testPosition = transform.position + testDirection * retreatDistance;
+                if (IsNavPositionReachable(testPosition, out navPos))
                 {
-                    float ang = (360f / fallbackSamples) * i;
-                    Vector3 samplePoint = player.position + new Vector3(Mathf.Cos(ang * Mathf.Deg2Rad), 0f, Mathf.Sin(ang * Mathf.Deg2Rad)) * (retreatDistance + 0.5f);
-                    if (TryGetNavPosition(samplePoint, out navPos, fallbackRadius))
+                    // Comprobar si la nueva posición aumenta la distancia al player
+                    if (Vector3.Distance(navPos, player.position) > currentDist + 0.5f)
                     {
-                        float candidateDist = Vector3.Distance(navPos, player.position);
-                        if (candidateDist > currentDist + 0.5f)
-                        {
-                            found = true;
-                            break;
-                        }
+                        found = true;
+                        break;
                     }
                 }
             }
         }
 
+        // 4) Si se encontró un destino válido, establecerlo.
         if (found)
         {
-            // No reasignar si ya estamos navegando hacia ese navPos
-            if (!IsNavigatingTo(navPos, 0.1f))
+            if (!IsNavigatingTo(navPos, 0.5f))
             {
                 agent.isStopped = false;
                 agent.speed = retreatSpeed;
@@ -272,63 +250,60 @@ public class Bruja_Movement : MonoBehaviour
         }
         else
         {
-            // Como último recurso, si no hay punto navegable que aumente distancia, intentamos marcharnos en la dirección local (aunque sea parcial)
-            Vector3 fallback = transform.position + dir.normalized * (retreatDistance * 0.4f);
-            TrySetNavDestination(fallback, navSampleMaxDistance);
-            agent.speed = retreatSpeed;
+            // 5) Si no se encontró un destino de retirada válido, simplemente detenerse.
+            // Esto evita que el agente intente moverse a un punto inalcanzable.
+            StopMoving();
         }
     }
 
-    // Detener movimiento inmediatamente (usar para que no haya jitter)
-    public void StopMoving()
-    {
-        if (agent == null) return;
-        agent.isStopped = true;
-        agent.ResetPath();
-        agent.velocity = Vector3.zero;
-        isAtDestination = true;
-    }
-
-    // pausa / reanudar
+    // Pausar el movimiento
     public void PauseMovement()
     {
-        if (agent == null) return;
-        if (isPaused) return;
-        isPaused = true;
-        hadPathBeforePause = agent.hasPath && !agent.isStopped;
-        if (hadPathBeforePause) lastDestination = agent.destination;
-        StopMoving();
+        if (agent != null && !isPaused)
+        {
+            if (agent.hasPath)
+            {
+                hadPathBeforePause = true;
+                lastDestination = agent.destination;
+            }
+            agent.isStopped = true;
+            isPaused = true;
+        }
     }
 
+    // Reanudar el movimiento
     public void ResumeMovement()
     {
-        if (agent == null) return;
-        if (!isPaused) return;
-        isPaused = false;
-        isAtDestination = false;
-        agent.isStopped = false;
-
-        if (hadPathBeforePause)
+        if (agent != null && isPaused)
         {
-            TrySetNavDestination(lastDestination, navSampleMaxDistance);
+            isPaused = false;
+            agent.isStopped = false;
+            if (hadPathBeforePause)
+            {
+                agent.SetDestination(lastDestination);
+            }
         }
-        else if (player != null)
-        {
-            TrySetNavDestination(player.position, navSampleMaxDistance);
-        }
-
-        hadPathBeforePause = false;
-        lastDestination = Vector3.zero;
     }
 
-    // Retirada rapida por interrupcion: alejarse un tiempo determinado
+    public void StopMoving()
+    {
+        if (agent != null)
+        {
+            if (agent.hasPath) agent.ResetPath();
+            agent.isStopped = true;
+            agent.velocity = Vector3.zero;
+            isAtDestination = true;
+        }
+    }
+
+    // Corrutina para alejarse por un tiempo determinado
     public void RetreatForSeconds(float seconds, float extraMultiplier = 1f)
     {
         if (retreatCoroutine != null) StopCoroutine(retreatCoroutine);
-        retreatCoroutine = StartCoroutine(RetreatRoutine(seconds, extraMultiplier));
+        retreatCoroutine = StartCoroutine(RetreatCoroutine(seconds, extraMultiplier));
     }
 
-    IEnumerator RetreatRoutine(float seconds, float extraMultiplier)
+    IEnumerator RetreatCoroutine(float seconds, float extraMultiplier = 1f)
     {
         float t = 0f;
         float savedSpeed = agent.speed;
@@ -353,33 +328,11 @@ public class Bruja_Movement : MonoBehaviour
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
     }
 
-    // Obtener distancia actual al player (posición transform)
+    // Obtener distancia actual al player
     public float DistanceToPlayer()
     {
         if (player == null) return float.MaxValue;
         return Vector3.Distance(transform.position, player.position);
-    }
-
-    // Devuelve true si una posicion dada es navegable (samplea el navmesh)
-    public bool IsNavPositionReachable(Vector3 position, out Vector3 navPos)
-    {
-        navPos = transform.position;
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(position, out hit, navSampleMaxDistance, NavMesh.AllAreas))
-        {
-            navPos = hit.position;
-            return true;
-        }
-        return false;
-    }
-
-    // Draw gizmos para debug
-    void OnDrawGizmosSelected()
-    {
-        Gizmos.color = new Color(0.2f, 0.8f, 0.2f, 0.15f);
-        Gizmos.DrawWireSphere(transform.position, retreatDistance);
-        Gizmos.color = new Color(0.8f, 0.2f, 0.2f, 0.12f);
-        Gizmos.DrawWireSphere(transform.position, navSampleMaxDistance);
     }
 }
 
