@@ -1,6 +1,7 @@
 // MeleeEnemyController.cs
 using UnityEngine;
 using UnityEngine.AI;
+using System;
 
 /// <summary>
 /// Control principal del enemigo (movimiento, estados, interacción con AttackManager/HitboxSpawner).
@@ -21,22 +22,38 @@ public class MeleeEnemyController : MonoBehaviour, IDamageable
     public int attackDamage = 1;
 
     [Header("Vida / recibir")]
-    public int maxHealth = 10;
+    public float maxHealth = 10;
     public float receiveResetTime = 1.0f;
     public Renderer[] renderersToColor;
 
-    NavMeshAgent agent;
-    AttackManager attackManager;
+    private NavMeshAgent agent;
+    private AttackManager attackManager;
     HitboxSpawner spawner;
 
-    int currentHealth;
-    float receiveTimer = 0f;
-    Color[] originalColors;
+    private float currentHealth;
+    private float receiveTimer = 0f;
+    private Color[] originalColors;
 
-    enum State { Chase, Receiving, Dead }
-    State state = State.Chase;
+    private enum State { Chase, Receiving, Dead }
+    private State state = State.Chase;
 
-    void Awake()
+    public float CurrentHealth
+    {
+        get => currentHealth;
+        private set
+        {
+            if (currentHealth != value)
+            {
+                currentHealth = value;
+            }
+        }
+    }
+
+    public float MaxHealth => maxHealth;
+
+    public event Action<GameObject> OnDeath;
+
+    private void Awake()
     {
         GameObject go = GameObject.FindWithTag("Player");
         if (go != null)
@@ -71,7 +88,7 @@ public class MeleeEnemyController : MonoBehaviour, IDamageable
     }
 
     // --- FIX: sincronizar posición del NavMeshAgent con el Transform para evitar "teletransporte" al play/instanciar ---
-    void Start()
+    private void Start()
     {
         if (agent != null)
         {
@@ -93,7 +110,7 @@ public class MeleeEnemyController : MonoBehaviour, IDamageable
         }
     }
 
-    void Update()
+    private void Update()
     {
         if (state == State.Dead) return;
 
@@ -157,7 +174,7 @@ public class MeleeEnemyController : MonoBehaviour, IDamageable
         }
     }
 
-    public void TakeDamage(int amount)
+    public void TakeDamage(float amount, bool isCritical = false)
     {
         if (state == State.Dead) return;
 
@@ -179,14 +196,14 @@ public class MeleeEnemyController : MonoBehaviour, IDamageable
         }
     }
 
-    void EndReceiving()
+    private void EndReceiving()
     {
         if (state == State.Dead) return;
         state = State.Chase;
         agent.isStopped = false;
     }
 
-    void Die()
+    private void Die()
     {
         state = State.Dead;
         agent.isStopped = true;
@@ -195,7 +212,7 @@ public class MeleeEnemyController : MonoBehaviour, IDamageable
         Destroy(gameObject, 1.0f);
     }
 
-    void SetColor(Color c)
+    private void SetColor(Color c)
     {
         if (renderersToColor == null) return;
         foreach (var r in renderersToColor)
@@ -205,7 +222,7 @@ public class MeleeEnemyController : MonoBehaviour, IDamageable
         }
     }
 
-    void SetColorToOriginal()
+    private void SetColorToOriginal()
     {
         if (renderersToColor == null || originalColors == null) return;
         for (int i = 0; i < renderersToColor.Length; i++)
@@ -215,186 +232,3 @@ public class MeleeEnemyController : MonoBehaviour, IDamageable
         }
     }
 }
-
-
-//// MeleeEnemyController.cs
-//using UnityEngine;
-//using UnityEngine.AI;
-
-///// <summary>
-///// Control principal del enemigo (movimiento, estados, interacción con AttackManager/HitboxSpawner).
-///// </summary>
-//[RequireComponent(typeof(NavMeshAgent))]
-//[RequireComponent(typeof(AttackManager))]
-//[RequireComponent(typeof(HitboxSpawner))]
-//public class MeleeEnemyController : MonoBehaviour, IDamageable
-//{
-//    public Transform player;
-//    public float chaseSpeed = 3.5f;
-//    public float stoppingDistance = 1.5f;
-
-//    [Header("Ataque")]
-//    public float attackPrepareTime = 0.6f;
-//    public float attackDuration = 0.25f;
-//    public float attackCooldown = 0.6f;
-//    public int attackDamage = 1;
-
-//    [Header("Vida / recibir")]
-//    public int maxHealth = 10;
-//    public float receiveResetTime = 1.0f;
-//    public Renderer[] renderersToColor;
-
-//    NavMeshAgent agent;
-//    AttackManager attackManager;
-//    HitboxSpawner spawner;
-
-//    int currentHealth;
-//    float receiveTimer = 0f;
-//    Color[] originalColors;
-
-//    enum State { Chase, Receiving, Dead }
-//    State state = State.Chase;
-
-//    void Awake()
-//    {
-//        GameObject go = GameObject.FindWithTag("Player");
-//              if (go != null)
-//        player = go.transform;
-//               else
-//        Debug.LogWarning("No se encontró ningún GameObject con tag 'Player'");
-
-
-
-//        agent = GetComponent<NavMeshAgent>();
-//        attackManager = GetComponent<AttackManager>();
-//        spawner = GetComponent<HitboxSpawner>();
-
-//        if (agent == null || attackManager == null || spawner == null)
-//        {
-//            Debug.LogError($"{name}: faltan componentes requeridos.");
-//            enabled = false;
-//            return;
-//        }
-
-//        agent.speed = chaseSpeed;
-//        currentHealth = maxHealth;
-
-//        if (renderersToColor != null && renderersToColor.Length > 0)
-//        {
-//            originalColors = new Color[renderersToColor.Length];
-//            for (int i = 0; i < renderersToColor.Length; i++)
-//            {
-//                if (renderersToColor[i] != null && renderersToColor[i].material != null)
-//                    originalColors[i] = renderersToColor[i].material.color;
-//            }
-//        }
-//    }
-
-//    void Update()
-//    {
-//        if (state == State.Dead) return;
-
-//        if (player == null)
-//        {
-//            agent.isStopped = true;
-//            return;
-//        }
-
-//        float dist = Vector3.Distance(transform.position, player.position);
-
-//        if (state == State.Chase)
-//        {
-//            agent.isStopped = false;
-//            agent.SetDestination(player.position);
-
-//            if (dist <= stoppingDistance)
-//            {
-//                // iniciar ataque via AttackManager
-//                agent.isStopped = true;
-//                SetColor(Color.red);
-//                attackManager.StartAttack(attackPrepareTime, attackDuration, attackCooldown, spawner, attackDamage,
-//                    onComplete: () =>
-//                    {
-//                        // volver a chase
-//                        SetColorToOriginal();
-//                        if (state != State.Receiving && state != State.Dead)
-//                        {
-//                            state = State.Chase;
-//                            agent.isStopped = false;
-//                        }
-//                    },
-//                    onCanceled: () =>
-//                    {
-//                        // si fue cancelado (por recibir daño), ya manejado en TakeDamage
-//                        SetColorToOriginal();
-//                    });
-//            }
-//        }
-//        else if (state == State.Receiving)
-//        {
-//            receiveTimer -= Time.deltaTime;
-//            if (receiveTimer <= 0f)
-//            {
-//                EndReceiving();
-//            }
-//        }
-//    }
-
-//    public void TakeDamage(int amount)
-//    {
-//        if (state == State.Dead) return;
-
-//        currentHealth -= amount;
-
-//        // cancelar ataque en progreso
-//        attackManager.CancelAttack();
-//        spawner.Cleanup();
-
-//        // pasar a recibir
-//        state = State.Receiving;
-//        receiveTimer = receiveResetTime;
-//        agent.isStopped = true;
-//        SetColorToOriginal(); // mostrar color normal mientras recibe; cámbialo si quieres otro feedback
-
-//        if (currentHealth <= 0)
-//        {
-//            Die();
-//        }
-//    }
-
-//    void EndReceiving()
-//    {
-//        if (state == State.Dead) return;
-//        state = State.Chase;
-//        agent.isStopped = false;
-//    }
-
-//    void Die()
-//    {
-//        state = State.Dead;
-//        agent.isStopped = true;
-//        spawner.Cleanup();
-//        // destruir o hacer pooling
-//        Destroy(gameObject, 1.0f);
-//    }
-
-//    void SetColor(Color c)
-//    {
-//        if (renderersToColor == null) return;
-//        foreach (var r in renderersToColor)
-//        {
-//            if (r == null || r.material == null) continue;
-//            r.material.color = c;
-//        }
-//    }
-
-//    void SetColorToOriginal()
-//    {
-//        if (renderersToColor == null || originalColors == null) return;
-//        for (int i = 0; i < renderersToColor.Length; i++)
-//        {
-//            if (renderersToColor[i] == null || renderersToColor[i].material == null) continue;
-//            if (i < originalColors.Length) renderersToColor[i].material.color = originalColors[i];
-//        }
-//    }
-//}

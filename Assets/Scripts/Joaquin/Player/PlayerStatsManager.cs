@@ -42,14 +42,13 @@ public class PlayerStatsManager : MonoBehaviour
 
     private void Awake()
     {
-        // Se asegura de que los diccionarios estén inicializados antes de Start
         InitializeStats();
         if (playerStats != null) ResetStats();
     }
 
     private void Start()
     {
-        playerHealth = FindAnyObjectByType<PlayerHealth>();
+        playerHealth = GetComponent<PlayerHealth>();
     }
 
     /// <summary>
@@ -107,7 +106,6 @@ public class PlayerStatsManager : MonoBehaviour
     /// <param name="roomsDuration">Cantidad de salas/habitaciones/enfrentamientos que debe durar.</param>
     public void ApplyModifier(StatType type, float amount, float duration = 0f, bool isPercentage = false, bool isTemporary = false, bool isByRooms = false, int roomsDuration = 0)
     {
-        // Se asegura de que el StatType exista para evitar KeyNotFoundException
         if (!baseStats.ContainsKey(type))
         {
             return;

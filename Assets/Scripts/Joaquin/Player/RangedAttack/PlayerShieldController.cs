@@ -28,10 +28,12 @@ public class PlayerShieldController : MonoBehaviour
     [SerializeField] private float shieldReboundRadius = 15f;
     [SerializeField] private bool canShieldRebound = true;
 
-    public bool CanShieldRebound => canShieldRebound;
+    private int finalAttackDamage;
+    private float finalAttackSpeed;
+    private float damageMultiplier = 1f;
+    private float speedMultiplier = 1f;
 
-    [Header("Costes")]
-    //[SerializeField] private float timeCostToThrow = 5f;
+    public bool CanShieldRebound => canShieldRebound;
 
     private bool hasShield = true;
 
@@ -43,8 +45,6 @@ public class PlayerShieldController : MonoBehaviour
         get { return shieldDamage; }
         set { shieldDamage = value; }
     }
-
-    // private PlayerTimeResource playerTime;
 
     private void Awake()
     {
@@ -64,8 +64,7 @@ public class PlayerShieldController : MonoBehaviour
 
     private void Start()
     {
-        CalculateShieldStats();
-
+        // Inicializar estadísticas del ataque a distancia desde PlayerStatsManager o usar valores de fallback
         float shieldDamageStat = statsManager != null ? statsManager.GetStat(StatType.ShieldAttackDamage) : fallbackshieldDamage;
         shieldDamage = Mathf.RoundToInt(shieldDamageStat);
 
@@ -81,66 +80,69 @@ public class PlayerShieldController : MonoBehaviour
         float shieldReboundRadiusStat = statsManager != null ? statsManager.GetStat(StatType.ShieldReboundRadius) : fallbackshieldReboundRadius;
         shieldReboundRadius = shieldReboundRadiusStat;
 
-        // playerTime = GetComponent<PlayerTimeResource>();
+        // Inicializar estadísticas globales que afectan a todos los ataques desde PlayerStatsManager o usar valores fallback
+        float damageMultiplierStat = statsManager != null ? statsManager.GetStat(StatType.AttackDamage) : 1f;
+        damageMultiplier = damageMultiplierStat;
+
+        float speedMultiplierStat = statsManager != null ? statsManager.GetStat(StatType.AttackSpeed) : 1f;
+        speedMultiplier = speedMultiplierStat;
+
         shieldPrefab.SetActive(false);
+
+        CalculateStats();
+    }
+
+    private void HandleStatChanged(StatType statType, float newValue)
+    {
+        switch (statType)
+        {
+            case StatType.ShieldAttackDamage:
+                shieldDamage = Mathf.RoundToInt(newValue);
+                break;
+            case StatType.ShieldSpeed:
+                shieldSpeed = newValue;
+                break;
+            case StatType.ShieldMaxDistance:
+                shieldMaxDistance = newValue;
+                break;
+            case StatType.ShieldMaxRebounds:
+                shieldMaxRebounds = Mathf.RoundToInt(newValue);
+                break;
+            case StatType.ShieldReboundRadius:
+                shieldReboundRadius = newValue;
+                break;
+            case StatType.AttackDamage:
+                damageMultiplier = newValue;
+                break;
+            case StatType.AttackSpeed:
+                speedMultiplier = newValue;
+                break;
+            default:
+                return;
+        }
+
+        CalculateStats();
+        ReportDebug($"Estadística {statType} actualizada a {newValue}.", 1);
+    }
+
+    // Metodo para recalcular las estadísticas del escudo
+    private void CalculateStats()
+    {
+        finalAttackDamage = Mathf.RoundToInt(shieldDamage * damageMultiplier);
+        finalAttackSpeed = shieldSpeed * speedMultiplier;
+
+        currentShieldDamage = finalAttackDamage;
+        currentShieldSpeed = finalAttackSpeed;
+
+        ReportDebug($"Estadísticas recalculadas: Daño de ataque del escudo = {currentShieldDamage}, Velocidad del escudo = {currentShieldSpeed}", 1);
     }
 
     private void Update()
     {
         if (Input.GetMouseButtonDown(1) && hasShield)
         {
-            // if (playerTime.CurrentTime >= timeCostToThrow)
-            // {
-            //     playerTime.SpendTime(timeCostToThrow);
             ThrowShield();
-            // }
         }
-    }
-
-    private void CalculateShieldStats()
-    {
-        if (statsManager == null)
-        {
-            ReportDebug("StatsManager no asignado. Usando valores de fallback.", 2);
-            currentShieldDamage = fallbackshieldDamage;
-            currentShieldSpeed = fallbackshieldSpeed;
-            return;
-        }
-
-        float baseDamage = statsManager.GetStat(StatType.ShieldAttackDamage);
-        float baseSpeed = statsManager.GetStat(StatType.ShieldSpeed);
-
-        float damageMultiplier = statsManager.GetStat(StatType.AttackDamage);
-        float speedMultiplier = statsManager.GetStat(StatType.AttackSpeed);
-
-        currentShieldDamage = (int)(baseDamage * damageMultiplier);
-        currentShieldSpeed = baseSpeed * speedMultiplier;
-
-        ReportDebug($"Daño final del escudo: {currentShieldDamage}", 1);
-        ReportDebug($"Velocidad final del escudo: {currentShieldSpeed}", 1);
-    }
-
-    private void HandleStatChanged(StatType statType, float newValue)
-    {
-        if (statType == StatType.ShieldAttackDamage || statType == StatType.AttackDamage ||
-            statType == StatType.ShieldSpeed || statType == StatType.AttackSpeed)
-        {
-            CalculateShieldStats();
-        }
-        else if (statType == StatType.ShieldMaxDistance)
-        {
-            shieldMaxDistance = newValue;
-        }
-        else if (statType == StatType.ShieldMaxRebounds)
-        {
-            shieldMaxRebounds = Mathf.RoundToInt(newValue);
-        }
-        else if (statType == StatType.ShieldReboundRadius)
-        {
-            shieldReboundRadius = newValue;
-        }
-
-        ReportDebug($"Estadística {statType} actualizada a {newValue}.", 1);
     }
 
     /// <summary>

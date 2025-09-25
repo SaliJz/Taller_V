@@ -112,7 +112,7 @@ public class HealthController : MonoBehaviour /*, IDamageable*/ // Descomenta ",
     /// Interfaz pública para aplicar daño (compatible con ambos scripts originales).
     /// </summary>
     /// <param name="amount"></param>
-    public void TakeDamage(int amount)
+    public void TakeDamage(int amount, bool isCritical = false)
     {
         if (amount <= 0) return;
         if (GetTotalLife() <= 0) return; // ya muerto -> ignorar

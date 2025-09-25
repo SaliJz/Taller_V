@@ -147,6 +147,21 @@ public class Shield : MonoBehaviour
                 ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de daño.", 1);
             }
 
+            IDamageable damageable = enemy.GetComponent<IDamageable>();
+            if (damageable != null)
+            {
+                if (!hitTargets.Contains(hitTransform))
+                {
+                    hitTargets.Add(hitTransform);
+                }
+
+                bool isCritical;
+                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
+                damageable.TakeDamage(finalDamageWithCrit, isCritical);
+
+                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daño.", 1);
+            }
+
             BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
             if (bloodKnight != null)
             {
@@ -176,6 +191,29 @@ public class Shield : MonoBehaviour
         else
         {
             StartReturning();
+        }
+    }
+
+    // Detecta cuando el escudo sale de la colisión con un enemigo u objeto en las capas especificadas
+    private void OnTriggerExit(Collider other)
+    {
+        if (currentState != ShieldState.Thrown) return;
+
+        if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
+        {
+            RemoveHitDetection(other.transform);
+        }
+    }
+
+    /// <summary>
+    /// Metodo para eliminar un objetivo de la lista de objetivos golpeados por primera vez.
+    /// </summary>
+    /// <param name="hitTransform"> Transform del objetivo golpeado </param>
+    private void RemoveHitDetection(Transform hitTransform)
+    {
+        if (hitTargets.Contains(hitTransform))
+        {
+            hitTargets.Remove(hitTransform);
         }
     }
 
@@ -225,6 +263,12 @@ public class Shield : MonoBehaviour
     private void StartReturning()
     {
         currentState = ShieldState.Returning;
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, reboundDetectionRadius);
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]

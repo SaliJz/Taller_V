@@ -3,7 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Función que maneja las estadísticas del jugador.
 /// </summary>
-[CreateAssetMenu(fileName = "NewPlayerStats", menuName = "Stats/Player Stats")]
+[CreateAssetMenu(fileName = "NewEntityStats", menuName = "Stats/Player Stats")]
 public class PlayerStats : ScriptableObject
 {
     [Header("Vida")]

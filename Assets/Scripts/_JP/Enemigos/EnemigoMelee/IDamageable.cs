@@ -1,5 +1,23 @@
-// IDamageable.cs
+using System;
+using UnityEngine;
+
+/// <summary>
+/// Define el contrato para cualquier objeto en el juego que pueda recibir daño,
+/// tener vida y morir.
+/// </summary>
 public interface IDamageable
 {
-    void TakeDamage(int amount);
+    public float CurrentHealth { get; }
+    public float MaxHealth { get; }
+
+    // Evento que se dispara cuando la entidad muere.
+    // Envía el GameObject para que otros sistemas sepan quién murió.
+    public event Action<GameObject> OnDeath;
+
+    /// <summary>
+    /// Método universal para aplicar daño.
+    /// </summary>
+    /// <param name="damageAmount">La cantidad de daño a aplicar.</param>
+    /// <param name="isCritical">Indica si el daño es crítico (para efectos visuales/sonoros).</param>
+    public void TakeDamage(float damageAmount, bool isCritical = false);
 }

@@ -30,6 +30,13 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private float shieldBlockCooldown = 18f;
     private bool isShieldBlockReady = true;
 
+    [Header("Veneno de Morlock")]
+    [SerializeField] private MorlockStats morlockStats;
+    [SerializeField] private int poisonHitThreshold;
+    [SerializeField] private float poisonInitialDamage;
+    [SerializeField] private float poisonResetTime;
+    private int morlockHitCounter = 0;
+
     public bool HasShieldBlockUpgrade { get; private set; } = false;
     public bool IsInvulnerable { get; set; } = false;
     private bool isDamageInvulnerable = false;
@@ -42,18 +49,19 @@ public class PlayerHealth : MonoBehaviour
     private PlayerMeleeAttack playerMeleeAttack;
     private PlayerShieldController playerShieldController;
 
+    private Coroutine poisonResetCoroutine;
+
+    public float MaxHealth => statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
+    public float CurrentHealth => currentHealth;
+
     private void Awake()
     {
-        // Se asegura de que la referencia se obtenga antes de que se ejecute cualquier Start()
         statsManager = GetComponent<PlayerStatsManager>();
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerHealth. Usando vida máxima de fallback.", 2);
 
         playerMovement = GetComponent<PlayerMovement>();
         playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
         playerShieldController = GetComponent<PlayerShieldController>();
-
-        // Suscripción al evento en Awake para que siempre esté listo
-        PlayerStatsManager.OnStatChanged += HandleStatChanged;
     }
 
     private void Start()
@@ -63,6 +71,19 @@ public class PlayerHealth : MonoBehaviour
 
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         UpdateLifeStage(true);
+        InitializedPosionDebuff();
+    }
+
+    private void InitializedPosionDebuff()
+    {
+        poisonHitThreshold = morlockStats.poisonHitThreshold;
+        poisonInitialDamage = morlockStats.poisonInitialDamage;
+        poisonResetTime = morlockStats.poisonResetTime;
+    }
+
+    private void OnEnable()
+    {
+        PlayerStatsManager.OnStatChanged += HandleStatChanged;
     }
 
     private void OnDisable()
@@ -244,6 +265,38 @@ public class PlayerHealth : MonoBehaviour
         ReportDebug("La mejora de bloqueo de escudo ha sido desactivada.", 1);
     }
 
+    #region Debuffs
+
+    /// <summary>
+    /// Función que aplica el efecto de veneno al jugador cuando es golpeado por un proyectil de Morlock.
+    /// </summary>
+    public void ApplyMorlockPoisonHit()
+    {
+        morlockHitCounter++;
+
+        if (poisonResetCoroutine != null)
+        {
+            StopCoroutine(poisonResetCoroutine);
+        }
+
+        if (morlockHitCounter >= poisonHitThreshold)
+        {
+            float poisonDamage = poisonInitialDamage + (morlockHitCounter - poisonHitThreshold);
+            TakeDamage(poisonDamage);
+            // Aquí podrías iniciar un efecto de veneno que dañe con el tiempo
+        }
+
+        poisonResetCoroutine = StartCoroutine(ResetPoisonCounter());
+    }
+
+    private IEnumerator ResetPoisonCounter()
+    {
+        yield return new WaitForSeconds(poisonResetTime);
+        morlockHitCounter = 0;
+        poisonResetCoroutine = null;
+    }
+
+    #endregion
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     /// <summary> 
