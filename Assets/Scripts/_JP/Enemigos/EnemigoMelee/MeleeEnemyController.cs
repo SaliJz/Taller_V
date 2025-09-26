@@ -51,8 +51,6 @@ public class MeleeEnemyController : MonoBehaviour, IDamageable
 
     public float MaxHealth => maxHealth;
 
-    public event Action<GameObject> OnDeath;
-
     private void Awake()
     {
         GameObject go = GameObject.FindWithTag("Player");

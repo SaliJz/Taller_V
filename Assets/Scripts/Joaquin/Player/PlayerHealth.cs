@@ -32,9 +32,9 @@ public class PlayerHealth : MonoBehaviour
 
     [Header("Veneno de Morlock")]
     [SerializeField] private MorlockStats morlockStats;
-    [SerializeField] private int poisonHitThreshold;
-    [SerializeField] private float poisonInitialDamage;
-    [SerializeField] private float poisonResetTime;
+    [SerializeField] private int poisonHitThreshold = 3;
+    [SerializeField] private float poisonInitialDamage = 2;
+    [SerializeField] private float poisonResetTime = 5;
     private int morlockHitCounter = 0;
 
     public bool HasShieldBlockUpgrade { get; private set; } = false;
@@ -48,7 +48,7 @@ public class PlayerHealth : MonoBehaviour
     private PlayerMovement playerMovement;
     private PlayerMeleeAttack playerMeleeAttack;
     private PlayerShieldController playerShieldController;
-
+    private Coroutine damageInvulnerabilityCoroutine;
     private Coroutine poisonResetCoroutine;
 
     public float MaxHealth => statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
@@ -76,9 +76,16 @@ public class PlayerHealth : MonoBehaviour
 
     private void InitializedPosionDebuff()
     {
-        poisonHitThreshold = morlockStats.poisonHitThreshold;
-        poisonInitialDamage = morlockStats.poisonInitialDamage;
-        poisonResetTime = morlockStats.poisonResetTime;
+        if (morlockStats != null)
+        {
+            poisonHitThreshold = morlockStats.poisonHitThreshold;
+            poisonInitialDamage = morlockStats.poisonInitialDamage;
+            poisonResetTime = morlockStats.poisonResetTime;
+        }
+        else
+        {
+            ReportDebug("MorlockStats no está asignado en PlayerHealth. Usando valores de veneno por defecto.", 2);
+        }
     }
 
     private void OnEnable()
@@ -142,7 +149,8 @@ public class PlayerHealth : MonoBehaviour
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
         isDamageInvulnerable = true;
-        StartCoroutine(DamageInvulnerabilityRoutine());
+        if (damageInvulnerabilityCoroutine != null) StopCoroutine(damageInvulnerabilityCoroutine);
+        damageInvulnerabilityCoroutine = StartCoroutine(DamageInvulnerabilityRoutine());
 
         if (currentHealth <= 0) Die();
 
@@ -172,6 +180,7 @@ public class PlayerHealth : MonoBehaviour
         }
 
         isDamageInvulnerable = false;
+        damageInvulnerabilityCoroutine = null;
         ReportDebug("La invulnerabilidad por daño ha terminado.", 1);
 
         playerSpriteRenderer.color = Color.white;

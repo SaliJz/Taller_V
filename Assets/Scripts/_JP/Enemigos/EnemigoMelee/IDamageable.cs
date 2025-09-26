@@ -10,10 +10,6 @@ public interface IDamageable
     public float CurrentHealth { get; }
     public float MaxHealth { get; }
 
-    // Evento que se dispara cuando la entidad muere.
-    // Envía el GameObject para que otros sistemas sepan quién murió.
-    public event Action<GameObject> OnDeath;
-
     /// <summary>
     /// Método universal para aplicar daño.
     /// </summary>
