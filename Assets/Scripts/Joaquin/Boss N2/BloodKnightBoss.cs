@@ -70,7 +70,6 @@ public class BloodKnightBoss : MonoBehaviour
     private Coroutine stunCoroutine;
     private Coroutine currentAttackCoroutine;
     private Coroutine currentCriticalDamageCoroutine;
-    private Coroutine ensurePathCoroutine;
 
     #endregion
 
@@ -434,11 +433,15 @@ public class BloodKnightBoss : MonoBehaviour
 
         currentHealth -= damageAmount;
 
-        if (currentHealth <= 0) Die();
+        if (currentHealth <= 0)
+        {
+            currentHealth = 0;
+            Die();
+        }
 
         UpdateSlidersSafely();
 
-        if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageAmount} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);
+        if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jefe 2 ha recibido {damageAmount} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);
 
         var bloodKnightVisualEffects = GetComponent<BloodKnightVisualEffects>();
 
