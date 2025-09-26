@@ -497,7 +497,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fade: {fileID: 171166524}
+  fadeImage: {fileID: 0}
   fadeDuration: 1
+  defaultFadeColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!225 &171166524
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -913,6 +915,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b72dba1c4d4b52d48b95e4bf5d9645ec, type: 2}
   - {fileID: 11400000, guid: c904b55d20077964a9deb317354981b1, type: 2}
   - {fileID: 11400000, guid: c8b435636ace3584599f56788ac7b7ce, type: 2}
+  safeRelics: []
   shopItemPrefabs:
   - {fileID: 2790493699222432776, guid: 3f233f07f502ad8429d387518ae486b8, type: 3}
   - {fileID: 2790493699222432776, guid: fb73de1475fe6fc47bf7300276c49958, type: 3}
@@ -921,6 +924,7 @@ MonoBehaviour:
   - {fileID: 2790493699222432776, guid: 453a2138ca6b29b429efc6d8bd35e0d2, type: 3}
   - {fileID: 2790493699222432776, guid: aabaf2f22a4ef504a87a245611b9b0f6, type: 3}
   - {fileID: 2790493699222432776, guid: 93d679b1d4b391e4ab0438182556ffba, type: 3}
+  itemAppearanceEffectPrefab: {fileID: 0}
   shopUIPanel: {fileID: 21918916}
   uiPanelTransform: {fileID: 21918917}
   itemNameText: {fileID: 999571698}
@@ -2161,6 +2165,10 @@ PrefabInstance:
       propertyPath: currentHealth
       value: 100
       objectReference: {fileID: 0}
+    - target: {fileID: 6110564483166717353, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: sceneToLoadOnDeath
+      value: TransitionDead
+      objectReference: {fileID: 0}
     - target: {fileID: 6679960082821164706, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_Name
       value: Player
@@ -2886,7 +2894,7 @@ MonoBehaviour:
     probability: 100
   enemyPrefabs:
   - {fileID: 6467406229690815049, guid: 8204b994f9c31834a88efac2f7f25b70, type: 3}
-  - {fileID: 1801363628311297083, guid: e62163bc4bfc7474aa0368718a660423, type: 3}
+  - {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
   spawnEffectPrefab: {fileID: 3331059551027662099, guid: 9d5ba65ab5339c74b901aaa2ae57bc30, type: 3}
   minRooms: 10
   maxRooms: 10
