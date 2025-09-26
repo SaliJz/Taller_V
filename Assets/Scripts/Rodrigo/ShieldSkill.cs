@@ -10,6 +10,9 @@ public class ShieldSkill : MonoBehaviour
     [Header("References")]
     [SerializeField] private PlayerStatsManager statsManager;
 
+    [Header("Skill Settings")]
+    [SerializeField] private float skillDuration = 10f; 
+
     [HideInInspector] private PlayerMeleeAttack PMA;
     [HideInInspector] private PlayerShieldController PSC;
     [HideInInspector] private PlayerHealth PH;
@@ -21,7 +24,8 @@ public class ShieldSkill : MonoBehaviour
     private float BaseAttackShield;
     private float BaseSpeed;
     private float healthDrainAmount;
-    private float Timer;
+    private float healthDrainTimer;
+    private float skillDurationTimer; 
 
     #endregion
 
@@ -45,6 +49,8 @@ public class ShieldSkill : MonoBehaviour
         PM = GetComponent<PlayerMovement>();
 
         SkillActive = false;
+        healthDrainAmount = 0;
+        skillDurationTimer = 0f;
 
         BaseAttackMelee = PMA.AttackDamage;
         BaseAttackShield = PSC.ShieldDamage;
@@ -66,37 +72,50 @@ public class ShieldSkill : MonoBehaviour
 
     void Update()
     {
-        Timer += Time.deltaTime;
-
-        if (Input.GetKeyDown(KeyCode.Q))
+        if (Input.GetKeyDown(KeyCode.Q) && !SkillActive)
         {
-            SkillActive = !SkillActive;
-            if (SkillActive)
+            ActivateSkill();
+        }
+
+        if (SkillActive)
+        {
+            if (PH != null && healthDrainAmount > 0)
             {
-                if (PH.CurrentLifeStage == PlayerHealth.LifeStage.Young)
+                healthDrainTimer += Time.deltaTime;
+
+                if (healthDrainTimer >= 1f)
                 {
-                    Debug.Log("Joven :buffo 20% mas de velocidad, 10% mas de fuerza aumentados y redondeados");
-                }
-                else if (PH.CurrentLifeStage == PlayerHealth.LifeStage.Adult)
-                {
-                    Debug.Log("adulto :buffo 20% mas de fuerza, 10% mas de velocidad aumentados y redondeados");
-                }
-                else if (PH.CurrentLifeStage == PlayerHealth.LifeStage.Elder)
-                {
-                    Debug.Log("Viejo :buffo 15% mas de fuerza y velocidad aumentados y redondeados");
+                    PH.TakeDamage(healthDrainAmount);
+                    healthDrainTimer = 0f;
+                    Debug.Log($"[DRENADO] Vida reducida en {healthDrainAmount}. SkillActive: {SkillActive}");
                 }
             }
+
+            skillDurationTimer += Time.deltaTime;
+
+            if (skillDurationTimer >= skillDuration)
+            {
+                DeactivateSkill();
+            }
         }
-            
-
-        ApplyBuff();
-
+        else
+        {
+            healthDrainTimer = 0f;
+            skillDurationTimer = 0f;
+        }
     }
+
     /// <summary>
-    /// aplica el las estadisticas para el buffo de la habilidad
+    /// Activa la habilidad aplicando los buffs correspondientes.
     /// </summary>
-    private void ApplyBuff()
+    private void ActivateSkill()
     {
+        SkillActive = true;
+        skillDurationTimer = 0f;
+        healthDrainTimer = 0f;
+
+        Debug.Log($"[ACTIVAR] SkillActive cambiado a: {SkillActive}");
+
         float moveBuff = 1f;
         float attackBuff = 1f;
         int healthDrainBase = 0;
@@ -107,41 +126,56 @@ public class ShieldSkill : MonoBehaviour
                 moveBuff = 1.2f;
                 attackBuff = 1.1f;
                 healthDrainBase = 2;
-                healthDrainAmount = healthDrainBase;
+                Debug.Log("Joven: buff 20% velocidad, 10% fuerza");
                 break;
             case PlayerHealth.LifeStage.Adult:
                 moveBuff = 1.1f;
                 attackBuff = 1.2f;
                 healthDrainBase = 2;
-                healthDrainAmount = healthDrainBase;
+                Debug.Log("Adulto: buff 20% fuerza, 10% velocidad");
                 break;
             case PlayerHealth.LifeStage.Elder:
                 moveBuff = 1.15f;
                 attackBuff = 1.15f;
                 healthDrainBase = 1;
-                healthDrainAmount = healthDrainBase;
+                Debug.Log("Viejo: buff 15% fuerza y velocidad");
                 break;
         }
 
-        if (SkillActive)
-        {
-            if (Timer >= 1f)
-            {
-                if (PH != null) PH.TakeDamage(healthDrainAmount);
-                Timer = 0f;
-            }
-            PMA.AttackDamage = Mathf.RoundToInt(BaseAttackMelee * attackBuff);
-            PSC.ShieldDamage = Mathf.RoundToInt(BaseAttackShield * attackBuff);
-            PM.MoveSpeed = Mathf.RoundToInt(BaseSpeed * moveBuff);
-        }
-        else
-        {
-            PMA.AttackDamage = Mathf.RoundToInt(BaseAttackMelee);
-            PSC.ShieldDamage = Mathf.RoundToInt(BaseAttackShield);
-            PM.MoveSpeed = Mathf.RoundToInt(BaseSpeed);
+        PMA.AttackDamage = Mathf.RoundToInt(BaseAttackMelee * attackBuff);
+        PSC.ShieldDamage = Mathf.RoundToInt(BaseAttackShield * attackBuff);
+        PM.MoveSpeed = Mathf.RoundToInt(BaseSpeed * moveBuff);
 
-            Timer = 0f;
-        }
+        healthDrainAmount = healthDrainBase;
+
+        Debug.Log($"[ShieldSkill ACTIVADO] " +
+                  $"ATK M: {PMA.AttackDamage} (Base: {BaseAttackMelee}) | " +
+                  $"ATK S: {PSC.ShieldDamage} (Base: {BaseAttackShield}) | " +
+                  $"VEL: {PM.MoveSpeed} (Base: {BaseSpeed}) | " +
+                  $"DRENADO: {healthDrainAmount}/s | " +
+                  $"Duración: {skillDuration}s | SkillActive: {SkillActive}");
+    }
+
+    /// <summary>
+    /// Desactiva la habilidad y restaura las estadísticas base.
+    /// </summary>
+    private void DeactivateSkill()
+    {
+        SkillActive = false;
+        skillDurationTimer = 0f;
+        healthDrainTimer = 0f;
+
+        PMA.AttackDamage = Mathf.RoundToInt(BaseAttackMelee);
+        PSC.ShieldDamage = Mathf.RoundToInt(BaseAttackShield);
+        PM.MoveSpeed = Mathf.RoundToInt(BaseSpeed);
+
+        healthDrainAmount = 0;
+
+        Debug.Log($"[ShieldSkill DESACTIVADO AUTOMÁTICAMENTE] " +
+                  $"ATK M: {PMA.AttackDamage} | " +
+                  $"ATK S: {PSC.ShieldDamage} | " +
+                  $"VEL: {PM.MoveSpeed} | " +
+                  $"DRENADO: {healthDrainAmount} | SkillActive: {SkillActive}");
     }
     #endregion
 }
