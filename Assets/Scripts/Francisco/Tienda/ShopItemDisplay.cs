@@ -2,14 +2,16 @@ using UnityEngine;
 
 public class ShopItemDisplay : MonoBehaviour
 {
-    [Header("Item Data")]
     public ShopItem shopItemData;
 
     private ShopManager shopManager;
+    private MerchantRoomManager merchantRoomManager;
 
     private void Awake()
     {
         shopManager = FindAnyObjectByType<ShopManager>();
+        merchantRoomManager = FindAnyObjectByType<MerchantRoomManager>();
+
         if (shopManager == null)
         {
             Debug.LogError("ShopManager no encontrado. El item de la tienda no funcionará correctamente.");
@@ -28,13 +30,24 @@ public class ShopItemDisplay : MonoBehaviour
             if (Input.GetKey(KeyCode.E))
             {
                 bool purchaseSuccessful = shopManager.PurchaseItem(shopItemData);
+
                 if (shopManager != null)
                 {
                     shopManager.UpdateCostBar(0);
                 }
+
                 if (purchaseSuccessful)
                 {
-                    Destroy(gameObject);
+                    if (merchantRoomManager != null)
+                    {
+                        merchantRoomManager.OnItemPurchased();
+                    }
+
+                    GameObject objectToDestroy = (transform.parent != null)
+                                               ? transform.parent.gameObject
+                                               : gameObject;
+
+                    Destroy(objectToDestroy);
                 }
             }
         }

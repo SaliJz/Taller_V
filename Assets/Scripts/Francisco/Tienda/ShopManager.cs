@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -8,9 +9,11 @@ public class ShopManager : MonoBehaviour
     [Header("Item Pools")]
     public List<ShopItem> allRelics;
     public List<ShopItem> allGagans;
+    public List<ShopItem> safeRelics;
 
     [Header("Shop Prefabs")]
     public List<GameObject> shopItemPrefabs;
+    public GameObject itemAppearanceEffectPrefab;
 
     [Header("UI References")]
     [SerializeField] private GameObject shopUIPanel;
@@ -36,11 +39,13 @@ public class ShopManager : MonoBehaviour
     private PlayerStatsManager playerStatsManager;
     private PlayerHealth playerHealth;
     private ShopItem lastDetectedItem;
+    private MerchantRoomManager merchantRoomManager;
 
     private void Awake()
     {
         playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
+        merchantRoomManager = FindAnyObjectByType<MerchantRoomManager>();
 
         if (playerStatsManager == null || playerHealth == null)
         {
@@ -67,6 +72,39 @@ public class ShopManager : MonoBehaviour
         spawnedItems.Clear();
         availableItems.AddRange(allRelics);
         availableItems.AddRange(allGagans);
+    }
+
+    public IEnumerator SpawnItemWithEffect(ShopItem itemData, Transform spawnLocation, float effectDuration)
+    {
+        GameObject itemPrefab = FindPrefabForItemData(itemData);
+
+        if (itemPrefab != null)
+        {
+            if (itemAppearanceEffectPrefab != null)
+            {
+                GameObject effect = Instantiate(itemAppearanceEffectPrefab, spawnLocation.position, Quaternion.identity);
+                yield return new WaitForSeconds(effectDuration);
+                Destroy(effect);
+            }
+            else
+            {
+                yield return null;
+            }
+
+            GameObject spawnedItem = Instantiate(itemPrefab, spawnLocation.position, Quaternion.identity);
+            ShopItemDisplay display = spawnedItem.GetComponent<ShopItemDisplay>();
+            if (display != null)
+            {
+                display.shopItemData = itemData;
+            }
+
+            spawnedItems.Add(itemData);
+            currentShopItems.Add(itemData);
+        }
+        else
+        {
+            yield return null;
+        }
     }
 
     public void GenerateShopItems(List<Transform> spawnLocations)
@@ -144,6 +182,76 @@ public class ShopManager : MonoBehaviour
         }
     }
 
+    public IEnumerator GenerateMerchantItems(List<Transform> spawnLocations, bool isFirstVisit, float effectDuration, bool sequentialSpawn)
+    {
+        currentShopItems = new List<ShopItem>();
+        List<ShopItem> itemsToSpawn = new List<ShopItem>();
+        int maxItems = spawnLocations.Count;
+
+        if (maxItems > 3) maxItems = 3;
+
+        if (maxItems == 0)
+        {
+            Debug.LogWarning("No hay ubicaciones de spawn configuradas para el mercader o es cero.");
+            yield break;
+        }
+
+        if (isFirstVisit)
+        {
+            List<ShopItem> safeItemsCopy = new List<ShopItem>(safeRelics);
+            safeItemsCopy.Shuffle();
+
+            for (int i = 0; i < maxItems && i < safeItemsCopy.Count; i++)
+            {
+                itemsToSpawn.Add(safeItemsCopy[i]);
+            }
+        }
+        else
+        {
+            if (safeRelics.Count > 0 && maxItems > 0)
+            {
+                ShopItem safeItem = safeRelics[Random.Range(0, safeRelics.Count)];
+                itemsToSpawn.Add(safeItem);
+            }
+
+            List<ShopItem> generalRelicPool = new List<ShopItem>();
+            generalRelicPool.AddRange(allRelics);
+            generalRelicPool.AddRange(allGagans);
+            generalRelicPool.Shuffle();
+
+            int remainingSlots = maxItems - itemsToSpawn.Count;
+
+            for (int i = 0; i < remainingSlots && i < generalRelicPool.Count; i++)
+            {
+                itemsToSpawn.Add(generalRelicPool[i]);
+            }
+
+            itemsToSpawn.Shuffle();
+        }
+
+        List<Coroutine> itemSpawnCoroutines = new List<Coroutine>();
+
+        for (int i = 0; i < itemsToSpawn.Count && i < spawnLocations.Count; i++)
+        {
+            if (sequentialSpawn)
+            {
+                yield return StartCoroutine(SpawnItemWithEffect(itemsToSpawn[i], spawnLocations[i], effectDuration));
+            }
+            else
+            {
+                itemSpawnCoroutines.Add(StartCoroutine(SpawnItemWithEffect(itemsToSpawn[i], spawnLocations[i], effectDuration)));
+            }
+        }
+
+        if (!sequentialSpawn)
+        {
+            foreach (Coroutine coroutine in itemSpawnCoroutines)
+            {
+                yield return coroutine;
+            }
+        }
+    }
+
     private GameObject FindPrefabForItemData(ShopItem itemData)
     {
         foreach (GameObject prefab in shopItemPrefabs)
@@ -182,7 +290,6 @@ public class ShopManager : MonoBehaviour
             HideItemUI();
             lastDetectedItem = null;
         }
-        Debug.DrawRay(ray.origin, ray.direction * raycastDistance, Color.yellow);
     }
 
     public void DisplayItemUI(ShopItem itemData, bool showCostBar)

@@ -104,6 +104,7 @@ public class PlayerStatsManager : MonoBehaviour
     /// <param name="isTemporary">Si es false, el buff es permanente hasta morir.</param>
     /// <param name="isByRooms">Si es true, la duración se mide por salas/habitaciones/enfrentamientos.</param>
     /// <param name="roomsDuration">Cantidad de salas/habitaciones/enfrentamientos que debe durar.</param>
+
     public void ApplyModifier(StatType type, float amount, float duration = 0f, bool isPercentage = false, bool isTemporary = false, bool isByRooms = false, int roomsDuration = 0)
     {
         if (!baseStats.ContainsKey(type))
@@ -113,17 +114,16 @@ public class PlayerStatsManager : MonoBehaviour
 
         float modifierValue = amount;
 
-        // Se calcula el valor del modificador si es un porcentaje.
-        // Se excluyen explícitamente los stats booleanos (como ShieldBlockUpgrade) para evitar cálculos incorrectos.
         if (isPercentage && type != StatType.ShieldBlockUpgrade)
         {
-            modifierValue = baseStats[type] * amount;
+            float percentageFactor = amount / 100f;
+            modifierValue = baseStats[type] * percentageFactor;
         }
 
         currentStats[type] += modifierValue;
         OnStatChanged?.Invoke(type, currentStats[type]);
 
-        if (!isTemporary) return; // Buff permanente => no se remueve automáticamente
+        if (!isTemporary) return;
 
         if (isByRooms) StartCoroutine(RemoveModifierAfterRooms(type, modifierValue, roomsDuration));
         else if (duration > 0f) StartCoroutine(RemoveModifierAfterTime(type, modifierValue, duration));
