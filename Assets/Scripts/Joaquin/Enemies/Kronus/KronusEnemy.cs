@@ -121,7 +121,6 @@ public class KronusEnemy : MonoBehaviour
     private void OnDisable()
     {
         if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
-        if (dashCoroutine != null) StopCoroutine(dashCoroutine);
     }
 
     private void HandleEnemyDeath(GameObject enemy)
