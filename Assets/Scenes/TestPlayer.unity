@@ -497,7 +497,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fade: {fileID: 171166524}
+  fadeImage: {fileID: 0}
   fadeDuration: 1
+  defaultFadeColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!225 &171166524
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -913,6 +915,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b72dba1c4d4b52d48b95e4bf5d9645ec, type: 2}
   - {fileID: 11400000, guid: c904b55d20077964a9deb317354981b1, type: 2}
   - {fileID: 11400000, guid: c8b435636ace3584599f56788ac7b7ce, type: 2}
+  safeRelics: []
   shopItemPrefabs:
   - {fileID: 2790493699222432776, guid: 3f233f07f502ad8429d387518ae486b8, type: 3}
   - {fileID: 2790493699222432776, guid: fb73de1475fe6fc47bf7300276c49958, type: 3}
@@ -921,6 +924,7 @@ MonoBehaviour:
   - {fileID: 2790493699222432776, guid: 453a2138ca6b29b429efc6d8bd35e0d2, type: 3}
   - {fileID: 2790493699222432776, guid: aabaf2f22a4ef504a87a245611b9b0f6, type: 3}
   - {fileID: 2790493699222432776, guid: 93d679b1d4b391e4ab0438182556ffba, type: 3}
+  itemAppearanceEffectPrefab: {fileID: 0}
   shopUIPanel: {fileID: 21918916}
   uiPanelTransform: {fileID: 21918917}
   itemNameText: {fileID: 999571698}
@@ -1785,22 +1789,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b636fa411e6f82540880ffe29c95d882, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _inputKey: 110
+  _inputKey: 0
+  _inputKeyNext: 110
+  _inputKeyPrevious: 109
+  _nextSceneName: TestBoss
+  _previousSceneName: Tuto
   OnKeyPressed:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 961770969}
-        m_TargetAssemblyTypeName: SceneController, Assembly-CSharp
-        m_MethodName: LoadSceneByName
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: TestBoss
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!4 &961770970
 Transform:
   m_ObjectHideFlags: 0
@@ -2161,6 +2157,22 @@ PrefabInstance:
       propertyPath: currentHealth
       value: 100
       objectReference: {fileID: 0}
+    - target: {fileID: 6110564483166717353, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: deathFadeColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6110564483166717353, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: deathFadeColor.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6110564483166717353, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: deathFadeColor.r
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6110564483166717353, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: sceneToLoadOnDeath
+      value: TransitionDead
+      objectReference: {fileID: 0}
     - target: {fileID: 6679960082821164706, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_Name
       value: Player
@@ -2179,8 +2191,16 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1392266538}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6679960082821164706, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1202095475}
   m_SourcePrefab: {fileID: 100100000, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+--- !u!1 &1090497193 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6679960082821164706, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+  m_PrefabInstance: {fileID: 1090497192}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1130311632
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2307,12 +2327,27 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7736777102245202428, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
   m_PrefabInstance: {fileID: 1090497192}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1090497193}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ab0ca8ce965da4b429f1cfbd6ee396f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1202095475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1090497193}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd34c6eda4cb864458f5e257ab13f973, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  statsManager: {fileID: 1202095474}
+  skillDuration: 10
+  SkillActive: 0
 --- !u!224 &1241387786 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 4771108026129879708, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
@@ -2885,8 +2920,8 @@ MonoBehaviour:
     generateOnce: 0
     probability: 100
   enemyPrefabs:
-  - {fileID: 6467406229690815049, guid: 8204b994f9c31834a88efac2f7f25b70, type: 3}
-  - {fileID: 1801363628311297083, guid: e62163bc4bfc7474aa0368718a660423, type: 3}
+  - {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
+  - {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
   spawnEffectPrefab: {fileID: 3331059551027662099, guid: 9d5ba65ab5339c74b901aaa2ae57bc30, type: 3}
   minRooms: 10
   maxRooms: 10

@@ -497,7 +497,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fade: {fileID: 171166524}
+  fadeImage: {fileID: 0}
   fadeDuration: 1
+  defaultFadeColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!225 &171166524
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -913,6 +915,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b72dba1c4d4b52d48b95e4bf5d9645ec, type: 2}
   - {fileID: 11400000, guid: c904b55d20077964a9deb317354981b1, type: 2}
   - {fileID: 11400000, guid: c8b435636ace3584599f56788ac7b7ce, type: 2}
+  safeRelics: []
   shopItemPrefabs:
   - {fileID: 2790493699222432776, guid: 3f233f07f502ad8429d387518ae486b8, type: 3}
   - {fileID: 2790493699222432776, guid: fb73de1475fe6fc47bf7300276c49958, type: 3}
@@ -921,6 +924,7 @@ MonoBehaviour:
   - {fileID: 2790493699222432776, guid: 453a2138ca6b29b429efc6d8bd35e0d2, type: 3}
   - {fileID: 2790493699222432776, guid: aabaf2f22a4ef504a87a245611b9b0f6, type: 3}
   - {fileID: 2790493699222432776, guid: 93d679b1d4b391e4ab0438182556ffba, type: 3}
+  itemAppearanceEffectPrefab: {fileID: 0}
   shopUIPanel: {fileID: 21918916}
   uiPanelTransform: {fileID: 21918917}
   itemNameText: {fileID: 999571698}
@@ -2907,22 +2911,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b636fa411e6f82540880ffe29c95d882, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _inputKey: 110
+  _inputKey: 0
+  _inputKeyNext: 110
+  _inputKeyPrevious: 109
+  _nextSceneName: Tuto
+  _previousSceneName: TestPlayer
   OnKeyPressed:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 2003143903}
-        m_TargetAssemblyTypeName: SceneController, Assembly-CSharp
-        m_MethodName: LoadSceneByName
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: TestPlayer
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!4 &2003143904
 Transform:
   m_ObjectHideFlags: 0

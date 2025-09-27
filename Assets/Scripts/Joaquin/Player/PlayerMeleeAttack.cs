@@ -8,6 +8,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private PlayerStatsManager statsManager;
+    [SerializeField] private GameObject visualHit;
 
     [Header("Configuración de Ataque")]
     [SerializeField] private Transform hitPoint;
@@ -41,6 +42,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private void Awake()
     {
+        if (visualHit != null) visualHit.SetActive(false);
         statsManager = GetComponent<PlayerStatsManager>();
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMeleeAttack. Usando valores de de fallback.", 2);
     }
@@ -192,8 +194,10 @@ public class PlayerMeleeAttack : MonoBehaviour
     private IEnumerator ShowGizmoCoroutine()
     {
         showGizmo = true;
+        if (visualHit != null) visualHit.SetActive(true);
         yield return new WaitForSeconds(gizmoDuration);
         showGizmo = false;
+        if (visualHit != null) visualHit.SetActive(false);
     }
 
     private void OnDrawGizmos()

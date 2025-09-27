@@ -26,6 +26,11 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private float currentHealth;
     [SerializeField] private float damageInvulnerabilityTime = 0.5f;
 
+    [Header("Configuración de Muerte")]
+    [SerializeField] private string sceneToLoadOnDeath = "Tuto";
+    [SerializeField] private Color deathFadeColor = Color.red;
+
+
     [Header("Mejora de Escudo")]
     [SerializeField] private float shieldBlockCooldown = 18f;
     private bool isShieldBlockReady = true;
@@ -41,6 +46,8 @@ public class PlayerHealth : MonoBehaviour
     public bool IsInvulnerable { get; set; } = false;
     private bool isDamageInvulnerable = false;
     public LifeStage CurrentLifeStage { get; private set; }
+
+    private bool isDying = false;
 
     public static event Action<float, float> OnHealthChanged;
     public static event Action<LifeStage> OnLifeStageChanged;
@@ -125,6 +132,8 @@ public class PlayerHealth : MonoBehaviour
     /// <param name="damageAmount"> Cantidad de daño a aplicar. </param>
     public void TakeDamage(float damageAmount)
     {
+        if (isDying) return;
+
         if (isDamageInvulnerable || IsInvulnerable)
         {
             ReportDebug("El jugador es invulnerable y no recibe daño.", 1);
@@ -141,7 +150,7 @@ public class PlayerHealth : MonoBehaviour
                 StartCoroutine(ShieldBlockCooldownRoutine());
                 return;
             }
-        } 
+        }
 
         float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
 
@@ -176,7 +185,7 @@ public class PlayerHealth : MonoBehaviour
             playerSpriteRenderer.color = Color.white;
             yield return new WaitForSeconds(blinkInterval);
 
-            timer += blinkInterval * 2; 
+            timer += blinkInterval * 2;
         }
 
         isDamageInvulnerable = false;
@@ -238,22 +247,31 @@ public class PlayerHealth : MonoBehaviour
     // Función que maneja la muerte del jugador.
     private void Die()
     {
-        ReportDebug("El jugador ha muerto.", 1);
+        if (isDying) return;
+        isDying = true;
+
+        ReportDebug("El jugador ha muerto. Recargando escena: " + sceneToLoadOnDeath, 1);
         statsManager.ResetStats();
 
         if (playerMovement != null) playerMovement.enabled = false;
         if (playerMeleeAttack != null) playerMeleeAttack.enabled = false;
         if (playerShieldController != null) playerShieldController.enabled = false;
 
+        Collider2D playerCollider = GetComponent<Collider2D>();
+        if (playerCollider != null) playerCollider.enabled = false;
+
+
         if (FadeController.Instance != null)
         {
-            StartCoroutine(FadeController.Instance.FadeOut(onComplete: () => {
-                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-            }));
+            StartCoroutine(FadeController.Instance.FadeOut(
+                fadeColor: deathFadeColor,
+                onComplete: () => {
+                    SceneManager.LoadScene(sceneToLoadOnDeath);
+                }));
         }
         else
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            SceneManager.LoadScene(sceneToLoadOnDeath);
         }
     }
 
@@ -281,6 +299,8 @@ public class PlayerHealth : MonoBehaviour
     /// </summary>
     public void ApplyMorlockPoisonHit()
     {
+        if (isDying) return;
+
         morlockHitCounter++;
 
         if (poisonResetCoroutine != null)

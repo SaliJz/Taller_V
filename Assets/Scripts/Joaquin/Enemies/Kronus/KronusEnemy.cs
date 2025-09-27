@@ -26,6 +26,9 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private float attackRadius = 2f;
     [SerializeField] private LayerMask playerLayer;
 
+    [SerializeField] private bool showGizmo = false;
+    [SerializeField] private float gizmoDuration = 0.2f;
+
     [Header("Perception")]
     [Tooltip("Radio dentro del cual Kronus detecta al jugador y empezará a perseguir/atacar.")]
     [SerializeField] private float detectionRadius = 12f;
@@ -73,7 +76,7 @@ public class KronusEnemy : MonoBehaviour
 
     private void Start()
     {
-        visualHit.SetActive(false);
+        if (visualHit != null) visualHit.SetActive(false);
 
         var playerGameObject = GameObject.FindGameObjectWithTag("Player");
         playerTransform = playerGameObject ? playerGameObject.transform : null;
@@ -121,7 +124,6 @@ public class KronusEnemy : MonoBehaviour
     private void OnDisable()
     {
         if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
-        if (dashCoroutine != null) StopCoroutine(dashCoroutine);
     }
 
     private void HandleEnemyDeath(GameObject enemy)
@@ -160,7 +162,6 @@ public class KronusEnemy : MonoBehaviour
 
         if (sqrDistToPlayer <= detectionSqr)
         {
-
             if (!isAttacking)
             {
                 attackTimer += Time.deltaTime;
@@ -347,8 +348,6 @@ public class KronusEnemy : MonoBehaviour
             yield return null;
         }
 
-        if (visualHit.activeSelf) visualHit.SetActive(false);
-
         if (animator != null) animator.SetTrigger("Attack");
 
         PerformHitDetection();
@@ -363,14 +362,11 @@ public class KronusEnemy : MonoBehaviour
             agent.SetDestination(playerTransform != null ? playerTransform.position : transform.position);
         }
 
-        if (visualHit.activeSelf) visualHit.SetActive(false);
-
         yield return new WaitForSeconds(2.5f);
 
         ReportDebug("Kronus finaliza ataque dash.", 1);
 
         isAttacking = false;
-        if (visualHit.activeSelf) visualHit.SetActive(false);
     }
 
     public void PerformHitDetection()
@@ -407,12 +403,24 @@ public class KronusEnemy : MonoBehaviour
             }
         }
 
+        StartCoroutine(ShowGizmoCoroutine());
+    }
+
+    private IEnumerator ShowGizmoCoroutine()
+    {
+        showGizmo = true;
+        if (visualHit != null) visualHit.SetActive(true);
+        yield return new WaitForSeconds(gizmoDuration);
+        showGizmo = false;
+        if (visualHit != null) visualHit.SetActive(false);
     }
 
     #endregion
 
     private void OnDrawGizmos()
     {
+        if (!showGizmo) return;
+
         if (hitPoint != null)
         {
             Gizmos.color = Color.red;

@@ -63,7 +63,7 @@ public class DungeonGenerator : MonoBehaviour
     public GameObject[] enemyPrefabs;
 
     [Header("Visual Effects")]
-    public GameObject spawnEffectPrefab; 
+    public GameObject spawnEffectPrefab;
 
     [Header("Generation Settings")]
     public int minRooms = 8;
@@ -85,6 +85,9 @@ public class DungeonGenerator : MonoBehaviour
     [Header("Door Settings")]
     [Range(0.1f, 5.0f)]
     public float doorActivateDelay = 0.5f;
+
+    [Header("Debug")]
+    [SerializeField] private KeyCode _debugCompleteRoomKey = KeyCode.O; 
 
     private List<Room> generatedRooms = new List<Room>();
     private int roomsGenerated = 0;
@@ -133,6 +136,94 @@ public class DungeonGenerator : MonoBehaviour
         PlanMandatoryRoom();
         GenerateInitialRoom();
         playerMovement = FindAnyObjectByType<PlayerMovement>();
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(_debugCompleteRoomKey))
+        {
+            CompleteCurrentRoomShortcut();
+        }
+    }
+
+    public void CompleteCurrentRoomShortcut()
+    {
+        Room currentRoom = generatedRooms.LastOrDefault();
+        int destroyedCount = 0;
+
+        if (currentRoom == null || currentRoom.isEndRoom || currentRoom.isStartRoom)
+        {
+            Debug.Log("[SHORTCUT] No se puede completar la sala: No hay una sala activa para completar (Start, End o nula).");
+            return;
+        }
+
+        if (currentRoom.roomType != RoomType.Combat)
+        {
+            Debug.Log($"[SHORTCUT] La sala actual ({currentRoom.name}) no es de tipo Combate. No se realiza ninguna acción.");
+            return;
+        }
+
+        EnemyManager enemyManager = currentRoom.GetComponent<EnemyManager>();
+
+        if (enemyManager == null)
+        {
+            Debug.Log($"[SHORTCUT] La sala de combate ({currentRoom.name}) no tiene un EnemyManager activo. Las puertas ya deberían estar desbloqueadas o hubo un error.");
+            return;
+        }
+
+        float roomDetectionRadius = 30f; 
+        Vector3 roomPosition = currentRoom.transform.position;
+
+        int enemyLayer = LayerMask.NameToLayer("Enemy");
+
+        if (enemyLayer != -1)
+        {
+            Collider[] colliders = Physics.OverlapSphere(roomPosition, roomDetectionRadius);
+
+            foreach (Collider col in colliders)
+            {
+                if (col != null && col.gameObject.layer == enemyLayer)
+                {
+                    Destroy(col.gameObject);
+                    destroyedCount++;
+                }
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[SHORTCUT] La capa 'Enemy' no fue encontrada. Asegúrate de que existe en las etiquetas de Unity.");
+        }
+
+        if (spawnEffectPrefab != null)
+        {
+            string effectName = spawnEffectPrefab.name;
+            GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+
+            foreach (GameObject obj in allObjects)
+            {
+                string cleanName = obj.name.Replace("(Clone)", "");
+
+                if (cleanName == effectName && Vector3.Distance(obj.transform.position, roomPosition) < roomDetectionRadius)
+                {
+                    Destroy(obj);
+                    destroyedCount++;
+                }
+            }
+        }
+
+        Destroy(enemyManager);
+
+        ConnectionPoint entrancePoint = currentRoom.connectionPoints.FirstOrDefault(conn => conn.isConnected);
+
+        if (entrancePoint == null)
+        {
+            Debug.LogError("[SHORTCUT] No se pudo determinar el punto de entrada para desbloquear las puertas.");
+            return;
+        }
+
+        OnCombatEnded(currentRoom, entrancePoint);
+
+        Debug.Log($"[SHORTCUT - WIN] Combate en **{currentRoom.name}** forzado a completarse. **{destroyedCount} objetos (enemigos/efectos) eliminados por Layer/Prefab** y puertas desbloqueadas.");
     }
 
     void PlanMandatoryRoom()
@@ -304,7 +395,7 @@ public class DungeonGenerator : MonoBehaviour
                     enemyManager.dungeonGenerator = this;
                     enemyManager.parentRoom = newRoom;
                     enemyManager.enemyPrefabs = this.enemyPrefabs;
-                    enemyManager.spawnEffectPrefab = this.spawnEffectPrefab; 
+                    enemyManager.spawnEffectPrefab = this.spawnEffectPrefab;
                 }
 
                 foreach (ConnectionPoint connectionPoint in newRoom.connectionPoints)
