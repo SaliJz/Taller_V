@@ -110,10 +110,23 @@ public class Shield : MonoBehaviour
         }
     }
 
+    private void FixedUpdate()
+    {
+        if (currentState == ShieldState.Inactive) return;
+
+        Vector3 moveDir = transform.forward;
+        float step = currentSpeed * Time.fixedDeltaTime;
+
+        if (Physics.Raycast(transform.position, moveDir, out RaycastHit hit, step + 0.5f, collisionLayers))
+        {
+            PerformHitDetection(hit.transform);
+        }
+    }
+
     // Detecta colisiones con enemigos u otros objetos en las capas especificadas
     private void OnTriggerEnter(Collider other)
     {
-        if (currentState != ShieldState.Thrown) return;
+        if (currentState == ShieldState.Inactive) return;
 
         if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
         {
@@ -267,6 +280,27 @@ public class Shield : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        if (!Application.isPlaying) return;
+
+        switch (currentState)
+        {
+            case ShieldState.Thrown:
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawLine(startPosition, transform.position);
+                break;
+            case ShieldState.Rebounding:
+                Gizmos.color = Color.yellow;
+                if (currentTarget != null)
+                    Gizmos.DrawLine(transform.position, currentTarget.position);
+                break;
+            case ShieldState.Returning:
+                Gizmos.color = Color.green;
+                if (returnTarget != null)
+                    Gizmos.DrawLine(transform.position, returnTarget.position);
+                break;
+        }
+
+        // Radio de búsqueda
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, reboundDetectionRadius);
     }
