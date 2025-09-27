@@ -2199,8 +2199,16 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1392266538}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6679960082821164706, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1202095475}
   m_SourcePrefab: {fileID: 100100000, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+--- !u!1 &1090497193 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6679960082821164706, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+  m_PrefabInstance: {fileID: 1090497192}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1130311632
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2327,12 +2335,27 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7736777102245202428, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
   m_PrefabInstance: {fileID: 1090497192}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1090497193}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ab0ca8ce965da4b429f1cfbd6ee396f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1202095475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1090497193}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd34c6eda4cb864458f5e257ab13f973, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  statsManager: {fileID: 1202095474}
+  skillDuration: 10
+  SkillActive: 0
 --- !u!224 &1241387786 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 4771108026129879708, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
@@ -2905,7 +2928,7 @@ MonoBehaviour:
     generateOnce: 0
     probability: 100
   enemyPrefabs:
-  - {fileID: 6467406229690815049, guid: 8204b994f9c31834a88efac2f7f25b70, type: 3}
+  - {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
   - {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
   spawnEffectPrefab: {fileID: 3331059551027662099, guid: 9d5ba65ab5339c74b901aaa2ae57bc30, type: 3}
   minRooms: 10

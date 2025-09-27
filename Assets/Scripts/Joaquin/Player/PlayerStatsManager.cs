@@ -77,7 +77,7 @@ public class PlayerStatsManager : MonoBehaviour
         baseStats[StatType.MeleeAttackSpeed] = playerStats.meleeSpeed;
         baseStats[StatType.HealthDrainAmount] = playerStats.HealthDrainAmount;
         baseStats[StatType.DamageTaken] = 0f;
-        baseStats[StatType.ShieldBlockUpgrade] = 0f; // Valor booleano como flotante: 0f = false, 1f = true
+        baseStats[StatType.ShieldBlockUpgrade] = 0f;
     }
 
     /// <summary>

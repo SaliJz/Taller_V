@@ -39,13 +39,11 @@ public class ShopManager : MonoBehaviour
     private PlayerStatsManager playerStatsManager;
     private PlayerHealth playerHealth;
     private ShopItem lastDetectedItem;
-    private MerchantRoomManager merchantRoomManager;
 
     private void Awake()
     {
         playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
-        merchantRoomManager = FindAnyObjectByType<MerchantRoomManager>();
 
         if (playerStatsManager == null || playerHealth == null)
         {

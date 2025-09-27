@@ -11,7 +11,7 @@ public class ShieldSkill : MonoBehaviour
     [SerializeField] private PlayerStatsManager statsManager;
 
     [Header("Skill Settings")]
-    [SerializeField] private float skillDuration = 10f; 
+    [SerializeField] private float skillDuration = 10f;
 
     [HideInInspector] private PlayerMeleeAttack PMA;
     [HideInInspector] private PlayerShieldController PSC;
@@ -25,7 +25,7 @@ public class ShieldSkill : MonoBehaviour
     private float BaseSpeed;
     private float healthDrainAmount;
     private float healthDrainTimer;
-    private float skillDurationTimer; 
+    private float skillDurationTimer;
 
     #endregion
 
@@ -49,7 +49,17 @@ public class ShieldSkill : MonoBehaviour
         PM = GetComponent<PlayerMovement>();
 
         SkillActive = false;
-        healthDrainAmount = 0;
+
+        if (statsManager != null)
+        {
+            healthDrainAmount = statsManager.GetStat(StatType.HealthDrainAmount);
+        }
+        else
+        {
+            healthDrainAmount = 0f;
+            Debug.LogError("PlayerStatsManager no asignado en ShieldSkill.");
+        }
+
         skillDurationTimer = 0f;
 
         BaseAttackMelee = PMA.AttackDamage;
@@ -118,26 +128,27 @@ public class ShieldSkill : MonoBehaviour
 
         float moveBuff = 1f;
         float attackBuff = 1f;
-        int healthDrainBase = 0;
+
+        float healthDrainMultiplier = 1f;
 
         switch (PH.CurrentLifeStage)
         {
             case PlayerHealth.LifeStage.Young:
                 moveBuff = 1.2f;
                 attackBuff = 1.1f;
-                healthDrainBase = 2;
+                healthDrainMultiplier = 1f; 
                 Debug.Log("Joven: buff 20% velocidad, 10% fuerza");
                 break;
             case PlayerHealth.LifeStage.Adult:
                 moveBuff = 1.1f;
                 attackBuff = 1.2f;
-                healthDrainBase = 2;
+                healthDrainMultiplier = 1f; 
                 Debug.Log("Adulto: buff 20% fuerza, 10% velocidad");
                 break;
             case PlayerHealth.LifeStage.Elder:
                 moveBuff = 1.15f;
                 attackBuff = 1.15f;
-                healthDrainBase = 1;
+                healthDrainMultiplier = 1f; 
                 Debug.Log("Viejo: buff 15% fuerza y velocidad");
                 break;
         }
@@ -146,7 +157,7 @@ public class ShieldSkill : MonoBehaviour
         PSC.ShieldDamage = Mathf.RoundToInt(BaseAttackShield * attackBuff);
         PM.MoveSpeed = Mathf.RoundToInt(BaseSpeed * moveBuff);
 
-        healthDrainAmount = healthDrainBase;
+        healthDrainAmount *= healthDrainMultiplier;
 
         Debug.Log($"[ShieldSkill ACTIVADO] " +
                   $"ATK M: {PMA.AttackDamage} (Base: {BaseAttackMelee}) | " +
@@ -169,7 +180,14 @@ public class ShieldSkill : MonoBehaviour
         PSC.ShieldDamage = Mathf.RoundToInt(BaseAttackShield);
         PM.MoveSpeed = Mathf.RoundToInt(BaseSpeed);
 
-        healthDrainAmount = 0;
+        if (statsManager != null)
+        {
+            healthDrainAmount = statsManager.GetStat(StatType.HealthDrainAmount);
+        }
+        else
+        {
+            healthDrainAmount = 0f;
+        }
 
         Debug.Log($"[ShieldSkill DESACTIVADO AUTOMÁTICAMENTE] " +
                   $"ATK M: {PMA.AttackDamage} | " +
