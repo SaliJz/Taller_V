@@ -3391,7 +3391,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b636fa411e6f82540880ffe29c95d882, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _inputKey: 110
+  _inputKey: 0
+  _inputKeyNext: 110
+  _inputKeyPrevious: 109
+  _nextSceneName: TestPlayer
+  _previousSceneName: TestBoss
   OnKeyPressed:
     m_PersistentCalls:
       m_Calls:
@@ -4069,7 +4073,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fade: {fileID: 1472074574}
+  fadeImage: {fileID: 0}
   fadeDuration: 1
+  defaultFadeColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!225 &1472074574
 CanvasGroup:
   m_ObjectHideFlags: 0

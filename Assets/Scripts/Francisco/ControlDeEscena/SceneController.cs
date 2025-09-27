@@ -9,6 +9,14 @@ public class SceneController : MonoBehaviour
 
     [SerializeField] private KeyCode _inputKey;
 
+    [Header("Scene Navigation Keys")] 
+    [SerializeField] private KeyCode _inputKeyNext;
+    [SerializeField] private KeyCode _inputKeyPrevious;
+
+    [Header("Scene Names")] 
+    [SerializeField] private string _nextSceneName;
+    [SerializeField] private string _previousSceneName;
+
     public UnityEvent OnKeyPressed;
 
     private void Awake()
@@ -29,6 +37,16 @@ public class SceneController : MonoBehaviour
         {
             OnKeyPressed.Invoke();
         }
+
+        if (Input.GetKeyDown(_inputKeyNext))
+        {
+            LoadNextScene();
+        }
+
+        if (Input.GetKeyDown(_inputKeyPrevious))
+        {
+            LoadPreviousScene();
+        }
     }
 
     public void LoadSceneByName(string sceneName)
@@ -40,6 +58,16 @@ public class SceneController : MonoBehaviour
         }
 
         StartCoroutine(LoadSceneWithFade(sceneName));
+    }
+
+    public void LoadNextScene()
+    {
+        LoadSceneByName(_nextSceneName);
+    }
+
+    public void LoadPreviousScene()
+    {
+        LoadSceneByName(_previousSceneName);
     }
 
     public void ReloadCurrentScene()
@@ -54,7 +82,14 @@ public class SceneController : MonoBehaviour
 
     private IEnumerator LoadSceneWithFade(string sceneName)
     {
-        yield return FadeController.Instance.FadeOut();
+        if (FadeController.Instance != null)
+        {
+            yield return FadeController.Instance.FadeOut();
+        }
+        else
+        {
+            Debug.LogWarning("FadeController.Instance is missing. Loading scene without fade.");
+        }
 
         SceneManager.LoadScene(sceneName);
     }
