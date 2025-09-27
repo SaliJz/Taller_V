@@ -952,6 +952,7 @@ GameObject:
   - component: {fileID: 1944634115120772411}
   - component: {fileID: 7133803733463680231}
   - component: {fileID: 695154817908411261}
+  - component: {fileID: 898864339131825323}
   - component: {fileID: 5823493146228490408}
   - component: {fileID: 2892049814083954529}
   - component: {fileID: 7502008598184262393}
@@ -1026,6 +1027,29 @@ NavMeshAgent:
   m_BaseOffset: 0.8
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &898864339131825323
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8508571803709799617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa9c23e57cc55574da2e6741861d1762, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  characterRadius: 0.5
+  sphereCastStartHeight: 0.9
+  castDistance: 1.3
+  navSampleDistance: 0.5
+  disableOnFail: 1
+  useAwake: 1
+  drawDetailedGizmos: 1
+  gizmoScale: 1
 --- !u!114 &5823493146228490408
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1041,6 +1065,7 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 0
   deathCooldown: 2
+  healthSteal: 5
   firstLifeSlider: {fileID: 8587315499701455932}
   firstFillImage: {fileID: 3576358720955880675}
   offsetAboveEnemy: 2

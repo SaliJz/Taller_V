@@ -2240,6 +2240,7 @@ GameObject:
   - component: {fileID: 211560707229807652}
   - component: {fileID: 4675314116780095713}
   - component: {fileID: 7381641209963904684}
+  - component: {fileID: 8710548483889858685}
   - component: {fileID: 8291591988962821256}
   - component: {fileID: 6113203021159324906}
   - component: {fileID: 5355768341301424616}
@@ -2314,6 +2315,29 @@ NavMeshAgent:
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &8710548483889858685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7967318150890097738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa9c23e57cc55574da2e6741861d1762, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  characterRadius: 0.5
+  sphereCastStartHeight: 1.1
+  castDistance: 1.5
+  navSampleDistance: 0.5
+  disableOnFail: 1
+  useAwake: 1
+  drawDetailedGizmos: 1
+  gizmoScale: 1
 --- !u!114 &8291591988962821256
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2349,7 +2373,7 @@ MonoBehaviour:
   stats: {fileID: 11400000, guid: 827240c34ab30b44faf66dd69d82507b, type: 2}
   projectilePrefab: {fileID: 5442904530204617264, guid: 9f7e821dc3eb3bc46b6ab54cf186063b, type: 3}
   firePoint: {fileID: 9215352895255589693}
-  health: 80
+  health: 8
   optimalAttackDistance: 10
   teleportMinDistance: 5
   teleportRange: 5
