@@ -348,14 +348,11 @@ public class MorlockEnemy : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if (firePoint != null)
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawRay(firePoint.position, firePoint.position + firePoint.forward * optimalAttackDistance);
-        }
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, optimalAttackDistance);
 
         Gizmos.color = Color.green;
-        Gizmos.DrawRay(transform.position, transform.forward * 2f);
+        Gizmos.DrawLine(transform.position, transform.forward * 2f);
 
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
