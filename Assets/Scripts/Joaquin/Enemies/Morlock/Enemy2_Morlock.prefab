@@ -1531,7 +1531,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
-  m_Volume: 1
+  m_Volume: 0.25
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -2332,11 +2332,11 @@ MonoBehaviour:
     m_Bits: 8
   characterRadius: 0.5
   sphereCastStartHeight: 1.1
-  castDistance: 1.5
+  castDistance: 5
   navSampleDistance: 0.5
   disableOnFail: 1
   useAwake: 1
-  drawDetailedGizmos: 1
+  drawDetailedGizmos: 0
   gizmoScale: 1
 --- !u!114 &8291591988962821256
 MonoBehaviour:
@@ -2374,14 +2374,14 @@ MonoBehaviour:
   projectilePrefab: {fileID: 5442904530204617264, guid: 9f7e821dc3eb3bc46b6ab54cf186063b, type: 3}
   firePoint: {fileID: 9215352895255589693}
   health: 8
-  optimalAttackDistance: 10
+  optimalAttackDistance: 15
   teleportMinDistance: 5
   teleportRange: 5
   teleportCooldown: 2.5
   fireRate: 1
   projectileDamage: 5
   projectileSpeed: 15
-  detectionRadius: 12
+  detectionRadius: 16
   patrolWaypoints: []
   loopWaypoints: 1
   patrolRadius: 8
