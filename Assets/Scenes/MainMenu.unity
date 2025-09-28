@@ -1071,6 +1071,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _inputKey: 0
+  _inputKeyNext: 0
+  _inputKeyPrevious: 0
+  _nextSceneName: 
+  _previousSceneName: 
   OnKeyPressed:
     m_PersistentCalls:
       m_Calls: []
@@ -1296,7 +1300,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fade: {fileID: 1486812752}
+  fadeImage: {fileID: 0}
   fadeDuration: 1
+  defaultFadeColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!114 &1486812754
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1661,7 +1667,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Intro
+          m_StringArgument: Tuto
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!114 &1932857410
