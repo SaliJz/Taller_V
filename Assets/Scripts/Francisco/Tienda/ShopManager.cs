@@ -32,9 +32,15 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private LayerMask shopItemLayer;
     [SerializeField] private float raycastDistance = 100f;
 
+    [Header("Reroll Settings")]
+    [SerializeField] private KeyCode reRollKey = KeyCode.R;
+    [SerializeField] private bool canReroll = true;
+
     private readonly List<ShopItem> availableItems = new();
     private readonly List<ShopItem> spawnedItems = new();
+    private readonly List<GameObject> _spawnedItemObjects = new();
     private List<ShopItem> currentShopItems;
+    private List<Transform> _shopSpawnLocations;
 
     private PlayerStatsManager playerStatsManager;
     private PlayerHealth playerHealth;
@@ -69,6 +75,11 @@ public class ShopManager : MonoBehaviour
     private void Update()
     {
         HandleMouseInteraction();
+
+        if (canReroll && Input.GetKeyDown(reRollKey))
+        {
+            RerollShop();
+        }
     }
 
     public void InitializeShopItemPools()
@@ -97,6 +108,9 @@ public class ShopManager : MonoBehaviour
             }
 
             GameObject spawnedItem = Instantiate(itemPrefab, spawnLocation.position, Quaternion.identity);
+
+            _spawnedItemObjects.Add(spawnedItem);
+
             ShopItemDisplay display = spawnedItem.GetComponent<ShopItemDisplay>();
             if (display != null)
             {
@@ -114,6 +128,7 @@ public class ShopManager : MonoBehaviour
 
     public void GenerateShopItems(List<Transform> spawnLocations)
     {
+        _shopSpawnLocations = spawnLocations;
         currentShopItems = new List<ShopItem>();
 
         if (spawnLocations == null || spawnLocations.Count == 0 || availableItems.Count < 3)
@@ -175,6 +190,9 @@ public class ShopManager : MonoBehaviour
             if (itemPrefab != null)
             {
                 GameObject spawnedItem = Instantiate(itemPrefab, spawnLocations[i].position, Quaternion.identity);
+
+                _spawnedItemObjects.Add(spawnedItem);
+
                 ShopItemDisplay display = spawnedItem.GetComponent<ShopItemDisplay>();
                 if (display != null)
                 {
@@ -185,6 +203,35 @@ public class ShopManager : MonoBehaviour
                 currentShopItems.Add(itemData);
             }
         }
+    }
+
+    private void DestroyCurrentItems()
+    {
+        foreach (GameObject itemObject in _spawnedItemObjects)
+        {
+            if (itemObject != null)
+            {
+                Destroy(itemObject);
+            }
+        }
+        _spawnedItemObjects.Clear();
+    }
+
+    public void RerollShop()
+    {
+        if (_shopSpawnLocations == null || _shopSpawnLocations.Count == 0)
+        {
+            Debug.LogWarning("No hay ubicaciones de spawn registradas para regenerar la tienda.");
+            return;
+        }
+
+        DestroyCurrentItems();
+
+        InitializeShopItemPools();
+
+        GenerateShopItems(_shopSpawnLocations);
+
+        Debug.Log("Tienda regenerada con éxito.");
     }
 
     public IEnumerator GenerateMerchantItems(List<Transform> spawnLocations, bool isFirstVisit, float effectDuration, bool sequentialSpawn)
@@ -204,8 +251,8 @@ public class ShopManager : MonoBehaviour
         if (isFirstVisit)
         {
             List<ShopItem> safeItemsCopy = new List<ShopItem>(safeRelics);
-            safeItemsCopy.Shuffle();
 
+            safeItemsCopy.Shuffle();
             for (int i = 0; i < maxItems && i < safeItemsCopy.Count; i++)
             {
                 itemsToSpawn.Add(safeItemsCopy[i]);
@@ -213,25 +260,12 @@ public class ShopManager : MonoBehaviour
         }
         else
         {
-            if (safeRelics.Count > 0 && maxItems > 0)
+            List<ShopItem> allItemsCopy = new List<ShopItem>(allRelics);
+            allItemsCopy.Shuffle();
+            for (int i = 0; i < maxItems && i < allItemsCopy.Count; i++)
             {
-                ShopItem safeItem = safeRelics[Random.Range(0, safeRelics.Count)];
-                itemsToSpawn.Add(safeItem);
+                itemsToSpawn.Add(allItemsCopy[i]);
             }
-
-            List<ShopItem> generalRelicPool = new List<ShopItem>();
-            generalRelicPool.AddRange(allRelics);
-            generalRelicPool.AddRange(allGagans);
-            generalRelicPool.Shuffle();
-
-            int remainingSlots = maxItems - itemsToSpawn.Count;
-
-            for (int i = 0; i < remainingSlots && i < generalRelicPool.Count; i++)
-            {
-                itemsToSpawn.Add(generalRelicPool[i]);
-            }
-
-            itemsToSpawn.Shuffle();
         }
 
         List<Coroutine> itemSpawnCoroutines = new List<Coroutine>();
@@ -313,8 +347,11 @@ public class ShopManager : MonoBehaviour
         if (costBar != null)
         {
             float currentHealth = GetPlayerCurrentHealth();
-            costBar.fillAmount = Mathf.Clamp01(itemCost / currentHealth);
-            costBar.color = currentHealth >= itemCost ? affordableColor : unaffordableColor;
+            float maxHealth = GetPlayerMaxHealth();
+
+            costBar.fillAmount = Mathf.Clamp01(itemCost / maxHealth);
+
+            costBar.color = currentHealth > itemCost ? affordableColor : unaffordableColor;
         }
     }
 
@@ -331,20 +368,31 @@ public class ShopManager : MonoBehaviour
         return playerHealth.GetCurrentHealth();
     }
 
+    public float GetPlayerMaxHealth()
+    {
+        return playerHealth.GetMaxHealth();
+    }
+
+
     public bool PurchaseItem(ShopItem item)
     {
         if (playerStatsManager == null || playerHealth == null || inventoryManager == null) return false;
 
-        if (inventoryManager.GetCurrentItemCount() >= InventoryManager.MaxInventorySize)
+        float currentHealth = playerHealth.GetCurrentHealth();
+
+        if (currentHealth <= item.cost)
         {
-            inventoryManager.ShowInventoryFullMessage();
+            if (inventoryManager != null)
+            {
+                inventoryManager.ShowWarningMessage("Vida insuficiente para la compra. ¡Debes sobrevivir!");
+            }
+            Debug.LogWarning($"No se puede comprar {item.itemName}. Vida actual ({currentHealth}) es menor o igual que el costo ({item.cost}).");
             return false;
         }
 
-        float currentHealth = playerHealth.GetCurrentHealth();
-        if (currentHealth < item.cost)
+        if (inventoryManager.GetCurrentItemCount() >= InventoryManager.MaxInventorySize)
         {
-            Debug.LogWarning($"No se puede comprar {item.itemName}. Vida actual ({currentHealth}) es menor que el costo ({item.cost}).");
+            inventoryManager.ShowWarningMessage("Inventario lleno.");
             return false;
         }
 
@@ -363,7 +411,7 @@ public class ShopManager : MonoBehaviour
             playerStatsManager.ApplyModifier(drawback.type, drawback.amount, isTemporary: false, isPercentage: drawback.isPercentage);
         }
 
-        playerHealth.TakeDamage(item.cost);
+        playerHealth.TakeDamage(item.cost, true);
         Debug.Log($"Compra exitosa de {item.itemName}. Se ha restado {item.cost} de vida.");
 
         if (item.benefits.Exists(b => b.type == StatType.ShieldBlockUpgrade))
