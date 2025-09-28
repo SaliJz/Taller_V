@@ -38,16 +38,23 @@ public class ShopManager : MonoBehaviour
 
     private PlayerStatsManager playerStatsManager;
     private PlayerHealth playerHealth;
+    private InventoryManager inventoryManager;
     private ShopItem lastDetectedItem;
 
     private void Awake()
     {
         playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
+        inventoryManager = FindAnyObjectByType<InventoryManager>();
 
         if (playerStatsManager == null || playerHealth == null)
         {
             Debug.LogError("PlayerStatsManager o PlayerHealth no encontrados. La tienda no funcionará.");
+        }
+
+        if (inventoryManager == null)
+        {
+            Debug.LogError("InventoryManager no encontrado. El inventario no funcionará correctamente.");
         }
 
         if (mainCamera == null)
@@ -326,12 +333,23 @@ public class ShopManager : MonoBehaviour
 
     public bool PurchaseItem(ShopItem item)
     {
-        if (playerStatsManager == null || playerHealth == null) return false;
+        if (playerStatsManager == null || playerHealth == null || inventoryManager == null) return false;
+
+        if (inventoryManager.GetCurrentItemCount() >= InventoryManager.MaxInventorySize)
+        {
+            inventoryManager.ShowInventoryFullMessage();
+            return false;
+        }
 
         float currentHealth = playerHealth.GetCurrentHealth();
         if (currentHealth < item.cost)
         {
             Debug.LogWarning($"No se puede comprar {item.itemName}. Vida actual ({currentHealth}) es menor que el costo ({item.cost}).");
+            return false;
+        }
+
+        if (!inventoryManager.TryAddItem(item))
+        {
             return false;
         }
 

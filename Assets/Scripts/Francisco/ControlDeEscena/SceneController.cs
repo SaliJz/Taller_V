@@ -2,22 +2,25 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Events;
 using System.Collections;
+using System.Collections.Generic; 
+
+[System.Serializable]
+public struct SceneTransition
+{
+    public KeyCode inputKey;
+    public string targetSceneName;
+}
 
 public class SceneController : MonoBehaviour
 {
     public static SceneController Instance;
 
+    [Header("Input General")]
     [SerializeField] private KeyCode _inputKey;
 
-    [Header("Scene Navigation Keys")] 
-    [SerializeField] private KeyCode _inputKeyNext;
-    [SerializeField] private KeyCode _inputKeyPrevious;
-
-    [Header("Scene Names")] 
-    [SerializeField] private string _nextSceneName;
-    [SerializeField] private string _previousSceneName;
-
-    public UnityEvent OnKeyPressed;
+    [Header("Transiciones de Escena")]
+    [SerializeField] private List<SceneTransition> _sceneTransitions;
+    [SerializeField] private UnityEvent OnKeyPressed;
 
     private void Awake()
     {
@@ -38,14 +41,19 @@ public class SceneController : MonoBehaviour
             OnKeyPressed.Invoke();
         }
 
-        if (Input.GetKeyDown(_inputKeyNext))
-        {
-            LoadNextScene();
-        }
+        CheckSceneTransitions();
+    }
 
-        if (Input.GetKeyDown(_inputKeyPrevious))
+    private void CheckSceneTransitions()
+    {
+        if (_sceneTransitions == null) return;
+
+        foreach (var transition in _sceneTransitions)
         {
-            LoadPreviousScene();
+            if (Input.GetKeyDown(transition.inputKey))
+            {
+                LoadSceneByName(transition.targetSceneName);
+            }
         }
     }
 
@@ -58,16 +66,6 @@ public class SceneController : MonoBehaviour
         }
 
         StartCoroutine(LoadSceneWithFade(sceneName));
-    }
-
-    public void LoadNextScene()
-    {
-        LoadSceneByName(_nextSceneName);
-    }
-
-    public void LoadPreviousScene()
-    {
-        LoadSceneByName(_previousSceneName);
     }
 
     public void ReloadCurrentScene()
