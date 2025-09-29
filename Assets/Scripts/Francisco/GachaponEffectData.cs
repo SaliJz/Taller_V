@@ -1,27 +1,33 @@
 using UnityEngine;
+using System.Collections.Generic;
+
+[System.Serializable] public enum EffectRarity { Comun, Raro, Epico, Legendario }
+[System.Serializable] public enum EffectDurationType { Permanent, Rounds, Time }
 
 [System.Serializable]
-public enum EffectRarity { Comun, Raro, Epico, Legendario }
-
-[System.Serializable]
-public enum EffectDurationType { Permanent, Rounds, Time }
+public class GachaponModifier
+{
+    public StatType statType;
+    public float modifierValue;
+    public bool isPercentage = false;
+    public EffectDurationType durationType = EffectDurationType.Permanent;
+    public float durationValue = 0;
+}
 
 [CreateAssetMenu(fileName = "NewGachaponEffect", menuName = "Gachapon/Effect Data", order = 1)]
 public class GachaponEffectData : ScriptableObject
 {
-    [Header("Identificación y Tipo")]
-    public string effectName = "Nuevo Efecto";
-    public bool isAdvantage = true; 
-    public EffectRarity rarity = EffectRarity.Comun; 
-
-    [Header("Probabilidad (Pool Interno)")]
+    [Header("Identificación y Probabilidad")]
+    public string effectName = "Nuevo Par de Efectos";
+    public EffectRarity rarity = EffectRarity.Comun;
     public float poolProbability = 1f;
 
-    [Header("Efecto")]
-    public StatType statType;
-    public float modifierValue;
+    [Header("Efectos (Ventaja)")]
+    public List<GachaponModifier> advantageModifiers = new List<GachaponModifier>();
 
-    [Header("Duración")]
-    public EffectDurationType durationType = EffectDurationType.Permanent;
-    public float durationValue = 0; 
+    [Header("Efectos (Desventaja)")]
+    public List<GachaponModifier> disadvantageModifiers = new List<GachaponModifier>();
+
+    public bool HasAdvantage => advantageModifiers.Count > 0;
+    public bool HasDisadvantage => disadvantageModifiers.Count > 0;
 }

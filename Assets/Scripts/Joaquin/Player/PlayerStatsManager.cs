@@ -101,11 +101,13 @@ public class PlayerStatsManager : MonoBehaviour
     private void OnEnable()
     {
         OnStatChanged += HandleStatChanged;
+        DungeonGenerator.OnRoomCompleted += IncrementRoomCount;
     }
 
     private void OnDisable()
     {
         OnStatChanged -= HandleStatChanged;
+        DungeonGenerator.OnRoomCompleted -= IncrementRoomCount;
     }
 
     private void Update()
@@ -145,16 +147,6 @@ public class PlayerStatsManager : MonoBehaviour
         // Si se abre el panel, actualizamos el texto para mostrar valores recientes.
         if (newState)
             UpdateStatsDisplay();
-    }
-
-    private void OnEnable()
-    {
-        DungeonGenerator.OnRoomCompleted += IncrementRoomCount;
-    }
-
-    private void OnDisable()
-    {
-        DungeonGenerator.OnRoomCompleted -= IncrementRoomCount;
     }
 
     private void IncrementRoomCount()

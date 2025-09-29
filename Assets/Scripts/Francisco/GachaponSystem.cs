@@ -4,7 +4,7 @@ using System.Linq;
 
 public struct GachaponResult
 {
-    public GachaponEffectData effect;
+    public GachaponEffectData effectPair;
     public EffectRarity rarity;
 }
 
@@ -15,7 +15,6 @@ public class GachaponSystem : MonoBehaviour
     [Header("Configuración y Pool de Efectos")]
     public List<GachaponEffectData> allEffects;
 
-    private const float ADVANTAGE_CHANCE = 70f;
 
     private Dictionary<EffectRarity, float> baseRarityChances = new Dictionary<EffectRarity, float>()
     {
@@ -40,40 +39,23 @@ public class GachaponSystem : MonoBehaviour
 
     public GachaponResult PullGachapon()
     {
-        if (playerStatsManager == null) return new GachaponResult { effect = null, rarity = EffectRarity.Comun };
+        if (playerStatsManager == null) return new GachaponResult { effectPair = null, rarity = EffectRarity.Comun };
 
-        bool isAdvantage = Random.Range(0f, 100f) < ADVANTAGE_CHANCE;
+        GachaponEffectData selectedEffectPair = SelectEffectPairWithRarity(allEffects);
 
-        List<GachaponEffectData> filteredPool = allEffects
-            .Where(e => e.isAdvantage == isAdvantage)
-            .ToList();
-
-        if (!filteredPool.Any()) return new GachaponResult { effect = null, rarity = EffectRarity.Comun };
-
-        GachaponEffectData selectedEffect;
-
-        if (isAdvantage)
-        {
-            selectedEffect = SelectAdvantageWithRarity(filteredPool);
-        }
-        else
-        {
-            selectedEffect = SelectEffectFromPool(filteredPool);
-        }
-
-        if (selectedEffect != null)
+        if (selectedEffectPair != null)
         {
             return new GachaponResult
             {
-                effect = selectedEffect,
-                rarity = selectedEffect.rarity
+                effectPair = selectedEffectPair,
+                rarity = selectedEffectPair.rarity
             };
         }
 
-        return new GachaponResult { effect = null, rarity = EffectRarity.Comun };
+        return new GachaponResult { effectPair = null, rarity = EffectRarity.Comun };
     }
 
-    private GachaponEffectData SelectAdvantageWithRarity(List<GachaponEffectData> advantagePool)
+    private GachaponEffectData SelectEffectPairWithRarity(List<GachaponEffectData> effectPool)
     {
         float luckStacks = playerStatsManager.GetCurrentStat(StatType.LuckStack);
         luckStacks = Mathf.Min(luckStacks, MAX_LUCK_STACKS);
@@ -108,11 +90,11 @@ public class GachaponSystem : MonoBehaviour
 
         EffectRarity selectedRarity = SelectRarity(currentRarityChances);
 
-        List<GachaponEffectData> rarityPool = advantagePool
+        List<GachaponEffectData> rarityPool = effectPool
             .Where(e => e.rarity == selectedRarity)
             .ToList();
 
-        if (!rarityPool.Any()) return SelectEffectFromPool(advantagePool);
+        if (!rarityPool.Any()) return SelectEffectFromPool(effectPool);
 
         return SelectEffectFromPool(rarityPool);
     }
@@ -157,21 +139,50 @@ public class GachaponSystem : MonoBehaviour
         return EffectRarity.Comun;
     }
 
-    public void ApplyEffect(GachaponEffectData effect)
+    public void ApplyEffect(GachaponResult result)
     {
-        if (effect.durationType == EffectDurationType.Permanent)
+        GachaponEffectData effectPair = result.effectPair;
+
+        if (effectPair == null) return;
+
+        foreach (var modifier in effectPair.advantageModifiers)
         {
-            playerStatsManager.ModifyPermanentStat(effect.statType, effect.modifierValue);
-        }
-        else if (effect.durationType == EffectDurationType.Rounds)
-        {
-            playerStatsManager.ApplyTemporaryStatByRooms(effect.statType, effect.modifierValue, (int)effect.durationValue);
-        }
-        else if (effect.durationType == EffectDurationType.Time)
-        {
-            playerStatsManager.ApplyTemporaryStatByTime(effect.statType, effect.modifierValue, effect.durationValue);
+            ApplySingleModifier(modifier, true);
         }
 
-        Debug.Log($"Gachapon aplicado: {effect.effectName}. Valor: {effect.modifierValue}. Duración: {effect.durationType} por {effect.durationValue}");
+        foreach (var modifier in effectPair.disadvantageModifiers)
+        {
+            ApplySingleModifier(modifier, false);
+        }
+
+        Debug.Log($"Gachapon aplicado: {effectPair.effectName}. Rareza: {effectPair.rarity}. Total Ventajas: {effectPair.advantageModifiers.Count}. Total Desventajas: {effectPair.disadvantageModifiers.Count}");
+    }
+
+    private void ApplySingleModifier(GachaponModifier modifier, bool isAdvantage)
+    {
+        float finalModifierValue = modifier.modifierValue;
+
+        if (modifier.isPercentage)
+        {
+            float currentStatValue = playerStatsManager.GetCurrentStat(modifier.statType);
+            finalModifierValue = currentStatValue * (modifier.modifierValue / 100f);
+        }
+
+        string type = isAdvantage ? "Ventaja" : "Desventaja";
+
+        if (modifier.durationType == EffectDurationType.Permanent)
+        {
+            playerStatsManager.ModifyPermanentStat(modifier.statType, finalModifierValue);
+        }
+        else if (modifier.durationType == EffectDurationType.Rounds)
+        {
+            playerStatsManager.ApplyTemporaryStatByRooms(modifier.statType, finalModifierValue, (int)modifier.durationValue);
+        }
+        else if (modifier.durationType == EffectDurationType.Time)
+        {
+            playerStatsManager.ApplyTemporaryStatByTime(modifier.statType, finalModifierValue, modifier.durationValue);
+        }
+
+        Debug.Log($"   -> {type} aplicado: {modifier.statType}. Valor: {finalModifierValue} (Original: {modifier.modifierValue}{(modifier.isPercentage ? "%" : "")}). Duración: {modifier.durationType} por {modifier.durationValue}");
     }
 }

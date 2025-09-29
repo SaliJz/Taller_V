@@ -104,13 +104,13 @@ public class GachaponTrigger : MonoBehaviour
 
         if (rarityColorsMap.ContainsKey(result.rarity))
         {
-            if (result.effect != null)
+            if (result.effectPair != null)
             {
-                gachaponSystem.ApplyEffect(result.effect);
+                gachaponSystem.ApplyEffect(result);
             }
             else
             {
-                Debug.LogWarning("La gachapon falló o no devolvió un efecto. El color de la rareza ganada será visible permanentemente.");
+                Debug.LogWarning("La gachapon falló o no devolvió un par de efectos. El color de la rareza ganada será visible permanentemente.");
             }
 
             yield return StartCoroutine(SetFinalRarityColor(result.rarity));

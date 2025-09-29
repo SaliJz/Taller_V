@@ -36,9 +36,9 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private KeyCode reRollKey = KeyCode.R;
     [SerializeField] private bool canReroll = true;
 
-    private readonly List<ShopItem> availableItems = new();
-    private readonly List<ShopItem> spawnedItems = new();
-    private readonly List<GameObject> _spawnedItemObjects = new();
+    private readonly List<ShopItem> availableItems = new List<ShopItem>();
+    private readonly List<ShopItem> spawnedItems = new List<ShopItem>();
+    private readonly List<GameObject> _spawnedItemObjects = new List<GameObject>();
     private List<ShopItem> currentShopItems;
     private List<Transform> _shopSpawnLocations;
 
@@ -226,9 +226,7 @@ public class ShopManager : MonoBehaviour
         }
 
         DestroyCurrentItems();
-
         InitializeShopItemPools();
-
         GenerateShopItems(_shopSpawnLocations);
 
         Debug.Log("Tienda regenerada con éxito.");
@@ -252,7 +250,6 @@ public class ShopManager : MonoBehaviour
         {
             List<ShopItem> safeItemsCopy = new List<ShopItem>(safeRelics);
 
-            safeItemsCopy.Shuffle();
             for (int i = 0; i < maxItems && i < safeItemsCopy.Count; i++)
             {
                 itemsToSpawn.Add(safeItemsCopy[i]);
@@ -261,7 +258,7 @@ public class ShopManager : MonoBehaviour
         else
         {
             List<ShopItem> allItemsCopy = new List<ShopItem>(allRelics);
-            allItemsCopy.Shuffle();
+
             for (int i = 0; i < maxItems && i < allItemsCopy.Count; i++)
             {
                 itemsToSpawn.Add(allItemsCopy[i]);
@@ -307,8 +304,12 @@ public class ShopManager : MonoBehaviour
 
     private void HandleMouseInteraction()
     {
+        if (mainCamera == null) return;
+
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
+
+        bool hitShopItem = false;
 
         if (Physics.Raycast(ray, out hit, raycastDistance, shopItemLayer))
         {
@@ -316,42 +317,71 @@ public class ShopManager : MonoBehaviour
 
             if (itemDisplay != null)
             {
+                hitShopItem = true;
+
+                float finalCost = CalculateFinalCost(itemDisplay.shopItemData.cost);
+
                 if (lastDetectedItem != itemDisplay.shopItemData)
                 {
-                    DisplayItemUI(itemDisplay.shopItemData, showCostBar: false);
+                    DisplayItemUI(itemDisplay.shopItemData, finalCost);
                     lastDetectedItem = itemDisplay.shopItemData;
                 }
                 PositionUIPanel(Input.mousePosition);
             }
         }
-        else
+
+        if (!hitShopItem && shopUIPanel != null && shopUIPanel.activeSelf)
         {
             HideItemUI();
             lastDetectedItem = null;
         }
     }
 
-    public void DisplayItemUI(ShopItem itemData, bool showCostBar)
+    public float CalculateFinalCost(float baseCost)
+    {
+        if (playerStatsManager == null) return baseCost;
+
+        float priceReductionPercentage = playerStatsManager.GetCurrentStat(StatType.ShopPriceReduction);
+        float discountFactor = Mathf.Clamp01(priceReductionPercentage / 100f);
+
+        float finalCost = baseCost * (1f - discountFactor);
+
+        finalCost = Mathf.Max(1f, finalCost);
+
+        return finalCost;
+    }
+
+    public void DisplayItemUI(ShopItem itemData, float finalCost)
     {
         if (shopUIPanel != null)
         {
             shopUIPanel.SetActive(true);
             itemNameText.text = $"Nombre: {itemData.itemName}";
-            itemCostText.text = $"Costo: {itemData.cost} HP";
+            itemCostText.text = $"Costo: {Mathf.RoundToInt(finalCost)} HP";
             itemDescriptionText.text = $"Descripción: {itemData.description}";
         }
     }
 
-    public void UpdateCostBar(float itemCost)
+    public void UpdateCostBar(float cost)
     {
-        if (costBar != null)
+        if (costBar == null || playerHealth == null) return;
+
+        float currentHealth = GetPlayerCurrentHealth();
+        float maxHealth = GetPlayerMaxHealth();
+
+        bool shouldDisplay = cost > 0;
+        costBar.gameObject.SetActive(shouldDisplay);
+        if (!shouldDisplay) return;
+
+        costBar.fillAmount = cost / maxHealth;
+
+        if (currentHealth > cost)
         {
-            float currentHealth = GetPlayerCurrentHealth();
-            float maxHealth = GetPlayerMaxHealth();
-
-            costBar.fillAmount = Mathf.Clamp01(itemCost / maxHealth);
-
-            costBar.color = currentHealth > itemCost ? affordableColor : unaffordableColor;
+            costBar.color = affordableColor;
+        }
+        else
+        {
+            costBar.color = unaffordableColor;
         }
     }
 
@@ -373,20 +403,21 @@ public class ShopManager : MonoBehaviour
         return playerHealth.GetMaxHealth();
     }
 
-
     public bool PurchaseItem(ShopItem item)
     {
         if (playerStatsManager == null || playerHealth == null || inventoryManager == null) return false;
 
+        float finalCost = CalculateFinalCost(item.cost);
+
         float currentHealth = playerHealth.GetCurrentHealth();
 
-        if (currentHealth <= item.cost)
+        if (currentHealth <= finalCost)
         {
             if (inventoryManager != null)
             {
                 inventoryManager.ShowWarningMessage("Vida insuficiente para la compra. ¡Debes sobrevivir!");
             }
-            Debug.LogWarning($"No se puede comprar {item.itemName}. Vida actual ({currentHealth}) es menor o igual que el costo ({item.cost}).");
+            Debug.LogWarning($"No se puede comprar {item.itemName}. Vida actual ({currentHealth}) es menor o igual que el costo final ({finalCost}).");
             return false;
         }
 
@@ -411,8 +442,8 @@ public class ShopManager : MonoBehaviour
             playerStatsManager.ApplyModifier(drawback.type, drawback.amount, isTemporary: false, isPercentage: drawback.isPercentage);
         }
 
-        playerHealth.TakeDamage(item.cost, true);
-        Debug.Log($"Compra exitosa de {item.itemName}. Se ha restado {item.cost} de vida.");
+        playerHealth.TakeDamage(Mathf.RoundToInt(finalCost), true); 
+        Debug.Log($"Compra exitosa de {item.itemName}. Se ha restado {finalCost:F2} de vida (Costo base: {item.cost}).");
 
         if (item.benefits.Exists(b => b.type == StatType.ShieldBlockUpgrade))
         {

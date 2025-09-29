@@ -24,7 +24,9 @@ public class ShopItemDisplay : MonoBehaviour
         {
             if (shopManager != null)
             {
-                shopManager.UpdateCostBar(shopItemData.cost);
+                float finalCost = shopManager.CalculateFinalCost(shopItemData.cost);
+
+                shopManager.UpdateCostBar(finalCost);
             }
 
             if (Input.GetKey(KeyCode.E))
