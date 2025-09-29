@@ -24,6 +24,24 @@ public enum StatType
     ShieldBlockUpgrade,
     DamageTaken,
     HealthDrainAmount,
+
+    EssenceCostReduction,
+    ShopPriceReduction,
+    HealthPerRoomRegen,
+    MeleeStunChance,
+    RangedSlowStunChance,
+    CriticalChance,
+    LuckStack,
+    FireDashEffect,
+    ResidualDashEffect,
+
+    StunnedOnHitChance,
+    ShieldCatchRequired,
+    SameAttackDamageReduction,
+    MissChance,
+    ShieldDropChance,
+    BerserkerEffect,
+    DashRangeMultiplier
 }
 
 /// <summary>
@@ -42,6 +60,7 @@ public class PlayerStatsManager : MonoBehaviour
     public static event Action<StatType, float> OnStatChanged;
 
     private PlayerHealth playerHealth;
+    private int roomsCompletedSinceStart = 0;
 
     private void Awake()
     {
@@ -52,6 +71,22 @@ public class PlayerStatsManager : MonoBehaviour
     private void Start()
     {
         playerHealth = GetComponent<PlayerHealth>();
+    }
+
+    private void OnEnable()
+    {
+        DungeonGenerator.OnRoomCompleted += IncrementRoomCount;
+    }
+
+    private void OnDisable()
+    {
+        DungeonGenerator.OnRoomCompleted -= IncrementRoomCount;
+    }
+
+    private void IncrementRoomCount()
+    {
+        roomsCompletedSinceStart++;
+        Debug.Log($"[PlayerStatsManager] Sala completada. Contador: {roomsCompletedSinceStart}");
     }
 
     /// <summary>
@@ -197,6 +232,44 @@ public class PlayerStatsManager : MonoBehaviour
         }
     }
 
+    public void ModifyPermanentStat(StatType type, float modifierValue)
+    {
+        if (!baseStats.ContainsKey(type)) return;
+
+        currentStats[type] += modifierValue;
+
+        if (float.IsNaN(currentStats[type]) || float.IsInfinity(currentStats[type]))
+        {
+            Debug.LogError($"[PlayerStatsManager] Stat permanente '{type}' resultó en un valor inválido ({currentStats[type]}). Se ha reseteado al valor base.");
+            currentStats[type] = baseStats.ContainsKey(type) ? baseStats[type] : 0f;
+        }
+
+        baseStats[type] = currentStats[type];
+        SetStatOnSO(currentStatSO, type, currentStats[type]);
+
+        OnStatChanged?.Invoke(type, currentStats[type]);
+    }
+
+    public void ApplyTemporaryStatByRooms(StatType type, float modifierValue, int rooms)
+    {
+        currentStats[type] += modifierValue;
+        OnStatChanged?.Invoke(type, currentStats[type]);
+
+        StartCoroutine(RemoveModifierAfterRooms(type, modifierValue, rooms));
+    }
+
+    /// <summary>
+    /// Aplica una modificación de estadística temporal que dura por un tiempo específico.
+    /// </summary>
+    public void ApplyTemporaryStatByTime(StatType type, float modifierValue, float duration)
+    {
+        currentStats[type] += modifierValue;
+        OnStatChanged?.Invoke(type, currentStats[type]);
+
+        StartCoroutine(RemoveModifierAfterTime(type, modifierValue, duration));
+    }
+
+
     private void SetStatOnSO(PlayerStats so, StatType type, float value)
     {
         switch (type)
@@ -235,18 +308,17 @@ public class PlayerStatsManager : MonoBehaviour
 
     private IEnumerator RemoveModifierAfterRooms(StatType type, float modifierValue, int rooms)
     {
-        int completedRooms = 0;
+        int startRoomCount = roomsCompletedSinceStart;
+        int targetRoomCount = startRoomCount + rooms;
 
-        // Aquí debería suscribirse a un evento de "sala completada".
-        // Espera frames hasta que "completedRooms" alcance el valor.
-        while (completedRooms < rooms)
+        while (roomsCompletedSinceStart < targetRoomCount)
         {
             yield return null;
-            // Futura linea de codigo para incrementar completedRooms con un evento.
         }
 
         currentStats[type] -= modifierValue;
         OnStatChanged?.Invoke(type, currentStats[type]);
+        Debug.Log($"Efecto temporal '{type}' removido después de {rooms} habitaciones.");
     }
 
     public float GetCurrentStat(StatType type)

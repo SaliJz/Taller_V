@@ -104,6 +104,7 @@ public class DungeonGenerator : MonoBehaviour
     private float currentProbableMandatoryProbability;
 
     public PlayerMovement playerMovement;
+    public static event System.Action OnRoomCompleted;
 
     void Start()
     {
@@ -785,6 +786,13 @@ public class DungeonGenerator : MonoBehaviour
     {
         Debug.Log("Combate terminado. Abriendo puertas de salida...");
         combatRoom.UnlockExitDoors(entrancePoint);
+
+        OnRoomCompleted?.Invoke();
+    }
+
+    public void NotifyRoomCompletion()
+    {
+        OnRoomCompleted?.Invoke();
     }
 
     private IEnumerator ActivateEntranceDoorDelayed(GameObject door)

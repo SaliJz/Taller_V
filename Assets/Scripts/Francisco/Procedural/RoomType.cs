@@ -5,5 +5,6 @@ public enum RoomType
     Treasure,
     Boss,
     Shop,
-    Challenge
+    Challenge,
+    Gachapon 
 }
