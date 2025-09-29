@@ -6,7 +6,18 @@ using System.Collections;
 public class InventoryManager : MonoBehaviour
 {
     public const int MaxInventorySize = 10;
-    private readonly List<ShopItem> purchasedItems = new();
+    private static readonly List<ShopItem> currentRunItems = new List<ShopItem>();
+
+    public static List<ShopItem> CurrentRunItems
+    {
+        get { return currentRunItems; }
+    }
+
+    public void ResetRunItems()
+    {
+        currentRunItems.Clear();
+    }
+
 
     [Header("UI y Mensajes de Advertencia")]
     public GameObject inventoryFullPanel;
@@ -24,7 +35,7 @@ public class InventoryManager : MonoBehaviour
     private int messageIndex = 0;
     private Coroutine hideMessageCoroutine;
 
-    [Header("Visualización del Inventario")]
+    [Header("Visualización del Inventario (UI)")]
     public TextMeshProUGUI[] itemDisplayTexts = new TextMeshProUGUI[MaxInventorySize];
 
     private void Start()
@@ -43,35 +54,43 @@ public class InventoryManager : MonoBehaviour
 
     public bool TryAddItem(ShopItem item)
     {
-        if (purchasedItems.Count < MaxInventorySize)
+        if (CurrentRunItems.Count < MaxInventorySize) 
         {
-            purchasedItems.Add(item);
+            CurrentRunItems.Add(item); 
             UpdateInventoryUI();
             return true;
         }
-        else
-        {
-            ShowInventoryFullMessage();
-            return false;
-        }
+
+        ShowInventoryFullMessage();
+        return false;
+    }
+
+    public int GetCurrentItemCount()
+    {
+        return CurrentRunItems.Count; 
+    }
+
+    public void ClearInventory()
+    {
+        ResetRunItems(); 
+        UpdateInventoryUI();
     }
 
     private void UpdateInventoryUI()
     {
+        List<ShopItem> currentItems = CurrentRunItems; 
+
         for (int i = 0; i < MaxInventorySize; i++)
         {
-            if (i < purchasedItems.Count)
+            if (itemDisplayTexts[i] != null)
             {
-                if (itemDisplayTexts[i] != null)
+                if (i < currentItems.Count)
                 {
-                    itemDisplayTexts[i].text = purchasedItems[i].itemName;
+                    itemDisplayTexts[i].text = currentItems[i].itemName;
                 }
-            }
-            else
-            {
-                if (itemDisplayTexts[i] != null)
+                else
                 {
-                    itemDisplayTexts[i].text = string.Empty;
+                    itemDisplayTexts[i].text = "";
                 }
             }
         }
@@ -87,6 +106,13 @@ public class InventoryManager : MonoBehaviour
             message = inventoryFullMessages[messageIndex];
             messageIndex = (messageIndex + 1) % inventoryFullMessages.Length;
         }
+
+        ShowWarningMessage(message);
+    }
+
+    public void ShowWarningMessage(string message)
+    {
+        if (inventoryFullText == null) return;
 
         inventoryFullText.text = message;
         inventoryFullText.color = Color.red;
@@ -120,6 +146,4 @@ public class InventoryManager : MonoBehaviour
             inventoryFullText.gameObject.SetActive(false);
         }
     }
-
-    public int GetCurrentItemCount() => purchasedItems.Count;
 }

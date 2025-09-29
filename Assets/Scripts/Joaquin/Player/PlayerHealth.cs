@@ -23,7 +23,7 @@ public class PlayerHealth : MonoBehaviour
     [Header("Configuración de Vida")]
     [Tooltip("Vida máxima por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackMaxHealth = 100;
-    [SerializeField] private float currentHealth;
+    private float currentHealth;
     [SerializeField] private float damageInvulnerabilityTime = 0.5f;
 
     [Header("Configuración de Muerte")]
@@ -47,6 +47,8 @@ public class PlayerHealth : MonoBehaviour
     private bool isDamageInvulnerable = false;
     public LifeStage CurrentLifeStage { get; private set; }
 
+    private bool isInitialized = false;
+
     private bool isDying = false;
 
     public static event Action<float, float> OnHealthChanged;
@@ -55,6 +57,7 @@ public class PlayerHealth : MonoBehaviour
     private PlayerMovement playerMovement;
     private PlayerMeleeAttack playerMeleeAttack;
     private PlayerShieldController playerShieldController;
+    private InventoryManager inventoryManager;
     private Coroutine damageInvulnerabilityCoroutine;
     private Coroutine poisonResetCoroutine;
 
@@ -64,6 +67,7 @@ public class PlayerHealth : MonoBehaviour
     private void Awake()
     {
         statsManager = GetComponent<PlayerStatsManager>();
+        inventoryManager = FindAnyObjectByType<InventoryManager>();
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerHealth. Usando vida máxima de fallback.", 2);
 
         playerMovement = GetComponent<PlayerMovement>();
@@ -73,12 +77,68 @@ public class PlayerHealth : MonoBehaviour
 
     private void Start()
     {
-        float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
-        currentHealth = maxHealth;
+        bool isTutoScene = SceneManager.GetActiveScene().name == "Tuto";
+        if (isTutoScene && statsManager != null)
+        {
+            statsManager.ResetRunStatsToDefaults();
+            inventoryManager.ClearInventory();
 
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+            float maxHealth = statsManager.GetStat(StatType.MaxHealth);
+            statsManager._currentStatSO.currentHealth = maxHealth;
+            ReportDebug($"Vida del SO forzada a MaxHealth ({maxHealth}) para el reinicio en la escena {sceneToLoadOnDeath}.", 1);
+        }
+
+        InitializeCurrentHealthFromSO();
+        InitializeShieldUpgradeFromSO();
+
+        OnHealthChanged?.Invoke(currentHealth, MaxHealth);
         UpdateLifeStage(true);
         InitializedPosionDebuff();
+
+        isInitialized = true;
+    }
+
+    private void InitializeShieldUpgradeFromSO()
+    {
+        if (statsManager != null && statsManager._currentStatSO != null)
+        {
+            HasShieldBlockUpgrade = statsManager._currentStatSO.isShieldBlockUpgradeActive;
+        }
+    }
+
+    private void InitializeCurrentHealthFromSO()
+    {
+        if (statsManager != null && statsManager._currentStatSO != null)
+        {
+            float maxHealthValue = MaxHealth;
+            float soCurrentHealth = statsManager._currentStatSO.currentHealth;
+
+            bool isTutoScene = SceneManager.GetActiveScene().name == sceneToLoadOnDeath;
+
+            if (isTutoScene)
+            {
+                currentHealth = maxHealthValue;
+                statsManager._currentStatSO.currentHealth = maxHealthValue;
+                ReportDebug($"Escena de reinicio ({SceneManager.GetActiveScene().name}) detectada. Vida restaurada a MaxHealth: {currentHealth}", 1);
+            }
+            else
+            {
+                currentHealth = Mathf.Clamp(soCurrentHealth, 0, maxHealthValue);
+                ReportDebug($"Vida actual cargada desde SO en escena {SceneManager.GetActiveScene().name}: {currentHealth}/{maxHealthValue}", 1);
+            }
+        }
+        else
+        {
+            currentHealth = fallbackMaxHealth;
+        }
+    }
+
+    private void SyncCurrentHealthToSO()
+    {
+        if (statsManager != null && statsManager._currentStatSO != null)
+        {
+            statsManager._currentStatSO.currentHealth = currentHealth;
+        }
     }
 
     private void InitializedPosionDebuff()
@@ -114,10 +174,20 @@ public class PlayerHealth : MonoBehaviour
     {
         if (statType == StatType.MaxHealth)
         {
-            float oldMaxHealth = Mathf.Max(1, statsManager.GetStat(StatType.MaxHealth));
-            float percentage = currentHealth / oldMaxHealth;
+            float maxHealthBeforeChange = MaxHealth;
+            float percentage = currentHealth / Mathf.Max(1, maxHealthBeforeChange);
 
             currentHealth = Mathf.Clamp(newValue * percentage, 0, newValue);
+
+            if (isInitialized)
+            {
+                SyncCurrentHealthToSO();
+            }
+            else
+            {
+                ReportDebug("Sincronización de vida omitida debido a inicialización temprana (currentHealth=0).", 1);
+            }
+
             OnHealthChanged?.Invoke(currentHealth, newValue);
 
             UpdateLifeStage();
@@ -130,25 +200,25 @@ public class PlayerHealth : MonoBehaviour
     /// Función que aplica daño al jugador.
     /// </summary>
     /// <param name="damageAmount"> Cantidad de daño a aplicar. </param>
-    public void TakeDamage(float damageAmount)
+    public void TakeDamage(float damageAmount, bool isCostDamage = false)
     {
         if (isDying) return;
 
-        if (isDamageInvulnerable || IsInvulnerable)
+        if (!isCostDamage && (isDamageInvulnerable || IsInvulnerable))
         {
             ReportDebug("El jugador es invulnerable y no recibe daño.", 1);
             return;
         }
 
-        if (HasShieldBlockUpgrade)
+        if (!isCostDamage && HasShieldBlockUpgrade)
         {
             if (isShieldBlockReady)
             {
-                isShieldBlockReady = false; // El bloqueo se consume
+                isShieldBlockReady = false; 
                 ReportDebug("El escudo ha bloqueado el daño entrante.", 1);
 
                 StartCoroutine(ShieldBlockCooldownRoutine());
-                return;
+                return; 
             }
         }
 
@@ -157,9 +227,14 @@ public class PlayerHealth : MonoBehaviour
         currentHealth -= damageAmount;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
-        isDamageInvulnerable = true;
-        if (damageInvulnerabilityCoroutine != null) StopCoroutine(damageInvulnerabilityCoroutine);
-        damageInvulnerabilityCoroutine = StartCoroutine(DamageInvulnerabilityRoutine());
+        SyncCurrentHealthToSO();
+
+        if (!isCostDamage)
+        {
+            isDamageInvulnerable = true;
+            if (damageInvulnerabilityCoroutine != null) StopCoroutine(damageInvulnerabilityCoroutine);
+            damageInvulnerabilityCoroutine = StartCoroutine(DamageInvulnerabilityRoutine());
+        }
 
         if (currentHealth <= 0) Die();
 
@@ -216,6 +291,8 @@ public class PlayerHealth : MonoBehaviour
         currentHealth += healAmount;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
+        SyncCurrentHealthToSO();
+
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
         UpdateLifeStage();
@@ -250,8 +327,7 @@ public class PlayerHealth : MonoBehaviour
         if (isDying) return;
         isDying = true;
 
-        ReportDebug("El jugador ha muerto. Recargando escena: " + sceneToLoadOnDeath, 1);
-        statsManager.ResetStats();
+        ReportDebug("El jugador ha muerto. Cargando escena: " + sceneToLoadOnDeath, 1);
 
         if (playerMovement != null) playerMovement.enabled = false;
         if (playerMeleeAttack != null) playerMeleeAttack.enabled = false;
@@ -264,10 +340,10 @@ public class PlayerHealth : MonoBehaviour
         if (FadeController.Instance != null)
         {
             StartCoroutine(FadeController.Instance.FadeOut(
-                fadeColor: deathFadeColor,
-                onComplete: () => {
-                    SceneManager.LoadScene(sceneToLoadOnDeath);
-                }));
+              fadeColor: deathFadeColor,
+              onComplete: () => {
+                  SceneManager.LoadScene(sceneToLoadOnDeath);
+              }));
         }
         else
         {
@@ -280,15 +356,32 @@ public class PlayerHealth : MonoBehaviour
         return currentHealth;
     }
 
+    public float GetMaxHealth()
+    {
+        return MaxHealth;
+    }
+
     public void EnableShieldBlockUpgrade()
     {
         HasShieldBlockUpgrade = true;
+
+        if (statsManager != null && statsManager._currentStatSO != null)
+        {
+            statsManager._currentStatSO.isShieldBlockUpgradeActive = true;
+        }
+
         ReportDebug("La mejora de bloqueo de escudo ha sido activada.", 1);
     }
 
     public void DisableShieldBlockUpgrade()
     {
         HasShieldBlockUpgrade = false;
+
+        if (statsManager != null && statsManager._currentStatSO != null)
+        {
+            statsManager._currentStatSO.isShieldBlockUpgradeActive = false;
+        }
+
         ReportDebug("La mejora de bloqueo de escudo ha sido desactivada.", 1);
     }
 
@@ -328,10 +421,10 @@ public class PlayerHealth : MonoBehaviour
     #endregion
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
-    /// <summary> 
-    /// Función de depuración para reportar mensajes en la consola de Unity. 
-    /// </summary> 
-    /// <<param name="message">Mensaje a reportar.</param> >
+    /// <summary> 
+    /// Función de depuración para reportar mensajes en la consola de Unity. 
+    /// </summary> 
+    /// <param name="message">Mensaje a reportar.</param>
     /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
     private static void ReportDebug(string message, int reportPriorityLevel)
     {

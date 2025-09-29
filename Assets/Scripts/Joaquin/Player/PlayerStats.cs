@@ -8,6 +8,7 @@ public class PlayerStats : ScriptableObject
 {
     [Header("Vida")]
     public float maxHealth = 100f;
+    public float currentHealth = 100f;
 
     [Header("Movimiento")]
     public float moveSpeed = 5f;
@@ -31,4 +32,5 @@ public class PlayerStats : ScriptableObject
 
     [Header("Habilidades")]
     public float HealthDrainAmount = 2f;
+    public bool isShieldBlockUpgradeActive = false;
 }
