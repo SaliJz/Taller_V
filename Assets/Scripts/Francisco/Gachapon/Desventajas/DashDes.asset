@@ -10,20 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 222afdbd4ac8db6449e5f7acaa1f4658, type: 3}
-  m_Name: MovimientoDes
+  m_Name: DashDes
   m_EditorClassIdentifier: 
-  effectName: Movimiento
+  effectName: Dash reducido
   rarity: 1
-  poolProbability: 3
+  poolProbability: 1
   advantageModifiers: []
   disadvantageModifiers:
-  - statType: 1
-    modifierValue: -7
+  - statType: 31
+    modifierValue: -0.5
     isPercentage: 0
-    durationType: 0
-    durationValue: 0
-  - statType: 1
-    modifierValue: -10
-    isPercentage: 1
     durationType: 1
     durationValue: 2

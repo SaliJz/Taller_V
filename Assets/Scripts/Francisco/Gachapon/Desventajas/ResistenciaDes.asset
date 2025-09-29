@@ -10,20 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 222afdbd4ac8db6449e5f7acaa1f4658, type: 3}
-  m_Name: MovimientoDes
+  m_Name: ResistenciaDes
   m_EditorClassIdentifier: 
-  effectName: Movimiento
+  effectName: Resistencia
   rarity: 1
-  poolProbability: 3
+  poolProbability: 1
   advantageModifiers: []
   disadvantageModifiers:
-  - statType: 1
-    modifierValue: -7
-    isPercentage: 0
+  - statType: 14
+    modifierValue: 5
+    isPercentage: 1
     durationType: 0
     durationValue: 0
-  - statType: 1
-    modifierValue: -10
+  - statType: 14
+    modifierValue: 20
     isPercentage: 1
     durationType: 1
-    durationValue: 2
+    durationValue: 1
