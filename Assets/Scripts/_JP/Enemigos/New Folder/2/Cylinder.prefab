@@ -11,9 +11,9 @@ GameObject:
   - component: {fileID: 1799472208382461301}
   - component: {fileID: 7518326986700771134}
   - component: {fileID: 5994915342241069059}
-  - component: {fileID: 1398523369654636916}
   - component: {fileID: 1195014509090568236}
-  m_Layer: 7
+  - component: {fileID: 3695302792289767289}
+  m_Layer: 0
   m_Name: Cylinder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -5.3, y: 0, z: 2.82}
-  m_LocalScale: {x: 1, y: 0.055433, z: 1}
+  m_LocalScale: {x: 18.254269, y: 0.008100206, z: 18.254269}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -88,8 +88,23 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!135 &1398523369654636916
-SphereCollider:
+--- !u!114 &1195014509090568236
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6685282543253373226}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d363bf3e8581834ca624df2aee565d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reduccionPercent: 1
+  duracion: 10
+  applyInterval: 1
+--- !u!64 &3695302792289767289
+MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -106,19 +121,7 @@ SphereCollider:
   m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 1.0000001
-  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
---- !u!114 &1195014509090568236
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6685282543253373226}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5d363bf3e8581834ca624df2aee565d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  visualMaterial: {fileID: 2100000, guid: 7e74d3f1e040299429deb50291dc342e, type: 2}
+  serializedVersion: 5
+  m_Convex: 1
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}

@@ -956,6 +956,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 244175890}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &251345373
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 251345374}
+  m_Layer: 0
+  m_Name: TransformArea
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &251345374
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 251345373}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.016, y: -0.995, z: -0.02}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1890080359}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &259045291
 GameObject:
   m_ObjectHideFlags: 0
@@ -1618,7 +1649,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: 3af1653c96af2ce4991f77818c455fff, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: b16c26ff6de528c4989da40c3b8a5cad, type: 2}
   m_BuildHeightMesh: 0
 --- !u!4 &794741222
 Transform:
@@ -2048,7 +2079,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1254756861}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: TransformAtaque
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2063,7 +2094,7 @@ Transform:
   m_GameObject: {fileID: 1254756860}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1.25}
+  m_LocalPosition: {x: 0, y: 0, z: 0.65}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3179,7 +3210,6 @@ GameObject:
   - component: {fileID: 1890080354}
   - component: {fileID: 1890080360}
   - component: {fileID: 1890080361}
-  - component: {fileID: 1890080363}
   - component: {fileID: 1890080362}
   m_Layer: 7
   m_Name: Capsule
@@ -3315,13 +3345,14 @@ Transform:
   m_GameObject: {fileID: 1890080353}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.8504744, y: -0.26, z: -7.8673983}
+  m_LocalPosition: {x: 2.8504744, y: -0.127, z: -7.8673983}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1585713221}
   - {fileID: 1678676556}
   - {fileID: 1254756861}
+  - {fileID: 251345374}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1890080360
@@ -3390,41 +3421,14 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   areaPrefab: {fileID: 6685282543253373226, guid: 336f3ed34d206274a9846dd49788956d, type: 3}
+  areaSpawnPoint: {fileID: 251345374}
   visualColor: {r: 0, g: 1, b: 0, a: 0.25}
   visualThickness: 0.08
   flattenHeightThreshold: 1.2
   checkInterval: 0.2
---- !u!114 &1890080363
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1890080353}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 0
-  deathCooldown: 2
-  healthSteal: 5
-  firstLifeSlider: {fileID: 0}
-  firstFillImage: {fileID: 0}
-  offsetAboveEnemy: 2
-  glowDelayAfterCritical: 2
-  enableAutoArea: 1
-  areaTriggerPercent: 0.25
-  areaReductionPercent: 0.25
-  areaDuration: 10
-  areaCooldown: 4.5
-  areaRadius: 8
-  areaLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  flattenHeightThreshold: 1.2
-  areaCheckInterval: 0.25
+  momentaryDuration: 0.15
+  destroyAreaInstanceAfterUse: 1
+  destroyDelayAfterDeactivate: 0
 --- !u!1 &1962080825
 GameObject:
   m_ObjectHideFlags: 0
