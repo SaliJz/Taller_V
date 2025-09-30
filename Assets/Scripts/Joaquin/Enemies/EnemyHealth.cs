@@ -16,6 +16,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float currentHealth;
     [SerializeField] private float deathCooldown = 2f;
+    [SerializeField] private bool canDestroy = false;
 
     [Header("Health Stealing Mechanics")]
     [SerializeField] private float healthSteal = 5;
@@ -31,7 +32,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     public float CurrentHealth
     {
-        get => currentHealth;
+        get
+        { 
+            return currentHealth; 
+        }
         private set
         {
             if (!Mathf.Approximately(currentHealth, value))
@@ -39,6 +43,30 @@ public class EnemyHealth : MonoBehaviour, IDamageable
                 currentHealth = value;
                 OnEnemyHealthChanged?.Invoke(currentHealth, maxHealth);
             }
+        }
+    }
+
+    public bool IsDead
+    { 
+        get 
+        { 
+            return isDead; 
+        }
+        private set
+        {
+            isDead = value;
+        }
+    }
+
+    public bool CanDestroy 
+    { 
+        get 
+        { 
+            return canDestroy; 
+        }
+        set
+        {
+            canDestroy = value;
         }
     }
 
@@ -186,7 +214,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         UpdateSlidersSafely();
     }
 
-    private void Die()
+    public void Die()
     {
         isDead = true;
 
@@ -199,7 +227,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             ReportDebug($"El jugador ha robado {healthSteal} de vida al matar a {gameObject.name}.", 1);
         }
 
-        Destroy(gameObject, deathCooldown);
+        if (!canDestroy) Destroy(gameObject, deathCooldown);
     }
 
     private void UpdateSlidersSafely()
