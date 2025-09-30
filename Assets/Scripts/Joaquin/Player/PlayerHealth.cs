@@ -95,6 +95,13 @@ public class PlayerHealth : MonoBehaviour
         InitializeCurrentHealthFromSO();
         InitializeShieldUpgradeFromSO();
 
+        // --- Cambiado: forzar vida al máximo en Start para evitar iniciar con vida baja ---
+        float startMaxHealth = MaxHealth;
+        currentHealth = startMaxHealth;
+        SyncCurrentHealthToSO();
+        ReportDebug($"Vida forzada a MaxHealth al iniciar: {currentHealth}/{startMaxHealth}", 1);
+        // -------------------------------------------------------------------------------
+
         OnHealthChanged?.Invoke(currentHealth, MaxHealth);
         UpdateLifeStage(true);
         InitializedPosionDebuff();
@@ -480,21 +487,14 @@ public class PlayerHealth : MonoBehaviour
 
 
 
-
-
-
-
-
-
-
-
-//Codigo anterior antes del textmeshPro metido por jp
+// Codigo sin el maximo de vida en el start()
 
 
 //using System;
 //using System.Collections;
 //using UnityEngine;
 //using UnityEngine.SceneManagement;
+//using TMPro; // <-- añadido
 
 ///// <summary>
 ///// Clase que maneja la salud del jugador, incluyendo daño, curación y etapas de vida.
@@ -534,6 +534,9 @@ public class PlayerHealth : MonoBehaviour
 //    [SerializeField] private float poisonInitialDamage = 2;
 //    [SerializeField] private float poisonResetTime = 5;
 //    private int morlockHitCounter = 0;
+
+//    [Header("UI")]
+//    [SerializeField] private TMP_Text lifeStageText; // <-- añadido: TextMeshPro que muestra la etapa de vida
 
 //    public bool HasShieldBlockUpgrade { get; private set; } = false;
 //    public bool IsInvulnerable { get; set; } = false;
@@ -811,6 +814,29 @@ public class PlayerHealth : MonoBehaviour
 //        if (CurrentLifeStage != oldStage || forceNotify)
 //        {
 //            OnLifeStageChanged?.Invoke(CurrentLifeStage);
+
+//            // Actualizar TextMeshPro si está asignado
+//            if (lifeStageText != null)
+//            {
+//                // Mostrar solo el nombre de la etapa (sin texto adicional)
+//                lifeStageText.text = GetLifeStageString(CurrentLifeStage);
+//            }
+//        }
+//    }
+
+//    // Traduce el enum de LifeStage a una cadena en español para mostrar en TMP.
+//    private string GetLifeStageString(LifeStage stage)
+//    {
+//        switch (stage)
+//        {
+//            case LifeStage.Young:
+//                return "Joven";
+//            case LifeStage.Adult:
+//                return "Adulto";
+//            case LifeStage.Elder:
+//                return "Anciano";
+//            default:
+//                return stage.ToString();
 //        }
 //    }
 
@@ -915,9 +941,9 @@ public class PlayerHealth : MonoBehaviour
 //    #endregion
 
 //    [System.Diagnostics.Conditional("UNITY_EDITOR")]
-//    /// <summary> 
-//    /// Función de depuración para reportar mensajes en la consola de Unity. 
-//    /// </summary> 
+//    /// <summary> 
+//    /// Función de depuración para reportar mensajes en la consola de Unity. 
+//    /// </summary> 
 //    /// <param name="message">Mensaje a reportar.</param>
 //    /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
 //    private static void ReportDebug(string message, int reportPriorityLevel)
