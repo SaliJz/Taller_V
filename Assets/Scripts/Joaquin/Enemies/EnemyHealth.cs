@@ -16,7 +16,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float currentHealth;
     [SerializeField] private float deathCooldown = 2f;
-    [SerializeField] private bool canDestroy = false;
+    [SerializeField] private bool canDestroy = true;
 
     [Header("Health Stealing Mechanics")]
     [SerializeField] private float healthSteal = 5;
