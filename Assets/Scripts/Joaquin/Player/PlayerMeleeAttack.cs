@@ -10,12 +10,12 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private PlayerStatsManager statsManager;
     [SerializeField] private GameObject visualHit;
 
-    [Header("Configuración de Ataque")]
+    [Header("Configuraciï¿½n de Ataque")]
     [SerializeField] private Transform hitPoint;
     [Tooltip("Radio de golpe por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackHitRadius = 0.8f;
     [SerializeField] private float hitRadius = 0.8f;
-    [Tooltip("Daño de ataque por defecto si no se encuentra PlayerStatsManager.")]
+    [Tooltip("Daï¿½o de ataque por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackAttackDamage = 10;
     [SerializeField] private int attackDamage = 10;
     [Tooltip("Velocidad de ataque por defecto si no se encuentra PlayerStatsManager.")]
@@ -44,7 +44,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     {
         if (visualHit != null) visualHit.SetActive(false);
         statsManager = GetComponent<PlayerStatsManager>();
-        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMeleeAttack. Usando valores de de fallback.", 2);
+        if (statsManager == null) ReportDebug("StatsManager no estï¿½ asignado en PlayerMeleeAttack. Usando valores de de fallback.", 2);
     }
 
     private void OnEnable()
@@ -63,7 +63,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         showGizmo = false;
 
-        // Inicializar estadísticas del ataque melee desde PlayerStatsManager o usar valores de fallback
+        // Inicializar estadï¿½sticas del ataque melee desde PlayerStatsManager o usar valores de fallback
         float hitRadiusStat = statsManager != null ? statsManager.GetStat(StatType.MeleeRadius) : fallbackHitRadius;
         hitRadius = hitRadiusStat;
 
@@ -73,7 +73,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         float attackSpeedStat = statsManager != null ? statsManager.GetStat(StatType.MeleeAttackSpeed) : fallbackAttackSpeed;
         attackSpeed = attackSpeedStat;
 
-        // Inicializar estadísticas globales que afectan a todos los ataques desde PlayerStatsManager o usar valores fallback
+        // Inicializar estadï¿½sticas globales que afectan a todos los ataques desde PlayerStatsManager o usar valores fallback
         float damageMultiplierStat = statsManager != null ? statsManager.GetStat(StatType.AttackDamage) : 1f;
         damageMultiplier = damageMultiplierStat;
 
@@ -86,8 +86,8 @@ public class PlayerMeleeAttack : MonoBehaviour
     /// <summary>
     /// Maneja los cambios de stats.
     /// </summary>
-    /// <param name="statType">Tipo de estadística que ha cambiado.</param>
-    /// <param name="newValue">Nuevo valor de la estadística.</param>
+    /// <param name="statType">Tipo de estadï¿½stica que ha cambiado.</param>
+    /// <param name="newValue">Nuevo valor de la estadï¿½stica.</param>
     private void HandleStatChanged(StatType statType, float newValue)
     {
         switch (statType)
@@ -112,16 +112,16 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
 
         CalculateStats();
-        ReportDebug($"Estadística {statType} actualizada a {newValue}.", 1);
+        ReportDebug($"Estadï¿½stica {statType} actualizada a {newValue}.", 1);
     }
 
-    // Metodo para calcular las estadísticas finales del ataque.
+    // Metodo para calcular las estadï¿½sticas finales del ataque.
     private void CalculateStats()
     {
         finalAttackDamage = Mathf.RoundToInt(attackDamage * damageMultiplier);
         finalAttackSpeed = attackSpeed * speedMultiplier;
 
-        ReportDebug($"Estadísticas recalculadas: Daño Final = {finalAttackDamage}, Velocidad de Ataque Final = {finalAttackSpeed}", 1);
+        ReportDebug($"Estadï¿½sticas recalculadas: Daï¿½o Final = {finalAttackDamage}, Velocidad de Ataque Final = {finalAttackSpeed}", 1);
     }
 
     private void Update()
@@ -134,10 +134,10 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
-    // Función que inicia el ataque cuerpo a cuerpo.
+    // Funciï¿½n que inicia el ataque cuerpo a cuerpo.
     private void Attack()
     {
-        // Rota hacia el mouse justo cuando se inicia el ataque (cambio mínimo solicitado)
+        // Rota hacia el mouse justo cuando se inicia el ataque (cambio mï¿½nimo solicitado)
         RotateTowardsMouseInstant();
 
         //animator.SetTrigger("Attack");
@@ -146,7 +146,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         attackCooldown = 1f / finalAttackSpeed;
     }
 
-    // Rota instantáneamente al mouse proyectado en el plano horizontal (y = transform.position.y)
+    // Rota instantï¿½neamente al mouse proyectado en el plano horizontal (y = transform.position.y)
     private void RotateTowardsMouseInstant()
     {
         Camera cam = Camera.main;
@@ -166,9 +166,9 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
-    // FUNCIÓN LLAMADA POR UN ANIMATION EVENT
+    // FUNCIï¿½N LLAMADA POR UN ANIMATION EVENT
     /// <summary>
-    /// Función que realiza la detección de golpes en un área definida alrededor del punto de impacto.
+    /// Funciï¿½n que realiza la detecciï¿½n de golpes en un ï¿½rea definida alrededor del punto de impacto.
     /// </summary>
     public void PerformHitDetection()
     {
@@ -180,11 +180,11 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (healthController != null)
             {
                 bool isCritical;
-                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+                float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
-                healthController.TakeDamage(Mathf.RoundToInt(finalDamageWithCrit));
+                healthController.TakeDamage(Mathf.RoundToInt(finalDamage));
 
-                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daño.", 1);
+                ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daï¿½o.", 1);
             }
 
             IDamageable damageable = enemy.GetComponent<IDamageable>();
@@ -194,20 +194,23 @@ public class PlayerMeleeAttack : MonoBehaviour
                 float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
                 damageable.TakeDamage(finalDamageWithCrit, isCritical);
+                float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+                
+                damageable.TakeDamage(finalDamage, isCritical);
 
-                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daño.", 1);
+                ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daï¿½o.", 1);
             }
 
             BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
             if (bloodKnight != null)
             {
                 bool isCritical;
-                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+                float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
-                bloodKnight.TakeDamage(finalDamageWithCrit, isCritical);
+                bloodKnight.TakeDamage(finalDamage, isCritical);
                 bloodKnight.OnPlayerCounterAttack();
 
-                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daño.", 1);
+                ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daï¿½o.", 1);
             }
         }
 
@@ -232,7 +235,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     /// <summary> 
-    /// Función de depuración para reportar mensajes en la consola de Unity. 
+    /// Funciï¿½n de depuraciï¿½n para reportar mensajes en la consola de Unity. 
     /// </summary> 
     /// <<param name="message">Mensaje a reportar.</param> >
     /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
@@ -270,12 +273,12 @@ public class PlayerMeleeAttack : MonoBehaviour
 //    [SerializeField] private PlayerStatsManager statsManager;
 //    [SerializeField] private GameObject visualHit;
 
-//    [Header("Configuración de Ataque")]
+//    [Header("Configuraciï¿½n de Ataque")]
 //    [SerializeField] private Transform hitPoint;
 //    [Tooltip("Radio de golpe por defecto si no se encuentra PlayerStatsManager.")]
 //    [HideInInspector] private float fallbackHitRadius = 0.8f;
 //    [SerializeField] private float hitRadius = 0.8f;
-//    [Tooltip("Daño de ataque por defecto si no se encuentra PlayerStatsManager.")]
+//    [Tooltip("Daï¿½o de ataque por defecto si no se encuentra PlayerStatsManager.")]
 //    [HideInInspector] private float fallbackAttackDamage = 10;
 //    [SerializeField] private int attackDamage = 10;
 //    [Tooltip("Velocidad de ataque por defecto si no se encuentra PlayerStatsManager.")]
@@ -304,7 +307,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 //    {
 //        if (visualHit != null) visualHit.SetActive(false);
 //        statsManager = GetComponent<PlayerStatsManager>();
-//        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMeleeAttack. Usando valores de de fallback.", 2);
+//        if (statsManager == null) ReportDebug("StatsManager no estï¿½ asignado en PlayerMeleeAttack. Usando valores de de fallback.", 2);
 //    }
 
 //    private void OnEnable()
@@ -323,7 +326,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
 //        showGizmo = false;
 
-//        // Inicializar estadísticas del ataque melee desde PlayerStatsManager o usar valores de fallback
+//        // Inicializar estadï¿½sticas del ataque melee desde PlayerStatsManager o usar valores de fallback
 //        float hitRadiusStat = statsManager != null ? statsManager.GetStat(StatType.MeleeRadius) : fallbackHitRadius;
 //        hitRadius = hitRadiusStat;
 
@@ -333,7 +336,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 //        float attackSpeedStat = statsManager != null ? statsManager.GetStat(StatType.MeleeAttackSpeed) : fallbackAttackSpeed;
 //        attackSpeed = attackSpeedStat;
 
-//        // Inicializar estadísticas globales que afectan a todos los ataques desde PlayerStatsManager o usar valores fallback
+//        // Inicializar estadï¿½sticas globales que afectan a todos los ataques desde PlayerStatsManager o usar valores fallback
 //        float damageMultiplierStat = statsManager != null ? statsManager.GetStat(StatType.AttackDamage) : 1f;
 //        damageMultiplier = damageMultiplierStat;
 
@@ -346,8 +349,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 //    /// <summary>
 //    /// Maneja los cambios de stats.
 //    /// </summary>
-//    /// <param name="statType">Tipo de estadística que ha cambiado.</param>
-//    /// <param name="newValue">Nuevo valor de la estadística.</param>
+//    /// <param name="statType">Tipo de estadï¿½stica que ha cambiado.</param>
+//    /// <param name="newValue">Nuevo valor de la estadï¿½stica.</param>
 //    private void HandleStatChanged(StatType statType, float newValue)
 //    {
 //        switch (statType)
@@ -372,16 +375,16 @@ public class PlayerMeleeAttack : MonoBehaviour
 //        }
 
 //        CalculateStats();
-//        ReportDebug($"Estadística {statType} actualizada a {newValue}.", 1);
+//        ReportDebug($"Estadï¿½stica {statType} actualizada a {newValue}.", 1);
 //    }
 
-//    // Metodo para calcular las estadísticas finales del ataque.
+//    // Metodo para calcular las estadï¿½sticas finales del ataque.
 //    private void CalculateStats()
 //    {
 //        finalAttackDamage = Mathf.RoundToInt(attackDamage * damageMultiplier);
 //        finalAttackSpeed = attackSpeed * speedMultiplier;
 
-//        ReportDebug($"Estadísticas recalculadas: Daño Final = {finalAttackDamage}, Velocidad de Ataque Final = {finalAttackSpeed}", 1);
+//        ReportDebug($"Estadï¿½sticas recalculadas: Daï¿½o Final = {finalAttackDamage}, Velocidad de Ataque Final = {finalAttackSpeed}", 1);
 //    }
 
 //    private void Update()
@@ -394,7 +397,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 //        }
 //    }
 
-//    // Función que inicia el ataque cuerpo a cuerpo.
+//    // Funciï¿½n que inicia el ataque cuerpo a cuerpo.
 //    private void Attack()
 //    {
 //        //animator.SetTrigger("Attack");
@@ -403,9 +406,9 @@ public class PlayerMeleeAttack : MonoBehaviour
 //        attackCooldown = 1f / finalAttackSpeed;
 //    }
 
-//    // FUNCIÓN LLAMADA POR UN ANIMATION EVENT
+//    // FUNCIï¿½N LLAMADA POR UN ANIMATION EVENT
 //    /// <summary>
-//    /// Función que realiza la detección de golpes en un área definida alrededor del punto de impacto.
+//    /// Funciï¿½n que realiza la detecciï¿½n de golpes en un ï¿½rea definida alrededor del punto de impacto.
 //    /// </summary>
 //    public void PerformHitDetection()   
 //    {
@@ -421,7 +424,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
 //                healthController.TakeDamage(Mathf.RoundToInt(finalDamageWithCrit));
 
-//                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daño.", 1);
+//                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daï¿½o.", 1);
 //            }
 
 //            IDamageable damageable = enemy.GetComponent<IDamageable>();
@@ -432,7 +435,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
 //                damageable.TakeDamage(finalDamageWithCrit, isCritical);
 
-//                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daño.", 1);
+//                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daï¿½o.", 1);
 //            }
 
 //            BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
@@ -444,7 +447,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 //                bloodKnight.TakeDamage(finalDamageWithCrit, isCritical);
 //                bloodKnight.OnPlayerCounterAttack();
 
-//                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daño.", 1);
+//                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daï¿½o.", 1);
 //            }
 //        }
 
@@ -469,7 +472,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
 //    [System.Diagnostics.Conditional("UNITY_EDITOR")]
 //    /// <summary> 
-//    /// Función de depuración para reportar mensajes en la consola de Unity. 
+//    /// Funciï¿½n de depuraciï¿½n para reportar mensajes en la consola de Unity. 
 //    /// </summary> 
 //    /// <<param name="message">Mensaje a reportar.</param> >
 //    /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>

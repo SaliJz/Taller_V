@@ -16,6 +16,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float currentHealth;
     [SerializeField] private float deathCooldown = 2f;
+    [SerializeField] private bool canDestroy = true;
 
     [Header("Health Stealing Mechanics")]
     [SerializeField] private float healthSteal = 5;
@@ -26,12 +27,16 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private float offsetAboveEnemy = 2f;
     [SerializeField] private float glowDelayAfterCritical = 2f;
 
+    private bool canHealPlayer = true;
     private bool isDead = false;
     private Coroutine currentCriticalDamageCoroutine;
 
     public float CurrentHealth
     {
-        get => currentHealth;
+        get
+        { 
+            return currentHealth; 
+        }
         private set
         {
             if (!Mathf.Approximately(currentHealth, value))
@@ -40,6 +45,30 @@ public class EnemyHealth : MonoBehaviour, IDamageable
                 OnEnemyHealthChanged?.Invoke(currentHealth, maxHealth);
             }
         }
+    }
+
+    public bool CanHealPlayer
+    {
+        get { return canHealPlayer; }
+        set { canHealPlayer = value; }
+    }
+
+    public bool IsDead
+    { 
+        get { return isDead; }
+        set{ isDead = value; }
+    }
+
+    public bool CanDestroy 
+    { 
+        get { return canDestroy; }
+        set { canDestroy = value; }
+    }
+
+    public float DeathCooldown
+    {
+        get { return deathCooldown; }
+        set { deathCooldown = value; }
     }
 
     public float MaxHealth => maxHealth;
@@ -186,20 +215,29 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         UpdateSlidersSafely();
     }
 
-    private void Die()
+    public void Die()
     {
         isDead = true;
+
+        currentHealth = 0;
 
         ReportDebug($"{gameObject.name} ha muerto.", 1);
         OnDeath?.Invoke(gameObject);
 
         if (playerHealth != null)
         {
-            playerHealth.Heal(healthSteal);
+            if (canHealPlayer) playerHealth.Heal(healthSteal);
             ReportDebug($"El jugador ha robado {healthSteal} de vida al matar a {gameObject.name}.", 1);
         }
 
-        Destroy(gameObject, deathCooldown);
+        if (canDestroy)
+        {
+            Destroy(gameObject, deathCooldown);
+        }
+        else
+        {
+            gameObject.SetActive(false);
+        }
     }
 
     private void UpdateSlidersSafely()
@@ -371,5 +409,3 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     }
     #endregion
 }
-
-

@@ -2,12 +2,12 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using TMPro; // <-- añadido
+using TMPro; // <-- aï¿½adido
 
 /// <summary>
-/// Clase que maneja la salud del jugador, incluyendo daño, curación y etapas de vida.
+/// Clase que maneja la salud del jugador, incluyendo daï¿½o, curaciï¿½n y etapas de vida.
 /// </summary>
-public class PlayerHealth : MonoBehaviour
+public class PlayerHealth : MonoBehaviour, IDamageable
 {
     // Tipos de etapas de vida del jugador.
     public enum LifeStage
@@ -21,13 +21,13 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private PlayerStatsManager statsManager;
     [SerializeField] private SpriteRenderer playerSpriteRenderer;
 
-    [Header("Configuración de Vida")]
-    [Tooltip("Vida máxima por defecto si no se encuentra PlayerStatsManager.")]
+    [Header("Configuraciï¿½n de Vida")]
+    [Tooltip("Vida mï¿½xima por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackMaxHealth = 100;
     private float currentHealth;
     [SerializeField] private float damageInvulnerabilityTime = 0.5f;
 
-    [Header("Configuración de Muerte")]
+    [Header("Configuraciï¿½n de Muerte")]
     [SerializeField] private string sceneToLoadOnDeath = "Tuto";
     [SerializeField] private Color deathFadeColor = Color.red;
 
@@ -44,7 +44,7 @@ public class PlayerHealth : MonoBehaviour
     private int morlockHitCounter = 0;
 
     [Header("UI")]
-    [SerializeField] private TMP_Text lifeStageText; // <-- añadido: TextMeshPro que muestra la etapa de vida
+    [SerializeField] private TMP_Text lifeStageText; // <-- aï¿½adido: TextMeshPro que muestra la etapa de vida
 
     public bool HasShieldBlockUpgrade { get; private set; } = false;
     public bool IsInvulnerable { get; set; } = false;
@@ -72,7 +72,7 @@ public class PlayerHealth : MonoBehaviour
     {
         statsManager = GetComponent<PlayerStatsManager>();
         inventoryManager = FindAnyObjectByType<InventoryManager>();
-        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerHealth. Usando vida máxima de fallback.", 2);
+        if (statsManager == null) ReportDebug("StatsManager no estï¿½ asignado en PlayerHealth. Usando vida mï¿½xima de fallback.", 2);
 
         playerMovement = GetComponent<PlayerMovement>();
         playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
@@ -95,7 +95,7 @@ public class PlayerHealth : MonoBehaviour
         InitializeCurrentHealthFromSO();
         InitializeShieldUpgradeFromSO();
 
-        // --- Cambiado: forzar vida al máximo en Start para evitar iniciar con vida baja ---
+        // --- Cambiado: forzar vida al mï¿½ximo en Start para evitar iniciar con vida baja ---
         float startMaxHealth = MaxHealth;
         currentHealth = startMaxHealth;
         SyncCurrentHealthToSO();
@@ -162,7 +162,7 @@ public class PlayerHealth : MonoBehaviour
         }
         else
         {
-            ReportDebug("MorlockStats no está asignado en PlayerHealth. Usando valores de veneno por defecto.", 2);
+            ReportDebug("MorlockStats no estï¿½ asignado en PlayerHealth. Usando valores de veneno por defecto.", 2);
         }
     }
 
@@ -179,8 +179,8 @@ public class PlayerHealth : MonoBehaviour
     /// <summary>
     /// Maneja los cambios de stats.
     /// </summary>
-    /// <param name="statType">Tipo de estadística que ha cambiado.</param>
-    /// <param name="newValue">Nuevo valor de la estadística.</param>
+    /// <param name="statType">Tipo de estadï¿½stica que ha cambiado.</param>
+    /// <param name="newValue">Nuevo valor de la estadï¿½stica.</param>
     private void HandleStatChanged(StatType statType, float newValue)
     {
         if (statType == StatType.MaxHealth)
@@ -196,28 +196,28 @@ public class PlayerHealth : MonoBehaviour
             }
             else
             {
-                ReportDebug("Sincronización de vida omitida debido a inicialización temprana (currentHealth=0).", 1);
+                ReportDebug("Sincronizaciï¿½n de vida omitida debido a inicializaciï¿½n temprana (currentHealth=0).", 1);
             }
 
             OnHealthChanged?.Invoke(currentHealth, newValue);
 
             UpdateLifeStage();
 
-            ReportDebug($"Nueva vida máxima: {newValue}, vida actual ajustada a {currentHealth}", 1);
+            ReportDebug($"Nueva vida mï¿½xima: {newValue}, vida actual ajustada a {currentHealth}", 1);
         }
     }
 
     /// <summary>
-    /// Función que aplica daño al jugador.
+    /// Funciï¿½n que aplica daï¿½o al jugador.
     /// </summary>
-    /// <param name="damageAmount"> Cantidad de daño a aplicar. </param>
+    /// <param name="damageAmount"> Cantidad de daï¿½o a aplicar. </param>
     public void TakeDamage(float damageAmount, bool isCostDamage = false)
     {
         if (isDying) return;
 
         if (!isCostDamage && (isDamageInvulnerable || IsInvulnerable))
         {
-            ReportDebug("El jugador es invulnerable y no recibe daño.", 1);
+            ReportDebug("El jugador es invulnerable y no recibe daï¿½o.", 1);
             return;
         }
 
@@ -226,7 +226,7 @@ public class PlayerHealth : MonoBehaviour
             if (isShieldBlockReady)
             {
                 isShieldBlockReady = false;
-                ReportDebug("El escudo ha bloqueado el daño entrante.", 1);
+                ReportDebug("El escudo ha bloqueado el daï¿½o entrante.", 1);
 
                 StartCoroutine(ShieldBlockCooldownRoutine());
                 return;
@@ -252,13 +252,13 @@ public class PlayerHealth : MonoBehaviour
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         UpdateLifeStage();
 
-        if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageAmount} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);
+        if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageAmount} de daï¿½o. Vida actual: {currentHealth}/{maxHealth}", 1);
     }
 
     private IEnumerator DamageInvulnerabilityRoutine()
     {
         isDamageInvulnerable = true;
-        ReportDebug($"El jugador es invulnerable por daño continuo durante {damageInvulnerabilityTime} segundos.", 1);
+        ReportDebug($"El jugador es invulnerable por daï¿½o continuo durante {damageInvulnerabilityTime} segundos.", 1);
 
         float blinkInterval = 0.1f;
         float timer = 0f;
@@ -276,25 +276,25 @@ public class PlayerHealth : MonoBehaviour
 
         isDamageInvulnerable = false;
         damageInvulnerabilityCoroutine = null;
-        ReportDebug("La invulnerabilidad por daño ha terminado.", 1);
+        ReportDebug("La invulnerabilidad por daï¿½o ha terminado.", 1);
 
         playerSpriteRenderer.color = Color.white;
     }
 
-    // Función que maneja el cooldown del bloqueo del escudo.
+    // Funciï¿½n que maneja el cooldown del bloqueo del escudo.
     private IEnumerator ShieldBlockCooldownRoutine()
     {
-        ReportDebug($"El escudo bloqueará de nuevo en {shieldBlockCooldown} segundos.", 1);
+        ReportDebug($"El escudo bloquearï¿½ de nuevo en {shieldBlockCooldown} segundos.", 1);
         yield return new WaitForSeconds(shieldBlockCooldown);
 
         isShieldBlockReady = true;
-        ReportDebug("El escudo está listo para bloquear de nuevo.", 1);
+        ReportDebug("El escudo estï¿½ listo para bloquear de nuevo.", 1);
     }
 
     /// <summary>
-    /// Función que cura al jugador.
+    /// Funciï¿½n que cura al jugador.
     /// </summary>
-    /// <param name="healAmount"> Cantidad de daño a curar </param>
+    /// <param name="healAmount"> Cantidad de daï¿½o a curar </param>
     public void Heal(float healAmount)
     {
         float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
@@ -312,9 +312,9 @@ public class PlayerHealth : MonoBehaviour
     }
 
     /// <summary>
-    /// Función que actualiza la etapa de vida del jugador y notifica si ha cambiado.
+    /// Funciï¿½n que actualiza la etapa de vida del jugador y notifica si ha cambiado.
     /// </summary>
-    /// <param name="forceNotify"> Si es true, fuerza la notificación del cambio de etapa incluso si no ha cambiado. </param>
+    /// <param name="forceNotify"> Si es true, fuerza la notificaciï¿½n del cambio de etapa incluso si no ha cambiado. </param>
     private void UpdateLifeStage(bool forceNotify = false)
     {
         LifeStage oldStage = CurrentLifeStage;
@@ -330,7 +330,7 @@ public class PlayerHealth : MonoBehaviour
         {
             OnLifeStageChanged?.Invoke(CurrentLifeStage);
 
-            // Actualizar TextMeshPro si está asignado
+            // Actualizar TextMeshPro si estï¿½ asignado
             if (lifeStageText != null)
             {
                 // Mostrar solo el nombre de la etapa (sin texto adicional)
@@ -339,7 +339,7 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    // Traduce el enum de LifeStage a una cadena en español para mostrar en TMP.
+    // Traduce el enum de LifeStage a una cadena en espaï¿½ol para mostrar en TMP.
     private string GetLifeStageString(LifeStage stage)
     {
         switch (stage)
@@ -355,7 +355,7 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    // Función que maneja la muerte del jugador.
+    // Funciï¿½n que maneja la muerte del jugador.
     private void Die()
     {
         if (isDying) return;
@@ -423,7 +423,7 @@ public class PlayerHealth : MonoBehaviour
     #region Debuffs
 
     /// <summary>
-    /// Función que aplica el efecto de veneno al jugador cuando es golpeado por un proyectil de Morlock.
+    /// Funciï¿½n que aplica el efecto de veneno al jugador cuando es golpeado por un proyectil de Morlock.
     /// </summary>
     public void ApplyMorlockPoisonHit()
     {
@@ -440,7 +440,7 @@ public class PlayerHealth : MonoBehaviour
         {
             float poisonDamage = poisonInitialDamage + (morlockHitCounter - poisonHitThreshold);
             TakeDamage(poisonDamage);
-            // Aquí podrías iniciar un efecto de veneno que dañe con el tiempo
+            // Aquï¿½ podrï¿½as iniciar un efecto de veneno que daï¿½e con el tiempo
         }
 
         poisonResetCoroutine = StartCoroutine(ResetPoisonCounter());
@@ -457,7 +457,7 @@ public class PlayerHealth : MonoBehaviour
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     /// <summary> 
-    /// Función de depuración para reportar mensajes en la consola de Unity. 
+    /// Funciï¿½n de depuraciï¿½n para reportar mensajes en la consola de Unity. 
     /// </summary> 
     /// <param name="message">Mensaje a reportar.</param>
     /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
@@ -494,10 +494,10 @@ public class PlayerHealth : MonoBehaviour
 //using System.Collections;
 //using UnityEngine;
 //using UnityEngine.SceneManagement;
-//using TMPro; // <-- añadido
+//using TMPro; // <-- aï¿½adido
 
 ///// <summary>
-///// Clase que maneja la salud del jugador, incluyendo daño, curación y etapas de vida.
+///// Clase que maneja la salud del jugador, incluyendo daï¿½o, curaciï¿½n y etapas de vida.
 ///// </summary>
 //public class PlayerHealth : MonoBehaviour
 //{
@@ -513,13 +513,13 @@ public class PlayerHealth : MonoBehaviour
 //    [SerializeField] private PlayerStatsManager statsManager;
 //    [SerializeField] private SpriteRenderer playerSpriteRenderer;
 
-//    [Header("Configuración de Vida")]
-//    [Tooltip("Vida máxima por defecto si no se encuentra PlayerStatsManager.")]
+//    [Header("Configuraciï¿½n de Vida")]
+//    [Tooltip("Vida mï¿½xima por defecto si no se encuentra PlayerStatsManager.")]
 //    [HideInInspector] private float fallbackMaxHealth = 100;
 //    private float currentHealth;
 //    [SerializeField] private float damageInvulnerabilityTime = 0.5f;
 
-//    [Header("Configuración de Muerte")]
+//    [Header("Configuraciï¿½n de Muerte")]
 //    [SerializeField] private string sceneToLoadOnDeath = "Tuto";
 //    [SerializeField] private Color deathFadeColor = Color.red;
 
@@ -536,7 +536,7 @@ public class PlayerHealth : MonoBehaviour
 //    private int morlockHitCounter = 0;
 
 //    [Header("UI")]
-//    [SerializeField] private TMP_Text lifeStageText; // <-- añadido: TextMeshPro que muestra la etapa de vida
+//    [SerializeField] private TMP_Text lifeStageText; // <-- aï¿½adido: TextMeshPro que muestra la etapa de vida
 
 //    public bool HasShieldBlockUpgrade { get; private set; } = false;
 //    public bool IsInvulnerable { get; set; } = false;
@@ -564,7 +564,7 @@ public class PlayerHealth : MonoBehaviour
 //    {
 //        statsManager = GetComponent<PlayerStatsManager>();
 //        inventoryManager = FindAnyObjectByType<InventoryManager>();
-//        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerHealth. Usando vida máxima de fallback.", 2);
+//        if (statsManager == null) ReportDebug("StatsManager no estï¿½ asignado en PlayerHealth. Usando vida mï¿½xima de fallback.", 2);
 
 //        playerMovement = GetComponent<PlayerMovement>();
 //        playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
@@ -647,7 +647,7 @@ public class PlayerHealth : MonoBehaviour
 //        }
 //        else
 //        {
-//            ReportDebug("MorlockStats no está asignado en PlayerHealth. Usando valores de veneno por defecto.", 2);
+//            ReportDebug("MorlockStats no estï¿½ asignado en PlayerHealth. Usando valores de veneno por defecto.", 2);
 //        }
 //    }
 
@@ -664,8 +664,8 @@ public class PlayerHealth : MonoBehaviour
 //    /// <summary>
 //    /// Maneja los cambios de stats.
 //    /// </summary>
-//    /// <param name="statType">Tipo de estadística que ha cambiado.</param>
-//    /// <param name="newValue">Nuevo valor de la estadística.</param>
+//    /// <param name="statType">Tipo de estadï¿½stica que ha cambiado.</param>
+//    /// <param name="newValue">Nuevo valor de la estadï¿½stica.</param>
 //    private void HandleStatChanged(StatType statType, float newValue)
 //    {
 //        if (statType == StatType.MaxHealth)
@@ -681,28 +681,28 @@ public class PlayerHealth : MonoBehaviour
 //            }
 //            else
 //            {
-//                ReportDebug("Sincronización de vida omitida debido a inicialización temprana (currentHealth=0).", 1);
+//                ReportDebug("Sincronizaciï¿½n de vida omitida debido a inicializaciï¿½n temprana (currentHealth=0).", 1);
 //            }
 
 //            OnHealthChanged?.Invoke(currentHealth, newValue);
 
 //            UpdateLifeStage();
 
-//            ReportDebug($"Nueva vida máxima: {newValue}, vida actual ajustada a {currentHealth}", 1);
+//            ReportDebug($"Nueva vida mï¿½xima: {newValue}, vida actual ajustada a {currentHealth}", 1);
 //        }
 //    }
 
 //    /// <summary>
-//    /// Función que aplica daño al jugador.
+//    /// Funciï¿½n que aplica daï¿½o al jugador.
 //    /// </summary>
-//    /// <param name="damageAmount"> Cantidad de daño a aplicar. </param>
+//    /// <param name="damageAmount"> Cantidad de daï¿½o a aplicar. </param>
 //    public void TakeDamage(float damageAmount, bool isCostDamage = false)
 //    {
 //        if (isDying) return;
 
 //        if (!isCostDamage && (isDamageInvulnerable || IsInvulnerable))
 //        {
-//            ReportDebug("El jugador es invulnerable y no recibe daño.", 1);
+//            ReportDebug("El jugador es invulnerable y no recibe daï¿½o.", 1);
 //            return;
 //        }
 
@@ -711,7 +711,7 @@ public class PlayerHealth : MonoBehaviour
 //            if (isShieldBlockReady)
 //            {
 //                isShieldBlockReady = false;
-//                ReportDebug("El escudo ha bloqueado el daño entrante.", 1);
+//                ReportDebug("El escudo ha bloqueado el daï¿½o entrante.", 1);
 
 //                StartCoroutine(ShieldBlockCooldownRoutine());
 //                return;
@@ -737,13 +737,13 @@ public class PlayerHealth : MonoBehaviour
 //        OnHealthChanged?.Invoke(currentHealth, maxHealth);
 //        UpdateLifeStage();
 
-//        if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageAmount} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);
+//        if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageAmount} de daï¿½o. Vida actual: {currentHealth}/{maxHealth}", 1);
 //    }
 
 //    private IEnumerator DamageInvulnerabilityRoutine()
 //    {
 //        isDamageInvulnerable = true;
-//        ReportDebug($"El jugador es invulnerable por daño continuo durante {damageInvulnerabilityTime} segundos.", 1);
+//        ReportDebug($"El jugador es invulnerable por daï¿½o continuo durante {damageInvulnerabilityTime} segundos.", 1);
 
 //        float blinkInterval = 0.1f;
 //        float timer = 0f;
@@ -761,25 +761,25 @@ public class PlayerHealth : MonoBehaviour
 
 //        isDamageInvulnerable = false;
 //        damageInvulnerabilityCoroutine = null;
-//        ReportDebug("La invulnerabilidad por daño ha terminado.", 1);
+//        ReportDebug("La invulnerabilidad por daï¿½o ha terminado.", 1);
 
 //        playerSpriteRenderer.color = Color.white;
 //    }
 
-//    // Función que maneja el cooldown del bloqueo del escudo.
+//    // Funciï¿½n que maneja el cooldown del bloqueo del escudo.
 //    private IEnumerator ShieldBlockCooldownRoutine()
 //    {
-//        ReportDebug($"El escudo bloqueará de nuevo en {shieldBlockCooldown} segundos.", 1);
+//        ReportDebug($"El escudo bloquearï¿½ de nuevo en {shieldBlockCooldown} segundos.", 1);
 //        yield return new WaitForSeconds(shieldBlockCooldown);
 
 //        isShieldBlockReady = true;
-//        ReportDebug("El escudo está listo para bloquear de nuevo.", 1);
+//        ReportDebug("El escudo estï¿½ listo para bloquear de nuevo.", 1);
 //    }
 
 //    /// <summary>
-//    /// Función que cura al jugador.
+//    /// Funciï¿½n que cura al jugador.
 //    /// </summary>
-//    /// <param name="healAmount"> Cantidad de daño a curar </param>
+//    /// <param name="healAmount"> Cantidad de daï¿½o a curar </param>
 //    public void Heal(float healAmount)
 //    {
 //        float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
@@ -797,9 +797,9 @@ public class PlayerHealth : MonoBehaviour
 //    }
 
 //    /// <summary>
-//    /// Función que actualiza la etapa de vida del jugador y notifica si ha cambiado.
+//    /// Funciï¿½n que actualiza la etapa de vida del jugador y notifica si ha cambiado.
 //    /// </summary>
-//    /// <param name="forceNotify"> Si es true, fuerza la notificación del cambio de etapa incluso si no ha cambiado. </param>
+//    /// <param name="forceNotify"> Si es true, fuerza la notificaciï¿½n del cambio de etapa incluso si no ha cambiado. </param>
 //    private void UpdateLifeStage(bool forceNotify = false)
 //    {
 //        LifeStage oldStage = CurrentLifeStage;
@@ -815,7 +815,7 @@ public class PlayerHealth : MonoBehaviour
 //        {
 //            OnLifeStageChanged?.Invoke(CurrentLifeStage);
 
-//            // Actualizar TextMeshPro si está asignado
+//            // Actualizar TextMeshPro si estï¿½ asignado
 //            if (lifeStageText != null)
 //            {
 //                // Mostrar solo el nombre de la etapa (sin texto adicional)
@@ -824,7 +824,7 @@ public class PlayerHealth : MonoBehaviour
 //        }
 //    }
 
-//    // Traduce el enum de LifeStage a una cadena en español para mostrar en TMP.
+//    // Traduce el enum de LifeStage a una cadena en espaï¿½ol para mostrar en TMP.
 //    private string GetLifeStageString(LifeStage stage)
 //    {
 //        switch (stage)
@@ -840,7 +840,7 @@ public class PlayerHealth : MonoBehaviour
 //        }
 //    }
 
-//    // Función que maneja la muerte del jugador.
+//    // Funciï¿½n que maneja la muerte del jugador.
 //    private void Die()
 //    {
 //        if (isDying) return;
@@ -908,7 +908,7 @@ public class PlayerHealth : MonoBehaviour
 //    #region Debuffs
 
 //    /// <summary>
-//    /// Función que aplica el efecto de veneno al jugador cuando es golpeado por un proyectil de Morlock.
+//    /// Funciï¿½n que aplica el efecto de veneno al jugador cuando es golpeado por un proyectil de Morlock.
 //    /// </summary>
 //    public void ApplyMorlockPoisonHit()
 //    {
@@ -925,7 +925,7 @@ public class PlayerHealth : MonoBehaviour
 //        {
 //            float poisonDamage = poisonInitialDamage + (morlockHitCounter - poisonHitThreshold);
 //            TakeDamage(poisonDamage);
-//            // Aquí podrías iniciar un efecto de veneno que dañe con el tiempo
+//            // Aquï¿½ podrï¿½as iniciar un efecto de veneno que daï¿½e con el tiempo
 //        }
 
 //        poisonResetCoroutine = StartCoroutine(ResetPoisonCounter());
@@ -942,7 +942,7 @@ public class PlayerHealth : MonoBehaviour
 
 //    [System.Diagnostics.Conditional("UNITY_EDITOR")]
 //    /// <summary> 
-//    /// Función de depuración para reportar mensajes en la consola de Unity. 
+//    /// Funciï¿½n de depuraciï¿½n para reportar mensajes en la consola de Unity. 
 //    /// </summary> 
 //    /// <param name="message">Mensaje a reportar.</param>
 //    /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
@@ -965,3 +965,4 @@ public class PlayerHealth : MonoBehaviour
 //        }
 //    }
 //}
+}
