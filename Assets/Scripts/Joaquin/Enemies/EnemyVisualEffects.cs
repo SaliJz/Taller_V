@@ -42,6 +42,20 @@ public class EnemyVisualEffects : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        ResetVisuals();
+    }
+
+    private void OnDisable()
+    {
+        if (flashRoutine != null)
+        {
+            StopCoroutine(flashRoutine);
+            flashRoutine = null;
+        }
+    }
+
     #region Damage Feedback
 
     /// <summary>
@@ -151,6 +165,25 @@ public class EnemyVisualEffects : MonoBehaviour
             if (damageNumberScript != null)
             {
                 damageNumberScript.Initialize(damage, isCritical);
+            }
+        }
+    }
+
+    private void ResetVisuals()
+    {
+        if (renderers != null && defaultMaterial != null)
+        {
+            foreach (var r in renderers)
+            {
+                if (r != null) r.material = defaultMaterial;
+            }
+        }
+
+        if (damageNumberParent != null)
+        {
+            for (int i = 0; i < damageNumberParent.childCount; i++)
+            {
+                Destroy(damageNumberParent.GetChild(i).gameObject);
             }
         }
     }

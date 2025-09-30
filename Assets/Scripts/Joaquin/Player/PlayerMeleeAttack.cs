@@ -157,34 +157,34 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (healthController != null)
             {
                 bool isCritical;
-                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+                float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
-                healthController.TakeDamage(Mathf.RoundToInt(finalDamageWithCrit));
+                healthController.TakeDamage(Mathf.RoundToInt(finalDamage));
 
-                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daño.", 1);
+                ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
             }
 
             IDamageable damageable = enemy.GetComponent<IDamageable>();
             if (damageable != null) 
             {
                 bool isCritical;
-                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+                float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
                 
-                damageable.TakeDamage(finalDamageWithCrit, isCritical);
+                damageable.TakeDamage(finalDamage, isCritical);
 
-                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daño.", 1);
+                ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
             }
 
             BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
             if (bloodKnight != null)
             {
                 bool isCritical;
-                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+                float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
-                bloodKnight.TakeDamage(finalDamageWithCrit, isCritical);
+                bloodKnight.TakeDamage(finalDamage, isCritical);
                 bloodKnight.OnPlayerCounterAttack();
 
-                ReportDebug("Golpe a " + enemy.name + " por " + finalDamageWithCrit + " de daño.", 1);
+                ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
             }
         }
 

@@ -7,7 +7,7 @@ using TMPro; // <-- añadido
 /// <summary>
 /// Clase que maneja la salud del jugador, incluyendo daño, curación y etapas de vida.
 /// </summary>
-public class PlayerHealth : MonoBehaviour
+public class PlayerHealth : MonoBehaviour, IDamageable
 {
     // Tipos de etapas de vida del jugador.
     public enum LifeStage
