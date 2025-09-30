@@ -537,13 +537,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3262d89af242a0145998a2de9c343db7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 6
+  speed: 24
   frontalDamage: 2.5
   backDamage: 5
   lifeTime: 10
+  deathCooldown: 0.25
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
+  stoppingBuffer: 0.5
+  attackRange: 1.5
+  attackCooldown: 0.5
+  destinationUpdateInterval: 0.18
+  accelMultiplier: 3
+  minAcceleration: 8
+  angularSpeed: 120
+  drawGizmos: 1
 --- !u!1 &2145914912902681135
 GameObject:
   m_ObjectHideFlags: 0

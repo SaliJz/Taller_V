@@ -9,7 +9,11 @@ public class Hive : MonoBehaviour
     [SerializeField] private float larvaSpawnInterval = 2.5f;
     [SerializeField] private int maxLarvas = 4;
     [SerializeField] private float autoDestroyAfterMaxSeconds = 10f;
+    [SerializeField] private GameObject larvaPrefab;
     [SerializeField] private NavMeshObstacle obstacle;
+    [SerializeField] private NavMeshAgent navMeshAgent;
+    [Tooltip("Tiempo de cooldown antes de destruirse.")]
+    [SerializeField] private float deathCooldown = 0.5f;
 
     [Header("References")]
     [SerializeField] private AudioClip spawnLarvaSFX;
@@ -18,8 +22,6 @@ public class Hive : MonoBehaviour
     private int spawnedCount = 0;
     private bool isProducing = true;
     private VeynarEnemy owner;
-    private SimplePool myPool;
-    private SimplePool larvaPool;
     private EnemyHealth enemyHealth;
 
     public VeynarEnemy Owner => owner;
@@ -29,16 +31,19 @@ public class Hive : MonoBehaviour
     {
         enemyHealth = GetComponent<EnemyHealth>();
         obstacle = GetComponent<NavMeshObstacle>();
+        navMeshAgent = GetComponent<NavMeshAgent>();
 
-        if (enemyHealth != null) enemyHealth.CanDestroy = false;
+        if (enemyHealth != null) enemyHealth.CanHealPlayer = false;
+        if (enemyHealth != null) enemyHealth.CanDestroy = true;
+        if (enemyHealth != null) enemyHealth.DeathCooldown = deathCooldown;
         if (obstacle != null) obstacle.enabled = false;
+        if (navMeshAgent != null) navMeshAgent.enabled = true;
     }
 
-    public void Initialize(VeynarEnemy ownerRef, SimplePool hivePoolRef, SimplePool larvaPoolRef)
+    public void Initialize(VeynarEnemy ownerRef, GameObject larvaPrefabRef)
     {
         owner = ownerRef;
-        myPool = hivePoolRef;
-        larvaPool = larvaPoolRef;
+        larvaPrefab = larvaPrefabRef;
 
         spawnedCount = 0;
         isProducing = true;
@@ -46,7 +51,7 @@ public class Hive : MonoBehaviour
         StopAllCoroutines();
         StartCoroutine(ProduceRoutine());
 
-        StartCoroutine(ActivateObstacleAfterDelay(0.2f));
+        StartCoroutine(ActivateObstacleAfterDelay(1f));
     }
 
     private void OnEnable()
@@ -70,7 +75,8 @@ public class Hive : MonoBehaviour
         if (enemy != gameObject) return;
 
         obstacle.enabled = false;
-        StopProducing();
+        StopAllCoroutines();
+        owner?.OnHiveDestroyed(this);
     }
 
     private IEnumerator ProduceRoutine()
@@ -96,24 +102,25 @@ public class Hive : MonoBehaviour
     private IEnumerator ActivateObstacleAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
-        if (obstacle != null)
-        {
-            obstacle.enabled = true;
-        }
+
+        if (navMeshAgent != null) navMeshAgent.enabled = false;
+        if (obstacle != null) obstacle.enabled = true;
     }
 
     private void SpawnLarva()
     {
         spawnedCount++;
 
-        if (larvaPool == null) return;
+        if (larvaPrefab == null)
+        {
+            Debug.LogWarning("[Hive] larvaPrefab no asignado.");
+            return;
+        }
 
-        var larvaGameObject = larvaPool.Get();
-        larvaGameObject.transform.position = transform.position + Vector3.up * 0.5f + Random.insideUnitSphere * 0.3f;
-        larvaGameObject.transform.rotation = Quaternion.identity;
-
+        var larvaGameObject = Instantiate(larvaPrefab, transform.position + Vector3.up * 0.5f + Random.insideUnitSphere * 0.3f, Quaternion.identity);
         var larva = larvaGameObject.GetComponent<Larva>();
-        if (larva != null) larva.Initialize(larvaPool, owner?.PlayerTransform);
+
+        if (larva != null) larva.Initialize(owner?.PlayerTransform);
 
         if (spawnVFX != null) spawnVFX.Play();
 
@@ -129,27 +136,12 @@ public class Hive : MonoBehaviour
     {
         isProducing = false;
         StopAllCoroutines();
-        SelfDestruct();
+        if (!enemyHealth.IsDead) enemyHealth.Die();
     }
 
     private IEnumerator SelfDestructAfterDelay()
     {
         yield return new WaitForSeconds(autoDestroyAfterMaxSeconds);
-        SelfDestruct();
-    }
-
-    private void SelfDestruct()
-    {
-        StopAllCoroutines();
-        owner?.OnHiveDestroyed(this);
-
-        if (myPool != null)
-        {
-            myPool.Return(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (!enemyHealth.IsDead) enemyHealth.Die();
     }
 }

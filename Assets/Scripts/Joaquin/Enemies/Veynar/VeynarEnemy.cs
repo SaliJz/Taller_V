@@ -7,7 +7,8 @@ using System.Collections.Generic;
 public class VeynarEnemy : MonoBehaviour
 {
     [Header("Spawning")]
-    [SerializeField] private SimplePool hivePool;
+    [SerializeField] private GameObject hivePrefab;
+    [SerializeField] private GameObject larvaPrefab;
     [SerializeField] private int maxActiveHives = 5;
     [SerializeField] private float hiveSpawnInterval = 2.5f;
     [SerializeField] private float hiveSpawnRadius = 3f;
@@ -23,9 +24,6 @@ public class VeynarEnemy : MonoBehaviour
     [Tooltip("El material translúcido para cuando se oculta.")]
     [SerializeField] private Material transparentMaterial;
 
-    [Header("Limits & Pools")]
-    [SerializeField] private SimplePool larvaPool;
-
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip spawnHiveSFX;
@@ -34,13 +32,10 @@ public class VeynarEnemy : MonoBehaviour
     private EnemyHealth enemyHealth;
     private Transform playerTransform;
     private bool isHidden = false;
-    private Coroutine spawnRoutine;
     private Coroutine teleportWatchRoutine;
-
     private List<Hive> activeHives = new List<Hive>();
     private Renderer[] allRenderers;
     private NavMeshAgent navAgent;
-    private MaterialPropertyBlock mpb;
 
     public bool IsDead => enemyHealth != null && enemyHealth.IsDead;
     public Transform PlayerTransform => playerTransform;
@@ -52,7 +47,6 @@ public class VeynarEnemy : MonoBehaviour
     {
         enemyHealth = GetComponent<EnemyHealth>();
         allRenderers = GetComponentsInChildren<Renderer>();
-        mpb = new MaterialPropertyBlock();
         navAgent = GetComponent<NavMeshAgent>();
     }
 
@@ -60,14 +54,14 @@ public class VeynarEnemy : MonoBehaviour
     {
         playerTransform = GameObject.FindGameObjectWithTag("Player")?.transform;
 
-        if (hivePool == null || larvaPool == null)
+        if (hivePrefab == null || larvaPrefab == null)
         {
-            Debug.LogError($"Pools no asignados en {gameObject.name}. Veynar no funcionará correctamente.", this);
+            Debug.LogError($"[VeynarEnemy] Prefabs no asignados en {gameObject.name}. Veynar no funcionará correctamente.", this);
             enabled = false;
             return;
         }
 
-        spawnRoutine = StartCoroutine(HiveSpawnRoutine());
+        StartCoroutine(HiveSpawnRoutine());
     }
 
     private void OnEnable()
@@ -120,17 +114,14 @@ public class VeynarEnemy : MonoBehaviour
     private void SpawnHive()
     {
         Vector3 spawnPosition = transform.position + (Random.insideUnitSphere * hiveSpawnRadius);
-        spawnPosition.y = transform.position.y;
+        spawnPosition.y = -0.4f;
         if (NavMesh.SamplePosition(spawnPosition, out var hit, 5f, NavMesh.AllAreas)) spawnPosition = hit.position;
 
-        var gameObject = hivePool.Get();
-        gameObject.transform.position = spawnPosition;
-        gameObject.transform.rotation = Quaternion.identity;
-
-        var hive = gameObject.GetComponent<Hive>();
+        var go = Instantiate(hivePrefab, spawnPosition, Quaternion.identity);
+        var hive = go.GetComponent<Hive>();
         if (hive != null)
         {
-            hive.Initialize(this, hivePool, larvaPool);
+            hive.Initialize(this, larvaPrefab);
             activeHives.Add(hive);
         }
 

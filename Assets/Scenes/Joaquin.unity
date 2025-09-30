@@ -2311,9 +2311,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
-    - target: {fileID: 6679960082821164706, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
-      propertyPath: m_IsActive
-      value: 1
+    - target: {fileID: 7736777102245202428, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: statsText
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7736777102245202428, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: statsPanel
+      value: 
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3090,7 +3094,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea8057c6ad514e24e871bcdaa49a25d9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hivePool: {fileID: 1818855801}
+  hivePrefab: {fileID: 6494588530873725524, guid: b193b5a4589c6bb4caf102806069d752, type: 3}
+  larvaPrefab: {fileID: 2070855010256960706, guid: d77c866a58ba6f84c818e09b699bd71c, type: 3}
   maxActiveHives: 5
   hiveSpawnInterval: 2.5
   hiveSpawnRadius: 5
@@ -3099,7 +3104,6 @@ MonoBehaviour:
   teleportRange: 10
   normalMaterial: {fileID: 2100000, guid: b7d887137b3a1e44bb8ef4865b374a56, type: 2}
   transparentMaterial: {fileID: 2100000, guid: e7d10bd2a0cd13f448af8c25e7d29078, type: 2}
-  larvaPool: {fileID: 1575765945}
   audioSource: {fileID: 3918138568303728049}
   spawnHiveSFX: {fileID: 0}
   teleportSFX: {fileID: 0}

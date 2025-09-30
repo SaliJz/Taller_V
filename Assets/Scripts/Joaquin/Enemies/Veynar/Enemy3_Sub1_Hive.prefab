@@ -780,7 +780,7 @@ NavMeshAgent:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6494588530873725524}
-  m_Enabled: 0
+  m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
   m_Speed: 3.5
@@ -891,7 +891,10 @@ MonoBehaviour:
   larvaSpawnInterval: 2.5
   maxLarvas: 4
   autoDestroyAfterMaxSeconds: 10
+  larvaPrefab: {fileID: 0}
   obstacle: {fileID: 7062026571937158164}
+  navMeshAgent: {fileID: 241961261687332342}
+  deathCooldown: 0.5
   spawnLarvaSFX: {fileID: 0}
   spawnVFX: {fileID: 0}
 --- !u!54 &4384501985470753249
