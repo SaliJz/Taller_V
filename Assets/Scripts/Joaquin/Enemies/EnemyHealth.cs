@@ -218,7 +218,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     public void Die()
     {
         isDead = true;
-
         currentHealth = 0;
 
         ReportDebug($"{gameObject.name} ha muerto.", 1);

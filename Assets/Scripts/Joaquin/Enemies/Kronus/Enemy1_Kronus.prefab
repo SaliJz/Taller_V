@@ -956,6 +956,7 @@ GameObject:
   - component: {fileID: 5823493146228490408}
   - component: {fileID: 2892049814083954529}
   - component: {fileID: 7502008598184262393}
+  - component: {fileID: 6571817399541728252}
   m_Layer: 7
   m_Name: Enemy1_Kronus
   m_TagString: Untagged
@@ -1065,11 +1066,23 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 0
   deathCooldown: 2
+  canDestroy: 1
   healthSteal: 5
   firstLifeSlider: {fileID: 8587315499701455932}
   firstFillImage: {fileID: 3576358720955880675}
   offsetAboveEnemy: 2
   glowDelayAfterCritical: 2
+  enableAutoArea: 1
+  areaTriggerPercent: 0.25
+  areaReductionPercent: 0.25
+  areaDuration: 10
+  areaCooldown: 4.5
+  areaRadius: 8
+  areaLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  flattenHeightThreshold: 1.2
+  areaCheckInterval: 0.25
 --- !u!114 &2892049814083954529
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1132,6 +1145,18 @@ MonoBehaviour:
   audioSource: {fileID: 2196188235658860128}
   normalHitSFX: {fileID: 8300000, guid: 0fec22aee26abcb4eb065ab1cf58f2f8, type: 3}
   criticalHitSFX: {fileID: 8300000, guid: 380029a5fb5484c4aa9ce46386d0d108, type: 3}
+--- !u!114 &6571817399541728252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8508571803709799617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73d4e83809fd58b4293186b0b01eaaf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8676804943043656577
 GameObject:
   m_ObjectHideFlags: 0

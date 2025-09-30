@@ -117,10 +117,50 @@ public class Hive : MonoBehaviour
             return;
         }
 
-        var larvaGameObject = Instantiate(larvaPrefab, transform.position + Vector3.up * 0.5f + Random.insideUnitSphere * 0.3f, Quaternion.identity);
-        var larva = larvaGameObject.GetComponent<Larva>();
+        Vector3 spawnPosition = transform.position + Vector3.up * 0.5f;
+        NavMeshHit hit;
 
-        if (larva != null) larva.Initialize(owner?.PlayerTransform);
+        if (NavMesh.SamplePosition(spawnPosition, out hit, 2f, NavMesh.AllAreas))
+        {
+            spawnPosition = hit.position + Vector3.up * 0.2f;
+        }
+        else
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                Vector3 randomOffset = Random.insideUnitSphere * 0.8f;
+                randomOffset.y = 0.5f;
+                Vector3 testPos = transform.position + randomOffset;
+
+                if (NavMesh.SamplePosition(testPos, out hit, 2f, NavMesh.AllAreas))
+                {
+                    spawnPosition = hit.position + Vector3.up * 0.2f;
+                    break;
+                }
+            }
+        }
+
+        var larvaGameObject = Instantiate(larvaPrefab, spawnPosition, Quaternion.identity);
+
+        if (larvaGameObject != null && larvaGameObject.activeInHierarchy)
+        {
+            var larva = larvaGameObject.GetComponent<Larva>();
+            if (larva != null)
+            {
+                larva.Initialize(owner?.PlayerTransform);
+            }
+            else
+            {
+                Debug.LogWarning("[Hive] No se encontró componente Larva en el prefab.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[Hive] La larva no se pudo activar correctamente. Destruyéndola.");
+            if (larvaGameObject != null) Destroy(larvaGameObject);
+            spawnedCount--;
+            return;
+        }
 
         if (spawnVFX != null) spawnVFX.Play();
 

@@ -1879,10 +1879,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy1_Kronus
       objectReference: {fileID: 0}
-    - target: {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2311,14 +2307,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
-    - target: {fileID: 7736777102245202428, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
-      propertyPath: statsText
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 7736777102245202428, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
-      propertyPath: statsPanel
-      value: 
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2586,7 +2574,7 @@ MonoBehaviour:
   firstFillImage: {fileID: 5873732277278882594}
   offsetAboveEnemy: 2
   glowDelayAfterCritical: 2
-  enableAutoArea: 1
+  enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
   areaDuration: 10
@@ -2747,6 +2735,7 @@ GameObject:
   - component: {fileID: 5699375577165441868}
   - component: {fileID: 8528159568703577644}
   - component: {fileID: 9001451508900484902}
+  - component: {fileID: 9001451508900484903}
   m_Layer: 7
   m_Name: Enemy3_Veynar
   m_TagString: Enemy
@@ -3107,6 +3096,18 @@ MonoBehaviour:
   audioSource: {fileID: 3918138568303728049}
   spawnHiveSFX: {fileID: 0}
   teleportSFX: {fileID: 0}
+--- !u!114 &9001451508900484903
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5951507710707147662}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73d4e83809fd58b4293186b0b01eaaf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &9203120765486894489
 GameObject:
   m_ObjectHideFlags: 0

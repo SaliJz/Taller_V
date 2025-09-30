@@ -121,6 +121,23 @@ public class Larva : MonoBehaviour
         playerHealth = player ? player.GetComponent<PlayerHealth>() : null;
 
         if (agent == null) agent = GetComponent<NavMeshAgent>();
+        if (agent != null && !agent.isOnNavMesh)
+        {
+            ReportDebug("NavMeshAgent no está en el NavMesh. Intentando colocar...", 2);
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(transform.position, out hit, 2f, NavMesh.AllAreas))
+            {
+                transform.position = hit.position;
+                agent.Warp(hit.position);
+            }
+            else
+            {
+                ReportDebug("No se pudo colocar en el NavMesh. Destruyendo larva.", 3);
+                if (enemyHealth != null && !enemyHealth.IsDead) enemyHealth.Die();
+                return;
+            }
+        }
+
         if (agent != null) ConfigureAgentFromParams();
 
         StopAllCoroutines();

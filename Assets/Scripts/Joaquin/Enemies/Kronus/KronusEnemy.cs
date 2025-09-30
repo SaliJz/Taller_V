@@ -135,9 +135,17 @@ public class KronusEnemy : MonoBehaviour
 
         if (agent != null)
         {
-            agent.isStopped = true;
-            agent.updatePosition = false;
-            agent.updateRotation = false;
+            if (agent.enabled && agent.isOnNavMesh)
+            {
+                agent.isStopped = true;
+                agent.ResetPath();
+                agent.updatePosition = false;
+                agent.updateRotation = false;
+            }
+            else
+            {
+                agent.enabled = false;
+            }
         }
 
         if (animator != null) animator.SetTrigger("Die");
@@ -166,7 +174,7 @@ public class KronusEnemy : MonoBehaviour
             {
                 attackTimer += Time.deltaTime;
 
-                if (agent != null)
+                if (agent != null && agent.enabled && agent.isOnNavMesh)
                 {
                     agent.isStopped = false;
                     agent.SetDestination(playerTransform.position);
@@ -208,7 +216,7 @@ public class KronusEnemy : MonoBehaviour
         }
         else
         {
-            if (agent != null && !agent.pathPending && (agent.remainingDistance <= agent.stoppingDistance))
+            if (agent != null && agent.enabled && agent.isOnNavMesh && !agent.pathPending && (agent.remainingDistance <= agent.stoppingDistance))
             {
                 Vector3 roamPoint;
                 if (TryGetRandomPoint(transform.position, patrolRadius, out roamPoint))
@@ -260,7 +268,7 @@ public class KronusEnemy : MonoBehaviour
     {
         if (patrolWaypoints != null && patrolWaypoints.Length > 0)
         {
-            if (agent != null && patrolWaypoints[currentWaypointIndex] != null)
+            if (agent != null && agent.enabled && agent.isOnNavMesh && patrolWaypoints[currentWaypointIndex] != null)
             {
                 agent.SetDestination(patrolWaypoints[currentWaypointIndex].position);
             }
@@ -270,7 +278,7 @@ public class KronusEnemy : MonoBehaviour
             Vector3 roamPoint;
             if (TryGetRandomPoint(transform.position, patrolRadius, out roamPoint) && agent != null)
             {
-                agent.SetDestination(roamPoint);
+                if (agent != null && agent.enabled && agent.isOnNavMesh) agent.SetDestination(roamPoint);
             }
         }
     }
@@ -310,11 +318,16 @@ public class KronusEnemy : MonoBehaviour
 
         ReportDebug("Kronus inicia ataque dash.", 1);
 
-        if (agent != null)
+        if (agent != null && agent.enabled && agent.isOnNavMesh)
         {
             agent.isStopped = true;
+            agent.ResetPath();
             agent.updatePosition = false;
             agent.updateRotation = false;
+            agent.enabled = false;
+        }
+        else if (agent != null && agent.enabled)
+        {
             agent.enabled = false;
         }
 
@@ -359,7 +372,8 @@ public class KronusEnemy : MonoBehaviour
             agent.updatePosition = true;
             agent.updateRotation = true;
             agent.Warp(transform.position);
-            agent.SetDestination(playerTransform != null ? playerTransform.position : transform.position);
+            if (agent != null && agent.enabled && agent.isOnNavMesh) 
+                agent.SetDestination(playerTransform != null ? playerTransform.position : transform.position);
         }
 
         yield return new WaitForSeconds(2.5f);

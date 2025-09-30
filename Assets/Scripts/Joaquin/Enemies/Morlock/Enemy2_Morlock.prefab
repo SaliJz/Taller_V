@@ -2135,6 +2135,7 @@ GameObject:
   - component: {fileID: 8291591988962821256}
   - component: {fileID: 6113203021159324906}
   - component: {fileID: 5355768341301424616}
+  - component: {fileID: 69844080327497481}
   m_Layer: 7
   m_Name: Enemy2_Morlock
   m_TagString: Untagged
@@ -2244,6 +2245,7 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 0
   deathCooldown: 2
+  canDestroy: 1
   healthSteal: 5
   firstLifeSlider: {fileID: 7789715516251961850}
   firstFillImage: {fileID: 7893166915883177190}
@@ -2332,6 +2334,18 @@ MonoBehaviour:
   audioSource: {fileID: 750306028043729525}
   normalHitSFX: {fileID: 8300000, guid: 71970489b650da1489b22e74bd3bce04, type: 3}
   criticalHitSFX: {fileID: 8300000, guid: 3098f91a9f978c348b37b3e8f8b30219, type: 3}
+--- !u!114 &69844080327497481
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7967318150890097738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73d4e83809fd58b4293186b0b01eaaf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8158688492970012218
 GameObject:
   m_ObjectHideFlags: 0
