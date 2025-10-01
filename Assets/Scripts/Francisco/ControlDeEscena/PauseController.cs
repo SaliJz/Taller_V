@@ -6,11 +6,14 @@ public class PauseController : MonoBehaviour
 {
     [SerializeField] private GameObject pausePanel;
 
+    private PlayerStatsManager statsManager;
     private float previousTimeScale;
     private bool isPaused = false;
 
     void Start()
     {
+        statsManager = FindAnyObjectByType<PlayerStatsManager>();
+
         if (pausePanel != null)
         {
             pausePanel.SetActive(false);
@@ -77,6 +80,7 @@ public class PauseController : MonoBehaviour
         }
 
         Time.timeScale = 1f;
+        if (statsManager != null) statsManager.ResetStatsOnDeath();         // esto seria momentaneo
         SceneManager.LoadScene(sceneName);
     }
 }

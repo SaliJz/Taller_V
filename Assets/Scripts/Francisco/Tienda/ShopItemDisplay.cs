@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class ShopItemDisplay : MonoBehaviour
 {
+    public GameObject textPanel;
     public ShopItem shopItemData;
 
     private ShopManager shopManager;
@@ -15,6 +16,14 @@ public class ShopItemDisplay : MonoBehaviour
         if (shopManager == null)
         {
             Debug.LogError("ShopManager no encontrado. El item de la tienda no funcionará correctamente.");
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            if (textPanel != null)  textPanel.SetActive(true);
         }
     }
 
@@ -59,6 +68,7 @@ public class ShopItemDisplay : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
+            if (textPanel != null) textPanel.SetActive(false);
             if (shopManager != null)
             {
                 shopManager.UpdateCostBar(0);
