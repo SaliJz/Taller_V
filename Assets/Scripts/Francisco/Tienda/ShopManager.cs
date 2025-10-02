@@ -366,21 +366,35 @@ public class ShopManager : MonoBehaviour
     {
         if (costBar == null || playerHealth == null) return;
 
+        float finalCost = cost;
+
         float currentHealth = GetPlayerCurrentHealth();
         float maxHealth = GetPlayerMaxHealth();
 
-        bool shouldDisplay = cost > 0;
+        bool shouldDisplay = finalCost > 0 && maxHealth > 0;
         costBar.gameObject.SetActive(shouldDisplay);
         if (!shouldDisplay) return;
 
-        costBar.fillAmount = cost / maxHealth;
+        RectTransform costBarRect = costBar.GetComponent<RectTransform>();
+        float parentWidth = costBarRect.parent.GetComponent<RectTransform>().rect.width;
 
-        if (currentHealth > cost)
+        float currentHealthRatio = Mathf.Clamp(currentHealth / maxHealth, 0f, 1f);
+        float costRatio = Mathf.Clamp(finalCost / maxHealth, 0f, 1f);
+
+        if (currentHealth > finalCost)
         {
+            costBarRect.localScale = new Vector3(costRatio, costBarRect.localScale.y, costBarRect.localScale.z);
+
+            costBarRect.anchoredPosition = new Vector2(currentHealthRatio * parentWidth, costBarRect.anchoredPosition.y);
+
             costBar.color = affordableColor;
         }
-        else
+        else 
         {
+            costBarRect.localScale = new Vector3(costRatio, costBarRect.localScale.y, costBarRect.localScale.z);
+
+            costBarRect.anchoredPosition = new Vector2(costRatio * parentWidth, costBarRect.anchoredPosition.y);
+
             costBar.color = unaffordableColor;
         }
     }
