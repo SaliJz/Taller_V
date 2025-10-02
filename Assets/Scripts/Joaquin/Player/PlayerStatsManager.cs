@@ -62,6 +62,10 @@ public class PlayerStatsManager : MonoBehaviour
     [SerializeField] private Dictionary<StatType, float> baseStats = new();
     [SerializeField] private Dictionary<StatType, float> currentStats = new();
 
+    // Guarda el estado visual de cada stat:
+    //  1 => verde (subió), -1 => rojo (bajó), 0 => neutro
+    private Dictionary<StatType, int> statVisualState = new();
+
     public static event Action<StatType, float> OnStatChanged;
 
     private PlayerHealth playerHealth;
@@ -78,6 +82,12 @@ public class PlayerStatsManager : MonoBehaviour
 
     private void Awake()
     {
+        // Inicializa los estados visuales en 0 para todos los StatType
+        foreach (StatType s in Enum.GetValues(typeof(StatType)))
+        {
+            statVisualState[s] = 0;
+        }
+
         InitializeStats();
         ResetCurrentStatsToBase();
     }
@@ -93,6 +103,12 @@ public class PlayerStatsManager : MonoBehaviour
                 statsPanel = statsText.transform.parent.gameObject;
             else
                 statsPanel = statsText.gameObject;
+        }
+
+        // Asegurarnos de que TMP permita rich text (necesario para colorear valores).
+        if (statsText != null)
+        {
+            statsText.richText = true;
         }
 
         UpdateStatsDisplay(); // asegurar display inicial
@@ -182,6 +198,13 @@ public class PlayerStatsManager : MonoBehaviour
         baseStats[StatType.HealthDrainAmount] = currentStatSO.HealthDrainAmount;
         baseStats[StatType.DamageTaken] = 0f;
         baseStats[StatType.ShieldBlockUpgrade] = 0f;
+
+        // Asegurar que todas las statVisualState tengan una entrada (por si algún stat no estaba presente).
+        foreach (StatType s in Enum.GetValues(typeof(StatType)))
+        {
+            if (!statVisualState.ContainsKey(s))
+                statVisualState[s] = 0;
+        }
     }
 
     /// <summary>
@@ -193,6 +216,8 @@ public class PlayerStatsManager : MonoBehaviour
         foreach (var kvp in baseStats)
         {
             currentStats[kvp.Key] = kvp.Value;
+            // Al resetear, limpiamos el estado visual (neutro).
+            statVisualState[kvp.Key] = 0;
             OnStatChanged?.Invoke(kvp.Key, kvp.Value);
         }
 
@@ -249,6 +274,21 @@ public class PlayerStatsManager : MonoBehaviour
     public float GetStat(StatType type) => currentStats.TryGetValue(type, out var value) ? value : 0;
 
     /// <summary>
+    /// Marca el estado visual basado en el delta aplicado.
+    /// delta > 0 => subió (verde)
+    /// delta < 0 => bajó (rojo)
+    /// delta == 0 => no cambia el estado (se mantiene)
+    /// </summary>
+    private void MarkVisualStateFromDelta(StatType type, float delta)
+    {
+        if (delta > 0f)
+            statVisualState[type] = 1;
+        else if (delta < 0f)
+            statVisualState[type] = -1;
+        // si delta == 0 no tocamos el estado: se mantiene la coloración anterior
+    }
+
+    /// <summary>
     /// Aplica un buff/debuff al stat especificado.
     /// </summary>
     /// <param name="type">Stat a modificar.</param>
@@ -273,12 +313,20 @@ public class PlayerStatsManager : MonoBehaviour
             modifierValue = baseStats[type] * percentageFactor;
         }
 
+        // registra valor previo para calcular delta visual
+        float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
+
         currentStats[type] += modifierValue;
+
+        float delta = currentStats[type] - prev;
+        MarkVisualStateFromDelta(type, delta);
 
         if (float.IsNaN(currentStats[type]) || float.IsInfinity(currentStats[type]))
         {
             Debug.LogError($"[PlayerStatsManager] Stat '{type}' resultó en un valor inválido ({currentStats[type]}). Se ha reseteado al valor base.");
             currentStats[type] = baseStats.ContainsKey(type) ? baseStats[type] : 0f;
+            // Al resetear por seguridad, ajustamos visual a neutro
+            statVisualState[type] = 0;
         }
 
         OnStatChanged?.Invoke(type, currentStats[type]);
@@ -305,12 +353,18 @@ public class PlayerStatsManager : MonoBehaviour
     {
         if (!baseStats.ContainsKey(type)) return;
 
+        float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
+
         currentStats[type] += modifierValue;
+
+        float delta = currentStats[type] - prev;
+        MarkVisualStateFromDelta(type, delta);
 
         if (float.IsNaN(currentStats[type]) || float.IsInfinity(currentStats[type]))
         {
             Debug.LogError($"[PlayerStatsManager] Stat permanente '{type}' resultó en un valor inválido ({currentStats[type]}). Se ha reseteado al valor base.");
             currentStats[type] = baseStats.ContainsKey(type) ? baseStats[type] : 0f;
+            statVisualState[type] = 0;
         }
 
         baseStats[type] = currentStats[type];
@@ -321,7 +375,13 @@ public class PlayerStatsManager : MonoBehaviour
 
     public void ApplyTemporaryStatByRooms(StatType type, float modifierValue, int rooms)
     {
+        float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
+
         currentStats[type] += modifierValue;
+
+        float delta = currentStats[type] - prev;
+        MarkVisualStateFromDelta(type, delta);
+
         OnStatChanged?.Invoke(type, currentStats[type]);
 
         StartCoroutine(RemoveModifierAfterRooms(type, modifierValue, rooms));
@@ -332,7 +392,13 @@ public class PlayerStatsManager : MonoBehaviour
     /// </summary>
     public void ApplyTemporaryStatByTime(StatType type, float modifierValue, float duration)
     {
+        float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
+
         currentStats[type] += modifierValue;
+
+        float delta = currentStats[type] - prev;
+        MarkVisualStateFromDelta(type, delta);
+
         OnStatChanged?.Invoke(type, currentStats[type]);
 
         StartCoroutine(RemoveModifierAfterTime(type, modifierValue, duration));
@@ -371,7 +437,13 @@ public class PlayerStatsManager : MonoBehaviour
     {
         yield return new WaitForSeconds(duration);
 
+        float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
+
         currentStats[type] -= modifierValue;
+
+        float delta = currentStats[type] - prev;
+        MarkVisualStateFromDelta(type, delta);
+
         OnStatChanged?.Invoke(type, currentStats[type]);
     }
 
@@ -385,7 +457,13 @@ public class PlayerStatsManager : MonoBehaviour
             yield return null;
         }
 
+        float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
+
         currentStats[type] -= modifierValue;
+
+        float delta = currentStats[type] - prev;
+        MarkVisualStateFromDelta(type, delta);
+
         OnStatChanged?.Invoke(type, currentStats[type]);
         Debug.Log($"Efecto temporal '{type}' removido después de {rooms} habitaciones.");
     }
@@ -420,14 +498,34 @@ public class PlayerStatsManager : MonoBehaviour
             float baseVal = baseStats.TryGetValue(stat, out var b) ? b : 0f;
 
             string formattedCurrent = current.ToString($"F{Mathf.Max(0, decimals)}");
-            if (showBaseValues)
+            string coloredCurrent = formattedCurrent;
+
+            // Usamos el estado visual persistente en lugar de comparar con base directamente.
+            int visualState = statVisualState.ContainsKey(stat) ? statVisualState[stat] : 0;
+            if (visualState == 1)
             {
-                string formattedBase = baseVal.ToString($"F{Mathf.Max(0, decimals)}");
-                sb.AppendLine($"{SplitCamelCase(stat.ToString())}: {formattedCurrent} (base: {formattedBase})");
+                // verde para aumento persistente
+                coloredCurrent = $"<color=#00FF00>{formattedCurrent}</color>";
+            }
+            else if (visualState == -1)
+            {
+                // rojo para disminución persistente
+                coloredCurrent = $"<color=#FF0000>{formattedCurrent}</color>";
             }
             else
             {
-                sb.AppendLine($"{SplitCamelCase(stat.ToString())}: {formattedCurrent}");
+                // neutro: mostramos sin color
+                coloredCurrent = formattedCurrent;
+            }
+
+            if (showBaseValues)
+            {
+                string formattedBase = baseVal.ToString($"F{Mathf.Max(0, decimals)}");
+                sb.AppendLine($"{SplitCamelCase(stat.ToString())}: {coloredCurrent} (base: {formattedBase})");
+            }
+            else
+            {
+                sb.AppendLine($"{SplitCamelCase(stat.ToString())}: {coloredCurrent}");
             }
         }
 
@@ -458,14 +556,12 @@ public class PlayerStatsManager : MonoBehaviour
     #endregion
 }
 
-
-
-// Codigo anterior a la modificacion(stats mostrados en un textmeshpro)
-
 //using System;
 //using System.Collections;
 //using System.Collections.Generic;
+//using System.Text;
 //using UnityEngine;
+//using TMPro;
 
 ///// <summary>
 ///// Enumeración de los diferentes tipos de estadísticas del jugador.
@@ -488,24 +584,55 @@ public class PlayerStatsManager : MonoBehaviour
 //    ShieldBlockUpgrade,
 //    DamageTaken,
 //    HealthDrainAmount,
+
+//    EssenceCostReduction,
+//    ShopPriceReduction,
+//    HealthPerRoomRegen,
+//    MeleeStunChance,
+//    RangedSlowStunChance,
+//    CriticalChance,
+//    LuckStack,
+//    FireDashEffect,
+//    ResidualDashEffect,
+
+//    StunnedOnHitChance,
+//    ShieldCatchRequired,
+//    SameAttackDamageReduction,
+//    MissChance,
+//    ShieldDropChance,
+//    BerserkerEffect,
+//    DashRangeMultiplier
 //}
 
 ///// <summary>
 ///// Clase que maneja las estadísticas del jugador, incluyendo buffs y debuffs temporales (por tiempo o salas/habitaciones/enfrentamientos) o permanentes.
+///// Además muestra todas las stats en un TextMeshProUGUI ordenado y permite abrir/cerrar el panel con la tecla P.
 ///// </summary>
 //public class PlayerStatsManager : MonoBehaviour
 //{
+//    [Header("ScriptableObjects")]
 //    [SerializeField] private PlayerStats playerStats;
 //    [SerializeField] private PlayerStats currentStatSO;
 
 //    public PlayerStats _currentStatSO => currentStatSO;
 
+//    [Header("Stats (internas)")]
 //    [SerializeField] private Dictionary<StatType, float> baseStats = new();
 //    [SerializeField] private Dictionary<StatType, float> currentStats = new();
 
 //    public static event Action<StatType, float> OnStatChanged;
 
 //    private PlayerHealth playerHealth;
+//    private int roomsCompletedSinceStart = 0;
+
+//    [Header("UI: Mostrar estadísticas")]
+//    [SerializeField] private TextMeshProUGUI statsText; // Arrastra aquí el TextMeshProUGUI del canvas
+//    [Tooltip("GameObject que contiene el panel con el TextMeshProUGUI. Si no se asigna, se intentará usar el parent del statsText.")]
+//    [SerializeField] private GameObject statsPanel;
+//    [Tooltip("Si está activo, se mostrará también el valor base entre paréntesis.")]
+//    [SerializeField] private bool showBaseValues = true;
+//    [Tooltip("Cantidad de decimales a mostrar para los valores.")]
+//    [SerializeField] private int decimals = 2;
 
 //    private void Awake()
 //    {
@@ -516,6 +643,74 @@ public class PlayerStatsManager : MonoBehaviour
 //    private void Start()
 //    {
 //        playerHealth = GetComponent<PlayerHealth>();
+
+//        // Si no se asignó explicitamente el panel, intentamos usar el parent del TextMeshProUGUI
+//        if (statsPanel == null && statsText != null)
+//        {
+//            if (statsText.transform.parent != null)
+//                statsPanel = statsText.transform.parent.gameObject;
+//            else
+//                statsPanel = statsText.gameObject;
+//        }
+
+//        UpdateStatsDisplay(); // asegurar display inicial
+//    }
+
+//    private void OnEnable()
+//    {
+//        OnStatChanged += HandleStatChanged;
+//        DungeonGenerator.OnRoomCompleted += IncrementRoomCount;
+//    }
+
+//    private void OnDisable()
+//    {
+//        OnStatChanged -= HandleStatChanged;
+//        DungeonGenerator.OnRoomCompleted -= IncrementRoomCount;
+//    }
+
+//    private void Update()
+//    {
+//        // Toggle del panel con la tecla P
+//        if (Input.GetKeyDown(KeyCode.P))
+//        {
+//            ToggleStatsPanel();
+//        }
+//    }
+
+//    private void HandleStatChanged(StatType type, float newValue)
+//    {
+//        // Simplemente refresca todo el display cuando cambie cualquier stat.
+//        UpdateStatsDisplay();
+//    }
+
+//    /// <summary>
+//    /// Alterna el estado (activo/inactivo) del panel de estadísticas.
+//    /// </summary>
+//    private void ToggleStatsPanel()
+//    {
+//        if (statsPanel == null)
+//        {
+//            // Si no hay panel, intentamos alternar directamente el objeto de statsText
+//            if (statsText != null)
+//            {
+//                statsText.gameObject.SetActive(!statsText.gameObject.activeSelf);
+//                if (statsText.gameObject.activeSelf) UpdateStatsDisplay();
+//            }
+//            return;
+//        }
+
+//        bool newState = !statsPanel.activeSelf;
+//        statsPanel.SetActive(newState);
+
+//        // Si se abre el panel, actualizamos el texto para mostrar valores recientes.
+//        if (newState)
+//            UpdateStatsDisplay();
+//    }
+
+//    private void IncrementRoomCount()
+//    {
+//        roomsCompletedSinceStart++;
+//        Debug.Log($"[PlayerStatsManager] Sala completada. Contador: {roomsCompletedSinceStart}");
 //    }
 
 //    /// <summary>
@@ -558,6 +753,9 @@ public class PlayerStatsManager : MonoBehaviour
 //            currentStats[kvp.Key] = kvp.Value;
 //            OnStatChanged?.Invoke(kvp.Key, kvp.Value);
 //        }
+
+//        // Además de las invocaciones por stat, actualiza una vez para garantizar consistencia.
+//        UpdateStatsDisplay();
 //    }
 
 //    public void ResetStatsOnDeath()
@@ -661,6 +859,44 @@ public class PlayerStatsManager : MonoBehaviour
 //        }
 //    }
 
+//    public void ModifyPermanentStat(StatType type, float modifierValue)
+//    {
+//        if (!baseStats.ContainsKey(type)) return;
+
+//        currentStats[type] += modifierValue;
+
+//        if (float.IsNaN(currentStats[type]) || float.IsInfinity(currentStats[type]))
+//        {
+//            Debug.LogError($"[PlayerStatsManager] Stat permanente '{type}' resultó en un valor inválido ({currentStats[type]}). Se ha reseteado al valor base.");
+//            currentStats[type] = baseStats.ContainsKey(type) ? baseStats[type] : 0f;
+//        }
+
+//        baseStats[type] = currentStats[type];
+//        SetStatOnSO(currentStatSO, type, currentStats[type]);
+
+//        OnStatChanged?.Invoke(type, currentStats[type]);
+//    }
+
+//    public void ApplyTemporaryStatByRooms(StatType type, float modifierValue, int rooms)
+//    {
+//        currentStats[type] += modifierValue;
+//        OnStatChanged?.Invoke(type, currentStats[type]);
+
+//        StartCoroutine(RemoveModifierAfterRooms(type, modifierValue, rooms));
+//    }
+
+//    /// <summary>
+//    /// Aplica una modificación de estadística temporal que dura por un tiempo específico.
+//    /// </summary>
+//    public void ApplyTemporaryStatByTime(StatType type, float modifierValue, float duration)
+//    {
+//        currentStats[type] += modifierValue;
+//        OnStatChanged?.Invoke(type, currentStats[type]);
+
+//        StartCoroutine(RemoveModifierAfterTime(type, modifierValue, duration));
+//    }
+
+
 //    private void SetStatOnSO(PlayerStats so, StatType type, float value)
 //    {
 //        switch (type)
@@ -699,18 +935,17 @@ public class PlayerStatsManager : MonoBehaviour
 
 //    private IEnumerator RemoveModifierAfterRooms(StatType type, float modifierValue, int rooms)
 //    {
-//        int completedRooms = 0;
+//        int startRoomCount = roomsCompletedSinceStart;
+//        int targetRoomCount = startRoomCount + rooms;
 
-//        // Aquí debería suscribirse a un evento de "sala completada".
-//        // Espera frames hasta que "completedRooms" alcance el valor.
-//        while (completedRooms < rooms)
+//        while (roomsCompletedSinceStart < targetRoomCount)
 //        {
 //            yield return null;
-//            // Futura linea de codigo para incrementar completedRooms con un evento.
 //        }
 
 //        currentStats[type] -= modifierValue;
 //        OnStatChanged?.Invoke(type, currentStats[type]);
+//        Debug.Log($"Efecto temporal '{type}' removido después de {rooms} habitaciones.");
 //    }
 
 //    public float GetCurrentStat(StatType type)
@@ -722,4 +957,64 @@ public class PlayerStatsManager : MonoBehaviour
 
 //        return 0f;
 //    }
+
+//    #region UI Helper: Construir y actualizar el TextMeshPro
+
+//    /// <summary>
+//    /// Construye el texto que se mostrará en el TextMeshProUGUI con todas las stats ordenadas.
+//    /// </summary>
+//    private void UpdateStatsDisplay()
+//    {
+//        if (statsText == null)
+//        {
+//            return;
+//        }
+
+//        var sb = new StringBuilder();
+
+//        foreach (StatType stat in Enum.GetValues(typeof(StatType)))
+//        {
+//            float current = currentStats.TryGetValue(stat, out var cur) ? cur : 0f;
+//            float baseVal = baseStats.TryGetValue(stat, out var b) ? b : 0f;
+
+//            string formattedCurrent = current.ToString($"F{Mathf.Max(0, decimals)}");
+//            if (showBaseValues)
+//            {
+//                string formattedBase = baseVal.ToString($"F{Mathf.Max(0, decimals)}");
+//                sb.AppendLine($"{SplitCamelCase(stat.ToString())}: {formattedCurrent} (base: {formattedBase})");
+//            }
+//            else
+//            {
+//                sb.AppendLine($"{SplitCamelCase(stat.ToString())}: {formattedCurrent}");
+//            }
+//        }
+
+//        statsText.text = sb.ToString();
+//    }
+
+//    /// <summary>
+//    /// Convierte un nombre en CamelCase a una cadena con espacios para mejor lectura.
+//    /// Ej: ShieldMaxDistance -> Shield Max Distance
+//    /// </summary>
+//    private string SplitCamelCase(string input)
+//    {
+//        if (string.IsNullOrEmpty(input)) return input;
+//        var sb = new StringBuilder();
+//        sb.Append(input[0]);
+//        for (int i = 1; i < input.Length; i++)
+//        {
+//            char c = input[i];
+//            if (char.IsUpper(c) && !char.IsUpper(input[i - 1]))
+//            {
+//                sb.Append(' ');
+//            }
+//            sb.Append(c);
+//        }
+//        return sb.ToString();
+//    }
+
+//    #endregion
 //}
+
+
+
