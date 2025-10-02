@@ -179,7 +179,7 @@ public class Larva : MonoBehaviour
                         {
                             agent.SetDestination(player.position);
                             lastDestinationTime = Time.time;
-                            ReportDebug($"[Larva] SetDestination -> {player.position} (speed={agent.speed}, accel={agent.acceleration})", 1);
+                            //ReportDebug($"[Larva] SetDestination -> {player.position} (speed={agent.speed}, accel={agent.acceleration})", 1);
                         }
                     }
                 }

@@ -1,6 +1,7 @@
+using System.Collections;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.AI;
-using System.Collections;
 
 [RequireComponent(typeof(NavMeshAgent), typeof(EnemyHealth))]
 public class KronusEnemy : MonoBehaviour
@@ -9,25 +10,28 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private KronusStats stats;
     [SerializeField] private Transform hitPoint;
     [SerializeField] private GameObject visualHit;
+    [SerializeField] private GameObject groundIndicator;
 
     [Header("Statistics (fallback si no hay KronusStats)")]
     [Header("Health")]
-    [SerializeField] private float health = 10f;
+    [SerializeField] private float health = 20f;
 
     [Header("Movement")]
     [Tooltip("Velocidad de movimiento por defecto si no se encuentra KronusStats.")]
     [SerializeField] private float moveSpeed = 3.5f;
     [SerializeField] private float dashSpeedMultiplier = 2f;
     [SerializeField] private float dashDuration = 1f;
+    [SerializeField] private float dashMaxDistance = 6f;
 
     [Header("Attack")]
-    [SerializeField] private float attackCycleCooldown = 5f;
+    [SerializeField] private bool isPercentageDmg = false;
+    [SerializeField] private float attackCycleCooldown = 2.5f;
+    [SerializeField] private float attackDamage = 10f;
     [SerializeField] private float attackDamagePercentage = 0.2f;
-    [SerializeField] private float attackRadius = 2f;
+    [SerializeField] private float attackRadius = 1.5f;
+    [SerializeField] private float preparationTime = 1f;
+    [SerializeField] private float knockbackForce = 1f;
     [SerializeField] private LayerMask playerLayer;
-
-    [SerializeField] private bool showGizmo = false;
-    [SerializeField] private float gizmoDuration = 0.2f;
 
     [Header("Perception")]
     [Tooltip("Radio dentro del cual Kronus detecta al jugador y empezará a perseguir/atacar.")]
@@ -37,17 +41,20 @@ public class KronusEnemy : MonoBehaviour
     [Tooltip("Si se asignan waypoints, Kronus los recorrerá en bucle. Si no, hará roaming aleatorio en patrolRadius.")]
     [SerializeField] private Transform[] patrolWaypoints;
     [SerializeField] private bool loopWaypoints = true;
-    [SerializeField] private float patrolRadius = 8f; // usado si no hay waypoints
-    [SerializeField] private float patrolIdleTime = 1.2f; // espera entre puntos
+    [SerializeField] private float patrolRadius = 8f;
+    [SerializeField] private float patrolIdleTime = 1.2f;
 
     [Header("Sound")]
     [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip dashAttackSFX;
+    [SerializeField] private AudioClip dashSFX;
+    [SerializeField] private AudioClip hammerSmashSFX;
     [SerializeField] private AudioClip deathSFX;
     [SerializeField] private AudioClip hitSFX;
 
     [Header("Debug Options")]
     [SerializeField] private bool showDetailsOptions = false;
+    [SerializeField] private bool showGizmo = false;
+    [SerializeField] private float gizmoDuration = 0.25f;
 
     private EnemyHealth enemyHealth;
     private NavMeshAgent agent;
@@ -64,6 +71,10 @@ public class KronusEnemy : MonoBehaviour
     private bool isPatrolWaiting = false;
     private int currentWaypointIndex = 0;
 
+    private GUIStyle titleStyle;
+    private GUIStyle labelStyle;
+    private GUIStyle worldLabelStyle;
+
     private void Awake()
     {
         enemyHealth = GetComponent<EnemyHealth>();
@@ -77,6 +88,7 @@ public class KronusEnemy : MonoBehaviour
     private void Start()
     {
         if (visualHit != null) visualHit.SetActive(false);
+        if (groundIndicator != null) groundIndicator.SetActive(false);
 
         var playerGameObject = GameObject.FindGameObjectWithTag("Player");
         playerTransform = playerGameObject ? playerGameObject.transform : null;
@@ -104,9 +116,13 @@ public class KronusEnemy : MonoBehaviour
             moveSpeed = stats.moveSpeed;
             dashSpeedMultiplier = stats.dashSpeedMultiplier;
             dashDuration = stats.dashDuration;
+            dashMaxDistance = stats.dashMaxDistance;
             attackCycleCooldown = stats.attackCycleCooldown;
             attackDamagePercentage = stats.attackDamagePercentage;
+            attackDamage = stats.attackDamage;
             attackRadius = stats.attackRadius;
+            preparationTime = stats.preparationTime;
+            knockbackForce = stats.knockbackForce;
             if (enemyHealth != null) enemyHealth.SetMaxHealth(stats.health);
         }
         else
@@ -122,6 +138,11 @@ public class KronusEnemy : MonoBehaviour
     }
 
     private void OnDisable()
+    {
+        if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
+    }
+
+    private void OnDestroy()
     {
         if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
     }
@@ -332,38 +353,77 @@ public class KronusEnemy : MonoBehaviour
         }
 
         if (animator != null) animator.SetTrigger("StartDash");
-        if (audioSource != null && dashAttackSFX != null) audioSource.PlayOneShot(dashAttackSFX);
+        if (audioSource != null && dashSFX != null) audioSource.PlayOneShot(dashSFX);
 
+        Vector3 startPosition = transform.position;
         Vector3 dashTarget = playerTransform != null ? playerTransform.position : transform.position;
         dashTarget.y = transform.position.y;
 
+        Vector3 direction = (dashTarget - startPosition).normalized;
+        float distanceToPlayer = Vector3.Distance(startPosition, dashTarget);
+        float dashDistance = Mathf.Min(distanceToPlayer, dashMaxDistance);
+
+        dashTarget = startPosition + direction * dashDistance;
+
         float startTime = Time.time;
         float endTime = startTime + dashDuration;
+        bool interruptedByPlayer = false;
 
         while (Time.time < endTime)
         {
-            if (dashTarget == null) break;
-
             transform.position = Vector3.MoveTowards(transform.position, dashTarget, moveSpeed * dashSpeedMultiplier * Time.deltaTime);
-            
-            Vector3 direction = (dashTarget - transform.position);
 
-            direction.y = 0f;
+            Vector3 lookDirection = (dashTarget - transform.position);
+            lookDirection.y = 0f;
 
-            if (direction.sqrMagnitude > 0.01f)
+            if (lookDirection.sqrMagnitude > 0.01f)
             {
-                Quaternion targetRotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+                Quaternion targetRotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 10f * Time.deltaTime);
             }
 
-            PerformHitDetection();
+            // Detectar si el jugador está en el camino durante el dash
+            if (playerTransform != null && !interruptedByPlayer)
+            {
+                float distToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+                if (distToPlayer <= attackRadius * 1.5f)
+                {
+                    interruptedByPlayer = true;
+                    ReportDebug("Dash interrumpido: jugador detectado en la trayectoria.", 1);
+                    break;
+                }
+            }
+
+            // Si llegó al objetivo antes de tiempo
+            if (Vector3.Distance(transform.position, dashTarget) < 0.1f)
+            {
+                break;
+            }
 
             yield return null;
         }
 
-        if (animator != null) animator.SetTrigger("Attack");
+        // Fase de preparación del martillazo(1 segundo con indicador visual)
+        ReportDebug("Kronus preparando martillazo.", 1);
 
-        PerformHitDetection();
+        if (groundIndicator != null && hitPoint != null)
+        {
+            groundIndicator.transform.position = new Vector3(hitPoint.position.x, -0.875f, hitPoint.position.z);
+            groundIndicator.transform.localScale = new Vector3(attackRadius * 2f, 0.025f, attackRadius * 2f);
+            groundIndicator.SetActive(true);
+        }
+
+        if (animator != null) animator.SetTrigger("PrepareAttack");
+
+        yield return new WaitForSeconds(preparationTime);
+
+        if (groundIndicator != null) groundIndicator.SetActive(false);
+
+        // Ejecutar el martillazo
+        if (animator != null) animator.SetTrigger("Attack");
+        if (audioSource != null && hammerSmashSFX != null) audioSource.PlayOneShot(hammerSmashSFX);
+
+        PerformHammerSmash();
 
         if (agent != null)
         {
@@ -372,32 +432,30 @@ public class KronusEnemy : MonoBehaviour
             agent.updatePosition = true;
             agent.updateRotation = true;
             agent.Warp(transform.position);
-            if (agent != null && agent.enabled && agent.isOnNavMesh) 
+            if (agent != null && agent.enabled && agent.isOnNavMesh)
                 agent.SetDestination(playerTransform != null ? playerTransform.position : transform.position);
         }
 
-        yield return new WaitForSeconds(2.5f);
+        yield return new WaitForSeconds(1f);
 
         ReportDebug("Kronus finaliza ataque dash.", 1);
 
         isAttacking = false;
     }
 
-    public void PerformHitDetection()
+    public void PerformHammerSmash()
     {
         if (hasHitPlayerThisDash) return;
 
         if (hitPoint == null || playerHealth == null)
         {
-            ReportDebug("PerformHitDetection: falta hitPoint o playerHealth.", 2);
+            ReportDebug("PerformHammerSmash: falta hitPoint o playerHealth.", 2);
             return;
         }
 
-        visualHit.SetActive(true);
+        if (visualHit != null) visualHit.SetActive(true);
 
         Collider[] hitPlayer = Physics.OverlapSphere(hitPoint.position, attackRadius, playerLayer);
-
-        float baseDamage = playerHealth.MaxHealth * attackDamagePercentage;
 
         foreach (Collider collider in hitPlayer)
         {
@@ -405,11 +463,19 @@ public class KronusEnemy : MonoBehaviour
             {
                 var hitTransform = collider.transform;
                 bool isCritical;
-                float damage = playerHealth.MaxHealth * attackDamagePercentage;
+                float damage;
+
+                if (isPercentageDmg) damage = playerHealth.MaxHealth * attackDamagePercentage;
+                else damage = attackDamage;
+
+                // Calcular daño con sistema de críticos
                 float damageToApply = CriticalHitSystem.CalculateDamage(damage, transform, hitTransform, out isCritical);
                 
                 if (audioSource != null && hitSFX != null) audioSource.PlayOneShot(hitSFX);
                 playerHealth.TakeDamage(damageToApply);
+
+                // Aplicar empuje
+                ApplyKnockback(hitTransform);
 
                 ReportDebug($"Kronus atacó al jugador por {damageToApply} de daño. Crítico: {isCritical}", 1);
 
@@ -420,13 +486,64 @@ public class KronusEnemy : MonoBehaviour
         StartCoroutine(ShowGizmoCoroutine());
     }
 
+    private void ApplyKnockback(Transform target)
+    {
+        // Calcular dirección del empuje (desde Kronus hacia el jugador)
+        Vector3 knockbackDirection = (target.position - transform.position).normalized;
+        knockbackDirection.y = 0f; // Mantener en el plano horizontal
+
+        // Aplicar empuje
+        CharacterController cc = target.GetComponent<CharacterController>();
+        Rigidbody rb = target.GetComponent<Rigidbody>();
+
+        if (cc != null)
+        {
+            // Si el jugador usa CharacterController
+            StartCoroutine(ApplyKnockbackOverTime(cc, knockbackDirection * knockbackForce));
+        }
+        else if (rb != null)
+        {
+            // Si el jugador usa Rigidbody
+            rb.AddForce(knockbackDirection * knockbackForce * 10f, ForceMode.Impulse);
+        }
+
+        ReportDebug($"Empuje aplicado al jugador en dirección {knockbackDirection}", 1);
+    }
+
+    private IEnumerator ApplyKnockbackOverTime(CharacterController cc, Vector3 knockbackVelocity)
+    {
+        float duration = 0.2f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            if (cc != null && cc.enabled)
+            {
+                cc.Move(knockbackVelocity * Time.deltaTime);
+            }
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+    }
+
     private IEnumerator ShowGizmoCoroutine()
     {
+        Vector3 originalScale = visualHit.transform.localScale;
+
         showGizmo = true;
-        if (visualHit != null) visualHit.SetActive(true);
+        if (visualHit != null && hitPoint != null)
+        {
+            visualHit.transform.localScale = Vector3.one * attackRadius * 2f;
+            visualHit.SetActive(true);
+        }
         yield return new WaitForSeconds(gizmoDuration);
+
         showGizmo = false;
-        if (visualHit != null) visualHit.SetActive(false);
+        if (visualHit != null && hitPoint != null)
+        {
+            visualHit.SetActive(false);
+            visualHit.transform.localScale = originalScale;
+        }
     }
 
     #endregion
@@ -449,25 +566,138 @@ public class KronusEnemy : MonoBehaviour
 
         Gizmos.color = new Color(1f, 0.5f, 0f, 1f);
         Gizmos.DrawWireSphere(transform.position, patrolRadius);
+
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, dashMaxDistance);
+    }
+
+    private void EnsureGuiStyles()
+    {
+        if (titleStyle != null) return;
+
+        titleStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 14,
+            fontStyle = FontStyle.Bold,
+            normal = { textColor = Color.white }
+        };
+
+        labelStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 12,
+            normal = { textColor = Color.white }
+        };
+
+        worldLabelStyle = new GUIStyle(GUI.skin.box)
+        {
+            fontSize = 11,
+            alignment = TextAnchor.MiddleCenter,
+            normal = { textColor = Color.white, background = Texture2D.blackTexture },
+            padding = new RectOffset(6, 6, 3, 3)
+        };
+    }
+
+    private void DrawWorldLabel(Vector3 worldPos, string text, GUIStyle style)
+    {
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
+        Vector3 screenPos = cam.WorldToScreenPoint(worldPos);
+        if (screenPos.z < 0) return;
+
+        Vector2 guiPoint = new Vector2(screenPos.x, Screen.height - screenPos.y);
+        Vector2 size = style.CalcSize(new GUIContent(text));
+        Rect rect = new Rect(guiPoint.x - size.x * 0.5f, guiPoint.y - size.y - 8f, size.x + 8f, size.y + 6f);
+
+        GUI.Box(rect, GUIContent.none, style);
+        GUI.Label(rect, text, style);
     }
 
     private void OnGUI()
     {
-        if (showDetailsOptions)
+        if (!showDetailsOptions) return;
+#if !UNITY_EDITOR
+        if (!Debug.isDebugBuild) return;
+#endif
+        EnsureGuiStyles();
+
+        Rect area = new Rect(10, 10, 360, 340);
+        GUILayout.BeginArea(area, GUI.skin.box);
+
+        GUILayout.Label("KRONUS - DEBUG", titleStyle);
+
+        if (enemyHealth != null)
         {
-            GUI.Label(new Rect(10, 10, 300, 20), $"Kronus Enemy Details:");
-            GUI.Label(new Rect(10, 30, 300, 20), $"- Move Speed: {moveSpeed}");
-            GUI.Label(new Rect(10, 50, 300, 20), $"- Dash Speed Multiplier: {dashSpeedMultiplier}");
-            GUI.Label(new Rect(10, 70, 300, 20), $"- Dash Duration: {dashDuration}");
-            GUI.Label(new Rect(10, 90, 300, 20), $"- Attack Cycle Cooldown: {attackCycleCooldown}");
-            GUI.Label(new Rect(10, 110, 300, 20), $"- Attack Damage Percentage: {attackDamagePercentage * 100}%");
-            GUI.Label(new Rect(10, 130, 300, 20), $"- Attack Radius: {attackRadius}");
-            if (enemyHealth != null)
-            {
-                GUI.Label(new Rect(10, 150, 300, 20), $"- Current Health: {enemyHealth.CurrentHealth}/{enemyHealth.MaxHealth}");
-            }
-            GUI.Label(new Rect(10, 170, 300, 20), $"- Time until next attack: {Mathf.Max(0, attackCycleCooldown - attackTimer):F2} seconds");
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("HP:", labelStyle, GUILayout.Width(140));
+            GUILayout.Label($"{enemyHealth.CurrentHealth:F1}/{enemyHealth.MaxHealth:F1}", labelStyle);
+            GUILayout.EndHorizontal();
         }
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Move Speed:", labelStyle, GUILayout.Width(140));
+        GUILayout.Label($"{moveSpeed:F1}", labelStyle);
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Dash Speed Mult:", labelStyle, GUILayout.Width(140));
+        GUILayout.Label($"{dashSpeedMultiplier:F1}", labelStyle);
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Dash Duration:", labelStyle, GUILayout.Width(140));
+        GUILayout.Label($"{dashDuration:F1}s", labelStyle);
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Dash Max Distance:", labelStyle, GUILayout.Width(140));
+        GUILayout.Label($"{dashMaxDistance:F1}", labelStyle);
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(4);
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Attack Damage:", labelStyle, GUILayout.Width(140));
+        GUILayout.Label(isPercentageDmg ? $"{attackDamagePercentage * 100f:F0}% HP" : $"{attackDamage:F1}", labelStyle);
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Attack Radius:", labelStyle, GUILayout.Width(140));
+        GUILayout.Label($"{attackRadius:F1}", labelStyle);
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Knockback Force:", labelStyle, GUILayout.Width(140));
+        GUILayout.Label($"{knockbackForce:F1}", labelStyle);
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Next Attack (s):", labelStyle, GUILayout.Width(140));
+        GUILayout.Label($"{Mathf.Max(0, attackCycleCooldown - attackTimer):F2}", labelStyle);
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(6);
+
+        if (GUILayout.Button("Force Attack", GUILayout.Height(24)))
+        {
+            PerformHammerSmash();
+        }
+
+        if (GUILayout.Button("Force Dash", GUILayout.Height(24)))
+        {
+            if (dashCoroutine == null) dashCoroutine = StartCoroutine(DashAttackRoutine());
+        }
+
+        if (GUILayout.Button("Kill (debug)", GUILayout.Height(24)))
+        {
+            if (enemyHealth != null) enemyHealth.TakeDamage(9999f);
+        }
+
+        GUILayout.EndArea();
+
+        // etiqueta flotante en el mundo
+        string worldText = $"Kronus\nHP: {(enemyHealth != null ? enemyHealth.CurrentHealth.ToString("F0") : "N/A")}\nAttacking: {isAttacking}";
+        DrawWorldLabel(transform.position + Vector3.up * 2f, worldText, worldLabelStyle);
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]

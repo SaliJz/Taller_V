@@ -74,6 +74,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     public float MaxHealth => maxHealth;
     public static event Action<float, float> OnEnemyHealthChanged;
     public event Action<GameObject> OnDeath;
+    public event Action OnDamaged;
     private EnemyVisualEffects enemyVisualEffects;
     private Transform playerTransform;
     private PlayerHealth playerHealth;
@@ -167,6 +168,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         // emitir cambio de vida para listeners
         CurrentHealth = currentHealth;
 
+        OnDamaged?.Invoke();
         UpdateSlidersSafely();
 
         if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El enemigo ha recibido {finalDamage} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);

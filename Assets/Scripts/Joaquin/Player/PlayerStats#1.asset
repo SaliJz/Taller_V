@@ -13,12 +13,18 @@ MonoBehaviour:
   m_Name: PlayerStats#1
   m_EditorClassIdentifier: 
   maxHealth: 100
+  currentHealth: 100
   moveSpeed: 5
   gravity: -9.81
-  meleeAttackDamage: 10
+  attackDamage: 10
+  attackSpeed: 1
+  meleeAttackDamage: 1
+  meleeSpeed: 1
   meleeRadius: 0.8
   shieldAttackDamage: 10
   shieldSpeed: 25
   shieldMaxDistance: 25
   shieldMaxRebounds: 2
   shieldReboundRadius: 15
+  HealthDrainAmount: 2
+  isShieldBlockUpgradeActive: 0

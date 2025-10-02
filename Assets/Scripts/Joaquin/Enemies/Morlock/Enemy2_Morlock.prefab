@@ -1394,7 +1394,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2116185712686992134
 Transform:
   m_ObjectHideFlags: 0
@@ -2251,7 +2251,7 @@ MonoBehaviour:
   firstFillImage: {fileID: 7893166915883177190}
   offsetAboveEnemy: 2
   glowDelayAfterCritical: 2
-  enableAutoArea: 1
+  enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
   areaDuration: 10
@@ -2277,23 +2277,36 @@ MonoBehaviour:
   stats: {fileID: 11400000, guid: 827240c34ab30b44faf66dd69d82507b, type: 2}
   projectilePrefab: {fileID: 5442904530204617264, guid: 9f7e821dc3eb3bc46b6ab54cf186063b, type: 3}
   firePoint: {fileID: 9215352895255589693}
-  health: 8
-  optimalAttackDistance: 15
-  teleportMinDistance: 5
+  health: 15
+  moveSpeed: 4
+  optimalAttackDistance: 5
   teleportRange: 5
-  teleportCooldown: 2.5
   fireRate: 1
-  projectileDamage: 5
-  projectileSpeed: 15
-  detectionRadius: 16
+  projectileDamage: 1
+  projectileSpeed: 12
+  maxDamageIncrease: 2
+  maxRangeForDamageIncrease: 6
+  maxDistanceForDamageStart: 20
+  detectionRadius: 15
   patrolWaypoints: []
   loopWaypoints: 1
   patrolRadius: 8
   patrolIdleTime: 1.2
+  pursuitAdvanceDistance: 4
+  pursuitLateralVariationMin: 3
+  pursuitLateralVariationMax: 5
+  pursuitTeleportCooldown: 2.5
+  defensiveTeleportActivationRadius: 5
+  defensiveTeleportRange: 5
+  defensiveTeleportCooldown: 2.5
+  evasiveTeleportCooldown: 1.5
+  evasiveTeleportPositions: 4
+  evasiveTeleportRadiusMin: 5
+  evasiveTeleportRadiusMax: 10
   audioSource: {fileID: 750306028043729525}
-  teleportSFX: {fileID: 8300000, guid: 90938bb89fe09b549b16d2f3608c480e, type: 3}
-  deathSFX: {fileID: 8300000, guid: dbe57604d779bee4eb8433b0cb2bf9fb, type: 3}
-  shootSFX: {fileID: 8300000, guid: f75d4fbf44f186b4793cafa4612223d7, type: 3}
+  teleportSFX: {fileID: 0}
+  deathSFX: {fileID: 0}
+  shootSFX: {fileID: 0}
   showDetailsOptions: 0
 --- !u!114 &5355768341301424616
 MonoBehaviour:
@@ -2332,8 +2345,8 @@ MonoBehaviour:
   damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
   damageNumberParent: {fileID: 4910896970551499904}
   audioSource: {fileID: 750306028043729525}
-  normalHitSFX: {fileID: 8300000, guid: 71970489b650da1489b22e74bd3bce04, type: 3}
-  criticalHitSFX: {fileID: 8300000, guid: 3098f91a9f978c348b37b3e8f8b30219, type: 3}
+  normalHitSFX: {fileID: 0}
+  criticalHitSFX: {fileID: 0}
 --- !u!114 &69844080327497481
 MonoBehaviour:
   m_ObjectHideFlags: 0

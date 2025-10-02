@@ -171,7 +171,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
         else
         {
-            ReportDebug("MorlockStats no est� asignado en PlayerHealth. Usando valores de veneno por defecto.", 2);
+            ReportDebug("MorlockStats no esta asignado en PlayerHealth. Usando valores de veneno por defecto.", 2);
         }
     }
 
@@ -205,14 +205,14 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             }
             else
             {
-                ReportDebug("Sincronizaci�n de vida omitida debido a inicializaci�n temprana (currentHealth=0).", 1);
+                ReportDebug("Sincronizacion de vida omitida debido a inicializacion temprana (currentHealth=0).", 1);
             }
 
             OnHealthChanged?.Invoke(currentHealth, newValue);
 
             UpdateLifeStage();
 
-            ReportDebug($"Nueva vida m�xima: {newValue}, vida actual ajustada a {currentHealth}", 1);
+            ReportDebug($"Nueva vida maxima: {newValue}, vida actual ajustada a {currentHealth}", 1);
         }
     }
 
@@ -267,7 +267,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private IEnumerator DamageInvulnerabilityRoutine()
     {
         isDamageInvulnerable = true;
-        ReportDebug($"El jugador es invulnerable por da�o continuo durante {damageInvulnerabilityTime} segundos.", 1);
+        ReportDebug($"El jugador es invulnerable por daño continuo durante {damageInvulnerabilityTime} segundos.", 1);
 
         float blinkInterval = 0.1f;
         float timer = 0f;
@@ -285,7 +285,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         isDamageInvulnerable = false;
         damageInvulnerabilityCoroutine = null;
-        ReportDebug("La invulnerabilidad por da�o ha terminado.", 1);
+        ReportDebug("La invulnerabilidad por daño ha terminado.", 1);
 
         playerSpriteRenderer.color = Color.white;
     }
@@ -293,11 +293,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     // Funci�n que maneja el cooldown del bloqueo del escudo.
     private IEnumerator ShieldBlockCooldownRoutine()
     {
-        ReportDebug($"El escudo bloquear� de nuevo en {shieldBlockCooldown} segundos.", 1);
+        ReportDebug($"El escudo bloqueara de nuevo en {shieldBlockCooldown} segundos.", 1);
         yield return new WaitForSeconds(shieldBlockCooldown);
 
         isShieldBlockReady = true;
-        ReportDebug("El escudo est� listo para bloquear de nuevo.", 1);
+        ReportDebug("El escudo esta listo para bloquear de nuevo.", 1);
     }
 
     /// <summary>

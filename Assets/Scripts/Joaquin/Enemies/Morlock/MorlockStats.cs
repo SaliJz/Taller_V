@@ -4,18 +4,17 @@ using UnityEngine;
 public class MorlockStats : ScriptableObject
 {
     [Header("Salud")]
-    public float health = 8f;
+    public float health = 15f;
 
     [Header("Movimiento y Posicionamiento")]
+    public float moveSpeed = 4f;
     public float optimalAttackDistance = 10f;
-    public float teleportMinDistance = 5f;
     public float teleportRange = 5f;
-    public float teleportCooldown = 2.5f;
 
     [Header("Combate")]
     public float fireRate = 1f;
-    public float projectileDamage = 5f;
-    public float projectileSpeed = 20f;
+    public float projectileDamage = 1f;
+    public float projectileSpeed = 12f;
 
     [Header("Efecto de Veneno")]
     public int poisonHitThreshold = 3;

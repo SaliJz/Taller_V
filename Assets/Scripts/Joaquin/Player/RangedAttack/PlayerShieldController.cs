@@ -46,6 +46,12 @@ public class PlayerShieldController : MonoBehaviour
         set { shieldDamage = value; }
     }
 
+    public bool HasShield 
+    { 
+        get { return hasShield; }
+        set { hasShield = value; }
+    }
+
     private void Awake()
     {
         statsManager = GetComponent<PlayerStatsManager>();

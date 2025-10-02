@@ -8,7 +8,9 @@ public class PlayerMeleeAttack : MonoBehaviour
 {
     [Header("Referencias")]
     [SerializeField] private PlayerStatsManager statsManager;
-    [SerializeField] private GameObject visualHit;
+    [SerializeField] private GameObject visualSphereHit;
+    [SerializeField] private GameObject visualBoxHit;
+    [SerializeField] private PlayerShieldController playerShieldController;
 
     [Header("Configuraci�n de Ataque")]
     [SerializeField] private Transform hitPoint;
@@ -29,6 +31,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private float knockbackElder = 0.5f;
 
     [Header("Debug")]
+    [SerializeField] private bool useBoxCollider = false;
     [SerializeField] private bool showGizmo = false;
     [SerializeField] private float gizmoDuration = 0.2f;
 
@@ -50,11 +53,16 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private void Awake()
     {
-        if (visualHit != null) visualHit.SetActive(false);
+        if (visualSphereHit != null) visualSphereHit.SetActive(false);
+        if (visualBoxHit != null) visualBoxHit.SetActive(false);
+
         statsManager = GetComponent<PlayerStatsManager>();
         playerHealth = GetComponent<PlayerHealth>();
+        playerShieldController = GetComponent<PlayerShieldController>();
+
         if (statsManager == null) ReportDebug("StatsManager no est� asignado en PlayerMeleeAttack. Usando valores de de fallback.", 2);
-        if (playerHealth == null) ReportDebug("PlayerHealth no se encuentra en el objeto. El empuje no funcionará.", 3);
+        if (playerHealth == null) ReportDebug("PlayerHealth no se encuentra en el objeto.", 3);
+        if (playerShieldController == null) ReportDebug("PlayerShieldController no se encuentra en el objeto.", 3);
     }
 
     private void OnEnable()
@@ -120,7 +128,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
 
         CalculateStats();
-        ReportDebug($"Estad�stica {statType} actualizada a {newValue}.", 1);
+        ReportDebug($"Estadistica {statType} actualizada a {newValue}.", 1);
     }
 
     // Metodo para calcular las estaditicas finales del ataque.
@@ -129,7 +137,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         finalAttackDamage = Mathf.RoundToInt(attackDamage * damageMultiplier);
         finalAttackSpeed = attackSpeed * speedMultiplier;
 
-        ReportDebug($"Estad�sticas recalculadas: Da�o Final = {finalAttackDamage}, Velocidad de Ataque Final = {finalAttackSpeed}", 1);
+        ReportDebug($"Estadisticas recalculadas: Da�o Final = {finalAttackDamage}, Velocidad de Ataque Final = {finalAttackSpeed}", 1);
     }
 
     private void Update()
@@ -138,7 +146,15 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0) && attackCooldown <= 0f)
         {
-            Attack();
+            if (playerShieldController != null)
+            {
+                if (playerShieldController.HasShield) Attack();
+                else ReportDebug("No tiene el escudo", 1);
+            }
+            else
+            {
+                Attack();
+            }
         }
     }
 
@@ -178,47 +194,97 @@ public class PlayerMeleeAttack : MonoBehaviour
     /// </summary>
     public void PerformHitDetection()
     {
-        Collider[] hitEnemies = Physics.OverlapSphere(hitPoint.position, hitRadius, enemyLayer);
-
-        foreach (Collider enemy in hitEnemies)
+        if (useBoxCollider)
         {
-            ApplyKnockback(enemy);
+            Vector3 boxHalfExtents = new Vector3(hitRadius, hitRadius, hitRadius);
+            Collider[] hitEnemiesBox = Physics.OverlapBox(hitPoint.position, boxHalfExtents, Quaternion.identity, enemyLayer);
 
-            HealthController healthController = enemy.GetComponent<HealthController>();
-            if (healthController != null)
+            foreach (Collider enemy in hitEnemiesBox)
             {
-                bool isCritical;
-                float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+                ApplyKnockback(enemy);
 
-                healthController.TakeDamage(Mathf.RoundToInt(finalDamage));
+                HealthController healthController = enemy.GetComponent<HealthController>();
+                if (healthController != null)
+                {
+                    bool isCritical;
+                    float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
-                ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
+                    healthController.TakeDamage(Mathf.RoundToInt(finalDamage));
+
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
+                }
+
+                IDamageable damageable = enemy.GetComponent<IDamageable>();
+                if (damageable != null)
+                {
+                    bool isCritical;
+                    float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+
+                    damageable.TakeDamage(finalDamageWithCrit, isCritical);
+                    float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+
+                    damageable.TakeDamage(finalDamage, isCritical);
+
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
+                }
+
+                BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
+                if (bloodKnight != null)
+                {
+                    bool isCritical;
+                    float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+
+                    bloodKnight.TakeDamage(finalDamage, isCritical);
+                    bloodKnight.OnPlayerCounterAttack();
+
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
+                }
             }
+        }
+        else
+        {
+            Collider[] hitEnemies = Physics.OverlapSphere(hitPoint.position, hitRadius, enemyLayer);
 
-            IDamageable damageable = enemy.GetComponent<IDamageable>();
-            if (damageable != null)
+            foreach (Collider enemy in hitEnemies)
             {
-                bool isCritical;
-                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+                ApplyKnockback(enemy);
 
-                damageable.TakeDamage(finalDamageWithCrit, isCritical);
-                float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
-                
-                damageable.TakeDamage(finalDamage, isCritical);
+                HealthController healthController = enemy.GetComponent<HealthController>();
+                if (healthController != null)
+                {
+                    bool isCritical;
+                    float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
-                ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
-            }
+                    healthController.TakeDamage(Mathf.RoundToInt(finalDamage));
 
-            BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
-            if (bloodKnight != null)
-            {
-                bool isCritical;
-                float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
+                }
 
-                bloodKnight.TakeDamage(finalDamage, isCritical);
-                bloodKnight.OnPlayerCounterAttack();
+                IDamageable damageable = enemy.GetComponent<IDamageable>();
+                if (damageable != null)
+                {
+                    bool isCritical;
+                    float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
-                ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
+                    damageable.TakeDamage(finalDamageWithCrit, isCritical);
+                    float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+
+                    damageable.TakeDamage(finalDamage, isCritical);
+
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
+                }
+
+                BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
+                if (bloodKnight != null)
+                {
+                    bool isCritical;
+                    float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+
+                    bloodKnight.TakeDamage(finalDamage, isCritical);
+                    bloodKnight.OnPlayerCounterAttack();
+
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
+                }
             }
         }
 
@@ -266,17 +332,43 @@ public class PlayerMeleeAttack : MonoBehaviour
     private IEnumerator ShowGizmoCoroutine()
     {
         showGizmo = true;
-        if (visualHit != null) visualHit.SetActive(true);
+
+        if (useBoxCollider && visualBoxHit != null) visualBoxHit.SetActive(true);
+        else
+        {
+            if (visualSphereHit != null) visualSphereHit.SetActive(true);
+        }
+        
         yield return new WaitForSeconds(gizmoDuration);
+
         showGizmo = false;
-        if (visualHit != null) visualHit.SetActive(false);
+
+        if (useBoxCollider && visualBoxHit != null) visualBoxHit.SetActive(false);
+        else
+        {
+            if (visualSphereHit != null) visualSphereHit.SetActive(false);
+        }
     }
 
     private void OnDrawGizmos()
     {
         if (hitPoint == null || !showGizmo) return;
+        
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(hitPoint.position, hitRadius);
+
+        if (useBoxCollider)
+        {
+            Vector3 boxCenter = hitPoint.position;
+            Vector3 boxHalfExtents = new Vector3(hitRadius, hitRadius, hitRadius);
+            Quaternion boxRotation = Quaternion.identity;
+
+            Gizmos.matrix = Matrix4x4.TRS(boxCenter, boxRotation, Vector3.one);
+            Gizmos.DrawWireCube(Vector3.zero, boxHalfExtents * 2f);
+        }
+        else
+        {
+            Gizmos.DrawWireSphere(hitPoint.position, hitRadius);
+        }
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
