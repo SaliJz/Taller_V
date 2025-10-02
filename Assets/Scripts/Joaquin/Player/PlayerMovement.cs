@@ -1,3 +1,4 @@
+// PlayerMovement.cs
 using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -11,15 +12,11 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private CharacterController controller;
     [SerializeField] private Transform mainCameraTransform;
     [SerializeField] private Animator playerAnimator;
-    //[SerializeField] private AudioSource audioSource;
-    //[SerializeField] private TrailRenderer trailRenderer;
     [SerializeField] private PlayerHealth playerHealth;
 
     [Header("Movimiento")]
-    [Tooltip("Velocidad de movimiento por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackMoveSpeed = 5f;
     [SerializeField] private float moveSpeed = 5f;
-    [Tooltip("Gravedad por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackGravity = -9.81f;
     [SerializeField] private float gravity = -9.81f;
 
@@ -27,20 +24,16 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float dashSpeed = 15f;
     [SerializeField] private float dashDuration = 0.2f;
     [SerializeField] private float dashCooldown = 1f;
-    [Tooltip("Capas que el jugador puede atravesar durante el Dash.")]
     [SerializeField] private LayerMask traversableLayers;
 
     [Header("Efectos")]
-    //[SerializeField] private AudioClip dashStartSound;
-    //[SerializeField] private AudioClip dashImpactSound;
     [SerializeField] private GameObject afterimagePrefab;
 
     private int playerLayer;
-    //private int enemyLayer;
     private float dashCooldownTimer = 0f;
     public bool IsDashing { get; private set; }
     public float MoveSpeed
-    {         
+    {
         get { return moveSpeed; }
         set { moveSpeed = value; }
     }
@@ -50,6 +43,10 @@ public class PlayerMovement : MonoBehaviour
     private bool canMove = true;
     private float lastMoveX;
     private float lastMoveY;
+
+    // Rotation lock fields (para respetar la dirección del ataque)
+    private bool rotationLocked = false;
+    private Quaternion lockedRotation = Quaternion.identity;
 
     #endregion
 
@@ -73,14 +70,11 @@ public class PlayerMovement : MonoBehaviour
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMovement. Usando valores de fallback.", 2);
 
         controller = GetComponent<CharacterController>();
-        mainCameraTransform = Camera.main.transform;
+        mainCameraTransform = Camera.main != null ? Camera.main.transform : mainCameraTransform;
         playerAnimator = GetComponentInChildren<Animator>();
-        //audioSource = GetComponentInChildren<AudioSource>();
-        //trailRenderer = GetComponentInChildren<TrailRenderer>();
         playerHealth = GetComponent<PlayerHealth>();
 
         playerLayer = LayerMask.NameToLayer("Player");
-        //enemyLayer = LayerMask.NameToLayer("Enemy");
 
         float moveSpeedStat = statsManager != null ? statsManager.GetStat(StatType.MoveSpeed) : fallbackMoveSpeed;
         moveSpeed = moveSpeedStat;
@@ -92,11 +86,6 @@ public class PlayerMovement : MonoBehaviour
         lastMoveX = 0;
     }
 
-    /// <summary>
-    /// Maneja los cambios de stats.
-    /// </summary>
-    /// <param name="statType">Tipo de estadística que ha cambiado.</param>
-    /// <param name="newValue">Nuevo valor de la estadística.</param>
     private void HandleStatChanged(StatType statType, float newValue)
     {
         if (statType == StatType.MoveSpeed)
@@ -111,11 +100,6 @@ public class PlayerMovement : MonoBehaviour
         ReportDebug($"Stat {statType} cambiado a {newValue}.", 1);
     }
 
-    /// <summary>
-    /// Se ejecuta cuando el evento OnLifeStageChanged es invocado desde PlayerHealth.
-    /// Actualiza el parámetro "AgeStage" del Animator.
-    /// </summary>
-    /// <param name="newStage">La nueva etapa de vida del jugador.</param>
     private void HandleLifeStageChanged(PlayerHealth.LifeStage newStage)
     {
         int ageStageValue = 0;
@@ -178,13 +162,15 @@ public class PlayerMovement : MonoBehaviour
     #region Custom Methods
 
     // Maneja la entrada de movimiento del jugador y actualiza las animaciones.
+    // Importante: si rotationLocked == true, NO actualizar lastMoveX/lastMoveY ni Xaxis/Yaxis del animator,
+    // y NO permitir que la entrada WASD cambie la rotación (solo permite mover el personaje).
     private void HandleMovementInput()
     {
         float moveX = Input.GetAxisRaw("Horizontal");
         float moveY = Input.GetAxisRaw("Vertical");
 
-        Vector3 cameraForward = mainCameraTransform.forward;
-        Vector3 cameraRight = mainCameraTransform.right;
+        Vector3 cameraForward = mainCameraTransform != null ? mainCameraTransform.forward : Vector3.forward;
+        Vector3 cameraRight = mainCameraTransform != null ? mainCameraTransform.right : Vector3.right;
 
         cameraForward.y = 0;
         cameraRight.y = 0;
@@ -194,21 +180,43 @@ public class PlayerMovement : MonoBehaviour
         moveDirection = (cameraForward * moveY + cameraRight * moveX).normalized;
 
         bool isMoving = moveDirection.magnitude > 0.1f;
+
+        // Siempre actualizar "Running" para que la animación de movimiento ocurra cuando se mueve.
         if (playerAnimator != null) playerAnimator.SetBool("Running", isMoving);
 
-        if (isMoving)
+        // Si NO hay bloqueo de rotación, actualizamos los ejes del animator según la entrada WASD.
+        if (!rotationLocked)
         {
-            lastMoveX = moveX;
-            lastMoveY = moveY;
-        }
+            if (isMoving)
+            {
+                // Guardamos la última entrada directa del jugador (valores -1,0,1).
+                lastMoveX = Mathf.Round(moveX);
+                lastMoveY = Mathf.Round(moveY);
+            }
 
-        if (playerAnimator != null) playerAnimator.SetFloat("Xaxis", lastMoveX);
-        if (playerAnimator != null) playerAnimator.SetFloat("Yaxis", lastMoveY);
+            if (playerAnimator != null)
+            {
+                playerAnimator.SetFloat("Xaxis", lastMoveX);
+                playerAnimator.SetFloat("Yaxis", lastMoveY);
+            }
+        }
+        else
+        {
+            // Si está bloqueado: no tocar lastMoveX/Y ni Xaxis/Yaxis.
+            // Esto asegura que la rotación del mouse (bloqueada a 8 direcciones) se mantenga hasta que termine el ataque.
+        }
     }
 
-    // Alinea al jugador en la dirección del movimiento.
+    // Alinea al jugador en la dirección del movimiento o hacia la rotación bloqueada si existe.
     private void RotateTowardsMovement()
     {
+        if (rotationLocked)
+        {
+            // Mantener la rotación bloqueada (suave)
+            transform.rotation = Quaternion.Slerp(transform.rotation, lockedRotation, 12f * Time.fixedDeltaTime);
+            return;
+        }
+
         Vector3 direction = new Vector3(moveDirection.x, 0, moveDirection.z);
         if (direction.magnitude > 0.01f)
         {
@@ -217,25 +225,15 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Función que maneja la lógica del dash, incluyendo invulnerabilidad, efectos visuales y colisiones.
-    /// Además, inicia la corrutina que mueve al jugador en la dirección del dash.
-    /// Para evitar atravesar paredes, se realiza un raycast en la dirección del dash.
-    /// </summary>
-    /// <returns></returns>
     private IEnumerator DashRoutine()
     {
         IsDashing = true;
         dashCooldownTimer = dashCooldown;
-        // if (playerAnimator != null) playerAnimator.SetTrigger("Dash");
-        //if (audioSource != null && dashStartSound != null) audioSource.PlayOneShot(dashStartSound);
 
         if (playerHealth != null) playerHealth.IsInvulnerable = true;
         ToggleLayerCollisions(true);
-        //if (trailRenderer != null) trailRenderer.emitting = true;
         if (afterimagePrefab != null) StartCoroutine(AfterimageRoutine());
 
-        float startTime = Time.time;
         Vector3 dashDirection = moveDirection.magnitude > 0.1f ? moveDirection : transform.forward;
 
         if (Physics.Raycast(transform.position, dashDirection, out RaycastHit hit, dashSpeed * dashDuration, ~traversableLayers))
@@ -253,17 +251,11 @@ public class PlayerMovement : MonoBehaviour
 
         yield return new WaitForSeconds(dashDuration);
 
-        //if (trailRenderer != null) trailRenderer.emitting = false;
         if (playerHealth != null) playerHealth.IsInvulnerable = false;
         ToggleLayerCollisions(false);
         IsDashing = false;
     }
 
-    /// <summary>
-    /// Función que mueve al jugador en la dirección especificada durante la duración dada.
-    /// </summary>
-    /// <param name="direction">Dirección del dash.</param>
-    /// <param name="duration">Duración del dash en segundos.</param>
     private IEnumerator PerformDash(Vector3 direction, float duration)
     {
         float startTime = Time.time;
@@ -274,14 +266,10 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Activa o desactiva las colisiones entre el jugador y las capas definidas en 'traversableLayers'.
-    /// </summary>
     private void ToggleLayerCollisions(bool ignore)
     {
         for (int i = 0; i < 32; i++)
         {
-            // Verifica si la capa i está en el LayerMask traversableLayers
             if (traversableLayers == (traversableLayers | (1 << i)))
             {
                 Physics.IgnoreLayerCollision(playerLayer, i, ignore);
@@ -289,9 +277,6 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Crea afterimages del jugador a intervalos regulares mientras está dashing.
-    /// </summary>
     private IEnumerator AfterimageRoutine()
     {
         float interval = 0.05f;
@@ -306,7 +291,6 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // Aplica la gravedad al jugador.
     private void ApplyGravity()
     {
         if (controller.enabled && controller.isGrounded)
@@ -319,14 +303,12 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // Activa o desactiva la capacidad de movimiento del jugador.
     public void SetCanMove(bool state)
     {
         canMove = state;
         if (!state)
         {
             moveDirection = Vector3.zero;
-            //if (playerAnimator != null) playerAnimator.SetBool("IsMoving", false);
         }
     }
 
@@ -340,23 +322,115 @@ public class PlayerMovement : MonoBehaviour
         moveDirection = Vector3.zero;
     }
 
-    #endregion
+    /// <summary>
+    /// Lockea la rotación del jugador hacia la dirección mundial dada, pero ajustada a las 8 direcciones (octantes).
+    /// Si setAnimatorAxes es true se actualizarán lastMoveX/lastMoveY y los parámetros del Animator para que la animación corresponda.
+    /// </summary>
+    public void LockFacingTo8Directions(Vector3 worldDirection, bool setAnimatorAxes = true)
+    {
+        if (worldDirection.sqrMagnitude < 0.0001f) return;
+
+        Vector3 dir = worldDirection;
+        dir.y = 0f;
+        dir.Normalize();
+
+        float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+        float snapped = Mathf.Round(angle / 45f) * 45f;
+        Quaternion target = Quaternion.Euler(0f, snapped, 0f);
+
+        rotationLocked = true;
+        lockedRotation = target;
+
+        if (setAnimatorAxes && playerAnimator != null && mainCameraTransform != null)
+        {
+            Vector3 camForward = mainCameraTransform.forward;
+            Vector3 camRight = mainCameraTransform.right;
+            camForward.y = 0f;
+            camRight.y = 0f;
+            camForward.Normalize();
+            camRight.Normalize();
+
+            Vector3 snappedDir = target * Vector3.forward;
+            // Dot produce valores entre -1 y 1; round los convertirá a -1,0,1 (octantes alineados con la cámara)
+            float x = Mathf.Round(Vector3.Dot(snappedDir, camRight));
+            float y = Mathf.Round(Vector3.Dot(snappedDir, camForward));
+
+            lastMoveX = x;
+            lastMoveY = y;
+
+            playerAnimator.SetFloat("Xaxis", lastMoveX);
+            playerAnimator.SetFloat("Yaxis", lastMoveY);
+            playerAnimator.SetBool("Running", (x != 0f || y != 0f));
+        }
+    }
 
     /// <summary>
-    /// Dibuja la trayectoria y el posible punto de impacto del Dash en el editor.
+    /// Desbloquea la rotación permitiendo que el jugador vuelva a rotar según su movimiento.
+    /// Además sincroniza los ejes del animator con la entrada de movimiento actual para evitar saltos.
     /// </summary>
+    public void UnlockFacing()
+    {
+        // Al desbloquear, si el jugador está moviendo con WASD usamos esa dirección para los ejes,
+        // si no, conservamos la última dirección del lock (para evitar saltos).
+        rotationLocked = false;
+
+        if (playerAnimator != null && mainCameraTransform != null)
+        {
+            Vector3 camForward = mainCameraTransform.forward;
+            Vector3 camRight = mainCameraTransform.right;
+            camForward.y = 0f;
+            camRight.y = 0f;
+            camForward.Normalize();
+            camRight.Normalize();
+
+            if (moveDirection.magnitude > 0.1f)
+            {
+                Vector3 currentDir = moveDirection.normalized;
+                float x = Mathf.Round(Vector3.Dot(currentDir, camRight));
+                float y = Mathf.Round(Vector3.Dot(currentDir, camForward));
+
+                lastMoveX = x;
+                lastMoveY = y;
+            }
+            else
+            {
+                // Si no se está moviendo, mantener los valores que impuso el lock (ya estaban en lastMoveX/Y).
+            }
+
+            playerAnimator.SetFloat("Xaxis", lastMoveX);
+            playerAnimator.SetFloat("Yaxis", lastMoveY);
+            playerAnimator.SetBool("Running", (moveDirection.magnitude > 0.1f));
+        }
+    }
+
+    /// <summary>
+    /// Devuelve la rotación objetivo del lock para que otros scripts puedan comparar.
+    /// </summary>
+    public Quaternion GetLockedRotation()
+    {
+        return lockedRotation;
+    }
+
+    /// <summary>
+    /// Aplica inmediatamente la rotación lockeada (útil si quieres forzar el snapped rotation).
+    /// </summary>
+    public void ForceApplyLockedRotation()
+    {
+        transform.rotation = lockedRotation;
+    }
+
+    #endregion
+
     private void OnDrawGizmos()
     {
-        if (!Application.isPlaying) return; // Solo mostrar en modo juego para tener datos reales
+        if (!Application.isPlaying) return;
 
         Gizmos.color = Color.cyan;
         Vector3 dashDirection = moveDirection.magnitude > 0.1f ? moveDirection.normalized : transform.forward;
         float dashDistance = dashSpeed * dashDuration;
 
-        // Dibuja la línea de la trayectoria
         Gizmos.DrawRay(transform.position, dashDirection * dashDistance);
 
-        // Dibuja una esfera en el punto de impacto si se detecta una pared
         if (Physics.Raycast(transform.position, dashDirection, out RaycastHit hit, dashDistance, ~traversableLayers))
         {
             Gizmos.color = Color.red;
@@ -365,11 +439,6 @@ public class PlayerMovement : MonoBehaviour
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
-    /// <summary> 
-    /// Función de depuración para reportar mensajes en la consola de Unity. 
-    /// </summary> 
-    /// <<param name="message">Mensaje a reportar.</param> >
-    /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
     private static void ReportDebug(string message, int reportPriorityLevel)
     {
         switch (reportPriorityLevel)

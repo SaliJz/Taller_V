@@ -1,8 +1,10 @@
+// PlayerMeleeAttack.cs
 using UnityEngine;
 using System.Collections;
 
 /// <summary>
 /// Clase que maneja el ataque cuerpo a cuerpo del jugador.
+/// Ahora: primero se rota (snap a 8 direcciones), espera la rotación, y luego ejecuta el ataque.
 /// </summary>
 public class PlayerMeleeAttack : MonoBehaviour
 {
@@ -12,15 +14,12 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private GameObject visualBoxHit;
     [SerializeField] private PlayerShieldController playerShieldController;
 
-    [Header("Configuraci�n de Ataque")]
+    [Header("Configuración de Ataque")]
     [SerializeField] private Transform hitPoint;
-    [Tooltip("Radio de golpe por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackHitRadius = 0.8f;
     [SerializeField] private float hitRadius = 0.8f;
-    [Tooltip("Da�o de ataque por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackAttackDamage = 10;
     [SerializeField] private int attackDamage = 10;
-    [Tooltip("Velocidad de ataque por defecto si no se encuentra PlayerStatsManager.")]
     [SerializeField] private float fallbackAttackSpeed = 1f;
     [SerializeField] private float attackSpeed = 1f;
     [SerializeField] private LayerMask enemyLayer;
@@ -49,7 +48,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     }
 
     private PlayerHealth playerHealth;
-    //private Animator animator;
+    private PlayerMovement playerMovement;
 
     private void Awake()
     {
@@ -59,10 +58,12 @@ public class PlayerMeleeAttack : MonoBehaviour
         statsManager = GetComponent<PlayerStatsManager>();
         playerHealth = GetComponent<PlayerHealth>();
         playerShieldController = GetComponent<PlayerShieldController>();
+        playerMovement = GetComponent<PlayerMovement>();
 
-        if (statsManager == null) ReportDebug("StatsManager no est� asignado en PlayerMeleeAttack. Usando valores de de fallback.", 2);
+        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMeleeAttack. Usando valores de fallback.", 2);
         if (playerHealth == null) ReportDebug("PlayerHealth no se encuentra en el objeto.", 3);
         if (playerShieldController == null) ReportDebug("PlayerShieldController no se encuentra en el objeto.", 3);
+        if (playerMovement == null) ReportDebug("PlayerMovement no se encuentra en el objeto. Lock de rotación no funcionará.", 2);
     }
 
     private void OnEnable()
@@ -79,7 +80,6 @@ public class PlayerMeleeAttack : MonoBehaviour
     {
         showGizmo = false;
 
-        // Inicializar estadisticas del ataque melee desde PlayerStatsManager o usar valores de fallback
         float hitRadiusStat = statsManager != null ? statsManager.GetStat(StatType.MeleeRadius) : fallbackHitRadius;
         hitRadius = hitRadiusStat;
 
@@ -89,7 +89,6 @@ public class PlayerMeleeAttack : MonoBehaviour
         float attackSpeedStat = statsManager != null ? statsManager.GetStat(StatType.MeleeAttackSpeed) : fallbackAttackSpeed;
         attackSpeed = attackSpeedStat;
 
-        // Inicializar estadisticas globales que afectan a todos los ataques desde PlayerStatsManager o usar valores fallback
         float damageMultiplierStat = statsManager != null ? statsManager.GetStat(StatType.AttackDamage) : 1f;
         damageMultiplier = damageMultiplierStat;
 
@@ -99,11 +98,6 @@ public class PlayerMeleeAttack : MonoBehaviour
         CalculateStats();
     }
 
-    /// <summary>
-    /// Maneja los cambios de stats.
-    /// </summary>
-    /// <param name="statType">Tipo de estad�stica que ha cambiado.</param>
-    /// <param name="newValue">Nuevo valor de la estad�stica.</param>
     private void HandleStatChanged(StatType statType, float newValue)
     {
         switch (statType)
@@ -131,13 +125,12 @@ public class PlayerMeleeAttack : MonoBehaviour
         ReportDebug($"Estadistica {statType} actualizada a {newValue}.", 1);
     }
 
-    // Metodo para calcular las estaditicas finales del ataque.
     private void CalculateStats()
     {
         finalAttackDamage = Mathf.RoundToInt(attackDamage * damageMultiplier);
         finalAttackSpeed = attackSpeed * speedMultiplier;
 
-        ReportDebug($"Estadisticas recalculadas: Da�o Final = {finalAttackDamage}, Velocidad de Ataque Final = {finalAttackSpeed}", 1);
+        ReportDebug($"Estadisticas recalculadas: Daño Final = {finalAttackDamage}, Velocidad de Ataque Final = {finalAttackSpeed}", 1);
     }
 
     private void Update()
@@ -148,27 +141,83 @@ public class PlayerMeleeAttack : MonoBehaviour
         {
             if (playerShieldController != null)
             {
-                if (playerShieldController.HasShield) Attack();
+                if (playerShieldController.HasShield) StartCoroutine(AttackSequence());
                 else ReportDebug("No tiene el escudo", 1);
             }
             else
             {
-                Attack();
+                StartCoroutine(AttackSequence());
             }
         }
     }
 
-    // Función que inicia el ataque cuerpo a cuerpo.
-    private void Attack()
+    /// <summary>
+    /// Secuencia de ataque:
+    /// 1) Obtener dirección del mouse (o forward)
+    /// 2) Lockear rotación snapped a 8 direcciones
+    /// 3) Esperar a que la rotación alcance el objetivo (o timeout)
+    /// 4) Ejecutar el ataque (PerformHitDetection)
+    /// 5) Mantener bloqueo durante la duración del ataque y luego desbloquear
+    /// </summary>
+    private IEnumerator AttackSequence()
     {
-        RotateTowardsMouseInstant();
+        // 1) Dirección objetivo
+        Vector3 mouseWorldDir;
+        if (!TryGetMouseWorldDirection(out mouseWorldDir))
+        {
+            mouseWorldDir = transform.forward;
+        }
 
+        // 2) Lockear rotación snapped
+        if (playerMovement != null)
+        {
+            playerMovement.LockFacingTo8Directions(mouseWorldDir, true);
+        }
+        else
+        {
+            // fallback: aplicar rotación instantánea snappeada
+            RotateTowardsMouseInstant();
+        }
+
+        // 3) Esperar a que se alcance la rotación lockeada (o timeout corto)
+        float maxWait = 0.25f; // tiempo máximo a esperar para rotación (ajustable)
+        float start = Time.time;
+        float angleThreshold = 2f; // grados para considerar que llegó
+        while (Time.time - start < maxWait)
+        {
+            if (playerMovement != null)
+            {
+                Quaternion target = playerMovement.GetLockedRotation();
+                float angle = Quaternion.Angle(transform.rotation, target);
+                if (angle <= angleThreshold) break;
+            }
+            else
+            {
+                // si no hay playerMovement, break inmediatamente
+                break;
+            }
+            yield return null;
+        }
+
+        // asegurar rotación exacta justo antes del ataque (evita pequeños deslices)
+        if (playerMovement != null) playerMovement.ForceApplyLockedRotation();
+
+        // 4) Ejecutar ataque (hit detection) inmediatamente después de rotar
         PerformHitDetection();
 
-        attackCooldown = 1f / finalAttackSpeed;
+        // 5) Mantener bloqueo durante la duración del ataque (1 / finalAttackSpeed)
+        float lockDuration = 1f / finalAttackSpeed;
+        attackCooldown = lockDuration;
+
+        // Opcional: si tienes una animación, aquí deberías disparar el trigger (ej: animator.SetTrigger("Attack"))
+        // y preferiblemente usar un AnimationEvent para UnlockFacing() al final de la animación.
+        yield return new WaitForSeconds(lockDuration);
+
+        // 6) Desbloquear rotación
+        if (playerMovement != null) playerMovement.UnlockFacing();
     }
 
-    // Rota instantaneamente al mouse proyectado en el plano horizontal (y = transform.position.y)
+    // Rota instantaneamente al mouse proyectado en el plano horizontal (y = transform.position.y), con snap a 8 direcciones.
     private void RotateTowardsMouseInstant()
     {
         Camera cam = Camera.main;
@@ -183,15 +232,37 @@ public class PlayerMeleeAttack : MonoBehaviour
             dir.y = 0f;
             if (dir.sqrMagnitude > 0.0001f)
             {
-                transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+                float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+                float snapped = Mathf.Round(angle / 45f) * 45f;
+                Quaternion snappedRot = Quaternion.Euler(0f, snapped, 0f);
+                transform.rotation = snappedRot;
             }
         }
     }
 
-    // FUNCIÓN LLAMADA POR UN ANIMATION EVENT
-    /// <summary>
-    /// Funci�n que realiza la detecci�n de golpes en un �rea definida alrededor del punto de impacto.
-    /// </summary>
+    private bool TryGetMouseWorldDirection(out Vector3 outDir)
+    {
+        outDir = Vector3.zero;
+        Camera cam = Camera.main;
+        if (cam == null) return false;
+
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+        Plane plane = new Plane(Vector3.up, transform.position);
+        if (plane.Raycast(ray, out float enter))
+        {
+            Vector3 worldPoint = ray.GetPoint(enter);
+            Vector3 dir = worldPoint - transform.position;
+            dir.y = 0f;
+            if (dir.sqrMagnitude > 0.0001f)
+            {
+                outDir = dir.normalized;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // --- Rest of hit detection / knockback code (sin cambios lógicos) ---
     public void PerformHitDetection()
     {
         if (useBoxCollider)
@@ -210,8 +281,7 @@ public class PlayerMeleeAttack : MonoBehaviour
                     float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
                     healthController.TakeDamage(Mathf.RoundToInt(finalDamage));
-
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
                 }
 
                 IDamageable damageable = enemy.GetComponent<IDamageable>();
@@ -225,7 +295,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
                     damageable.TakeDamage(finalDamage, isCritical);
 
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
                 }
 
                 BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
@@ -237,7 +307,7 @@ public class PlayerMeleeAttack : MonoBehaviour
                     bloodKnight.TakeDamage(finalDamage, isCritical);
                     bloodKnight.OnPlayerCounterAttack();
 
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
                 }
             }
         }
@@ -257,7 +327,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
                     healthController.TakeDamage(Mathf.RoundToInt(finalDamage));
 
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
                 }
 
                 IDamageable damageable = enemy.GetComponent<IDamageable>();
@@ -271,7 +341,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
                     damageable.TakeDamage(finalDamage, isCritical);
 
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
                 }
 
                 BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
@@ -283,7 +353,7 @@ public class PlayerMeleeAttack : MonoBehaviour
                     bloodKnight.TakeDamage(finalDamage, isCritical);
                     bloodKnight.OnPlayerCounterAttack();
 
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de da�o.", 1);
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
                 }
             }
         }
@@ -291,10 +361,6 @@ public class PlayerMeleeAttack : MonoBehaviour
         StartCoroutine(ShowGizmoCoroutine());
     }
 
-    /// <summary>
-    /// Aplica una fuerza de empuje al enemigo.
-    /// </summary>
-    /// <param name="enemy"> El collider del enemigo golpeado. </param>
     private void ApplyKnockback(Collider enemy)
     {
         EnemyKnockbackHandler knockbackHandler = enemy.GetComponent<EnemyKnockbackHandler>();
@@ -338,7 +404,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         {
             if (visualSphereHit != null) visualSphereHit.SetActive(true);
         }
-        
+
         yield return new WaitForSeconds(gizmoDuration);
 
         showGizmo = false;
@@ -353,7 +419,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     private void OnDrawGizmos()
     {
         if (hitPoint == null || !showGizmo) return;
-        
+
         Gizmos.color = Color.red;
 
         if (useBoxCollider)
@@ -372,11 +438,6 @@ public class PlayerMeleeAttack : MonoBehaviour
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
-    /// <summary> 
-    /// Funci�n de depuraci�n para reportar mensajes en la consola de Unity. 
-    /// </summary> 
-    /// <<param name="message">Mensaje a reportar.</param> >
-    /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
     private static void ReportDebug(string message, int reportPriorityLevel)
     {
         switch (reportPriorityLevel)
