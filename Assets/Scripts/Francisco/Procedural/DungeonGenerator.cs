@@ -86,8 +86,13 @@ public class DungeonGenerator : MonoBehaviour
     [Range(0.1f, 5.0f)]
     public float doorActivateDelay = 0.5f;
 
+    [Header("Dependencies")]
+    [SerializeField] private PlayerHealth playerHealth;
+    [SerializeField] private PlayerStatsManager statsManager;
+    private PlayerMovement playerMovement;
+
     [Header("Debug")]
-    [SerializeField] private KeyCode _debugCompleteRoomKey = KeyCode.O; 
+    [SerializeField] private KeyCode _debugCompleteRoomKey = KeyCode.O;
 
     private List<Room> generatedRooms = new List<Room>();
     private int roomsGenerated = 0;
@@ -103,7 +108,6 @@ public class DungeonGenerator : MonoBehaviour
     private bool hasProbableMandatoryBeenGenerated = false;
     private float currentProbableMandatoryProbability;
 
-    public PlayerMovement playerMovement;
     public static event System.Action OnRoomCompleted;
 
     void Start()
@@ -137,7 +141,9 @@ public class DungeonGenerator : MonoBehaviour
         PlanMandatoryRoom();
         GenerateInitialRoom();
         playerMovement = FindAnyObjectByType<PlayerMovement>();
-    }
+        playerHealth = FindAnyObjectByType<PlayerHealth>();
+        statsManager = FindAnyObjectByType<PlayerStatsManager>();
+}
 
     void Update()
     {
@@ -838,9 +844,16 @@ public class DungeonGenerator : MonoBehaviour
         {
             playerMovement.TeleportTo(finalPos);
         }
-        else
+
+        if (playerHealth != null && statsManager != null)
         {
-            playerTransform.position = finalPos;
+            float healAmount = statsManager.GetStat(StatType.HealthPerRoomRegen);
+
+            if (healAmount > 0)
+            {
+                playerHealth.Heal(healAmount);
+                Debug.Log($"[DungeonGenerator] Curación por sala aplicada: {healAmount} de vida.");
+            }
         }
     }
 }

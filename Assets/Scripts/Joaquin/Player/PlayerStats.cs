@@ -32,5 +32,27 @@ public class PlayerStats : ScriptableObject
 
     [Header("Habilidades")]
     public float HealthDrainAmount = 2f;
+    public float lifestealOnKillAmount = 5f;
     public bool isShieldBlockUpgradeActive = false;
+    public float healthPerRoomRegenBase = 2f;
+
+    [Header("Generales")]
+    public float shopPriceReductionBase = 0f;
+    // --- VARIABLES DE STATS PENDIENTES DE CONEXIÓN ---
+    /*
+    public float essenceCostReductionBase = 0f;
+    public float meleeStunChanceBase = 0f;
+    public float rangedSlowStunChanceBase = 0f;
+    public float criticalChanceBase = 0f;
+    public float luckStackBase = 0f;
+    public float fireDashEffectBase = 0f;
+    public float residualDashEffectBase = 0f;
+    public float stunnedOnHitChanceBase = 0f;
+    public bool shieldCatchRequiredBase = false;
+    public float sameAttackDamageReductionBase = 0f;
+    public float missChanceBase = 0f;
+    public float shieldDropChanceBase = 0f;
+    public float berserkerEffectBase = 0f;
+    public float dashRangeMultiplierBase = 1f;
+    */
 }

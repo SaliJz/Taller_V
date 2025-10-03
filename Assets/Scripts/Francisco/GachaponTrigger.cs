@@ -309,7 +309,7 @@ public class GachaponTrigger : MonoBehaviour
             description += "<b><color=green>VENTAJA:</color></b>\n";
             foreach (var mod in effectData.advantageModifiers)
             {
-                description += $"- {mod.statType}: +{mod.modifierValue}{(mod.isPercentage ? "%" : "")} ({mod.durationType})\n";
+                description += $"- {mod.statType}: {mod.modifierValue}{(mod.isPercentage ? "%" : "")} ({mod.durationType})\n";
             }
         }
 
@@ -318,7 +318,7 @@ public class GachaponTrigger : MonoBehaviour
             description += "\n<b><color=red>DESVENTAJA:</color></b>\n";
             foreach (var mod in effectData.disadvantageModifiers)
             {
-                description += $"- {mod.statType}: -{mod.modifierValue}{(mod.isPercentage ? "%" : "")} ({mod.durationType})\n";
+                description += $"- {mod.statType}: {mod.modifierValue}{(mod.isPercentage ? "%" : "")} ({mod.durationType})\n";
             }
         }
 

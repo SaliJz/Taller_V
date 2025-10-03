@@ -18,14 +18,13 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private float deathCooldown = 2f;
     [SerializeField] private bool canDestroy = true;
 
-    [Header("Health Stealing Mechanics")]
-    [SerializeField] private float healthSteal = 5;
-
     [Header("UI - Sliders (optional)")]
     [SerializeField] private Slider firstLifeSlider;
     [SerializeField] private Image firstFillImage;
     [SerializeField] private float offsetAboveEnemy = 2f;
     [SerializeField] private float glowDelayAfterCritical = 2f;
+
+    private PlayerStatsManager playerStatsManager;
 
     private bool canHealPlayer = true;
     private bool isDead = false;
@@ -122,7 +121,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         var playerGameObject = GameObject.FindGameObjectWithTag("Player");
         playerTransform = playerGameObject ? playerGameObject.transform : null;
         if (playerTransform == null) ReportDebug("Jugador no encontrado en la escena.", 3);
-        else playerTransform.TryGetComponent(out playerHealth);
+        else
+        {
+            playerTransform.TryGetComponent(out playerHealth);
+            playerTransform.TryGetComponent(out playerStatsManager); 
+        }
 
         // arrancar monitor de vida si está activado
         if (enableAutoArea)
@@ -225,10 +228,15 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         ReportDebug($"{gameObject.name} ha muerto.", 1);
         OnDeath?.Invoke(gameObject);
 
-        if (playerHealth != null)
+        if (playerHealth != null && playerStatsManager != null) 
         {
-            if (canHealPlayer) playerHealth.Heal(healthSteal);
-            ReportDebug($"El jugador ha robado {healthSteal} de vida al matar a {gameObject.name}.", 1);
+            float lifestealAmount = playerStatsManager.GetCurrentStat(StatType.LifestealOnKill); 
+
+            if (canHealPlayer && lifestealAmount > 0) 
+            {
+                playerHealth.Heal(lifestealAmount);
+                ReportDebug($"El jugador ha robado {lifestealAmount} de vida al matar a {gameObject.name} (LifestealOnKill).", 1); // <-- Actualizar el mensaje
+            }
         }
 
         if (canDestroy)
