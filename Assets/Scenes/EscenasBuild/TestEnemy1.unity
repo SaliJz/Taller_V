@@ -2248,7 +2248,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   statsManager: {fileID: 1871913946}
-  skillDuration: 10
+  skillKey: 113
+  youngBuffs:
+    MoveMultiplier: 1.2
+    AttackDmgMultiplier: 1.1
+    AttackSpeedMultiplier: 1.2
+  adultBuffs:
+    MoveMultiplier: 1.1
+    AttackDmgMultiplier: 1.2
+    AttackSpeedMultiplier: 1.1
+  elderBuffs:
+    MoveMultiplier: 1.1
+    AttackDmgMultiplier: 1.12
+    AttackSpeedMultiplier: 1.1
   SkillActive: 0
 --- !u!1 &2147417158
 GameObject:
@@ -2779,6 +2791,10 @@ PrefabInstance:
     - target: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6110564483166717353, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: sceneToLoadOnDeath
+      value: TestEnemy1
       objectReference: {fileID: 0}
     - target: {fileID: 6679960082821164706, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_Name

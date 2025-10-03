@@ -424,6 +424,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
               onComplete: () =>
               {
                   statsManager.ResetRunStatsToDefaults();
+                  statsManager.ResetStatsOnDeath();
                   inventoryManager.ClearInventory();
                   SceneManager.LoadScene(sceneToLoadOnDeath);
               }));
@@ -431,6 +432,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         else
         {
             statsManager.ResetRunStatsToDefaults();
+            statsManager.ResetStatsOnDeath();
             inventoryManager.ClearInventory();
             SceneManager.LoadScene(sceneToLoadOnDeath);
         }
