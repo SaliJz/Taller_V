@@ -51,7 +51,7 @@ public enum StatType
 /// Clase que maneja las estadísticas del jugador, incluyendo buffs y debuffs temporales (por tiempo o salas/habitaciones/enfrentamientos) o permanentes.
 /// Además muestra todas las stats en un TextMeshProUGUI ordenado y permite abrir/cerrar el panel con la tecla P.
 /// </summary>
-public class PlayerStatsManager : MonoBehaviour
+public partial class PlayerStatsManager : MonoBehaviour
 {
     [Header("ScriptableObjects")]
     [SerializeField] private PlayerStats playerStats;
@@ -133,6 +133,13 @@ public class PlayerStatsManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.P))
         {
             ToggleStatsPanel();
+        }
+
+        bool shiftPresionado = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+
+        if (shiftPresionado && Input.GetKeyDown(KeyCode.E))
+        {
+            showDebugOnGUI = !showDebugOnGUI;
         }
     }
 

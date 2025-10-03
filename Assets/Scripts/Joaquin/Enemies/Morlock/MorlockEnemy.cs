@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshAgent), typeof(EnemyHealth))]
-public class MorlockEnemy : MonoBehaviour
+public partial class MorlockEnemy : MonoBehaviour
 {
     private enum MorlockState { Cautious, Combat, Repositioning }
     private MorlockState currentState;
@@ -31,6 +31,7 @@ public class MorlockEnemy : MonoBehaviour
     [SerializeField] private int maxDamageIncrease = 2;
     [SerializeField] private float maxRangeForDamageIncrease = 6f;
     [SerializeField] private float maxDistanceForDamageStart = 20f;
+    [SerializeField] private float shootDelayAfterTeleport = 1f;
 
     [Header("Perception")]
     [Tooltip("Radio dentro del cual Morlock detecta al jugador y empezará a perseguir/atacar.")]
@@ -73,9 +74,6 @@ public class MorlockEnemy : MonoBehaviour
     [SerializeField] private AudioClip deathSFX;
     [SerializeField] private AudioClip shootSFX;
 
-    [Header("Debug Options")]
-    [SerializeField] private bool showDetailsOptions = false;
-
     #endregion
 
     private EnemyHealth enemyHealth;
@@ -93,12 +91,10 @@ public class MorlockEnemy : MonoBehaviour
     private bool isDead = false;
 
     private Coroutine teleportCoroutine = null;
-    
-    private int currentPursuitPhase = 0;
-    
-    private GUIStyle titleStyle;
-    private GUIStyle labelStyle;
-    private GUIStyle worldLabelStyle;
+    private Coroutine shootAfterTeleportCoroutine = null;
+
+    private int pursuitPhaseCount = 0;
+    private const int maxPursuitPhases = 3;
 
     private void Awake()
     {
@@ -121,15 +117,6 @@ public class MorlockEnemy : MonoBehaviour
 
         InitializedEnemy();
 
-        if (agent != null)
-        {
-            agent.speed = moveSpeed;
-            agent.stoppingDistance = optimalAttackDistance;
-            agent.updatePosition = true;
-            agent.updateRotation = true;
-            agent.isStopped = false;
-        }
-
         ChangeState(MorlockState.Cautious);
     }
 
@@ -138,6 +125,7 @@ public class MorlockEnemy : MonoBehaviour
     {
         if (stats != null)
         {
+            health = stats.health;
             moveSpeed = stats.moveSpeed;
             optimalAttackDistance = stats.optimalAttackDistance;
             teleportRange = stats.teleportRange;
@@ -149,14 +137,28 @@ public class MorlockEnemy : MonoBehaviour
         else
         {
             ReportDebug("MorlockStats no asignado. Usando valores por defecto.", 2);
-            enemyHealth.SetMaxHealth(health);
+        }
+
+        enemyHealth.SetMaxHealth(health);
+
+        if (agent != null)
+        {
+            agent.speed = moveSpeed;
+            agent.stoppingDistance = optimalAttackDistance;
+            agent.updatePosition = true;
+            agent.updateRotation = true;
+            agent.isStopped = false;
         }
     }
 
     private void OnEnable()
     {
-        enemyHealth.OnDeath += HandleEnemyDeath;
-        enemyHealth.OnDamaged += HandleDamageTaken;
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnDeath += HandleEnemyDeath;
+            enemyHealth.OnDamaged += HandleDamageTaken;
+        }
+
         if (teleportCoroutine != null)
         {
             StopCoroutine(teleportCoroutine);
@@ -166,8 +168,12 @@ public class MorlockEnemy : MonoBehaviour
 
     private void OnDisable()
     {
-        enemyHealth.OnDeath -= HandleEnemyDeath;
-        enemyHealth.OnDamaged -= HandleDamageTaken;
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnDeath -= HandleEnemyDeath;
+            enemyHealth.OnDamaged -= HandleDamageTaken;
+        }
+
         if (teleportCoroutine != null)
         {
             StopCoroutine(teleportCoroutine);
@@ -177,14 +183,17 @@ public class MorlockEnemy : MonoBehaviour
 
     private void OnDestroy()
     {
-        enemyHealth.OnDeath -= HandleEnemyDeath;
-        enemyHealth.OnDamaged -= HandleDamageTaken;
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnDeath -= HandleEnemyDeath;
+            enemyHealth.OnDamaged -= HandleDamageTaken;
+        }
     }
 
     private void HandleDamageTaken()
     {
         // Si recibe daño y el teletransporte evasivo está listo, lo prioriza.
-        if (currentState == MorlockState.Combat && evasiveTeleportTimer >= evasiveTeleportCooldown)
+        if (currentState == MorlockState.Combat && evasiveTeleportTimer >= evasiveTeleportCooldown && teleportCoroutine == null)
         {
             PerformEvasiveTeleport();
         }
@@ -237,6 +246,12 @@ public class MorlockEnemy : MonoBehaviour
     private void ChangeState(MorlockState newState)
     {
         if (currentState == newState) return;
+
+        if (currentState == MorlockState.Combat && newState != MorlockState.Combat)
+        {
+            pursuitPhaseCount = 0;
+        }
+
         currentState = newState;
     }
 
@@ -269,15 +284,21 @@ public class MorlockEnemy : MonoBehaviour
 
         LookAtPlayer();
 
-        // SISTEMA DE TELETRANSPORTE POR FASES
-        // 1. Prioridad defensiva: si el jugador está muy cerca, teletransporte defensivo.
+        bool isTeleporting = (teleportCoroutine != null);
+
+        if (isTeleporting)
+        {
+            return; // Esperar a que termine el teletransporte actual
+        }
+
+        // PRIORIDAD 1: Teletransporte defensivo si el jugador está muy cerca
         if (distanceToPlayer < defensiveTeleportActivationRadius && defensiveTeleportTimer >= defensiveTeleportCooldown)
         {
             PerformDefensiveTeleport();
             return;
         }
 
-        // 2. Comportamiento de ataque: Disparar si está en la distancia óptima.
+        // PRIORIDAD 2: Disparar si está en rango óptimo
         if (distanceToPlayer <= optimalAttackDistance)
         {
             fireTimer += Time.deltaTime;
@@ -288,8 +309,8 @@ public class MorlockEnemy : MonoBehaviour
             }
         }
 
-        // 3. Reposicionamiento ofensivo: si está fuera de rango o necesita presionar.
-        else if (pursuitTeleportTimer >= pursuitTeleportCooldown)
+        // PRIORIDAD 3: Teletransporte de persecución si está fuera de rango
+        else if (pursuitPhaseCount < maxPursuitPhases && pursuitTeleportTimer >= pursuitTeleportCooldown)
         {
             PerformPursuitTeleport();
             return;
@@ -304,7 +325,7 @@ public class MorlockEnemy : MonoBehaviour
     private void PerformPursuitTeleport()
     {
         pursuitTeleportTimer = 0f;
-        currentPursuitPhase = 1;
+        pursuitPhaseCount++;
 
         // Calcular línea de distancia mínima entre Morlock y jugador
         Vector3 directionToPlayer = (playerTransform.position - transform.position).normalized;
@@ -319,7 +340,7 @@ public class MorlockEnemy : MonoBehaviour
 
         Vector3 targetPosition = advancePosition + lateralDirection * lateralOffset;
 
-        ReportDebug($"Perseguir 1: Teletransporte de avance. Fase {currentPursuitPhase}/3", 1);
+        ReportDebug($"Perseguir 1: Teletransporte de avance. Fase {pursuitPhaseCount}/{maxPursuitPhases}", 1);
 
         if (teleportCoroutine != null) StopCoroutine(teleportCoroutine);
         teleportCoroutine = StartCoroutine(TeleportRoutine(targetPosition, MorlockState.Combat));
@@ -331,8 +352,6 @@ public class MorlockEnemy : MonoBehaviour
     private void PerformDefensiveTeleport()
     {
         defensiveTeleportTimer = 0f;
-        currentPursuitPhase = 2;
-        optimalAttackDistance = defensiveTeleportRange;
 
         // Generar 4 posiciones equidistantes alrededor del jugador
         Vector3[] teleportPositions = new Vector3[4];
@@ -347,17 +366,17 @@ public class MorlockEnemy : MonoBehaviour
         Vector3 targetPosition = teleportPositions[0];
         float maxDistance = 0f;
 
-        foreach (Vector3 pos in teleportPositions)
+        foreach (Vector3 position in teleportPositions)
         {
-            float dist = Vector3.Distance(transform.position, pos);
-            if (dist > maxDistance)
+            float distance = Vector3.Distance(transform.position, position);
+            if (distance > maxDistance)
             {
-                maxDistance = dist;
-                targetPosition = pos;
+                maxDistance = distance;
+                targetPosition = position;
             }
         }
 
-        ReportDebug("Perseguir 2: Teletransporte defensivo activado", 1);
+        ReportDebug($"Perseguir 2: Teletransporte defensivo activado.", 1);
 
         if (teleportCoroutine != null) StopCoroutine(teleportCoroutine);
         teleportCoroutine = StartCoroutine(TeleportRoutine(targetPosition, MorlockState.Combat));
@@ -369,8 +388,6 @@ public class MorlockEnemy : MonoBehaviour
     private void PerformEvasiveTeleport()
     {
         evasiveTeleportTimer = 0f;
-        currentPursuitPhase = 3;
-        optimalAttackDistance = evasiveTeleportRadiusMax;
 
         // Generar 4 posiciones aleatorias alrededor del jugador (5-10 unidades)
         Vector3[] teleportPositions = new Vector3[evasiveTeleportPositions];
@@ -386,7 +403,7 @@ public class MorlockEnemy : MonoBehaviour
         // Elegir una posición aleatoria de las generadas
         Vector3 targetPosition = teleportPositions[Random.Range(0, teleportPositions.Length)];
 
-        ReportDebug("Perseguir 3: Teletransporte evasivo activado", 1);
+        ReportDebug($"Perseguir 3: Teletransporte evasivo activado.", 1);
 
         if (teleportCoroutine != null) StopCoroutine(teleportCoroutine);
         teleportCoroutine = StartCoroutine(TeleportRoutine(targetPosition, MorlockState.Combat));
@@ -458,18 +475,30 @@ public class MorlockEnemy : MonoBehaviour
     {
         ChangeState(MorlockState.Repositioning);
 
-        pursuitTeleportTimer = 0;
-
         if (animator != null) animator.SetTrigger("TeleportOut");
         if (audioSource != null && teleportSFX != null) audioSource.PlayOneShot(teleportSFX);
 
         yield return new WaitForSeconds(0.5f);
 
         NavMeshHit hit;
+        Vector3 finalPosition = transform.position;
+
         if (NavMesh.SamplePosition(targetPosition, out hit, teleportRange, NavMesh.AllAreas))
         {
-            transform.position = hit.position;
-            agent.Warp(hit.position);
+            finalPosition = hit.position;
+            transform.position = finalPosition;
+            if (agent != null) agent.Warp(finalPosition);
+        }
+
+        if (playerTransform != null && stateAfterTeleport == MorlockState.Combat)
+        {
+            Vector3 directionToPlayer = (playerTransform.position - finalPosition).normalized;
+            directionToPlayer.y = 0f;
+
+            if (directionToPlayer.sqrMagnitude > 0.01f)
+            {
+                transform.rotation = Quaternion.LookRotation(directionToPlayer);
+            }
         }
 
         if (animator != null) animator.SetTrigger("TeleportIn");
@@ -477,7 +506,32 @@ public class MorlockEnemy : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
 
         ChangeState(stateAfterTeleport);
+
+        if (stateAfterTeleport == MorlockState.Combat && playerTransform != null)
+        {
+            if (shootAfterTeleportCoroutine != null)
+            {
+                StopCoroutine(shootAfterTeleportCoroutine);
+            }
+            shootAfterTeleportCoroutine = StartCoroutine(ShootAfterTeleportRoutine());
+        }
+
         teleportCoroutine = null;
+    }
+
+    private IEnumerator ShootAfterTeleportRoutine()
+    {
+        ReportDebug($"Disparo programado para {shootDelayAfterTeleport}s después del teletransporte", 1);
+
+        yield return new WaitForSeconds(shootDelayAfterTeleport);
+
+        if (currentState == MorlockState.Combat && playerTransform != null && !isDead)
+        {
+            Shoot();
+            ReportDebug("Disparo post-teletransporte ejecutado", 1);
+        }
+
+        shootAfterTeleportCoroutine = null;
     }
 
     private void LookAtPlayer()
@@ -554,226 +608,6 @@ public class MorlockEnemy : MonoBehaviour
             float t = (distance - maxRangeForDamageIncrease) / (maxDistanceForDamageStart - maxRangeForDamageIncrease);
             return Mathf.Lerp(maxDamageIncrease, projectileDamage, t);
         }
-    }
-
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, optimalAttackDistance);
-
-        Gizmos.color = Color.green;
-        Gizmos.DrawLine(transform.position, transform.forward * 2f);
-
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, detectionRadius);
-
-        Gizmos.color = new Color(1f, 0.5f, 0f, 1f);
-        Gizmos.DrawWireSphere(transform.position, patrolRadius);
-
-        // Visualizar rangos de teletransporte
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position, defensiveTeleportActivationRadius);
-
-        Gizmos.color = Color.magenta;
-        Gizmos.DrawWireSphere(transform.position, defensiveTeleportRange);
-
-        Gizmos.color = Color.white;
-        Gizmos.DrawWireSphere(transform.position, evasiveTeleportRadiusMin);
-
-        Gizmos.color = Color.gray;
-        Gizmos.DrawWireSphere(transform.position, evasiveTeleportRadiusMax);
-    }
-
-    private void EnsureGuiStyles()
-    {
-        if (titleStyle != null) return;
-
-        titleStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 14,
-            fontStyle = FontStyle.Bold,
-            normal = { textColor = Color.white }
-        };
-
-        labelStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 12,
-            normal = { textColor = Color.white }
-        };
-
-        worldLabelStyle = new GUIStyle(GUI.skin.box)
-        {
-            fontSize = 11,
-            alignment = TextAnchor.MiddleCenter,
-            normal = { textColor = Color.white, background = Texture2D.blackTexture },
-            padding = new RectOffset(6, 6, 3, 3)
-        };
-    }
-
-    private void DrawWorldLabel(Vector3 worldPos, string text, GUIStyle style)
-    {
-        Camera cam = Camera.main;
-        if (cam == null) return;
-
-        Vector3 screenPos = cam.WorldToScreenPoint(worldPos);
-        if (screenPos.z < 0) return;
-
-        Vector2 guiPoint = new Vector2(screenPos.x, Screen.height - screenPos.y);
-        Vector2 size = style.CalcSize(new GUIContent(text));
-        Rect rect = new Rect(guiPoint.x - size.x * 0.5f, guiPoint.y - size.y - 8f, size.x + 8f, size.y + 6f);
-
-        GUI.Box(rect, GUIContent.none, style);
-        GUI.Label(rect, text, style);
-    }
-
-    private Vector3 GetDebugTeleportTarget()
-    {
-        Vector3 target = transform.position;
-        if (patrolWaypoints != null && patrolWaypoints.Length > 0)
-        {
-            int nextIndex = (currentWaypointIndex + 1) % patrolWaypoints.Length;
-            if (patrolWaypoints[nextIndex] != null) target = patrolWaypoints[nextIndex].position;
-        }
-        else
-        {
-            Vector3 randomPoint;
-            if (TryGetRandomPoint(transform.position, patrolRadius, out randomPoint)) target = randomPoint;
-        }
-        return target;
-    }
-
-    private void OnGUI()
-    {
-        if (!showDetailsOptions) return;
-#if !UNITY_EDITOR
-        if (!Debug.isDebugBuild) return;
-#endif
-
-        EnsureGuiStyles();
-
-        Rect area = new Rect(10, 10, 380, 400);
-        GUILayout.BeginArea(area, GUI.skin.box);
-
-        GUILayout.Label("MORLOCK - DEBUG", titleStyle);
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Estado:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label(currentState.ToString(), labelStyle);
-        GUILayout.EndHorizontal();
-
-        if (enemyHealth != null)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("HP:", labelStyle, GUILayout.Width(140));
-            GUILayout.Label($"{enemyHealth.CurrentHealth:F1} / {enemyHealth.MaxHealth:F1}", labelStyle);
-            GUILayout.EndHorizontal();
-        }
-
-        if (playerTransform != null)
-        {
-            float dist = Vector3.Distance(transform.position, playerTransform.position);
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Dist. a Jugador (m):", labelStyle, GUILayout.Width(140));
-            GUILayout.Label($"{dist:F2}", labelStyle);
-            GUILayout.EndHorizontal();
-
-            // Mostrar daño calculado en tiempo real
-            float calculatedDamage = CalculateDamageByDistance(dist);
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Daño actual (por dist):", labelStyle, GUILayout.Width(140));
-            GUILayout.Label($"{calculatedDamage:F2}", labelStyle);
-            GUILayout.EndHorizontal();
-        }
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Fase de persecución:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{currentPursuitPhase}/3", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Pursuit Timer:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{pursuitTeleportTimer:F2} / {pursuitTeleportCooldown:F2}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Defensive Timer:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{defensiveTeleportTimer:F2} / {defensiveTeleportCooldown:F2}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Evasive Timer:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{evasiveTeleportTimer:F2} / {evasiveTeleportCooldown:F2}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        float timeToNextShot = Mathf.Max(0f, (1f / Mathf.Max(0.0001f, fireRate)) - fireTimer);
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Siguiente disparo (s):", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{timeToNextShot:F2}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Proj. daño / vel:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{projectileDamage:F1}-{maxDamageIncrease:F1} / {projectileSpeed:F1}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.Space(6);
-
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Teleport Now", GUILayout.Height(26)))
-        {
-            Vector3 target = GetDebugTeleportTarget();
-            if (teleportCoroutine != null) StopCoroutine(teleportCoroutine);
-            teleportCoroutine = StartCoroutine(TeleportRoutine(target, currentState));
-        }
-
-        if (GUILayout.Button("Shoot Now", GUILayout.Height(26)))
-        {
-            Shoot();
-            fireTimer = 0f;
-        }
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Reset Timers", GUILayout.Height(22)))
-        {
-            fireTimer = 0f;
-            pursuitTeleportTimer = 0f;
-            defensiveTeleportTimer = 0f;
-            evasiveTeleportTimer = 0f;
-            patrolIdleTimer = 0f;
-        }
-        if (GUILayout.Button("Reset Phase", GUILayout.Height(22)))
-        {
-            currentPursuitPhase = 0;
-        }
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Force Pursuit TP", GUILayout.Height(22)))
-        {
-            PerformPursuitTeleport();
-        }
-        if (GUILayout.Button("Force Defensive TP", GUILayout.Height(22)))
-        {
-            PerformDefensiveTeleport();
-        }
-        GUILayout.EndHorizontal();
-
-        if (GUILayout.Button("Force Evasive TP", GUILayout.Height(22)))
-        {
-            PerformEvasiveTeleport();
-        }
-
-        if (GUILayout.Button("Kill (debug)", GUILayout.Height(22)))
-        {
-            if (enemyHealth != null) enemyHealth.TakeDamage(9999f);
-        }
-
-        GUILayout.EndArea();
-
-        // etiqueta flotante en el mundo
-        string worldText = $"Morlock\nState: {currentState}\nHP: {(enemyHealth != null ? enemyHealth.CurrentHealth.ToString("F0") : "N/A")}\nPhase: {currentPursuitPhase}";
-        DrawWorldLabel(transform.position + Vector3.up * 2.0f, worldText, worldLabelStyle);
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
