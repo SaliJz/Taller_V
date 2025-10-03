@@ -63,6 +63,7 @@ public partial class PlayerStatsManager : MonoBehaviour
     [Header("Stats (internas)")]
     [SerializeField] private Dictionary<StatType, float> baseStats = new();
     [SerializeField] private Dictionary<StatType, float> currentStats = new();
+    private Dictionary<string, Dictionary<StatType, float>> namedModifiers = new();
 
     // Guarda el estado visual de cada stat:
     //  1 => verde (subió), -1 => rojo (bajó), 0 => neutro
@@ -711,6 +712,49 @@ public partial class PlayerStatsManager : MonoBehaviour
             {
                 OnStatChanged?.Invoke(statType, currentStats[statType]);
             }
+        }
+    }
+
+    /// <summary>
+    /// Aplica un modificador temporal identificado por una clave única. Si ya existe un modificador con esa clave, se sobrescribe.
+    /// </summary>
+    /// <param name="key">Una clave única para este modificador (ej. "ShieldSkillBuff").</param>
+    /// <param name="type">El tipo de stat a modificar.</param>
+    /// <param name="amount">La cantidad a añadir (puede ser negativa).</param>
+    public void ApplyNamedModifier(string key, StatType type, float amount)
+    {
+        // Si ya había un buff con esta clave, lo remueve primero para evitar acumulaciones.
+        RemoveNamedModifier(key);
+
+        if (!baseStats.ContainsKey(type)) return;
+
+        currentStats[type] += amount;
+
+        if (!namedModifiers.ContainsKey(key))
+        {
+            namedModifiers[key] = new Dictionary<StatType, float>();
+        }
+        namedModifiers[key][type] = amount;
+
+        OnStatChanged?.Invoke(type, currentStats[type]);
+        Debug.Log($"[PlayerStatsManager] Modificador '{key}' aplicado a {type}: {amount}");
+    }
+
+    /// <summary>
+    /// Remueve un modificador previamente aplicado con una clave única.
+    /// </summary>
+    /// <param name="key">La clave única del modificador a remover.</param>
+    public void RemoveNamedModifier(string key)
+    {
+        if (namedModifiers.TryGetValue(key, out var modifiers))
+        {
+            foreach (var mod in modifiers)
+            {
+                currentStats[mod.Key] -= mod.Value;
+                OnStatChanged?.Invoke(mod.Key, currentStats[mod.Key]);
+            }
+            namedModifiers.Remove(key);
+            Debug.Log($"[PlayerStatsManager] Modificador '{key}' removido.");
         }
     }
 }

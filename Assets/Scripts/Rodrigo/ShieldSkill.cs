@@ -18,14 +18,11 @@ public class ShieldSkill : MonoBehaviour
 
     [Header("Skill Settings")]
     [Header("Buffs por Etapa de Vida")]
-    [SerializeField] private BuffSettings youngBuffs = new BuffSettings(1.2f, 1.1f);
-    [SerializeField] private BuffSettings adultBuffs = new BuffSettings(1.1f, 1.2f);
-    [SerializeField] private BuffSettings elderBuffs = new BuffSettings(1.15f, 1.15f);
+    [SerializeField] private BuffSettings youngBuffs = new BuffSettings(1.2f, 1.1f, 1.2f);
+    [SerializeField] private BuffSettings adultBuffs = new BuffSettings(1.1f, 1.2f, 1.1f);
+    [SerializeField] private BuffSettings elderBuffs = new BuffSettings(1.1f, 1.12f, 1.1f);
 
-    [HideInInspector] private PlayerMeleeAttack playerMeleeAttack;
-    [HideInInspector] private PlayerShieldController playerShieldController;
     [HideInInspector] private PlayerHealth playerHealth;
-    [HideInInspector] private PlayerMovement playerMovement;
 
     [SerializeField] private bool SkillActive;
 
@@ -33,9 +30,7 @@ public class ShieldSkill : MonoBehaviour
     private float healthDrainAmount;
     private float healthDrainTimer;
 
-    private float baseMoveSpeed;
-    private int baseMeleeAttackDamage;
-    private int baseShieldDamage;
+    private const string SHIELD_SKILL_MODIFIER_KEY = "ShieldSkillBuff";
 
     #endregion
 
@@ -43,10 +38,13 @@ public class ShieldSkill : MonoBehaviour
 
     private void Awake()
     {
-        playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
-        playerShieldController = GetComponent<PlayerShieldController>();
         playerHealth = GetComponent<PlayerHealth>();
-        playerMovement = GetComponent<PlayerMovement>();
+
+        if (statsManager == null)
+        {
+            Debug.LogError("PlayerStatsManager no está asignado en ShieldSkill. La habilidad no funcionará.", this);
+            enabled = false;
+        }
     }
 
     private void OnEnable()
@@ -63,10 +61,8 @@ public class ShieldSkill : MonoBehaviour
         }
     }
 
-    void Start()
+    private void Start()
     {
-        CacheBaseStats();
-
         if (statsManager != null)
         {
             healthDrainAmount = statsManager.GetStat(StatType.HealthDrainAmount);
@@ -115,15 +111,43 @@ public class ShieldSkill : MonoBehaviour
         healthDrainTimer = 0f;
 
         BuffSettings currentBuffs = GetCurrentBuffs();
-        ApplyBuffs(currentBuffs);
 
-        Debug.Log($"[HABILIDAD ACTIVADA] - Buffs: Velocidad x{currentBuffs.MoveMultiplier}, Ataque x{currentBuffs.AttackMultiplier}");
+        float baseMoveSpeed = statsManager.GetStat(StatType.MoveSpeed);
+        float moveSpeedIncrease = baseMoveSpeed * (currentBuffs.MoveMultiplier - 1.0f);
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "Move", StatType.MoveSpeed, moveSpeedIncrease);
+
+        float baseMeleeDamage = statsManager.GetStat(StatType.MeleeAttackDamage);
+        float meleeDamageIncrease = baseMeleeDamage * (currentBuffs.AttackDmgMultiplier - 1.0f);
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeDmg", StatType.MeleeAttackDamage, meleeDamageIncrease);
+
+        float baseShieldDamage = statsManager.GetStat(StatType.ShieldAttackDamage);
+        float shieldDamageIncrease = baseShieldDamage * (currentBuffs.AttackDmgMultiplier - 1.0f);
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldDmg", StatType.ShieldAttackDamage, shieldDamageIncrease);
+
+        float baseMeleeSpeed = statsManager.GetStat(StatType.MeleeAttackSpeed);
+        float meleeSpeedIncrease = baseMeleeSpeed * (currentBuffs.AttackSpeedMultiplier - 1.0f);
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeSpeed", StatType.MeleeAttackSpeed, meleeSpeedIncrease);
+
+        float baseShieldSpeed = statsManager.GetStat(StatType.ShieldSpeed);
+        float shieldSpeedIncrease = baseShieldSpeed * (currentBuffs.AttackSpeedMultiplier - 1.0f);
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldSpeed", StatType.ShieldSpeed, shieldSpeedIncrease);
+
+        Debug.Log($"[HABILIDAD ACTIVADA] - Buffs: Velocidad de movimiento x{currentBuffs.MoveMultiplier}, " +
+                  $"Daño de ataque x{currentBuffs.AttackDmgMultiplier}, " +
+                  $"Velocidad de ataque x{currentBuffs.AttackSpeedMultiplier}");
     }
 
     private void DeactivateSkill()
     {
         isSkillActive = false;
-        RestoreBaseStats();
+
+        statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "Move");
+
+        statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeDmg");
+        statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldDmg");
+
+        statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeSpeed");
+        statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldSpeed");
 
         Debug.Log("[HABILIDAD DESACTIVADA] - Estadísticas restauradas a sus valores base.");
     }
@@ -133,14 +157,14 @@ public class ShieldSkill : MonoBehaviour
     /// </summary>
     private void UpdateActiveSkill()
     {
-        // Drenaje de vida por segundo.
+        float healthDrainAmount = statsManager.GetStat(StatType.HealthDrainAmount);
         if (healthDrainAmount > 0)
         {
             healthDrainTimer += Time.deltaTime;
             if (healthDrainTimer >= 1f)
             {
                 playerHealth.TakeDamage(healthDrainAmount);
-                healthDrainTimer %= 1f; // Resetea el timer conservando el exceso de tiempo.
+                healthDrainTimer %= 1f;
                 Debug.Log($"Vida drenada: {healthDrainAmount}. Vida actual: {playerHealth.CurrentHealth}");
             }
         }
@@ -151,51 +175,16 @@ public class ShieldSkill : MonoBehaviour
     #region Stat Management
 
     /// <summary>
-    /// Almacena los valores originales de las estadísticas del jugador.
-    /// </summary>
-    private void CacheBaseStats()
-    {
-        baseMeleeAttackDamage = playerMeleeAttack.AttackDamage;
-        baseShieldDamage = playerShieldController.ShieldDamage;
-        baseMoveSpeed = playerMovement.MoveSpeed;
-    }
-
-    /// <summary>
-    /// Restaura las estadísticas del jugador a sus valores originales.
-    /// </summary>
-    private void RestoreBaseStats()
-    {
-        playerMeleeAttack.AttackDamage = baseMeleeAttackDamage;
-        playerShieldController.ShieldDamage = baseShieldDamage;
-        playerMovement.MoveSpeed = baseMoveSpeed;
-    }
-
-    /// <summary>
-    /// Aplica los multiplicadores de buff a las estadísticas del jugador.
-    /// </summary>
-    private void ApplyBuffs(BuffSettings buffs)
-    {
-        playerMeleeAttack.AttackDamage = Mathf.RoundToInt(baseMeleeAttackDamage * buffs.AttackMultiplier);
-        playerShieldController.ShieldDamage = Mathf.RoundToInt(baseShieldDamage * buffs.AttackMultiplier);
-        playerMovement.MoveSpeed = baseMoveSpeed * buffs.MoveMultiplier;
-    }
-
-    /// <summary>
     /// Devuelve los buffs correspondientes a la etapa de vida actual del jugador.
     /// </summary>
     private BuffSettings GetCurrentBuffs()
     {
         switch (playerHealth.CurrentLifeStage)
         {
-            case PlayerHealth.LifeStage.Young:
-                return youngBuffs;
-            case PlayerHealth.LifeStage.Adult:
-                return adultBuffs;
-            case PlayerHealth.LifeStage.Elder:
-                return elderBuffs;
-            default:
-                Debug.LogWarning("Etapa de vida no reconocida. No se aplicarán buffs.");
-                return new BuffSettings(1f, 1f); // No buff
+            case PlayerHealth.LifeStage.Young: return youngBuffs;
+            case PlayerHealth.LifeStage.Adult: return adultBuffs;
+            case PlayerHealth.LifeStage.Elder: return elderBuffs;
+            default: return new BuffSettings(1f, 1f, 1f);
         }
     }
 
@@ -220,11 +209,13 @@ public class ShieldSkill : MonoBehaviour
 public struct BuffSettings
 {
     [Range(1f, 3f)] public float MoveMultiplier;
-    [Range(1f, 3f)] public float AttackMultiplier;
+    [Range(1f, 3f)] public float AttackDmgMultiplier;
+    [Range(1f, 3f)] public float AttackSpeedMultiplier;
 
-    public BuffSettings(float moveMultiplier, float attackMultiplier)
+    public BuffSettings(float moveMultiplier, float attackDmgMultiplier, float attackSpeedMultiplier)
     {
         MoveMultiplier = moveMultiplier;
-        AttackMultiplier = attackMultiplier;
+        AttackDmgMultiplier = attackDmgMultiplier;
+        AttackSpeedMultiplier = attackSpeedMultiplier;
     }
 }
