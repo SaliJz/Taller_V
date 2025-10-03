@@ -80,7 +80,9 @@ public class PauseController : MonoBehaviour
         }
 
         Time.timeScale = 1f;
-        if (statsManager != null) statsManager.ResetStatsOnDeath();         // esto seria momentaneo
+        if (statsManager != null) statsManager.ResetRunStatsToDefaults();
+        InventoryManager inventory = FindAnyObjectByType<InventoryManager>();
+        inventory.ClearInventory(); // esto seria momentaneo
         SceneManager.LoadScene(sceneName);
     }
 }

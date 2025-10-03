@@ -423,11 +423,15 @@ public class PlayerHealth : MonoBehaviour, IDamageable
               fadeColor: deathFadeColor,
               onComplete: () =>
               {
+                  statsManager.ResetRunStatsToDefaults();
+                  inventoryManager.ClearInventory();
                   SceneManager.LoadScene(sceneToLoadOnDeath);
               }));
         }
         else
         {
+            statsManager.ResetRunStatsToDefaults();
+            inventoryManager.ClearInventory();
             SceneManager.LoadScene(sceneToLoadOnDeath);
         }
     }
