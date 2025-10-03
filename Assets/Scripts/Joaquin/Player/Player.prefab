@@ -197,7 +197,7 @@ Transform:
   m_GameObject: {fileID: 2185771539099287546}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1.3}
+  m_LocalPosition: {x: 0, y: 0, z: 1.725}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -570,6 +570,7 @@ GameObject:
   - component: {fileID: 6110564483166717353}
   - component: {fileID: 3158206734398763717}
   - component: {fileID: 9211243997880812482}
+  - component: {fileID: 8984845218185550205}
   - component: {fileID: 7736777102245202428}
   m_Layer: 8
   m_Name: Player
@@ -720,9 +721,9 @@ MonoBehaviour:
   playerHealth: {fileID: 6110564483166717353}
   moveSpeed: 5
   gravity: -9.81
-  dashSpeed: 15
-  dashDuration: 0.2
-  dashCooldown: 1
+  dashSpeed: 10
+  dashDuration: 0.3
+  dashCooldown: 0
   traversableLayers:
     serializedVersion: 2
     m_Bits: 192
@@ -795,19 +796,42 @@ MonoBehaviour:
   visualBoxHit: {fileID: 6871184688509333741}
   playerShieldController: {fileID: 3158206734398763717}
   hitPoint: {fileID: 7029900753368981312}
-  hitRadius: 0.8
+  hitRadius: 1.2
   attackDamage: 10
-  fallbackAttackSpeed: 1
-  attackSpeed: 1
+  attackSpeed: 3
   enemyLayer:
     serializedVersion: 2
     m_Bits: 128
   knockbackYoung: 0.25
-  knockbackAdult: 0.25
-  knockbackElder: 0.5
+  knockbackAdult: 0.5
+  knockbackElder: 0.75
   useBoxCollider: 1
   showGizmo: 1
   gizmoDuration: 0.25
+--- !u!114 &8984845218185550205
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6679960082821164706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd34c6eda4cb864458f5e257ab13f973, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  statsManager: {fileID: 7736777102245202428}
+  skillKey: 113
+  youngBuffs:
+    MoveMultiplier: 1.2
+    AttackMultiplier: 1.1
+  adultBuffs:
+    MoveMultiplier: 1.1
+    AttackMultiplier: 1.2
+  elderBuffs:
+    MoveMultiplier: 1.15
+    AttackMultiplier: 1.15
+  SkillActive: 0
 --- !u!114 &7736777102245202428
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -824,12 +848,12 @@ MonoBehaviour:
   currentStatSO: {fileID: 11400000, guid: ea3506cba284fac44a761904b92bf1b5, type: 2}
   statsText: {fileID: 3509488526369192923}
   statsPanel: {fileID: 7097059385777304942}
-  showBaseValues: 1
+  showBaseValues: 0
   decimals: 2
   showDebugOnGUI: 0
   guiCustomPosition: {x: 10, y: 10}
   guiWidth: 440
-  guiHeight: 600
+  guiHeight: 670
   guiDraggable: 1
   guiAnchor: 0
   guiCornerPadding: 8
@@ -910,7 +934,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.6, y: 1.6, z: 1.6}
+  m_LocalScale: {x: 2.4, y: 2.4, z: 2.4}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 7029900753368981312}

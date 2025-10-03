@@ -2246,7 +2246,6 @@ MonoBehaviour:
   currentHealth: 0
   deathCooldown: 2
   canDestroy: 1
-  healthSteal: 5
   firstLifeSlider: {fileID: 7789715516251961850}
   firstFillImage: {fileID: 7893166915883177190}
   offsetAboveEnemy: 2
@@ -2279,7 +2278,7 @@ MonoBehaviour:
   firePoint: {fileID: 9215352895255589693}
   health: 15
   moveSpeed: 4
-  optimalAttackDistance: 5
+  optimalAttackDistance: 15
   teleportRange: 5
   fireRate: 1
   projectileDamage: 1
@@ -2287,6 +2286,7 @@ MonoBehaviour:
   maxDamageIncrease: 2
   maxRangeForDamageIncrease: 6
   maxDistanceForDamageStart: 20
+  shootDelayAfterTeleport: 1
   detectionRadius: 15
   patrolWaypoints: []
   loopWaypoints: 1
@@ -2308,6 +2308,11 @@ MonoBehaviour:
   deathSFX: {fileID: 0}
   shootSFX: {fileID: 0}
   showDetailsOptions: 0
+  worldLabelMaxDistance: 40
+  worldLabelReferenceDistance: 10
+  uiAreaWidth: 380
+  uiAreaHeight: 400
+  uiPadding: 10
 --- !u!114 &5355768341301424616
 MonoBehaviour:
   m_ObjectHideFlags: 0

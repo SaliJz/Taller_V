@@ -2,8 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using UnityEngine;
 using TMPro;
+using UnityEngine;
+using static PlayerHealth;
 
 /// <summary>
 /// Enumeración de los diferentes tipos de estadísticas del jugador.
@@ -119,12 +120,14 @@ public partial class PlayerStatsManager : MonoBehaviour
     {
         OnStatChanged += HandleStatChanged;
         DungeonGenerator.OnRoomCompleted += IncrementRoomCount;
+        PlayerHealth.OnLifeStageChanged += ApplyLifeStageModifiers;
     }
 
     private void OnDisable()
     {
         OnStatChanged -= HandleStatChanged;
         DungeonGenerator.OnRoomCompleted -= IncrementRoomCount;
+        PlayerHealth.OnLifeStageChanged -= ApplyLifeStageModifiers;
     }
 
     private void Update()
@@ -648,4 +651,66 @@ public partial class PlayerStatsManager : MonoBehaviour
     }
 
     #endregion
+
+    /// <summary>
+    /// Aplica modificadores de estadísticas permanentes basados en la etapa de vida del jugador.
+    /// Este método es llamado por el evento OnLifeStageChanged de PlayerHealth.
+    /// </summary>
+    /// <param name="newStage">La nueva etapa de vida del jugador.</param>
+    private void ApplyLifeStageModifiers(LifeStage newStage)
+    {
+        var affectedStats = new StatType[]
+        {
+        StatType.MoveSpeed,
+        StatType.MeleeAttackSpeed,
+        StatType.MeleeAttackDamage,
+        StatType.ShieldSpeed,
+        StatType.ShieldAttackDamage
+        };
+
+        // 1. REVERTIR A VALORES BASE: Limpiamos los modificadores de la etapa anterior.
+        foreach (var statType in affectedStats)
+        {
+            if (baseStats.ContainsKey(statType))
+            {
+                currentStats[statType] = baseStats[statType];
+            }
+        }
+
+        // 2. APLICAR NUEVOS MODIFICADORES
+        switch (newStage)
+        {
+            case LifeStage.Young:
+                Debug.Log("[PlayerStatsManager] Etapa Joven: Aplicando buffs de velocidad y debuffs de daño.");
+                currentStats[StatType.MoveSpeed] += baseStats[StatType.MoveSpeed] * 0.25f;
+                currentStats[StatType.MeleeAttackSpeed] += baseStats[StatType.MeleeAttackSpeed] * 0.25f;
+                currentStats[StatType.MeleeAttackDamage] -= baseStats[StatType.MeleeAttackDamage] * 0.25f;
+                currentStats[StatType.ShieldSpeed] += baseStats[StatType.ShieldSpeed] * 0.25f;
+                currentStats[StatType.ShieldAttackDamage] -= baseStats[StatType.ShieldAttackDamage] * 0.25f;
+                break;
+
+            case LifeStage.Adult:
+                Debug.Log("[PlayerStatsManager] Etapa Adulto: Estadísticas base restauradas.");
+                // No se aplican modificadores, ya se revirtió a los valores base.
+                break;
+
+            case LifeStage.Elder:
+                Debug.Log("[PlayerStatsManager] Etapa Anciano: Aplicando buffs de daño y debuffs de velocidad.");
+                currentStats[StatType.MoveSpeed] -= baseStats[StatType.MoveSpeed] * 0.25f;
+                currentStats[StatType.MeleeAttackSpeed] -= baseStats[StatType.MeleeAttackSpeed] * 0.25f;
+                currentStats[StatType.MeleeAttackDamage] += baseStats[StatType.MeleeAttackDamage] * 0.25f;
+                currentStats[StatType.ShieldSpeed] -= baseStats[StatType.ShieldSpeed] * 0.25f;
+                currentStats[StatType.ShieldAttackDamage] += baseStats[StatType.ShieldAttackDamage] * 0.25f;
+                break;
+        }
+
+        // 3. NOTIFICAR CAMBIOS: Es crucial para que todo el juego (incluida la UI) se actualice.
+        foreach (var statType in affectedStats)
+        {
+            if (currentStats.ContainsKey(statType))
+            {
+                OnStatChanged?.Invoke(statType, currentStats[statType]);
+            }
+        }
+    }
 }

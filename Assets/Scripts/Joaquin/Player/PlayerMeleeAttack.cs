@@ -20,7 +20,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private float hitRadius = 0.8f;
     [HideInInspector] private float fallbackAttackDamage = 10;
     [SerializeField] private int attackDamage = 10;
-    [SerializeField] private float fallbackAttackSpeed = 1f;
+    [HideInInspector] private float fallbackAttackSpeed = 1f;
     [SerializeField] private float attackSpeed = 1f;
     [SerializeField] private LayerMask enemyLayer;
 
