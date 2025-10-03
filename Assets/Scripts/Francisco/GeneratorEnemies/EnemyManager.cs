@@ -4,35 +4,31 @@ using UnityEngine;
 
 public class EnemyManager : MonoBehaviour
 {
-    public DungeonGenerator dungeonGenerator;
-    public Room parentRoom;
+    private DungeonGenerator dungeonGenerator;
+    private Room parentRoom;
+    private CombatContents combatConfig;
 
-    [Header("Enemy Prefabs")]
-    public GameObject[] enemyPrefabs;
+    private GameObject[] defaultEnemyPrefabs;
+    private GameObject spawnEffectPrefab;
 
-    [Header("Wave Settings")]
-    public int maxWaves = 3;
-    public int enemiesPerWave = 3;
-    public float timeBetweenWaves = 5f;
-
-    [Header("Visual Effects")]
-    public GameObject spawnEffectPrefab;
-
-    private int currentWave = 0;
     private List<GameObject> activeEnemies = new List<GameObject>();
 
-    void Start()
-    {
-        if (parentRoom == null)
-        {
-            parentRoom = GetComponentInParent<Room>();
-        }
-    }
-
-    public IEnumerator StartCombatEncounter(ConnectionPoint entrancePoint, DungeonGenerator dg, GameObject effectPrefab)
+    public void Initialize(DungeonGenerator dg, Room parent, CombatContents rules, GameObject effectPrefab, GameObject[] defaultEnemies)
     {
         dungeonGenerator = dg;
-        this.spawnEffectPrefab = effectPrefab;
+        parentRoom = parent;
+        combatConfig = rules;
+        spawnEffectPrefab = effectPrefab;
+        defaultEnemyPrefabs = defaultEnemies;
+    }
+
+    public IEnumerator StartCombatEncounter(ConnectionPoint entrancePoint)
+    {
+        if (combatConfig == null || combatConfig.waves == null || combatConfig.waves.Count == 0)
+        {
+            dungeonGenerator.OnCombatEnded(parentRoom, entrancePoint);
+            yield break;
+        }
 
         if (parentRoom != null)
         {
@@ -47,38 +43,57 @@ public class EnemyManager : MonoBehaviour
 
         yield return StartCoroutine(SpawnWaves());
 
-        Debug.Log("Combate finalizado. Notificando al DungeonGenerator.");
         dungeonGenerator.OnCombatEnded(parentRoom, entrancePoint);
     }
 
     IEnumerator SpawnWaves()
     {
-        while (currentWave < maxWaves)
+        for (int currentWave = 0; currentWave < combatConfig.waves.Count; currentWave++)
         {
-            yield return StartCoroutine(SpawnEnemiesWithEffect());
-            yield return new WaitForSeconds(timeBetweenWaves);
+            EnemyWave wave = combatConfig.waves[currentWave];
+
+            yield return StartCoroutine(SpawnEnemiesWithEffect(wave));
 
             while (activeEnemies.Count > 0)
             {
                 activeEnemies.RemoveAll(enemy => enemy == null);
                 yield return null;
             }
-            currentWave++;
+
+            if (currentWave < combatConfig.waves.Count - 1)
+            {
+                yield return new WaitForSeconds(combatConfig.timeBetweenWaves);
+            }
         }
     }
 
-    IEnumerator SpawnEnemiesWithEffect()
+    IEnumerator SpawnEnemiesWithEffect(EnemyWave wave)
     {
-        if (parentRoom == null || parentRoom.spawnAreas.Length == 0 || enemyPrefabs.Length == 0)
+        if (parentRoom == null || parentRoom.spawnAreas.Length == 0)
         {
-            Debug.LogWarning("No se pueden generar enemigos. Faltan prefabs o puntos de aparición en la sala de combate.");
+            yield break;
+        }
+
+        GameObject[] prefabsToUse;
+        int enemyCount = wave.enemyCount;
+
+        if (wave.enemyPrefabs != null && wave.enemyPrefabs.Length > 0)
+        {
+            prefabsToUse = wave.enemyPrefabs;
+        }
+        else if (defaultEnemyPrefabs != null && defaultEnemyPrefabs.Length > 0)
+        {
+            prefabsToUse = defaultEnemyPrefabs;
+        }
+        else
+        {
             yield break;
         }
 
         List<GameObject> instantiatedEffects = new List<GameObject>();
         List<Vector3> spawnPositions = new List<Vector3>();
 
-        for (int i = 0; i < enemiesPerWave; i++)
+        for (int i = 0; i < enemyCount; i++)
         {
             BoxCollider spawnArea = parentRoom.spawnAreas[Random.Range(0, parentRoom.spawnAreas.Length)];
             Vector3 spawnPosition = new Vector3(
@@ -95,18 +110,22 @@ public class EnemyManager : MonoBehaviour
             }
         }
 
-        yield return new WaitForSeconds(2.0f); 
+        yield return new WaitForSeconds(2.0f);
 
-        for (int i = 0; i < enemiesPerWave; i++)
+        for (int i = 0; i < enemyCount; i++)
         {
             if (i < instantiatedEffects.Count && instantiatedEffects[i] != null)
             {
                 Destroy(instantiatedEffects[i]);
             }
 
-            GameObject enemyPrefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
+            GameObject enemyPrefab = prefabsToUse[Random.Range(0, prefabsToUse.Length)];
             GameObject newEnemy = Instantiate(enemyPrefab, spawnPositions[i], Quaternion.identity);
-            activeEnemies.Add(newEnemy);
+
+            if (newEnemy != null)
+            {
+                activeEnemies.Add(newEnemy);
+            }
         }
     }
 }
