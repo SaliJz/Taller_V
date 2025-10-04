@@ -2261,10 +2261,6 @@ MonoBehaviour:
     m_Bits: 4294967295
   flattenHeightThreshold: 1.2
   areaCheckInterval: 0.25
-  blinkRenderer: {fileID: 3280764147264144518}
-  flashMaterial: {fileID: 2100000, guid: d1f9e2c5e82298b4b8f024596ca37e41, type: 2}
-  blinkInterval: 0.06
-  blinkCount: 6
 --- !u!114 &6113203021159324906
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2341,10 +2337,10 @@ MonoBehaviour:
   - {fileID: 6064679713689361994}
   - {fileID: 4632777121511405127}
   - {fileID: 3280764147264144518}
-  normalFlashColor: {r: 1, g: 0, b: 0, a: 0.6}
-  criticalFlashColor: {r: 1, g: 0.5, b: 0, a: 0.9}
-  flashDuration: 0.2
-  flashCount: 2
+  blinkTargetRenderer: {fileID: 3280764147264144518}
+  blinkFlashMaterial: {fileID: 2100000, guid: d1f9e2c5e82298b4b8f024596ca37e41, type: 2}
+  blinkInterval: 0.06
+  blinkCount: 6
   defaultMaterial: {fileID: 2100000, guid: e826f8fe9d1a524468d39863e3899f64, type: 2}
   glowMaterial: {fileID: 2100000, guid: 5da8ab1f06f51c047a99ed21c3104c56, type: 2}
   glowIntensity: 2
