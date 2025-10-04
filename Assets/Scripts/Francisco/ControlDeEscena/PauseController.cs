@@ -81,6 +81,7 @@ public class PauseController : MonoBehaviour
 
         Time.timeScale = 1f;
         if (statsManager != null) statsManager.ResetRunStatsToDefaults();
+        if (statsManager != null) statsManager.ResetStatsOnDeath();
         InventoryManager inventory = FindAnyObjectByType<InventoryManager>();
         inventory.ClearInventory(); // esto seria momentaneo
         SceneManager.LoadScene(sceneName);
