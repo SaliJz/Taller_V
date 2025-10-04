@@ -280,8 +280,8 @@ public class PlayerMeleeAttack : MonoBehaviour
                     bool isCritical;
                     float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
-                    healthController.TakeDamage(Mathf.RoundToInt(finalDamage));
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
+                    healthController.TakeDamage(Mathf.RoundToInt(finalAttackDamage));
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
                 }
 
                 IDamageable damageable = enemy.GetComponent<IDamageable>();
@@ -293,9 +293,9 @@ public class PlayerMeleeAttack : MonoBehaviour
                     damageable.TakeDamage(finalDamageWithCrit, isCritical);
                     float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
-                    damageable.TakeDamage(finalDamage, isCritical);
+                    damageable.TakeDamage(finalAttackDamage);
 
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
                 }
 
                 BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
@@ -304,10 +304,10 @@ public class PlayerMeleeAttack : MonoBehaviour
                     bool isCritical;
                     float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
-                    bloodKnight.TakeDamage(finalDamage, isCritical);
+                    bloodKnight.TakeDamage(finalAttackDamage);
                     bloodKnight.OnPlayerCounterAttack();
 
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
                 }
             }
         }
@@ -325,9 +325,9 @@ public class PlayerMeleeAttack : MonoBehaviour
                     bool isCritical;
                     float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
-                    healthController.TakeDamage(Mathf.RoundToInt(finalDamage));
+                    healthController.TakeDamage(Mathf.RoundToInt(finalAttackDamage));
 
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
                 }
 
                 IDamageable damageable = enemy.GetComponent<IDamageable>();
@@ -339,9 +339,9 @@ public class PlayerMeleeAttack : MonoBehaviour
                     damageable.TakeDamage(finalDamageWithCrit, isCritical);
                     float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
-                    damageable.TakeDamage(finalDamage, isCritical);
+                    damageable.TakeDamage(finalAttackDamage);
 
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
                 }
 
                 BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
@@ -350,10 +350,10 @@ public class PlayerMeleeAttack : MonoBehaviour
                     bool isCritical;
                     float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
-                    bloodKnight.TakeDamage(finalDamage, isCritical);
+                    bloodKnight.TakeDamage(finalAttackDamage);
                     bloodKnight.OnPlayerCounterAttack();
 
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
                 }
             }
         }

@@ -1,4 +1,3 @@
-// PlayerMovement.cs
 using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -14,7 +13,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Animator playerAnimator;
     [SerializeField] private PlayerHealth playerHealth;
 
-    [Header("Movimiento")]
+    [Header("Movement")]
     [HideInInspector] private float fallbackMoveSpeed = 5f;
     [SerializeField] private float moveSpeed = 5f;
     [HideInInspector] private float fallbackGravity = -9.81f;
@@ -22,12 +21,15 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Dash")]
     [SerializeField] private float dashSpeed = 15f;
-    [SerializeField] private float dashDuration = 0.2f;
-    [SerializeField] private float dashCooldown = 1f;
+    [SerializeField] private float dashDuration = 0.3f;
+    [SerializeField] private float dashCooldown = 0.3f;
     [SerializeField] private LayerMask traversableLayers;
 
-    [Header("Efectos")]
+    [Header("Effects")]
+    [Header("Afterimage Settings")]
     [SerializeField] private GameObject afterimagePrefab;
+    [SerializeField, Range(0f, 1f)] private float afterimageAlpha = 0.5f;
+    [SerializeField] private float afterimageLifetime = 0.5f;
 
     private int playerLayer;
     private float dashCooldownTimer = 0f;
@@ -228,7 +230,6 @@ public class PlayerMovement : MonoBehaviour
     private IEnumerator DashRoutine()
     {
         IsDashing = true;
-        dashCooldownTimer = dashCooldown;
 
         if (playerHealth != null) playerHealth.IsInvulnerable = true;
         ToggleLayerCollisions(true);
@@ -254,6 +255,8 @@ public class PlayerMovement : MonoBehaviour
         if (playerHealth != null) playerHealth.IsInvulnerable = false;
         ToggleLayerCollisions(false);
         IsDashing = false;
+
+        dashCooldownTimer = dashCooldown;
     }
 
     private IEnumerator PerformDash(Vector3 direction, float duration)
@@ -284,11 +287,91 @@ public class PlayerMovement : MonoBehaviour
         {
             if (afterimagePrefab != null)
             {
-                GameObject afterimage = Instantiate(afterimagePrefab, transform.position, transform.rotation);
-                Destroy(afterimage, 0.5f);
+                // Usa el transform del modelo si PlayerHealth lo expone,
+                // Sino usa el root transform del jugador.
+                Transform modelTransform = (playerHealth != null && playerHealth.PlayerModelTransform != null)
+                    ? playerHealth.PlayerModelTransform
+                    : transform;
+
+                // Instancia el afterimage en la posición/rotación del modelo
+                GameObject afterimage = Instantiate(afterimagePrefab, modelTransform.position, modelTransform.rotation);
+
+                // Ajusta escala mundial del afterimage para que coincida con la del modelo actual
+                // Si el prefab está pensado para escala 1 en root, asigna la escala global del modelo.
+                afterimage.transform.localScale = modelTransform.lossyScale;
+
+                // Sincronizar visual (Sprite o Mesh)
+                // Copiar sprite si existe
+                var srcSprite = modelTransform.GetComponentInChildren<SpriteRenderer>();
+                var dstSprite = afterimage.GetComponentInChildren<SpriteRenderer>();
+                if (srcSprite != null && dstSprite != null)
+                {
+                    dstSprite.sprite = srcSprite.sprite;
+                    dstSprite.flipX = srcSprite.flipX;
+                    // No toca srcSprite.color. Aplica transparencia solo al afterimage.
+                    Color dstColor = srcSprite.color;
+                    dstColor.a = afterimageAlpha;
+                    dstSprite.color = dstColor;
+                }
+                else
+                {
+                    // Sino intenta copiar mesh + material y aplica transparencia con MaterialPropertyBlock
+                    var srcMeshRenderer = modelTransform.GetComponentInChildren<MeshRenderer>();
+                    var srcMeshFilter = modelTransform.GetComponentInChildren<MeshFilter>();
+
+                    var dstMeshRenderer = afterimage.GetComponentInChildren<MeshRenderer>();
+                    var dstMeshFilter = afterimage.GetComponentInChildren<MeshFilter>();
+
+                    if (srcMeshRenderer != null && dstMeshRenderer != null)
+                    {
+                        // Copiar mesh si existe
+                        if (srcMeshFilter != null && dstMeshFilter != null)
+                        {
+                            dstMeshFilter.mesh = srcMeshFilter.sharedMesh;
+                        }
+
+                        // Aplicar transparencia usando MaterialPropertyBlock para no instanciar materiales
+                        ApplyTransparencyToRenderer(dstMeshRenderer, afterimageAlpha);
+                    }
+                }
+
+            Destroy(afterimage, afterimageLifetime);
             }
             yield return new WaitForSeconds(interval);
         }
+    }
+
+    /// <summary>
+    /// Aplica un valor de alpha al renderer usando MaterialPropertyBlock (no instancia materials).
+    /// Intenta propiedades comunes: "_BaseColor" (URP/HDRP) y "_Color" (legacy).
+    /// </summary>
+    private void ApplyTransparencyToRenderer(Renderer renderer, float alpha)
+    {
+        if (renderer == null) return;
+
+        // Si el renderer tiene material con _BaseColor o _Color, intentar obtenerlo.
+        Color baseColor = Color.white;
+        Material mat = renderer.sharedMaterial;
+        if (mat != null)
+        {
+            if (mat.HasProperty("_BaseColor"))
+            {
+                baseColor = mat.GetColor("_BaseColor");
+            }
+            else if (mat.HasProperty("_Color"))
+            {
+                baseColor = mat.GetColor("_Color");
+            }
+        }
+
+        // Ajustar alpha
+        baseColor.a = alpha;
+
+        // Aplicar con MaterialPropertyBlock
+        MaterialPropertyBlock mpb = new MaterialPropertyBlock();
+        mpb.SetColor("_BaseColor", baseColor);
+        mpb.SetColor("_Color", baseColor);
+        renderer.SetPropertyBlock(mpb);
     }
 
     private void ApplyGravity()

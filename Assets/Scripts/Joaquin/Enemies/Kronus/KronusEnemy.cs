@@ -472,12 +472,12 @@ public class KronusEnemy : MonoBehaviour
                 float damageToApply = CriticalHitSystem.CalculateDamage(damage, transform, hitTransform, out isCritical);
                 
                 if (audioSource != null && hitSFX != null) audioSource.PlayOneShot(hitSFX);
-                playerHealth.TakeDamage(damageToApply);
+                playerHealth.TakeDamage(damage);
 
                 // Aplicar empuje
                 ApplyKnockback(hitTransform);
 
-                ReportDebug($"Kronus atacó al jugador por {damageToApply} de daño. Crítico: {isCritical}", 1);
+                ReportDebug($"Kronus atacó al jugador por {damage} de daño.", 1);
 
                 hasHitPlayerThisDash = true;
             }
@@ -488,11 +488,11 @@ public class KronusEnemy : MonoBehaviour
 
     private void ApplyKnockback(Transform target)
     {
-        // Calcular dirección del empuje (desde Kronus hacia el jugador)
+        // Calcula la dirección del empuje (desde Kronus hacia el jugador)
         Vector3 knockbackDirection = (target.position - transform.position).normalized;
         knockbackDirection.y = 0f; // Mantener en el plano horizontal
 
-        // Aplicar empuje
+        // Aplica el empuje
         CharacterController cc = target.GetComponent<CharacterController>();
         Rigidbody rb = target.GetComponent<Rigidbody>();
 

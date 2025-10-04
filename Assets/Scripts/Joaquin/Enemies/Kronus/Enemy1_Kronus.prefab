@@ -1209,11 +1209,11 @@ MonoBehaviour:
   hitPoint: {fileID: 5399706999602248979}
   visualHit: {fileID: 963048917619979615}
   groundIndicator: {fileID: 5630910583302828604}
-  health: 20
+  health: 40
   moveSpeed: 3.5
   dashSpeedMultiplier: 2
   dashDuration: 1
-  dashMaxDistance: 6
+  dashMaxDistance: 9
   isPercentageDmg: 0
   attackCycleCooldown: 2.5
   attackDamage: 10
@@ -1249,7 +1249,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 120953a634ec616478c5722a12285e45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  renderers: []
+  renderers:
+  - {fileID: 8239850304368769487}
   normalFlashColor: {r: 1, g: 0, b: 0, a: 0.6}
   criticalFlashColor: {r: 1, g: 0.5, b: 0, a: 0.9}
   flashDuration: 0.2

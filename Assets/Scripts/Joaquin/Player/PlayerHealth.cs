@@ -79,6 +79,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     public float MaxHealth => statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
     public float CurrentHealth => currentHealth;
 
+    public Transform PlayerModelTransform => playerModelTransform;
+    public Vector3 CurrentModelLocalScale => playerModelTransform != null ? playerModelTransform.localScale : Vector3.one;
+    public Vector3 CurrentModelWorldScale => playerModelTransform != null ? playerModelTransform.lossyScale : Vector3.one;
+    public float CurrentModelYOffset => playerModelTransform != null ? playerModelTransform.localPosition.y : 0f;
+
     private void Awake()
     {
         statsManager = GetComponent<PlayerStatsManager>();
