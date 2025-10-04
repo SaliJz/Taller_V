@@ -723,7 +723,7 @@ MonoBehaviour:
   gravity: -9.81
   dashSpeed: 10
   dashDuration: 0.3
-  dashCooldown: 0
+  dashCooldown: 0.3
   traversableLayers:
     serializedVersion: 2
     m_Bits: 192
@@ -824,13 +824,16 @@ MonoBehaviour:
   skillKey: 113
   youngBuffs:
     MoveMultiplier: 1.2
-    AttackMultiplier: 1.1
+    AttackDmgMultiplier: 1.1
+    AttackSpeedMultiplier: 1.2
   adultBuffs:
     MoveMultiplier: 1.1
-    AttackMultiplier: 1.2
+    AttackDmgMultiplier: 1.2
+    AttackSpeedMultiplier: 1.1
   elderBuffs:
     MoveMultiplier: 1.15
-    AttackMultiplier: 1.15
+    AttackDmgMultiplier: 1.12
+    AttackSpeedMultiplier: 1.1
   SkillActive: 0
 --- !u!114 &7736777102245202428
 MonoBehaviour:
