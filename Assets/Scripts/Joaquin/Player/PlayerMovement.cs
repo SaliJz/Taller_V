@@ -1,5 +1,4 @@
 using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -49,6 +48,13 @@ public class PlayerMovement : MonoBehaviour
     // Rotation lock fields (para respetar la dirección del ataque)
     private bool rotationLocked = false;
     private Quaternion lockedRotation = Quaternion.identity;
+
+    private bool isDashDisabled = false;
+    public bool IsDashDisabled
+    {
+        get { return isDashDisabled; }
+        set { isDashDisabled = value; }
+    }
 
     #endregion
 
@@ -141,7 +147,7 @@ public class PlayerMovement : MonoBehaviour
 
         ApplyGravity();
 
-        if (Input.GetKeyDown(KeyCode.Space) && dashCooldownTimer <= 0 && !IsDashing)
+        if (Input.GetKeyDown(KeyCode.Space) && dashCooldownTimer <= 0 && !IsDashing && !isDashDisabled)
         {
             StartCoroutine(DashRoutine());
         }
@@ -504,6 +510,8 @@ public class PlayerMovement : MonoBehaviour
 
     #endregion
 
+    #region Debugging
+
     private void OnDrawGizmos()
     {
         if (!Application.isPlaying) return;
@@ -520,6 +528,8 @@ public class PlayerMovement : MonoBehaviour
             Gizmos.DrawWireSphere(hit.point, 0.5f);
         }
     }
+
+    #endregion
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     private static void ReportDebug(string message, int reportPriorityLevel)

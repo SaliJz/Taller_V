@@ -16,7 +16,7 @@ public class EnemyVisualEffects : MonoBehaviour
 
     [Header("Materials / Material Blink (material swap)")]
     [Tooltip("Renderer objetivo para el material-swap. Si se deja null, usa el primer renderer en 'renderers' (si existe).")]
-    [SerializeField] private Renderer blinkTargetRenderer;
+    [SerializeField] private Renderer[] blinkTargetRenderer;
     [Tooltip("Material temporal que se usará para el parpadeo por swap (por ejemplo: blanco).")]
     [SerializeField] private Material blinkFlashMaterial;
     [Tooltip("Intervalo entre toggles (segundos). Ej: 0.06 -> parpadeo rápido.")]
@@ -57,10 +57,9 @@ public class EnemyVisualEffects : MonoBehaviour
             }
         }
 
-        // si no se asignó target específico, intentar usar el primero
-        if (blinkTargetRenderer == null && renderers != null && renderers.Length > 0)
+        if ((blinkTargetRenderer == null || blinkTargetRenderer.Length == 0) && renderers != null && renderers.Length > 0)
         {
-            blinkTargetRenderer = renderers[0];
+            blinkTargetRenderer = renderers;
         }
     }
 
@@ -98,11 +97,19 @@ public class EnemyVisualEffects : MonoBehaviour
         // Material swap (parpadeo por swap) — solo si se asignó material de flash
         if (blinkFlashMaterial != null)
         {
-            Renderer target = blinkTargetRenderer;
-            if (target == null && renderers != null && renderers.Length > 0) target = renderers[0];
-            if (target != null)
+            Renderer[] targets = blinkTargetRenderer != null && blinkTargetRenderer.Length > 0
+                ? blinkTargetRenderer
+                : (renderers != null ? renderers : null);
+
+            if (targets != null)
             {
-                BlinkMaterial(target, blinkFlashMaterial, blinkInterval, blinkCount);
+                foreach (var target in targets)
+                {
+                    if (target != null)
+                    {
+                        BlinkMaterial(target, blinkFlashMaterial, blinkInterval, blinkCount);
+                    }
+                }
             }
         }
 

@@ -75,6 +75,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     public static event Action<float, float> OnEnemyHealthChanged;
     public event Action<GameObject> OnDeath;
     public event Action OnDamaged;
+    public event Action<float, float> OnHealthChanged;
     private EnemyVisualEffects enemyVisualEffects;
     private Transform playerTransform;
     private PlayerHealth playerHealth;
@@ -82,7 +83,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     #region --- Armadura de área (configurable) ---
     [Header("Armadura Demoníaca (Auto)")]
     [Tooltip("Si true, este componente intentará activar la armadura de área cuando la vida <= areaTriggerPercent.")]
-    [SerializeField] private bool enableAutoArea = true;
+    [SerializeField] private bool enableAutoArea = false;
     [SerializeField, Range(0f, 1f)] private float areaTriggerPercent = 0.25f; // 25%
     [SerializeField, Range(0f, 1f)] private float areaReductionPercent = 0.25f; // 25% reducción
     [SerializeField] private float areaDuration = 10f;
@@ -173,6 +174,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         CurrentHealth = currentHealth;
 
         OnDamaged?.Invoke();
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
         UpdateSlidersSafely();
 
         if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El enemigo ha recibido {finalDamage} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);

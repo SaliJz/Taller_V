@@ -35,7 +35,7 @@ public partial class MorlockEnemy : MonoBehaviour
     [Header("Patrol")]
     [Tooltip("Si se asignan waypoints, Morlock los recorrerá en bucle. Si no, hará roaming aleatorio en patrolRadius.")]
     [SerializeField] private Transform[] patrolWaypoints;
-    [SerializeField] private bool loopWaypoints = true;
+    //[SerializeField] private bool loopWaypoints = true;
     [SerializeField] private float patrolRadius = 8f; // usado si no hay waypoints
     [SerializeField] private float patrolIdleTime = 1.2f; // espera entre puntos
 

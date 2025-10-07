@@ -1,6 +1,9 @@
+using System.Collections;
+using System.Collections.Generic;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.AI;
-using System.Collections;
+using UnityEngine.Audio;
 
 [System.Serializable]
 public struct WhipKeyframe
@@ -25,7 +28,8 @@ public class AstarothController : MonoBehaviour
     public enum BossState
     {
         Moving,
-        Attacking
+        Attacking,
+        SpecialAbility
     }
 
     [Header("Boss State")]
@@ -35,6 +39,12 @@ public class AstarothController : MonoBehaviour
     #region General Settings
     [Header("Player Settings")]
     [SerializeField] private Transform _player;
+
+    [Header("Health Settings")]
+    [SerializeField] private float _maxHealth = 100f;
+    [SerializeField] private float _currentHealth;
+    private int _specialAbilityUsedCount = 0;
+
     [Header("Movement Settings")]
     [SerializeField] private float _stoppingDistance = 15f;
     private NavMeshAgent _navMeshAgent;
@@ -45,6 +55,7 @@ public class AstarothController : MonoBehaviour
     [Header("Attack 1: Latigazo Desgarrador")]
     [SerializeField] private Transform _whipVisualTransform;
     [SerializeField] private WhipKeyframe[] _whipAnimationKeyframes;
+    [SerializeField] private float _Attack1Damage = 9f;
     [SerializeField] private float _attack1Cooldown = 7f;
     [SerializeField] private float _whipRange = 25f;
     [SerializeField] private int _whipAttackCount = 3;
@@ -62,6 +73,7 @@ public class AstarothController : MonoBehaviour
     [Header("Attack 2: Latigazo Demoledor")]
     [SerializeField] private Transform _smashVisualTransform;
     [SerializeField] private SmashKeyframe[] _smashAnimationKeyframes;
+    [SerializeField] private float _Attack2Damage = 25f;
     [SerializeField] private float _attack2Cooldown = 12f;
     [SerializeField] private float _smashRadius = 5f;
     [SerializeField] private float _smashDetectionRadius = 10f;
@@ -75,19 +87,94 @@ public class AstarothController : MonoBehaviour
     private bool _showSmashOverlapGizmo;
     #endregion
 
+    #region Special Ability: Pulso Carnal
+    [Header("Special Ability: Pulso Carnal")]
+    [SerializeField] private float _pulseExpansionDuration = 3f;
+    [SerializeField] private float _pulseWaitDuration = 1f;
+    [SerializeField] private float _pulseSlowPercentage = 0.5f;
+    [SerializeField] private float _pulseSlowDuration = 2f;
+    [SerializeField] private int _pulseDamage = 1;
+    [SerializeField] private GameObject _nervesVisualizationPrefab;
+    [SerializeField] private GameObject _crackEffectPrefab;
+    [SerializeField] private AudioClip _pulseScreamSound;
+    [SerializeField] private AudioClip _rocksFallingSound;
+    [SerializeField] private float _postPulseAttackDelay = 0.8f;
+    [SerializeField] private Transform _headsTransform;
+    [SerializeField] private float _headDownRotationAngle = -45f;
+    [SerializeField] private float _headAnimationDuration = 0.5f;
+    private bool _isUsingSpecialAbility;
+    private float[] _healthThresholdsForPulse = { 0.67f, 0.34f };
+    private bool _isPulseAttackBlocked = false;
+    private float _roomMaxRadius = 45f;
+    private List<GameObject> _instantiatedEffects = new List<GameObject>();
+    #endregion
+
+    #region Enraged Phase
+    [Header("Enraged Phase (25% HP)")]
+    [SerializeField] private float _enragedHealthThreshold = 0.25f;
+    [SerializeField] private Renderer[] _eyeRenderers;
+    [SerializeField] private Material _enragedEyeMaterial;
+    [SerializeField] private AudioClip _enragedRoarSound;
+    private bool _isEnraged = false;
+    private float _attackSpeedMultiplier = 1f;
+    private float _baseAttack1Cooldown;
+    private float _baseAttack2Cooldown;
+    private float _basePulseExpansionDuration;
+    private float _basePulseWaitDuration;
+    private Material[] _originalEyeMaterials;
+    #endregion
+
     #region VFX
     [Header("VFX")]
     [SerializeField] private TrailRenderer _trailRenderer;
-    #endregion
+    #endregion
+
+    #region SFX
+    [Header("Sound")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip deathSFX;
+    #endregion
+
+    #region Camera Shake
+    [SerializeField] private CinemachineCamera _vcam;
+    [SerializeField] private float _shakeDuration = 0.2f;
+    [SerializeField] private float _amplitude = 2f;
+    [SerializeField] private float _frequency = 2f;
+    private CinemachineBasicMultiChannelPerlin _noise;
+    #endregion
+
+    private EnemyHealth _enemyHealth;
 
     #region Unity Lifecycle Methods
-    void Start()
+    private void Awake()
     {
+        _enemyHealth = GetComponent<EnemyHealth>();
         _navMeshAgent = GetComponent<NavMeshAgent>();
         _animator = GetComponent<Animator>();
+
+        if (_vcam == null)
+        {
+            CinemachineCamera vcam = Object.FindFirstObjectByType<CinemachineCamera>();
+            if (vcam != null)
+            {
+                _vcam = vcam;
+            }
+        }
+    }
+
+    private void Start()
+    {
         _navMeshAgent.updateRotation = false;
         _attack1Timer = _attack1Cooldown;
         _attack2Timer = _attack2Cooldown;
+
+        _baseAttack1Cooldown = _attack1Cooldown;
+        _baseAttack2Cooldown = _attack2Cooldown;
+        _basePulseExpansionDuration = _pulseExpansionDuration;
+        _basePulseWaitDuration = _pulseWaitDuration;
+
+        CalculateRoomRadius();
+
         if (_trailRenderer != null)
         {
             _trailRenderer.enabled = false;
@@ -101,14 +188,21 @@ public class AstarothController : MonoBehaviour
                 _player = playerGO.transform;
             }
         }
+
+        if (_enemyHealth != null) _enemyHealth.SetMaxHealth(_maxHealth);
+        _currentHealth = _maxHealth;
+
+        if (_vcam != null) _noise = _vcam.GetCinemachineComponent(CinemachineCore.Stage.Noise) as CinemachineBasicMultiChannelPerlin;
     }
 
-    void Update()
+    private void Update()
     {
         if (_player == null)
         {
             return;
         }
+
+        CheckHealthThresholds();
 
         switch (_currentState)
         {
@@ -118,47 +212,140 @@ public class AstarothController : MonoBehaviour
             case BossState.Attacking:
                 HandleAttacks();
                 break;
+            case BossState.SpecialAbility:
+                break;
         }
     }
 
-    void OnDrawGizmos()
+    #endregion
+
+    #region Health and Phase Management
+    private void OnEnable()
     {
-        if (_showWhipRaycastGizmo)
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawRay(_lastWhipRaycastOrigin, _lastWhipRaycastDirection * _whipRange);
-            Gizmos.DrawWireSphere(_lastWhipRaycastOrigin, 0.5f);
-        }
-        if (_showWhipImpactGizmo)
-        {
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawWireSphere(_whipImpactPoint, 0.5f);
-        }
-        if (_showSmashOverlapGizmo)
-        {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(_lastSmashOverlapCenter, _lastSmashOverlapRadius);
-        }
+        if (_enemyHealth != null) _enemyHealth.OnDeath += HandleEnemyDeath;
+        if (_enemyHealth != null) _enemyHealth.OnHealthChanged += HandleEnemyHealthChange;
     }
 
-    void OnDrawGizmosSelected()
+    private void OnDisable()
     {
-        if (Application.isPlaying)
+        if (_enemyHealth != null) _enemyHealth.OnDeath -= HandleEnemyDeath;
+        if (_enemyHealth != null) _enemyHealth.OnHealthChanged -= HandleEnemyHealthChange;
+    }
+
+    private void OnDestroy()
+    {
+        if (_enemyHealth != null) _enemyHealth.OnDeath -= HandleEnemyDeath;
+        if (_enemyHealth != null) _enemyHealth.OnHealthChanged -= HandleEnemyHealthChange;
+    }
+
+    private void HandleEnemyDeath(GameObject enemy)
+    {
+        if (enemy != gameObject) return;
+
+        _isAttackingWithWhip = false;
+        _isSmashing = false;
+        _isUsingSpecialAbility = false;
+        _isEnraged = false;
+
+        StopAllCoroutines();
+
+        DestroyAllInstantiatedEffects();
+
+        if (_navMeshAgent != null)
         {
-            Gizmos.color = Color.blue;
-            Gizmos.DrawWireSphere(transform.position, _smashDetectionRadius);
+            if (_navMeshAgent.enabled && _navMeshAgent.isOnNavMesh)
+            {
+                _navMeshAgent.isStopped = true;
+                _navMeshAgent.ResetPath();
+                _navMeshAgent.updatePosition = false;
+                _navMeshAgent.updateRotation = false;
+            }
+            else
+            {
+                _navMeshAgent.enabled = false;
+            }
+        }
+
+        if (_animator != null) _animator.SetTrigger("Die");
+        if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
+
+        this.enabled = false;
+    }
+
+    private void DestroyAllInstantiatedEffects()
+    {
+        foreach (GameObject effect in _instantiatedEffects)
+        {
+            if (effect != null)
+            {
+                Destroy(effect);
+            }
+        }
+        _instantiatedEffects.Clear();
+    }
+
+    private void HandleEnemyHealthChange(float newCurrentHealth, float newMaxHealth)
+    {
+        _currentHealth = newCurrentHealth;
+        _maxHealth = newMaxHealth;
+    }
+
+    private void CheckHealthThresholds()
+    {
+        if (_isUsingSpecialAbility) return;
+
+        float healthPercentage = _currentHealth / _maxHealth;
+
+        if (_specialAbilityUsedCount < _healthThresholdsForPulse.Length)
+        {
+            if (healthPercentage <= _healthThresholdsForPulse[_specialAbilityUsedCount])
+            {
+                _currentState = BossState.SpecialAbility;
+                StartCoroutine(PulsoCarnal());
+                _specialAbilityUsedCount++;
+            }
+        }
+
+        if (!_isEnraged && healthPercentage <= _enragedHealthThreshold)
+        {
+            EnterEnragedPhase();
         }
     }
-    #endregion
 
-    #region State Logic
-    private void HandleMovement()
+    private void EnterEnragedPhase()
+    {
+        _isEnraged = true;
+        _attackSpeedMultiplier = 2f;
+
+        // Actualizar cooldowns de ataques
+        _attack1Cooldown = _baseAttack1Cooldown / _attackSpeedMultiplier;
+        _attack2Cooldown = _baseAttack2Cooldown / _attackSpeedMultiplier;
+
+        _pulseExpansionDuration = 1.5f; // Reducido de 3s
+        _pulseWaitDuration = 0.5f; // Reducido de 1s
+
+        if (_enragedRoarSound != null)
+        {
+            AudioSource.PlayClipAtPoint(_enragedRoarSound, transform.position);
+        }
+
+        Debug.Log("Astaroth entered ENRAGED phase!");
+    }
+    #endregion
+
+    #region State Logic
+    private void HandleMovement()
     {
         float distanceToPlayer = Vector3.Distance(transform.position, _player.position);
         _navMeshAgent.updateRotation = true;
 
         _attack1Timer -= Time.deltaTime;
         _attack2Timer -= Time.deltaTime;
+
+        if (_isPulseAttackBlocked)
+        {
+            return;
+        }
 
         if (_attack1Timer <= 0 && distanceToPlayer <= _whipRange)
         {
@@ -269,6 +456,11 @@ public class AstarothController : MonoBehaviour
                     {
                         if (hitCollider.CompareTag("Player"))
                         {
+                            PlayerHealth playerHealth = hitCollider.GetComponent<PlayerHealth>();
+                            if (playerHealth != null)
+                            {
+                                playerHealth.TakeDamage(_Attack1Damage);
+                            }
                             Debug.Log("Player was hit by Whip Attack!");
                         }
                     }
@@ -357,20 +549,31 @@ public class AstarothController : MonoBehaviour
         _lastSmashOverlapRadius = _smashRadius;
         _showSmashOverlapGizmo = true;
 
+        Vector3 smashGroundPosition = GetGroundPosition();
+        smashGroundPosition.x = damageCenter.x;
+        smashGroundPosition.z = damageCenter.z;
+
         if (_smashRadiusPrefab != null)
         {
-            GameObject visualEffect = Instantiate(_smashRadiusPrefab, damageCenter, Quaternion.identity);
+            GameObject visualEffect = Instantiate(_smashRadiusPrefab, smashGroundPosition, Quaternion.identity);
+            _instantiatedEffects.Add(visualEffect);
             StartCoroutine(ExpandSmashRadius(visualEffect.transform, _smashRadius));
         }
 
-        //Collider[] hitColliders = Physics.OverlapSphere(damageCenter, _smashRadius); 
-        //foreach (var hitCollider in hitColliders)
-        //{
-        //    if (hitCollider.CompareTag("Player"))
-        //    {
-        //        Debug.Log("Player hit by Smash Attack!");
-        //    }
-        //} 
+        Collider[] hitColliders = Physics.OverlapSphere(damageCenter, _smashRadius);
+        foreach (var hitCollider in hitColliders)
+        {
+            if (hitCollider.CompareTag("Player"))
+            {
+                PlayerHealth playerHealth = hitCollider.GetComponent<PlayerHealth>();
+                if (playerHealth != null)
+                {
+                    playerHealth.TakeDamage(_Attack2Damage);
+                }
+                Debug.Log("Jugador golpeado por Latigazo Demoledor!");
+            }
+        }
+
         Invoke("DisableSmashOverlapGizmo", 1f);
     }
 
@@ -397,4 +600,287 @@ public class AstarothController : MonoBehaviour
         Destroy(effectTransform.gameObject, 0.5f);
     }
     #endregion
+
+    #region Special Ability: Pulso Carnal
+
+    private void CalculateRoomRadius()
+    {
+        // Buscar el NavMeshSurface para obtener el tamaño de la habitación
+        UnityEngine.AI.NavMeshTriangulation triangulation = UnityEngine.AI.NavMesh.CalculateTriangulation();
+
+        if (triangulation.vertices.Length > 0)
+        {
+            Vector3 bossPos = transform.position;
+            float maxDistance = 0f;
+
+            // Encontrar el vértice más lejano del NavMesh desde la posición del boss
+            foreach (Vector3 vertex in triangulation.vertices)
+            {
+                float distance = Vector3.Distance(new Vector3(bossPos.x, 0, bossPos.z), new Vector3(vertex.x, 0, vertex.z));
+                if (distance > maxDistance)
+                {
+                    maxDistance = distance;
+                }
+            }
+
+            _roomMaxRadius = maxDistance;
+            Debug.Log($"Room radius calculated: {_roomMaxRadius}m");
+        }
+        else
+        {
+            // Fallback: usar un valor grande por defecto
+            _roomMaxRadius = 50f;
+            Debug.LogWarning("No NavMesh found. Using default room radius: 50m");
+        }
+    }
+
+    private IEnumerator PulsoCarnal()
+    {
+        _isUsingSpecialAbility = true;
+        _navMeshAgent.isStopped = true;
+
+        Debug.Log("Astaroth is preparing Pulso Carnal!");
+
+        if (_headsTransform != null)
+        {
+            yield return StartCoroutine(AnimateHeadDown());
+        }
+
+        // Obtener posición del suelo
+        Vector3 groundPos = GetGroundPosition();
+
+        GameObject nervesVisualization = null;
+        if (_nervesVisualizationPrefab != null)
+        {
+            nervesVisualization = Instantiate(_nervesVisualizationPrefab, groundPos, Quaternion.identity);
+            _instantiatedEffects.Add(nervesVisualization);
+        }
+
+        float expansionTimer = 0f;
+        while (expansionTimer < _pulseExpansionDuration)
+        {
+            expansionTimer += Time.deltaTime;
+
+            if (nervesVisualization != null)
+            {
+                float expansionProgress = expansionTimer / _pulseExpansionDuration;
+                // Escalar hasta el radio máximo de la habitación
+                float scaleXZ = expansionProgress * _roomMaxRadius; // *2 para diámetro
+                nervesVisualization.transform.localScale = new Vector3(scaleXZ, 1f, scaleXZ); // Y fijo en 1
+            }
+
+            yield return null;
+        }
+
+        yield return new WaitForSeconds(_pulseWaitDuration);
+
+        // Restaurar posición de cabeza
+        if (_headsTransform != null)
+        {
+            StartCoroutine(AnimateHeadUp());
+        }
+
+        if (nervesVisualization != null)
+        {
+            Destroy(nervesVisualization, 0.2f);
+        }
+
+        ApplyPulseEffect();
+
+        ShakeCamera(_shakeDuration, _amplitude, _frequency);
+
+        if (_pulseScreamSound != null)
+        {
+            AudioSource.PlayClipAtPoint(_pulseScreamSound, transform.position);
+        }
+
+        if (_rocksFallingSound != null)
+        {
+            AudioSource.PlayClipAtPoint(_rocksFallingSound, transform.position);
+        }
+
+        if (_crackEffectPrefab != null)
+        {
+            GameObject crackEffect = Instantiate(_crackEffectPrefab, groundPos, Quaternion.identity);
+            _instantiatedEffects.Add(crackEffect);
+            Destroy(crackEffect, 2f);
+        }
+
+        StartCoroutine(BlockAttacksAfterPulse());
+
+        yield return new WaitForSeconds(1f);
+
+        _isUsingSpecialAbility = false;
+        _currentState = BossState.Moving;
+    }
+
+    private IEnumerator AnimateHeadDown()
+    {
+        if (_headsTransform == null) yield break;
+
+        Quaternion startRotation = _headsTransform.localRotation;
+        Quaternion targetRotation = startRotation * Quaternion.Euler(_headDownRotationAngle, 0, 0);
+
+        float elapsed = 0f;
+        while (elapsed < _headAnimationDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / _headAnimationDuration;
+            _headsTransform.localRotation = Quaternion.Slerp(startRotation, targetRotation, t);
+            yield return null;
+        }
+
+        _headsTransform.localRotation = targetRotation;
+    }
+
+    private IEnumerator AnimateHeadUp()
+    {
+        if (_headsTransform == null) yield break;
+
+        Quaternion startRotation = _headsTransform.localRotation;
+        Quaternion targetRotation = Quaternion.identity;
+
+        float elapsed = 0f;
+        while (elapsed < _headAnimationDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / _headAnimationDuration;
+            _headsTransform.localRotation = Quaternion.Slerp(startRotation, targetRotation, t);
+            yield return null;
+        }
+
+        _headsTransform.localRotation = targetRotation;
+    }
+
+    private IEnumerator BlockAttacksAfterPulse()
+    {
+        _isPulseAttackBlocked = true;
+
+        // Bloquear Caos por 2s
+        _attack2Timer = Mathf.Max(_attack2Timer, 2f);
+
+        // Retrasar Latigazo por 0.8s
+        _attack1Timer = Mathf.Max(_attack1Timer, _postPulseAttackDelay);
+
+        yield return new WaitForSeconds(_postPulseAttackDelay);
+
+        _isPulseAttackBlocked = false;
+    }
+
+    private Vector3 GetGroundPosition()
+    {
+        RaycastHit hit;
+        Vector3 rayOrigin = transform.position;
+
+        // Intentar raycast hacia abajo para encontrar el suelo
+        if (Physics.Raycast(rayOrigin, Vector3.down, out hit, 20f, LayerMask.GetMask("Ground")))
+        {
+            return hit.point + Vector3.up * 0.01f; // Pequeño offset para evitar z-fighting
+        }
+
+        // Fallback: asumir Y = 0
+        return new Vector3(transform.position.x, 0.01f, transform.position.z);
+    }
+
+    private void ApplyPulseEffect()
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, 1000f);
+
+        foreach (var hitCollider in hitColliders)
+        {
+            if (hitCollider.CompareTag("Player"))
+            {
+                PlayerMovement playerMovement = hitCollider.GetComponent<PlayerMovement>();
+                PlayerHealth playerHealth = hitCollider.GetComponent<PlayerHealth>();
+                PlayerStatsManager statsManager = hitCollider.GetComponent<PlayerStatsManager>();
+
+                if (playerMovement != null)
+                {
+                    playerMovement.IsDashDisabled = true;
+                    
+                    StartCoroutine(DesactivePulseEffect(hitCollider));
+                }
+
+                if (playerHealth != null)
+                {
+                    playerHealth.TakeDamage(_pulseDamage);
+                }
+
+                if (statsManager != null)
+                {
+                    float currentSpeed = statsManager.GetStat(StatType.MoveSpeed);
+                    float slowAmount = currentSpeed * -_pulseSlowPercentage;
+                    float duration = 3.0f;
+
+                    string uniqueKey = $"SlowEffect_{Time.time}";
+
+                    statsManager.ApplyTimedModifier(uniqueKey, StatType.MoveSpeed, slowAmount, duration);
+                }
+
+                Debug.Log($"Player hit by Pulso Carnal! Slowed by {_pulseSlowPercentage * 100}% for {_pulseSlowDuration} seconds and took {_pulseDamage} damage.");
+            }
+        }
+    }
+
+    private IEnumerator DesactivePulseEffect(Collider hitCollider)
+    {
+        yield return new WaitForSeconds(_pulseSlowDuration);
+
+        PlayerMovement playerMovement = hitCollider.GetComponent<PlayerMovement>();
+
+        if (playerMovement != null)
+        {
+            playerMovement.IsDashDisabled = false;
+        }
+    }
+
+    public void ShakeCamera(float duration, float amplitude, float frequency)
+    {
+        if (_noise == null) return;
+        StartCoroutine(ShakeRoutine(duration, amplitude, frequency));
+    }
+
+    private IEnumerator ShakeRoutine(float duration, float amplitude, float frequency)
+    {
+        _noise.AmplitudeGain = amplitude;
+        _noise.FrequencyGain = frequency;
+
+        yield return new WaitForSeconds(duration);
+
+        _noise.AmplitudeGain = 0f;
+        _noise.FrequencyGain = 0f;
+    }
+    #endregion
+
+    private void OnDrawGizmos()
+    {
+        if (_showWhipRaycastGizmo)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawRay(_lastWhipRaycastOrigin, _lastWhipRaycastDirection * _whipRange);
+            Gizmos.DrawWireSphere(_lastWhipRaycastOrigin, 0.5f);
+        }
+        if (_showWhipImpactGizmo)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(_whipImpactPoint, 0.5f);
+        }
+        if (_showSmashOverlapGizmo)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(_lastSmashOverlapCenter, _lastSmashOverlapRadius);
+        }
+
+        Gizmos.color = Color.green;
+        Gizmos.DrawLine(transform.position, transform.position + transform.forward * 5f);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (Application.isPlaying)
+        {
+            Gizmos.color = Color.blue;
+            Gizmos.DrawWireSphere(transform.position, _smashDetectionRadius);
+        }
+    }
 }

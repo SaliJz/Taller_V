@@ -1,344 +1,286 @@
 using UnityEngine;
+using System.Collections;
 
 /// <summary>
-/// Clase que maneja el buffo de estadisticas al usar la habilidad del jugador,
-/// ahora también cambia el material del MeshRenderer a dorado mientras el buff está activo
-/// y lo restaura al desactivarse.
-/// Además: aplica/remueve modificadores nombrados en PlayerStatsManager para que la UI (TextMeshPro) se actualice.
+/// Gestiona una habilidad que potencia las estadísticas del jugador mientras está activa.
+/// La habilidad se activa y desactiva, pidiendo al PlayerStatsManager que aplique los modificadores.
 /// </summary>
 public class ShieldSkill : MonoBehaviour
 {
-    #region Variables
+    #region Settings
 
-    [Header("References")]
+    [Header("Configuration")]
+    [SerializeField] private KeyCode skillKey = KeyCode.Q;
     [SerializeField] private PlayerStatsManager statsManager;
 
-    [Header("Skill Settings")]
-    [SerializeField] private float skillDuration = 10f;
-
-    [HideInInspector] private PlayerMeleeAttack PMA;
-    [HideInInspector] private PlayerShieldController PSC;
-    [HideInInspector] private PlayerHealth PH;
-    [HideInInspector] private PlayerMovement PM;
-
-    [SerializeField] private bool SkillActive;
-
-    private float BaseAttackMelee;
-    private float BaseAttackShield;
-    private float BaseSpeed;
-    private float healthDrainAmount;
-    private float healthDrainTimer;
-    private float skillDurationTimer;
+    [Header("Buffs por Etapa de Vida")]
+    [SerializeField] private BuffSettings youngBuffs = new BuffSettings(1.2f, 1.1f, 1.2f, 2f);
+    [SerializeField] private BuffSettings adultBuffs = new BuffSettings(1.1f, 1.2f, 1.1f, 2f);
+    [SerializeField] private BuffSettings elderBuffs = new BuffSettings(1.1f, 1.12f, 1.1f, 1f);
 
     [Header("Visuals - material swap")]
-    [Tooltip("Si no se asigna, intentará obtener el MeshRenderer del GameObject o hijos.")]
-    [SerializeField] private MeshRenderer meshRenderer;
-    [Tooltip("Material dorado que se aplicará durante la habilidad.")]
+    [Tooltip("Si no se asigna, intentara obtener el MeshRenderer del GameObject o hijos.")]
+    [SerializeField] private MeshRenderer[] meshRenderers;
+    [Tooltip("Material dorado que se aplicara durante la habilidad.")]
     [SerializeField] private Material goldenMaterial;
-    // Guardamos los materiales originales para restaurarlos exactamente como estaban
-    private Material[] originalMaterials;
-
-    // Claves para los modificadores nombrados (usadas en PlayerStatsManager)
-    private const string KEY_ATK_MELEE = "ShieldSkill_ATK_M";
-    private const string KEY_ATK_SHIELD = "ShieldSkill_ATK_S";
-    private const string KEY_MOVE_SPEED = "ShieldSkill_MOVE";
-    private const string KEY_HEALTH_DRAIN = "ShieldSkill_HEALTH_DRAIN";
 
     #endregion
 
-    #region Logica
+    #region State
+
+    private bool isSkillActive;
+    private float healthDrainTimer;
+    private const string SHIELD_SKILL_MODIFIER_KEY = "ShieldSkillBuff";
+
+    private PlayerHealth playerHealth;
+    private Material[][] originalMaterials;
+    private PlayerHealth.LifeStage lastKnownLifeStage;
+
+    #endregion
+
+    #region Unity Lifecycle
+
+    private void Awake()
+    {
+        playerHealth = GetComponent<PlayerHealth>();
+        statsManager = GetComponent<PlayerStatsManager>();
+
+        if (statsManager == null)
+        {
+            Debug.LogError("PlayerStatsManager no está asignado en ShieldSkill. La habilidad no funcionará.", this);
+            enabled = false;
+            return;
+        }
+
+        if (meshRenderers == null || meshRenderers.Length == 0)
+        {
+            meshRenderers = GetComponentsInChildren<MeshRenderer>();
+            if (meshRenderers == null || meshRenderers.Length == 0)
+            {
+                Debug.LogWarning("No se encontraron MeshRenderers en ShieldSkill. La habilidad no tendrá efecto visual.", this);
+            }
+        }
+    }
 
     private void OnEnable()
     {
-        PlayerStatsManager.OnStatChanged += HandleStatChanged;
+        PlayerHealth.OnLifeStageChanged += HandleLifeStageChanged;
     }
 
     private void OnDisable()
     {
-        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
-        // Restaurar material si por alguna razón quedan cambiados al deshabilitar el componente
+        PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
+
         RestoreOriginalMaterial();
 
-        // Asegurarnos de remover cualquier modificador que pudiera quedar
-        if (statsManager != null)
+        if (isSkillActive)
         {
-            statsManager.RemoveNamedModifier(KEY_ATK_MELEE);
-            statsManager.RemoveNamedModifier(KEY_ATK_SHIELD);
-            statsManager.RemoveNamedModifier(KEY_MOVE_SPEED);
-            statsManager.RemoveNamedModifier(KEY_HEALTH_DRAIN);
+            DeactivateSkill();
         }
     }
 
-    void Start()
+    private void OnDestroy()
     {
-        PMA = GetComponent<PlayerMeleeAttack>();
-        PSC = GetComponent<PlayerShieldController>();
-        PH = GetComponent<PlayerHealth>();
-        PM = GetComponent<PlayerMovement>();
+        PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
 
-        SkillActive = false;
+        RestoreOriginalMaterial();
 
-        if (statsManager != null)
+        if (isSkillActive)
         {
-            healthDrainAmount = statsManager.GetStat(StatType.HealthDrainAmount);
-        }
-        else
-        {
-            healthDrainAmount = 0f;
-            Debug.LogError("PlayerStatsManager no asignado en ShieldSkill.");
-        }
-
-        skillDurationTimer = 0f;
-
-        // Guardar valores base
-        if (PMA != null) BaseAttackMelee = PMA.AttackDamage;
-        if (PSC != null) BaseAttackShield = PSC.ShieldDamage;
-        if (PM != null) BaseSpeed = PM.MoveSpeed;
-
-        // Si no se asignó el MeshRenderer en el inspector, intentamos buscarlo en el GameObject o hijos
-        if (meshRenderer == null)
-        {
-            meshRenderer = GetComponent<MeshRenderer>();
-            if (meshRenderer == null)
-            {
-                meshRenderer = GetComponentInChildren<MeshRenderer>();
-            }
-        }
-
-        if (meshRenderer == null)
-        {
-            Debug.LogWarning("MeshRenderer no encontrado en ShieldSkill. No se hará swap de materiales.");
-        }
-
-        if (goldenMaterial == null)
-        {
-            Debug.LogWarning("goldenMaterial no asignado en ShieldSkill. No se hará swap de materiales.");
+            DeactivateSkill();
         }
     }
 
     /// <summary>
-    /// Maneja los cambios de stats.
+    /// Maneja el cambio de etapa de vida mientras la habilidad está activa.
     /// </summary>
-    /// <param name="statType">Tipo de estadística que ha cambiado.</param>
-    /// <param name="newValue">Nuevo valor de la estadística.</param>
-    private void HandleStatChanged(StatType statType, float newValue)
+    private void HandleLifeStageChanged(PlayerHealth.LifeStage newStage)
     {
-        if (statType == StatType.HealthDrainAmount)
+        if (!isSkillActive)
         {
-            healthDrainAmount = newValue;
+            lastKnownLifeStage = newStage;
+            return;
+        }
+
+        Debug.Log($"[ShieldSkill] Cambio de etapa detectado durante habilidad: {lastKnownLifeStage} -> {newStage}");
+
+        lastKnownLifeStage = newStage;
+
+        StartCoroutine(ReapplySkillModifiersNextFrame());
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(skillKey))
+        {
+            ToggleSkill();
+        }
+
+        if (isSkillActive)
+        {
+            UpdateActiveSkill();
         }
     }
 
-    void Update()
+    #endregion
+
+    #region Core Logic
+
+    private void ToggleSkill()
     {
-        // Toggle con Q: si está activo, lo desactiva; si no, lo activa.
-        if (Input.GetKeyDown(KeyCode.Q))
-        {
-            if (SkillActive)
-            {
-                DeactivateSkill();
-            }
-            else
-            {
-                ActivateSkill();
-            }
-        }
-
-        if (SkillActive)
-        {
-            if (PH != null && healthDrainAmount > 0)
-            {
-                healthDrainTimer += Time.deltaTime;
-
-                if (healthDrainTimer >= 1f)
-                {
-                    PH.TakeDamage(healthDrainAmount);
-                    healthDrainTimer = 0f;
-                    Debug.Log($"[DRENADO] Vida reducida en {healthDrainAmount}. SkillActive: {SkillActive}");
-                }
-            }
-
-            skillDurationTimer += Time.deltaTime;
-
-            if (skillDurationTimer >= skillDuration)
-            {
-                DeactivateSkill();
-            }
-        }
-        else
-        {
-            healthDrainTimer = 0f;
-            skillDurationTimer = 0f;
-        }
+        if (isSkillActive) DeactivateSkill();
+        else ActivateSkill();
     }
 
-    /// <summary>
-    /// Activa la habilidad aplicando los buffs correspondientes.
-    /// Ahora además aplica modificadores nombrados en PlayerStatsManager para actualizar la UI.
-    /// </summary>
     private void ActivateSkill()
     {
-        // Si ya está activo, no hacer nada (seguridad)
-        if (SkillActive) return;
-
-        SkillActive = true;
-        skillDurationTimer = 0f;
+        isSkillActive = true;
         healthDrainTimer = 0f;
+        lastKnownLifeStage = playerHealth.CurrentLifeStage;
 
-        Debug.Log($"[ACTIVAR] SkillActive cambiado a: {SkillActive}");
+        BuffSettings currentBuffs = GetCurrentBuffs();
 
-        float moveBuff = 1f;
-        float attackBuff = 1f;
+        RemoveHealthDrainModifier();
 
-        float healthDrainMultiplier = 1f;
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "Move", StatType.MoveSpeed, currentBuffs.MoveMultiplier - 1.0f, true);
 
-        if (PH == null)
-        {
-            Debug.LogWarning("PlayerHealth no encontrado en ShieldSkill. Se asumirá estado Adult por defecto.");
-        }
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeDmg", StatType.MeleeAttackDamage, currentBuffs.AttackDamageMultiplier - 1.0f, true);
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldDmg", StatType.ShieldAttackDamage, currentBuffs.AttackDamageMultiplier - 1.0f, true);
 
-        switch (PH != null ? PH.CurrentLifeStage : PlayerHealth.LifeStage.Adult)
-        {
-            case PlayerHealth.LifeStage.Young:
-                moveBuff = 1.2f;
-                attackBuff = 1.1f;
-                healthDrainMultiplier = 1f;
-                Debug.Log("Joven: buff 20% velocidad, 10% fuerza");
-                break;
-            case PlayerHealth.LifeStage.Adult:
-                moveBuff = 1.1f;
-                attackBuff = 1.2f;
-                healthDrainMultiplier = 1f;
-                Debug.Log("Adulto: buff 20% fuerza, 10% velocidad");
-                break;
-            case PlayerHealth.LifeStage.Elder:
-                moveBuff = 1.15f;
-                attackBuff = 1.15f;
-                healthDrainMultiplier = 1f;
-                Debug.Log("Viejo: buff 15% fuerza y velocidad");
-                break;
-        }
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeSpeed", StatType.MeleeAttackSpeed, currentBuffs.AttackSpeedMultiplier - 1.0f, true);
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldSpeed", StatType.ShieldSpeed, currentBuffs.AttackSpeedMultiplier - 1.0f, true);
 
-        // --- Aplicar cambios a componentes para la jugabilidad ---
-        if (PMA != null) PMA.AttackDamage = Mathf.RoundToInt(BaseAttackMelee * attackBuff);
-        if (PSC != null) PSC.ShieldDamage = Mathf.RoundToInt(BaseAttackShield * attackBuff);
-        if (PM != null) PM.MoveSpeed = Mathf.RoundToInt(BaseSpeed * moveBuff);
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "HealthDrain", StatType.HealthDrainAmount, currentBuffs.HealthDrainAmount);
 
-        // --- Sincronizar con PlayerStatsManager (para UI) mediante modificadores nombrados ---
-        if (statsManager != null)
-        {
-            // Melee Attack Damage
-            float currentMelee = statsManager.GetStat(StatType.MeleeAttackDamage);
-            float newMelee = Mathf.RoundToInt(BaseAttackMelee * attackBuff);
-            float deltaMelee = newMelee - currentMelee;
-            statsManager.ApplyNamedModifier(KEY_ATK_MELEE, StatType.MeleeAttackDamage, deltaMelee);
-
-            // Shield Attack Damage
-            float currentShieldAtk = statsManager.GetStat(StatType.ShieldAttackDamage);
-            float newShieldAtk = Mathf.RoundToInt(BaseAttackShield * attackBuff);
-            float deltaShield = newShieldAtk - currentShieldAtk;
-            statsManager.ApplyNamedModifier(KEY_ATK_SHIELD, StatType.ShieldAttackDamage, deltaShield);
-
-            // Move Speed
-            float currentMove = statsManager.GetStat(StatType.MoveSpeed);
-            float newMove = Mathf.RoundToInt(BaseSpeed * moveBuff);
-            float deltaMove = newMove - currentMove;
-            statsManager.ApplyNamedModifier(KEY_MOVE_SPEED, StatType.MoveSpeed, deltaMove);
-
-            // Health Drain (si aplica multiplicador)
-            float currentDrain = statsManager.GetStat(StatType.HealthDrainAmount);
-            float newDrain = currentDrain * healthDrainMultiplier;
-            float deltaDrain = newDrain - currentDrain;
-            statsManager.ApplyNamedModifier(KEY_HEALTH_DRAIN, StatType.HealthDrainAmount, deltaDrain);
-
-            // Actualizar la copia local también (por si el PlayerStatsManager cambió valores)
-            healthDrainAmount = statsManager.GetStat(StatType.HealthDrainAmount);
-        }
-        else
-        {
-            // Si no hay statsManager, aplicamos solo la copia local
-            healthDrainAmount *= healthDrainMultiplier;
-        }
-
-        // Cambiar material a dorado (si se dispone)
         ApplyGoldenMaterial();
 
-        Debug.Log($"[ShieldSkill ACTIVADO] " +
-                  $"ATK M: {(PMA != null ? PMA.AttackDamage.ToString() : "N/A")} (Base: {BaseAttackMelee}) | " +
-                  $"ATK S: {(PSC != null ? PSC.ShieldDamage.ToString() : "N/A")} (Base: {BaseAttackShield}) | " +
-                  $"VEL: {(PM != null ? PM.MoveSpeed.ToString() : "N/A")} (Base: {BaseSpeed}) | " +
-                  $"DRENADO: {healthDrainAmount}/s | " +
-                  $"Duración: {skillDuration}s | SkillActive: {SkillActive}");
+        Debug.Log($"[HABILIDAD ACTIVADA] Etapa: {lastKnownLifeStage} " +
+                  $"- Buffs: Velocidad de movimiento x{currentBuffs.MoveMultiplier}, " +
+                  $"Daño de ataques x{currentBuffs.AttackDamageMultiplier}, " +
+                  $"Velolicad de ataques x{currentBuffs.AttackSpeedMultiplier} " +
+                  $"- Debuff: Cantidad de vida drenada +{currentBuffs.HealthDrainAmount}");
     }
 
-    /// <summary>
-    /// Desactiva la habilidad y restaura las estadísticas base.
-    /// Ahora además remueve los modificadores nombrados en PlayerStatsManager para actualizar la UI.
-    /// </summary>
     private void DeactivateSkill()
     {
-        // Si ya está desactivado, no hacer nada (seguridad)
-        if (!SkillActive) return;
+        isSkillActive = false;
 
-        SkillActive = false;
-        skillDurationTimer = 0f;
-        healthDrainTimer = 0f;
+        float beforeMoveValue = statsManager.GetStat(StatType.MoveSpeed);
 
-        if (PMA != null) PMA.AttackDamage = Mathf.RoundToInt(BaseAttackMelee);
-        if (PSC != null) PSC.ShieldDamage = Mathf.RoundToInt(BaseAttackShield);
-        if (PM != null) PM.MoveSpeed = Mathf.RoundToInt(BaseSpeed);
+        float beforeMeleeDmgValue = statsManager.GetStat(StatType.MeleeAttackDamage);
+        float beforeShieldDmgValue = statsManager.GetStat(StatType.ShieldAttackDamage);
 
-        if (statsManager != null)
-        {
-            // Remover modificadores nombrados para restaurar los valores en PlayerStatsManager (y disparar OnStatChanged)
-            statsManager.RemoveNamedModifier(KEY_ATK_MELEE);
-            statsManager.RemoveNamedModifier(KEY_ATK_SHIELD);
-            statsManager.RemoveNamedModifier(KEY_MOVE_SPEED);
-            statsManager.RemoveNamedModifier(KEY_HEALTH_DRAIN);
+        float beforeMeleeSpeedValue = statsManager.GetStat(StatType.MeleeAttackSpeed);
+        float beforeShieldSpeedValue = statsManager.GetStat(StatType.ShieldSpeed);
 
-            // Actualizar copia local del drenado según el stat manager
-            healthDrainAmount = statsManager.GetStat(StatType.HealthDrainAmount);
-        }
-        else
-        {
-            healthDrainAmount = 0f;
-        }
+        statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "Move");
 
-        // Restaurar material original
+        statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeDmg");
+        statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldDmg");
+
+        statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeSpeed");
+        statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldSpeed");
+
+        RemoveHealthDrainModifier();
+
         RestoreOriginalMaterial();
 
-        Debug.Log($"[ShieldSkill DESACTIVADO] " +
-                  $"ATK M: {(PMA != null ? PMA.AttackDamage.ToString() : "N/A")} | " +
-                  $"ATK S: {(PSC != null ? PSC.ShieldDamage.ToString() : "N/A")} | " +
-                  $"VEL: {(PM != null ? PM.MoveSpeed.ToString() : "N/A")} | " +
-                  $"DRENADO: {healthDrainAmount} | SkillActive: {SkillActive}");
+        float afterMoveValue = statsManager.GetStat(StatType.MoveSpeed);
+
+        float afterMeleeDmgValue = statsManager.GetStat(StatType.MeleeAttackDamage);
+        float afterShieldDmgValue = statsManager.GetStat(StatType.ShieldAttackDamage);
+
+        float afterMeleeSpeedValue = statsManager.GetStat(StatType.MeleeAttackSpeed);
+        float afterShieldSpeedValue = statsManager.GetStat(StatType.ShieldSpeed);
+
+        Debug.Log("[HABILIDAD DESACTIVADA] Modificadores removidos. " +
+                  $"Velocidad de movimiento: {beforeMoveValue} -> {afterMoveValue}, " +
+                  $"Daño de ataque melee: {beforeMeleeDmgValue} -> {afterMeleeDmgValue}, " +
+                  $"Daño de ataque con escudo: {beforeShieldDmgValue} -> {afterShieldDmgValue}, " +
+                  $"Velocidad de ataque melee: {beforeMeleeSpeedValue} -> {afterMeleeSpeedValue}, " +
+                  $"Velocidad de ataque con escudo: {beforeShieldSpeedValue} -> {afterShieldSpeedValue}");
+    }
+
+    private IEnumerator ReapplySkillModifiersNextFrame()
+    {
+        yield return null;
+
+        BuffSettings currentBuffs = GetCurrentBuffs();
+
+        RemoveHealthDrainModifier();
+
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "Move", StatType.MoveSpeed, currentBuffs.MoveMultiplier - 1.0f, true);
+
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeDmg", StatType.MeleeAttackDamage, currentBuffs.AttackDamageMultiplier - 1.0f, true);
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldDmg", StatType.ShieldAttackDamage, currentBuffs.AttackDamageMultiplier - 1.0f, true);
+
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeSpeed", StatType.MeleeAttackSpeed, currentBuffs.AttackSpeedMultiplier - 1.0f, true);
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldSpeed", StatType.ShieldSpeed, currentBuffs.AttackSpeedMultiplier - 1.0f, true);
+
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "HealthDrain", StatType.HealthDrainAmount, currentBuffs.HealthDrainAmount);
+
+        Debug.Log($"[ShieldSkill] Modificadores reaplicados para etapa {lastKnownLifeStage}");
+    }
+
+    private void UpdateActiveSkill()
+    {
+        float currentHealthDrain = statsManager.GetStat(StatType.HealthDrainAmount);
+
+        if (currentHealthDrain > 0)
+        {
+            healthDrainTimer += Time.deltaTime;
+            if (healthDrainTimer >= 1f)
+            {
+                playerHealth.TakeDamage(currentHealthDrain, true);
+                healthDrainTimer %= 1f; 
+            }
+        }
     }
 
     /// <summary>
-    /// Aplica el material dorado a todos los sub-materiales del MeshRenderer.
+    /// Remueve el modificador de HealthDrainAmount.
+    /// </summary>
+    private void RemoveHealthDrainModifier()
+    {
+        float beforeValue = statsManager.GetStat(StatType.HealthDrainAmount);
+        statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "HealthDrain");
+        float afterValue = statsManager.GetStat(StatType.HealthDrainAmount);
+
+        Debug.Log($"[ShieldSkill] HealthDrainAmount removido: {beforeValue} -> {afterValue}");
+    }
+
+    /// <summary>
+    /// Aplica el material dorado a todos los sub-materiales de cada MeshRenderer.
     /// Guarda los materiales originales si todavía no se guardaron.
     /// </summary>
     private void ApplyGoldenMaterial()
     {
-        if (meshRenderer == null || goldenMaterial == null) return;
+        if (meshRenderers == null || meshRenderers.Length == 0 || goldenMaterial == null) return;
 
-        // Si no hemos guardado los originales, guardarlos ahora
         if (originalMaterials == null || originalMaterials.Length == 0)
         {
-            // Clonar el array para evitar referencias compartidas
-            var mats = meshRenderer.materials;
-            originalMaterials = new Material[mats.Length];
-            for (int i = 0; i < mats.Length; i++) originalMaterials[i] = mats[i];
+            originalMaterials = new Material[meshRenderers.Length][];
+            for (int i = 0; i < meshRenderers.Length; i++)
+            {
+                var mats = meshRenderers[i].materials;
+                originalMaterials[i] = new Material[mats.Length];
+                for (int j = 0; j < mats.Length; j++)
+                {
+                    originalMaterials[i][j] = mats[j];
+                }
+            }
         }
 
-        // Crear array con el material dorado repetido la misma cantidad de sub-materiales
-        Material[] goldMats = new Material[originalMaterials.Length];
-        for (int i = 0; i < goldMats.Length; i++)
+        for (int i = 0; i < meshRenderers.Length; i++)
         {
-            goldMats[i] = goldenMaterial;
+            var mats = meshRenderers[i].materials;
+            Material[] goldMats = new Material[mats.Length];
+            for (int j = 0; j < goldMats.Length; j++)
+            {
+                goldMats[j] = goldenMaterial;
+            }
+            meshRenderers[i].materials = goldMats;
         }
-
-        meshRenderer.materials = goldMats;
     }
 
     /// <summary>
@@ -346,372 +288,49 @@ public class ShieldSkill : MonoBehaviour
     /// </summary>
     private void RestoreOriginalMaterial()
     {
-        if (meshRenderer == null) return;
-        if (originalMaterials == null || originalMaterials.Length == 0) return;
+        if (meshRenderers == null || originalMaterials == null || originalMaterials.Length == 0) return;
 
-        meshRenderer.materials = originalMaterials;
+        for (int i = 0; i < meshRenderers.Length; i++)
+        {
+            if (originalMaterials[i] != null)
+            {
+                meshRenderers[i].materials = originalMaterials[i];
+            }
+        }
         originalMaterials = null;
     }
 
     #endregion
+
+    #region Helpers
+
+    private BuffSettings GetCurrentBuffs()
+    {
+        switch (playerHealth.CurrentLifeStage)
+        {
+            case PlayerHealth.LifeStage.Young: return youngBuffs;
+            case PlayerHealth.LifeStage.Adult: return adultBuffs;
+            case PlayerHealth.LifeStage.Elder: return elderBuffs;
+            default: return new BuffSettings(1f, 1f, 1f, 1f);
+        }
+    }
+
+    [System.Serializable]
+    public struct BuffSettings
+    {
+        [Range(1f, 3f)] public float MoveMultiplier;
+        [Range(1f, 3f)] public float AttackDamageMultiplier;
+        [Range(1f, 3f)] public float AttackSpeedMultiplier;
+        [Range(1f, 3f)] public float HealthDrainAmount;
+
+        public BuffSettings(float moveMultiplier, float attackDamageMultiplier, float attackSpeedMultiplier, float healthDrainAmount)
+        {
+            MoveMultiplier = moveMultiplier;
+            AttackDamageMultiplier = attackDamageMultiplier;
+            AttackSpeedMultiplier = attackSpeedMultiplier;
+            HealthDrainAmount = healthDrainAmount;
+        }
+    }
+
+    #endregion
 }
-
-
-//using UnityEngine;
-
-///// <summary>
-///// Clase que maneja el buffo de estadisticas al usar la habilidad del jugador,
-///// ahora también cambia el material del MeshRenderer a dorado mientras el buff está activo
-///// y lo restaura al desactivarse.
-///// Además: aplica/remueve modificadores nombrados en PlayerStatsManager para que la UI (TextMeshPro) se actualice.
-///// </summary>
-//public class ShieldSkill : MonoBehaviour
-//{
-//    #region Variables
-
-//    [Header("References")]
-//    [SerializeField] private PlayerStatsManager statsManager;
-
-//    [Header("Skill Settings")]
-//    [SerializeField] private float skillDuration = 10f;
-
-//    [HideInInspector] private PlayerMeleeAttack PMA;
-//    [HideInInspector] private PlayerShieldController PSC;
-//    [HideInInspector] private PlayerHealth PH;
-//    [HideInInspector] private PlayerMovement PM;
-
-//    [SerializeField] private bool SkillActive;
-
-//    private float BaseAttackMelee;
-//    private float BaseAttackShield;
-//    private float BaseSpeed;
-//    private float healthDrainAmount;
-//    private float healthDrainTimer;
-//    private float skillDurationTimer;
-
-//    [Header("Visuals - material swap")]
-//    [Tooltip("Si no se asigna, intentará obtener el MeshRenderer del GameObject o hijos.")]
-//    [SerializeField] private MeshRenderer meshRenderer;
-//    [Tooltip("Material dorado que se aplicará durante la habilidad.")]
-//    [SerializeField] private Material goldenMaterial;
-//    // Guardamos los materiales originales para restaurarlos exactamente como estaban
-//    private Material[] originalMaterials;
-
-//    // Claves para los modificadores nombrados (usadas en PlayerStatsManager)
-//    private const string KEY_ATK_MELEE = "ShieldSkill_ATK_M";
-//    private const string KEY_ATK_SHIELD = "ShieldSkill_ATK_S";
-//    private const string KEY_MOVE_SPEED = "ShieldSkill_MOVE";
-//    private const string KEY_HEALTH_DRAIN = "ShieldSkill_HEALTH_DRAIN";
-
-//    #endregion
-
-//    #region Logica
-
-//    private void OnEnable()
-//    {
-//        PlayerStatsManager.OnStatChanged += HandleStatChanged;
-//    }
-
-//    private void OnDisable()
-//    {
-//        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
-//        // Restaurar material si por alguna razón quedan cambiados al deshabilitar el componente
-//        RestoreOriginalMaterial();
-
-//        // Asegurarnos de remover cualquier modificador que pudiera quedar
-//        if (statsManager != null)
-//        {
-//            statsManager.RemoveNamedModifier(KEY_ATK_MELEE);
-//            statsManager.RemoveNamedModifier(KEY_ATK_SHIELD);
-//            statsManager.RemoveNamedModifier(KEY_MOVE_SPEED);
-//            statsManager.RemoveNamedModifier(KEY_HEALTH_DRAIN);
-//        }
-//    }
-
-//    void Start()
-//    {
-//        PMA = GetComponent<PlayerMeleeAttack>();
-//        PSC = GetComponent<PlayerShieldController>();
-//        PH = GetComponent<PlayerHealth>();
-//        PM = GetComponent<PlayerMovement>();
-
-//        SkillActive = false;
-
-//        if (statsManager != null)
-//        {
-//            healthDrainAmount = statsManager.GetStat(StatType.HealthDrainAmount);
-//        }
-//        else
-//        {
-//            healthDrainAmount = 0f;
-//            Debug.LogError("PlayerStatsManager no asignado en ShieldSkill.");
-//        }
-
-//        skillDurationTimer = 0f;
-
-//        // Guardar valores base
-//        if (PMA != null) BaseAttackMelee = PMA.AttackDamage;
-//        if (PSC != null) BaseAttackShield = PSC.ShieldDamage;
-//        if (PM != null) BaseSpeed = PM.MoveSpeed;
-
-//        // Si no se asignó el MeshRenderer en el inspector, intentamos buscarlo en el GameObject o hijos
-//        if (meshRenderer == null)
-//        {
-//            meshRenderer = GetComponent<MeshRenderer>();
-//            if (meshRenderer == null)
-//            {
-//                meshRenderer = GetComponentInChildren<MeshRenderer>();
-//            }
-//        }
-
-//        if (meshRenderer == null)
-//        {
-//            Debug.LogWarning("MeshRenderer no encontrado en ShieldSkill. No se hará swap de materiales.");
-//        }
-
-//        if (goldenMaterial == null)
-//        {
-//            Debug.LogWarning("goldenMaterial no asignado en ShieldSkill. No se hará swap de materiales.");
-//        }
-//    }
-
-//    /// <summary>
-//    /// Maneja los cambios de stats.
-//    /// </summary>
-//    /// <param name="statType">Tipo de estadística que ha cambiado.</param>
-//    /// <param name="newValue">Nuevo valor de la estadística.</param>
-//    private void HandleStatChanged(StatType statType, float newValue)
-//    {
-//        if (statType == StatType.HealthDrainAmount)
-//        {
-//            healthDrainAmount = newValue;
-//        }
-//    }
-
-//    void Update()
-//    {
-//        // Toggle con Q: si está activo, lo desactiva; si no, lo activa.
-//        if (Input.GetKeyDown(KeyCode.Q))
-//        {
-//            if (SkillActive)
-//            {
-//                DeactivateSkill();
-//            }
-//            else
-//            {
-//                ActivateSkill();
-//            }
-//        }
-
-//        if (SkillActive)
-//        {
-//            if (PH != null && healthDrainAmount > 0)
-//            {
-//                healthDrainTimer += Time.deltaTime;
-
-//                if (healthDrainTimer >= 1f)
-//                {
-//                    PH.TakeDamage(healthDrainAmount);
-//                    healthDrainTimer = 0f;
-//                    Debug.Log($"[DRENADO] Vida reducida en {healthDrainAmount}. SkillActive: {SkillActive}");
-//                }
-//            }
-
-//            skillDurationTimer += Time.deltaTime;
-
-//            if (skillDurationTimer >= skillDuration)
-//            {
-//                DeactivateSkill();
-//            }
-//        }
-//        else
-//        {
-//            healthDrainTimer = 0f;
-//            skillDurationTimer = 0f;
-//        }
-//    }
-
-//    /// <summary>
-//    /// Activa la habilidad aplicando los buffs correspondientes.
-//    /// Ahora además aplica modificadores nombrados en PlayerStatsManager para actualizar la UI.
-//    /// </summary>
-//    private void ActivateSkill()
-//    {
-//        // Si ya está activo, no hacer nada (seguridad)
-//        if (SkillActive) return;
-
-//        SkillActive = true;
-//        skillDurationTimer = 0f;
-//        healthDrainTimer = 0f;
-
-//        Debug.Log($"[ACTIVAR] SkillActive cambiado a: {SkillActive}");
-
-//        float moveBuff = 1f;
-//        float attackBuff = 1f;
-
-//        float healthDrainMultiplier = 1f;
-
-//        if (PH == null)
-//        {
-//            Debug.LogWarning("PlayerHealth no encontrado en ShieldSkill. Se asumirá estado Adult por defecto.");
-//        }
-
-//        switch (PH != null ? PH.CurrentLifeStage : PlayerHealth.LifeStage.Adult)
-//        {
-//            case PlayerHealth.LifeStage.Young:
-//                moveBuff = 1.2f;
-//                attackBuff = 1.1f;
-//                healthDrainMultiplier = 1f;
-//                Debug.Log("Joven: buff 20% velocidad, 10% fuerza");
-//                break;
-//            case PlayerHealth.LifeStage.Adult:
-//                moveBuff = 1.1f;
-//                attackBuff = 1.2f;
-//                healthDrainMultiplier = 1f;
-//                Debug.Log("Adulto: buff 20% fuerza, 10% velocidad");
-//                break;
-//            case PlayerHealth.LifeStage.Elder:
-//                moveBuff = 1.15f;
-//                attackBuff = 1.15f;
-//                healthDrainMultiplier = 1f;
-//                Debug.Log("Viejo: buff 15% fuerza y velocidad");
-//                break;
-//        }
-
-//        // --- Aplicar cambios a componentes para la jugabilidad ---
-//        if (PMA != null) PMA.AttackDamage = Mathf.RoundToInt(BaseAttackMelee * attackBuff);
-//        if (PSC != null) PSC.ShieldDamage = Mathf.RoundToInt(BaseAttackShield * attackBuff);
-//        if (PM != null) PM.MoveSpeed = Mathf.RoundToInt(BaseSpeed * moveBuff);
-
-//        // --- Sincronizar con PlayerStatsManager (para UI) mediante modificadores nombrados ---
-//        if (statsManager != null)
-//        {
-//            // Melee Attack Damage
-//            float currentMelee = statsManager.GetStat(StatType.MeleeAttackDamage);
-//            float newMelee = Mathf.RoundToInt(BaseAttackMelee * attackBuff);
-//            float deltaMelee = newMelee - currentMelee;
-//            statsManager.ApplyNamedModifier(KEY_ATK_MELEE, StatType.MeleeAttackDamage, deltaMelee);
-
-//            // Shield Attack Damage
-//            float currentShieldAtk = statsManager.GetStat(StatType.ShieldAttackDamage);
-//            float newShieldAtk = Mathf.RoundToInt(BaseAttackShield * attackBuff);
-//            float deltaShield = newShieldAtk - currentShieldAtk;
-//            statsManager.ApplyNamedModifier(KEY_ATK_SHIELD, StatType.ShieldAttackDamage, deltaShield);
-
-//            // Move Speed
-//            float currentMove = statsManager.GetStat(StatType.MoveSpeed);
-//            float newMove = Mathf.RoundToInt(BaseSpeed * moveBuff);
-//            float deltaMove = newMove - currentMove;
-//            statsManager.ApplyNamedModifier(KEY_MOVE_SPEED, StatType.MoveSpeed, deltaMove);
-
-//            // Health Drain (si aplica multiplicador)
-//            float currentDrain = statsManager.GetStat(StatType.HealthDrainAmount);
-//            float newDrain = currentDrain * healthDrainMultiplier;
-//            float deltaDrain = newDrain - currentDrain;
-//            statsManager.ApplyNamedModifier(KEY_HEALTH_DRAIN, StatType.HealthDrainAmount, deltaDrain);
-
-//            // Actualizar la copia local también (por si el PlayerStatsManager cambió valores)
-//            healthDrainAmount = statsManager.GetStat(StatType.HealthDrainAmount);
-//        }
-//        else
-//        {
-//            // Si no hay statsManager, aplicamos solo la copia local
-//            healthDrainAmount *= healthDrainMultiplier;
-//        }
-
-//        // Cambiar material a dorado (si se dispone)
-//        ApplyGoldenMaterial();
-
-//        Debug.Log($"[ShieldSkill ACTIVADO] " +
-//                  $"ATK M: {(PMA != null ? PMA.AttackDamage.ToString() : "N/A")} (Base: {BaseAttackMelee}) | " +
-//                  $"ATK S: {(PSC != null ? PSC.ShieldDamage.ToString() : "N/A")} (Base: {BaseAttackShield}) | " +
-//                  $"VEL: {(PM != null ? PM.MoveSpeed.ToString() : "N/A")} (Base: {BaseSpeed}) | " +
-//                  $"DRENADO: {healthDrainAmount}/s | " +
-//                  $"Duración: {skillDuration}s | SkillActive: {SkillActive}");
-//    }
-
-//    /// <summary>
-//    /// Desactiva la habilidad y restaura las estadísticas base.
-//    /// Ahora además remueve los modificadores nombrados en PlayerStatsManager para actualizar la UI.
-//    /// </summary>
-//    private void DeactivateSkill()
-//    {
-//        // Si ya está desactivado, no hacer nada (seguridad)
-//        if (!SkillActive) return;
-
-//        SkillActive = false;
-//        skillDurationTimer = 0f;
-//        healthDrainTimer = 0f;
-
-//        if (PMA != null) PMA.AttackDamage = Mathf.RoundToInt(BaseAttackMelee);
-//        if (PSC != null) PSC.ShieldDamage = Mathf.RoundToInt(BaseAttackShield);
-//        if (PM != null) PM.MoveSpeed = Mathf.RoundToInt(BaseSpeed);
-
-//        if (statsManager != null)
-//        {
-//            // Remover modificadores nombrados para restaurar los valores en PlayerStatsManager (y disparar OnStatChanged)
-//            statsManager.RemoveNamedModifier(KEY_ATK_MELEE);
-//            statsManager.RemoveNamedModifier(KEY_ATK_SHIELD);
-//            statsManager.RemoveNamedModifier(KEY_MOVE_SPEED);
-//            statsManager.RemoveNamedModifier(KEY_HEALTH_DRAIN);
-
-//            // Actualizar copia local del drenado según el stat manager
-//            healthDrainAmount = statsManager.GetStat(StatType.HealthDrainAmount);
-//        }
-//        else
-//        {
-//            healthDrainAmount = 0f;
-//        }
-
-//        // Restaurar material original
-//        RestoreOriginalMaterial();
-
-//        Debug.Log($"[ShieldSkill DESACTIVADO] " +
-//                  $"ATK M: {(PMA != null ? PMA.AttackDamage.ToString() : "N/A")} | " +
-//                  $"ATK S: {(PSC != null ? PSC.ShieldDamage.ToString() : "N/A")} | " +
-//                  $"VEL: {(PM != null ? PM.MoveSpeed.ToString() : "N/A")} | " +
-//                  $"DRENADO: {healthDrainAmount} | SkillActive: {SkillActive}");
-//    }
-
-//    /// <summary>
-//    /// Aplica el material dorado a todos los sub-materiales del MeshRenderer.
-//    /// Guarda los materiales originales si todavía no se guardaron.
-//    /// </summary>
-//    private void ApplyGoldenMaterial()
-//    {
-//        if (meshRenderer == null || goldenMaterial == null) return;
-
-//        // Si no hemos guardado los originales, guardarlos ahora
-//        if (originalMaterials == null || originalMaterials.Length == 0)
-//        {
-//            // Clonar el array para evitar referencias compartidas
-//            var mats = meshRenderer.materials;
-//            originalMaterials = new Material[mats.Length];
-//            for (int i = 0; i < mats.Length; i++) originalMaterials[i] = mats[i];
-//        }
-
-//        // Crear array con el material dorado repetido la misma cantidad de sub-materiales
-//        Material[] goldMats = new Material[originalMaterials.Length];
-//        for (int i = 0; i < goldMats.Length; i++)
-//        {
-//            goldMats[i] = goldenMaterial;
-//        }
-
-//        meshRenderer.materials = goldMats;
-//    }
-
-//    /// <summary>
-//    /// Restaura los materiales originales si existen.
-//    /// </summary>
-//    private void RestoreOriginalMaterial()
-//    {
-//        if (meshRenderer == null) return;
-//        if (originalMaterials == null || originalMaterials.Length == 0) return;
-
-//        meshRenderer.materials = originalMaterials;
-//        originalMaterials = null;
-//    }
-
-//    #endregion
-//}
-
