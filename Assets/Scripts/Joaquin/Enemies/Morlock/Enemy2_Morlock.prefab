@@ -749,6 +749,7 @@ GameObject:
   - component: {fileID: 5906869264233938674}
   - component: {fileID: 5007824442848748127}
   - component: {fileID: 5743507524378697475}
+  - component: {fileID: 2184337052624607616}
   m_Layer: 7
   m_Name: Enemy2_HUD
   m_TagString: Untagged
@@ -840,6 +841,19 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &2184337052624607616
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3521872913044358628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64b34b6e31a20964fa0802483d47f26d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MainCamera: {fileID: 0}
 --- !u!1 &3656137811634560369
 GameObject:
   m_ObjectHideFlags: 0
@@ -2288,7 +2302,6 @@ MonoBehaviour:
   maxDistanceForDamageStart: 20
   attackRange: 50
   patrolWaypoints: []
-  loopWaypoints: 1
   patrolRadius: 8
   patrolIdleTime: 1.2
   p1_teleportCooldown: 2.5
@@ -2337,7 +2350,8 @@ MonoBehaviour:
   - {fileID: 6064679713689361994}
   - {fileID: 4632777121511405127}
   - {fileID: 3280764147264144518}
-  blinkTargetRenderer: {fileID: 3280764147264144518}
+  blinkTargetRenderer:
+  - {fileID: 0}
   blinkFlashMaterial: {fileID: 2100000, guid: d1f9e2c5e82298b4b8f024596ca37e41, type: 2}
   blinkInterval: 0.06
   blinkCount: 6

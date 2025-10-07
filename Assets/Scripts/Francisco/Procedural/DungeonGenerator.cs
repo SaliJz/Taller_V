@@ -832,7 +832,7 @@ public class DungeonGenerator : MonoBehaviour
                 }
                 else
                 {
-                    newRoom.UnlockExitDoors(exitPoint);
+                    newRoom.UnlockExitDoors(exitPoint);  
                 }
 
                 for (int i = 1; i < newRoom.connectionPoints.Length; i++)
@@ -854,8 +854,8 @@ public class DungeonGenerator : MonoBehaviour
 
     public void OnCombatEnded(Room combatRoom, ConnectionPoint entrancePoint)
     {
+        combatRoom.EventsOnFinsih();
         combatRoom.UnlockExitDoors(entrancePoint);
-
         OnRoomCompleted?.Invoke();
     }
 

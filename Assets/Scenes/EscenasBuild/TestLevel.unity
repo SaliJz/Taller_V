@@ -4407,6 +4407,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 6679960082821164706, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7736777102245202428, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: imageForVerification
       value: 
@@ -6280,10 +6284,11 @@ MonoBehaviour:
   - roomType: 1
     probability: 60
     roomPrefabs:
-    - {fileID: -2013639086596557405, guid: 32c3281490c7c8e4cb1cfcdb785276d9, type: 3}
+    - {fileID: 2588792259577954230, guid: 1deae2f052b999a489b4282bbc55c88f, type: 3}
+    - {fileID: 6979571409241399476, guid: cbe87892ebb11514b9a0874bc9890b65, type: 3}
+    - {fileID: 6402625034275730424, guid: 3840615f41742b94f89d93ab8936732f, type: 3}
+    - {fileID: 4324317031823392196, guid: c77c7f951b8daa84a942808b0cc4a9af, type: 3}
     - {fileID: -2013639086596557405, guid: a11945a626c4cd64b87486776f3df920, type: 3}
-    - {fileID: -2013639086596557405, guid: d9b6104add60d02428cdc6d458df95c9, type: 3}
-    - {fileID: -2013639086596557405, guid: 2dee2a55c0d4c424ab1a448e6e65bcf5, type: 3}
     - {fileID: -2013639086596557405, guid: 891c4fd8269a3c14c86ad43775c63539, type: 3}
     - {fileID: -2013639086596557405, guid: 246beb3ff92028d418b083a17e9ef225, type: 3}
     roomDataList: []
@@ -6355,12 +6360,22 @@ MonoBehaviour:
         - {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
         enemyCount: 3
       timeBetweenWaves: 5
+  - roomType: 4
+    minRoomNumber: 5
+    maxRoomNumber: 5
+    isMandatory: 1
+    isProbableMandatory: 0
+    generateOnce: 0
+    probability: 0
+    combatContent:
+      waves: []
+      timeBetweenWaves: 5
   enemyPrefabs:
   - {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
   - {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
   spawnEffectPrefab: {fileID: 3331059551027662099, guid: 9d5ba65ab5339c74b901aaa2ae57bc30, type: 3}
-  minRooms: 4
-  maxRooms: 4
+  minRooms: 6
+  maxRooms: 6
   maxRoomAttempts: 10
   repetitionPenalty: 0.5
   weightDecay: 0.7
@@ -7127,7 +7142,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 5, y: 5, z: 5}
-  m_ConstrainProportionsScale: 1
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

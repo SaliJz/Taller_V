@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 public class Room : MonoBehaviour
 {
@@ -13,6 +14,8 @@ public class Room : MonoBehaviour
     [Header("Room Components")]
     public GameObject[] connectionDoors;
     public BoxCollider[] spawnAreas;
+
+    public UnityEvent onFinsih;
 
     private EnemyManager enemyManager;
 
@@ -49,5 +52,9 @@ public class Room : MonoBehaviour
                 }
             }
         }
+    }
+    public void EventsOnFinsih()
+    {
+        onFinsih?.Invoke();
     }
 }
