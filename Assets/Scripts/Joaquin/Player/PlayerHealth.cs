@@ -5,7 +5,8 @@ using UnityEngine.SceneManagement;
 using TMPro;
 
 /// <summary>
-/// Clase que maneja la salud del jugador, incluyendo daño, curación y etapas de vida.
+/// Clase que maneja la salud del jugador, incluyendo dano, curacion y etapas de vida.
+/// Archivo adaptado para soportar: veneno por tiempo y ralentizacion aplicada por areas (acido).
 /// </summary>
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
@@ -21,17 +22,17 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private PlayerStatsManager statsManager;
     [SerializeField] private SpriteRenderer playerSpriteRenderer;
 
-    [Header("Configuración de Vida")]
-    [Tooltip("Vida máxima por defecto si no se encuentra PlayerStatsManager.")]
+    [Header("Configuracion de Vida")]
+    [Tooltip("Vida maxima por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackMaxHealth = 100;
     private float currentHealth;
     [SerializeField] private float damageInvulnerabilityTime = 0.5f;
 
-    [Header("Configuración de Muerte")]
+    [Header("Configuracion de Muerte")]
     [SerializeField] private string sceneToLoadOnDeath = "Tuto";
     [SerializeField] private Color deathFadeColor = Color.red;
 
-    [Header("Configuración de Modelo por Etapa")]
+    [Header("Configuracion de Modelo por Etapa")]
     [Tooltip("El objeto hijo que contiene el modelo visual del jugador.")]
     [SerializeField] private Transform playerModelTransform;
     [SerializeField] private Vector3 scaleYoung = new Vector3(0.75f, 0.75f, 0.75f);
@@ -89,7 +90,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         statsManager = GetComponent<PlayerStatsManager>();
         // FindAnyObjectByType puede devolver null; lo guardamos y comprobamos antes de usar.
         inventoryManager = FindAnyObjectByType<InventoryManager>();
-        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerHealth. Usando vida máxima de fallback.", 2);
+        if (statsManager == null) ReportDebug("StatsManager no esta asignado en PlayerHealth. Usando vida maxima de fallback.", 2);
 
         playerMovement = GetComponent<PlayerMovement>();
         playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
@@ -209,8 +210,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     /// <summary>
     /// Maneja los cambios de stats.
     /// </summary>
-    /// <param name="statType">Tipo de estadística que ha cambiado.</param>
-    /// <param name="newValue">Nuevo valor de la estadística.</param>
+    /// <param name="statType">Tipo de estadistica que ha cambiado.</param>
+    /// <param name="newValue">Nuevo valor de la estadistica.</param>
     private void HandleStatChanged(StatType statType, float newValue)
     {
         if (statType == StatType.MaxHealth)
@@ -238,16 +239,16 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     }
 
     /// <summary>
-    /// Función que aplica daño al jugador.
+    /// Funcion que aplica dano al jugador.
     /// </summary>
-    /// <param name="damageAmount"> Cantidad de daño a aplicar. </param>
+    /// <param name="damageAmount"> Cantidad de dano a aplicar. </param>
     public void TakeDamage(float damageAmount, bool isCostDamage = false)
     {
         if (isDying) return;
 
         if (!isCostDamage && (isDamageInvulnerable || IsInvulnerable))
         {
-            ReportDebug("El jugador es invulnerable y no recibe daño.", 1);
+            ReportDebug("El jugador es invulnerable y no recibe dano.", 1);
             return;
         }
 
@@ -256,7 +257,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             if (isShieldBlockReady)
             {
                 isShieldBlockReady = false;
-                ReportDebug("El escudo ha bloqueado el daño entrante.", 1);
+                ReportDebug("El escudo ha bloqueado el dano entrante.", 1);
 
                 StartCoroutine(ShieldBlockCooldownRoutine());
                 return;
@@ -282,13 +283,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         UpdateLifeStage();
 
-        if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageAmount} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);
+        if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageAmount} de dano. Vida actual: {currentHealth}/{maxHealth}", 1);
     }
 
     private IEnumerator DamageInvulnerabilityRoutine()
     {
         isDamageInvulnerable = true;
-        ReportDebug($"El jugador es invulnerable por daño continuo durante {damageInvulnerabilityTime} segundos.", 1);
+        ReportDebug($"El jugador es invulnerable por dano continuo durante {damageInvulnerabilityTime} segundos.", 1);
 
         float blinkInterval = 0.1f;
         float timer = 0f;
@@ -299,7 +300,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             yield return new WaitForSeconds(damageInvulnerabilityTime);
             isDamageInvulnerable = false;
             damageInvulnerabilityCoroutine = null;
-            ReportDebug("La invulnerabilidad por daño ha terminado (no hay SpriteRenderer).", 1);
+            ReportDebug("La invulnerabilidad por dano ha terminado (no hay SpriteRenderer).", 1);
             yield break;
         }
 
@@ -316,12 +317,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         isDamageInvulnerable = false;
         damageInvulnerabilityCoroutine = null;
-        ReportDebug("La invulnerabilidad por daño ha terminado.", 1);
+        ReportDebug("La invulnerabilidad por dano ha terminado.", 1);
 
         playerSpriteRenderer.color = Color.white;
     }
 
-    // Función que maneja el cooldown del bloqueo del escudo.
+    // Funcion que maneja el cooldown del bloqueo del escudo.
     private IEnumerator ShieldBlockCooldownRoutine()
     {
         ReportDebug($"El escudo bloqueara de nuevo en {shieldBlockCooldown} segundos.", 1);
@@ -332,9 +333,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     }
 
     /// <summary>
-    /// Función que cura al jugador.
+    /// Funcion que cura al jugador.
     /// </summary>
-    /// <param name="healAmount"> Cantidad de daño a curar </param>
+    /// <param name="healAmount"> Cantidad de dano a curar </param>
     public void Heal(float healAmount)
     {
         float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
@@ -352,9 +353,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     }
 
     /// <summary>
-    /// Función que actualiza la etapa de vida del jugador y notifica si ha cambiado.
+    /// Funcion que actualiza la etapa de vida del jugador y notifica si ha cambiado.
     /// </summary>
-    /// <param name="forceNotify"> Si es true, fuerza la notificación del cambio de etapa incluso si no ha cambiado. </param>
+    /// <param name="forceNotify"> Si es true, fuerza la notificacion del cambio de etapa incluso si no ha cambiado. </param>
     private void UpdateLifeStage(bool forceNotify = false)
     {
         LifeStage oldStage = CurrentLifeStage;
@@ -371,7 +372,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             OnLifeStageChanged?.Invoke(CurrentLifeStage);
             UpdateModelForLifeStage(CurrentLifeStage);
 
-            // Actualizar TextMeshPro si está asignado
+            // Actualizar TextMeshPro si esta asignado
             if (lifeStageText != null)
             {
                 // Mostrar solo el nombre de la etapa (sin texto adicional)
@@ -381,7 +382,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     }
 
     /// <summary>
-    /// Ajusta la escala y la posición vertical del modelo del jugador según su etapa de vida.
+    /// Ajusta la escala y la posicion vertical del modelo del jugador segun su etapa de vida.
     /// </summary>
     /// <param name="newStage">La nueva etapa de vida a representar.</param>
     private void UpdateModelForLifeStage(LifeStage newStage)
@@ -413,10 +414,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         playerModelTransform.localScale = targetScale;
         playerModelTransform.localPosition = new Vector3(0, targetYOffset, 0);
-        ReportDebug($"Modelo actualizado para la etapa {newStage}. Escala: {targetScale}, Posición Y: {targetYOffset}", 1);
+        ReportDebug($"Modelo actualizado para la etapa {newStage}. Escala: {targetScale}, Posicion Y: {targetYOffset}", 1);
     }
 
-    // Traduce el enum de LifeStage a una cadena en español para mostrar en TMP.
+    // Traduce el enum de LifeStage a una cadena en espanol para mostrar en TMP.
     private string GetLifeStageString(LifeStage stage)
     {
         switch (stage)
@@ -432,7 +433,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
     }
 
-    // Función que maneja la muerte del jugador.
+    // Funcion que maneja la muerte del jugador.
     private void Die()
     {
         if (isDying) return;
@@ -444,7 +445,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (playerMeleeAttack != null) playerMeleeAttack.enabled = false;
         if (playerShieldController != null) playerShieldController.enabled = false;
 
-        Collider2D playerCollider = GetComponent<Collider2D>();
+        Collider playerCollider = GetComponent<Collider>();
         if (playerCollider != null) playerCollider.enabled = false;
 
         // Capturamos referencias locales para evitar NullReference dentro del callback diferido
@@ -541,7 +542,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     #region Debuffs
 
     /// <summary>
-    /// Función que aplica el efecto de veneno al jugador cuando es golpeado por un proyectil de Morlock.
+    /// Funcion que aplica el efecto de veneno al jugador cuando es golpeado por un proyectil de Morlock.
     /// </summary>
     public void ApplyMorlockPoisonHit()
     {
@@ -558,7 +559,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         {
             float poisonDamage = poisonInitialDamage + (morlockHitCounter - poisonHitThreshold);
             TakeDamage(poisonDamage);
-            // Aquí podrías iniciar un efecto de veneno que dañe con el tiempo
+            // Aqui podrias iniciar un efecto de veneno que dañe con el tiempo
         }
 
         poisonResetCoroutine = StartCoroutine(ResetPoisonCounter());
@@ -573,9 +574,92 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     #endregion
 
+    // ------------------ METODOS AGREGADOS PARA ACIDO / VENENO / RALENTIZACION ------------------
+
+    private Coroutine rutinaVenenoCoroutine;
+    private Coroutine rutinaRalentizacionCoroutine;
+
+    /// <summary>
+    /// Aplica un veneno que causa dano por segundo durante 'duracion' segundos.
+    /// Internamente llama a TakeDamage() para aplicar cada tick.
+    /// </summary>
+    /// <param name="duracion">Tiempo total del veneno en segundos.</param>
+    /// <param name="danoPorSegundo">Dano por segundo aplicado por el veneno.</param>
+    /// <param name="intervaloTick">Intervalo entre ticks (por defecto 1s).</param>
+    public void AplicarVeneno(float duracion, float danoPorSegundo, float intervaloTick = 1f)
+    {
+        // si ya hay una rutina de veneno, reiniciamos con la nueva duracion
+        if (rutinaVenenoCoroutine != null) StopCoroutine(rutinaVenenoCoroutine);
+        rutinaVenenoCoroutine = StartCoroutine(RutinaVeneno(duracion, danoPorSegundo, intervaloTick));
+    }
+
+    private IEnumerator RutinaVeneno(float duracion, float danoPorSegundo, float intervaloTick)
+    {
+        float tiempo = 0f;
+        while (tiempo < duracion)
+        {
+            if (isDying) yield break;
+            float danoTick = danoPorSegundo * intervaloTick;
+            // marcado como cost damage false para que respete invulnerabilidades/escudos
+            TakeDamage(danoTick);
+            yield return new WaitForSeconds(intervaloTick);
+            tiempo += intervaloTick;
+        }
+        rutinaVenenoCoroutine = null;
+    }
+
+    /// <summary>
+    /// Propone una ralentizacion logica. Esto no cambia automaticamente la velocidad
+    /// del movimiento; expone propiedades que PlayerMovement puede leer para aplicar la reduccion.
+    /// </summary>
+    public bool EstaRalentizado { get; private set; } = false;
+    public float MultiplicadorVelocidadPorRalentizacion { get; private set; } = 1f;
+
+    /// <summary>
+    /// Aplica una ralentizacion (porcentaje entre 0 y 1: 0.5 = 50% de velocidad) durante 'duracion' segundos.
+    /// Deja propiedades publicas que PlayerMovement puede consultar al mover.
+    /// </summary>
+    /// <param name="porcentajeRalentizacion">Fraccion de velocidad que queda (0..1).</param>
+    /// <param name="duracion">Duracion en segundos.</param>
+    public void AplicarRalentizacion(float porcentajeRalentizacion, float duracion)
+    {
+        if (porcentajeRalentizacion < 0.01f) porcentajeRalentizacion = 0.01f;
+        if (rutinaRalentizacionCoroutine != null) StopCoroutine(rutinaRalentizacionCoroutine);
+        MultiplicadorVelocidadPorRalentizacion = Mathf.Clamp01(porcentajeRalentizacion);
+        rutinaRalentizacionCoroutine = StartCoroutine(RutinaRalentizacion(duracion));
+    }
+
+    private IEnumerator RutinaRalentizacion(float duracion)
+    {
+        EstaRalentizado = true;
+        float tiempo = 0f;
+        while (tiempo < duracion)
+        {
+            if (isDying) break;
+            tiempo += Time.deltaTime;
+            yield return null;
+        }
+        EstaRalentizado = false;
+        MultiplicadorVelocidadPorRalentizacion = 1f;
+        rutinaRalentizacionCoroutine = null;
+    }
+
+    /// <summary>
+    /// Remueve la ralentizacion inmediatamente (util por AreaAcido al salir).
+    /// </summary>
+    public void RemoverRalentizacion()
+    {
+        if (rutinaRalentizacionCoroutine != null) StopCoroutine(rutinaRalentizacionCoroutine);
+        EstaRalentizado = false;
+        MultiplicadorVelocidadPorRalentizacion = 1f;
+        rutinaRalentizacionCoroutine = null;
+    }
+
+    // -------------------------------------------------------------------------------------------
+
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     /// <summary> 
-    /// Función de depuración para reportar mensajes en la consola de Unity. 
+    /// Funcion de depuracion para reportar mensajes en la consola de Unity. 
     /// </summary> 
     /// <param name="message">Mensaje a reportar.</param>
     /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
@@ -598,6 +682,3 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
     }
 }
-
-
-
