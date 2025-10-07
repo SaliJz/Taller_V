@@ -10,6 +10,7 @@ public class ShopManager : MonoBehaviour
     public List<ShopItem> allRelics;
     public List<ShopItem> allGagans;
     public List<ShopItem> safeRelics;
+    public List<Pact> allPacts = new List<Pact>();
 
     [Header("Shop Prefabs")]
     public List<GameObject> shopItemPrefabs;
@@ -389,7 +390,7 @@ public class ShopManager : MonoBehaviour
 
             costBar.color = affordableColor;
         }
-        else 
+        else
         {
             costBarRect.localScale = new Vector3(costRatio, costBarRect.localScale.y, costBarRect.localScale.z);
 
@@ -456,7 +457,7 @@ public class ShopManager : MonoBehaviour
             playerStatsManager.ApplyModifier(drawback.type, drawback.amount, isTemporary: false, isPercentage: drawback.isPercentage);
         }
 
-        playerHealth.TakeDamage(Mathf.RoundToInt(finalCost), true); 
+        playerHealth.TakeDamage(Mathf.RoundToInt(finalCost), true);
         Debug.Log($"Compra exitosa de {item.itemName}. Se ha restado {finalCost:F2} de vida (Costo base: {item.cost}).");
 
         if (item.benefits.Exists(b => b.type == StatType.ShieldBlockUpgrade))

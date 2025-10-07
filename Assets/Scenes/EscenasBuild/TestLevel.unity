@@ -1462,6 +1462,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c904b55d20077964a9deb317354981b1, type: 2}
   - {fileID: 11400000, guid: c8b435636ace3584599f56788ac7b7ce, type: 2}
   safeRelics: []
+  allPacts:
+  - {fileID: 11400000, guid: e9008f33002e1d946a13bc132a961ee4, type: 2}
   shopItemPrefabs:
   - {fileID: 2790493699222432776, guid: 3f233f07f502ad8429d387518ae486b8, type: 3}
   - {fileID: 2790493699222432776, guid: fb73de1475fe6fc47bf7300276c49958, type: 3}
@@ -5079,20 +5081,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   statsManager: {fileID: 1202095474}
-  skillKey: 113
-  youngBuffs:
-    MoveMultiplier: 1.2
-    AttackDmgMultiplier: 1.1
-    AttackSpeedMultiplier: 1.2
-  adultBuffs:
-    MoveMultiplier: 1.1
-    AttackDmgMultiplier: 1.2
-    AttackSpeedMultiplier: 1.1
-  elderBuffs:
-    MoveMultiplier: 1.1
-    AttackDmgMultiplier: 1.12
-    AttackSpeedMultiplier: 1.1
+  skillDuration: 10
   SkillActive: 0
+  meshRenderer: {fileID: 0}
+  goldenMaterial: {fileID: 0}
 --- !u!1 &1203091228
 GameObject:
   m_ObjectHideFlags: 0
