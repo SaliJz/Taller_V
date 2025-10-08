@@ -850,6 +850,8 @@ MonoBehaviour:
   statsManager: {fileID: 7736777102245202428}
   shieldPrefab: {fileID: 97364978854938720, guid: 63062dad4adee9e48bc2714414765908, type: 3}
   shieldSpawnPoint: {fileID: 5494151711966022061}
+  playerMeleeAttack: {fileID: 0}
+  playerMovement: {fileID: 0}
   shieldDamage: 10
   shieldSpeed: 25
   shieldMaxDistance: 30
@@ -897,10 +899,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd34c6eda4cb864458f5e257ab13f973, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  skillKey: 113
   statsManager: {fileID: 7736777102245202428}
-  skillDuration: 10
-  SkillActive: 0
-  meshRenderer: {fileID: 5481761503523786478}
+  youngBuffs:
+    MoveMultiplier: 1.2
+    AttackDamageMultiplier: 1.1
+    AttackSpeedMultiplier: 1.2
+    HealthDrainAmount: 2
+  adultBuffs:
+    MoveMultiplier: 1.1
+    AttackDamageMultiplier: 1.2
+    AttackSpeedMultiplier: 1.1
+    HealthDrainAmount: 2
+  elderBuffs:
+    MoveMultiplier: 1.1
+    AttackDamageMultiplier: 1.12
+    AttackSpeedMultiplier: 1.1
+    HealthDrainAmount: 1
+  meshRenderers: []
   goldenMaterial: {fileID: 2100000, guid: 90ed0b7a08c96ab49945eaf8e5280862, type: 2}
 --- !u!114 &7736777102245202428
 MonoBehaviour:
@@ -920,7 +936,7 @@ MonoBehaviour:
   statsPanel: {fileID: 7097059385777304942}
   showBaseValues: 0
   decimals: 2
-  showDebugOnGUI: 0
+  showDebugOnGUI: 1
   guiCustomPosition: {x: 10, y: 10}
   guiWidth: 440
   guiHeight: 670
@@ -1335,13 +1351,13 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8582395779807881146}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1556058793286858742}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 25}

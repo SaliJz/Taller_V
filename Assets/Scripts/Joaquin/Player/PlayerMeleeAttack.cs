@@ -41,11 +41,15 @@ public class PlayerMeleeAttack : MonoBehaviour
     private float damageMultiplier = 1f;
     private float speedMultiplier = 1f;
 
+    private bool isAttacking = false;
+
     public int AttackDamage
     {
         get { return attackDamage; }
         set { attackDamage = value; }
     }
+
+    public bool IsAttacking => isAttacking;
 
     private PlayerHealth playerHealth;
     private PlayerMovement playerMovement;
@@ -72,6 +76,11 @@ public class PlayerMeleeAttack : MonoBehaviour
     }
 
     private void OnDisable()
+    {
+        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
+    }
+
+    private void OnDestroy()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
     }
@@ -137,17 +146,24 @@ public class PlayerMeleeAttack : MonoBehaviour
     {
         if (attackCooldown > 0f) attackCooldown -= Time.deltaTime;
 
-        if (Input.GetMouseButtonDown(0) && attackCooldown <= 0f)
+        if (Input.GetMouseButtonDown(0) && attackCooldown <= 0f && !isAttacking)
         {
             if (playerShieldController != null)
             {
-                if (playerShieldController.HasShield) StartCoroutine(AttackSequence());
-                else ReportDebug("No tiene el escudo", 1);
+                if (!playerShieldController.HasShield)
+                {
+                    ReportDebug("No se puede atacar: el escudo no está disponible.", 1);
+                    return;
+                }
+
+                if (playerShieldController.IsThrowingShield)
+                {
+                    ReportDebug("No se puede atacar: el escudo está siendo lanzado.", 1);
+                    return;
+                }
             }
-            else
-            {
-                StartCoroutine(AttackSequence());
-            }
+
+            StartCoroutine(AttackSequence());
         }
     }
 
@@ -161,6 +177,8 @@ public class PlayerMeleeAttack : MonoBehaviour
     /// </summary>
     private IEnumerator AttackSequence()
     {
+        isAttacking = true;
+
         // 1) Dirección objetivo
         Vector3 mouseWorldDir;
         if (!TryGetMouseWorldDirection(out mouseWorldDir))
@@ -215,6 +233,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         // 6) Desbloquear rotación
         if (playerMovement != null) playerMovement.UnlockFacing();
+
+        isAttacking = false;
     }
 
     // Rota instantaneamente al mouse proyectado en el plano horizontal (y = transform.position.y), con snap a 8 direcciones.
@@ -262,7 +282,6 @@ public class PlayerMeleeAttack : MonoBehaviour
         return false;
     }
 
-    // --- Rest of hit detection / knockback code (sin cambios lógicos) ---
     public void PerformHitDetection()
     {
         if (useBoxCollider)
