@@ -148,8 +148,17 @@ public abstract class FichaBase : MonoBehaviour
         }
     }
 
+    // NUEVA RUTINA DE ATAQUE (reserva la ruta completa, prioridad por ETA, libera pasos al avanzar)
     protected IEnumerator RutinaAtaque(Vector2Int destino)
     {
+        // Special-case: si esta instancia es una torre, delegar a su rutina directa
+        var torre = this as FichaTorre;
+        if (torre != null)
+        {
+            yield return StartCoroutine(torre.RutinaAtaqueDirecta(destino));
+            yield break;
+        }
+
         estaMoviendo = true;
 
         yield return new WaitForSeconds(tiempoEsperaInicial);
@@ -161,107 +170,97 @@ public abstract class FichaBase : MonoBehaviour
             yield break;
         }
 
+        // Estimación de tiempo hasta llegar (incluye tiempoAntesMover)
+        float eta = tiempoAntesMover + (ruta.Count / Mathf.Max(1f, tilesPorSegundo));
+
+        // Intentar reservar la ruta completa con prioridad por ETA
+        bool reserved = tablero.RequestRouteReservation(ruta, gameObject, eta);
+
+        // si no pudo reservar ruta completa, intentar reservar el primer paso disponible (fallback)
+        if (!reserved)
+        {
+            bool gotFallback = false;
+            foreach (var paso in ruta)
+            {
+                var c = tablero.GetCasilla(paso);
+                if (c == null) continue;
+                if (c.tieneOcupante && c.ocupanteGO != gameObject) continue;
+                if (c.reservadoPor != null && c.reservadoPor != gameObject) continue;
+
+                // intentar reservar solo este paso como ruta corta
+                var single = new List<Vector2Int>() { paso };
+                float etaSingle = tiempoAntesMover + (1f / Mathf.Max(1f, tilesPorSegundo));
+                if (tablero.RequestRouteReservation(single, gameObject, etaSingle))
+                {
+                    ruta = single;
+                    eta = etaSingle;
+                    reserved = true;
+                    gotFallback = true;
+                    break;
+                }
+            }
+
+            if (!gotFallback && !reserved)
+            {
+                // no pudo reservar nada => abortar (no se queda bloqueada)
+                estaMoviendo = false;
+                yield break;
+            }
+        }
+
+        // Si llegamos acá, tenemos la reserva de 'ruta'
+        // marcar las casillas (trail) — importante para feedback visual
         foreach (var c in ruta)
         {
             var cas = tablero.GetCasilla(c);
             if (cas != null) cas.AgregarMarca(marcadorTrailPrefab, tiempoAntesMover + (ruta.Count / tilesPorSegundo) + 0.2f);
         }
 
+        // esperar tiempo antes de mover (delay de intención)
         yield return new WaitForSeconds(tiempoAntesMover);
 
-        bool completed = false;
-        int recomputeAttempts = 0;
-        while (!completed && recomputeAttempts < 6)
+        // Antes de mover, notificar que comenzamos (impide que nos preempten)
+        tablero.NotifyRouteStarted(gameObject);
+
+        bool aborted = false;
+        foreach (var paso in ruta)
         {
-            ruta = CalcularRutaHasta(destino);
-            if (ruta == null || ruta.Count == 0) break;
-
-            bool aborted = false;
-            foreach (var paso in ruta)
+            if (jugadorTransform == null)
             {
-                if (jugadorTransform == null)
-                {
-                    var pj = GameObject.FindGameObjectWithTag(tagJugador);
-                    if (pj != null) jugadorTransform = pj.transform;
-                }
-                if (jugadorTransform == null) { aborted = true; break; }
-
-                Casilla llegada = tablero.GetCasilla(paso);
-                if (llegada == null) { aborted = true; break; }
-
-                if (llegada.tieneOcupante && llegada.ocupanteGO != null && llegada.ocupanteGO.CompareTag(tagJugador))
-                {
-                    // atacar si jugador ya esta ahi
-                    AttackPlayer(transform.position);
-                    aborted = true;
-                    break;
-                }
-
-                int stepTries = 0;
-                bool reserved = false;
-                while (stepTries < 8 && !reserved)
-                {
-                    stepTries++;
-                    if (llegada.TryReserve(gameObject)) reserved = true;
-                    else yield return new WaitForSeconds(0.05f);
-                }
-
-                if (!reserved)
-                {
-                    Vector2Int dir = new Vector2Int(Mathf.Clamp(paso.x - coordActual.x, -1, 1), Mathf.Clamp(paso.y - coordActual.y, -1, 1));
-                    bool movedToAlt = false;
-                    Vector2Int[] alternativos = new Vector2Int[]
-                    {
-                        coordActual + new Vector2Int(dir.x, 0),
-                        coordActual + new Vector2Int(0, dir.y)
-                    };
-                    foreach (var alt in alternativos)
-                    {
-                        if (!tablero.ExisteCasilla(alt)) continue;
-                        var cAlt = tablero.GetCasilla(alt);
-                        if (cAlt == null) continue;
-                        if (!cAlt.tieneOcupante && (cAlt.reservadoPor == null || cAlt.reservadoPor == gameObject))
-                        {
-                            if (cAlt.TryReserve(gameObject))
-                            {
-                                yield return StartCoroutine(MoverPaso(alt));
-                                movedToAlt = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (movedToAlt) continue;
-
-                    aborted = true;
-                    break;
-                }
-
-                yield return StartCoroutine(MoverPaso(paso));
-
-                llegada.ReleaseReservation(gameObject);
+                var pj = GameObject.FindGameObjectWithTag(tagJugador);
+                if (pj != null) jugadorTransform = pj.transform;
             }
+            if (jugadorTransform == null) { aborted = true; break; }
 
-            if (!aborted)
+            Casilla llegada = tablero.GetCasilla(paso);
+            if (llegada == null) { aborted = true; break; }
+
+            // Si jugador ya está ahí, atacar y terminar
+            if (llegada.tieneOcupante && llegada.ocupanteGO != null && llegada.ocupanteGO.CompareTag(tagJugador))
             {
-                completed = true;
+                AttackPlayer(transform.position);
+                aborted = true;
                 break;
             }
 
-            recomputeAttempts++;
-            yield return new WaitForSeconds(0.05f);
-        }
+            // Mover paso (no intentamos reservar aquí porque la ruta ya fue reservada)
+            yield return StartCoroutine(MoverPaso(paso));
 
-        if (!completed && jugadorTransform != null)
-        {
-            Vector2Int coordJugador = WorldPosACoord(jugadorTransform.position);
-            if (coordJugador == destino)
+            // Liberar la reserva de la casilla que acabamos de ocupar, permitiendo que otros la usen
+            tablero.ReleaseRutaReservationForCoord(paso, gameObject);
+
+            // Si colision/ataque provocó fin, revisar
+            if (llegada.tieneOcupante && llegada.ocupanteGO != null && llegada.ocupanteGO.CompareTag(tagJugador))
             {
-                if (EsAdyacente(coordActual, coordJugador))
-                {
-                    AttackPlayer(transform.position);
-                }
+                AttackPlayer(transform.position);
+                aborted = true;
+                break;
             }
         }
+
+        // Limpieza: liberar cualquier reserva residual y notificar finalización
+        tablero.ReleaseRutaReservation(ruta, gameObject);
+        tablero.NotifyRouteFinished(gameObject);
 
         estaMoviendo = false;
     }

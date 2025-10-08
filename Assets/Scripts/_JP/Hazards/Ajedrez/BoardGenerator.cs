@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -28,29 +29,25 @@ public class BoardGenerator : MonoBehaviour
     // Diccionario interno para búsquedas rápidas por coordenada
     private Dictionary<Vector2Int, Casilla> casillas = new Dictionary<Vector2Int, Casilla>();
 
+    // Reserva con info (owner + eta)
+    private class ReservationInfo { public GameObject owner; public float eta; }
+    private Dictionary<Vector2Int, ReservationInfo> routeReservations = new Dictionary<Vector2Int, ReservationInfo>();
+
+    // Si un owner ya empezó a moverse por su ruta, lo marcamos aquí (no puede ser preemptado)
+    private HashSet<GameObject> startedOwners = new HashSet<GameObject>();
+
     // tiempo de reintento en caso las casillas se creen justo después de Start
     public int reintentosRecolectar = 30; // frames
     public float delayEntreReintentos = 0.05f;
 
     void Start()
     {
-        // Asegurar tablero listo para que FichaBase/otros lo usen.
         EnsureReady();
-
-        // Si después de EnsureReady no hay casillas, iniciar reintentos en runtime
-        if (casillas.Count == 0)
-        {
-            StartCoroutine(RetryCollectRoutine());
-        }
+        if (casillas.Count == 0) StartCoroutine(RetryCollectRoutine());
     }
 
     public int CasillasCount => casillas != null ? casillas.Count : 0;
 
-    /// <summary>
-    /// Asegura que el Board esté listo: si ya hay casillas no hace nada.
-    /// Si generarAutomatico==true intentará generar el tablero; si no, recolectará casillas en escena.
-    /// Método público porque otros scripts (p.ej. FichaBase) lo llaman.
-    /// </summary>
     public void EnsureReady()
     {
         if (CasillasCount > 0) return;
@@ -68,19 +65,12 @@ public class BoardGenerator : MonoBehaviour
         }
         else
         {
-            // Si el usuario ya rellenó casillasList en el inspector, la usamos.
-            if (casillasList != null && casillasList.Count > 0)
-            {
-                SyncDictFromList();
-            }
-            else
-            {
-                RecolectarCasillasExistentes();
-            }
+            if (casillasList != null && casillasList.Count > 0) SyncDictFromList();
+            else RecolectarCasillasExistentes();
         }
     }
 
-    // --- Generacion automatica (como antes) ---
+    #region generación / recolección (sin cambios funcionales relevantes)
     public void GenerarTableroAutomatico()
     {
         if (padreCasillas != null)
@@ -111,11 +101,8 @@ public class BoardGenerator : MonoBehaviour
         }
     }
 
-    // --- Recoleccion de casillas ya existentes en escena (incluye inactivos de la escena) ---
     public void RecolectarCasillasExistentes()
     {
-        // Si el usuario ya puso manualmente casillas en el Inspector, las respetamos.
-        // Solo si la lista está vacía es cuando buscamos automáticamente en la escena.
         if (casillasList != null && casillasList.Count > 0)
         {
             SyncDictFromList();
@@ -126,24 +113,15 @@ public class BoardGenerator : MonoBehaviour
         casillasList.Clear();
 
         Casilla[] encontradas;
-
-        if (padreCasillas != null)
-        {
-            // incluir inactivos bajo el padre
-            encontradas = padreCasillas.GetComponentsInChildren<Casilla>(true);
-        }
+        if (padreCasillas != null) encontradas = padreCasillas.GetComponentsInChildren<Casilla>(true);
         else
         {
-            // Recolectar todas las Casilla en la escena, incluyendo GameObjects inactivos,
-            // pero evitando assets/prefabs que estén en project (no pertenecen a una escena válida).
             var todas = Resources.FindObjectsOfTypeAll<Casilla>();
             List<Casilla> lista = new List<Casilla>();
             foreach (var c in todas)
             {
                 if (c == null) continue;
-                var go = c.gameObject;
-                // asegurarnos que pertenece a una escena válida (evita prefabs/assets)
-                if (!go.scene.IsValid()) continue;
+                if (!c.gameObject.scene.IsValid()) continue;
                 lista.Add(c);
             }
             encontradas = lista.ToArray();
@@ -152,22 +130,15 @@ public class BoardGenerator : MonoBehaviour
         foreach (var c in encontradas)
         {
             if (c == null) continue;
-
-            // Si no tiene coord asignada, generar una a partir de la posición
             if (c.coord == new Vector2Int(int.MinValue, int.MinValue))
             {
                 Vector2Int auto = AutoAsignarCoordPorPosicion(c.transform.position);
-                // si hay conflicto, desplazar en +X hasta encontrar libre
-                while (casillas.ContainsKey(auto))
-                {
-                    auto.x += 1;
-                }
+                while (casillas.ContainsKey(auto)) auto.x += 1;
                 c.Inicializar(auto, c.transform.position, tamCasilla, this);
                 Debug.Log($"BoardGenerator: Casilla '{c.name}' no tenía coord; se asignó {auto} automáticamente.");
             }
             else
             {
-                // garantizar initializacion (por si fue asignada manualmente pero falta world/tam/board)
                 c.Inicializar(c.coord, c.transform.position, c.tam > 0 ? c.tam : tamCasilla, this);
             }
 
@@ -182,13 +153,9 @@ public class BoardGenerator : MonoBehaviour
             }
         }
 
-        if (casillas.Count == 0)
-        {
-            Debug.LogWarning("BoardGenerator: no se encontraron casillas en la escena.");
-        }
+        if (casillas.Count == 0) Debug.LogWarning("BoardGenerator: no se encontraron casillas en la escena.");
     }
 
-    // Si recolección falla en Start porque las casillas se crean después, reintentar unos frames.
     private IEnumerator RetryCollectRoutine()
     {
         int tries = 0;
@@ -199,30 +166,21 @@ public class BoardGenerator : MonoBehaviour
             tries++;
             yield return new WaitForSeconds(delayEntreReintentos);
         }
-
-        if (casillas.Count == 0)
-            Debug.LogWarning("BoardGenerator: RetryCollectRoutine terminó sin encontrar casillas.");
+        if (casillas.Count == 0) Debug.LogWarning("BoardGenerator: RetryCollectRoutine terminó sin encontrar casillas.");
     }
 
-    // --- Sincronización helper ---
-    // Llenar el diccionario a partir de casillasList (cuando el usuario pone la lista manualmente)
     private void SyncDictFromList()
     {
         casillas.Clear();
         if (casillasList == null) casillasList = new List<Casilla>();
-        for (int i = 0; i < casillasList.Count; i++)
+        foreach (var c in casillasList)
         {
-            var c = casillasList[i];
             if (c == null) continue;
-            if (!c.gameObject.scene.IsValid()) continue; // evitar assets/prefabs
-
-            // si no tiene coord asignada, intentar auto-asignar
+            if (!c.gameObject.scene.IsValid()) continue;
             if (c.coord == new Vector2Int(int.MinValue, int.MinValue))
             {
                 Vector2Int auto = AutoAsignarCoordPorPosicion(c.transform.position);
-                // evitar colisiones: desplazar en +X hasta libre
-                while (casillas.ContainsKey(auto))
-                    auto.x += 1;
+                while (casillas.ContainsKey(auto)) auto.x += 1;
                 c.Inicializar(auto, c.transform.position, tamCasilla, this);
                 Debug.Log($"BoardGenerator: (SyncDictFromList) Casilla '{c.name}' no tenía coord; se asignó {auto} automáticamente.");
             }
@@ -231,46 +189,38 @@ public class BoardGenerator : MonoBehaviour
                 c.Inicializar(c.coord, c.transform.position, c.tam > 0 ? c.tam : tamCasilla, this);
             }
 
-            if (!casillas.ContainsKey(c.coord))
-                casillas[c.coord] = c;
-            else
-                Debug.LogWarning($"SyncDictFromList: coord duplicada {c.coord} en '{c.name}', ignorada.");
+            if (!casillas.ContainsKey(c.coord)) casillas[c.coord] = c;
+            else Debug.LogWarning($"SyncDictFromList: coord duplicada {c.coord} en '{c.name}', ignorada.");
         }
     }
 
-    // Llenar casillasList a partir del diccionario (por ejemplo después de generar automáticamente)
     private void SyncListFromDict()
     {
         if (casillasList == null) casillasList = new List<Casilla>();
         casillasList.Clear();
-        foreach (var kv in casillas)
-        {
-            if (kv.Value != null) casillasList.Add(kv.Value);
-        }
+        foreach (var kv in casillas) if (kv.Value != null) casillasList.Add(kv.Value);
     }
 
-    // Calcula coord aproximada desde posición world (redondeando por tamCasilla)
     private Vector2Int AutoAsignarCoordPorPosicion(Vector3 worldPos)
     {
-        Vector3 local = worldPos - transform.position; // relativo al board
+        Vector3 local = worldPos - transform.position;
         int x = Mathf.RoundToInt(local.x / tamCasilla);
-        int y = Mathf.RoundToInt(local.z / tamCasilla); // z -> y en coordenadas de tablero
+        int y = Mathf.RoundToInt(local.z / tamCasilla);
         return new Vector2Int(x, y);
     }
+    #endregion
 
-    // --- FALLBACK robusto: si el diccionario no tiene la casilla, buscar en la lista y cachear ---
+    #region API de casillas (fallbacks y limpieza)
     public bool ExisteCasilla(Vector2Int coord)
     {
         if (casillas.ContainsKey(coord)) return true;
-
-        // buscar en lista (caso: casillasList fue rellenada por inspector o en runtime)
         if (casillasList != null)
         {
             foreach (var c in casillasList)
             {
                 if (c != null && c.coord == coord)
                 {
-                    casillas[coord] = c; // cachear para siguientes consultas
+                    casillas[coord] = c;
                     return true;
                 }
             }
@@ -281,24 +231,21 @@ public class BoardGenerator : MonoBehaviour
     public Casilla GetCasilla(Vector2Int coord)
     {
         if (casillas.TryGetValue(coord, out Casilla c)) return c;
-
         if (casillasList != null)
         {
             foreach (var item in casillasList)
             {
                 if (item != null && item.coord == coord)
                 {
-                    casillas[coord] = item; // cachear
+                    casillas[coord] = item;
                     return item;
                 }
             }
         }
 
-        // Como último recurso, intentar recolectar de la escena (útil si se crearon tardíamente)
-        RecolectarCasillasExistentes();
-        if (casillas.TryGetValue(coord, out c)) return c;
-
-        return null;
+        RecolectarCasillasExistentes(); // último recurso
+        casillas.TryGetValue(coord, out c);
+        return c;
     }
 
     public Vector3 GetWorldPos(Vector2Int coord)
@@ -307,9 +254,119 @@ public class BoardGenerator : MonoBehaviour
         return c != null ? c.worldPos : Vector3.zero;
     }
 
-    // ahora GetAllCasillas devuelve la lista pública (pero como IEnumerable para compatibilidad)
     public IEnumerable<Casilla> GetAllCasillas() => casillasList;
+    #endregion
 
+    #region Reserva/Coordinación (nuevas funciones)
+    /// <summary>
+    /// Solicita reservar una ruta completa. Devuelve true si se pudo reservar.
+    /// La prioridad la gana quien tenga menor 'eta' (si la reserva actual NO ha empezado todavía).
+    /// No preemptamos reservas cuyos owners ya empezaron a moverse.
+    /// </summary>
+    public bool RequestRouteReservation(List<Vector2Int> ruta, GameObject requester, float eta)
+    {
+        if (ruta == null || ruta.Count == 0) return false;
+        // validaciones rápidas: no reservar casillas ocupadas por terceros
+        foreach (var coord in ruta)
+        {
+            var c = GetCasilla(coord);
+            if (c == null) return false;
+            if (c.tieneOcupante && c.ocupanteGO != requester) return false;
+
+            if (routeReservations.TryGetValue(coord, out ReservationInfo existing) && existing.owner != requester)
+            {
+                // si el owner ya empezó, no lo preemptamos
+                if (startedOwners.Contains(existing.owner)) return false;
+
+                // si el requestor es más rápido, preemptamos la reserva (liberamos las casillas conflictivas)
+                if (eta + 0.001f < existing.eta)
+                {
+                    ReleaseAllReservationsOfOwner(existing.owner);
+                    // continue para evaluar el resto
+                }
+                else
+                {
+                    // existing tiene prioridad o mismo eta -> no reservar
+                    return false;
+                }
+            }
+        }
+
+        // si llegamos acá, podemos reservar la ruta completamente
+        foreach (var coord in ruta)
+        {
+            var c = GetCasilla(coord);
+            if (c == null) continue;
+            // asignar reservadoPor en la casilla (solo si está libre o ya reservado por requester)
+            if (c.reservadoPor == null || c.reservadoPor == requester) c.reservadoPor = requester;
+            routeReservations[coord] = new ReservationInfo() { owner = requester, eta = eta };
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Libera una lista de coordenadas reservadas por 'requester' (compatibilidad con uso previo).
+    /// </summary>
+    public void ReleaseRutaReservation(List<Vector2Int> ruta, GameObject requester)
+    {
+        if (ruta == null) return;
+        foreach (var coord in ruta)
+        {
+            ReleaseRutaReservationForCoord(coord, requester);
+        }
+    }
+
+    /// <summary>
+    /// Libera la reserva de una sola casilla si pertenece a 'requester'.
+    /// </summary>
+    public void ReleaseRutaReservationForCoord(Vector2Int coord, GameObject requester)
+    {
+        var c = GetCasilla(coord);
+        if (c != null && c.reservadoPor == requester) c.reservadoPor = null;
+        if (routeReservations.TryGetValue(coord, out ReservationInfo info) && info.owner == requester)
+        {
+            routeReservations.Remove(coord);
+        }
+    }
+
+    /// <summary>
+    /// Libera todas las reservas asociadas a 'owner' (usado para preemption).
+    /// </summary>
+    public void ReleaseAllReservationsOfOwner(GameObject owner)
+    {
+        if (owner == null) return;
+        var keys = routeReservations.Where(kv => kv.Value.owner == owner).Select(kv => kv.Key).ToList();
+        foreach (var k in keys)
+        {
+            var c = GetCasilla(k);
+            if (c != null && c.reservadoPor == owner) c.reservadoPor = null;
+            routeReservations.Remove(k);
+        }
+        startedOwners.Remove(owner);
+    }
+
+    /// <summary>
+    /// Llamar cuando el owner comienza a ejecutar la ruta (evita preempt por otros).
+    /// </summary>
+    public void NotifyRouteStarted(GameObject owner)
+    {
+        if (owner == null) return;
+        startedOwners.Add(owner);
+    }
+
+    /// <summary>
+    /// Llamar cuando el owner ha acabado su ruta (limpia marcas internas).
+    /// </summary>
+    public void NotifyRouteFinished(GameObject owner)
+    {
+        if (owner == null) return;
+        startedOwners.Remove(owner);
+        // limpiar cualquier reserva residuo por owner (seguridad)
+        ReleaseAllReservationsOfOwner(owner);
+    }
+    #endregion
+
+    #region Raycasts / utilidades (sin cambios relevantes)
     public List<Casilla> RayCasillasEnDireccion(Vector2Int inicio, Vector2Int dir)
     {
         List<Casilla> lista = new List<Casilla>();
@@ -317,69 +374,32 @@ public class BoardGenerator : MonoBehaviour
         while (ExisteCasilla(cur))
         {
             Casilla c = GetCasilla(cur);
-            if (c == null) break;
             lista.Add(c);
             if (c.tieneOcupante) break;
             cur += dir;
         }
         return lista;
     }
+    #endregion
 
-    // Reserva una ruta completa para 'requester'. Devuelve true si pudo reservar todas las casillas.
-    public bool TryReserveRuta(List<Vector2Int> ruta, GameObject requester)
-    {
-        if (ruta == null || ruta.Count == 0) return false;
-        // chequear primero
-        foreach (var coord in ruta)
-        {
-            var c = GetCasilla(coord);
-            if (c == null) return false;
-            if (c.tieneOcupante && c.ocupanteGO != requester) return false;
-            if (c.reservadoPor != null && c.reservadoPor != requester) return false;
-        }
-        // reservar
-        foreach (var coord in ruta)
-        {
-            var c = GetCasilla(coord);
-            c.reservadoPor = requester;
-        }
-        return true;
-    }
-
-    // Liberar reservas (solo si las poseía requester)
-    public void ReleaseRutaReservation(List<Vector2Int> ruta, GameObject requester)
-    {
-        if (ruta == null) return;
-        foreach (var coord in ruta)
-        {
-            var c = GetCasilla(coord);
-            if (c != null && c.reservadoPor == requester) c.reservadoPor = null;
-        }
-    }
-
-    // --- Herramientas de editor / debug ---
+    #region Editor tools
     [ContextMenu("Refresh Casillas (Recolectar)")]
-    public void ContextRefreshCasillas()
-    {
-        RecolectarCasillasExistentes();
-    }
+    public void ContextRefreshCasillas() { RecolectarCasillasExistentes(); }
 
 #if UNITY_EDITOR
-    // Cuando editas la lista en el Inspector, sincronizamos el diccionario (solo en editor).
     void OnValidate()
     {
-        // Evitar llamadas peligrosas fuera de modo edit/runtime checks simples
         if (!EditorApplication.isPlayingOrWillChangePlaymode)
         {
             if (casillasList == null) casillasList = new List<Casilla>();
-            // limpiar nulos de la lista
             casillasList.RemoveAll(item => item == null);
-            // sincronizar diccionario ligero (no usar FindObjectsOfTypeAll en OnValidate)
             SyncDictFromList();
         }
     }
 #endif
+    #endregion
 }
+
 
 //using System.Collections.Generic;
 //using UnityEngine;
