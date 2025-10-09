@@ -373,6 +373,8 @@ public class MerchantRoomManager : MonoBehaviour
     {
         if (playerStatsManager == null || playerHealth == null) return;
 
+        InventoryManager inventoryManager = FindAnyObjectByType<InventoryManager>();
+
         if (pactData.lifeRecoveryAmount > 0)
         {
             playerHealth.Heal(pactData.lifeRecoveryAmount);
@@ -380,12 +382,17 @@ public class MerchantRoomManager : MonoBehaviour
 
         foreach (var drawback in pactData.drawbacks)
         {
-            float debuffAmount = Mathf.Abs(drawback.amount);
-            debuffAmount *= -1;
+            float finalAmount = drawback.amount;
 
-            playerStatsManager.ApplyModifier(drawback.type, debuffAmount, isTemporary: false, isPercentage: drawback.isPercentage);
+            playerStatsManager.ApplyModifier(drawback.type, finalAmount, isTemporary: false, isPercentage: drawback.isPercentage);
         }
 
-        Debug.Log($"Pacto '{pactData.pactName}' aplicado. Maldición: {pactData.drawbacks.Count} efectos.");
+        if (pactData.removeRandomRelic)
+        {
+            if (inventoryManager != null)
+            {
+                inventoryManager.RemoveRandomRelic();
+            }
+        }
     }
 }

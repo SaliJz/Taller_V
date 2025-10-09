@@ -8,6 +8,24 @@ public class InventoryManager : MonoBehaviour
     public const int MaxInventorySize = 10;
     private static readonly List<ShopItem> currentRunItems = new List<ShopItem>();
 
+    private PlayerStatsManager playerStatsManager;
+    private PlayerHealth playerHealth;
+
+    private void Awake()
+    {
+        playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
+        if (playerStatsManager == null)
+        {
+            Debug.LogError("PlayerStatsManager no encontrado.");
+        }
+
+        playerHealth = FindAnyObjectByType<PlayerHealth>();
+        if (playerHealth == null)
+        {
+            Debug.LogWarning("PlayerHealth no encontrado. Funciones de curación/escudo podrían fallar.");
+        }
+    }
+
     public static List<ShopItem> CurrentRunItems
     {
         get { return currentRunItems; }
@@ -76,6 +94,43 @@ public class InventoryManager : MonoBehaviour
         UpdateInventoryUI();
     }
 
+    public bool RemoveRandomRelic()
+    {
+        if (CurrentRunItems.Count == 0)
+        {
+            ShowWarningMessage("No tienes reliquias para quitar.");
+            return false;
+        }
+
+        CurrentRunItems.Shuffle();
+
+        ShopItem relicToRemove = CurrentRunItems[0];
+
+        if (playerStatsManager != null)
+        {
+            foreach (var benefit in relicToRemove.benefits)
+            {
+                playerStatsManager.ApplyModifier(benefit.type, -benefit.amount, isTemporary: false, isPercentage: benefit.isPercentage);
+            }
+
+            foreach (var drawback in relicToRemove.drawbacks)
+            {
+                playerStatsManager.ApplyModifier(drawback.type, -drawback.amount, isTemporary: false, isPercentage: drawback.isPercentage);
+            }
+
+            if (relicToRemove.benefits.Exists(b => b.type == StatType.ShieldBlockUpgrade))
+            {
+                playerHealth.DisableShieldBlockUpgrade(); 
+            }
+        }
+
+        CurrentRunItems.RemoveAt(0);
+
+        UpdateInventoryUI();
+
+        ShowWarningMessage($"Pacto cumplido: Se ha quitado la reliquia '{relicToRemove.itemName}'.");
+        return true;
+    }
     private void UpdateInventoryUI()
     {
         List<ShopItem> currentItems = CurrentRunItems; 

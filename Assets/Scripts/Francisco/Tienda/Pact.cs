@@ -19,4 +19,7 @@ public class Pact : ScriptableObject
     [Header("Stats")]
     public int lifeRecoveryAmount;
     public List<StatModifier> drawbacks = new List<StatModifier>();
+
+    [Header("Desventajas de Inventario")]
+    public bool removeRandomRelic = false;
 }
