@@ -8,13 +8,13 @@ using System.Collections;
 /// </summary>
 public class PlayerMeleeAttack : MonoBehaviour
 {
-    [Header("Referencias")]
+    [Header("References")]
     [SerializeField] private PlayerStatsManager statsManager;
     [SerializeField] private GameObject visualSphereHit;
     [SerializeField] private GameObject visualBoxHit;
     [SerializeField] private PlayerShieldController playerShieldController;
 
-    [Header("Configuración de Ataque")]
+    [Header("Attack Configuration")]
     [SerializeField] private Transform hitPoint;
     [HideInInspector] private float fallbackHitRadius = 0.8f;
     [SerializeField] private float hitRadius = 0.8f;
@@ -23,11 +23,16 @@ public class PlayerMeleeAttack : MonoBehaviour
     [HideInInspector] private float fallbackAttackSpeed = 1f;
     [SerializeField] private float attackSpeed = 1f;
     [SerializeField] private LayerMask enemyLayer;
+    [SerializeField] private bool canShowHitGizmo = false;
 
-    [Header("Configuración de Empuje")]
+    [Header("knockback Configuration")]
     [SerializeField] private float knockbackYoung = 0.25f;
     [SerializeField] private float knockbackAdult = 0.25f;
     [SerializeField] private float knockbackElder = 0.5f;
+
+    [Header("Melee Impact VFX")]
+    [SerializeField] private ParticleSystem meleeImpactVFX;
+    [SerializeField] private int impactParticleCount = 20;
 
     [Header("Debug")]
     [SerializeField] private bool useBoxCollider = false;
@@ -54,6 +59,8 @@ public class PlayerMeleeAttack : MonoBehaviour
     private PlayerHealth playerHealth;
     private PlayerMovement playerMovement;
 
+    private Material meleeImpactMatInstance;
+
     private void Awake()
     {
         if (visualSphereHit != null) visualSphereHit.SetActive(false);
@@ -78,11 +85,33 @@ public class PlayerMeleeAttack : MonoBehaviour
     private void OnDisable()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
+        if (meleeImpactVFX != null)
+        {
+            meleeImpactVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            meleeImpactVFX.Clear(true);
+        }
+
+        if (meleeImpactMatInstance != null)
+        {
+            Destroy(meleeImpactMatInstance);
+            meleeImpactMatInstance = null;
+        }
     }
 
     private void OnDestroy()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
+        if (meleeImpactVFX != null)
+        {
+            meleeImpactVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            meleeImpactVFX.Clear(true);
+        }
+
+        if (meleeImpactMatInstance != null)
+        {
+            Destroy(meleeImpactMatInstance);
+            meleeImpactMatInstance = null;
+        }
     }
 
     private void Start()
@@ -105,6 +134,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         speedMultiplier = speedMultiplierStat;
 
         CalculateStats();
+        InitializeMeleeImpactVFX();
     }
 
     private void HandleStatChanged(StatType statType, float newValue)
@@ -284,6 +314,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     public void PerformHitDetection()
     {
+        bool hitAnyEnemy = false;
+
         if (useBoxCollider)
         {
             Vector3 boxHalfExtents = new Vector3(hitRadius, hitRadius, hitRadius);
@@ -291,6 +323,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
             foreach (Collider enemy in hitEnemiesBox)
             {
+                hitAnyEnemy = true;
                 ApplyKnockback(enemy);
 
                 HealthController healthController = enemy.GetComponent<HealthController>();
@@ -328,6 +361,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
                     ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
                 }
+
+                PlayImpactVFX(enemy.transform.position);
             }
         }
         else
@@ -336,6 +371,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
             foreach (Collider enemy in hitEnemies)
             {
+                hitAnyEnemy = true;
                 ApplyKnockback(enemy);
 
                 HealthController healthController = enemy.GetComponent<HealthController>();
@@ -374,7 +410,14 @@ public class PlayerMeleeAttack : MonoBehaviour
 
                     ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
                 }
+
+                PlayImpactVFX(enemy.transform.position);
             }
+        }
+
+        if (!hitAnyEnemy)
+        {
+            PlayImpactVFX(hitPoint.position);
         }
 
         StartCoroutine(ShowGizmoCoroutine());
@@ -416,6 +459,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private IEnumerator ShowGizmoCoroutine()
     {
+        if (canShowHitGizmo == false) yield break;
+
         showGizmo = true;
 
         if (useBoxCollider && visualBoxHit != null) visualBoxHit.SetActive(true);
@@ -434,6 +479,41 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (visualSphereHit != null) visualSphereHit.SetActive(false);
         }
     }
+
+    #region VFX Methods
+
+    /// <summary>
+    /// Inicializa el sistema de partículas de impacto melee si no está asignado.
+    /// </summary>
+    private void InitializeMeleeImpactVFX()
+    {
+        if (meleeImpactVFX == null) return;
+
+        meleeImpactMatInstance = new Material(meleeImpactVFX.GetComponent<ParticleSystemRenderer>().sharedMaterial);
+        meleeImpactVFX.GetComponent<ParticleSystemRenderer>().material = meleeImpactMatInstance;
+
+        meleeImpactVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        meleeImpactVFX.Clear(true);
+
+    }
+
+    /// <summary>
+    /// Reproduce el efecto de impacto en una posición específica.
+    /// </summary>
+    private void PlayImpactVFX(Vector3 position)
+    {
+        if (meleeImpactVFX == null) return;
+
+        meleeImpactVFX.transform.position = position;
+        meleeImpactVFX.transform.rotation = Quaternion.identity;
+
+        meleeImpactVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        meleeImpactVFX.Clear(true);
+
+        meleeImpactVFX.Emit(impactParticleCount);
+    }
+
+    #endregion
 
     private void OnDrawGizmos()
     {

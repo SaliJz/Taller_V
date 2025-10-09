@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>
@@ -22,6 +23,10 @@ public class Shield : MonoBehaviour
     [SerializeField] private float reboundDetectionRadius = 15f;
     [SerializeField] private LayerMask enemyLayer;
 
+    [Header("Shield Trail VFX")]
+    [SerializeField] private ParticleSystem shieldTrailVFX;
+    [SerializeField] private TrailRenderer shieldTrail;
+
     private enum ShieldState { Inactive, Thrown, Returning, Rebounding }
     private ShieldState currentState = ShieldState.Inactive;
 
@@ -32,6 +37,40 @@ public class Shield : MonoBehaviour
     private List<Transform> hitTargets = new List<Transform>();
 
     private PlayerShieldController owner;
+
+    private Material shieldTrailVFXMatInstance;
+    private Material shieldTrailMatInstance;
+
+    private void Awake()
+    {
+        InitializeShieldVFX();
+    }
+
+    private void OnDestroy()
+    {
+        if (shieldTrailVFX != null)
+        {
+            shieldTrailVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            shieldTrailVFX.Clear(true);
+        }
+
+        if (shieldTrailVFXMatInstance != null)
+        {
+            Destroy(shieldTrailVFXMatInstance);
+            shieldTrailVFXMatInstance = null;
+        }
+
+        if (shieldTrail != null)
+        {
+            shieldTrail.emitting = false;
+        }
+
+        if (shieldTrailMatInstance != null)
+        {
+            Destroy(shieldTrailMatInstance);
+            shieldTrailMatInstance = null;
+        }
+    }
 
     /// <summary>
     /// Función que es llamada por el PlayerShieldController para lanzar el escudo.
@@ -59,6 +98,8 @@ public class Shield : MonoBehaviour
 
         currentState = ShieldState.Thrown;
         gameObject.SetActive(true);
+
+        PlayTrailVFX(true);
     }
 
     /// <summary>
@@ -105,6 +146,7 @@ public class Shield : MonoBehaviour
             {
                 owner.CatchShield();
                 currentState = ShieldState.Inactive;
+                PlayTrailVFX(false);
                 gameObject.SetActive(false);
             }
         }
@@ -277,6 +319,59 @@ public class Shield : MonoBehaviour
     {
         currentState = ShieldState.Returning;
     }
+
+    #region VFX Methods
+
+    /// <summary>
+    /// Inicializa el sistema de VFX del escudo (partículas y trail renderer).
+    /// </summary>
+    private void InitializeShieldVFX()
+    {
+        if (shieldTrailVFX == null || shieldTrail == null) return;
+
+        shieldTrailVFX.gameObject.SetActive(true);
+        shieldTrail.gameObject.SetActive(true);
+
+        shieldTrailVFXMatInstance = new Material(shieldTrailVFX.GetComponent<ParticleSystemRenderer>().sharedMaterial);
+        shieldTrailVFX.GetComponent<ParticleSystemRenderer>().material = shieldTrailVFXMatInstance;
+
+        shieldTrailMatInstance = new Material(shieldTrail.GetComponent<TrailRenderer>().sharedMaterial);
+        shieldTrail.GetComponent<TrailRenderer>().material = shieldTrailMatInstance;
+
+        shieldTrailVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        shieldTrailVFX.Clear(true);
+
+        shieldTrail.emitting = false;
+        shieldTrail.Clear();
+    }
+
+    /// <summary>
+    /// Activa los efectos visuales del escudo.
+    /// </summary>
+    private void PlayTrailVFX(bool active)
+    {
+        if (shieldTrailVFX == null || shieldTrail == null) return;
+
+        var emission = shieldTrailVFX.emission;
+        emission.enabled = active;
+
+        if (active)
+        {
+            if (!shieldTrailVFX.isPlaying) shieldTrailVFX.Play();
+
+            shieldTrail.Clear();
+            shieldTrail.emitting = true;
+        }
+        else
+        {
+            shieldTrailVFX.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+            shieldTrailVFX.Clear(false);
+
+            shieldTrail.emitting = false;
+        }
+    }
+
+    #endregion
 
     private void OnDrawGizmos()
     {

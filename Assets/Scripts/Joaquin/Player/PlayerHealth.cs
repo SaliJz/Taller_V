@@ -1,8 +1,9 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using TMPro;
 
 /// <summary>
 /// Clase que maneja la salud del jugador, incluyendo dano, curacion y etapas de vida.
@@ -44,6 +45,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private float yOffsetAdult = 0.5f;
     [SerializeField] private float yOffsetElder = 0.625f;
 
+    [Header("Damage VFX")]
+    [SerializeField] private Color damageEmissionColor = Color.red;
+    [SerializeField] private float damageEmissionIntensity = 2f;
+    [SerializeField] private float damageFlashDuration = 0.1f;
+    [SerializeField] private int damageFlashCount = 3;
+
     [Header("Mejora de Escudo")]
     [SerializeField] private float shieldBlockCooldown = 18f;
     private bool isShieldBlockReady = true;
@@ -64,7 +71,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     public LifeStage CurrentLifeStage { get; private set; }
 
     private bool isInitialized = false;
-
     private bool isDying = false;
 
     public static event Action<float, float> OnHealthChanged;
@@ -76,14 +82,21 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private InventoryManager inventoryManager;
     private Coroutine damageInvulnerabilityCoroutine;
     private Coroutine poisonResetCoroutine;
+    private Coroutine damageFlashCoroutine;
+
+    private MeshRenderer[] cachedMeshRenderers;
+    private Dictionary<MeshRenderer, MaterialPropertyBlock> materialPropertyBlocks;
+    private Dictionary<MeshRenderer, Color[]> originalEmissionColors;
+    private Dictionary<MeshRenderer, bool> originalEmissionEnabled;
 
     public float MaxHealth => statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
     public float CurrentHealth => currentHealth;
-
     public Transform PlayerModelTransform => playerModelTransform;
     public Vector3 CurrentModelLocalScale => playerModelTransform != null ? playerModelTransform.localScale : Vector3.one;
     public Vector3 CurrentModelWorldScale => playerModelTransform != null ? playerModelTransform.lossyScale : Vector3.one;
     public float CurrentModelYOffset => playerModelTransform != null ? playerModelTransform.localPosition.y : 0f;
+
+    public bool IsLowHealth => currentHealth < (MaxHealth * 0.25f);
 
     private void Awake()
     {
@@ -95,6 +108,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         playerMovement = GetComponent<PlayerMovement>();
         playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
         playerShieldController = GetComponent<PlayerShieldController>();
+
+        InitializeMaterialCache();
     }
 
     private void Start()
@@ -140,6 +155,168 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         isInitialized = true;
     }
 
+    private void OnDestroy()
+    {
+        CleanupMaterialCache();
+    }
+
+    #region Material Cache Management
+
+    /// <summary>
+    /// Inicializa el cache de materiales para evitar crear nuevos MaterialPropertyBlocks en cada frame.
+    /// </summary>
+    private void InitializeMaterialCache()
+    {
+        if (playerModelTransform == null) return;
+
+        cachedMeshRenderers = playerModelTransform.GetComponentsInChildren<MeshRenderer>();
+        materialPropertyBlocks = new Dictionary<MeshRenderer, MaterialPropertyBlock>();
+        originalEmissionColors = new Dictionary<MeshRenderer, Color[]>();
+        originalEmissionEnabled = new Dictionary<MeshRenderer, bool>();
+
+        foreach (var renderer in cachedMeshRenderers)
+        {
+            if (renderer == null) continue;
+
+            // Crear un MaterialPropertyBlock por renderer
+            materialPropertyBlocks[renderer] = new MaterialPropertyBlock();
+
+            // Guardar colores de emisión originales
+            Material[] materials = renderer.sharedMaterials;
+            Color[] colors = new Color[materials.Length];
+
+            for (int i = 0; i < materials.Length; i++)
+            {
+                if (materials[i] != null)
+                {
+                    if (materials[i].HasProperty("_EmissionColor"))
+                    {
+                        colors[i] = materials[i].GetColor("_EmissionColor");
+                        originalEmissionEnabled[renderer] = materials[i].IsKeywordEnabled("_EMISSION");
+                    }
+                    else
+                    {
+                        colors[i] = Color.black;
+                        originalEmissionEnabled[renderer] = false;
+                    }
+                }
+            }
+            originalEmissionColors[renderer] = colors;
+        }
+
+        ReportDebug($"Cache de materiales inicializado con {cachedMeshRenderers.Length} renderers.", 1);
+    }
+
+    /// <summary>
+    /// Limpia el cache de materiales para prevenir memory leaks.
+    /// </summary>
+    private void CleanupMaterialCache()
+    {
+        if (materialPropertyBlocks != null)
+        {
+            materialPropertyBlocks.Clear();
+            materialPropertyBlocks = null;
+        }
+
+        if (originalEmissionColors != null)
+        {
+            originalEmissionColors.Clear();
+            originalEmissionColors = null;
+        }
+
+        if (originalEmissionEnabled != null)
+        {
+            originalEmissionEnabled.Clear();
+            originalEmissionEnabled = null;
+        }
+
+        cachedMeshRenderers = null;
+    }
+
+    /// <summary>
+    /// Aplica emisión roja a todos los MeshRenderers usando MaterialPropertyBlocks.
+    /// </summary>
+    private void ApplyDamageEmission()
+    {
+        if (cachedMeshRenderers == null || materialPropertyBlocks == null) return;
+
+        Color emissionColor = damageEmissionColor * damageEmissionIntensity;
+
+        foreach (var renderer in cachedMeshRenderers)
+        {
+            if (renderer == null || !materialPropertyBlocks.ContainsKey(renderer)) continue;
+
+            MaterialPropertyBlock mpb = materialPropertyBlocks[renderer];
+            renderer.GetPropertyBlock(mpb);
+
+            // Aplicar emisión
+            mpb.SetColor("_EmissionColor", emissionColor);
+            renderer.SetPropertyBlock(mpb);
+
+            // Habilitar keyword de emisión en el material si no está habilitado
+            Material[] materials = renderer.sharedMaterials;
+            foreach (var mat in materials)
+            {
+                if (mat != null && mat.HasProperty("_EmissionColor"))
+                {
+                    mat.EnableKeyword("_EMISSION");
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Restaura la emisión original de todos los MeshRenderers.
+    /// </summary>
+    private void RestoreOriginalEmission()
+    {
+        if (cachedMeshRenderers == null || materialPropertyBlocks == null) return;
+
+        foreach (var renderer in cachedMeshRenderers)
+        {
+            if (renderer == null || !materialPropertyBlocks.ContainsKey(renderer)) continue;
+
+            MaterialPropertyBlock mpb = materialPropertyBlocks[renderer];
+            renderer.GetPropertyBlock(mpb);
+
+            // Restaurar emisión original
+            if (originalEmissionColors.ContainsKey(renderer))
+            {
+                Color[] originalColors = originalEmissionColors[renderer];
+                if (originalColors != null && originalColors.Length > 0)
+                {
+                    // Usamos el primer color como referencia (podrías expandir esto para multi-material)
+                    mpb.SetColor("_EmissionColor", originalColors[0]);
+                    renderer.SetPropertyBlock(mpb);
+                }
+            }
+
+            // Restaurar estado de keyword de emisión
+            if (originalEmissionEnabled.ContainsKey(renderer))
+            {
+                Material[] materials = renderer.sharedMaterials;
+                foreach (var mat in materials)
+                {
+                    if (mat != null && mat.HasProperty("_EmissionColor"))
+                    {
+                        if (originalEmissionEnabled[renderer])
+                        {
+                            mat.EnableKeyword("_EMISSION");
+                        }
+                        else
+                        {
+                            mat.DisableKeyword("_EMISSION");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #endregion
+
+    #region Initialization
+
     private void InitializeShieldUpgradeFromSO()
     {
         if (statsManager != null && statsManager._currentStatSO != null)
@@ -175,6 +352,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
     }
 
+    #endregion
+    
     private void SyncCurrentHealthToSO()
     {
         if (statsManager != null && statsManager._currentStatSO != null)
@@ -273,6 +452,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         if (!isCostDamage)
         {
+            if (damageFlashCoroutine != null) StopCoroutine(damageFlashCoroutine);
+            damageFlashCoroutine = StartCoroutine(DamageFlashRoutine());
+
             isDamageInvulnerable = true;
             if (damageInvulnerabilityCoroutine != null) StopCoroutine(damageInvulnerabilityCoroutine);
             damageInvulnerabilityCoroutine = StartCoroutine(DamageInvulnerabilityRoutine());
@@ -284,6 +466,23 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         UpdateLifeStage();
 
         if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageAmount} de dano. Vida actual: {currentHealth}/{maxHealth}", 1);
+    }
+
+    /// <summary>
+    /// Rutina que hace parpadear la emisión roja en los materiales del jugador.
+    /// </summary>
+    private IEnumerator DamageFlashRoutine()
+    {
+        for (int i = 0; i < damageFlashCount; i++)
+        {
+            ApplyDamageEmission();
+            yield return new WaitForSeconds(damageFlashDuration);
+
+            RestoreOriginalEmission();
+            yield return new WaitForSeconds(damageFlashDuration);
+        }
+
+        damageFlashCoroutine = null;
     }
 
     private IEnumerator DamageInvulnerabilityRoutine()

@@ -30,6 +30,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float afterimageAlpha = 0.5f;
     [SerializeField] private float afterimageLifetime = 0.5f;
 
+    [Header("Dash VFX")]
+    [SerializeField] private ParticleSystem dashDustVFX;
+
     private int playerLayer;
     private float dashCooldownTimer = 0f;
     public bool IsDashing { get; private set; }
@@ -45,7 +48,6 @@ public class PlayerMovement : MonoBehaviour
     private float lastMoveX;
     private float lastMoveY;
 
-    // Rotation lock fields (para respetar la dirección del ataque)
     private bool rotationLocked = false;
     private Quaternion lockedRotation = Quaternion.identity;
 
@@ -55,6 +57,8 @@ public class PlayerMovement : MonoBehaviour
         get { return isDashDisabled; }
         set { isDashDisabled = value; }
     }
+
+    private Material dashVFXMaterialInstance;
 
     #endregion
 
@@ -70,6 +74,36 @@ public class PlayerMovement : MonoBehaviour
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
         PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
+
+        if (dashDustVFX != null)
+        {
+            dashDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            dashDustVFX.Clear(true);
+        }
+
+        if (dashVFXMaterialInstance != null)
+        {
+            Destroy(dashVFXMaterialInstance);
+            dashVFXMaterialInstance = null;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
+        PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
+
+        if (dashDustVFX != null)
+        {
+            dashDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            dashDustVFX.Clear(true);
+        }
+
+        if (dashVFXMaterialInstance != null)
+        {
+            Destroy(dashVFXMaterialInstance);
+            dashVFXMaterialInstance = null;
+        }
     }
 
     private void Start()
@@ -92,6 +126,8 @@ public class PlayerMovement : MonoBehaviour
 
         lastMoveY = -1;
         lastMoveX = 0;
+
+        InitializeDashVFX();
     }
 
     private void HandleStatChanged(StatType statType, float newValue)
@@ -239,6 +275,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (playerHealth != null) playerHealth.IsInvulnerable = true;
         ToggleLayerCollisions(true);
+        if (dashDustVFX != null) PlayDashVFX(true);
         if (afterimagePrefab != null) StartCoroutine(AfterimageRoutine());
 
         Vector3 dashDirection = moveDirection.magnitude > 0.1f ? moveDirection : transform.forward;
@@ -258,12 +295,42 @@ public class PlayerMovement : MonoBehaviour
 
         yield return new WaitForSeconds(dashDuration);
 
+        if (dashDustVFX != null) PlayDashVFX(false);
         if (playerHealth != null) playerHealth.IsInvulnerable = false;
         ToggleLayerCollisions(false);
         IsDashing = false;
 
         dashCooldownTimer = dashCooldown;
     }
+
+    private void InitializeDashVFX()
+    {
+        if (dashDustVFX == null) return;
+
+        dashVFXMaterialInstance = new Material(dashDustVFX.GetComponent<ParticleSystemRenderer>().sharedMaterial);
+        dashDustVFX.GetComponent<ParticleSystemRenderer>().material = dashVFXMaterialInstance;
+
+        dashDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        dashDustVFX.Clear(true);
+    }
+
+    private void PlayDashVFX(bool active)
+    {
+        if (dashDustVFX == null) return;
+        var emission = dashDustVFX.emission;
+        emission.enabled = active;
+
+        if (active)
+        {
+            if (!dashDustVFX.isPlaying) dashDustVFX.Play();
+        }
+        else
+        {
+            dashDustVFX.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+            dashDustVFX.Clear(false);
+        }
+    }
+
 
     private IEnumerator PerformDash(Vector3 direction, float duration)
     {
