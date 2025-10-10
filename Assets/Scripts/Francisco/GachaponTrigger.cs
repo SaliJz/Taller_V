@@ -30,6 +30,7 @@ public class GachaponTrigger : MonoBehaviour
     private bool playerIsNear = false;
     private bool isActivated = false;
     public bool allowMultiplePulls = false;
+    private bool isAnimating = false;
 
     [Header("Animation Configuration")]
     public float animationDuration = 1.5f;
@@ -44,6 +45,7 @@ public class GachaponTrigger : MonoBehaviour
     [Header("Sink Animation")]
     public float sinkDuration = 1.0f;
     public float sinkDistance = -0.5f;
+    public float riseDistance = 0.5f;
     public AnimationCurve sinkCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     [Header("Rarity Colors")]
@@ -91,7 +93,7 @@ public class GachaponTrigger : MonoBehaviour
 
     private void Update()
     {
-        if (playerIsNear && !isActivated && Input.GetKeyDown(activationKey))
+        if (playerIsNear && !isActivated && !isAnimating && Input.GetKeyDown(activationKey))
         {
             StartCoroutine(AnimateAndPull());
         }
@@ -99,7 +101,7 @@ public class GachaponTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") && !isAnimating)
         {
             playerIsNear = true;
         }
@@ -110,6 +112,7 @@ public class GachaponTrigger : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             playerIsNear = false;
+            ShowResultUI(false, "", "");
         }
     }
 
@@ -217,10 +220,8 @@ public class GachaponTrigger : MonoBehaviour
             }
 
             Material finalMaterial = cubeRenderer.material;
-
             Color startColor = finalMaterial.GetColor(EmissionColor);
             Color targetColor = baseColor * finalIntensityMultiplier;
-
             float elapsedTime = 0f;
 
             while (elapsedTime < intensityLerpDuration)
@@ -228,10 +229,8 @@ public class GachaponTrigger : MonoBehaviour
                 elapsedTime += Time.deltaTime;
                 float t = elapsedTime / intensityLerpDuration;
                 t = Mathf.SmoothStep(0f, 1f, t);
-
                 Color currentColor = Color.Lerp(startColor, targetColor, t);
                 finalMaterial.SetColor(EmissionColor, currentColor);
-
                 yield return null;
             }
 
@@ -250,10 +249,8 @@ public class GachaponTrigger : MonoBehaviour
         {
             float t = Mathf.PingPong(Time.time / intensityLerpDuration, 1f);
             t = colorCurve.Evaluate(t);
-
             Color currentColor = Color.Lerp(lowIntensityColor, highIntensityColor, t);
             finalMaterial.SetColor(EmissionColor, currentColor);
-
             yield return null;
         }
 
@@ -262,6 +259,10 @@ public class GachaponTrigger : MonoBehaviour
 
     private IEnumerator SinkGachapon()
     {
+        isAnimating = true;
+        GetComponent<Collider>().enabled = false;
+        playerIsNear = false;
+
         Vector3 startPos = transform.position;
         Vector3 endPos = initialPosition + Vector3.up * sinkDistance;
         float elapsedTime = 0f;
@@ -271,14 +272,38 @@ public class GachaponTrigger : MonoBehaviour
             elapsedTime += Time.deltaTime;
             float t = elapsedTime / sinkDuration;
             t = sinkCurve.Evaluate(t);
-
             transform.position = Vector3.Lerp(startPos, endPos, t);
-
             yield return null;
         }
 
         transform.position = endPos;
+        isAnimating = false;
+    }
+
+    public void StartAnimationRise() => StartCoroutine(RiseGachapon());
+
+    private IEnumerator RiseGachapon()
+    {
+        isAnimating = true;
         GetComponent<Collider>().enabled = false;
+        playerIsNear = false;
+
+        Vector3 startPos = transform.position;
+        Vector3 endPos = initialPosition;
+        float elapsedTime = 0f;
+
+        while (elapsedTime < sinkDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / sinkDuration;
+            t = sinkCurve.Evaluate(t);
+            transform.position = Vector3.Lerp(startPos, endPos, t);
+            yield return null;
+        }
+
+        transform.position = endPos;
+        GetComponent<Collider>().enabled = true;
+        isAnimating = false;
     }
 
     private void ShowResultUI(bool show, string name, string effects)
@@ -332,16 +357,24 @@ public class GachaponTrigger : MonoBehaviour
             initialPosition = transform.position;
         }
 
-        Vector3 start = initialPosition;
-        Vector3 end = initialPosition + Vector3.up * sinkDistance;
+        Vector3 upPosition = initialPosition;
+        Vector3 downPosition = initialPosition + Vector3.up * sinkDistance;
 
         Gizmos.color = Color.red;
-        Gizmos.DrawLine(start, end);
+        Gizmos.DrawLine(upPosition, downPosition);
 
         Gizmos.color = Color.green;
-        Gizmos.DrawSphere(start, 0.05f);
+        Gizmos.DrawSphere(upPosition, 0.05f);
 
         Gizmos.color = Color.red;
-        Gizmos.DrawSphere(end, 0.05f);
+        Gizmos.DrawSphere(downPosition, 0.05f);
+
+        Vector3 riseTargetPosition = initialPosition + Vector3.up * riseDistance;
+
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawLine(upPosition, riseTargetPosition);
+
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawSphere(riseTargetPosition, 0.05f);
     }
 }
