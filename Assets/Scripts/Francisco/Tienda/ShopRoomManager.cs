@@ -31,7 +31,7 @@ public class ShopRoomManager : MonoBehaviour
     {
         if (shopManager != null)
         {
-            shopManager.GenerateShopItems(spawnLocations);
+            shopManager.GenerateShopItems(spawnLocations, this.transform);
         }
 
         if (merchantPrefab != null && merchantSpawnLocation != null && merchantRoomManager != null)

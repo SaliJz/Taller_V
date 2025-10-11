@@ -108,7 +108,8 @@ public class ShopManager : MonoBehaviour
                 yield return null;
             }
 
-            GameObject spawnedItem = Instantiate(itemPrefab, spawnLocation.position, Quaternion.identity);
+            Transform parentMerchantRoom = spawnLocation.GetComponentInParent<Transform>();
+            GameObject spawnedItem = Instantiate(itemPrefab, spawnLocation.position, Quaternion.identity, parentMerchantRoom);
 
             _spawnedItemObjects.Add(spawnedItem);
 
@@ -127,7 +128,7 @@ public class ShopManager : MonoBehaviour
         }
     }
 
-    public void GenerateShopItems(List<Transform> spawnLocations)
+    public void GenerateShopItems(List<Transform> spawnLocations, Transform parent)
     {
         _shopSpawnLocations = spawnLocations;
         currentShopItems = new List<ShopItem>();
@@ -190,7 +191,7 @@ public class ShopManager : MonoBehaviour
 
             if (itemPrefab != null)
             {
-                GameObject spawnedItem = Instantiate(itemPrefab, spawnLocations[i].position, Quaternion.identity);
+                GameObject spawnedItem = Instantiate(itemPrefab, spawnLocations[i].position, Quaternion.identity, parent);
 
                 _spawnedItemObjects.Add(spawnedItem);
 
@@ -228,7 +229,7 @@ public class ShopManager : MonoBehaviour
 
         DestroyCurrentItems();
         InitializeShopItemPools();
-        GenerateShopItems(_shopSpawnLocations);
+        GenerateShopItems(_shopSpawnLocations, null);
 
         Debug.Log("Tienda regenerada con éxito.");
     }

@@ -11,7 +11,7 @@ public class ShopItemDisplay : MonoBehaviour
     private void Awake()
     {
         shopManager = FindAnyObjectByType<ShopManager>();
-        merchantRoomManager = FindAnyObjectByType<MerchantRoomManager>();
+        merchantRoomManager = GetComponentInParent<MerchantRoomManager>();
 
         if (shopManager == null)
         {
@@ -54,11 +54,11 @@ public class ShopItemDisplay : MonoBehaviour
                         merchantRoomManager.OnItemPurchased();
                     }
 
-                    GameObject objectToDestroy = (transform.parent != null)
-                                               ? transform.parent.gameObject
-                                               : gameObject;
+                    //GameObject objectToDestroy = (transform.parent != null)
+                    //                           ? transform.parent.gameObject
+                    //                           : gameObject;
 
-                    Destroy(objectToDestroy);
+                    Destroy(gameObject);
                 }
             }
         }
