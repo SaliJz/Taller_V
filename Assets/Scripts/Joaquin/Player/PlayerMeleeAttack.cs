@@ -1,6 +1,7 @@
 // PlayerMeleeAttack.cs
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
+using UnityEngine.UIElements;
 
 /// <summary>
 /// Clase que maneja el ataque cuerpo a cuerpo del jugador.
@@ -333,6 +334,7 @@ public class PlayerMeleeAttack : MonoBehaviour
                     float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
                     healthController.TakeDamage(Mathf.RoundToInt(finalAttackDamage));
+
                     ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
                 }
 
@@ -353,13 +355,9 @@ public class PlayerMeleeAttack : MonoBehaviour
                 BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
                 if (bloodKnight != null)
                 {
-                    bool isCritical;
-                    float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
-
-                    bloodKnight.TakeDamage(finalAttackDamage);
                     bloodKnight.OnPlayerCounterAttack();
 
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
+                    ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
                 }
 
                 PlayImpactVFX(enemy.transform.position);
@@ -402,13 +400,9 @@ public class PlayerMeleeAttack : MonoBehaviour
                 BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
                 if (bloodKnight != null)
                 {
-                    bool isCritical;
-                    float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
-
-                    bloodKnight.TakeDamage(finalAttackDamage);
                     bloodKnight.OnPlayerCounterAttack();
 
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
+                    ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
                 }
 
                 PlayImpactVFX(enemy.transform.position);

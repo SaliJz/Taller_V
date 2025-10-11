@@ -199,7 +199,7 @@ public class Shield : MonoBehaviour
 
                 healthController.TakeDamage(attackDamage);
 
-                ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de daño.", 1);
+                ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
             }
 
             IDamageable damageable = enemy.GetComponent<IDamageable>();
@@ -214,7 +214,7 @@ public class Shield : MonoBehaviour
                 float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
                 damageable.TakeDamage(attackDamage);
 
-                ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de daño.", 1);
+                ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
             }
 
             BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
@@ -225,13 +225,9 @@ public class Shield : MonoBehaviour
                     hitTargets.Add(hitTransform);
                 }
 
-                bool isCritical;
-                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
-
-                bloodKnight.TakeDamage(attackDamage);
                 bloodKnight.OnPlayerCounterAttack();
 
-                ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de daño.", 1);
+                ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
             }
         }
 

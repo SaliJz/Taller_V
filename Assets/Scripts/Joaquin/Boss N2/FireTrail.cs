@@ -1,16 +1,22 @@
 using UnityEngine;
 
+/// <summary>
+/// Script para el rastro de fuego verde del ataque Sodoma y Gomorra.
+/// </summary>
 public class FireTrail : MonoBehaviour
 {
     [SerializeField] private float damagePerSecond;
-    [SerializeField] private float lifetime = 5f;
+    [SerializeField] private float lifetime = 10f;
     [SerializeField] private float groundOffset = 0.01f;
 
+    private float damageTimer = 0f;
     public float DamagePerSecond
     {
         get { return damagePerSecond; }
         set { damagePerSecond = value; }
     }
+
+    private ParticleSystem fireParticles;
 
     private void Start()
     {
@@ -22,10 +28,17 @@ public class FireTrail : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            PlayerHealth playerHealth = other.GetComponent<PlayerHealth>();
-            if (playerHealth != null)
+            damageTimer += Time.deltaTime;
+
+            if (damageTimer >= 1f)
             {
-                playerHealth.TakeDamage(damagePerSecond * Time.deltaTime);
+                PlayerHealth playerHealth = other.GetComponent<PlayerHealth>();
+                if (playerHealth != null)
+                {
+                    playerHealth.TakeDamage(DamagePerSecond);
+                }
+
+                damageTimer = 0f;
             }
         }
     }
