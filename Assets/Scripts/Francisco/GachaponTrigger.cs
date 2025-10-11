@@ -44,8 +44,8 @@ public class GachaponTrigger : MonoBehaviour
 
     [Header("Sink Animation")]
     public float sinkDuration = 1.0f;
-    public float sinkDistance = -0.5f;
-    public float riseDistance = 0.5f;
+    public Transform sinkTargetTransform;
+    public Transform riseTargetTransform;
     public AnimationCurve sinkCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     [Header("Rarity Colors")]
@@ -73,6 +73,13 @@ public class GachaponTrigger : MonoBehaviour
         if (gachaponSystem == null || cubeRenderer == null)
         {
             Debug.LogError("GachaponSystem o MeshRenderer no encontrado. Desactivando GachaponTrigger.");
+            enabled = false;
+            return;
+        }
+
+        if (sinkTargetTransform == null || riseTargetTransform == null)
+        {
+            Debug.LogError("Las referencias 'sinkTargetTransform' y 'riseTargetTransform' deben ser asignadas en el Inspector. Desactivando GachaponTrigger.");
             enabled = false;
             return;
         }
@@ -264,7 +271,7 @@ public class GachaponTrigger : MonoBehaviour
         playerIsNear = false;
 
         Vector3 startPos = transform.position;
-        Vector3 endPos = initialPosition + Vector3.up * sinkDistance;
+        Vector3 endPos = sinkTargetTransform.position;
         float elapsedTime = 0f;
 
         while (elapsedTime < sinkDuration)
@@ -280,7 +287,11 @@ public class GachaponTrigger : MonoBehaviour
         isAnimating = false;
     }
 
-    public void StartAnimationRise() => StartCoroutine(RiseGachapon());
+    public void StartAnimationRise()
+    {
+        Debug.Log("Inicia");
+        StartCoroutine(RiseGachapon());
+    }
 
     private IEnumerator RiseGachapon()
     {
@@ -289,7 +300,7 @@ public class GachaponTrigger : MonoBehaviour
         playerIsNear = false;
 
         Vector3 startPos = transform.position;
-        Vector3 endPos = initialPosition;
+        Vector3 endPos = riseTargetTransform.position;
         float elapsedTime = 0f;
 
         while (elapsedTime < sinkDuration)
@@ -303,6 +314,7 @@ public class GachaponTrigger : MonoBehaviour
 
         transform.position = endPos;
         GetComponent<Collider>().enabled = true;
+        isActivated = false;
         isAnimating = false;
     }
 
@@ -358,23 +370,30 @@ public class GachaponTrigger : MonoBehaviour
         }
 
         Vector3 upPosition = initialPosition;
-        Vector3 downPosition = initialPosition + Vector3.up * sinkDistance;
 
-        Gizmos.color = Color.red;
-        Gizmos.DrawLine(upPosition, downPosition);
+        if (sinkTargetTransform != null)
+        {
+            Vector3 downPosition = sinkTargetTransform.position;
 
-        Gizmos.color = Color.green;
-        Gizmos.DrawSphere(upPosition, 0.05f);
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(upPosition, downPosition);
 
-        Gizmos.color = Color.red;
-        Gizmos.DrawSphere(downPosition, 0.05f);
+            Gizmos.color = Color.green;
+            Gizmos.DrawSphere(upPosition, 0.05f);
 
-        Vector3 riseTargetPosition = initialPosition + Vector3.up * riseDistance;
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(downPosition, 0.05f);
+        }
 
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawLine(upPosition, riseTargetPosition);
+        if (riseTargetTransform != null)
+        {
+            Vector3 riseTargetPosition = riseTargetTransform.position;
 
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawSphere(riseTargetPosition, 0.05f);
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(upPosition, riseTargetPosition);
+
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawSphere(riseTargetPosition, 0.05f);
+        }
     }
 }

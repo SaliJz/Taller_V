@@ -832,6 +832,7 @@ public class DungeonGenerator : MonoBehaviour
                 }
                 else
                 {
+                    newRoom.EventsOnFinsih();
                     newRoom.UnlockExitDoors(exitPoint);  
                 }
 
