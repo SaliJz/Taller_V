@@ -257,12 +257,19 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         if (canDestroy)
         {
-            Destroy(gameObject, deathCooldown);
+            StartCoroutine(DeathRoutine());
         }
         else
         {
             gameObject.SetActive(false);
         }
+    }
+
+    private IEnumerator DeathRoutine()
+    {
+        yield return new WaitForSeconds(deathCooldown + 1.5f);
+
+        Destroy(gameObject);
     }
 
     public void ApplyStun(float duration) 

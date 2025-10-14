@@ -31,35 +31,14 @@ public class ExplosiveItemEffect : ItemEffectBase
 
     private void HandleEnemyExplosion(GameObject killedEnemy, float enemyBaseHealth)
     {
-        float explosionDamage = enemyBaseHealth * explosionDamagePercentage;
+        ExplosionDelayHandler handler = killedEnemy.AddComponent<ExplosionDelayHandler>();
 
-        Collider[] hitColliders = Physics.OverlapSphere(killedEnemy.transform.position, explosionRadius);
-
-        foreach (var hitCollider in hitColliders)
-        {
-            if (hitCollider.gameObject == killedEnemy) continue;
-
-            IDamageable damageable = hitCollider.GetComponentInParent<IDamageable>();
-            if (damageable != null)
-            {
-                damageable.TakeDamage(explosionDamage, false);
-                Debug.Log($"[ExplosiveItemEffect] Daño por explosión de {explosionDamage:F2} aplicado a {hitCollider.gameObject.name}.");
-            }
-        }
-
-        CreateExplosionVisualizer(killedEnemy.transform.position);
-    }
-
-    private void CreateExplosionVisualizer(Vector3 position)
-    {
-        if (explosionVisualizerPrefab == null)
-        {
-            Debug.LogWarning("[ExplosiveItemEffect] No hay prefab de visualizador de explosión asignado. Asigna el prefab ExplosionVisualizerPrefab.");
-            return;
-        }
-
-        GameObject visualizer = Instantiate(explosionVisualizerPrefab, position, Quaternion.identity);
-
-        lastExplosionPosition = position;
+        handler.StartExplosion(
+            explosionDamagePercentage,
+            explosionRadius,
+            explosionVisualizerPrefab,
+            enemyBaseHealth,
+            explosiveEnemyDetonationDelayBonus 
+        );
     }
 }
