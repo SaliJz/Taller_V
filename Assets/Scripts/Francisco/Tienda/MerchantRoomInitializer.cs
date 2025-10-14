@@ -58,7 +58,7 @@ public class MerchantRoomInitializer : MonoBehaviour
 
         if (shopManager != null && merchantRoomManager != null)
         {
-            merchantRoomManager.InitializeMerchantRoom(itemSpawnLocations);
+            merchantRoomManager.InitializeMerchantRoom(itemSpawnLocations, this.transform);
             merchantRoomManager.CompleteFirstVisit();
         }
     }

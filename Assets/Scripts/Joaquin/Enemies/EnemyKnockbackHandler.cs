@@ -7,9 +7,26 @@ public class EnemyKnockbackHandler : MonoBehaviour
     private NavMeshAgent agent;
     private Coroutine knockbackCoroutine;
 
+    private bool isMovementPausedByStun = false;
+
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
+    }
+
+    public void StopMovement(bool stop)
+    {
+        isMovementPausedByStun = stop;
+
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = stop;
+        }
+
+        if (!stop && knockbackCoroutine == null && agent != null && agent.enabled)
+        {
+            agent.isStopped = false;
+        }
     }
 
     /// <summary>
@@ -62,7 +79,7 @@ public class EnemyKnockbackHandler : MonoBehaviour
 
                 if (agent.isOnNavMesh)
                 {
-                    agent.isStopped = false;
+                    agent.isStopped = isMovementPausedByStun;
                 }
             }
             else

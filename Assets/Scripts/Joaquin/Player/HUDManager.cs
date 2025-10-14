@@ -19,6 +19,7 @@ public class HUDManager : MonoBehaviour
 
     [Header("Componentes del HUD")]
     [SerializeField] private Image healthBar;
+    [SerializeField] private Image temporaryHealthBar;
     [SerializeField] private Image lifeStageIconImage;
     [SerializeField] private List<LifeStageIcon> lifeStageIcons;
 
@@ -105,6 +106,17 @@ public class HUDManager : MonoBehaviour
             // Salir del estado de vida baja
             isLowHealth = false;
             StopLowHealthEffects();
+        }
+    }
+
+    public void UpdateTemporaryHealthBar(float currentTempHealth, float maxLimit)
+    {
+        if (temporaryHealthBar != null)
+        {
+            float fillAmount = maxLimit > 0 ? currentTempHealth / maxLimit : 0f;
+            temporaryHealthBar.fillAmount = fillAmount;
+
+            ReportDebug($"Vida temporal actualizada. Valor: {currentTempHealth}/{maxLimit} (Fill: {fillAmount})", 1);
         }
     }
 

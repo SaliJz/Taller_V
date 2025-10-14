@@ -25,10 +25,13 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private float offsetAboveEnemy = 2f;
     [SerializeField] private float glowDelayAfterCritical = 2f;
 
+    private EnemyKnockbackHandler knockbackHandler;
     private PlayerStatsManager playerStatsManager;
 
     private bool canHealPlayer = true;
     private bool isDead = false;
+    private bool isStunned = false; 
+    private Coroutine stunCoroutine;
     private Coroutine currentCriticalDamageCoroutine;
 
     public float CurrentHealth
@@ -116,6 +119,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         // asegurar inicialización de currentHealth (si no se configuró)
         currentHealth = Mathf.Clamp(currentHealth > 0f ? currentHealth : maxHealth, 0f, maxHealth);
+
+        knockbackHandler = GetComponent<EnemyKnockbackHandler>();
     }
 
     private void Start()
@@ -224,8 +229,15 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         UpdateSlidersSafely();
     }
 
-    public void Die()
+    public void Die(bool triggerEffects = true)
     {
+        if (isDead) return;
+
+        if (triggerEffects)
+        {
+            CombatEventsManager.TriggerEnemyKilled(gameObject, maxHealth);
+        }
+
         isDead = true;
         currentHealth = 0;
 
@@ -251,6 +263,40 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         {
             gameObject.SetActive(false);
         }
+    }
+
+    public void ApplyStun(float duration) 
+    {
+        if (isStunned)
+        {
+            if (stunCoroutine != null) StopCoroutine(stunCoroutine);
+        }
+
+        stunCoroutine = StartCoroutine(StunRoutine(duration));
+    }
+
+    private IEnumerator StunRoutine(float duration)
+    {
+        isStunned = true;
+
+        if (knockbackHandler != null)
+        {
+            knockbackHandler.StopMovement(true);
+        }
+
+        ReportDebug($"Aturdido por {duration}s.", 1);
+
+        yield return new WaitForSeconds(duration);
+
+        isStunned = false;
+
+        if (knockbackHandler != null)
+        {
+            knockbackHandler.StopMovement(false); 
+        }
+
+        stunCoroutine = null;
+        ReportDebug("Aturdimiento finalizado.", 1);
     }
 
     private void UpdateSlidersSafely()

@@ -20,4 +20,10 @@ public class ShopItem : ScriptableObject
     public float cost;
     public List<ItemEffect> benefits;
     public List<ItemEffect> drawbacks;
+
+    [Header("Tipo de Item")]
+    public bool isAmulet = false;
+
+    [Header("Comportamientos/Efectos Eventuales")]
+    public List<ItemEffectBase> behavioralEffects;
 }

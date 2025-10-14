@@ -186,6 +186,8 @@ public class Shield : MonoBehaviour
 
         foreach (Collider enemy in hitEnemies)
         {
+            CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, false);
+
             HealthController healthController = enemy.GetComponent<HealthController>();
             if (healthController != null)
             {

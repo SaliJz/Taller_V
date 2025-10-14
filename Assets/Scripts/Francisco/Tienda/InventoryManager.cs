@@ -31,6 +31,22 @@ public class InventoryManager : MonoBehaviour
         get { return currentRunItems; }
     }
 
+    public List<ItemEffectBase> ActiveBehavioralEffects
+    {
+        get
+        {
+            List<ItemEffectBase> allEffects = new List<ItemEffectBase>();
+            foreach (ShopItem item in CurrentRunItems)
+            {
+                if (item.behavioralEffects != null)
+                {
+                    allEffects.AddRange(item.behavioralEffects);
+                }
+            }
+            return allEffects;
+        }
+    }
+
     public void ResetRunItems()
     {
         currentRunItems.Clear();

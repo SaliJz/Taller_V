@@ -28,23 +28,14 @@ public enum StatType
     DamageTaken,
     HealthDrainAmount,
 
+    LuckStack,
     EssenceCostReduction,
     ShopPriceReduction,
     HealthPerRoomRegen,
-    MeleeStunChance,
-    RangedSlowStunChance,
     CriticalChance,
-    LuckStack,
-    FireDashEffect,
-    ResidualDashEffect,
     LifestealOnKill,
 
-    StunnedOnHitChance,
-    ShieldCatchRequired,
-    SameAttackDamageReduction,
-    MissChance,
-    ShieldDropChance,
-    BerserkerEffect,
+    CriticalDamageMultiplier,
     DashRangeMultiplier
 }
 
@@ -225,7 +216,6 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.MeleeAttackDamage: return statsSO.meleeAttackDamage;
             case StatType.MeleeAttackSpeed: return statsSO.meleeSpeed;
             case StatType.MeleeRadius: return statsSO.meleeRadius;
-            //case StatType.MeleeStunChance: return so.meleeStunChanceBase; 
 
             case StatType.ShieldAttackDamage: return statsSO.shieldAttackDamage;
             case StatType.ShieldSpeed: return statsSO.shieldSpeed;
@@ -233,29 +223,20 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.ShieldMaxRebounds: return statsSO.shieldMaxRebounds;
             case StatType.ShieldReboundRadius: return statsSO.shieldReboundRadius;
             case StatType.ShieldBlockUpgrade: return statsSO.isShieldBlockUpgradeActive ? 1f : 0f;
-            //case StatType.ShieldCatchRequired: return so.isShieldCatchRequiredActive ? 1f : 0f; 
-            //case StatType.ShieldDropChance: return so.shieldDropChanceBase;
 
             //case StatType.EssenceCostReduction: return so.essenceCostReductionBase; 
+            case StatType.LuckStack: return statsSO.luckStackBase;
             case StatType.ShopPriceReduction: return statsSO.shopPriceReductionBase;
             case StatType.HealthPerRoomRegen: return statsSO.healthPerRoomRegenBase;
 
-            //case StatType.RangedSlowStunChance: return so.rangedSlowStunChanceBase; 
-            //case StatType.CriticalChance: return so.criticalChanceBase; 
-            //case StatType.LuckStack: return so.luckStackBase;
-            //case StatType.FireDashEffect: return so.fireDashEffectActive ? 1f : 0f; 
-            //case StatType.ResidualDashEffect: return so.residualDashEffectActive ? 1f : 0f;
-            //case StatType.DashRangeMultiplier: return so.dashRangeMultiplierBase; 
-
-            //case StatType.StunnedOnHitChance: return so.stunnedOnHitChanceBase;
-            //case StatType.SameAttackDamageReduction: return so.sameAttackDamageReductionBase; 
-            //case StatType.MissChance: return so.missChanceBase; 
-            //case StatType.BerserkerEffect: return so.berserkerEffectActive ? 1f : 0f; 
+            case StatType.CriticalChance: return statsSO.criticalChanceBase;
+            case StatType.CriticalDamageMultiplier: return statsSO.criticalDamageMultiplierBase;
+            case StatType.DashRangeMultiplier: return statsSO.dashRangeMultiplierBase;
 
             case StatType.DamageTaken: return 0f;
 
             default:
-                Debug.LogWarning($"El StatType {type} no est� mapeado en GetStatFromSO. Retornando 0.");
+                Debug.LogWarning($"El StatType {type} no está mapeado en GetStatFromSO. Retornando 0.");
                 return 0f;
         }
     }
@@ -304,10 +285,6 @@ public partial class PlayerStatsManager : MonoBehaviour
             _currentStatSO.currentHealth = _currentStatSO.maxHealth;
 
             _currentStatSO.isShieldBlockUpgradeActive = false;
-            //_currentStatSO.isShieldCatchRequiredActive = false; 
-            //_currentStatSO.fireDashEffectActive = false; 
-            //_currentStatSO.residualDashEffectActive = false; 
-            //_currentStatSO.berserkerEffectActive = false; 
 
             Debug.Log("[PlayerStatsManager] Reset completo de stats para nueva Run ejecutado. Vida Maxima forzada.");
 
@@ -330,7 +307,6 @@ public partial class PlayerStatsManager : MonoBehaviour
         target.meleeAttackDamage = sourceStats.meleeAttackDamage;
         target.meleeSpeed = sourceStats.meleeSpeed;
         target.meleeRadius = sourceStats.meleeRadius;
-        //target.meleeStunChanceBase = source.meleeStunChanceBase;
 
         // Stats de Escudo
         target.shieldAttackDamage = sourceStats.shieldAttackDamage;
@@ -339,22 +315,13 @@ public partial class PlayerStatsManager : MonoBehaviour
         target.shieldMaxRebounds = sourceStats.shieldMaxRebounds;
         target.shieldReboundRadius = sourceStats.shieldReboundRadius;
         target.isShieldBlockUpgradeActive = sourceStats.isShieldBlockUpgradeActive;
-        //target.isShieldCatchRequiredActive = source.isShieldCatchRequiredActive; 
-        //target.shieldDropChanceBase = source.shieldDropChanceBase; 
-
+        target.luckStackBase = sourceStats.luckStackBase;
+        
         //target.essenceCostReductionBase = source.essenceCostReductionBase; 
-
-        //target.rangedSlowStunChanceBase = source.rangedSlowStunChanceBase; 
-        //target.criticalChanceBase = source.criticalChanceBase; 
-        //target.luckStackBase = source.luckStackBase; 
-        //target.fireDashEffectActive = source.fireDashEffectActive; 
-        //target.residualDashEffectActive = source.residualDashEffectActive; 
-        //target.dashRangeMultiplierBase = source.dashRangeMultiplierBase; 
-
-        //target.stunnedOnHitChanceBase = source.stunnedOnHitChanceBase; 
-        //target.sameAttackDamageReductionBase = source.sameAttackDamageReductionBase;
-        //target.missChanceBase = source.missChanceBase;
-        //target.berserkerEffectActive = source.berserkerEffectActive; 
+        
+        target.criticalChanceBase = sourceStats.criticalChanceBase;
+        target.criticalDamageMultiplierBase = sourceStats.criticalDamageMultiplierBase;
+        target.dashRangeMultiplierBase = sourceStats.dashRangeMultiplierBase;
     }
 
     /// <summary>
@@ -513,12 +480,12 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.HealthPerRoomRegen: so.healthPerRoomRegenBase = value; break;
             case StatType.ShopPriceReduction: so.shopPriceReductionBase = value; break;
             case StatType.LifestealOnKill: so.lifestealOnKillAmount = value; break;
+            case StatType.LuckStack: so.luckStackBase = value; break;
             //case StatType.EssenceCostReduction: so.essenceCostReductionBase = value; break; 
 
             case StatType.MeleeAttackDamage: so.meleeAttackDamage = (int)value; break;
             case StatType.MeleeAttackSpeed: so.meleeSpeed = value; break;
             case StatType.MeleeRadius: so.meleeRadius = value; break;
-            //case StatType.MeleeStunChance: so.meleeStunChanceBase = value; break; 
 
             case StatType.ShieldAttackDamage: so.shieldAttackDamage = (int)value; break;
             case StatType.ShieldSpeed: so.shieldSpeed = value; break;
@@ -526,26 +493,16 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.ShieldMaxRebounds: so.shieldMaxRebounds = (int)value; break;
             case StatType.ShieldReboundRadius: so.shieldReboundRadius = value; break;
             case StatType.ShieldBlockUpgrade: so.isShieldBlockUpgradeActive = value > 0.5f; break;
-            //case StatType.ShieldCatchRequired: so.isShieldCatchRequiredActive = value > 0.5f; break; 
-            //case StatType.ShieldDropChance: so.shieldDropChanceBase = value; break; 
 
-            //case StatType.RangedSlowStunChance: so.rangedSlowStunChanceBase = value; break; 
-            //case StatType.CriticalChance: so.criticalChanceBase = value; break; 
-            //case StatType.LuckStack: so.luckStackBase = value; break; 
-            //case StatType.FireDashEffect: so.fireDashEffectActive = value > 0.5f; break; 
-            //case StatType.ResidualDashEffect: so.residualDashEffectActive = value > 0.5f; break; 
-            //case StatType.DashRangeMultiplier: so.dashRangeMultiplierBase = value; break; 
-
-            //case StatType.StunnedOnHitChance: so.stunnedOnHitChanceBase = value; break; 
-            //case StatType.SameAttackDamageReduction: so.sameAttackDamageReductionBase = value; break;
-            //case StatType.MissChance: so.missChanceBase = value; break; 
-            //case StatType.BerserkerEffect: so.berserkerEffectActive = value > 0.5f; break; 
+            case StatType.CriticalChance: so.criticalChanceBase = value; break;
+            case StatType.CriticalDamageMultiplier: so.criticalDamageMultiplierBase = value; break;
+            case StatType.DashRangeMultiplier: so.dashRangeMultiplierBase = value; break;
 
             case StatType.DamageTaken:
                 break;
 
             default:
-                Debug.LogWarning($"El StatType {type} no est� mapeado para la modificaci�n directa del SO.");
+                Debug.LogWarning($"El StatType {type} no está mapeado para la modificación directa del SO.");
                 break;
         }
     }
@@ -599,6 +556,26 @@ public partial class PlayerStatsManager : MonoBehaviour
         Debug.Log($"Efecto temporal '{type}' removido despu�s de {rooms} habitaciones.");
     }
 
+    public void RemoveAllBehavioralEffects(List<ItemEffectBase> effectsToClean)
+    {
+        if (effectsToClean == null) return;
+
+        foreach (ItemEffectBase effect in effectsToClean)
+        {
+            effect.RemoveEffect(this);
+            Debug.Log($"Efecto de amuleto revertido y limpiado: {effect.name}");
+        }
+    }
+
+    public void ClearAllNamedModifiers()
+    {
+        List<string> keysToRemove = new List<string>(namedModifiers.Keys);
+        foreach (string key in keysToRemove)
+        {
+            RemoveNamedModifier(key);
+        }
+        Debug.Log("Todos los modificadores de estadísticas nombrados han sido limpiados.");
+    }
     /// <summary>
     /// Lee el valor actual de la estad�stica especificada.
     /// </summary> 

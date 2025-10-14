@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 /// <summary>
 /// Clase que maneja la salud del jugador, incluyendo dano, curacion y etapas de vida.
@@ -54,6 +55,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [Header("Mejora de Escudo")]
     [SerializeField] private float shieldBlockCooldown = 18f;
     private bool isShieldBlockReady = true;
+
+    [Header("Vida Temporal")]
+    [SerializeField] private float temporaryHealthDuration = 10f;
+    private float currentTemporaryHealth = 0f;
+    private float maxTemporaryHealthLimit = 0f;
+    private Coroutine temporaryHealthDecayCoroutine;
+    public bool HasAmuletOfEndurance { get; private set; } = false;
 
     [Header("Veneno de Morlock")]
     [SerializeField] private MorlockStats morlockStats;
@@ -443,29 +451,59 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             }
         }
 
-        float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
+        float damageToApply = damageAmount;
 
-        currentHealth -= damageAmount;
-        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-
-        SyncCurrentHealthToSO();
-
-        if (!isCostDamage)
+        if (currentTemporaryHealth > 0f)
         {
-            if (damageFlashCoroutine != null) StopCoroutine(damageFlashCoroutine);
-            damageFlashCoroutine = StartCoroutine(DamageFlashRoutine());
+            float remainingTemporaryHealth = currentTemporaryHealth - damageToApply;
+            if (remainingTemporaryHealth >= 0f)
+            {
+                currentTemporaryHealth = remainingTemporaryHealth;
+                damageToApply = 0f; 
+            }
+            else
+            {
+                damageToApply = -remainingTemporaryHealth; 
+                currentTemporaryHealth = 0f;
+            }
 
-            isDamageInvulnerable = true;
-            if (damageInvulnerabilityCoroutine != null) StopCoroutine(damageInvulnerabilityCoroutine);
-            damageInvulnerabilityCoroutine = StartCoroutine(DamageInvulnerabilityRoutine());
+            if (currentTemporaryHealth <= 0f && temporaryHealthDecayCoroutine != null)
+            {
+                StopCoroutine(temporaryHealthDecayCoroutine);
+                temporaryHealthDecayCoroutine = null;
+            }
+
+            ReportDebug($"Vida temporal restante después del golpe: {currentTemporaryHealth}. Daño restante a vida normal: {damageToApply}", 1);
         }
 
-        if (currentHealth <= 0) Die();
+        float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
+
+        if (damageToApply > 0f)
+        {
+            currentHealth -= damageToApply;
+            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+
+            if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageToApply} de dano. Vida actual: {currentHealth}/{maxHealth}", 1);
+
+            if (!isCostDamage)
+            {
+                if (damageFlashCoroutine != null) StopCoroutine(damageFlashCoroutine);
+                damageFlashCoroutine = StartCoroutine(DamageFlashRoutine());
+
+                isDamageInvulnerable = true;
+                if (damageInvulnerabilityCoroutine != null) StopCoroutine(damageInvulnerabilityCoroutine);
+                damageInvulnerabilityCoroutine = StartCoroutine(DamageInvulnerabilityRoutine());
+            }
+
+            if (currentHealth <= 0) Die();
+        }
+
+        SyncCurrentHealthToSO();
 
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         UpdateLifeStage();
 
-        if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El jugador ha recibido {damageAmount} de dano. Vida actual: {currentHealth}/{maxHealth}", 1);
+        UpdateTemporaryHealthUI();
     }
 
     /// <summary>
@@ -547,6 +585,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
         UpdateLifeStage();
+        UpdateTemporaryHealthUI();
 
         ReportDebug($"El jugador ha sido curado {healAmount}. Vida actual: {currentHealth}/{maxHealth}", 1);
     }
@@ -647,42 +686,55 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         Collider playerCollider = GetComponent<Collider>();
         if (playerCollider != null) playerCollider.enabled = false;
 
-        // Capturamos referencias locales para evitar NullReference dentro del callback diferido
         var sm = statsManager;
         var im = inventoryManager;
 
         if (FadeController.Instance != null)
         {
             StartCoroutine(FadeController.Instance.FadeOut(
-              fadeColor: deathFadeColor,
-              onComplete: () =>
-              {
-                  if (sm != null)
-                  {
-                      sm.ResetRunStatsToDefaults();
-                      sm.ResetStatsOnDeath();
-                  }
-                  else
-                  {
-                      ReportDebug("StatsManager es null en Die() durante callback de FadeOut.", 2);
-                  }
+                fadeColor: deathFadeColor,
+                onComplete: () =>
+                {
+                    if (sm != null)
+                    {
+                        if (im != null && im.ActiveBehavioralEffects != null)
+                        {
+                            sm.RemoveAllBehavioralEffects(im.ActiveBehavioralEffects);
+                        }
 
-                  if (im != null)
-                  {
-                      im.ClearInventory();
-                  }
-                  else
-                  {
-                      ReportDebug("InventoryManager es null en Die() durante callback de FadeOut.", 2);
-                  }
+                        sm.ClearAllNamedModifiers();
 
-                  SceneManager.LoadScene(sceneToLoadOnDeath);
-              }));
+                        sm.ResetRunStatsToDefaults();
+                        sm.ResetStatsOnDeath();
+                    }
+                    else
+                    {
+                        ReportDebug("StatsManager es null en Die() durante callback de FadeOut.", 2);
+                    }
+
+                    if (im != null)
+                    {
+                        im.ClearInventory();
+                    }
+                    else
+                    {
+                        ReportDebug("InventoryManager es null en Die() durante callback de FadeOut.", 2);
+                    }
+
+                    SceneManager.LoadScene(sceneToLoadOnDeath);
+                }));
         }
         else
         {
             if (sm != null)
             {
+                if (im != null && im.ActiveBehavioralEffects != null)
+                {
+                    sm.RemoveAllBehavioralEffects(im.ActiveBehavioralEffects);
+                }
+
+                sm.ClearAllNamedModifiers();
+
                 sm.ResetRunStatsToDefaults();
                 sm.ResetStatsOnDeath();
             }
@@ -736,6 +788,81 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
 
         ReportDebug("La mejora de bloqueo de escudo ha sido desactivada.", 1);
+    }
+    public void ActivateEnduranceAmulet()
+    {
+        if (HasAmuletOfEndurance) return;
+
+        HasAmuletOfEndurance = true;
+
+        statsManager.ApplyNamedModifier("EnduranceAmulet_DR", StatType.DamageTaken, 0.15f);
+
+        ReportDebug("¡Amuleto de Endurecimiento ACTIVADO! Reducción de daño +15% aplicada.", 2);
+    }
+    public void AddTemporaryHealth(float amount, float maxLimit)
+    {
+        maxTemporaryHealthLimit = maxLimit;
+
+        currentTemporaryHealth += amount;
+
+        if (currentTemporaryHealth > maxTemporaryHealthLimit)
+        {
+            currentTemporaryHealth = maxTemporaryHealthLimit;
+        }
+
+        if (temporaryHealthDecayCoroutine != null)
+        {
+            StopCoroutine(temporaryHealthDecayCoroutine);
+        }
+        if (currentTemporaryHealth > 0)
+        {
+            temporaryHealthDecayCoroutine = StartCoroutine(TemporaryHealthDecayRoutine());
+        }
+
+        UpdateTemporaryHealthUI();
+        ReportDebug($"Vida temporal añadida: {amount}. Total: {currentTemporaryHealth} (Límite: {maxTemporaryHealthLimit})", 1);
+    }
+    private IEnumerator TemporaryHealthDecayRoutine()
+    {
+        ReportDebug("Temporizador de vida temporal iniciado.", 1);
+
+        yield return new WaitForSeconds(temporaryHealthDuration);
+
+        ReportDebug("La vida temporal ha expirado y será eliminada.", 1);
+
+        currentTemporaryHealth = 0f;
+
+        UpdateTemporaryHealthUI();
+        temporaryHealthDecayCoroutine = null;
+    }
+    public void GrantTemporaryHealthOnKill(float amount)
+    {
+        if (!HasAmuletOfEndurance) return;
+
+
+        float maxLimit = 30f;
+        float currentMax = statsManager.GetCurrentStat(StatType.MaxHealth);
+
+        if (currentHealth < currentMax)
+        {
+            ReportDebug("Vida no está al máximo, no se puede añadir vida temporal.", 1);
+            return;
+        }
+
+        AddTemporaryHealth(amount, maxLimit);
+
+        if (temporaryHealthDecayCoroutine != null)
+        {
+            StopCoroutine(temporaryHealthDecayCoroutine);
+        }
+        temporaryHealthDecayCoroutine = StartCoroutine(TemporaryHealthDecayRoutine());
+    }
+    private void UpdateTemporaryHealthUI()
+    {
+        if (HUDManager.Instance != null)
+        {
+            HUDManager.Instance.UpdateTemporaryHealthBar(currentTemporaryHealth, maxTemporaryHealthLimit);
+        }
     }
 
     #region Debuffs

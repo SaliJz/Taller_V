@@ -352,6 +352,8 @@ public class PlayerMeleeAttack : MonoBehaviour
                     ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
                 }
 
+                CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, true);
+
                 BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
                 if (bloodKnight != null)
                 {
@@ -396,6 +398,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
                     ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
                 }
+
+                CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, true);
 
                 BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
                 if (bloodKnight != null)

@@ -11,6 +11,7 @@ public class ShopManager : MonoBehaviour
     public List<ShopItem> allGagans;
     public List<ShopItem> safeRelics;
     public List<Pact> allPacts = new List<Pact>();
+    public List<ShopItem> allAmulets;
 
     [Header("Shop Prefabs")]
     public List<GameObject> shopItemPrefabs;
@@ -47,6 +48,8 @@ public class ShopManager : MonoBehaviour
     private PlayerHealth playerHealth;
     private InventoryManager inventoryManager;
     private ShopItem lastDetectedItem;
+
+    private bool _amuletPurchasedInRun = false;
 
     private void Awake()
     {
@@ -91,7 +94,41 @@ public class ShopManager : MonoBehaviour
         availableItems.AddRange(allGagans);
     }
 
-    public IEnumerator SpawnItemWithEffect(ShopItem itemData, Transform spawnLocation, float effectDuration)
+    public void ResetMerchantRunState()
+    {
+        _amuletPurchasedInRun = false;
+    }
+
+    public void DisableRemainingAmulets(ShopItem purchasedAmulet)
+    {
+        if (purchasedAmulet == null || !purchasedAmulet.isAmulet) return;
+
+        List<GameObject> itemsToDestroy = new List<GameObject>();
+
+        foreach (GameObject itemObject in _spawnedItemObjects)
+        {
+            if (itemObject != null)
+            {
+                ShopItemDisplay display = itemObject.GetComponent<ShopItemDisplay>();
+
+                if (display != null && display.shopItemData.isAmulet && display.shopItemData != purchasedAmulet)
+                {
+                    itemsToDestroy.Add(itemObject);
+                }
+            }
+        }
+
+        foreach (GameObject item in itemsToDestroy)
+        {
+            if (item != null)
+            {
+                _spawnedItemObjects.Remove(item);
+                Destroy(item);
+            }
+        }
+    }
+
+    public IEnumerator SpawnItemWithEffect(ShopItem itemData, Transform spawnLocation, float effectDuration, Transform parent)
     {
         GameObject itemPrefab = FindPrefabForItemData(itemData);
 
@@ -108,8 +145,7 @@ public class ShopManager : MonoBehaviour
                 yield return null;
             }
 
-            Transform parentMerchantRoom = spawnLocation.GetComponentInParent<Transform>();
-            GameObject spawnedItem = Instantiate(itemPrefab, spawnLocation.position, Quaternion.identity, parentMerchantRoom);
+            GameObject spawnedItem = Instantiate(itemPrefab, spawnLocation.position, Quaternion.identity, parent);
 
             _spawnedItemObjects.Add(spawnedItem);
 
@@ -234,8 +270,10 @@ public class ShopManager : MonoBehaviour
         Debug.Log("Tienda regenerada con éxito.");
     }
 
-    public IEnumerator GenerateMerchantItems(List<Transform> spawnLocations, bool isFirstVisit, float effectDuration, bool sequentialSpawn)
+    public IEnumerator GenerateMerchantItems(List<Transform> spawnLocations, bool isFirstVisit, float effectDuration, bool sequentialSpawn, Transform parent)
     {
+        ResetMerchantRunState();
+
         currentShopItems = new List<ShopItem>();
         List<ShopItem> itemsToSpawn = new List<ShopItem>();
         int maxItems = spawnLocations.Count;
@@ -250,6 +288,7 @@ public class ShopManager : MonoBehaviour
 
         if (isFirstVisit)
         {
+            // PRIMERA VISITA: Items seguros
             List<ShopItem> safeItemsCopy = new List<ShopItem>(safeRelics);
 
             for (int i = 0; i < maxItems && i < safeItemsCopy.Count; i++)
@@ -259,11 +298,24 @@ public class ShopManager : MonoBehaviour
         }
         else
         {
-            List<ShopItem> allItemsCopy = new List<ShopItem>(allRelics);
+            List<ShopItem> amuletsToSpawn = new List<ShopItem>(allAmulets);
 
-            for (int i = 0; i < maxItems && i < allItemsCopy.Count; i++)
+            for (int i = 0; i < maxItems && amuletsToSpawn.Count > 0; i++)
             {
-                itemsToSpawn.Add(allItemsCopy[i]);
+                int randomIndex = Random.Range(0, amuletsToSpawn.Count);
+                itemsToSpawn.Add(amuletsToSpawn[randomIndex]);
+                amuletsToSpawn.RemoveAt(randomIndex); 
+            }
+
+            if (itemsToSpawn.Count == 0)
+            {
+                Debug.LogWarning("No hay amuletos disponibles para spawnear en la segunda visita. Usando ítems por defecto (Reliquias).");
+                List<ShopItem> allItemsCopy = new List<ShopItem>(allRelics);
+
+                for (int i = 0; i < maxItems && i < allItemsCopy.Count; i++)
+                {
+                    itemsToSpawn.Add(allItemsCopy[i]);
+                }
             }
         }
 
@@ -273,11 +325,11 @@ public class ShopManager : MonoBehaviour
         {
             if (sequentialSpawn)
             {
-                yield return StartCoroutine(SpawnItemWithEffect(itemsToSpawn[i], spawnLocations[i], effectDuration));
+                yield return StartCoroutine(SpawnItemWithEffect(itemsToSpawn[i], spawnLocations[i], effectDuration, parent));
             }
             else
             {
-                itemSpawnCoroutines.Add(StartCoroutine(SpawnItemWithEffect(itemsToSpawn[i], spawnLocations[i], effectDuration)));
+                itemSpawnCoroutines.Add(StartCoroutine(SpawnItemWithEffect(itemsToSpawn[i], spawnLocations[i], effectDuration, parent)));
             }
         }
 
@@ -423,6 +475,15 @@ public class ShopManager : MonoBehaviour
     {
         if (playerStatsManager == null || playerHealth == null || inventoryManager == null) return false;
 
+        if (item.isAmulet)
+        {
+            if (_amuletPurchasedInRun)
+            {
+                inventoryManager.ShowWarningMessage("Solo puedes comprar un amuleto por visita/run en el tutorial.");
+                return false;
+            }
+        }
+
         float finalCost = CalculateFinalCost(item.cost);
 
         float currentHealth = playerHealth.GetCurrentHealth();
@@ -456,6 +517,17 @@ public class ShopManager : MonoBehaviour
         foreach (var drawback in item.drawbacks)
         {
             playerStatsManager.ApplyModifier(drawback.type, drawback.amount, isTemporary: false, isPercentage: drawback.isPercentage);
+        }
+
+        foreach (var effect in item.behavioralEffects)
+        {
+            effect.ApplyEffect(playerStatsManager);
+        }
+
+        if (item.isAmulet)
+        {
+            _amuletPurchasedInRun = true;
+            DisableRemainingAmulets(item);
         }
 
         playerHealth.TakeDamage(Mathf.RoundToInt(finalCost), true);

@@ -84,16 +84,16 @@ public class MerchantRoomManager : MonoBehaviour
         }
     }
 
-    public void InitializeMerchantRoom(List<Transform> spawnLocations)
+    public void InitializeMerchantRoom(List<Transform> spawnLocations, Transform parent)
     {
-        StartCoroutine(GenerateItemsAndSetDialogue(spawnLocations));
+        StartCoroutine(GenerateItemsAndSetDialogue(spawnLocations, parent));
     }
 
-    private IEnumerator GenerateItemsAndSetDialogue(List<Transform> spawnLocations)
+    private IEnumerator GenerateItemsAndSetDialogue(List<Transform> spawnLocations, Transform parent)
     {
         if (shopManager != null)
         {
-            yield return StartCoroutine(shopManager.GenerateMerchantItems(spawnLocations, isFirstVisit, itemEffectDuration, sequentialItemSpawn));
+            yield return StartCoroutine(shopManager.GenerateMerchantItems(spawnLocations, isFirstVisit, itemEffectDuration, sequentialItemSpawn, parent));
         }
     }
 
