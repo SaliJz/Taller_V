@@ -6,6 +6,10 @@ public class ResurrectionItemEffect : ItemEffectBase
     [Header("Configuración de Resurrección")]
     public float resurrectionChance = 0.20f;
     public bool hasPriority = true;
+    
+    [Header("Larvas Resucitadas")]
+    public GameObject larvaPrefab;
+    public int numberOfLarvasToInstantiate = 3;
 
     public override void ApplyEffect(PlayerStatsManager statsManager)
     {
@@ -23,7 +27,22 @@ public class ResurrectionItemEffect : ItemEffectBase
     {
         if (Random.value < resurrectionChance)
         {
-            Debug.Log($"[ResurrectionItemEffect] Activando resurrección para {killedEnemy.name}...");
+            Debug.Log($"[ResurrectionItemEffect] Activando resurrección para {killedEnemy.name}... Instanciando Larvas.");
+
+            if (larvaPrefab != null)
+            {
+                for (int i = 0; i < numberOfLarvasToInstantiate; i++)
+                {
+                    GameObject larva = Instantiate(larvaPrefab, killedEnemy.transform.position, Quaternion.identity);
+
+                    larva.transform.rotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
+
+                    if (larva.TryGetComponent<ResurrectedLarva>(out var larvaScript))
+                    {
+                        larvaScript.Initialize(enemyBaseHealth);
+                    }
+                }
+            }
         }
     }
 }

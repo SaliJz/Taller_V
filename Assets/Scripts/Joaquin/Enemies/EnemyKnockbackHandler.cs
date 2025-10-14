@@ -21,11 +21,13 @@ public class EnemyKnockbackHandler : MonoBehaviour
         if (agent != null && agent.enabled)
         {
             agent.isStopped = stop;
+            agent.ResetPath();
+            agent.velocity = Vector3.zero;
         }
 
-        if (!stop && knockbackCoroutine == null && agent != null && agent.enabled)
+        if (agent != null && agent.enabled)
         {
-            agent.isStopped = false;
+            agent.enabled = !stop;
         }
     }
 

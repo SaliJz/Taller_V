@@ -30,7 +30,9 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private bool canHealPlayer = true;
     private bool isDead = false;
-    private bool isStunned = false; 
+    private bool isStunned = false;
+    private Renderer enemyRenderer; 
+    private Color originalColor;
     private Coroutine stunCoroutine;
     private Coroutine currentCriticalDamageCoroutine;
 
@@ -115,6 +117,12 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         if (enemyVisualEffects == null)
         {
             ReportDebug("Componente EnemyVisualEffects no encontrado en el enemigo.", 2);
+        }
+
+        enemyRenderer = GetComponentInChildren<Renderer>();
+        if (enemyRenderer != null && enemyRenderer.material.HasProperty("_Color"))
+        {
+            originalColor = enemyRenderer.material.color;
         }
 
         // asegurar inicialización de currentHealth (si no se configuró)
@@ -257,7 +265,14 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         if (canDestroy)
         {
-            StartCoroutine(DeathRoutine());
+            if (GetComponent<ExplosionDelayHandler>() != null)
+            {
+                StartCoroutine(DeathRoutine());
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
         else
         {
@@ -291,6 +306,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             knockbackHandler.StopMovement(true);
         }
 
+        if (enemyRenderer != null && enemyRenderer.material.HasProperty("_Color"))
+        {
+            enemyRenderer.material.color = Color.yellow;
+        }
+
         ReportDebug($"Aturdido por {duration}s.", 1);
 
         yield return new WaitForSeconds(duration);
@@ -299,7 +319,12 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         if (knockbackHandler != null)
         {
-            knockbackHandler.StopMovement(false); 
+            knockbackHandler.StopMovement(false);
+        }
+
+        if (enemyRenderer != null && enemyRenderer.material.HasProperty("_Color"))
+        {
+            enemyRenderer.material.color = originalColor;
         }
 
         stunCoroutine = null;
