@@ -235,6 +235,11 @@ public class MerchantRoomManager : MonoBehaviour
     {
         if (hasTakenPact) return;
 
+        if (shopManager != null && shopManager.allPacts != null && shopManager.allPacts.Count == 0)
+        {
+            return;
+        }
+
         if (playerHealth.CurrentHealth >= playerHealth.MaxHealth)
         {
             SetDialogue(new string[] { "Pareces estar en óptimas condiciones. No necesito tu alma por ahora." });

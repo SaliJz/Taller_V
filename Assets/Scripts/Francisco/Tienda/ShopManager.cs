@@ -286,38 +286,66 @@ public class ShopManager : MonoBehaviour
             yield break;
         }
 
+        List<ShopItem> primaryPool = new List<ShopItem>();
+        bool usedFallback = false;
+
         if (isFirstVisit)
         {
-            // PRIMERA VISITA: Items seguros
-            List<ShopItem> safeItemsCopy = new List<ShopItem>(safeRelics);
-
-            for (int i = 0; i < maxItems && i < safeItemsCopy.Count; i++)
+            if (safeRelics != null && safeRelics.Count > 0)
             {
-                itemsToSpawn.Add(safeItemsCopy[i]);
+                primaryPool.AddRange(safeRelics);
+            }
+            else
+            {
+                Debug.LogWarning("No hay SafeRelics disponibles en la primera visita. Usando Amuletos como alternativa.");
+                if (allAmulets != null && allAmulets.Count > 0)
+                {
+                    primaryPool.AddRange(allAmulets);
+                    usedFallback = true;
+                }
             }
         }
         else
         {
-            List<ShopItem> amuletsToSpawn = new List<ShopItem>(allAmulets);
-
-            for (int i = 0; i < maxItems && amuletsToSpawn.Count > 0; i++)
+            if (allAmulets != null)
             {
-                int randomIndex = Random.Range(0, amuletsToSpawn.Count);
-                itemsToSpawn.Add(amuletsToSpawn[randomIndex]);
-                amuletsToSpawn.RemoveAt(randomIndex); 
-            }
-
-            if (itemsToSpawn.Count == 0)
-            {
-                Debug.LogWarning("No hay amuletos disponibles para spawnear en la segunda visita. Usando ítems por defecto (Reliquias).");
-                List<ShopItem> allItemsCopy = new List<ShopItem>(allRelics);
-
-                for (int i = 0; i < maxItems && i < allItemsCopy.Count; i++)
-                {
-                    itemsToSpawn.Add(allItemsCopy[i]);
-                }
+                primaryPool.AddRange(allAmulets);
             }
         }
+
+        if (primaryPool.Count == 0 && !isFirstVisit)
+        {
+            Debug.LogWarning("No hay Amuletos disponibles para spawnear. Usando ítems por defecto (Reliquias).");
+            if (allRelics != null)
+            {
+                primaryPool.AddRange(allRelics);
+            }
+        }
+        else if (primaryPool.Count == 0 && isFirstVisit && safeRelics.Count == 0 && !usedFallback)
+        {
+            Debug.LogWarning("No hay SafeRelics ni Amuletos disponibles en la primera visita. No se generará ningún ítem.");
+            yield break;
+        }
+
+        if (isFirstVisit && !usedFallback)
+        {
+            for (int i = 0; i < maxItems && i < primaryPool.Count; i++)
+            {
+                itemsToSpawn.Add(primaryPool[i]);
+            }
+        }
+        else
+        {
+            List<ShopItem> dynamicPoolCopy = new List<ShopItem>(primaryPool);
+
+            for (int i = 0; i < maxItems && dynamicPoolCopy.Count > 0; i++)
+            {
+                int randomIndex = Random.Range(0, dynamicPoolCopy.Count);
+                itemsToSpawn.Add(dynamicPoolCopy[randomIndex]);
+                dynamicPoolCopy.RemoveAt(randomIndex);
+            }
+        }
+
 
         List<Coroutine> itemSpawnCoroutines = new List<Coroutine>();
 
@@ -522,6 +550,14 @@ public class ShopManager : MonoBehaviour
         foreach (var effect in item.behavioralEffects)
         {
             effect.ApplyEffect(playerStatsManager);
+        }
+
+        Pact purchasedPactReference = allPacts.Find(pact => pact.pactName == item.itemName);
+
+        if (purchasedPactReference != null)
+        {
+            allPacts.Remove(purchasedPactReference);
+            Debug.Log($"Pacto comprado ({item.itemName}) removido de la lista de Pactos disponibles. Quedan {allPacts.Count}.");
         }
 
         if (item.isAmulet)
