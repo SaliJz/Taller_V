@@ -272,7 +272,6 @@ public class PlayerMovement : MonoBehaviour
     private IEnumerator DashRoutine()
     {
         IsDashing = true;
-
         if (playerHealth != null) playerHealth.IsInvulnerable = true;
         ToggleLayerCollisions(true);
         if (dashDustVFX != null) PlayDashVFX(true);
@@ -280,26 +279,39 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 dashDirection = moveDirection.magnitude > 0.1f ? moveDirection : transform.forward;
 
-        if (Physics.Raycast(transform.position, dashDirection, out RaycastHit hit, dashSpeed * dashDuration, ~traversableLayers))
+        // 2. Ejecutamos el movimiento principal del dash como siempre.
+        yield return StartCoroutine(PerformDash(dashDirection, dashDuration));
+
+        // 3. Después del dash, verificamos si estamos atascados dentro de un objeto atravesable.
+        float safetyPushSpeed = dashSpeed * 0.75f; // Velocidad para empujar al jugador fuera del objeto.
+        float maxStuckTime = 1.0f; // Tiempo máximo para evitar bucles infinitos.
+        float stuckTimer = 0f;
+
+        // Obtenemos las dimensiones de la cápsula del jugador para la verificación.
+        Vector3 capsuleCenter = transform.position + controller.center;
+        Vector3 p1 = capsuleCenter + Vector3.up * (controller.height / 2f - controller.radius);
+        Vector3 p2 = capsuleCenter - Vector3.up * (controller.height / 2f - controller.radius);
+
+        // Mientras el jugador esté superpuesto con un objeto atravesable...
+        while (Physics.CheckCapsule(p1, p2, controller.radius, traversableLayers, QueryTriggerInteraction.Ignore) && stuckTimer < maxStuckTime)
         {
-            float distanceToWall = hit.distance - controller.radius;
-            if (distanceToWall > 0)
-            {
-                StartCoroutine(PerformDash(dashDirection, (distanceToWall / dashSpeed)));
-            }
-        }
-        else
-        {
-            StartCoroutine(PerformDash(dashDirection, dashDuration));
+            // ...lo seguimos empujando hacia adelante hasta que salga.
+            controller.Move(dashDirection * safetyPushSpeed * Time.deltaTime);
+            stuckTimer += Time.deltaTime;
+
+            // Actualizamos las posiciones de la cápsula para la siguiente verificación.
+            capsuleCenter = transform.position + controller.center;
+            p1 = capsuleCenter + Vector3.up * (controller.height / 2f - controller.radius);
+            p2 = capsuleCenter - Vector3.up * (controller.height / 2f - controller.radius);
+
+            yield return null; // Esperamos al siguiente frame para volver a comprobar.
         }
 
-        yield return new WaitForSeconds(dashDuration);
-
+        // 4. Una vez que estamos a salvo y fuera de cualquier objeto, reactivamos las colisiones.
         if (dashDustVFX != null) PlayDashVFX(false);
-        if (playerHealth != null) playerHealth.IsInvulnerable = false;
         ToggleLayerCollisions(false);
+        if (playerHealth != null) playerHealth.IsInvulnerable = false;
         IsDashing = false;
-
         dashCooldownTimer = dashCooldown;
     }
 
@@ -476,6 +488,18 @@ public class PlayerMovement : MonoBehaviour
 
         yVelocity = -0.5f;
         moveDirection = Vector3.zero;
+    }
+
+    /// <summary>
+    /// Mueve el personaje usando el CharacterController, respetando colisiones.
+    /// Ideal para movimientos forzados como los de un combo de ataque.
+    /// </summary>
+    public void MoveCharacter(Vector3 displacement)
+    {
+        if (controller != null && controller.enabled)
+        {
+            controller.Move(displacement);
+        }
     }
 
     /// <summary>

@@ -98,7 +98,6 @@ public partial class MorlockEnemy : MonoBehaviour
 
         ChangeState(MorlockState.Patrol);
     }
-
     
     private void InitializedEnemy()
     {
@@ -177,7 +176,7 @@ public partial class MorlockEnemy : MonoBehaviour
         ChangeState(MorlockState.Repositioning);
         StopAllCoroutines();
 
-        if (agent != null)
+        if (agent != null && agent.enabled)
         {
             agent.isStopped = true;
             agent.updatePosition = false;
@@ -387,7 +386,10 @@ public partial class MorlockEnemy : MonoBehaviour
         if (NavMesh.SamplePosition(targetPosition, out hit, 10f, NavMesh.AllAreas))
         {
             transform.position = hit.position;
-            agent.Warp(hit.position);
+            if (agent != null && agent.enabled)
+            {
+                agent.Warp(hit.position);
+            }
 
             if (playerTransform != null && currentState != MorlockState.Patrol)
             {

@@ -33,6 +33,8 @@ public class EnemyInitializer : MonoBehaviour
     private Vector3 lastPhysHit = Vector3.zero;
     private Vector3 lastNavHit = Vector3.zero;
 
+    private bool initializedOnce = false;
+
     private void Awake()
     {
         if (useAwake) TryGroundAndPlace();
@@ -45,6 +47,9 @@ public class EnemyInitializer : MonoBehaviour
 
     private void TryGroundAndPlace()
     {
+        if (initializedOnce) return; // proteger doble ejecución
+        initializedOnce = true;
+
         Vector3 origin = transform.position;
 
         bool ok = GroundingUtility.TryFindValidGroundPosition(
@@ -58,10 +63,34 @@ public class EnemyInitializer : MonoBehaviour
 
         if (ok)
         {
-            transform.position = validPosition;
+            NavMeshAgent localAgent = GetComponent<NavMeshAgent>();
+            if (localAgent != null)
+            {
+                if (localAgent.isOnNavMesh)
+                {
+                    localAgent.Warp(validPosition);
+                }
+                else
+                {
+                    NavMeshHit navHit;
+                    if (NavMesh.SamplePosition(validPosition, out navHit, navSampleDistance, NavMesh.AllAreas))
+                    {
+                        localAgent.Warp(navHit.position);
+                    }
+                    else
+                    {
+                        transform.position = validPosition;
+                    }
+                }
+            }
+            else
+            {
+                transform.position = validPosition;
+            }
+
             lastValid = true;
             lastNavHit = validPosition;
-            lastPhysHit = validPosition; // aproximación; para ver en gizmos
+            lastPhysHit = validPosition;
 
             Debug.Log($"[EnemyInitializer] Se encontró posición válida en NavMesh para '{gameObject.name}' en {origin}.", gameObject);
         }

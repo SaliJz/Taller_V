@@ -1,5 +1,6 @@
 // PlayerMeleeAttack.cs
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -14,22 +15,44 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private GameObject visualSphereHit;
     [SerializeField] private GameObject visualBoxHit;
     [SerializeField] private PlayerShieldController playerShieldController;
+    [SerializeField] private Animator playerAnimator;
 
     [Header("Attack Configuration")]
     [SerializeField] private Transform hitPoint;
+    [Header("Fallback stats (if no StatsManager)")]
     [HideInInspector] private float fallbackHitRadius = 0.8f;
-    [SerializeField] private float hitRadius = 0.8f;
     [HideInInspector] private float fallbackAttackDamage = 10;
-    [SerializeField] private int attackDamage = 10;
     [HideInInspector] private float fallbackAttackSpeed = 1f;
+    [Header("Calculated stats")]
+    [SerializeField] private float hitRadius = 0.8f;
+    [SerializeField] private int attackDamage = 10;
     [SerializeField] private float attackSpeed = 1f;
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private bool canShowHitGizmo = false;
 
+    [Header("Combo Configuration")]
+    [SerializeField] private float comboResetTime = 2f; // Tiempo sin atacar para resetear combo
+    [SerializeField] private float[] comboMovementForces = new float[3] { 1.5f, 2f, 1.8f }; // Fuerza de empuje por ataque
+    [SerializeField] private float[] comboLockDurations = new float[3] { 0.4f, 0.6f, 0.8f }; // Duración del lock por ataque
+
+    [Header("Attack 1 (Basic)")]
+    [SerializeField] private float attack1Duration = 0.4f;
+
+    [Header("Attack 2 (Area/Spin)")]
+    [SerializeField] private float attack2Duration = 0.6f;
+    [SerializeField] private float attack2SpinSpeed = 900f;
+
+    [Header("Attack 3 (Heavy/Charge)")]
+    [SerializeField] private float attack3PreChargeDuration = 0.3f;
+    [SerializeField] private float attack3ChargeDuration = 0.3f;
+    [SerializeField] private float attack3SpinSpeed = 90f;
+    [SerializeField] private float attack3StunDuration = 0.5f;
+
     [Header("knockback Configuration")]
     [SerializeField] private float knockbackYoung = 0.25f;
-    [SerializeField] private float knockbackAdult = 0.25f;
-    [SerializeField] private float knockbackElder = 0.5f;
+    [SerializeField] private float knockbackAdult = 0.5f;
+    [SerializeField] private float knockbackElder = 0.75f;
+    [SerializeField] private float knockbackMaxDistance = 3f; // Distancia máxima de knockback
 
     [Header("Melee Impact VFX")]
     [SerializeField] private ParticleSystem meleeImpactVFX;
@@ -49,6 +72,12 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private bool isAttacking = false;
 
+    private int comboCount = 0;
+    private float lastAttackTime = 0f;
+    private int currentAttackIndex = -1;
+    
+    private HashSet<Collider> hitEnemiesThisCombo = new HashSet<Collider>();
+
     public int AttackDamage
     {
         get { return attackDamage; }
@@ -59,7 +88,6 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private PlayerHealth playerHealth;
     private PlayerMovement playerMovement;
-
     private Material meleeImpactMatInstance;
 
     private void Awake()
@@ -71,6 +99,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         playerHealth = GetComponent<PlayerHealth>();
         playerShieldController = GetComponent<PlayerShieldController>();
         playerMovement = GetComponent<PlayerMovement>();
+        playerAnimator = GetComponentInChildren<Animator>();
 
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMeleeAttack. Usando valores de fallback.", 2);
         if (playerHealth == null) ReportDebug("PlayerHealth no se encuentra en el objeto.", 3);
@@ -86,33 +115,15 @@ public class PlayerMeleeAttack : MonoBehaviour
     private void OnDisable()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
-        if (meleeImpactVFX != null)
-        {
-            meleeImpactVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            meleeImpactVFX.Clear(true);
-        }
-
-        if (meleeImpactMatInstance != null)
-        {
-            Destroy(meleeImpactMatInstance);
-            meleeImpactMatInstance = null;
-        }
+        StopAllCoroutines();
+        CleanupVFX();
     }
 
     private void OnDestroy()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
-        if (meleeImpactVFX != null)
-        {
-            meleeImpactVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            meleeImpactVFX.Clear(true);
-        }
-
-        if (meleeImpactMatInstance != null)
-        {
-            Destroy(meleeImpactMatInstance);
-            meleeImpactMatInstance = null;
-        }
+        StopAllCoroutines();
+        CleanupVFX();
     }
 
     private void Start()
@@ -177,25 +188,36 @@ public class PlayerMeleeAttack : MonoBehaviour
     {
         if (attackCooldown > 0f) attackCooldown -= Time.deltaTime;
 
+        if (Time.time - lastAttackTime > comboResetTime) comboCount = 0;
+
         if (Input.GetMouseButtonDown(0) && attackCooldown <= 0f && !isAttacking)
         {
-            if (playerShieldController != null)
-            {
-                if (!playerShieldController.HasShield)
-                {
-                    ReportDebug("No se puede atacar: el escudo no está disponible.", 1);
-                    return;
-                }
+            if (!CanAttack()) return;
 
-                if (playerShieldController.IsThrowingShield)
-                {
-                    ReportDebug("No se puede atacar: el escudo está siendo lanzado.", 1);
-                    return;
-                }
+            lastAttackTime = Time.time;
+            StartCoroutine(AttackSequence(comboCount));
+            comboCount = (comboCount + 1) % 3; // Ciclo: 0 -> 1 -> 2 -> 0
+        }
+    }
+
+    // Verifica si el jugador puede atacar (tiene escudo y no está lanzándolo).
+    private bool CanAttack()
+    {
+        if (playerShieldController != null)
+        {
+            if (!playerShieldController.HasShield)
+            {
+                ReportDebug("No se puede atacar: escudo no disponible.", 1);
+                return false;
             }
 
-            StartCoroutine(AttackSequence());
+            if (playerShieldController.IsThrowingShield)
+            {
+                ReportDebug("No se puede atacar: escudo está siendo lanzado.", 1);
+                return false;
+            }
         }
+        return true;
     }
 
     /// <summary>
@@ -206,9 +228,13 @@ public class PlayerMeleeAttack : MonoBehaviour
     /// 4) Ejecutar el ataque (PerformHitDetection)
     /// 5) Mantener bloqueo durante la duración del ataque y luego desbloquear
     /// </summary>
-    private IEnumerator AttackSequence()
+    private IEnumerator AttackSequence(int attackIndex)
     {
+        currentAttackIndex = attackIndex;
         isAttacking = true;
+
+        // Limpiar enemigos golpeados para este nuevo ataque
+        hitEnemiesThisCombo.Clear();
 
         // 1) Dirección objetivo
         Vector3 mouseWorldDir;
@@ -228,10 +254,39 @@ public class PlayerMeleeAttack : MonoBehaviour
             RotateTowardsMouseInstant();
         }
 
-        // 3) Esperar a que se alcance la rotación lockeada (o timeout corto)
-        float maxWait = 0.25f; // tiempo máximo a esperar para rotación (ajustable)
+        // Esperar a que se alcance la rotación
+        yield return StartCoroutine(WaitForRotationLock());
+
+        // Trigger animación correspondiente
+        if (playerAnimator != null) playerAnimator.SetTrigger($"Attack{attackIndex + 1}");
+
+        // Ejecutar ataque específico
+        switch (attackIndex)
+        {
+            case 0: // Ataque 1: Jack Punch
+                yield return StartCoroutine(ExecuteAttack1());
+                break;
+            case 1: // Ataque 2: Shield Spin
+                yield return StartCoroutine(ExecuteAttack2());
+                break;
+            case 2: // Ataque 3: Thrust
+                yield return StartCoroutine(ExecuteAttack3());
+                break;
+        }
+
+        // Desbloquear y resetear
+        if (playerMovement != null) playerMovement.UnlockFacing();
+
+        isAttacking = false;
+        hitEnemiesThisCombo.Clear();
+    }
+
+    private IEnumerator WaitForRotationLock()
+    {
+        float maxWait = 0.25f;
         float start = Time.time;
-        float angleThreshold = 2f; // grados para considerar que llegó
+        float angleThreshold = 2f;
+
         while (Time.time - start < maxWait)
         {
             if (playerMovement != null)
@@ -242,30 +297,134 @@ public class PlayerMeleeAttack : MonoBehaviour
             }
             else
             {
-                // si no hay playerMovement, break inmediatamente
                 break;
             }
             yield return null;
         }
 
-        // asegurar rotación exacta justo antes del ataque (evita pequeños deslices)
         if (playerMovement != null) playerMovement.ForceApplyLockedRotation();
+    }
 
-        // 4) Ejecutar ataque (hit detection) inmediatamente después de rotar
-        PerformHitDetection();
+    private IEnumerator ExecuteAttack1()
+    {
+        // Golpe básico: movimiento directo hacia adelante
+        float movementDuration = attack1Duration;
+        float elapsedTime = 0f;
 
-        // 5) Mantener bloqueo durante la duración del ataque (1 / finalAttackSpeed)
-        float lockDuration = 1f / finalAttackSpeed;
+        Vector3 attackMoveVelocity = (transform.forward * comboMovementForces[0]) / movementDuration;
+
+        while (elapsedTime < movementDuration)
+        {
+            elapsedTime += Time.deltaTime;
+
+            if (playerMovement != null)
+            {
+                playerMovement.MoveCharacter(attackMoveVelocity * Time.deltaTime);
+
+            }
+            yield return null;
+        }
+
+        // Ejecutar hit detection en el medio del movimiento
+        PerformHitDetectionWithTracking();
+
+        // Mantener lock
+        float lockDuration = comboLockDurations[0];
         attackCooldown = lockDuration;
 
-        // Opcional: si tienes una animación, aquí deberías disparar el trigger (ej: animator.SetTrigger("Attack"))
-        // y preferiblemente usar un AnimationEvent para UnlockFacing() al final de la animación.
-        yield return new WaitForSeconds(lockDuration);
+        float remainingTime = Mathf.Max(0, lockDuration - attack1Duration);
+        if (remainingTime > 0)
+        {
+            yield return new WaitForSeconds(remainingTime);
+        }
+    }
 
-        // 6) Desbloquear rotación
-        if (playerMovement != null) playerMovement.UnlockFacing();
+    private IEnumerator ExecuteAttack2()
+    {
+        // Ataque de área: salto y rotación 360
+        float movementDuration = 0.2f;
+        float spinDuration = attack2Duration - movementDuration;
 
-        isAttacking = false;
+        // Salto ligero hacia adelante
+        float elapsedTime = 0f;
+        Vector3 attackMoveVelocity = (transform.forward * comboMovementForces[1]) / movementDuration;
+
+        while (elapsedTime < movementDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            if (playerMovement != null)
+            {
+                playerMovement.MoveCharacter(attackMoveVelocity * Time.deltaTime);
+            }
+            yield return null;
+        }
+
+        if (playerMovement != null)
+        {
+            playerMovement.UnlockFacing();
+        }
+
+        // Rotación mientras ataca
+        elapsedTime = 0f;
+        while (elapsedTime < spinDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float spinAmount = attack2SpinSpeed * Time.deltaTime;
+            transform.Rotate(0f, spinAmount, 0f, Space.Self);
+
+            // Hacer hit detection durante la rotación
+            PerformHitDetectionWithTracking();
+            yield return null;
+        }
+
+        // El lock duration es el tiempo total que dura el ataque (incluido movimiento + spin)
+        float lockDuration = comboLockDurations[1];
+        attackCooldown = lockDuration;
+
+        // Ya pasó attack2Duration, esperar el resto del lock
+        float remainingTime = Mathf.Max(0, lockDuration - attack2Duration);
+        if (remainingTime > 0)
+        {
+            yield return new WaitForSeconds(remainingTime);
+        }
+    }
+
+    private IEnumerator ExecuteAttack3()
+    {
+        // Ataque pesado: giro lento + carga + golpe
+        float preChargeElapsed = 0f;
+
+        // Fase 1: Giro lento
+        while (preChargeElapsed < attack3PreChargeDuration)
+        {
+            preChargeElapsed += Time.deltaTime;
+            float spinAmount = attack3SpinSpeed * Time.deltaTime;
+            transform.Rotate(0f, spinAmount, 0f, Space.Self);
+            yield return null;
+        }
+
+        // Fase 2: Movimiento y carga
+        float chargeElapsed = 0f;
+        Vector3 attackMoveVelocity = (transform.forward * comboMovementForces[2]) / attack3ChargeDuration;
+
+        while (chargeElapsed < attack3ChargeDuration)
+        {
+            chargeElapsed += Time.deltaTime;
+            if (playerMovement != null)
+            {
+                playerMovement.MoveCharacter(attackMoveVelocity * Time.deltaTime);
+            }
+
+            PerformHitDetectionWithTracking();
+            yield return null;
+        }
+
+        // Hit detection al final
+        //PerformHitDetectionWithTracking();
+
+        float lockDuration = comboLockDurations[2];
+        attackCooldown = lockDuration;
+        yield return new WaitForSeconds(lockDuration - (attack3PreChargeDuration + attack3ChargeDuration));
     }
 
     // Rota instantaneamente al mouse proyectado en el plano horizontal (y = transform.position.y), con snap a 8 direcciones.
@@ -313,169 +472,115 @@ public class PlayerMeleeAttack : MonoBehaviour
         return false;
     }
 
-    public void PerformHitDetection()
+    public void PerformHitDetectionWithTracking()
     {
         bool hitAnyEnemy = false;
+        Collider[] hitEnemies = useBoxCollider
+            ? Physics.OverlapBox(hitPoint.position, new Vector3(hitRadius, hitRadius, hitRadius), Quaternion.identity, enemyLayer)
+            : Physics.OverlapSphere(hitPoint.position, hitRadius, enemyLayer);
 
-        if (useBoxCollider)
+        foreach (Collider enemy in hitEnemies)
         {
-            Vector3 boxHalfExtents = new Vector3(hitRadius, hitRadius, hitRadius);
-            Collider[] hitEnemiesBox = Physics.OverlapBox(hitPoint.position, boxHalfExtents, Quaternion.identity, enemyLayer);
-
-            foreach (Collider enemy in hitEnemiesBox)
+            if (hitEnemiesThisCombo.Contains(enemy))
             {
-                hitAnyEnemy = true;
-                ApplyKnockback(enemy);
+                continue;
+            }
 
+            hitEnemiesThisCombo.Add(enemy);
+            hitAnyEnemy = true;
+
+            ApplyKnockbackSafe(enemy);
+
+            bool isCritical;
+            float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+
+            IDamageable damageable = enemy.GetComponent<IDamageable>();
+            EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
+
+            if (damageable != null)
+            {
+                damageable.TakeDamage(finalDamage, isCritical);
+                if (currentAttackIndex == 2)
+                {
+                    enemyHealth.ApplyStun(attack3StunDuration);
+                    ReportDebug($"Enemigo {enemy.name} aturdido por {attack3StunDuration} segundos.", 1);
+                }
+            }
+            else if (enemyHealth != null)
+            {
+                enemyHealth.TakeDamage(Mathf.RoundToInt(finalDamage), isCritical);
+                if (currentAttackIndex == 2)
+                {
+                    enemyHealth.ApplyStun(attack3StunDuration);
+                    ReportDebug($"Enemigo {enemy.name} aturdido por {attack3StunDuration} segundos.", 1);
+                }
+            }
+            else
+            {
                 HealthController healthController = enemy.GetComponent<HealthController>();
                 if (healthController != null)
                 {
-                    bool isCritical;
-                    float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
-
-                    healthController.TakeDamage(Mathf.RoundToInt(finalAttackDamage));
-
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
+                    healthController.TakeDamage(Mathf.RoundToInt(finalDamage));
                 }
-
-                IDamageable damageable = enemy.GetComponent<IDamageable>();
-                if (damageable != null)
-                {
-                    bool isCritical;
-                    float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
-
-                    damageable.TakeDamage(finalDamageWithCrit, isCritical);
-                    float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
-
-                    damageable.TakeDamage(finalAttackDamage);
-
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
-                }
-
-                CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, true);
-
-                BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
-                if (bloodKnight != null)
-                {
-                    bloodKnight.OnPlayerCounterAttack();
-
-                    ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
-                }
-
-                PlayImpactVFX(enemy.transform.position);
             }
-        }
-        else
-        {
-            Collider[] hitEnemies = Physics.OverlapSphere(hitPoint.position, hitRadius, enemyLayer);
 
-            foreach (Collider enemy in hitEnemies)
-            {
-                hitAnyEnemy = true;
-                ApplyKnockback(enemy);
+            CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, true);
 
-                HealthController healthController = enemy.GetComponent<HealthController>();
-                if (healthController != null)
-                {
-                    bool isCritical;
-                    float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+            BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
+            if (bloodKnight != null) bloodKnight.OnPlayerCounterAttack();
 
-                    healthController.TakeDamage(Mathf.RoundToInt(finalAttackDamage));
-
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
-                }
-
-                IDamageable damageable = enemy.GetComponent<IDamageable>();
-                if (damageable != null)
-                {
-                    bool isCritical;
-                    float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
-
-                    damageable.TakeDamage(finalDamageWithCrit, isCritical);
-                    float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
-
-                    damageable.TakeDamage(finalAttackDamage);
-
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalAttackDamage + " de daño.", 1);
-                }
-
-                CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, true);
-
-                BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
-                if (bloodKnight != null)
-                {
-                    bloodKnight.OnPlayerCounterAttack();
-
-                    ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
-                }
-
-                PlayImpactVFX(enemy.transform.position);
-            }
+            PlayImpactVFX(enemy.transform.position);
+            ReportDebug($"Golpe a {enemy.name} por {finalDamage} de daño.", 1);
         }
 
-        if (!hitAnyEnemy)
-        {
-            PlayImpactVFX(hitPoint.position);
-        }
+        if (!hitAnyEnemy) PlayImpactVFX(hitPoint.position);
 
         StartCoroutine(ShowGizmoCoroutine());
     }
 
-    private void ApplyKnockback(Collider enemy)
+    private void ApplyKnockbackSafe(Collider enemy)
     {
         EnemyKnockbackHandler knockbackHandler = enemy.GetComponent<EnemyKnockbackHandler>();
         if (knockbackHandler == null || playerHealth == null) return;
 
         float knockbackForce = 0f;
-        float knockbackDuration = 0f;
 
         switch (playerHealth.CurrentLifeStage)
         {
             case PlayerHealth.LifeStage.Young:
                 knockbackForce = knockbackYoung;
-                knockbackDuration = 0.25f;
                 break;
             case PlayerHealth.LifeStage.Adult:
                 knockbackForce = knockbackAdult;
-                knockbackDuration = 0.25f;
                 break;
             case PlayerHealth.LifeStage.Elder:
                 knockbackForce = knockbackElder;
-                knockbackDuration = 0.25f;
                 break;
         }
 
         if (knockbackForce > 0)
         {
-            Vector3 knockbackDirection = (enemy.transform.position - transform.position);
+            Vector3 knockbackDirection = (enemy.transform.position - transform.position).normalized;
             knockbackDirection.y = 0;
-            knockbackDirection.Normalize();
 
-            knockbackHandler.TriggerKnockback(knockbackDirection, knockbackForce, knockbackDuration);
+            float limitedForce = Mathf.Min(knockbackForce, knockbackMaxDistance);
+            knockbackHandler.TriggerKnockback(knockbackDirection, limitedForce, 0.25f);
         }
     }
 
     private IEnumerator ShowGizmoCoroutine()
     {
-        if (canShowHitGizmo == false) yield break;
+        if (!canShowHitGizmo) yield break;
 
         showGizmo = true;
-
         if (useBoxCollider && visualBoxHit != null) visualBoxHit.SetActive(true);
-        else
-        {
-            if (visualSphereHit != null) visualSphereHit.SetActive(true);
-        }
+        else if (visualSphereHit != null) visualSphereHit.SetActive(true);
 
         yield return new WaitForSeconds(gizmoDuration);
 
         showGizmo = false;
-
         if (useBoxCollider && visualBoxHit != null) visualBoxHit.SetActive(false);
-        else
-        {
-            if (visualSphereHit != null) visualSphereHit.SetActive(false);
-        }
+        else if (visualSphereHit != null) visualSphereHit.SetActive(false);
     }
 
     #region VFX Methods
@@ -509,6 +614,22 @@ public class PlayerMeleeAttack : MonoBehaviour
         meleeImpactVFX.Clear(true);
 
         meleeImpactVFX.Emit(impactParticleCount);
+    }
+
+    // Limpia los recursos del VFX al desactivar o destruir el objeto.
+    private void CleanupVFX()
+    {
+        if (meleeImpactVFX != null)
+        {
+            meleeImpactVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            meleeImpactVFX.Clear(true);
+        }
+
+        if (meleeImpactMatInstance != null)
+        {
+            Destroy(meleeImpactMatInstance);
+            meleeImpactMatInstance = null;
+        }
     }
 
     #endregion

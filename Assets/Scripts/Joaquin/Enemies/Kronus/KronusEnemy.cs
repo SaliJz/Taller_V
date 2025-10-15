@@ -1,5 +1,7 @@
 using System.Collections;
+using System.Collections.Generic;
 using DG.Tweening;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -22,6 +24,9 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private float dashSpeedMultiplier = 2f;
     [SerializeField] private float dashDuration = 1f;
     [SerializeField] private float dashMaxDistance = 6f;
+
+    [Header("Grounding Configuration")]
+    [SerializeField] private LayerMask groundLayer = ~0;
 
     [Header("Attack")]
     [SerializeField] private bool isPercentageDmg = false;
@@ -55,6 +60,8 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private bool showDetailsOptions = false;
     [SerializeField] private bool showGizmo = false;
     [SerializeField] private float gizmoDuration = 0.25f;
+
+    private List<GameObject> activeInstantiatedEffects = new List<GameObject>();
 
     private EnemyHealth enemyHealth;
     private NavMeshAgent agent;
@@ -135,16 +142,22 @@ public class KronusEnemy : MonoBehaviour
     private void OnEnable()
     {
         if (enemyHealth != null) enemyHealth.OnDeath += HandleEnemyDeath;
+        if (groundIndicator != null) groundIndicator.SetActive(false);
+        if (visualHit != null) visualHit.SetActive(false);
     }
 
     private void OnDisable()
     {
         if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
+        if (groundIndicator != null) groundIndicator.SetActive(false);
+        if (visualHit != null) visualHit.SetActive(false);
     }
 
     private void OnDestroy()
     {
         if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
+        if (groundIndicator != null) Destroy(groundIndicator);
+        if (visualHit != null) Destroy(visualHit);
     }
 
     private void HandleEnemyDeath(GameObject enemy)
@@ -344,12 +357,7 @@ public class KronusEnemy : MonoBehaviour
             agent.isStopped = true;
             agent.ResetPath();
             agent.updatePosition = false;
-            agent.updateRotation = false;
-            agent.enabled = false;
-        }
-        else if (agent != null && agent.enabled)
-        {
-            agent.enabled = false;
+            agent.updateRotation = true;
         }
 
         if (animator != null) animator.SetTrigger("StartDash");
@@ -357,58 +365,113 @@ public class KronusEnemy : MonoBehaviour
 
         Vector3 startPosition = transform.position;
         Vector3 dashTarget = playerTransform != null ? playerTransform.position : transform.position;
-        dashTarget.y = transform.position.y;
 
-        Vector3 direction = (dashTarget - startPosition).normalized;
-        float distanceToPlayer = Vector3.Distance(startPosition, dashTarget);
+        // Mantener la Y actual del enemigo
+        dashTarget.y = startPosition.y;
+
+        Vector3 direction = (dashTarget - startPosition);
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f) direction = transform.forward;
+        direction.Normalize();
+
+        float distanceToPlayer = Vector3.Distance(new Vector3(startPosition.x, 0, startPosition.z), new Vector3(dashTarget.x, 0, dashTarget.z));
         float dashDistance = Mathf.Min(distanceToPlayer, dashMaxDistance);
+        Vector3 finalDashTarget = startPosition + direction * dashDistance;
+        finalDashTarget.y = startPosition.y;
 
-        dashTarget = startPosition + direction * dashDistance;
+        float elapsed = 0f;
+        float interruptDistance = attackRadius * 1.5f;
 
-        float startTime = Time.time;
-        float endTime = startTime + dashDuration;
-        bool interruptedByPlayer = false;
-
-        while (Time.time < endTime)
+        // Dash por duración
+        while (elapsed < dashDuration)
         {
-            transform.position = Vector3.MoveTowards(transform.position, dashTarget, moveSpeed * dashSpeedMultiplier * Time.deltaTime);
+            float delta = Time.deltaTime;
+            elapsed += delta;
 
-            Vector3 lookDirection = (dashTarget - transform.position);
-            lookDirection.y = 0f;
+            Vector3 currentPos = transform.position;
+            Vector3 toTarget = finalDashTarget - currentPos;
+            toTarget.y = 0f;
+            float remaining = toTarget.magnitude;
 
-            if (lookDirection.sqrMagnitude > 0.01f)
+            if (remaining <= 0.05f) break;
+
+            Vector3 dashDir = toTarget.normalized;
+            float step = moveSpeed * dashSpeedMultiplier * delta;
+            float moveAmount = Mathf.Min(step, remaining);
+
+            // Calcular nueva posición manteniendo Y
+            Vector3 newPosition = currentPos + dashDir * moveAmount;
+
+            // Muestrear NavMesh para obtener la Y correcta
+            NavMeshHit navHit;
+            if (NavMesh.SamplePosition(newPosition, out navHit, 2f, NavMesh.AllAreas))
             {
-                Quaternion targetRotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 10f * Time.deltaTime);
+                newPosition.y = navHit.position.y;
             }
 
-            // Detectar si el jugador está en el camino durante el dash
-            if (playerTransform != null && !interruptedByPlayer)
+            // Actualizar posición directamente
+            transform.position = newPosition;
+
+            // Rotación suave
+            if (dashDir.sqrMagnitude > 0.01f)
+            {
+                Quaternion targetRot = Quaternion.LookRotation(dashDir, Vector3.up);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 10f * delta);
+            }
+
+            // Interrupción por proximidad al jugador
+            if (playerTransform != null)
             {
                 float distToPlayer = Vector3.Distance(transform.position, playerTransform.position);
-                if (distToPlayer <= attackRadius * 1.5f)
+                if (distToPlayer <= interruptDistance)
                 {
-                    interruptedByPlayer = true;
                     ReportDebug("Dash interrumpido: jugador detectado en la trayectoria.", 1);
                     break;
                 }
             }
 
-            // Si llegó al objetivo antes de tiempo
-            if (Vector3.Distance(transform.position, dashTarget) < 0.1f)
-            {
-                break;
-            }
-
             yield return null;
         }
 
-        // Fase de preparación del martillazo(1 segundo con indicador visual)
+        if (agent != null && agent.enabled)
+        {
+            NavMeshHit navHit;
+            if (NavMesh.SamplePosition(transform.position, out navHit, 2f, NavMesh.AllAreas))
+            {
+                agent.Warp(navHit.position);
+            }
+
+            agent.updatePosition = true;
+        }
+
         ReportDebug("Kronus preparando martillazo.", 1);
 
-        if (groundIndicator != null && hitPoint != null)
+        if (groundIndicator != null)
         {
-            groundIndicator.transform.position = new Vector3(hitPoint.position.x, -0.875f, hitPoint.position.z);
+            groundIndicator.transform.SetParent(null, true);
+
+            Vector3 sampleBase = (hitPoint != null) ? hitPoint.position : transform.position;
+            Vector3 indicatorPos = sampleBase;
+            NavMeshHit navHit;
+
+            if (NavMesh.SamplePosition(sampleBase, out navHit, 3f, NavMesh.AllAreas))
+            {
+                indicatorPos = navHit.position;
+                indicatorPos.y += 0.01f;
+            }
+            else
+            {
+                RaycastHit hit;
+                if (Physics.Raycast(sampleBase + Vector3.up * 3f, Vector3.down, out hit, 6f, groundLayer))
+                {
+                    indicatorPos.y = hit.point.y + 0.01f;
+                }
+            }
+
+            Collider indCol = groundIndicator.GetComponent<Collider>();
+            if (indCol != null) indCol.enabled = false;
+
+            groundIndicator.transform.position = indicatorPos;
             groundIndicator.transform.localScale = new Vector3(attackRadius * 2f, 0.025f, attackRadius * 2f);
             groundIndicator.SetActive(true);
         }
@@ -419,27 +482,24 @@ public class KronusEnemy : MonoBehaviour
 
         if (groundIndicator != null) groundIndicator.SetActive(false);
 
-        // Ejecutar el martillazo
         if (animator != null) animator.SetTrigger("Attack");
         if (audioSource != null && hammerSmashSFX != null) audioSource.PlayOneShot(hammerSmashSFX);
 
         PerformHammerSmash();
 
-        if (agent != null)
+        if (agent != null && agent.enabled)
         {
-            agent.enabled = true;
             agent.isStopped = false;
-            agent.updatePosition = true;
-            agent.updateRotation = true;
-            agent.Warp(transform.position);
-            if (agent != null && agent.enabled && agent.isOnNavMesh)
-                agent.SetDestination(playerTransform != null ? playerTransform.position : transform.position);
+
+            if (playerTransform != null && agent.isOnNavMesh)
+            {
+                agent.SetDestination(playerTransform.position);
+            }
         }
 
         yield return new WaitForSeconds(1f);
 
         ReportDebug("Kronus finaliza ataque dash.", 1);
-
         isAttacking = false;
     }
 
@@ -472,7 +532,8 @@ public class KronusEnemy : MonoBehaviour
                 float damageToApply = CriticalHitSystem.CalculateDamage(damage, transform, hitTransform, out isCritical);
                 
                 if (audioSource != null && hitSFX != null) audioSource.PlayOneShot(hitSFX);
-                playerHealth.TakeDamage(damage);
+
+                playerHealth.TakeDamage(damageToApply);
 
                 // Aplicar empuje
                 ApplyKnockback(hitTransform);
@@ -480,6 +541,8 @@ public class KronusEnemy : MonoBehaviour
                 ReportDebug($"Kronus atacó al jugador por {damage} de daño.", 1);
 
                 hasHitPlayerThisDash = true;
+
+                break;
             }
         }
 
@@ -543,6 +606,39 @@ public class KronusEnemy : MonoBehaviour
         {
             visualHit.SetActive(false);
             visualHit.transform.localScale = originalScale;
+        }
+    }
+
+    /// <summary>
+    /// Valida y corrige la posición de Kronus si está debajo del terreno o fuera del NavMesh.
+    /// </summary>
+    private void ValidatePositionOnNavMesh()
+    {
+        if (agent == null) return;
+
+        NavMeshHit hit;
+        if (NavMesh.SamplePosition(transform.position, out hit, 2f, NavMesh.AllAreas))
+        {
+            // Posición válida, mantener
+            transform.position = hit.position;
+        }
+        else
+        {
+            // Fuera del NavMesh, intentar encontrar posición cercana
+            ReportDebug("Kronus fuera del NavMesh, buscando posición válida...", 2);
+
+            for (int i = 0; i < 8; i++)
+            {
+                Vector3 randomOffset = Random.insideUnitSphere * 2f;
+                if (NavMesh.SamplePosition(transform.position + randomOffset, out hit, 2f, NavMesh.AllAreas))
+                {
+                    transform.position = hit.position;
+                    ReportDebug("Kronus reposicionado en NavMesh válido.", 1);
+                    return;
+                }
+            }
+
+            ReportDebug("No se encontró posición válida en NavMesh. Kronus puede estar atrapado.", 3);
         }
     }
 

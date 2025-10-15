@@ -5944,7 +5944,7 @@ MonoBehaviour:
   dashCooldown: 0.3
   traversableLayers:
     serializedVersion: 2
-    m_Bits: 192
+    m_Bits: 128
   afterimagePrefab: {fileID: 1529516632308541924, guid: 5813d161b87a73e46926413d2ef586b9, type: 3}
   afterimageAlpha: 0.5
   afterimageLifetime: 0.5
@@ -5978,6 +5978,7 @@ MonoBehaviour:
   damageFlashDuration: 0.1
   damageFlashCount: 3
   shieldBlockCooldown: 18
+  temporaryHealthDuration: 10
   morlockStats: {fileID: 11400000, guid: 827240c34ab30b44faf66dd69d82507b, type: 2}
   poisonHitThreshold: 0
   poisonInitialDamage: 0
@@ -6022,6 +6023,7 @@ MonoBehaviour:
   visualSphereHit: {fileID: 1624169214904273020}
   visualBoxHit: {fileID: 6871184688509333741}
   playerShieldController: {fileID: 3158206734398763717}
+  playerAnimator: {fileID: 0}
   hitPoint: {fileID: 7029900753368981312}
   hitRadius: 1.2
   attackDamage: 10
@@ -6029,10 +6031,27 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 128
-  canShowHitGizmo: 0
+  canShowHitGizmo: 1
+  comboResetTime: 2
+  comboMovementForces:
+  - 1.5
+  - 2
+  - 4
+  comboLockDurations:
+  - 0.2
+  - 0.3
+  - 0.4
+  attack1Duration: 0.4
+  attack2Duration: 0.6
+  attack2SpinSpeed: 900
+  attack3PreChargeDuration: 0.15
+  attack3ChargeDuration: 0.3
+  attack3SpinSpeed: 90
+  attack3StunDuration: 0.5
   knockbackYoung: 0.25
   knockbackAdult: 0.5
   knockbackElder: 0.75
+  knockbackMaxDistance: 3
   meleeImpactVFX: {fileID: 6878709896115108358}
   impactParticleCount: 20
   useBoxCollider: 1
@@ -6086,9 +6105,9 @@ MonoBehaviour:
   currentStatSO: {fileID: 11400000, guid: ea3506cba284fac44a761904b92bf1b5, type: 2}
   statsText: {fileID: 3509488526369192923}
   statsPanel: {fileID: 7097059385777304942}
-  showBaseValues: 0
+  showBaseValues: 1
   decimals: 2
-  showDebugOnGUI: 1
+  showDebugOnGUI: 0
   guiCustomPosition: {x: 10, y: 10}
   guiWidth: 440
   guiHeight: 670

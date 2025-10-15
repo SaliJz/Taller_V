@@ -299,6 +299,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private IEnumerator StunRoutine(float duration)
     {
+        ReportDebug("Iniciando aturdimiento.", 1);
         isStunned = true;
 
         if (knockbackHandler != null)
@@ -306,9 +307,16 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             knockbackHandler.StopMovement(true);
         }
 
-        if (enemyRenderer != null && enemyRenderer.material.HasProperty("_Color"))
+        if (enemyVisualEffects != null)
         {
-            enemyRenderer.material.color = Color.yellow;
+            enemyVisualEffects.StartStunEffect(duration);
+        }
+        else
+        {
+            if (enemyRenderer != null && enemyRenderer.material.HasProperty("_Color"))
+            {
+                enemyRenderer.material.color = Color.yellow;
+            }
         }
 
         ReportDebug($"Aturdido por {duration}s.", 1);
@@ -322,9 +330,16 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             knockbackHandler.StopMovement(false);
         }
 
-        if (enemyRenderer != null && enemyRenderer.material.HasProperty("_Color"))
+        if (enemyVisualEffects != null)
         {
-            enemyRenderer.material.color = originalColor;
+            enemyVisualEffects.StopStunEffect();
+        }
+        else
+        {
+            if (enemyRenderer != null && enemyRenderer.material.HasProperty("_Color"))
+            {
+                enemyRenderer.material.color = originalColor;
+            }
         }
 
         stunCoroutine = null;

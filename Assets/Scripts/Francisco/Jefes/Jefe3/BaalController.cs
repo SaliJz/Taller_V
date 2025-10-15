@@ -92,6 +92,12 @@ public class BaalController : MonoBehaviour
     [SerializeField] private int _maxRetargetAttempts = 1;
     private float _attack2Timer;
     private List<Vector3> _swarmPath = new List<Vector3>();
+
+    [Header("Attack 2: VFXs")]
+    [Header("VFX - Staff")]
+    [SerializeField] private ParticleSystem _staffGlowVFX;
+    [Header("VFX - Swarm")]
+    [SerializeField] private ParticleSystem _swarmVFX;
     #endregion
 
     #region Attack 3: Perfect Hit - Teleport
@@ -106,6 +112,7 @@ public class BaalController : MonoBehaviour
     [SerializeField] private Vector3 _teleportHitboxSize = new Vector3(1.5f, 2f, 3f);
     [SerializeField] private float _teleportCastRadius = 1.0f;
     private float _attack3Timer;
+
     #endregion
 
     #region Attack 4: Lord of Flies 
@@ -297,6 +304,34 @@ public class BaalController : MonoBehaviour
 
     }
 
+    private void OnDisable()
+    {
+        if (_healthController != null)
+        {
+            _healthController.OnOverwhelmed -= StunBoss;
+            _healthController.OnRecovered -= UnStunBoss;
+        }
+
+        if (_swarmVFX != null)
+        {
+            _swarmVFX.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        }
+
+        if (_staffGlowVFX != null)
+        {
+            _staffGlowVFX.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        }
+
+        if (_teleportVFXInstance != null)
+        {
+            ParticleSystem ps = _teleportVFXInstance.GetComponent<ParticleSystem>();
+            if (ps != null) ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            _teleportVFXInstance.SetActive(false);
+        }
+
+        StopAllCoroutines();
+    }
+
     private void OnDestroy()
     {
         if (_healthController != null)
@@ -305,10 +340,24 @@ public class BaalController : MonoBehaviour
             _healthController.OnRecovered -= UnStunBoss;
         }
 
+        if (_swarmVFX != null)
+        {
+            _swarmVFX.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        }
+
+        if (_staffGlowVFX != null)
+        {
+            _staffGlowVFX.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        }
+
         if (_teleportVFXInstance != null)
         {
+            ParticleSystem ps = _teleportVFXInstance.GetComponent<ParticleSystem>();
+            if (ps != null) ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
             Destroy(_teleportVFXInstance);
         }
+
+        StopAllCoroutines();
     }
     #endregion
 
@@ -647,7 +696,18 @@ public class BaalController : MonoBehaviour
         yield return StartCoroutine(RotateToFacePlayer(_rotationSpeed));
         if (_currentState == BossState.Stunned) yield break;
 
+        if (_staffGlowVFX != null)
+        {
+            _staffGlowVFX.Play();
+        }
+
         yield return StartCoroutine(PerformStaffAnimation());
+
+        if (_staffGlowVFX != null)
+        {
+            _staffGlowVFX.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        }
+
         if (_currentState == BossState.Stunned) yield break;
 
         if (_staffTransform != null)
@@ -706,6 +766,12 @@ public class BaalController : MonoBehaviour
 
         _swarmPath.Clear();
         _swarmVisualReference.gameObject.SetActive(true);
+
+        if (_swarmVFX != null)
+        {
+            _swarmVFX.Play();
+        }
+
         _swarmVisualReference.position = transform.position;
 
         int retargetsLeft = _maxRetargetAttempts;
@@ -773,6 +839,12 @@ public class BaalController : MonoBehaviour
             _swarmPath.Add(_swarmVisualReference.position);
             yield return null;
         }
+
+        if (_swarmVFX != null)
+        {
+            _swarmVFX.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        }
+
         _swarmVisualReference.gameObject.SetActive(false);
     }
     #endregion
@@ -795,6 +867,7 @@ public class BaalController : MonoBehaviour
 
         if (_currentState == BossState.Stunned)
         {
+            if (particleSystem != null) particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmitting);
             if (_teleportVFXInstance != null) _teleportVFXInstance.SetActive(false);
             yield break;
         }
@@ -808,6 +881,7 @@ public class BaalController : MonoBehaviour
         {
             if (_currentState == BossState.Stunned)
             {
+                if (particleSystem != null) particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmitting);
                 if (_teleportVFXInstance != null) _teleportVFXInstance.SetActive(false);
                 yield break;
             }
@@ -820,6 +894,7 @@ public class BaalController : MonoBehaviour
 
         transform.position = targetPosition;
 
+        if (particleSystem != null) particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         if (_teleportVFXInstance != null) _teleportVFXInstance.SetActive(false);
 
         Debug.Log("Golpe Perfecto: Baal reaparece y prepara el golpe.");
