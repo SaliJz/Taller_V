@@ -2152,7 +2152,7 @@ GameObject:
   - component: {fileID: 69844080327497481}
   m_Layer: 7
   m_Name: Enemy2_Morlock
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2350,11 +2350,15 @@ MonoBehaviour:
   - {fileID: 6064679713689361994}
   - {fileID: 4632777121511405127}
   - {fileID: 3280764147264144518}
-  blinkTargetRenderer:
-  - {fileID: 0}
   blinkFlashMaterial: {fileID: 2100000, guid: d1f9e2c5e82298b4b8f024596ca37e41, type: 2}
   blinkInterval: 0.06
   blinkCount: 6
+  stunMaterial: {fileID: 0}
+  stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  stunBlinkSpeed: 0.1
+  stunVFXPrefab: {fileID: 0}
+  stunVFXHeight: 2
+  stunSFX: {fileID: 0}
   defaultMaterial: {fileID: 2100000, guid: e826f8fe9d1a524468d39863e3899f64, type: 2}
   glowMaterial: {fileID: 2100000, guid: 5da8ab1f06f51c047a99ed21c3104c56, type: 2}
   glowIntensity: 2

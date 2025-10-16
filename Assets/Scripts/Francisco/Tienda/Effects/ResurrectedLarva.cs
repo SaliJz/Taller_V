@@ -106,15 +106,15 @@ public class ResurrectedLarva : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnTriggerEnter(Collider other)
     {
-        if (collision.gameObject.CompareTag("Enemy"))
+        if (other.CompareTag("Enemy"))
         {
             if (!hasFoundTarget)
             {
                 hasFoundTarget = true;
                 StopAllCoroutines();
-                Debug.Log($"[Larva] Colisión con enemigo ({collision.gameObject.name}). Explotando...");
+                Debug.Log($"[Larva] Colisión con enemigo ({other.name}). Explotando...");
             }
             DealDamageAndDie();
         }

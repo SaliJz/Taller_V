@@ -12,11 +12,11 @@ GameObject:
   - component: {fileID: 7499967202020531457}
   - component: {fileID: 3406694872015079568}
   - component: {fileID: 697252722090302473}
-  - component: {fileID: 403904252563956460}
+  - component: {fileID: 3119098667061123479}
   - component: {fileID: 8757515611011634336}
-  - component: {fileID: 8078139681920677308}
+  - component: {fileID: 3738477104067171628}
   m_Layer: 0
-  m_Name: Larva
+  m_Name: LarvaCurative
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -68,7 +68,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: deff49e71a8bee1478640ac03f2f6969, type: 2}
+  - {fileID: 2100000, guid: ff4fbc939de81b641b8dd3a3b11e61f7, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -111,7 +111,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &403904252563956460
+--- !u!114 &3119098667061123479
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -120,14 +120,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1531481768560991545}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9c4c63d3f55061946a5f9bb92ae0ab35, type: 3}
+  m_Script: {fileID: 11500000, guid: 6447c10991aad3e499ced2f30f5a4b74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 10
+  moveSpeed: 5
   lifetime: 5
-  damagePercentOfEnemyBase: 0.5
-  explosionRadius: 1
-  baseDamage: 10
+  stopDistance: 0.5
+  baseHealAmount: 15
+  healingRadius: 0.75
 --- !u!195 &8757515611011634336
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -150,7 +150,7 @@ NavMeshAgent:
   m_BaseOffset: 0.5
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
---- !u!135 &8078139681920677308
+--- !u!135 &3738477104067171628
 SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -169,5 +169,5 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 2
+  m_Radius: 1.5
   m_Center: {x: 0, y: 0, z: 0}
