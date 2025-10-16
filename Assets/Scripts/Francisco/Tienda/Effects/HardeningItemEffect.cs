@@ -42,6 +42,7 @@ public class HardeningItemEffect : ItemEffectBase
 
             if (playerHealth != null)
             {
+                if (!playerHealth.HasAmuletOfEndurance) playerHealth.AcquireAmuletOfEndurance();
                 playerHealth.AddTemporaryHealth(temporaryHealthPerKill, maxTemporaryHealth);
                 Debug.Log($"[HardeningItemEffect] {killedEnemy.name} eliminado. Se intenta añadir {temporaryHealthPerKill} de vida temporal.");
             }

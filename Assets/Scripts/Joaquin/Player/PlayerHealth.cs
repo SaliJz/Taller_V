@@ -58,6 +58,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     [Header("Vida Temporal")]
     [SerializeField] private float temporaryHealthDuration = 10f;
+    [SerializeField] private float temporaryHealthDecaySpeed = 0.5f;
     private float currentTemporaryHealth = 0f;
     private float maxTemporaryHealthLimit = 0f;
     private Coroutine temporaryHealthDecayCoroutine;
@@ -577,17 +578,24 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
 
-        currentHealth += healAmount;
-        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        if (HasAmuletOfEndurance)
+        {
+            AddTemporaryHealth(healAmount, maxHealth);
+            ReportDebug($"Curación desviada a vida temporal debido al Amuleto. Cantidad: {healAmount}", 1);
+        }
+        else
+        {
+            currentHealth += healAmount;
+            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+            ReportDebug($"El jugador ha sido curado {healAmount} de vida normal.", 1);
+        }
 
         SyncCurrentHealthToSO();
-
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
         UpdateLifeStage();
-        UpdateTemporaryHealthUI();
 
-        ReportDebug($"El jugador ha sido curado {healAmount}. Vida actual: {currentHealth}/{maxHealth}", 1);
+        UpdateTemporaryHealthUI();
     }
 
     /// <summary>
@@ -801,39 +809,47 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     }
     public void AddTemporaryHealth(float amount, float maxLimit)
     {
-        maxTemporaryHealthLimit = maxLimit;
+        maxTemporaryHealthLimit = Mathf.Max(maxTemporaryHealthLimit, maxLimit);
 
         currentTemporaryHealth += amount;
-
-        if (currentTemporaryHealth > maxTemporaryHealthLimit)
-        {
-            currentTemporaryHealth = maxTemporaryHealthLimit;
-        }
+        currentTemporaryHealth = Mathf.Min(currentTemporaryHealth, maxTemporaryHealthLimit);
 
         if (temporaryHealthDecayCoroutine != null)
         {
             StopCoroutine(temporaryHealthDecayCoroutine);
         }
-        if (currentTemporaryHealth > 0)
-        {
-            temporaryHealthDecayCoroutine = StartCoroutine(TemporaryHealthDecayRoutine());
-        }
+        temporaryHealthDecayCoroutine = StartCoroutine(TemporaryHealthDecayRoutine());
 
         UpdateTemporaryHealthUI();
-        ReportDebug($"Vida temporal añadida: {amount}. Total: {currentTemporaryHealth} (Límite: {maxTemporaryHealthLimit})", 1);
+        ReportDebug($"Vida temporal añadida: {amount}. Total: {currentTemporaryHealth}/{maxTemporaryHealthLimit}. Tiempo de decaimiento reseteado.", 1);
     }
+
     private IEnumerator TemporaryHealthDecayRoutine()
     {
-        ReportDebug("Temporizador de vida temporal iniciado.", 1);
-
         yield return new WaitForSeconds(temporaryHealthDuration);
 
-        ReportDebug("La vida temporal ha expirado y será eliminada.", 1);
+        ReportDebug("Tiempo de gracia de vida temporal terminado. Iniciando decaimiento rápido.", 1);
+
+        float startHealth = currentTemporaryHealth;
+        float timePassed = 0f;
+
+        while (timePassed < temporaryHealthDecaySpeed)
+        {
+            timePassed += Time.deltaTime;
+
+            currentTemporaryHealth = Mathf.Lerp(startHealth, 0f, timePassed / temporaryHealthDecaySpeed);
+
+            UpdateTemporaryHealthUI();
+
+            yield return null;
+        }
 
         currentTemporaryHealth = 0f;
-
         UpdateTemporaryHealthUI();
         temporaryHealthDecayCoroutine = null;
+        maxTemporaryHealthLimit = 0f;
+
+        ReportDebug("Decaimiento de vida temporal completado.", 1);
     }
     public void GrantTemporaryHealthOnKill(float amount)
     {
@@ -857,12 +873,17 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
         temporaryHealthDecayCoroutine = StartCoroutine(TemporaryHealthDecayRoutine());
     }
-    private void UpdateTemporaryHealthUI()
+    public void UpdateTemporaryHealthUI()
     {
         if (HUDManager.Instance != null)
         {
-            HUDManager.Instance.UpdateTemporaryHealthBar(currentTemporaryHealth, maxTemporaryHealthLimit);
+            HUDManager.Instance.SetTemporaryHealthValues(currentTemporaryHealth, MaxHealth);
         }
+    }
+    public void AcquireAmuletOfEndurance()
+    {
+        HasAmuletOfEndurance = true;
+        ReportDebug("Amuleto adquirido. La curación normal está deshabilitada.", 1);
     }
 
     #region Debuffs

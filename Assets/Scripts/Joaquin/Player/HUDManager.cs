@@ -31,6 +31,13 @@ public class HUDManager : MonoBehaviour
     [SerializeField] private float screenFlashInterval = 1f;
     [SerializeField] private float lowHealthThreshold = 0.25f;
 
+    [Header("Vida Temporal - Animacion")]
+    [SerializeField] private float temporaryHealthLerpSpeed = 5f;
+    [SerializeField] private RectTransform healthBarParentRect;
+
+    private float targetTempHealthPercentage = 0f;
+    private float maxHealthForTempBar = 1f;
+
     private bool isLowHealth = false;
     private Coroutine healthBarFlashCoroutine;
     private Coroutine screenFlashCoroutine;
@@ -55,6 +62,38 @@ public class HUDManager : MonoBehaviour
             transparent.a = 0f;
             screenFlashOverlay.color = transparent;
             screenFlashOverlay.raycastTarget = false; // No bloquear interacciones
+        }
+    }
+
+    private void Update()
+    {
+        if (temporaryHealthBar != null && healthBar != null)
+        {
+            if (healthBarParentRect != null)
+            {
+                float healthBarEndPosition = healthBar.fillAmount;
+
+                float targetAnchorMinX = healthBarEndPosition;
+
+                RectTransform tempBarRect = temporaryHealthBar.rectTransform;
+
+                float currentWidth = tempBarRect.anchorMax.x - tempBarRect.anchorMin.x;
+
+                Vector2 currentAnchorMin = tempBarRect.anchorMin;
+
+                tempBarRect.anchorMin = Vector2.Lerp(
+                    currentAnchorMin,
+                    new Vector2(targetAnchorMinX, currentAnchorMin.y),
+                    Time.deltaTime * temporaryHealthLerpSpeed
+                );
+
+                tempBarRect.anchorMax = new Vector2(
+                    tempBarRect.anchorMin.x + currentWidth,
+                    tempBarRect.anchorMax.y
+                );
+
+                temporaryHealthBar.fillAmount = Mathf.Lerp(temporaryHealthBar.fillAmount, targetTempHealthPercentage, Time.deltaTime * temporaryHealthLerpSpeed);
+            }
         }
     }
 
@@ -107,6 +146,17 @@ public class HUDManager : MonoBehaviour
             isLowHealth = false;
             StopLowHealthEffects();
         }
+    }
+
+    public void SetTemporaryHealthValues(float currentTempHealth, float maxHealth)
+    {
+        if (temporaryHealthBar == null) return;
+
+        maxHealthForTempBar = maxHealth > 0 ? maxHealth : 1f;
+
+        targetTempHealthPercentage = currentTempHealth / maxHealthForTempBar;
+
+        ReportDebug($"Vida temporal establecida. Valor: {currentTempHealth}/{maxHealth} (Target Fill: {targetTempHealthPercentage})", 1);
     }
 
     public void UpdateTemporaryHealthBar(float currentTempHealth, float maxLimit)
