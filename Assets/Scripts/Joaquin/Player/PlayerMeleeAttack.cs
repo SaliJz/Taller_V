@@ -77,6 +77,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     private int currentAttackIndex = -1;
     
     private HashSet<Collider> hitEnemiesThisCombo = new HashSet<Collider>();
+    private Collider[] hitBuffer = new Collider[64];
 
     public int AttackDamage
     {
@@ -89,6 +90,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     private PlayerHealth playerHealth;
     private PlayerMovement playerMovement;
     private Material meleeImpactMatInstance;
+    private Coroutine cleanupCoroutine;
 
     private void Awake()
     {
@@ -112,18 +114,31 @@ public class PlayerMeleeAttack : MonoBehaviour
         PlayerStatsManager.OnStatChanged += HandleStatChanged;
     }
 
-    private void OnDisable()
-    {
-        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
-        StopAllCoroutines();
-        CleanupVFX();
-    }
+    //private void OnDisable()
+    //{
+    //    PlayerStatsManager.OnStatChanged -= HandleStatChanged;
+
+    //    if (cleanupCoroutine != null)
+    //    {
+    //        StopCoroutine(cleanupCoroutine);
+    //        cleanupCoroutine = null;
+    //    }
+
+    //    CleanupVFXImmediate();
+    //}
 
     private void OnDestroy()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
+
+        if (cleanupCoroutine != null)
+        {
+            StopCoroutine(cleanupCoroutine);
+            cleanupCoroutine = null;
+        }
+
+        CleanupVFXImmediate();
         StopAllCoroutines();
-        CleanupVFX();
     }
 
     private void Start()
@@ -190,19 +205,20 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         if (Time.time - lastAttackTime > comboResetTime) comboCount = 0;
 
-        if (Input.GetMouseButtonDown(0) && attackCooldown <= 0f && !isAttacking)
-        {
-            if (!CanAttack()) return;
+        //if (Input.GetMouseButtonDown(0) && attackCooldown <= 0f && !isAttacking)
+        //{
+        //    if (!CanAttack()) return;
 
-            lastAttackTime = Time.time;
-            StartCoroutine(AttackSequence(comboCount));
-            comboCount = (comboCount + 1) % 3; // Ciclo: 0 -> 1 -> 2 -> 0
-        }
+        //    lastAttackTime = Time.time;
+        //    StartCoroutine(AttackSequence(comboCount));
+        //    comboCount = (comboCount + 1) % 3; // Ciclo: 0 -> 1 -> 2 -> 0
+        //}
     }
 
     // Verifica si el jugador puede atacar (tiene escudo y no está lanzándolo).
-    private bool CanAttack()
+    public bool CanAttack()
     {
+        if (isAttacking) return false;
         if (playerShieldController != null)
         {
             if (!playerShieldController.HasShield)
@@ -217,7 +233,25 @@ public class PlayerMeleeAttack : MonoBehaviour
                 return false;
             }
         }
+
         return true;
+    }
+
+    /// <summary>
+    /// Método público llamado por PlayerCombatActionManager para ejecutar el ataque.
+    /// </summary>
+    public IEnumerator ExecuteAttackFromManager()
+    {
+        if (Time.time - lastAttackTime > comboResetTime)
+        {
+            comboCount = 0;
+        }
+
+        if (!CanAttack()) yield break;
+
+        lastAttackTime = Time.time;
+        yield return StartCoroutine(AttackSequence(comboCount));
+        comboCount = (comboCount + 1) % 3; // Ciclo: 0 -> 1 -> 2 -> 0
     }
 
     /// <summary>
@@ -261,17 +295,14 @@ public class PlayerMeleeAttack : MonoBehaviour
         if (playerAnimator != null) playerAnimator.SetTrigger($"Attack{attackIndex + 1}");
 
         // Ejecutar ataque específico
+        float lockDuration = comboLockDurations[attackIndex];
+        attackCooldown = lockDuration;
+
         switch (attackIndex)
         {
-            case 0: // Ataque 1: Jack Punch
-                yield return StartCoroutine(ExecuteAttack1());
-                break;
-            case 1: // Ataque 2: Shield Spin
-                yield return StartCoroutine(ExecuteAttack2());
-                break;
-            case 2: // Ataque 3: Thrust
-                yield return StartCoroutine(ExecuteAttack3());
-                break;
+            case 0: yield return StartCoroutine(ExecuteAttack1(lockDuration)); break;
+            case 1: yield return StartCoroutine(ExecuteAttack2(lockDuration)); break;
+            case 2: yield return StartCoroutine(ExecuteAttack3(lockDuration)); break;
         }
 
         // Desbloquear y resetear
@@ -305,10 +336,9 @@ public class PlayerMeleeAttack : MonoBehaviour
         if (playerMovement != null) playerMovement.ForceApplyLockedRotation();
     }
 
-    private IEnumerator ExecuteAttack1()
+    private IEnumerator ExecuteAttack1(float totalDuration)
     {
-        // Golpe básico: movimiento directo hacia adelante
-        float movementDuration = attack1Duration;
+        float movementDuration = totalDuration;
         float elapsedTime = 0f;
 
         Vector3 attackMoveVelocity = (transform.forward * comboMovementForces[0]) / movementDuration;
@@ -339,7 +369,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
-    private IEnumerator ExecuteAttack2()
+    private IEnumerator ExecuteAttack2(float totalDuration)
     {
         // Ataque de área: salto y rotación 360
         float movementDuration = 0.2f;
@@ -389,7 +419,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
-    private IEnumerator ExecuteAttack3()
+    private IEnumerator ExecuteAttack3(float totalDuration)
     {
         // Ataque pesado: giro lento + carga + golpe
         float preChargeElapsed = 0f;
@@ -591,13 +621,14 @@ public class PlayerMeleeAttack : MonoBehaviour
     private void InitializeMeleeImpactVFX()
     {
         if (meleeImpactVFX == null) return;
+        var psRenderer = meleeImpactVFX.GetComponent<ParticleSystemRenderer>();
+        if (psRenderer == null) return;
 
-        meleeImpactMatInstance = new Material(meleeImpactVFX.GetComponent<ParticleSystemRenderer>().sharedMaterial);
-        meleeImpactVFX.GetComponent<ParticleSystemRenderer>().material = meleeImpactMatInstance;
+        meleeImpactMatInstance = new Material(psRenderer.sharedMaterial);
+        psRenderer.material = meleeImpactMatInstance;
 
         meleeImpactVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         meleeImpactVFX.Clear(true);
-
     }
 
     /// <summary>
@@ -617,19 +648,49 @@ public class PlayerMeleeAttack : MonoBehaviour
     }
 
     // Limpia los recursos del VFX al desactivar o destruir el objeto.
-    private void CleanupVFX()
+    private void CleanupVFXImmediate()
     {
         if (meleeImpactVFX != null)
         {
+            var psRenderer = meleeImpactVFX.GetComponent<ParticleSystemRenderer>();
             meleeImpactVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             meleeImpactVFX.Clear(true);
+            if (psRenderer != null)
+            {
+                psRenderer.material = null;
+            }
         }
 
         if (meleeImpactMatInstance != null)
         {
-            Destroy(meleeImpactMatInstance);
+            var toDestroy = meleeImpactMatInstance;
             meleeImpactMatInstance = null;
+            Destroy(toDestroy, 0.05f);
         }
+    }
+
+    private IEnumerator CleanupVFXCoroutine()
+    {
+        if (meleeImpactVFX != null)
+        {
+            var psRenderer = meleeImpactVFX.GetComponent<ParticleSystemRenderer>();
+            meleeImpactVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            meleeImpactVFX.Clear(true);
+            if (psRenderer != null)
+            {
+                psRenderer.material = null;
+            }
+        }
+
+        if (meleeImpactMatInstance != null)
+        {
+            var toDestroy = meleeImpactMatInstance;
+            meleeImpactMatInstance = null;
+            yield return null;
+            Destroy(toDestroy);
+        }
+
+        cleanupCoroutine = null;
     }
 
     #endregion

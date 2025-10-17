@@ -32,6 +32,7 @@ public class Shield : MonoBehaviour
 
     private float currentSpeed;
     private Vector3 startPosition;
+    private Vector3 lastPosition;
     private Transform returnTarget;
     private Transform currentTarget;
     private List<Transform> hitTargets = new List<Transform>();
@@ -46,32 +47,6 @@ public class Shield : MonoBehaviour
         InitializeShieldVFX();
     }
 
-    private void OnDestroy()
-    {
-        if (shieldTrailVFX != null)
-        {
-            shieldTrailVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            shieldTrailVFX.Clear(true);
-        }
-
-        if (shieldTrailVFXMatInstance != null)
-        {
-            Destroy(shieldTrailVFXMatInstance);
-            shieldTrailVFXMatInstance = null;
-        }
-
-        if (shieldTrail != null)
-        {
-            shieldTrail.emitting = false;
-        }
-
-        if (shieldTrailMatInstance != null)
-        {
-            Destroy(shieldTrailMatInstance);
-            shieldTrailMatInstance = null;
-        }
-    }
-
     /// <summary>
     /// Función que es llamada por el PlayerShieldController para lanzar el escudo.
     /// </summary>
@@ -84,6 +59,7 @@ public class Shield : MonoBehaviour
         this.returnTarget = owner.transform;
         transform.forward = direction;
         startPosition = transform.position;
+        lastPosition = transform.position;
 
         this.attackDamage = (int)damage;
         this.baseSpeed = speed;
@@ -330,11 +306,19 @@ public class Shield : MonoBehaviour
         shieldTrailVFX.gameObject.SetActive(true);
         shieldTrail.gameObject.SetActive(true);
 
-        shieldTrailVFXMatInstance = new Material(shieldTrailVFX.GetComponent<ParticleSystemRenderer>().sharedMaterial);
-        shieldTrailVFX.GetComponent<ParticleSystemRenderer>().material = shieldTrailVFXMatInstance;
+        var psRenderer = shieldTrailVFX.GetComponent<ParticleSystemRenderer>();
+        if (psRenderer != null && psRenderer.sharedMaterial != null)
+        {
+            shieldTrailVFXMatInstance = new Material(psRenderer.sharedMaterial);
+            psRenderer.material = shieldTrailVFXMatInstance;
+        }
 
-        shieldTrailMatInstance = new Material(shieldTrail.GetComponent<TrailRenderer>().sharedMaterial);
-        shieldTrail.GetComponent<TrailRenderer>().material = shieldTrailMatInstance;
+        var trailRenderer = shieldTrail.GetComponent<TrailRenderer>();
+        if (trailRenderer != null && trailRenderer.sharedMaterial != null)
+        {
+            shieldTrailMatInstance = new Material(trailRenderer.sharedMaterial);
+            trailRenderer.material = shieldTrailMatInstance;
+        }
 
         shieldTrailVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         shieldTrailVFX.Clear(true);

@@ -161,17 +161,63 @@ public class PlayerShieldController : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(1) && hasShield && !isThrowingShield)
-        {
-            // Verificar que no esté en medio de un ataque melee
-            if (playerMeleeAttack != null && playerMeleeAttack.IsAttacking)
-            {
-                ReportDebug("No se puede lanzar el escudo mientras se ataca en melee.", 1);
-                return;
-            }
+        //if (Input.GetMouseButtonDown(1) && hasShield && !isThrowingShield)
+        //{
+        //    // Verificar que no esté en medio de un ataque melee
+        //    if (playerMeleeAttack != null && playerMeleeAttack.IsAttacking)
+        //    {
+        //        ReportDebug("No se puede lanzar el escudo mientras se ataca en melee.", 1);
+        //        return;
+        //    }
 
-            StartCoroutine(ThrowShieldSequence());
+        //    StartCoroutine(ThrowShieldSequence());
+        //}
+    }
+
+    /// <summary>
+    /// Método público llamado por PlayerCombatActionManager para ejecutar el lanzamiento del escudo.
+    /// </summary>
+    public IEnumerator ExecuteShieldThrowFromManager()
+    {
+        if (!hasShield || isThrowingShield) yield break;
+
+        // Verificar que no esté en medio de un ataque melee
+        if (playerMeleeAttack != null && playerMeleeAttack.IsAttacking)
+        {
+            ReportDebug("No se puede lanzar el escudo mientras se ataca en melee.", 1);
+            yield break;
         }
+
+        isThrowingShield = true;
+
+        // Lógica de rotación
+        Vector3 mouseWorldDir;
+        if (!TryGetMouseWorldDirection(out mouseWorldDir))
+        {
+            mouseWorldDir = transform.forward;
+        }
+        else
+        {
+            // fallback: aplicar rotación instantánea snappeada
+            RotateTowardsMouseInstant();
+        }
+
+        if (playerMovement != null)
+        {
+            playerMovement.LockFacingTo8Directions(mouseWorldDir, true);
+            yield return StartCoroutine(WaitForRotationLock());
+            playerMovement.ForceApplyLockedRotation();
+        }
+
+        ThrowShield();
+
+        // Duración a la acción.
+        // Esto le dice al ActionManager que espere este tiempo antes de procesar la siguiente acción.
+        yield return new WaitForSeconds(0.25f);
+
+        if (playerMovement != null) playerMovement.UnlockFacing();
+
+        isThrowingShield = false;
     }
 
     /// <summary>
@@ -184,9 +230,18 @@ public class PlayerShieldController : MonoBehaviour
     /// </summary>
     private IEnumerator ThrowShieldSequence()
     {
+        if (!hasShield || isThrowingShield) yield break;
+
+        // Verificar que no esté en medio de un ataque melee
+        if (playerMeleeAttack != null && playerMeleeAttack.IsAttacking)
+        {
+            ReportDebug("No se puede lanzar el escudo mientras se ataca en melee.", 1);
+            yield break;
+        }
+
         isThrowingShield = true;
 
-        // 1) Dirección objetivo
+        // Dirección objetivo
         Vector3 mouseWorldDir;
         if (!TryGetMouseWorldDirection(out mouseWorldDir))
         {
@@ -198,43 +253,39 @@ public class PlayerShieldController : MonoBehaviour
             RotateTowardsMouseInstant();
         }
 
-        // 2) Lockear rotación snapped
         if (playerMovement != null)
         {
             playerMovement.LockFacingTo8Directions(mouseWorldDir, true);
+            yield return StartCoroutine(WaitForRotationLock());
+            playerMovement.ForceApplyLockedRotation();
         }
 
-        // 3) Esperar a que se alcance la rotación lockeada
-        float maxWait = 0.25f;
-        float start = Time.time;
-        float angleThreshold = 2f;
-
-        while (Time.time - start < maxWait)
-        {
-            if (playerMovement != null)
-            {
-                Quaternion target = playerMovement.GetLockedRotation();
-                float angle = Quaternion.Angle(transform.rotation, target);
-                if (angle <= angleThreshold) break;
-            }
-            else
-            {
-                break;
-            }
-            yield return null;
-        }
-
-        // Asegurar rotación exacta antes de lanzar
-        if (playerMovement != null) playerMovement.ForceApplyLockedRotation();
-
-        // 4) Ejecutar lanzamiento
+        // Ejecutar lanzamiento
         ThrowShield();
 
-        // 5) Desbloquear rotación inmediatamente después del lanzamiento
+        yield return new WaitForSeconds(0.25f);
+
+        // Desbloquear rotación inmediatamente después del lanzamiento
         // (el jugador puede moverse mientras el escudo vuela)
         if (playerMovement != null) playerMovement.UnlockFacing();
 
         isThrowingShield = false;
+    }
+
+    private IEnumerator WaitForRotationLock()
+    {
+        float maxWait = 0.25f;
+        float start = Time.time;
+        while (Time.time - start < maxWait)
+        {
+            if (playerMovement != null)
+            {
+                if (Quaternion.Angle(transform.rotation, playerMovement.GetLockedRotation()) <= 2f)
+                    break;
+            }
+            else break;
+            yield return null;
+        }
     }
 
     // Rota instantaneamente al mouse proyectado en el plano horizontal (y = transform.position.y), con snap a 8 direcciones.
@@ -316,6 +367,11 @@ public class PlayerShieldController : MonoBehaviour
     {
         hasShield = true;
         ReportDebug("Escudo recuperado.", 1);
+    }
+
+    public bool CanThrowShield()
+    {
+        return hasShield && !isThrowingShield;
     }
 
     // Permite cambiar si el escudo puede rebotar o no

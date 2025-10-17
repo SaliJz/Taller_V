@@ -40,7 +40,9 @@ public class PlayerMovement : MonoBehaviour
 
     private int playerLayer;
     private float dashCooldownTimer = 0f;
+
     public bool IsDashing { get; private set; }
+    public float DashCooldownTimer => dashCooldownTimer;
     public float MoveSpeed
     {
         get { return moveSpeed; }
@@ -82,17 +84,17 @@ public class PlayerMovement : MonoBehaviour
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
         PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
 
-        if (dashDustVFX != null)
-        {
-            dashDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            dashDustVFX.Clear(true);
-        }
+        //if (dashDustVFX != null)
+        //{
+        //    dashDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        //    dashDustVFX.Clear(true);
+        //}
 
-        if (dashVFXMaterialInstance != null)
-        {
-            Destroy(dashVFXMaterialInstance);
-            dashVFXMaterialInstance = null;
-        }
+        //if (dashVFXMaterialInstance != null)
+        //{
+        //    Destroy(dashVFXMaterialInstance);
+        //    dashVFXMaterialInstance = null;
+        //}
     }
 
     private void OnDestroy()
@@ -111,6 +113,8 @@ public class PlayerMovement : MonoBehaviour
             Destroy(dashVFXMaterialInstance);
             dashVFXMaterialInstance = null;
         }
+
+        StopAllCoroutines();
     }
 
     private void Start()
@@ -190,10 +194,10 @@ public class PlayerMovement : MonoBehaviour
 
         ApplyGravity();
 
-        if (Input.GetKeyDown(KeyCode.Space) && dashCooldownTimer <= 0 && !IsDashing && !isDashDisabled)
-        {
-            StartCoroutine(DashRoutine());
-        }
+        //if (Input.GetKeyDown(KeyCode.Space) && dashCooldownTimer <= 0 && !IsDashing && !isDashDisabled)
+        //{
+        //    StartCoroutine(DashRoutine());
+        //}
     }
 
     private void FixedUpdate()
@@ -276,6 +280,14 @@ public class PlayerMovement : MonoBehaviour
             Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 12f * Time.fixedDeltaTime);
         }
+    }
+
+    /// <summary>
+    /// Método público llamado por PlayerCombatActionManager para ejecutar el dash.
+    /// </summary>
+    public IEnumerator ExecuteDashFromManager()
+    {
+        yield return StartCoroutine(DashRoutine());
     }
 
     private IEnumerator DashRoutine()

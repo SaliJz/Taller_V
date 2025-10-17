@@ -16,18 +16,19 @@ public class ShieldPooler : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
     private void Start()
     {
+        if (shieldToPool == null)
+        {
+            Debug.LogError("[ShieldPooler] shieldToPool no asignado.");
+            pooledObjects = new List<GameObject>();
+            return;
+        }
+
         pooledObjects = new List<GameObject>();
         for (int i = 0; i < amountToPool; i++)
         {
@@ -43,15 +44,21 @@ public class ShieldPooler : MonoBehaviour
     /// <returns></returns>
     public GameObject GetPooledObject()
     {
-        foreach (GameObject obj in pooledObjects)
+        for (int i = pooledObjects.Count - 1; i >= 0; i--)
         {
+            if (pooledObjects[i] == null) pooledObjects.RemoveAt(i);
+        }
+
+        for (int i = 0; i < pooledObjects.Count; i++)
+        {
+            var obj = pooledObjects[i];
             if (!obj.activeInHierarchy)
             {
                 return obj;
             }
         }
-        
-        Debug.LogWarning("Pool de escudos agotado. Considera aumentar 'amountToPool'.");
+
+        Debug.LogWarning("[ShieldPooler] Pool de escudos agotado. Considera aumentar 'amountToPool'.");
         return null;
     }
 }

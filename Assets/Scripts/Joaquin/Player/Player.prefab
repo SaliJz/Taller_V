@@ -5784,8 +5784,8 @@ GameObject:
   - component: {fileID: 7561142854623488302}
   - component: {fileID: 4404166481987444120}
   - component: {fileID: 6801291884961726868}
-  - component: {fileID: 595312439969399503}
   - component: {fileID: 6110564483166717353}
+  - component: {fileID: 595312439969399503}
   - component: {fileID: 3158206734398763717}
   - component: {fileID: 9211243997880812482}
   - component: {fileID: 8984845218185550205}
@@ -5920,42 +5920,6 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &595312439969399503
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6679960082821164706}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 67589ffbda4f8574b9562cc587738cee, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  statsManager: {fileID: 7736777102245202428}
-  controller: {fileID: 6801291884961726868}
-  mainCameraTransform: {fileID: 0}
-  playerAnimator: {fileID: 0}
-  playerHealth: {fileID: 6110564483166717353}
-  moveSpeed: 5
-  gravity: -9.81
-  dashDistance: 10
-  dashDuration: 0.3
-  dashCooldown: 0.3
-  traversableLayers:
-    serializedVersion: 2
-    m_Bits: 128
-  dashCollisionLayers:
-    serializedVersion: 2
-    m_Bits: 512
-  gapDashBonusDistance: 3
-  groundLayerMask:
-    serializedVersion: 2
-    m_Bits: 8
-  afterimagePrefab: {fileID: 1529516632308541924, guid: 5813d161b87a73e46926413d2ef586b9, type: 3}
-  afterimageAlpha: 0.5
-  afterimageLifetime: 0.5
-  dashDustVFX: {fileID: 9021649713925411072}
 --- !u!114 &6110564483166717353
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5992,6 +5956,42 @@ MonoBehaviour:
   poisonInitialDamage: 0
   poisonResetTime: 0
   lifeStageText: {fileID: 9014533947318260704}
+--- !u!114 &595312439969399503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6679960082821164706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67589ffbda4f8574b9562cc587738cee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  statsManager: {fileID: 7736777102245202428}
+  controller: {fileID: 6801291884961726868}
+  mainCameraTransform: {fileID: 0}
+  playerAnimator: {fileID: 0}
+  playerHealth: {fileID: 6110564483166717353}
+  moveSpeed: 5
+  gravity: -9.81
+  dashDistance: 10
+  dashDuration: 0.3
+  dashCooldown: 0.3
+  traversableLayers:
+    serializedVersion: 2
+    m_Bits: 128
+  dashCollisionLayers:
+    serializedVersion: 2
+    m_Bits: 512
+  gapDashBonusDistance: 3
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 8
+  afterimagePrefab: {fileID: 1529516632308541924, guid: 5813d161b87a73e46926413d2ef586b9, type: 3}
+  afterimageAlpha: 0.5
+  afterimageLifetime: 0.5
+  dashDustVFX: {fileID: 9021649713925411072}
 --- !u!114 &3158206734398763717
 MonoBehaviour:
   m_ObjectHideFlags: 0
