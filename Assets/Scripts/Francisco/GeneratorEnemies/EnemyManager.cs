@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class EnemyManager : MonoBehaviour
 {
@@ -12,6 +13,55 @@ public class EnemyManager : MonoBehaviour
     private GameObject spawnEffectPrefab;
 
     private List<GameObject> activeEnemies = new List<GameObject>();
+
+    private bool isAuraActiveInThisRoom = false;
+    private DevilAuraType activeAura = DevilAuraType.None;
+    private ResurrectionLevel activeResurrectionLevel = ResurrectionLevel.None;
+    private float auraCoveragePercent = 0f;
+    private float initialHealthMultiplier = 1f;
+
+    private struct EnemyMultipliers
+    {
+        public float HealthMultiplier { get; set; }
+        public float DamageMultiplier { get; set; }
+        public float SpeedMultiplier { get; set; }
+    }
+
+    private void Awake()
+    {
+        parentRoom = GetComponentInParent<Room>();
+        dungeonGenerator = FindAnyObjectByType<DungeonGenerator>();
+    }
+
+    private void OnEnable()
+    {
+        if (DevilManipulationManager.Instance != null)
+        {
+            DevilManipulationManager.Instance.OnAuraManipulationActivated += HandleAuraManipulation;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (DevilManipulationManager.Instance != null)
+        {
+            DevilManipulationManager.Instance.OnAuraManipulationActivated -= HandleAuraManipulation;
+        }
+    }
+
+    private void HandleAuraManipulation(DevilAuraType aura, ResurrectionLevel level, float coverage)
+    {
+        isAuraActiveInThisRoom = true;
+        activeAura = aura;
+        activeResurrectionLevel = level;
+        auraCoveragePercent = coverage;
+        initialHealthMultiplier = 0.8f;
+
+        if (DevilManipulationManager.Instance != null)
+        {
+            DevilManipulationManager.Instance.ResetCleanRoomsCounter();
+        }
+    }
 
     public void Initialize(DungeonGenerator dg, Room parent, CombatContents rules, GameObject effectPrefab, GameObject[] defaultEnemies)
     {
@@ -26,7 +76,10 @@ public class EnemyManager : MonoBehaviour
     {
         if (combatConfig == null || combatConfig.waves == null || combatConfig.waves.Count == 0)
         {
-            dungeonGenerator.OnCombatEnded(parentRoom, entrancePoint);
+            if (dungeonGenerator != null)
+            {
+                dungeonGenerator.OnCombatEnded(parentRoom, entrancePoint);
+            }
             yield break;
         }
 
@@ -41,51 +94,48 @@ public class EnemyManager : MonoBehaviour
             parentRoom.connectionDoors[entranceDoorIndex].SetActive(true);
         }
 
-        yield return StartCoroutine(SpawnWaves());
-
-        dungeonGenerator.OnCombatEnded(parentRoom, entrancePoint);
-    }
-
-    IEnumerator SpawnWaves()
-    {
-        for (int currentWave = 0; currentWave < combatConfig.waves.Count; currentWave++)
+        if (dungeonGenerator != null)
         {
-            EnemyWave wave = combatConfig.waves[currentWave];
+            dungeonGenerator.StartRoomTimer();
+        }
 
-            yield return StartCoroutine(SpawnEnemiesWithEffect(wave));
+        for (int i = 0; i < combatConfig.waves.Count; i++)
+        {
+            EnemyWave wave = combatConfig.waves[i];
 
-            while (activeEnemies.Count > 0)
-            {
-                activeEnemies.RemoveAll(enemy => enemy == null);
-                yield return null;
-            }
+            yield return StartCoroutine(SpawnEnemiesInWave(wave));
 
-            if (currentWave < combatConfig.waves.Count - 1)
+            yield return StartCoroutine(WaitForAllEnemiesToDie());
+
+            bool isLastWave = (i == combatConfig.waves.Count - 1);
+            if (!isLastWave)
             {
                 yield return new WaitForSeconds(combatConfig.timeBetweenWaves);
             }
         }
+
+        if (dungeonGenerator != null)
+        {
+            dungeonGenerator.EndRoomTimer();
+        }
+
+        if (parentRoom != null)
+        {
+            parentRoom.UnlockExitDoors(entrancePoint);
+        }
+
+        if (dungeonGenerator != null)
+        {
+            dungeonGenerator.OnCombatEnded(parentRoom, entrancePoint);
+        }
     }
 
-    IEnumerator SpawnEnemiesWithEffect(EnemyWave wave)
+    private IEnumerator SpawnEnemiesInWave(EnemyWave wave)
     {
-        if (parentRoom == null || parentRoom.spawnAreas.Length == 0)
-        {
-            yield break;
-        }
-
-        GameObject[] prefabsToUse;
+        GameObject[] prefabsToUse = wave.enemyPrefabs.Length > 0 ? wave.enemyPrefabs : defaultEnemyPrefabs;
         int enemyCount = wave.enemyCount;
 
-        if (wave.enemyPrefabs != null && wave.enemyPrefabs.Length > 0)
-        {
-            prefabsToUse = wave.enemyPrefabs;
-        }
-        else if (defaultEnemyPrefabs != null && defaultEnemyPrefabs.Length > 0)
-        {
-            prefabsToUse = defaultEnemyPrefabs;
-        }
-        else
+        if (prefabsToUse == null || prefabsToUse.Length == 0 || enemyCount == 0)
         {
             yield break;
         }
@@ -112,6 +162,16 @@ public class EnemyManager : MonoBehaviour
 
         yield return new WaitForSeconds(2.0f);
 
+        List<int> auraIndices = new List<int>();
+        if (isAuraActiveInThisRoom && activeAura != DevilAuraType.None)
+        {
+            int numAuraEnemies = Mathf.CeilToInt(enemyCount * auraCoveragePercent);
+
+            List<int> allIndices = Enumerable.Range(0, enemyCount).ToList();
+
+            auraIndices = allIndices.OrderBy(x => Random.value).Take(numAuraEnemies).ToList();
+        }
+
         for (int i = 0; i < enemyCount; i++)
         {
             if (i < instantiatedEffects.Count && instantiatedEffects[i] != null)
@@ -125,6 +185,53 @@ public class EnemyManager : MonoBehaviour
             if (newEnemy != null)
             {
                 activeEnemies.Add(newEnemy);
+
+                EnemyHealth healthComponent = null;
+                bool hasHealthComponent = newEnemy.TryGetComponent<EnemyHealth>(out healthComponent);
+
+                if (auraIndices.Contains(i))
+                {
+                    EnemyAuraManager auraManager = newEnemy.AddComponent<EnemyAuraManager>();
+                    auraManager.ApplyAura(activeAura, activeResurrectionLevel);
+
+                    if (hasHealthComponent)
+                    {
+                        healthComponent.SetInitialHealthMultiplier(initialHealthMultiplier);
+                    }
+                }
+
+                if (hasHealthComponent)
+                {
+                    healthComponent.OnDeath += (enemyGO) => OnEnemyDeath(enemyGO);
+                }
+            }
+        }
+    }
+
+    private void OnEnemyDeath(GameObject enemyGO)
+    {
+        activeEnemies.Remove(enemyGO);
+    }
+
+    private IEnumerator WaitForAllEnemiesToDie()
+    {
+        while (activeEnemies.Count > 0)
+        {
+            yield return null;
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (parentRoom != null && parentRoom.spawnAreas != null)
+        {
+            Gizmos.color = Color.red;
+            foreach (var area in parentRoom.spawnAreas)
+            {
+                if (area != null)
+                {
+                    Gizmos.DrawWireCube(area.bounds.center, area.bounds.size);
+                }
             }
         }
     }

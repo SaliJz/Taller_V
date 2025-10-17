@@ -123,6 +123,7 @@ public class DungeonGenerator : MonoBehaviour
 
     private List<Room> generatedRooms = new List<Room>();
     private int roomsGenerated = 0;
+    private int currentRoomCount = 0;
     private int targetRoomCount;
 
     private Dictionary<RoomType, List<RoomData>> roomDataDictionary = new Dictionary<RoomType, List<RoomData>>();
@@ -135,7 +136,26 @@ public class DungeonGenerator : MonoBehaviour
     private bool hasProbableMandatoryBeenGenerated = false;
     private float currentProbableMandatoryProbability;
 
+    private float roomStartTime = 0f; 
+    private bool hasPlayerMadePact = false; 
+    private bool hasPlayerObtainedRelic = false;
+
     public static event System.Action OnRoomCompleted;
+    public int CurrentRoomCount { get; private set; } = 0;
+
+    private DevilManipulationManager devilManager;
+
+    void Awake()
+    {
+        if (DevilManipulationManager.Instance != null)
+        {
+            devilManager = DevilManipulationManager.Instance;
+        }
+        else
+        {
+            Debug.LogError("[DungeonGenerator] DevilManipulationManager.Instance no encontrado. La lógica del Diablo no funcionará.");
+        }
+    }
 
     void Start()
     {
@@ -172,12 +192,42 @@ public class DungeonGenerator : MonoBehaviour
         statsManager = FindAnyObjectByType<PlayerStatsManager>();
     }
 
+    private void OnEnable()
+    {
+        if (DevilManipulationManager.Instance != null)
+        {
+            DevilManipulationManager.Instance.OnDistortionActivated += HandleDistortion;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (DevilManipulationManager.Instance != null)
+        {
+            DevilManipulationManager.Instance.OnDistortionActivated -= HandleDistortion;
+        }
+    }
+
     void Update()
     {
         if (Input.GetKeyDown(_debugCompleteRoomKey))
         {
             CompleteCurrentRoomShortcut();
         }
+    }
+
+    public void StartRoomTimer()
+    {
+        roomStartTime = Time.time;
+    }
+
+    public float EndRoomTimer()
+    {
+        float timeElapsed = Time.time - roomStartTime;
+
+        roomStartTime = 0f;
+
+        return timeElapsed;
     }
 
     public void CompleteCurrentRoomShortcut()
@@ -732,12 +782,66 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
+    private void HandleDistortion(DevilDistortionType distortion)
+    {
+        if (UIManager.Instance != null)
+        {
+            string distortionName = GetDistortionName(distortion);
+            UIManager.Instance.ShowManipulationText($"¡Distorsión Activada: {distortionName}!");
+        }
+
+        switch (distortion)
+        {
+            case DevilDistortionType.AbyssalConfusion:
+                // Lógica: Invertir los controles de movimiento del jugador
+                // playerMovement.InvertControls(true); // Requiere este método en PlayerMovement
+                break;
+            case DevilDistortionType.FloorOfTheDamned:
+                // Lógica: Aplicar baja fricción (0.4) al suelo de la sala actual
+                // currentRoom.ApplyFriction(0.4f); // Requiere este método en Room
+                break;
+            case DevilDistortionType.DeceptiveDarkness:
+                // Lógica: Limitar la visibilidad a 12 unidades (ej: niebla de guerra / post-proceso)
+                // VisibilityController.Instance.SetVisibility(12f);
+                break;
+            case DevilDistortionType.SealedLuck:
+                // Lógica: El sistema de tienda/gachapon debe escuchar y cambiar reliquias por gangas.
+                break;
+            case DevilDistortionType.WitheredBloodthirst:
+                // Lógica: El sistema de curación por muerte debe escuchar y bloquear la regeneración de vida.
+                // PlayerHealth.Instance.BlockKillHeal(true);
+                break;
+            case DevilDistortionType.InfernalJudgement:
+                // Lógica: La sala actual debe añadir oleadas extra.
+                // currentRoom.EnemyManager.AddExtraWaves(UnityEngine.Random.Range(2, 4));
+                break;
+        }
+    }
+
+    private string GetDistortionName(DevilDistortionType distortion)
+    {
+        return distortion switch
+        {
+            DevilDistortionType.AbyssalConfusion => "Confusión del Abismo",
+            DevilDistortionType.FloorOfTheDamned => "Piso de Condenados",
+            DevilDistortionType.DeceptiveDarkness => "Oscuridad Engañosa",
+            DevilDistortionType.SealedLuck => "Suerte Sellada",
+            DevilDistortionType.WitheredBloodthirst => "Sed de Sangre Marchita",
+            DevilDistortionType.InfernalJudgement => "Juicio Infernal",
+            _ => "Efecto Desconocido"
+        };
+    }
+
     public IEnumerator TransitionToNextRoom(ConnectionPoint entrancePoint, Transform playerTransform)
     {
         if (playerMovement == null)
         {
             playerMovement = FindAnyObjectByType<PlayerMovement>();
         }
+
+        CurrentRoomCount++;
+
+        float timeToCleanRoom = EndRoomTimer();
 
         float originalPlayerY = playerTransform.position.y;
         if (playerMovement != null)
@@ -777,6 +881,38 @@ public class DungeonGenerator : MonoBehaviour
         }
 
         Vector3 entranceDirection = GetDirectionFromConnectionType(entrancePoint.connectionType);
+
+        if (DevilManipulationManager.Instance != null && oldRoom != null)
+        {
+            if (oldRoom.roomType == RoomType.Combat || oldRoom.roomType == RoomType.Boss)
+            {
+                DevilManipulationManager.Instance.NotifyRoomCleaned(timeToCleanRoom);
+            }
+            else 
+            {
+                DevilManipulationManager.Instance.NotifyNonCombatRoom();
+            }
+
+            if (playerHealth == null)
+            {
+                playerHealth = playerMovement?.GetComponent<PlayerHealth>();
+            }
+
+            float currentHealthPercent = (playerHealth != null && playerHealth.MaxHealth > 0)
+                ? playerHealth.CurrentHealth / playerHealth.MaxHealth
+                : 0f;
+
+            DevilManipulationManager.Instance.TryActivateManipulation(
+                currentHealthPercent,
+                hasPlayerMadePact,
+                hasPlayerObtainedRelic
+            );
+        }
+
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ClearManipulationText();
+        }
 
         yield return FadeController.Instance.FadeOut(
             onStart: () =>
@@ -822,6 +958,8 @@ public class DungeonGenerator : MonoBehaviour
                     StartCoroutine(ActivateEntranceDoorDelayed(newRoom.connectionDoors[newRoomEntranceDoorIndex]));
                 }
 
+                StartRoomTimer();
+
                 if (newRoom != null && newRoom.roomType == RoomType.Combat)
                 {
                     var enemyManager = newRoom.GetComponent<EnemyManager>();
@@ -833,7 +971,7 @@ public class DungeonGenerator : MonoBehaviour
                 else
                 {
                     newRoom.EventsOnFinsih();
-                    newRoom.UnlockExitDoors(exitPoint);  
+                    newRoom.UnlockExitDoors(exitPoint);
                 }
 
                 for (int i = 1; i < newRoom.connectionPoints.Length; i++)
@@ -853,11 +991,27 @@ public class DungeonGenerator : MonoBehaviour
         );
     }
 
-    public void OnCombatEnded(Room combatRoom, ConnectionPoint entrancePoint)
+    public void OnCombatEnded(Room room, ConnectionPoint entrancePoint)
     {
-        combatRoom.EventsOnFinsih();
-        combatRoom.UnlockExitDoors(entrancePoint);
-        OnRoomCompleted?.Invoke();
+        float timeToCleanRoom = EndRoomTimer();
+
+        if (devilManager != null)
+        {
+            if (room.roomType == RoomType.Combat || room.roomType == RoomType.Boss)
+            {
+                devilManager.NotifyRoomCleaned(timeToCleanRoom);
+            }
+            else
+            {
+                devilManager.NotifyNonCombatRoom();
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[DungeonGenerator] DevilManager es nulo, no se notificará el fin de sala.");
+        }
+
+        room.UnlockExitDoors(entrancePoint);
     }
 
     public void NotifyRoomCompletion()

@@ -29,9 +29,21 @@ public class ResurrectionItemEffect : ItemEffectBase
 
     private void HandleEnemyResurrection(GameObject killedEnemy, float enemyBaseHealth)
     {
+        EnemyHealth enemyHealthComponent = killedEnemy.GetComponent<EnemyHealth>();
+
+        if (enemyHealthComponent != null && enemyHealthComponent.ItemEffectHandledDeath)
+        {
+            return;
+        }
+
         if (Random.value < resurrectionChance)
         {
             Debug.Log($"[ResurrectionEffect] Evento de resurrección activado para {killedEnemy.name}.");
+
+            if (enemyHealthComponent != null)
+            {
+                enemyHealthComponent.ItemEffectHandledDeath = true;
+            }
 
             bool shouldInstantiateCurative = Random.value < curativeLarvaChance;
 

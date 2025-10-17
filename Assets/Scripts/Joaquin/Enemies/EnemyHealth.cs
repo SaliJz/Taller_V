@@ -27,6 +27,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private EnemyKnockbackHandler knockbackHandler;
     private PlayerStatsManager playerStatsManager;
+    private EnemyAuraManager _auraManager;
+
+    private float _initialHealthMultiplier = 1.0f; 
+    private float _auraDamageReduction = 0.0f;  
 
     private bool canHealPlayer = true;
     private bool isDead = false;
@@ -77,6 +81,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     }
 
     public float MaxHealth => maxHealth;
+    public bool ItemEffectHandledDeath { get; set; } = false;
     public static event Action<float, float> OnEnemyHealthChanged;
     public event Action<GameObject> OnDeath;
     public event Action OnDamaged;
@@ -125,10 +130,29 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             originalColor = enemyRenderer.material.color;
         }
 
+        currentHealth = maxHealth;
+
+        _auraManager = GetComponent<EnemyAuraManager>();
+
+        ApplyInitialHealth();
+
         // asegurar inicialización de currentHealth (si no se configuró)
         currentHealth = Mathf.Clamp(currentHealth > 0f ? currentHealth : maxHealth, 0f, maxHealth);
 
         knockbackHandler = GetComponent<EnemyKnockbackHandler>();
+    }
+
+    private void ApplyInitialHealth()
+    {
+        currentHealth = maxHealth * _initialHealthMultiplier;
+        maxHealth *= _initialHealthMultiplier; 
+
+        if (firstLifeSlider != null) firstLifeSlider.maxValue = maxHealth;
+    }
+
+    public void SetInitialHealthMultiplier(float multiplier)
+    {
+        _initialHealthMultiplier = multiplier;
     }
 
     private void Start()
@@ -173,14 +197,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     {
         if (currentHealth <= 0) return;
 
-        // aplicar reducción local si existe
-        float finalDamage = damageAmount;
-        if (_reduccionLocal > 0f)
-        {
-            finalDamage = finalDamage * (1f - _reduccionLocal);
-        }
+        float damageReductionTotal = _reduccionLocal + _auraDamageReduction; 
+        float finalDamage = damageAmount * (1f - damageReductionTotal);
 
         currentHealth -= finalDamage;
+        ReportDebug($"Dano recibido. Base: {damageAmount}. Reduccion total: {damageReductionTotal * 100}%. Dano Final: {finalDamage}. Vida Restante: {currentHealth}", 1);
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
         // emitir cambio de vida para listeners
@@ -213,6 +234,12 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             CurrentHealth = 0;
             Die();
         }
+    }
+
+    public void ApplyDamageReduction_Aura(float reductionPercent)
+    {
+        _auraDamageReduction = reductionPercent;
+        ReportDebug($"Reduccion de dano por Aura Endurecimiento: {reductionPercent * 100}%.", 1);
     }
 
     private IEnumerator StopGlowAfterDelay(float delay)
@@ -248,6 +275,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         isDead = true;
         currentHealth = 0;
+
+        if (_auraManager != null)
+        {
+            _auraManager.HandleDeathEffect(transform);
+        }
 
         ReportDebug($"{gameObject.name} ha muerto.", 1);
         OnDeath?.Invoke(gameObject);

@@ -31,6 +31,13 @@ public class ExplosiveItemEffect : ItemEffectBase
 
     private void HandleEnemyExplosion(GameObject killedEnemy, float enemyBaseHealth)
     {
+        EnemyHealth enemyHealthComponent = killedEnemy.GetComponent<EnemyHealth>();
+
+        if (enemyHealthComponent != null && enemyHealthComponent.ItemEffectHandledDeath)
+        {
+            return;
+        }
+
         ExplosionDelayHandler handler = killedEnemy.AddComponent<ExplosionDelayHandler>();
 
         handler.StartExplosion(
@@ -38,7 +45,11 @@ public class ExplosiveItemEffect : ItemEffectBase
             explosionRadius,
             explosionVisualizerPrefab,
             enemyBaseHealth,
-            explosiveEnemyDetonationDelayBonus 
-        );
+            explosiveEnemyDetonationDelayBonus);
+
+        if (enemyHealthComponent != null)
+        {
+            enemyHealthComponent.ItemEffectHandledDeath = true;
+        }
     }
 }

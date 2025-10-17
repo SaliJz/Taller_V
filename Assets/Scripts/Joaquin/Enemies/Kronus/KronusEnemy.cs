@@ -160,6 +160,21 @@ public class KronusEnemy : MonoBehaviour
         if (visualHit != null) Destroy(visualHit);
     }
 
+    public void ApplyRoomMultiplier(float damageMult, float speedMult)
+    {
+        attackDamage *= damageMult;
+
+        moveSpeed *= speedMult;
+        if (agent != null)
+        {
+            agent.speed = moveSpeed;
+        }
+
+        dashSpeedMultiplier *= speedMult;
+
+        ReportDebug($"Multiplicadores de sala aplicados a Kronus. Daño x{damageMult}, Velocidad x{speedMult}. Nueva Velocidad: {moveSpeed:F2}", 1);
+    }
+
     private void HandleEnemyDeath(GameObject enemy)
     {
         if (enemy != gameObject) return;

@@ -160,6 +160,19 @@ public partial class MorlockEnemy : MonoBehaviour
         StopAllCoroutines();
     }
 
+    public void ApplyRoomMultiplier(float damageMult, float speedMult)
+    {
+        projectileDamage *= damageMult;
+
+        moveSpeed *= speedMult;
+        if (agent != null)
+        {
+            agent.speed = moveSpeed;
+        }
+
+        ReportDebug($"Multiplicadores de sala aplicados a Morlock. Daño x{damageMult}, Velocidad x{speedMult}. Nueva Velocidad: {moveSpeed:F2}", 1);
+    }
+
     private void HandleDamageTaken()
     {
         if (!isDead && currentState == MorlockState.Pursue2)

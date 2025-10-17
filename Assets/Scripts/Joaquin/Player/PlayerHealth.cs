@@ -100,12 +100,15 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public float MaxHealth => statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
     public float CurrentHealth => currentHealth;
+    public float CurrentHealthPercent => currentHealth / MaxHealth;
     public Transform PlayerModelTransform => playerModelTransform;
     public Vector3 CurrentModelLocalScale => playerModelTransform != null ? playerModelTransform.localScale : Vector3.one;
     public Vector3 CurrentModelWorldScale => playerModelTransform != null ? playerModelTransform.lossyScale : Vector3.one;
     public float CurrentModelYOffset => playerModelTransform != null ? playerModelTransform.localPosition.y : 0f;
 
     public bool IsLowHealth => currentHealth < (MaxHealth * 0.25f);
+
+    public static event Action<PlayerHealth> OnPlayerInstantiated;
 
     private void Awake()
     {
@@ -119,6 +122,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         playerShieldController = GetComponent<PlayerShieldController>();
 
         InitializeMaterialCache();
+
+        OnPlayerInstantiated?.Invoke(this);
     }
 
     private void Start()
