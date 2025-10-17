@@ -5785,6 +5785,7 @@ GameObject:
   - component: {fileID: 4404166481987444120}
   - component: {fileID: 6801291884961726868}
   - component: {fileID: 6110564483166717353}
+  - component: {fileID: 682363650257746365}
   - component: {fileID: 595312439969399503}
   - component: {fileID: 3158206734398763717}
   - component: {fileID: 9211243997880812482}
@@ -5956,6 +5957,22 @@ MonoBehaviour:
   poisonInitialDamage: 0
   poisonResetTime: 0
   lifeStageText: {fileID: 9014533947318260704}
+--- !u!114 &682363650257746365
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6679960082821164706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0be74f554f4bb24b87b506664c3b7c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  meleeAttack: {fileID: 9211243997880812482}
+  shieldController: {fileID: 3158206734398763717}
+  playerMovement: {fileID: 595312439969399503}
+  inputBufferWindow: 2.5
 --- !u!114 &595312439969399503
 MonoBehaviour:
   m_ObjectHideFlags: 0
