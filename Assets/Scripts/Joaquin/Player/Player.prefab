@@ -5939,12 +5939,19 @@ MonoBehaviour:
   playerHealth: {fileID: 6110564483166717353}
   moveSpeed: 5
   gravity: -9.81
-  dashSpeed: 10
+  dashDistance: 10
   dashDuration: 0.3
   dashCooldown: 0.3
   traversableLayers:
     serializedVersion: 2
     m_Bits: 128
+  dashCollisionLayers:
+    serializedVersion: 2
+    m_Bits: 512
+  gapDashBonusDistance: 3
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 8
   afterimagePrefab: {fileID: 1529516632308541924, guid: 5813d161b87a73e46926413d2ef586b9, type: 3}
   afterimageAlpha: 0.5
   afterimageLifetime: 0.5
@@ -5979,6 +5986,7 @@ MonoBehaviour:
   damageFlashCount: 3
   shieldBlockCooldown: 18
   temporaryHealthDuration: 10
+  temporaryHealthDecaySpeed: 0.5
   morlockStats: {fileID: 11400000, guid: 827240c34ab30b44faf66dd69d82507b, type: 2}
   poisonHitThreshold: 0
   poisonInitialDamage: 0

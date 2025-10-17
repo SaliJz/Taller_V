@@ -19,10 +19,15 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float gravity = -9.81f;
 
     [Header("Dash")]
-    [SerializeField] private float dashSpeed = 15f;
+    [SerializeField] private float dashDistance = 10f;
     [SerializeField] private float dashDuration = 0.3f;
     [SerializeField] private float dashCooldown = 0.3f;
     [SerializeField] private LayerMask traversableLayers;
+    [SerializeField] private LayerMask dashCollisionLayers;
+
+    [Header("Dash - Gap Crossing")]
+    [SerializeField] private float gapDashBonusDistance = 3f;
+    [SerializeField] private LayerMask groundLayerMask;
 
     [Header("Effects")]
     [Header("Afterimage Settings")]
@@ -42,6 +47,8 @@ public class PlayerMovement : MonoBehaviour
         set { moveSpeed = value; }
     }
 
+    private float prevStepOffset = 0f;
+    private bool prevAnimatorApplyRootMotion = false;
     private Vector3 moveDirection;
     private float yVelocity;
     private bool canMove = true;
@@ -191,6 +198,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (IsDashing) return;
+
         if (controller.enabled)
         {
             Vector3 finalMove = moveDirection * moveSpeed;
@@ -271,17 +280,31 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator DashRoutine()
     {
+        Vector3 dashDirection = moveDirection.magnitude > 0.1f ? moveDirection : transform.forward;
+
+        if (!ValidateDashPath(dashDirection, out Vector3 targetDashPosition))
+        {
+            yield break;
+        }
+
         IsDashing = true;
+        yVelocity = 0f;
+        moveDirection = Vector3.zero;
         if (playerHealth != null) playerHealth.IsInvulnerable = true;
         ToggleLayerCollisions(true);
+
+        if (playerAnimator != null)
+        {
+            prevAnimatorApplyRootMotion = playerAnimator.applyRootMotion;
+            playerAnimator.applyRootMotion = false;
+        }
+
         if (dashDustVFX != null) PlayDashVFX(true);
         if (afterimagePrefab != null) StartCoroutine(AfterimageRoutine());
 
-        Vector3 dashDirection = moveDirection.magnitude > 0.1f ? moveDirection : transform.forward;
+        yield return StartCoroutine(PerformDash(targetDashPosition, dashDuration));
 
-        yield return StartCoroutine(PerformDash(dashDirection, dashDuration));
-
-        float safetyPushSpeed = dashSpeed * 0.75f;
+        float safetyPushSpeed = (dashDistance / dashDuration) * 0.75f;
         float maxStuckTime = 1.0f;
         float stuckTimer = 0f;
 
@@ -304,6 +327,12 @@ public class PlayerMovement : MonoBehaviour
         if (dashDustVFX != null) PlayDashVFX(false);
         ToggleLayerCollisions(false);
         if (playerHealth != null) playerHealth.IsInvulnerable = false;
+
+        if (playerAnimator != null)
+        {
+            playerAnimator.applyRootMotion = prevAnimatorApplyRootMotion;
+        }
+
         IsDashing = false;
         dashCooldownTimer = dashCooldown;
     }
@@ -336,15 +365,66 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-
-    private IEnumerator PerformDash(Vector3 direction, float duration)
+    private IEnumerator PerformDash(Vector3 targetPosition, float duration)
     {
-        float startTime = Time.time;
-        while (Time.time < startTime + duration)
+        float savedGravity = gravity;
+        float savedYVelocity = yVelocity;
+        gravity = 0f;
+        yVelocity = 0f;
+
+        if (controller != null)
         {
-            controller.Move(direction * dashSpeed * Time.deltaTime);
+            prevStepOffset = controller.stepOffset;
+            controller.stepOffset = 0f;
+        }
+
+        float startY = transform.position.y;
+
+        Vector3 startPosXZ = new Vector3(transform.position.x, 0f, transform.position.z);
+        Vector3 targetPosXZ = new Vector3(targetPosition.x, 0f, targetPosition.z);
+
+        float startTime = Time.time;
+        float endTime = startTime + duration;
+        float journeyLength = Vector3.Distance(startPosXZ, targetPosXZ);
+
+        if (journeyLength < 0.1f)
+        {
+            gravity = savedGravity;
+            yVelocity = savedYVelocity;
+            if (controller != null) controller.stepOffset = prevStepOffset;
+            yield break;
+        }
+
+        while (Time.time < endTime)
+        {
+            float t = Mathf.Clamp01((Time.time - startTime) / duration);
+            Vector3 lerpedXZ = Vector3.Lerp(startPosXZ, targetPosXZ, t);
+
+            Vector3 current = transform.position;
+            Vector3 currentFixedY = new Vector3(current.x, startY, current.z);
+            Vector3 next = new Vector3(lerpedXZ.x, startY, lerpedXZ.z);
+
+            Vector3 delta = next - currentFixedY;
+
+            delta.y = 0f;
+
+            controller.Move(delta);
+
+            yVelocity = 0f;
+
             yield return null;
         }
+
+        Vector3 finalXZ = new Vector3(targetPosXZ.x, startY, targetPosXZ.z);
+        Vector3 finalCurrent = transform.position;
+        Vector3 finalCurrentFixedY = new Vector3(finalCurrent.x, startY, finalCurrent.z);
+        Vector3 finalDelta = finalXZ - finalCurrentFixedY;
+        finalDelta.y = 0f;
+        controller.Move(finalDelta);
+
+        gravity = savedGravity;
+        yVelocity = savedYVelocity;
+        if (controller != null) controller.stepOffset = prevStepOffset;
     }
 
     private void ToggleLayerCollisions(bool ignore)
@@ -358,6 +438,76 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Valida la ruta del dash para detectar obstáculos o vacíos cruzables.
+    /// </summary>
+    /// <param name="direction">La dirección normalizada del dash.</param>
+    /// <param name="finalPosition">El punto de aterrizaje seguro parámetro de salida.</param>
+    /// <returns>True si el dash es posible, false si está bloqueado.</returns>
+    private bool ValidateDashPath(Vector3 direction, out Vector3 finalPosition)
+    {
+        Vector3 origin = transform.position;
+        float playerRadius = controller.radius;
+        float playerHeight = controller.height;
+
+        // Puntos de la cápsula para el CapsuleCast
+        Vector3 p1 = origin + controller.center + Vector3.up * (playerHeight / 2f - playerRadius);
+        Vector3 p2 = origin + controller.center - Vector3.up * (playerHeight / 2f - playerRadius);
+
+        // Paso 1: comprobar colisiones con capas explícitas de colisión del dash
+        if (Physics.CapsuleCast(p1, p2, playerRadius, direction, out RaycastHit obstacleHit, dashDistance, dashCollisionLayers, QueryTriggerInteraction.Ignore))
+        {
+            // Punto antes del choque, dejando un margen igual al radio para evitar clipping
+            finalPosition = origin + direction * Mathf.Max(0f, obstacleHit.distance - playerRadius);
+            ReportDebug("El camino está bloqueado por un obstáculo. Ajustando la distancia.", 1);
+            return true;
+        }
+
+        // Paso 2: intentar proyectar el punto objetivo base a dashDistance y buscar suelo bajo ese punto
+        float scanHeight = 2.0f; // altura desde la que proyectar el raycast hacia abajo
+        Vector3 baseTarget = origin + direction * dashDistance + Vector3.up * scanHeight;
+
+        if (Physics.Raycast(baseTarget, Vector3.down, out RaycastHit baseGroundHit, playerHeight + scanHeight + 1f, groundLayerMask, QueryTriggerInteraction.Ignore))
+        {
+            // Hay suelo bajo el punto objetivo base, permitir dash hasta ese punto
+            finalPosition = baseGroundHit.point;
+            ReportDebug("Se ha encontrado terreno o seguro debajo del objetivo del Dash base. Utilizando distancia del Dash base.", 1);
+            return true;
+        }
+
+        // Paso 3: no hay suelo bajo el target base. intentar buscar suelo entre dashDistance y dashDistance + gapDashBonusDistance
+        float scanStart = dashDistance + 0.1f;
+        float scanMax = dashDistance + gapDashBonusDistance;
+        float scanStep = Mathf.Max(0.5f, playerRadius * 0.5f);
+
+        RaycastHit foundHit = new RaycastHit();
+        bool found = false;
+
+        for (float t = scanStart; t <= scanMax; t += scanStep)
+        {
+            Vector3 probe = origin + direction * t + Vector3.up * scanHeight;
+            if (Physics.Raycast(probe, Vector3.down, out RaycastHit gh, playerHeight + scanHeight + 1f, groundLayerMask, QueryTriggerInteraction.Ignore))
+            {
+                foundHit = gh;
+                found = true;
+                break;
+            }
+        }
+
+        if (found)
+        {
+            // Si el suelo está dentro del bonus permitimos completar el dash
+            finalPosition = foundHit.point;
+            ReportDebug("Se detectó una brecha/vacio. Se encontró un aterrizaje seguro utilizando la bonificación por brecha/vacio.", 1);
+            return true;
+        }
+
+        // Paso 4: no hay suelo en rango permitido, cancelar dash
+        finalPosition = origin;
+        ReportDebug("La trayectoria del Dash no es segura, no hay terreno dentro del rango permitido. Dash cancelado.", 2);
+        return false;
+    }
+
     private IEnumerator AfterimageRoutine()
     {
         float interval = 0.05f;
@@ -365,17 +515,17 @@ public class PlayerMovement : MonoBehaviour
         {
             if (afterimagePrefab != null)
             {
-                // Usa el transform del modelo si PlayerHealth lo expone,
-                // Sino usa el root transform del jugador.
+                // Usar el transform del modelo si PlayerHealth lo expone,
+                // Sino usar el root transform del jugador.
                 Transform modelTransform = (playerHealth != null && playerHealth.PlayerModelTransform != null)
                     ? playerHealth.PlayerModelTransform
                     : transform;
 
-                // Instancia el afterimage en la posición/rotación del modelo
+                // Instanciar el afterimage en la posición/rotación del modelo
                 GameObject afterimage = Instantiate(afterimagePrefab, modelTransform.position, modelTransform.rotation);
 
-                // Ajusta escala mundial del afterimage para que coincida con la del modelo actual
-                // Si el prefab está pensado para escala 1 en root, asigna la escala global del modelo.
+                // Ajustar la escala mundial del afterimage para que coincida con la del modelo actual
+                // Si el prefab está pensado para escala 1 en root, asignar la escala global del modelo.
                 afterimage.transform.localScale = modelTransform.lossyScale;
 
                 // Sincronizar visual (Sprite o Mesh)
@@ -386,14 +536,14 @@ public class PlayerMovement : MonoBehaviour
                 {
                     dstSprite.sprite = srcSprite.sprite;
                     dstSprite.flipX = srcSprite.flipX;
-                    // No toca srcSprite.color. Aplica transparencia solo al afterimage.
+                    // No tocar srcSprite.color. Aplica transparencia solo al afterimage.
                     Color dstColor = srcSprite.color;
                     dstColor.a = afterimageAlpha;
                     dstSprite.color = dstColor;
                 }
                 else
                 {
-                    // Sino intenta copiar mesh + material y aplica transparencia con MaterialPropertyBlock
+                    // Sino intenta, copiar mesh + material y aplica transparencia con MaterialPropertyBlock
                     var srcMeshRenderer = modelTransform.GetComponentInChildren<MeshRenderer>();
                     var srcMeshFilter = modelTransform.GetComponentInChildren<MeshFilter>();
 
@@ -454,6 +604,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void ApplyGravity()
     {
+        if (IsDashing) return;
+
         if (controller.enabled && controller.isGrounded)
         {
             yVelocity = -0.5f;
@@ -598,19 +750,49 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if (!Application.isPlaying) return;
+        if (!Application.isPlaying || controller == null) return;
 
+        // Punto de origen
+        Vector3 origin = transform.position;
         Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(origin, 0.15f);
+
+        // Dirección actual del dash
         Vector3 dashDirection = moveDirection.magnitude > 0.1f ? moveDirection.normalized : transform.forward;
-        float dashDistance = dashSpeed * dashDuration;
 
-        Gizmos.DrawRay(transform.position, dashDirection * dashDistance);
+        // Línea del dash base (10 unidades por defecto)
+        Gizmos.color = Color.yellow;
+        Vector3 baseEnd = origin + dashDirection * dashDistance;
+        Gizmos.DrawLine(origin, baseEnd);
+        Gizmos.DrawWireSphere(baseEnd, 0.15f);
 
-        if (Physics.Raycast(transform.position, dashDirection, out RaycastHit hit, dashDistance, ~traversableLayers))
+        // Línea extendida (bonus de gap)
+        Gizmos.color = Color.magenta;
+        Vector3 bonusEnd = origin + dashDirection * (dashDistance + gapDashBonusDistance);
+        Gizmos.DrawLine(baseEnd, bonusEnd);
+        Gizmos.DrawWireSphere(bonusEnd, 0.1f);
+
+        // Comprobación visual del punto de suelo bajo el destino base
+        float scanHeight = 2.0f;
+        Vector3 downOrigin = baseEnd + Vector3.up * scanHeight;
+        if (Physics.Raycast(downOrigin, Vector3.down, out RaycastHit baseGroundHit, controller.height + scanHeight + 1f, groundLayerMask))
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(downOrigin, baseGroundHit.point);
+            Gizmos.DrawWireSphere(baseGroundHit.point, 0.2f);
+        }
+        else
         {
             Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(hit.point, 0.5f);
+            Gizmos.DrawLine(downOrigin, downOrigin + Vector3.down * (controller.height + scanHeight + 1f));
         }
+
+        // Texto de depuración opcional (solo visible en Scene)
+#if UNITY_EDITOR
+        UnityEditor.Handles.Label(origin + Vector3.up * 1.5f, "Origen de Dash");
+        UnityEditor.Handles.Label(baseEnd + Vector3.up * 1.5f, "Alcance base");
+        UnityEditor.Handles.Label(bonusEnd + Vector3.up * 1.5f, "Máximo (con bonificación)");
+#endif
     }
 
     #endregion
