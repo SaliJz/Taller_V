@@ -1,13 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>
-/// ExplosiveHead
-/// - Detecta proximidad
-/// - Reproduce grito
-/// - Tras priming explota, aplica daño y empuje
+/// ExplosiveHead:
+/// - Detecta proximidad con un contador (OnTriggerEnter/Exit).
+/// - Reproduce grito y efectos visuales de priming.
+/// - Tras priming explota, aplica daño y empuje.
 /// - Debug: OnGUI + Gizmos
 /// </summary>
 [RequireComponent(typeof(SphereCollider))]
@@ -19,23 +18,18 @@ public class ExplosiveHead : MonoBehaviour
     [Header("Parámetros")]
     [Tooltip("Tiempo en segundos desde el grito hasta la explosión.")]
     [SerializeField] private float primingDuration = 1.2f;
-
     [Tooltip("Radio de la explosión para aplicar daño y empuje.")]
     [SerializeField] private float explosionRadius = 5f;
-
     [Tooltip("Daño máximo infligido por la explosión (en el centro).")]
     [SerializeField] private float explosionDamage = 40f;
-
     [Tooltip("Fuerza aplicada a Rigidbodies (AddExplosionForce).")]
     [SerializeField] private float rigidbodyKnockbackForce = 700f;
-
     [Tooltip("Distancia de empuje aplicada a CharacterController (sin Rigidbody).")]
     [SerializeField] private float ccKnockbackDistance = 3f;
 
     [Header("Comportamiento")]
     [Tooltip("Si true, el daño decrece con la distancia (falloff).")]
     [SerializeField] private bool useDamageFalloff = true;
-
     [Tooltip("Si true, la priming se cancelará si el jugador sale del área antes de explotar.")]
     [SerializeField] private bool cancelIfPlayerLeaves = false;
 
@@ -46,19 +40,21 @@ public class ExplosiveHead : MonoBehaviour
     [Header("Referencias")]
     [SerializeField] private GameObject visuals;
     [SerializeField] private AudioSource audioSource;
-    [SerializeField] private ParticleSystem explosionVFX;
+    [SerializeField] private ParticleSystem explosionVFXPrefab;
     [SerializeField] private AudioClip screamSound;
     [SerializeField] private AudioClip explosionSound;
+    [SerializeField] private GameObject explosionSpherePrefab;
 
     [Header("Glow / Priming visuals")]
-    [Tooltip("Renderer de la cabeza (para parpadeo/emission).")]
-    [SerializeField] private Renderer headRenderer;
-    [Tooltip("Color base de emisión (si el shader lo soporta).")]
-    [SerializeField] private Color glowColor = Color.red;
-    [Tooltip("Intensidad máxima de emisión en el momento de la explosión.")]
-    [SerializeField] private float glowMaxIntensity = 3f;
-    [Tooltip("Curva que define la progresión del glow de 0..1 (x) -> factor (y).")]
-    [SerializeField] private AnimationCurve glowCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    [SerializeField] private List<Renderer> renderersToFlash = new List<Renderer>();
+    [SerializeField] private Color flashColor = Color.white;
+    [SerializeField] private float flashMaxIntensity = 3f;
+    [Tooltip("Curva que controla la intensidad del parpadeo en función del progreso 0..1 (0 inicio, 1 momento de explosión).")]
+    [SerializeField] private AnimationCurve intensityOverTime = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    [Tooltip("Curva que controla la frecuencia del parpadeo (Hz) en función del progreso 0..1. Ej: 1 -> 1Hz, 6 -> 6Hz.")]
+    [SerializeField] private AnimationCurve frequencyOverTime = AnimationCurve.Linear(0, 1f, 1, 8f);
+    [Tooltip("Curve to shape the blink envelope (0..1 input -> 0..1 output). Use to ease the on/off of the blink.")]
+    [SerializeField] private AnimationCurve blinkEnvelope = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Header("Jaw (mandíbula)")]
     [Tooltip("Transform usado como mandíbula (un cubo rotado sobre X para pruebas).")]
@@ -76,17 +72,19 @@ public class ExplosiveHead : MonoBehaviour
 
     [Header("Debug (OnGUI/Gizmos)")]
     [SerializeField] private bool showDebugHUD = true;
-    [SerializeField, Tooltip("Activa logs más verbosos para debugging (desactivar en build).")]
-    private bool verboseDebug = false;
+    [SerializeField] private bool verboseDebug = false;
 
     private Coroutine hazardRoutine;
     private SphereCollider triggerCollider;
     private Collider[] overlapResults;
-    private HashSet<Collider> insideColliders = new HashSet<Collider>();
     private float primingTimeLeft = 0f;
-    private MaterialPropertyBlock mpb;
-    private int emissionColorID;
 
+    private Dictionary<Renderer, MaterialPropertyBlock> mpbs;
+    private int emissionColorID;
+    private float maxScale;
+
+    private int targetsInTrigger = 0;
+    
     private void Awake()
     {
         triggerCollider = GetComponent<SphereCollider>();
@@ -98,40 +96,48 @@ public class ExplosiveHead : MonoBehaviour
         }
         triggerCollider.isTrigger = true;
 
+        maxScale = GetMaxLossyScale();
         overlapResults = new Collider[maxTargets];
 
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
-        if (explosionVFX == null) explosionVFX = GetComponentInChildren<ParticleSystem>();
 
-        mpb = new MaterialPropertyBlock();
+        mpbs = new Dictionary<Renderer, MaterialPropertyBlock>();
         emissionColorID = Shader.PropertyToID("_EmissionColor");
 
-        if (headRenderer == null) headRenderer = GetComponentInChildren<Renderer>();
+        if (renderersToFlash.Count == 0)
+        {
+            renderersToFlash.AddRange(GetComponentsInChildren<Renderer>(true));
+        }
 
-        glowCurve = new AnimationCurve(
-                    new Keyframe(0f, 0f),
-                    new Keyframe(0.6f, 0.18f),
-                    new Keyframe(0.9f, 0.72f),
-                    new Keyframe(1f, 1f)
-                    );
+        foreach (var r in renderersToFlash)
+        {
+            if (r == null) continue;
+            var mpb = new MaterialPropertyBlock();
+            r.GetPropertyBlock(mpb);
+            mpbs[r] = mpb;
+        }
 
-        glowCurve = new AnimationCurve(
-                    new Keyframe(0f, 0f),
-                    new Keyframe(0.6f, 0.18f),
-                    new Keyframe(0.9f, 0.72f),
-                    new Keyframe(1f, 1f)
-                    );
+        if (intensityOverTime == null || intensityOverTime.keys.Length == 0)
+            intensityOverTime = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-        if (verboseDebug) Debug.Log($"[ExplosiveHead] Awake - trigger center (local): {triggerCollider.center}, radius: {triggerCollider.radius}");
+        if (frequencyOverTime == null || frequencyOverTime.keys.Length == 0)
+            frequencyOverTime = AnimationCurve.Linear(0, 1f, 1, 8f);
+
+        if (jawCurve == null || jawCurve.keys.Length == 0)
+            jawCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+        if (blinkEnvelope == null || blinkEnvelope.keys.Length == 0)
+            blinkEnvelope = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+        if (verboseDebug) Debug.Log("[ExplosiveHead] Awake complete. Renderers controlled: " + mpbs.Count);
     }
 
     private void Update()
     {
-        if (currentState != HazardState.Armed) return;
-
-        if (DetectTargetsInTrigger(out int count) && count > 0)
+        if (currentState == HazardState.Armed && targetsInTrigger > 0 && hazardRoutine == null)
         {
-            if (verboseDebug) Debug.Log($"[ExplosiveHead] DetectTargetsInTrigger -> {count} targets, iniciando priming.");
+            if (verboseDebug) Debug.Log($"[ExplosiveHead] Objetivos detectados ({targetsInTrigger}), iniciando priming.");
+
             if (hazardRoutine == null)
             {
                 hazardRoutine = StartCoroutine(ActivationSequence());
@@ -145,6 +151,7 @@ public class ExplosiveHead : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (!IsLayerInMask(other.gameObject.layer, affectLayers)) return;
+        targetsInTrigger++;
         if (verboseDebug) Debug.Log($"[ExplosiveHead] OnTriggerEnter: {other.name}");
     }
 
@@ -154,6 +161,7 @@ public class ExplosiveHead : MonoBehaviour
     private void OnTriggerExit(Collider other)
     {
         if (!IsLayerInMask(other.gameObject.layer, affectLayers)) return;
+        targetsInTrigger = Mathf.Max(0, targetsInTrigger - 1);
         if (verboseDebug) Debug.Log($"[ExplosiveHead] OnTriggerExit: {other.name}");
     }
 
@@ -169,51 +177,82 @@ public class ExplosiveHead : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < primingDuration)
         {
-            yield return null;
-            float dt = Time.deltaTime;
-            elapsed += dt;
-            primingTimeLeft = Mathf.Max(0f, primingDuration - elapsed);
-
-            float t = Mathf.Clamp01(elapsed / Mathf.Max(0.0001f, primingDuration));
-            
-            float glowFactor = glowCurve.Evaluate(t);
-            SetGlow(glowFactor * glowMaxIntensity);
-
-            if (jawTransform != null)
-            {
-                float jawT = jawCurve.Evaluate(t);
-                float angle = Mathf.Lerp(jawClosedAngle, jawOpenAngle, jawT);
-                jawTransform.localRotation = Quaternion.Euler(angle, 0f, 0f);
-            }
-
             if (cancelIfPlayerLeaves)
             {
-                bool someoneInside = DetectTargetsInTrigger(out int cnt) && cnt > 0;
-                if (!someoneInside)
+                if (cancelIfPlayerLeaves && targetsInTrigger == 0)
                 {
                     if (verboseDebug) Debug.Log("[ExplosiveHead] Priming cancelado: ya no hay objetivos.");
-                    ResetGlow();
-                    ResetJaw();
+                    ResetVisuals();
                     currentState = HazardState.Armed;
                     hazardRoutine = null;
-                    primingTimeLeft = 0f;
                     yield break;
                 }
             }
+
+            elapsed += Time.deltaTime;
+            primingTimeLeft = Mathf.Max(0f, primingDuration - elapsed);
+
+            float t = Mathf.Clamp01(elapsed / Mathf.Max(0.0001f, primingDuration));
+
+            UpdateVisuals(t, elapsed);
+
+            yield return null;
         }
 
         primingTimeLeft = 0f;
+        Explode();
 
-        if (this != null && gameObject != null)
-        {
-            Explode();
+        currentState = HazardState.Exploded;
 
-            currentState = HazardState.Exploded;
+        float vfxDuration = explosionVFXPrefab != null ? explosionVFXPrefab.main.duration : 0.1f;
+        Destroy(gameObject, vfxDuration + 0.2f);
 
-            float vfxDuration = explosionVFX != null ? explosionVFX.main.duration : 0f;
-            Destroy(gameObject, Mathf.Max(0.1f, vfxDuration + 0.2f));
-        }
         hazardRoutine = null;
+    }
+
+    private void UpdateVisuals(float progress, float elapsedTime)
+    {
+        // Parpadeo
+        float freq = frequencyOverTime.Evaluate(progress);
+        float intensityFactor = intensityOverTime.Evaluate(progress);
+        float envelope = blinkEnvelope.Evaluate(progress);
+
+        float blinkWave = Mathf.Sin(elapsedTime * freq * Mathf.PI * 2f) * 0.5f + 0.5f;
+        float finalIntensity = blinkWave * envelope * intensityFactor;
+
+        ApplyFlashToRenderers(finalIntensity * flashMaxIntensity);
+
+        // Mandíbula
+        if (jawTransform != null)
+        {
+            float jawT = jawCurve.Evaluate(progress);
+            float angle = Mathf.Lerp(jawClosedAngle, jawOpenAngle, jawT);
+
+            jawTransform.localRotation = Quaternion.Euler(angle, 0f, 0f);
+        }
+    }
+
+    private void ApplyFlashToRenderers(float emissionIntensity)
+    {
+        Color emissionColor = flashColor * Mathf.Clamp01(emissionIntensity);
+        foreach (var kv in mpbs)
+        {
+            var renderer = kv.Key;
+            var mpb = kv.Value;
+            if (renderer == null) continue;
+            renderer.GetPropertyBlock(mpb);
+            mpb.SetColor(emissionColorID, emissionColor);
+            renderer.SetPropertyBlock(mpb);
+        }
+    }
+
+    private void ResetVisuals()
+    {
+        ApplyFlashToRenderers(0);
+        if (jawTransform != null)
+        {
+            jawTransform.localRotation = Quaternion.Euler(jawClosedAngle, 0f, 0f);
+        }
     }
 
     /// <summary>
@@ -221,34 +260,43 @@ public class ExplosiveHead : MonoBehaviour
     /// </summary>
     private void Explode()
     {
-        if (explosionVFX != null)
+        Vector3 center = GetTriggerWorldCenter();
+        float worldExplosionRadius = explosionRadius * GetMaxLossyScale();
+
+        if (explosionSpherePrefab != null)
         {
-            explosionVFX.transform.position = transform.position;
-            explosionVFX.Play();
+            var sphere = Instantiate(explosionSpherePrefab, center, Quaternion.identity);
+
+            if (sphere.TryGetComponent<ExplosionScaleOverTime>(out var scaler))
+            {
+                scaler.EndScale = Vector3.one * worldExplosionRadius * 2;
+            }
+        }
+
+        if (explosionVFXPrefab != null)
+        {
+            var vfxInstance = Instantiate(explosionVFXPrefab, center, Quaternion.identity);
+            if (vfxInstance != null) Destroy(vfxInstance.gameObject, 0.75f);
         }
 
         PlayAudio(explosionSound);
-
+        ResetVisuals();
         if (visuals != null) visuals.SetActive(false);
 
-        Vector3 center = GetTriggerWorldCenter();
-        float worldExplosionRadius = explosionRadius * GetMaxLossyScale();
         int found = Physics.OverlapSphereNonAlloc(center, worldExplosionRadius, overlapResults, affectLayers);
-        if (verboseDebug) Debug.Log($"[ExplosiveHead] Explode found={found}");
 
         for (int i = 0; i < found; i++)
         {
             Collider collider = overlapResults[i];
-            if (collider == null) continue;
+            if (collider.transform.IsChildOf(transform) || collider.transform == transform) continue;
 
-            float distance = Vector3.Distance(transform.position, collider.transform.position);
-            float normalizedDistance = Mathf.Clamp01(distance / Mathf.Max(0.0001f, worldExplosionRadius));
+            float distance = Vector3.Distance(center, collider.ClosestPoint(center));
+            float normalizedDistance = Mathf.Clamp01(distance / worldExplosionRadius);
             float dmg = useDamageFalloff ? Mathf.Lerp(explosionDamage, 0f, normalizedDistance) : explosionDamage;
 
-            IDamageable idamagable = collider.GetComponent<IDamageable>();
-            if (idamagable != null)
+            if (collider.TryGetComponent<IDamageable>(out var damageable))
             {
-                idamagable.TakeDamage(dmg);
+                damageable.TakeDamage(dmg);
             }
             else
             {
@@ -259,67 +307,29 @@ public class ExplosiveHead : MonoBehaviour
                 }
             }
 
-            Rigidbody rb = collider.attachedRigidbody;
-            if (rb != null)
+            if (collider.attachedRigidbody != null)
             {
-                rb.AddExplosionForce(rigidbodyKnockbackForce, transform.position, explosionRadius, 0.5f, ForceMode.Impulse);
+                collider.attachedRigidbody.AddExplosionForce(rigidbodyKnockbackForce, center, worldExplosionRadius, 0.5f, ForceMode.Impulse);
             }
-            else
+            else if (collider.TryGetComponent<CharacterController>(out var cc))
             {
-                CharacterController cc = collider.GetComponent<CharacterController>();
-                if (cc != null)
-                {
-                    Vector3 direction = (collider.transform.position - transform.position);
-                    direction.y = 0f;
-                    if (direction.sqrMagnitude < 0.001f) direction = Vector3.forward * 0.5f;
-                    direction.Normalize();
-
-                    float pushStrength = ccKnockbackDistance * (1f - normalizedDistance);
-                    Vector3 displacement = (direction + Vector3.up * 0.3f) * pushStrength;
-
-                    cc.Move(displacement);
-                }
+                Vector3 direction = (collider.transform.position - center).normalized;
+                direction.y = Mathf.Max(direction.y, 0.1f);
+                float pushStrength = ccKnockbackDistance * (1f - normalizedDistance);
+                cc.Move(direction * pushStrength);
             }
-
-            overlapResults[i] = null;
         }
     }
 
-    /// <summary>
-    /// Detecta colliders dentro del trigger (centro y radio del SphereCollider en world space).
-    /// Rellena overlapResults y devuelve true si se han encontrado >0 colliders en affectLayers.
-    /// </summary>
-    private bool DetectTargetsInTrigger(out int foundCount)
+    private void PlayAudio(AudioClip clip)
     {
-        foundCount = 0;
-        Vector3 center = GetTriggerWorldCenter();
-        float worldRadius = triggerCollider.radius * GetMaxLossyScale();
-
-        int found = Physics.OverlapSphereNonAlloc(center, worldRadius, overlapResults, affectLayers.value);
-
-        int real = 0;
-        for (int i = 0; i < found; i++)
-        {
-            Collider c = overlapResults[i];
-            if (c == null) continue;
-            real++;
-        }
-
-        foundCount = real;
-        for (int i = 0; i < found; i++) overlapResults[i] = null;
-
-        return real > 0;
+        if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
     }
 
     /// <summary>
     /// Devuelve el centro del SphereCollider en coordenadas mundo.
     /// </summary>
-    private Vector3 GetTriggerWorldCenter()
-    {
-        if (triggerCollider == null) triggerCollider = GetComponent<SphereCollider>();
-        // TransformPoint considera center local y escala/rotación del transform
-        return transform.TransformPoint(triggerCollider.center);
-    }
+    private Vector3 GetTriggerWorldCenter() => transform.TransformPoint(triggerCollider.center);
 
     /// <summary>
     /// Obtiene el mayor factor de escala para convertir radios locales a world space.
@@ -328,33 +338,6 @@ public class ExplosiveHead : MonoBehaviour
     {
         Vector3 s = transform.lossyScale;
         return Mathf.Max(Mathf.Abs(s.x), Mathf.Abs(s.y), Mathf.Abs(s.z));
-    }
-
-    private void ResetGlow()
-    {
-        if (headRenderer == null) return;
-        headRenderer.GetPropertyBlock(mpb);
-        mpb.SetColor(emissionColorID, Color.black);
-        headRenderer.SetPropertyBlock(mpb);
-    }
-
-    private void SetGlow(float intensity)
-    {
-        if (headRenderer == null) return;
-        headRenderer.GetPropertyBlock(mpb);
-        Color c = glowColor * Mathf.Clamp01(intensity);
-        mpb.SetColor(emissionColorID, c);
-        headRenderer.SetPropertyBlock(mpb);
-    }
-
-    private void ResetJaw()
-    {
-        if (jawTransform != null) jawTransform.localRotation = Quaternion.Euler(jawClosedAngle, 0f, 0f);
-    }
-
-    private void PlayAudio(AudioClip clip)
-    {
-        if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
     }
 
     private static bool IsLayerInMask(int layer, LayerMask mask)
@@ -389,7 +372,7 @@ public class ExplosiveHead : MonoBehaviour
             padding = new RectOffset(10, 10, 10, 10)
         };
 
-        Rect rect = new Rect(10, 10, 320, 190);
+        Rect rect = new Rect(10, 10, 360, 210);
         GUILayout.BeginArea(rect, box);
 
         GUILayout.Label($"ExplosiveHead Debug (obj: {gameObject.name})");
@@ -402,8 +385,7 @@ public class ExplosiveHead : MonoBehaviour
         }
         GUILayout.Label($"Trigger center (world): {GetTriggerWorldCenter()}");
         GUILayout.Label($"Trigger radius (world): {triggerCollider.radius * GetMaxLossyScale():F2}");
-        GUILayout.Label($"RigidbodyForce: {rigidbodyKnockbackForce:F0}  CC pushDist: {ccKnockbackDistance:F2}");
-
+        GUILayout.Label($"Explosion radius: {explosionRadius:F2}");
         GUILayout.Space(6);
         if (GUILayout.Button("Force Explode"))
         {
@@ -413,7 +395,6 @@ public class ExplosiveHead : MonoBehaviour
 
         GUILayout.EndArea();
     }
-
 
     #endregion
 }

@@ -20,6 +20,22 @@ public class SpikeTrap : MonoBehaviour
     [SerializeField, Tooltip("Tiempo de recarga de la trampa.")]
     private float cooldownDuration = 3f;
 
+    [Header("Placa de presión")]
+    [SerializeField, Tooltip("Transform de la base/plataforma que baja hacia el jugador.")]
+    private Transform plateTransform;
+    [SerializeField, Tooltip("posición local Y cuando la placa está levantada.")]
+    private float plateRaisedLocalY = 1f;
+    [SerializeField, Tooltip("posición local Y cuando la placa queda presionada.")]
+    private float platePressedLocalY = 0.25f;
+    [SerializeField, Tooltip("duración del movimiento de la placa al bajar o subir.")]
+    private float plateMoveDuration = 0.25f;
+
+    [Header("VFX")]
+    [SerializeField, Tooltip("particle system que se reproduce durante el priming. Debe ser hijo de la placa.")]
+    private ParticleSystem primingDustVFX;
+    [SerializeField, Tooltip("particle system tipo burst que se reproduce en la activación.")]
+    private ParticleSystem activateDustVFX;
+
     [Header("Referencias")]
     [SerializeField] private Animator animator;
     [SerializeField] private AudioSource audioSource;
@@ -34,6 +50,14 @@ public class SpikeTrap : MonoBehaviour
     private readonly List<PlayerHealth> playerInRange = new List<PlayerHealth>();
 
     private Coroutine trapRoutine;
+    private Coroutine plateMoveRoutine;
+
+    private void OnDisable()
+    {
+        StopPlateRoutineIfAny();
+        StopPrimingVFX();
+        StopActivateVFX();
+    }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -67,12 +91,19 @@ public class SpikeTrap : MonoBehaviour
         //1. Aviso (Priming)
         SetState(TrapState.Priming);
         PlaySound(triggerSound);
+
+        // iniciar movimiento de placa y VFX de priming
+        StartPlateLower();
+        StartPrimingVFX();
+
         yield return new WaitForSecondsRealtime(primingDuration);
 
         // 2. Ataque (Active)
+        StopPrimingVFX();
         SetState(TrapState.Active);
         TriggerAnimation("Activate");
         PlaySound(activateSound);
+        PlayActivateVFX();
 
         for (int i = playerInRange.Count - 1; i >= 0; i--)
         {
@@ -93,12 +124,16 @@ public class SpikeTrap : MonoBehaviour
         SetState(TrapState.Cooldown);
         TriggerAnimation("Deactivate");
         PlaySound(desactivateSound);
+
         yield return new WaitForSecondsRealtime(cooldownDuration);
 
         // 4. Rearmado (Armed)
         SetState(TrapState.Armed);
         PlaySound(armedSound);
         trapRoutine = null;
+        StartPlateRaise();
+        StopPrimingVFX();
+        StopActivateVFX();
 
         if (playerInRange.Count > 0)
         {
@@ -125,6 +160,92 @@ public class SpikeTrap : MonoBehaviour
         if (animator != null)
         {
             animator.SetTrigger(trigger);
+        }
+    }
+
+    private void StartPlateLower()
+    {
+        StopPlateRoutineIfAny();
+        if (plateTransform != null)
+        {
+            plateMoveRoutine = StartCoroutine(MovePlateLocalY(plateTransform, plateRaisedLocalY, platePressedLocalY, plateMoveDuration));
+        }
+    }
+
+    private void StartPlateRaise()
+    {
+        StopPlateRoutineIfAny();
+        if (plateTransform != null)
+        {
+            float raiseDuration = Mathf.Max(0.08f, plateMoveDuration * 0.45f);
+            plateMoveRoutine = StartCoroutine(MovePlateLocalY(plateTransform, platePressedLocalY, plateRaisedLocalY, raiseDuration));
+        }
+    }
+
+    private void StopPlateRoutineIfAny()
+    {
+        if (plateMoveRoutine != null)
+        {
+            StopCoroutine(plateMoveRoutine);
+            plateMoveRoutine = null;
+        }
+    }
+
+    private IEnumerator MovePlateLocalY(Transform t, float fromY, float toY, float duration)
+    {
+        if (t == null)
+            yield break;
+
+        Vector3 start = t.localPosition;
+        float startTime = Time.realtimeSinceStartup;
+        float endTime = startTime + Mathf.Max(0.0001f, duration);
+
+        while (Time.realtimeSinceStartup < endTime)
+        {
+            float elapsed = Time.realtimeSinceStartup - startTime;
+            float tNorm = Mathf.Clamp01(elapsed / duration);
+            // optional easing
+            float eased = Mathf.SmoothStep(0f, 1f, tNorm);
+            float y = Mathf.Lerp(fromY, toY, eased);
+            t.localPosition = new Vector3(start.x, y, start.z);
+            yield return null;
+        }
+
+        t.localPosition = new Vector3(start.x, toY, start.z);
+        plateMoveRoutine = null;
+    }
+
+    private void StartPrimingVFX()
+    {
+        if (primingDustVFX != null)
+        {
+            primingDustVFX.transform.position = plateTransform != null ? plateTransform.position : transform.position;
+            if (!primingDustVFX.isPlaying) primingDustVFX.Play();
+        }
+    }
+
+    private void StopPrimingVFX()
+    {
+        if (primingDustVFX != null && primingDustVFX.isPlaying)
+        {
+            primingDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        }
+    }
+
+    private void PlayActivateVFX()
+    {
+        if (activateDustVFX != null)
+        {
+            activateDustVFX.transform.position = plateTransform != null ? plateTransform.position : transform.position;
+            activateDustVFX.Play();
+        }
+    }
+
+    private void StopActivateVFX()
+    {
+        if (activateDustVFX != null && activateDustVFX.isPlaying)
+        {
+            activateDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         }
     }
 

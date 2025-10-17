@@ -279,35 +279,28 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 dashDirection = moveDirection.magnitude > 0.1f ? moveDirection : transform.forward;
 
-        // 2. Ejecutamos el movimiento principal del dash como siempre.
         yield return StartCoroutine(PerformDash(dashDirection, dashDuration));
 
-        // 3. Después del dash, verificamos si estamos atascados dentro de un objeto atravesable.
-        float safetyPushSpeed = dashSpeed * 0.75f; // Velocidad para empujar al jugador fuera del objeto.
-        float maxStuckTime = 1.0f; // Tiempo máximo para evitar bucles infinitos.
+        float safetyPushSpeed = dashSpeed * 0.75f;
+        float maxStuckTime = 1.0f;
         float stuckTimer = 0f;
 
-        // Obtenemos las dimensiones de la cápsula del jugador para la verificación.
         Vector3 capsuleCenter = transform.position + controller.center;
         Vector3 p1 = capsuleCenter + Vector3.up * (controller.height / 2f - controller.radius);
         Vector3 p2 = capsuleCenter - Vector3.up * (controller.height / 2f - controller.radius);
 
-        // Mientras el jugador esté superpuesto con un objeto atravesable...
         while (Physics.CheckCapsule(p1, p2, controller.radius, traversableLayers, QueryTriggerInteraction.Ignore) && stuckTimer < maxStuckTime)
         {
-            // ...lo seguimos empujando hacia adelante hasta que salga.
             controller.Move(dashDirection * safetyPushSpeed * Time.deltaTime);
             stuckTimer += Time.deltaTime;
 
-            // Actualizamos las posiciones de la cápsula para la siguiente verificación.
             capsuleCenter = transform.position + controller.center;
             p1 = capsuleCenter + Vector3.up * (controller.height / 2f - controller.radius);
             p2 = capsuleCenter - Vector3.up * (controller.height / 2f - controller.radius);
 
-            yield return null; // Esperamos al siguiente frame para volver a comprobar.
+            yield return null;
         }
 
-        // 4. Una vez que estamos a salvo y fuera de cualquier objeto, reactivamos las colisiones.
         if (dashDustVFX != null) PlayDashVFX(false);
         ToggleLayerCollisions(false);
         if (playerHealth != null) playerHealth.IsInvulnerable = false;
