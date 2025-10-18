@@ -6006,8 +6006,12 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   enableEdgeDetection: 1
-  edgeDetectionDistance: 0.25
+  edgeDetectionDistance: 0.5
   edgeRaycastHeight: 0.2
+  edgeSafetyMargin: 0.05
+  edgeSampleMax: 6
+  minHorizontalMagnitude: 0.01
+  groundTolerance: 0.15
   afterimagePrefab: {fileID: 1529516632308541924, guid: 5813d161b87a73e46926413d2ef586b9, type: 3}
   afterimageAlpha: 0.5
   afterimageLifetime: 0.5

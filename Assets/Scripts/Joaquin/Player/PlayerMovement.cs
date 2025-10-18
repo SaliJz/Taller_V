@@ -33,6 +33,10 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private bool enableEdgeDetection = true;
     [SerializeField] private float edgeDetectionDistance = 0.5f;
     [SerializeField] private float edgeRaycastHeight = 0.2f;
+    [SerializeField] private float edgeSafetyMargin = 0.05f;
+    [SerializeField] private int edgeSampleMax = 6;
+    [SerializeField] private float minHorizontalMagnitude = 0.01f;
+    [SerializeField] private float groundTolerance = 0.15f;
 
     [Header("Effects")]
     [Header("Afterimage Settings")]
@@ -62,6 +66,8 @@ public class PlayerMovement : MonoBehaviour
     private float lastMoveX;
     private float lastMoveY;
 
+    private bool allowExternalForces = true;
+
     private bool rotationLocked = false;
     private Quaternion lockedRotation = Quaternion.identity;
 
@@ -73,6 +79,12 @@ public class PlayerMovement : MonoBehaviour
     }
 
     private Material dashVFXMaterialInstance;
+
+    private bool inForcedMove = false;
+    private bool ignoreGravityDuringForcedMove = false;
+
+    private Vector3 lastTargetCheck = Vector3.zero;
+    private bool lastTargetHit = false;
 
     #endregion
 
@@ -88,18 +100,6 @@ public class PlayerMovement : MonoBehaviour
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
         PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
-
-        //if (dashDustVFX != null)
-        //{
-        //    dashDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        //    dashDustVFX.Clear(true);
-        //}
-
-        //if (dashVFXMaterialInstance != null)
-        //{
-        //    Destroy(dashVFXMaterialInstance);
-        //    dashVFXMaterialInstance = null;
-        //}
     }
 
     private void OnDestroy()
@@ -670,6 +670,12 @@ public class PlayerMovement : MonoBehaviour
     {
         if (IsDashing) return;
 
+        if (inForcedMove && ignoreGravityDuringForcedMove)
+        {
+            yVelocity = -0.5f;
+            return;
+        }
+
         if (controller.enabled && controller.isGrounded)
         {
             yVelocity = -0.5f;
@@ -699,6 +705,129 @@ public class PlayerMovement : MonoBehaviour
         moveDirection = Vector3.zero;
     }
 
+    public bool IsEffectivelyGrounded()
+    {
+        if (controller == null) return false;
+        if (controller.isGrounded) return true;
+
+        Vector3 origin = transform.position + Vector3.up * 0.1f;
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit h, groundTolerance + 0.05f, groundLayerMask, QueryTriggerInteraction.Ignore))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    public float GetMaxSafeDistance(Vector3 dir, float maxDesiredDistance)
+    {
+        if (!enableEdgeDetection || controller == null || !IsEffectivelyGrounded()) return maxDesiredDistance;
+
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.0001f) return 0f;
+        dir.Normalize();
+
+        int samples = Mathf.Clamp(Mathf.CeilToInt((maxDesiredDistance) / (controller.radius + edgeDetectionDistance)), 1, edgeSampleMax);
+        float step = maxDesiredDistance / samples;
+        Vector3 rayOriginBase = transform.position + Vector3.up * edgeRaycastHeight;
+        float rayDistance = controller.height + 0.6f;
+
+        for (int i = 1; i <= samples; i++)
+        {
+            float traveled = step * i;
+            // samplePos se mueve a lo largo de la trayectoria que el jugador recorrería
+            Vector3 samplePos = rayOriginBase + dir * Mathf.Max(0f, traveled + controller.radius + edgeDetectionDistance);
+
+            if (!Physics.Raycast(samplePos, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore))
+            {
+                float safeDistance = Mathf.Max(0f, (step * (i - 1)) - edgeSafetyMargin);
+                return safeDistance;
+            }
+        }
+
+        return maxDesiredDistance;
+    }
+
+    private Vector3 ComputeSafeHorizontalDisplacement(Vector3 desiredDisplacement)
+    {
+        Vector3 horizontal = new Vector3(desiredDisplacement.x, 0f, desiredDisplacement.z);
+        float mag = horizontal.magnitude;
+        if (mag < minHorizontalMagnitude || controller == null) return desiredDisplacement;
+
+        Vector3 dir = horizontal.normalized;
+        int samples = Mathf.Clamp(Mathf.CeilToInt((mag) / (controller.radius + edgeDetectionDistance)), 1, edgeSampleMax);
+        float step = mag / samples;
+        Vector3 rayOriginBase = transform.position + Vector3.up * edgeRaycastHeight;
+        float rayDistance = controller.height + 0.6f;
+
+        for (int i = 1; i <= samples; i++)
+        {
+            float traveled = step * i;
+            Vector3 samplePos = rayOriginBase + dir * Mathf.Max(0f, traveled + controller.radius + edgeDetectionDistance);
+
+            if (!Physics.Raycast(samplePos, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore))
+            {
+                float safeDistance = Mathf.Max(0f, (step * (i - 1)) - edgeSafetyMargin);
+                Vector3 safeHorizontal = dir * safeDistance;
+                return new Vector3(safeHorizontal.x, desiredDisplacement.y, safeHorizontal.z);
+            }
+        }
+
+        return desiredDisplacement;
+    }
+
+    private Vector3 TryComputeSlideAlongEdge(Vector3 forwardDir, float maxAllowedForwardDistance)
+    {
+        Vector3 right = Vector3.Cross(Vector3.up, forwardDir).normalized;
+        Vector3[] lateralDirs = new Vector3[] { right, -right };
+        Vector3 rayOriginBase = transform.position + Vector3.up * edgeRaycastHeight;
+        float rayDistance = controller.height + 0.6f;
+        float lateralMagnitude = Mathf.Max(controller.radius, 0.25f);
+
+        foreach (var lat in lateralDirs)
+        {
+            Vector3 testPos = rayOriginBase + forwardDir * (maxAllowedForwardDistance + controller.radius) + lat * lateralMagnitude;
+            if (Physics.Raycast(testPos, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore))
+            {
+                Vector3 combined = forwardDir * maxAllowedForwardDistance + lat * lateralMagnitude;
+                return combined;
+            }
+        }
+
+        return Vector3.zero;
+    }
+
+    /// <summary>
+    /// Aplica detección de bordes a un desplazamiento específico (usado en ataques).
+    /// Similar a ApplyEdgeDetection pero trabaja con un vector de desplazamiento directo.
+    /// </summary>
+    private Vector3 ApplyEdgeDetectionToDisplacement(Vector3 displacement)
+    {
+        if (!enableEdgeDetection || controller == null || !IsEffectivelyGrounded()) return displacement;
+
+        Vector3 horizontal = new Vector3(displacement.x, 0f, displacement.z);
+        if (horizontal.magnitude < minHorizontalMagnitude) return displacement;
+
+        Vector3 safe = ComputeSafeHorizontalDisplacement(displacement);
+        Vector3 desiredHorizontal = new Vector3(displacement.x, 0f, displacement.z);
+        Vector3 safeHorizontal = new Vector3(safe.x, 0f, safe.z);
+
+        if (safeHorizontal.sqrMagnitude + 0.0001f < desiredHorizontal.sqrMagnitude)
+        {
+            ReportDebug("Borde detectado durante ataque. Desplazamiento recortado", 1);
+
+            Vector3 slide = TryComputeSlideAlongEdge(desiredHorizontal.normalized, safeHorizontal.magnitude);
+            if (slide.sqrMagnitude > 0.0001f)
+            {
+                // mantener Y original del desplazamiento
+                return new Vector3(slide.x, displacement.y, slide.z);
+            }
+
+            return new Vector3(0f, displacement.y, 0f);
+        }
+
+        return displacement;
+    }
+
     /// <summary>
     /// Mueve el personaje usando el CharacterController, respetando colisiones.
     /// Ideal para movimientos forzados como los de un combo de ataque.
@@ -707,8 +836,35 @@ public class PlayerMovement : MonoBehaviour
     {
         if (controller != null && controller.enabled)
         {
+            // Aplicar detección de bordes al desplazamiento de ataque
+            if (enableEdgeDetection && controller.isGrounded)
+            {
+                displacement = ApplyEdgeDetectionToDisplacement(displacement);
+            }
+
             controller.Move(displacement);
         }
+    }
+
+    public bool IsMovementSafeDirection(Vector3 dir, float distance)
+    {
+        if (!enableEdgeDetection || controller == null) return true;
+        if (!IsEffectivelyGrounded()) return false;
+
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.0001f) return true;
+        dir.Normalize();
+
+        Vector3 rayOrigin = transform.position + Vector3.up * edgeRaycastHeight;
+        Vector3 targetCheck = rayOrigin + dir * (Mathf.Max(0f, distance) + controller.radius + edgeDetectionDistance);
+        float rayDistance = controller.height + 0.6f;
+
+        if (Physics.Raycast(targetCheck, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -740,7 +896,6 @@ public class PlayerMovement : MonoBehaviour
             camRight.Normalize();
 
             Vector3 snappedDir = target * Vector3.forward;
-            // Dot produce valores entre -1 y 1; round los convertirá a -1,0,1 (octantes alineados con la cámara)
             float x = Mathf.Round(Vector3.Dot(snappedDir, camRight));
             float y = Mathf.Round(Vector3.Dot(snappedDir, camForward));
 
@@ -792,6 +947,26 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    public void StartForcedMovement(bool ignoreGravity)
+    {
+        inForcedMove = true;
+        ignoreGravityDuringForcedMove = ignoreGravity;
+        allowExternalForces = false;
+        if (ignoreGravity)
+        {
+            yVelocity = -0.5f;
+        }
+    }
+
+    public void StopForcedMovement()
+    {
+        inForcedMove = false;
+        ignoreGravityDuringForcedMove = false;
+        allowExternalForces = true;
+    }
+
+    public void SetExternalForcesAllowed(bool allowed) { allowExternalForces = allowed; }
+
     /// <summary>
     /// Devuelve la rotación objetivo del lock para que otros scripts puedan comparar.
     /// </summary>
@@ -816,30 +991,26 @@ public class PlayerMovement : MonoBehaviour
     {
         if (!Application.isPlaying || controller == null) return;
 
-        // Punto de origen
         Vector3 origin = transform.position;
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(origin, 0.15f);
 
-        // Dirección actual del dash
         Vector3 dashDirection = moveDirection.magnitude > 0.1f ? moveDirection.normalized : transform.forward;
 
-        // Línea del dash base (10 unidades por defecto)
         Gizmos.color = Color.yellow;
         Vector3 baseEnd = origin + dashDirection * dashDistance;
         Gizmos.DrawLine(origin, baseEnd);
         Gizmos.DrawWireSphere(baseEnd, 0.15f);
 
-        // Línea extendida (bonus de gap)
         Gizmos.color = Color.magenta;
         Vector3 bonusEnd = origin + dashDirection * (dashDistance + gapDashBonusDistance);
         Gizmos.DrawLine(baseEnd, bonusEnd);
         Gizmos.DrawWireSphere(bonusEnd, 0.1f);
 
-        // Comprobación visual del punto de suelo bajo el destino base
         float scanHeight = 2.0f;
         Vector3 downOrigin = baseEnd + Vector3.up * scanHeight;
-        if (Physics.Raycast(downOrigin, Vector3.down, out RaycastHit baseGroundHit, controller.height + scanHeight + 1f, groundLayerMask))
+        float downRayMax = controller.height + scanHeight + 1f;
+        if (Physics.Raycast(downOrigin, Vector3.down, out RaycastHit baseGroundHit, downRayMax, groundLayerMask))
         {
             Gizmos.color = Color.green;
             Gizmos.DrawLine(downOrigin, baseGroundHit.point);
@@ -848,54 +1019,72 @@ public class PlayerMovement : MonoBehaviour
         else
         {
             Gizmos.color = Color.red;
-            Gizmos.DrawLine(downOrigin, downOrigin + Vector3.down * (controller.height + scanHeight + 1f));
+            Gizmos.DrawLine(downOrigin, downOrigin + Vector3.down * downRayMax);
         }
 
-        // Visualización de detección de bordes
         if (enableEdgeDetection && controller.isGrounded && moveDirection.magnitude > 0.1f)
         {
             Vector3 horizontalMovement = new Vector3(moveDirection.x, 0f, moveDirection.z);
             Vector3 movementDirection = horizontalMovement.normalized;
 
             Vector3 rayOrigin = transform.position + Vector3.up * edgeRaycastHeight;
-            Vector3 checkPosition = rayOrigin + movementDirection * (controller.radius + edgeDetectionDistance);
-            float rayDistance = controller.height + 0.5f;
+            float rayDistance = controller.height + 0.6f;
 
-            // Línea desde el origen del check hasta el punto de verificación
+            float totalDistance = dashDistance + gapDashBonusDistance;
+            int samples = Mathf.Clamp(Mathf.CeilToInt(totalDistance / (controller.radius + edgeDetectionDistance)), 1, edgeSampleMax);
+            float step = totalDistance / samples;
+
+            Vector3 firstCheck = rayOrigin + movementDirection * (controller.radius + edgeDetectionDistance);
             Gizmos.color = Color.blue;
-            Gizmos.DrawLine(rayOrigin, checkPosition);
-            Gizmos.DrawWireSphere(checkPosition, 0.1f);
+            Gizmos.DrawLine(rayOrigin, firstCheck);
+            Gizmos.DrawWireSphere(firstCheck, 0.1f);
 
-            // Raycast hacia abajo
-            if (Physics.Raycast(checkPosition, Vector3.down, out RaycastHit edgeHit, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore))
+            for (int i = 1; i <= samples; i++)
             {
-                // Hay suelo (seguro)
-                Gizmos.color = Color.green;
-                Gizmos.DrawLine(checkPosition, edgeHit.point);
-                Gizmos.DrawWireSphere(edgeHit.point, 0.15f);
-            }
-            else
-            {
-                // No hay suelo (borde detectado)
-                Gizmos.color = Color.red;
-                Gizmos.DrawLine(checkPosition, checkPosition + Vector3.down * rayDistance);
-                Gizmos.DrawWireSphere(checkPosition + Vector3.down * rayDistance, 0.15f);
+                float traveled = step * i;
+                Vector3 samplePos = rayOrigin + movementDirection * Mathf.Max(0f, traveled + controller.radius + edgeDetectionDistance);
+
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawWireSphere(samplePos, Mathf.Max(0.03f, controller.radius * 0.2f));
+
+                if (Physics.Raycast(samplePos, Vector3.down, out RaycastHit hit, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore))
+                {
+                    Gizmos.color = Color.green;
+                    Gizmos.DrawLine(samplePos, hit.point);
+                    Gizmos.DrawWireSphere(hit.point, 0.12f);
+                }
+                else
+                {
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawLine(samplePos, samplePos + Vector3.down * rayDistance);
+                    Gizmos.DrawWireSphere(samplePos + Vector3.down * rayDistance, 0.12f);
+                }
             }
         }
 
-        // Texto de depuración opcional (solo visible en Scene)
+#if UNITY_EDITOR
+        if (lastTargetCheck != Vector3.zero)
+        {
+            Gizmos.color = lastTargetHit ? Color.green : Color.red;
+            Gizmos.DrawWireSphere(lastTargetCheck, 0.12f);
+            Gizmos.DrawLine(lastTargetCheck, lastTargetCheck + Vector3.down * (controller.height + 0.6f));
+
+            UnityEditor.Handles.Label(lastTargetCheck + Vector3.up * 0.2f, lastTargetHit ? "lastTargetCheck hit" : "lastTargetCheck miss");
+        }
+#endif
+
 #if UNITY_EDITOR
         UnityEditor.Handles.Label(origin + Vector3.up * 1.5f, "Origen de Dash");
         UnityEditor.Handles.Label(baseEnd + Vector3.up * 1.5f, "Alcance base");
-        UnityEditor.Handles.Label(bonusEnd + Vector3.up * 1.5f, "Máximo (con bonificación)");
+        UnityEditor.Handles.Label(bonusEnd + Vector3.up * 1.5f, "Máximo con bonificación");
 
         if (enableEdgeDetection && controller.isGrounded)
         {
-            UnityEditor.Handles.Label(origin + Vector3.up * 2.0f, "Detección de bordes: Activada");
+            UnityEditor.Handles.Label(origin + Vector3.up * 2.0f, "Detección de bordes activada");
         }
         else
         {
-            UnityEditor.Handles.Label(origin + Vector3.up * 2.0f, "Detección de bordes: Desactivada");
+            UnityEditor.Handles.Label(origin + Vector3.up * 2.0f, "Detección de bordes desactivada");
         }
 #endif
     }

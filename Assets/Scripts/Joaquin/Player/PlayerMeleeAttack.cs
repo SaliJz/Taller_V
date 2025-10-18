@@ -75,7 +75,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     private int comboCount = 0;
     private float lastAttackTime = 0f;
     private int currentAttackIndex = -1;
-    
+
     private HashSet<Collider> hitEnemiesThisCombo = new HashSet<Collider>();
     private Collider[] hitBuffer = new Collider[64];
 
@@ -113,19 +113,6 @@ public class PlayerMeleeAttack : MonoBehaviour
     {
         PlayerStatsManager.OnStatChanged += HandleStatChanged;
     }
-
-    //private void OnDisable()
-    //{
-    //    PlayerStatsManager.OnStatChanged -= HandleStatChanged;
-
-    //    if (cleanupCoroutine != null)
-    //    {
-    //        StopCoroutine(cleanupCoroutine);
-    //        cleanupCoroutine = null;
-    //    }
-
-    //    CleanupVFXImmediate();
-    //}
 
     private void OnDestroy()
     {
@@ -294,19 +281,20 @@ public class PlayerMeleeAttack : MonoBehaviour
         // Trigger animación correspondiente
         if (playerAnimator != null) playerAnimator.SetTrigger($"Attack{attackIndex + 1}");
 
-        // Ejecutar ataque específico
-        float lockDuration = comboLockDurations[attackIndex];
-        attackCooldown = lockDuration;
+        if (playerMovement != null) playerMovement.StartForcedMovement(true);
 
         switch (attackIndex)
         {
-            case 0: yield return StartCoroutine(ExecuteAttack1(lockDuration)); break;
-            case 1: yield return StartCoroutine(ExecuteAttack2(lockDuration)); break;
-            case 2: yield return StartCoroutine(ExecuteAttack3(lockDuration)); break;
+            case 0: yield return StartCoroutine(ExecuteAttack1()); break;
+            case 1: yield return StartCoroutine(ExecuteAttack2()); break;
+            case 2: yield return StartCoroutine(ExecuteAttack3()); break;
         }
 
-        // Desbloquear y resetear
-        if (playerMovement != null) playerMovement.UnlockFacing();
+        if (playerMovement != null)
+        {
+            playerMovement.StopForcedMovement();
+            playerMovement.UnlockFacing();
+        }
 
         isAttacking = false;
         hitEnemiesThisCombo.Clear();
@@ -336,26 +324,73 @@ public class PlayerMeleeAttack : MonoBehaviour
         if (playerMovement != null) playerMovement.ForceApplyLockedRotation();
     }
 
-    private IEnumerator ExecuteAttack1(float totalDuration)
+    private IEnumerator ExecuteAttack1()
     {
-        float movementDuration = totalDuration;
+        float movementDuration = attack1Duration;
         float elapsedTime = 0f;
 
-        Vector3 attackMoveVelocity = (transform.forward * comboMovementForces[0]) / movementDuration;
+        float desiredTotalDistance = comboMovementForces[0];
+        Vector3 forward = transform.forward;
+
+        float safeDistance = desiredTotalDistance;
+        if (playerMovement != null)
+        {
+            if (!playerMovement.IsMovementSafeDirection(forward, desiredTotalDistance))
+            {
+                safeDistance = playerMovement.GetMaxSafeDistance(forward, desiredTotalDistance);
+                ReportDebug($"ExecuteAttack1: fast-path falló. safeDistance recortada a {safeDistance}", 1);
+            }
+        }
+
+        if (safeDistance <= 0.001f)
+        {
+            ReportDebug("Ataque1: espacio insuficiente para empuje. Se omite movimiento horizontal.", 1);
+        }
+
+        Vector3 attackMoveVelocity = (forward * safeDistance) / Mathf.Max(0.0001f, movementDuration);
+
+        float accumulated = 0f;
 
         while (elapsedTime < movementDuration)
         {
             elapsedTime += Time.deltaTime;
+            Vector3 frameDesired = attackMoveVelocity * Time.deltaTime;
+
+            float frameHorMag = new Vector3(frameDesired.x, 0f, frameDesired.z).magnitude;
+            float remaining = Mathf.Max(0f, safeDistance - accumulated);
+            if (frameHorMag > remaining)
+            {
+                if (remaining <= 0f) frameDesired = new Vector3(0f, frameDesired.y, 0f);
+                else
+                {
+                    Vector3 hor = new Vector3(frameDesired.x, 0f, frameDesired.z).normalized * remaining;
+                    frameDesired = new Vector3(hor.x, frameDesired.y, hor.z);
+                }
+            }
 
             if (playerMovement != null)
             {
-                playerMovement.MoveCharacter(attackMoveVelocity * Time.deltaTime);
-
+                if (safeDistance <= 0.001f)
+                {
+                    frameDesired = Vector3.zero;
+                    ReportDebug("ExecuteAttack1: No se aplica movimiento de carga por espacio insuficiente.", 1);
+                }
+                else
+                {
+                    playerMovement.MoveCharacter(frameDesired);
+                    accumulated += new Vector3(frameDesired.x, 0f, frameDesired.z).magnitude;
+                }
             }
+            else
+            {
+                transform.position += frameDesired;
+                accumulated += new Vector3(frameDesired.x, 0f, frameDesired.z).magnitude;
+            }
+
             yield return null;
         }
 
-        // Ejecutar hit detection en el medio del movimiento
+        // Ejecutar hit detection
         PerformHitDetectionWithTracking();
 
         // Mantener lock
@@ -369,23 +404,70 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
-    private IEnumerator ExecuteAttack2(float totalDuration)
+    private IEnumerator ExecuteAttack2()
     {
-        // Ataque de área: salto y rotación 360
         float movementDuration = 0.2f;
         float spinDuration = attack2Duration - movementDuration;
 
-        // Salto ligero hacia adelante
+        float desiredTotalDistance = comboMovementForces[1];
+        Vector3 forward = transform.forward;
+
+        float safeDistance = desiredTotalDistance;
+        if (playerMovement != null)
+        {
+            if (!playerMovement.IsMovementSafeDirection(forward, desiredTotalDistance))
+            {
+                safeDistance = playerMovement.GetMaxSafeDistance(forward, desiredTotalDistance);
+                ReportDebug($"ExecuteAttack2: fast-path falló. safeDistance recortada a {safeDistance}", 1);
+            }
+        }
+
+        if (safeDistance <= 0.001f)
+        {
+            ReportDebug("Ataque2: espacio insuficiente para empuje. Se omite movimiento horizontal.", 1);
+        }
+
         float elapsedTime = 0f;
-        Vector3 attackMoveVelocity = (transform.forward * comboMovementForces[1]) / movementDuration;
+        Vector3 attackMoveVelocity = (forward * safeDistance) / Mathf.Max(0.0001f, movementDuration);
+
+        float accumulated = 0f;
 
         while (elapsedTime < movementDuration)
         {
             elapsedTime += Time.deltaTime;
+            Vector3 frameDesired = attackMoveVelocity * Time.deltaTime;
+
+            float frameHorMag = new Vector3(frameDesired.x, 0f, frameDesired.z).magnitude;
+            float remaining = Mathf.Max(0f, safeDistance - accumulated);
+            if (frameHorMag > remaining)
+            {
+                if (remaining <= 0f) frameDesired = new Vector3(0f, frameDesired.y, 0f);
+                else
+                {
+                    Vector3 hor = new Vector3(frameDesired.x, 0f, frameDesired.z).normalized * remaining;
+                    frameDesired = new Vector3(hor.x, frameDesired.y, hor.z);
+                }
+            }
+
             if (playerMovement != null)
             {
-                playerMovement.MoveCharacter(attackMoveVelocity * Time.deltaTime);
+                if (safeDistance <= 0.001f)
+                {
+                    frameDesired = Vector3.zero;
+                    ReportDebug("ExecuteAttack2: No se aplica movimiento de carga por espacio insuficiente.", 1);
+                }
+                else
+                {
+                    playerMovement.MoveCharacter(frameDesired);
+                    accumulated += new Vector3(frameDesired.x, 0f, frameDesired.z).magnitude;
+                }
             }
+            else
+            {
+                transform.position += frameDesired;
+                accumulated += new Vector3(frameDesired.x, 0f, frameDesired.z).magnitude;
+            }
+
             yield return null;
         }
 
@@ -407,11 +489,9 @@ public class PlayerMeleeAttack : MonoBehaviour
             yield return null;
         }
 
-        // El lock duration es el tiempo total que dura el ataque (incluido movimiento + spin)
         float lockDuration = comboLockDurations[1];
         attackCooldown = lockDuration;
 
-        // Ya pasó attack2Duration, esperar el resto del lock
         float remainingTime = Mathf.Max(0, lockDuration - attack2Duration);
         if (remainingTime > 0)
         {
@@ -419,12 +499,10 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
-    private IEnumerator ExecuteAttack3(float totalDuration)
+    private IEnumerator ExecuteAttack3()
     {
-        // Ataque pesado: giro lento + carga + golpe
         float preChargeElapsed = 0f;
 
-        // Fase 1: Giro lento
         while (preChargeElapsed < attack3PreChargeDuration)
         {
             preChargeElapsed += Time.deltaTime;
@@ -433,24 +511,68 @@ public class PlayerMeleeAttack : MonoBehaviour
             yield return null;
         }
 
-        // Fase 2: Movimiento y carga
         float chargeElapsed = 0f;
-        Vector3 attackMoveVelocity = (transform.forward * comboMovementForces[2]) / attack3ChargeDuration;
+        float desiredTotalDistance = comboMovementForces[2];
+        Vector3 forward = transform.forward;
+
+        float safeDistance = desiredTotalDistance;
+        if (playerMovement != null)
+        {
+            if (!playerMovement.IsMovementSafeDirection(forward, desiredTotalDistance))
+            {
+                safeDistance = playerMovement.GetMaxSafeDistance(forward, desiredTotalDistance);
+                ReportDebug($"ExecuteAttack3: fast-path falló. safeDistance recortada a {safeDistance}", 1);
+            }
+        }
+
+        if (safeDistance <= 0.001f)
+        {
+            ReportDebug("Ataque3: espacio insuficiente para empuje. Se omite movimiento de carga.", 1);
+        }
+
+        Vector3 attackMoveVelocity = (forward * safeDistance) / Mathf.Max(0.0001f, attack3ChargeDuration);
+
+        float accumulated = 0f;
 
         while (chargeElapsed < attack3ChargeDuration)
         {
             chargeElapsed += Time.deltaTime;
+            Vector3 frameDesired = attackMoveVelocity * Time.deltaTime;
+
+            float frameHorMag = new Vector3(frameDesired.x, 0f, frameDesired.z).magnitude;
+            float remaining = Mathf.Max(0f, safeDistance - accumulated);
+            if (frameHorMag > remaining)
+            {
+                if (remaining <= 0f) frameDesired = new Vector3(0f, frameDesired.y, 0f);
+                else
+                {
+                    Vector3 hor = new Vector3(frameDesired.x, 0f, frameDesired.z).normalized * remaining;
+                    frameDesired = new Vector3(hor.x, frameDesired.y, hor.z);
+                }
+            }
+
             if (playerMovement != null)
             {
-                playerMovement.MoveCharacter(attackMoveVelocity * Time.deltaTime);
+                if (safeDistance <= 0.001f)
+                {
+                    frameDesired = Vector3.zero;
+                    ReportDebug("ExecuteAttack3: No se aplica movimiento de carga por espacio insuficiente.", 1);
+                }
+                else
+                {
+                    playerMovement.MoveCharacter(frameDesired);
+                    accumulated += new Vector3(frameDesired.x, 0f, frameDesired.z).magnitude;
+                }
+            }
+            else
+            {
+                transform.position += frameDesired;
+                accumulated += new Vector3(frameDesired.x, 0f, frameDesired.z).magnitude;
             }
 
             PerformHitDetectionWithTracking();
             yield return null;
         }
-
-        // Hit detection al final
-        //PerformHitDetectionWithTracking();
 
         float lockDuration = comboLockDurations[2];
         attackCooldown = lockDuration;
@@ -679,30 +801,6 @@ public class PlayerMeleeAttack : MonoBehaviour
             meleeImpactMatInstance = null;
             Destroy(toDestroy, 0.05f);
         }
-    }
-
-    private IEnumerator CleanupVFXCoroutine()
-    {
-        if (meleeImpactVFX != null)
-        {
-            var psRenderer = meleeImpactVFX.GetComponent<ParticleSystemRenderer>();
-            meleeImpactVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            meleeImpactVFX.Clear(true);
-            if (psRenderer != null)
-            {
-                psRenderer.material = null;
-            }
-        }
-
-        if (meleeImpactMatInstance != null)
-        {
-            var toDestroy = meleeImpactMatInstance;
-            meleeImpactMatInstance = null;
-            yield return null;
-            Destroy(toDestroy);
-        }
-
-        cleanupCoroutine = null;
     }
 
     #endregion
