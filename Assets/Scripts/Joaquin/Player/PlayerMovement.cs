@@ -29,6 +29,11 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float gapDashBonusDistance = 3f;
     [SerializeField] private LayerMask groundLayerMask;
 
+    [Header("Edge Detection")]
+    [SerializeField] private bool enableEdgeDetection = true;
+    [SerializeField] private float edgeDetectionDistance = 0.5f;
+    [SerializeField] private float edgeRaycastHeight = 0.2f;
+
     [Header("Effects")]
     [Header("Afterimage Settings")]
     [SerializeField] private GameObject afterimagePrefab;
@@ -208,6 +213,12 @@ public class PlayerMovement : MonoBehaviour
         {
             Vector3 finalMove = moveDirection * moveSpeed;
             finalMove.y = yVelocity;
+
+            if (enableEdgeDetection && moveDirection.magnitude > 0.1f)
+            {
+                finalMove = ApplyEdgeDetection(finalMove);
+            }
+
             controller.Move(finalMove * Time.fixedDeltaTime);
 
             RotateTowardsMovement();
@@ -448,6 +459,47 @@ public class PlayerMovement : MonoBehaviour
                 Physics.IgnoreLayerCollision(playerLayer, i, ignore);
             }
         }
+    }
+
+    /// <summary>
+    /// Sistema de detección de bordes estilo Hades.
+    /// Previene que el jugador se caiga de plataformas durante movimiento normal.
+    /// Si detecta un vacío adelante, anula el movimiento en esa dirección.
+    /// </summary>
+    /// <param name="movement">Vector de movimiento propuesto</param>
+    /// <returns>Vector de movimiento ajustado (o cero si hay vacío)</returns>
+    private Vector3 ApplyEdgeDetection(Vector3 movement)
+    {
+        // Solo aplicar detección de bordes si el jugador está en el suelo
+        if (!controller.isGrounded)
+        {
+            return movement;
+        }
+
+        // Calcular posición de origen del raycast
+        Vector3 horizontalMovement = new Vector3(movement.x, 0f, movement.z);
+        if (horizontalMovement.magnitude < 0.01f)
+        {
+            return movement;
+        }
+
+        Vector3 movementDirection = horizontalMovement.normalized;
+        Vector3 rayOrigin = transform.position + Vector3.up * edgeRaycastHeight;
+        Vector3 checkPosition = rayOrigin + movementDirection * (controller.radius + edgeDetectionDistance);
+
+        // Raycast hacia abajo para detectar suelo
+        float rayDistance = controller.height + 0.5f;
+
+        if (!Physics.Raycast(checkPosition, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore))
+        {
+            ReportDebug("Borde detectado. Bloqueando movimiento para prevenir caída.", 1);
+
+            // Anular movimiento horizontal
+            return new Vector3(0f, movement.y, 0f);
+        }
+
+        // Hay suelo, permitir movimiento normal
+        return movement;
     }
 
     /// <summary>
@@ -799,11 +851,52 @@ public class PlayerMovement : MonoBehaviour
             Gizmos.DrawLine(downOrigin, downOrigin + Vector3.down * (controller.height + scanHeight + 1f));
         }
 
+        // Visualización de detección de bordes
+        if (enableEdgeDetection && controller.isGrounded && moveDirection.magnitude > 0.1f)
+        {
+            Vector3 horizontalMovement = new Vector3(moveDirection.x, 0f, moveDirection.z);
+            Vector3 movementDirection = horizontalMovement.normalized;
+
+            Vector3 rayOrigin = transform.position + Vector3.up * edgeRaycastHeight;
+            Vector3 checkPosition = rayOrigin + movementDirection * (controller.radius + edgeDetectionDistance);
+            float rayDistance = controller.height + 0.5f;
+
+            // Línea desde el origen del check hasta el punto de verificación
+            Gizmos.color = Color.blue;
+            Gizmos.DrawLine(rayOrigin, checkPosition);
+            Gizmos.DrawWireSphere(checkPosition, 0.1f);
+
+            // Raycast hacia abajo
+            if (Physics.Raycast(checkPosition, Vector3.down, out RaycastHit edgeHit, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore))
+            {
+                // Hay suelo (seguro)
+                Gizmos.color = Color.green;
+                Gizmos.DrawLine(checkPosition, edgeHit.point);
+                Gizmos.DrawWireSphere(edgeHit.point, 0.15f);
+            }
+            else
+            {
+                // No hay suelo (borde detectado)
+                Gizmos.color = Color.red;
+                Gizmos.DrawLine(checkPosition, checkPosition + Vector3.down * rayDistance);
+                Gizmos.DrawWireSphere(checkPosition + Vector3.down * rayDistance, 0.15f);
+            }
+        }
+
         // Texto de depuración opcional (solo visible en Scene)
 #if UNITY_EDITOR
         UnityEditor.Handles.Label(origin + Vector3.up * 1.5f, "Origen de Dash");
         UnityEditor.Handles.Label(baseEnd + Vector3.up * 1.5f, "Alcance base");
         UnityEditor.Handles.Label(bonusEnd + Vector3.up * 1.5f, "Máximo (con bonificación)");
+
+        if (enableEdgeDetection && controller.isGrounded)
+        {
+            UnityEditor.Handles.Label(origin + Vector3.up * 2.0f, "Detección de bordes: Activada");
+        }
+        else
+        {
+            UnityEditor.Handles.Label(origin + Vector3.up * 2.0f, "Detección de bordes: Desactivada");
+        }
 #endif
     }
 

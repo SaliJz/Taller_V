@@ -111,6 +111,13 @@ public class ShieldSkill : MonoBehaviour
 
     private void Update()
     {
+        if (10 >= playerHealth.CurrentHealth)
+        {
+            if (isSkillActive) DeactivateSkill();
+            Debug.Log("[ShieldSkill] Salud del jugador demasiado baja. La habilidad no puede activarse.");
+            return;
+        }
+
         if (Input.GetKeyDown(skillKey))
         {
             ToggleSkill();
