@@ -175,27 +175,37 @@ public class Shield : MonoBehaviour
                 bool isCritical;
                 float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
 
-                healthController.TakeDamage(attackDamage);
+                healthController.TakeDamage(attackDamage);
 
                 ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
             }
 
-            IDamageable damageable = enemy.GetComponent<IDamageable>();
+            IDamageable damageable = enemy.GetComponent<IDamageable>();
             if (damageable != null)
             {
-                if (!hitTargets.Contains(hitTransform))
+                ShieldDummy shieldDummy = damageable as ShieldDummy;
+
+                if (shieldDummy != null)
                 {
-                    hitTargets.Add(hitTransform);
+                    shieldDummy.HitByShield();
+                    ReportDebug("Golpe a " + enemy.name + ": DUMMY DE ESCUDO DETECTADO. Contando golpe.", 1);
                 }
+                else
+                {
+                    if (!hitTargets.Contains(hitTransform))
+                    {
+                        hitTargets.Add(hitTransform);
+                    }
 
-                bool isCritical;
-                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
-                damageable.TakeDamage(attackDamage);
+                    bool isCritical;
+                    float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
+                    damageable.TakeDamage(attackDamage);
 
-                ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
+                    ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
+                }
             }
 
-            BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
+            BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
             if (bloodKnight != null)
             {
                 if (!hitTargets.Contains(hitTransform))

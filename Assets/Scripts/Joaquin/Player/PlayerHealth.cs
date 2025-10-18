@@ -431,6 +431,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
     }
 
+    private void ChangeLifeStage(LifeStage newStage)
+    {
+        OnLifeStageChanged?.Invoke(newStage);
+    }
+
     /// <summary>
     /// Funcion que aplica dano al jugador.
     /// </summary>

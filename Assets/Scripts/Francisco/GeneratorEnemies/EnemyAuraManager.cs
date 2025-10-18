@@ -7,6 +7,8 @@ public class EnemyAuraManager : MonoBehaviour
     private EnemyHealth enemyHealth;
     private DevilConfiguration config;
 
+    [SerializeField] private GameObject explosiveVFXPrefab;
+
     public DevilAuraType ActiveAura { get; private set; } = DevilAuraType.None;
     public ResurrectionLevel ActiveResurrectionLevel { get; private set; } = ResurrectionLevel.None;
 
@@ -110,17 +112,41 @@ public class EnemyAuraManager : MonoBehaviour
 
     private void Explode(Transform explosionCenter)
     {
-        float damage = enemyHealth.MaxHealth * config.ExplosiveDamagePercent;
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        PlayerHealth playerHealth = player?.GetComponent<PlayerHealth>();
+
+        if (playerHealth == null)
+        {
+            ReportDebug("ADVERTENCIA: No se pudo encontrar el componente PlayerHealth en el jugador. Cancelando explosión.", 1);
+            return;
+        }
+
+        float damage = playerHealth.MaxHealth * config.ExplosiveDamagePercent;
         float radius = config.ExplosiveRadius;
 
-        ReportDebug($"Explosion activada. Dano: {damage} en radio {radius}.", 3);
+        if (radius <= 0f || damage <= 0f)
+        {
+            ReportDebug($"Explosión fallida: ExplosiveRadius ({radius}) o Damage ({damage}) es cero. Revisar DevilConfig.", 1);
+            return;
+        }
+
+        if (config.ExplosiveVFXPrefab != null)
+        {
+            Instantiate(config.ExplosiveVFXPrefab, explosionCenter.position, Quaternion.identity);
+        }
+        else
+        {
+            ReportDebug("ADVERTENCIA: ExplosiveVFXPrefab no está asignado en DevilConfiguration. No se mostró el efecto visual.", 2);
+        }
+
+        ReportDebug($"Explosion activada. Dano: {damage} (MaxPlayerHealth * {config.ExplosiveDamagePercent}) en radio {radius}.", 3);
 
         Collider[] hitColliders = Physics.OverlapSphere(explosionCenter.position, radius);
         foreach (var hit in hitColliders)
         {
-            if (hit.CompareTag("Player"))
+            if (hit.CompareTag("Player") && playerHealth != null)
             {
-                hit.GetComponent<IDamageable>()?.TakeDamage(damage); 
+                hit.GetComponent<IDamageable>()?.TakeDamage(damage);
             }
         }
     }
@@ -135,7 +161,7 @@ public class EnemyAuraManager : MonoBehaviour
 
         for (int i = 0; i < config.ResurrectionSplitCount; i++)
         {
-            Vector3 offset = UnityEngine.Random.insideUnitSphere * 1.5f;
+            Vector3 offset = Random.insideUnitSphere * 1.5f;
             offset.y = 0; 
             GameObject minion = Instantiate(config.EscurridizoPrefab, spawnCenter.position + offset, Quaternion.identity);
 

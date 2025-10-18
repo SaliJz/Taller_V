@@ -527,13 +527,25 @@ public class PlayerMeleeAttack : MonoBehaviour
             IDamageable damageable = enemy.GetComponent<IDamageable>();
             EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
 
-            if (damageable != null)
+            MeleeDummy meleeDummy = damageable as MeleeDummy;
+
+            if (meleeDummy != null)
+            {
+                meleeDummy.HitByMelee();
+                ReportDebug($"Golpe a {enemy.name}: DUMMY DE MELEE DETECTADO. Contando golpe.", 1);
+            }
+            else if (damageable != null)
             {
                 damageable.TakeDamage(finalDamage, isCritical);
+
                 if (currentAttackIndex == 2)
                 {
-                    enemyHealth.ApplyStun(attack3StunDuration);
-                    ReportDebug($"Enemigo {enemy.name} aturdido por {attack3StunDuration} segundos.", 1);
+                    EnemyHealth tempHealth = enemy.GetComponent<EnemyHealth>();
+                    if (tempHealth != null)
+                    {
+                        tempHealth.ApplyStun(attack3StunDuration);
+                        ReportDebug($"Enemigo {enemy.name} aturdido por {attack3StunDuration} segundos.", 1);
+                    }
                 }
             }
             else if (enemyHealth != null)

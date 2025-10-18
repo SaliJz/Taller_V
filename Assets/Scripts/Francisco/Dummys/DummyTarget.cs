@@ -4,26 +4,25 @@ using TMPro;
 
 public class DummyTarget : MonoBehaviour, IDamageable
 {
-    #region IDAMAGEABLE IMPLEMENTATION
-    public float CurrentHealth { get { return 100f; } }
-    public float MaxHealth { get { return 100f; } }
-    #endregion
+    #region IDAMAGEABLE IMPLEMENTATION
+    public virtual float CurrentHealth { get { return 100f; } }
+    public virtual float MaxHealth { get { return 100f; } }
+    #endregion
 
-    #region REFERENCES AND CONFIGURATION
-
-    private Renderer dummyRenderer;
-    private Color baseColor;
-    private Coroutine colorChangeCoroutine;
+    #region REFERENCES AND CONFIGURATION
+    protected Renderer dummyRenderer;
+    protected Color baseColor;
+    protected Coroutine colorChangeCoroutine;
 
     [Header("Dialogue Configuration")]
-    public string[] dialogueLines; 
-    private int dialogueIndex = 0; 
+    public string[] dialogueLines;
+    protected int dialogueIndex = 0;  
 
-    [Header("Invulnerability Settings")]
-    public float invulnerabilityDuration = 0.5f; 
-    private bool canBeHit = true; 
+    [Header("Invulnerability Settings")]
+    public float invulnerabilityDuration = 0.5f;
+    protected bool canBeHit = true;  
 
-    [Header("Visual Effects Settings")]
+    [Header("Visual Effects Settings")]
     public Color hitColor = Color.red;
     public float hitColorDuration = 0.2f;
 
@@ -32,18 +31,18 @@ public class DummyTarget : MonoBehaviour, IDamageable
     public TextMeshProUGUI logText;
     public float logPanelDisplayTime = 4f;
 
-    private Coroutine panelToggleCoroutine;
+    protected Coroutine panelToggleCoroutine; 
 
-    #endregion
+    #endregion
 
-    #region INITIALIZATION
-    void Awake()
+    #region INITIALIZATION
+    protected virtual void Awake()
     {
         dummyRenderer = GetComponent<Renderer>();
 
         if (dummyRenderer != null)
         {
-            baseColor = dummyRenderer.material.GetColor("_Color");
+            baseColor = dummyRenderer.material.GetColor("_Color");
         }
         else
         {
@@ -52,12 +51,11 @@ public class DummyTarget : MonoBehaviour, IDamageable
 
         if (logPanel != null) logPanel.SetActive(false);
     }
-    #endregion
+    #endregion
 
 
-    #region CORE FUNCTIONALITY
-
-    public void TakeDamage(float damageAmount, bool isCritical = false)
+    #region CORE FUNCTIONALITY
+    public virtual void TakeDamage(float damageAmount, bool isCritical = false)
     {
         if (!canBeHit)
         {
@@ -78,13 +76,13 @@ public class DummyTarget : MonoBehaviour, IDamageable
         Debug.Log($"Maniquí golpeado. Daño: {damageAmount} (Crítico: {isCritical}). Nueva línea de diálogo.");
     }
 
-    private IEnumerator HitCooldown()
+    protected IEnumerator HitCooldown()
     {
         yield return new WaitForSeconds(invulnerabilityDuration);
         canBeHit = true;
     }
 
-    public void ShowNextLineCyclic()
+    public void ShowNextLineCyclic()
     {
         if (dialogueLines == null || dialogueLines.Length == 0)
         {
@@ -96,13 +94,13 @@ public class DummyTarget : MonoBehaviour, IDamageable
 
         if (dialogueIndex >= dialogueLines.Length)
         {
-            dialogueIndex = 0; 
+            dialogueIndex = 0;
         }
 
         ShowCurrentLine();
     }
 
-    public void ShowCurrentLine()
+    protected void ShowCurrentLine()
     {
         UpdateLogUI();
 
@@ -116,15 +114,14 @@ public class DummyTarget : MonoBehaviour, IDamageable
     #endregion
 
     #region LOGIC AND UI
-
-    private void UpdateLogUI()
+    protected void UpdateLogUI()
     {
         if (logText == null || dialogueLines == null || dialogueLines.Length == 0) return;
 
         logText.text = dialogueLines[dialogueIndex];
     }
 
-    private IEnumerator TogglePanelAfterDelay()
+    protected IEnumerator TogglePanelAfterDelay()
     {
         if (logPanel != null)
         {
@@ -142,7 +139,7 @@ public class DummyTarget : MonoBehaviour, IDamageable
     #endregion
 
     #region VISUAL EFFECTS
-    private IEnumerator FlashColor()
+    protected IEnumerator FlashColor()
     {
         if (dummyRenderer != null)
         {
@@ -156,7 +153,7 @@ public class DummyTarget : MonoBehaviour, IDamageable
     #endregion
 
     #region CLEANUP
-    void OnDestroy()
+    protected virtual void OnDestroy()
     {
         if (dummyRenderer != null && dummyRenderer.material != null)
         {

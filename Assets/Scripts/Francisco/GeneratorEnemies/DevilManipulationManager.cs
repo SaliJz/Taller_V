@@ -23,6 +23,13 @@ public class DevilManipulationManager : MonoBehaviour
     private bool isManipulationActive = false;
     private string activeManipulationName = "Ninguna";
 
+    private bool isManipulationPending = false;
+    private bool isAuraPending = false;
+    private DevilAuraType pendingAuraType = DevilAuraType.None;
+    private ResurrectionLevel pendingResurrectionLevel = ResurrectionLevel.None;
+    private float pendingAuraCoverage = 0f;
+    private DevilDistortionType pendingDistortionType = DevilDistortionType.None;
+
     public float EnemySpeedMultiplier { get; private set; } = 1.0f;
     public float EnemyDamageMultiplier { get; private set; } = 1.0f;
 
@@ -72,12 +79,18 @@ public class DevilManipulationManager : MonoBehaviour
         CheckManipulationConditions();
     }
 
-    public void TryActivateManipulation(float playerHealthPercent, bool hasMadePact, bool hasObtainedRelic)
+    public void CheckForAndSetPendingManipulation(float playerHealthPercent, bool hasMadePact, bool hasObtainedRelic)
     {
+        if (isManipulationPending)
+        {
+            ReportDebug("Ya hay una manipulación pendiente guardada. Se salta el chequeo.", 2);
+            return;
+        }
+
         if (roomsSinceLastManipulation < config.CooldownInRooms)
         {
             roomsSinceLastManipulation++;
-            ReportDebug($"Enfriamiento activo. Salas restantes: {config.CooldownInRooms - roomsSinceLastManipulation}", 3);
+            ReportDebug($"Enfriamiento activo. Salas restantes: {config.CooldownInRooms - roomsSinceLastManipulation}", 2);
             return;
         }
 
@@ -89,24 +102,24 @@ public class DevilManipulationManager : MonoBehaviour
 
         float activationChance = 0f;
 
-        if (condition1 && UnityEngine.Random.Range(0f, 1f) < 0.5f) 
-        {
-            activationChance = 1f; 
-            ReportDebug("Condición 1 (Reliquia + Vida 25%) cumplida.", 2);
-        }
-        else if (condition2) 
+        if (condition1 && UnityEngine.Random.Range(0f, 1f) < 0.5f)
         {
             activationChance = 1f;
-            ReportDebug("Condición 2 (No recibir daño) cumplida. Usando prob 50% indep.", 2);
+            ReportDebug("Condición 1 (Reliquia + Vida 25%) cumplida.", 2);
         }
-        else if (condition3 && UnityEngine.Random.Range(0f, 1f) < 0.5f) 
+        else if (condition2)
+        {
+            activationChance = 1f;
+            ReportDebug("Condición 2 (Probabilidad Indep.) cumplida.", 2);
+        }
+        else if (condition3 && UnityEngine.Random.Range(0f, 1f) < 0.5f)
         {
             activationChance = 1f;
             ReportDebug("Condición 3 (Pacto) cumplida.", 2);
         }
         else if (condition4)
         {
-            activationChance = 1f; 
+            activationChance = 1f;
             ReportDebug($"Condición 4 ({config.MaxCleanRoomsCondition} salas limpias en tiempo) cumplida.", 2);
         }
 
@@ -114,14 +127,24 @@ public class DevilManipulationManager : MonoBehaviour
         {
             roomsSinceLastManipulation = 0;
             cleanRoomsCounter = 0;
+            isManipulationPending = true;
 
             if (UnityEngine.Random.Range(0f, 1f) < config.AuraProbability)
             {
-                ActivateAuraManipulation(ChooseRandomAura(), ChooseRandomResurrectionLevel());
+                pendingAuraType = ChooseRandomAura();
+                pendingResurrectionLevel = ChooseRandomResurrectionLevel();
+
+                pendingAuraCoverage = 1.0f;
+
+                isAuraPending = true;
+                ReportDebug($"Manipulación pendiente: Aura '{pendingAuraType}' (Nivel {pendingResurrectionLevel}) guardada. Se activará en la próxima sala.", 1);
             }
             else
             {
-                ActivateDistortion(ChooseRandomDistortion());
+                pendingDistortionType = ChooseRandomDistortion();
+
+                isAuraPending = false;
+                ReportDebug($"Manipulación pendiente: Distorsión '{pendingDistortionType}' guardada. Se activará en la próxima sala.", 1);
             }
         }
         else
@@ -191,46 +214,6 @@ public class DevilManipulationManager : MonoBehaviour
         }
 
         return chosenDistortion;
-    }
-
-    private void ActivateAuraManipulation(DevilAuraType aura, ResurrectionLevel level)
-    {
-        isManipulationActive = true; 
-        string auraName = GetAuraName(aura);
-        activeManipulationName = auraName; 
-
-        OnAuraManipulationActivated?.Invoke(aura, level, config.AuraEnemyCoveragePercent);
-
-        if (UIManager.Instance != null)
-        {
-            UIManager.Instance.ShowManipulationText($"¡Aura Demoníaca Activada: {auraName}!");
-        }
-        ReportDebug($"Aura {aura} activada (Nivel Res: {level}).", 1);
-    }
-
-    private void ActivateDistortion(DevilDistortionType distortion)
-    {
-        isManipulationActive = true; 
-        string distortionName = GetDistortionName(distortion);
-        activeManipulationName = distortionName; 
-
-        OnDistortionActivated?.Invoke(distortion);
-
-        if (UIManager.Instance != null)
-        {
-            UIManager.Instance.ShowManipulationText($"¡Distorsión del Diablo: {distortionName}!");
-        }
-        ReportDebug($"Distorsión {distortion} activada.", 1);
-    }
-
-    private string GetDistortionName(DevilDistortionType distortion)
-    {
-        return distortion.ToString(); 
-    }
-
-    private string GetAuraName(DevilAuraType aura)
-    {
-        return aura.ToString(); 
     }
 
     public Color GetCurrentLevelColor()
@@ -403,7 +386,7 @@ public class DevilManipulationManager : MonoBehaviour
         {
             availableDistortions.Remove(chosenDistortion);
             OnDistortionActivated?.Invoke(chosenDistortion);
-            ReportDebug($"Manipulación del Diablo: Distorsión '{chosenDistortion}' activada.", 3);
+            ReportDebug($"Manipulación del Diablo: Distorsión '{chosenDistortion}' activada.", 2);
         }
     }
 
@@ -448,6 +431,34 @@ public class DevilManipulationManager : MonoBehaviour
             DevilDistortionType.InfernalJudgement => config.InfernalJudgement_Chance,
             _ => 0f
         };
+    }
+
+    public void TryActivatePendingManipulation()
+    {
+        if (!isManipulationPending)
+        {
+            return;
+        }
+
+        if (isAuraPending)
+        {
+            OnAuraManipulationActivated?.Invoke(pendingAuraType, pendingResurrectionLevel, pendingAuraCoverage);
+            isManipulationActive = true;
+            activeManipulationName = pendingAuraType.ToString();
+            ReportDebug($"Manipulación del Diablo: Aura '{pendingAuraType}' (Lvl {pendingResurrectionLevel}) activada en la NUEVA SALA.", 1);
+        }
+        else
+        {
+            OnDistortionActivated?.Invoke(pendingDistortionType);
+            isManipulationActive = true;
+            activeManipulationName = pendingDistortionType.ToString();
+            ReportDebug($"Manipulación del Diablo: Distorsión '{pendingDistortionType}' activada en la NUEVA SALA.", 1);
+        }
+
+        isManipulationPending = false;
+        isAuraPending = false;
+        pendingAuraType = DevilAuraType.None;
+        pendingDistortionType = DevilDistortionType.None;
     }
 
     public string GetCurrentManipulationStatus()

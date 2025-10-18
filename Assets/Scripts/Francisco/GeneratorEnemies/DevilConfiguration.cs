@@ -29,7 +29,8 @@ public class DevilConfiguration : ScriptableObject
 
     [Header("Aura Explosiva")]
     [Range(0f, 1f)] public float ExplosiveDamagePercent = 0.20f; 
-    public float ExplosiveRadius = 10f; 
+    public float ExplosiveRadius = 10f;
+    public GameObject ExplosiveVFXPrefab;
 
     [Header("Aura de Resurrección Parcial")]
     [Range(0f, 1f)] public float ResurrectionChance = 0.30f; 

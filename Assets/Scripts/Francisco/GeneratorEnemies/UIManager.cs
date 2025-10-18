@@ -14,7 +14,7 @@ public class UIManager : MonoBehaviour
         manipulationIndicatorText.enabled = false; 
     }
 
-    private void Update() 
+    private void Update()
     {
         if (DevilManipulationManager.Instance != null && roomStatusText != null)
         {
