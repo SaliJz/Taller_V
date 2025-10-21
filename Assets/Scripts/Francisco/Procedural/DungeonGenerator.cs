@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static RoomProgressionLevel;
 
 [System.Serializable]
 public class EnemyWave
@@ -77,8 +79,9 @@ public class DungeonGenerator : MonoBehaviour
     public Room startRoomPrefab;
     public Room[] endRoomPrefabs;
 
-    [Header("Room Type Probabilities")]
-    public RoomTypeProbability[] roomTypeProbabilities;
+    [Header("Generation Rules")]
+    public List<RoomGenerationRule> roomGenerationRules;
+    public List<RoomTypeProbability> roomTypeProbabilities;
 
     [Header("Room Generation Rules")]
     public RoomGenerationRule[] generationRules;
@@ -113,6 +116,9 @@ public class DungeonGenerator : MonoBehaviour
     [Range(0.1f, 5.0f)]
     public float doorActivateDelay = 0.5f;
 
+    [Header("Enemy Progressive System")]
+    public ProgressiveEnemySystemConfig defaultEnemyConfig;
+
     [Header("Dependencies")]
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private PlayerStatsManager statsManager;
@@ -128,6 +134,10 @@ public class DungeonGenerator : MonoBehaviour
     private Dictionary<RoomType, List<RoomData>> roomDataDictionary = new Dictionary<RoomType, List<RoomData>>();
     private Dictionary<RoomType, RoomType[]> generationRuleDictionary = new Dictionary<RoomType, RoomType[]>();
     private Dictionary<RoomType, RoomProgressionRule> progressionRuleDictionary = new Dictionary<RoomType, RoomProgressionRule>();
+    private List<RoomProgressionRule> usedOnceRules = new List<RoomProgressionRule>();
+
+    public static event Action<RoomType> OnRoomEntered;
+    public static event Action<RoomType, float> OnRoomCompleted;
 
     private RoomProgressionRule mandatoryRoomToPlace;
     private int mandatoryRoomNumber = -1;
@@ -136,16 +146,24 @@ public class DungeonGenerator : MonoBehaviour
     private float currentProbableMandatoryProbability;
 
     private float roomStartTime = 0f; 
-    private bool hasPlayerMadePact = false; 
-    private bool hasPlayerObtainedRelic = false;
-
-    public static event System.Action OnRoomCompleted;
     public int CurrentRoomCount { get; private set; } = 0;
+    public int currentRoomNumber { get; private set; } = 0;
+    public Room CurrentRoom { get; private set; }
+    public static DungeonGenerator Instance { get; private set; }
 
     private DevilManipulationManager devilManager;
 
     void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            Instance = this;
+        }
+
         if (DevilManipulationManager.Instance != null)
         {
             devilManager = DevilManipulationManager.Instance;
@@ -177,7 +195,7 @@ public class DungeonGenerator : MonoBehaviour
             progressionRuleDictionary[rule.roomType] = rule;
         }
 
-        targetRoomCount = Random.Range(minRooms, maxRooms + 1);
+        targetRoomCount = UnityEngine.Random.Range(minRooms, maxRooms + 1);
 
         if (probableMandatoryToPlace != null)
         {
@@ -189,22 +207,6 @@ public class DungeonGenerator : MonoBehaviour
         playerMovement = FindAnyObjectByType<PlayerMovement>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
         statsManager = FindAnyObjectByType<PlayerStatsManager>();
-    }
-
-    private void OnEnable()
-    {
-        if (DevilManipulationManager.Instance != null)
-        {
-            DevilManipulationManager.Instance.OnDistortionActivated += HandleDistortion;
-        }
-    }
-
-    private void OnDisable()
-    {
-        if (DevilManipulationManager.Instance != null)
-        {
-            DevilManipulationManager.Instance.OnDistortionActivated -= HandleDistortion;
-        }
     }
 
     void Update()
@@ -299,7 +301,7 @@ public class DungeonGenerator : MonoBehaviour
             return;
         }
 
-        OnCombatEnded(currentRoom, entrancePoint);
+        OnCombatRoomCleared(currentRoom, entrancePoint);
     }
 
     void PlanMandatoryRoom()
@@ -308,7 +310,7 @@ public class DungeonGenerator : MonoBehaviour
         if (mandatoryRules.Any())
         {
             mandatoryRoomToPlace = mandatoryRules.First();
-            mandatoryRoomNumber = Random.Range(mandatoryRoomToPlace.minRoomNumber, mandatoryRoomToPlace.maxRoomNumber + 1);
+            mandatoryRoomNumber = UnityEngine.Random.Range(mandatoryRoomToPlace.minRoomNumber, mandatoryRoomToPlace.maxRoomNumber + 1);
         }
 
         var probableMandatoryRules = progressionRules.Where(r => r.isProbableMandatory).ToList();
@@ -389,13 +391,13 @@ public class DungeonGenerator : MonoBehaviour
         {
             List<RoomData> mandatoryRoomPrefabs = roomDataDictionary[mandatoryRoomToPlace.roomType];
 
-            mandatoryRoomPrefabs = mandatoryRoomPrefabs.OrderBy(x => Random.value).ToList();
+            mandatoryRoomPrefabs = mandatoryRoomPrefabs.OrderBy(x => UnityEngine.Random.value).ToList();
 
             foreach (var roomData in mandatoryRoomPrefabs)
             {
                 if (attempts >= maxRoomAttempts) break;
 
-                if (PlaceRoom(roomData.prefab, entrancePoint, mandatoryRoomToPlace))
+                if (PlaceRoom(roomData.prefab, roomData, entrancePoint, mandatoryRoomToPlace))
                 {
                     roomPlaced = true;
                     UpdateRoomWeights(roomData);
@@ -419,27 +421,23 @@ public class DungeonGenerator : MonoBehaviour
 
             RoomSelectionResult selectionResult = GetRandomRoomData(previousRoomType, roomsGenerated + 1);
 
-            if (selectionResult == null || selectionResult.ProgressionRule == null)
+            if (selectionResult == null || selectionResult.RoomData == null)
             {
                 attempts++;
                 continue;
             }
 
-            roomPlaced = PlaceRoom(selectionResult.RoomData.prefab, entrancePoint, selectionResult.ProgressionRule);
+            roomPlaced = PlaceRoom(selectionResult.RoomData.prefab, selectionResult.RoomData, entrancePoint, selectionResult.ProgressionRule);
 
             if (roomPlaced)
             {
                 UpdateRoomWeights(selectionResult.RoomData);
-                if (probableMandatoryToPlace != null && selectionResult.RoomData.prefab.roomType == probableMandatoryToPlace.roomType)
-                {
-                    hasProbableMandatoryBeenGenerated = true;
-                }
             }
             attempts++;
         }
     }
 
-    bool PlaceRoom(Room newRoomPrefab, ConnectionPoint entrancePoint, RoomProgressionRule progressionRule)
+    bool PlaceRoom(Room newRoomPrefab, RoomData roomData, ConnectionPoint entrancePoint, RoomProgressionRule progressionRule)
     {
         Room newRoom = Instantiate(newRoomPrefab);
 
@@ -447,7 +445,7 @@ public class DungeonGenerator : MonoBehaviour
 
         if (exitPoints.Count > 0)
         {
-            ConnectionPoint exitPoint = exitPoints[Random.Range(0, exitPoints.Count)];
+            ConnectionPoint exitPoint = exitPoints[UnityEngine.Random.Range(0, exitPoints.Count)];
 
             Vector3 offset = exitPoint.transform.position - newRoom.transform.position;
 
@@ -467,17 +465,22 @@ public class DungeonGenerator : MonoBehaviour
                 generatedRooms.Add(newRoom);
                 roomsGenerated++;
 
-                if (newRoom.roomType == RoomType.Combat && progressionRule?.combatContent != null)
+                if (newRoom.roomType == RoomType.Combat)
                 {
-                    var enemyManager = newRoom.gameObject.AddComponent<EnemyManager>();
+                    CombatContents contents = GetCombatContentsForRoom(newRoom.roomType, progressionRule);
 
-                    enemyManager.Initialize(
-                        this,
-                        newRoom,
-                        progressionRule.combatContent,
-                        this.spawnEffectPrefab,
-                        this.enemyPrefabs
-                    );
+                    if (contents.waves.Any() && newRoom.GetComponent<EnemyManager>() == null)
+                    {
+                        var enemyManager = newRoom.gameObject.AddComponent<EnemyManager>();
+
+                        enemyManager.Initialize(
+                            this,
+                            newRoom,
+                            contents,
+                            this.spawnEffectPrefab,
+                            this.enemyPrefabs
+                        );
+                    }
                 }
 
                 foreach (ConnectionPoint connectionPoint in newRoom.connectionPoints)
@@ -490,6 +493,12 @@ public class DungeonGenerator : MonoBehaviour
                         connectionPoint.gameObject.AddComponent<ConnectionTrigger>();
                     }
                 }
+
+                if (progressionRule != null && progressionRule.generateOnce)
+                {
+                    usedOnceRules.Add(progressionRule);
+                }
+
                 return true;
             }
             else
@@ -529,13 +538,13 @@ public class DungeonGenerator : MonoBehaviour
 
         while (attempts < maxRoomAttempts && !roomPlaced)
         {
-            Room endRoomPrefab = endRoomPrefabs[Random.Range(0, endRoomPrefabs.Length)];
+            Room endRoomPrefab = endRoomPrefabs[UnityEngine.Random.Range(0, endRoomPrefabs.Length)];
             Room endRoom = Instantiate(endRoomPrefab);
 
             List<ConnectionPoint> exitPoints = GetAllMatchingConnectionPoints(endRoom, entrancePoint);
             if (exitPoints.Count > 0)
             {
-                ConnectionPoint exitPoint = exitPoints[Random.Range(0, exitPoints.Count)];
+                ConnectionPoint exitPoint = exitPoints[UnityEngine.Random.Range(0, exitPoints.Count)];
 
                 Vector3 offset = exitPoint.transform.position - endRoom.transform.position;
 
@@ -564,6 +573,8 @@ public class DungeonGenerator : MonoBehaviour
 
     RoomSelectionResult GetRandomRoomData(RoomType previousRoomType, int currentRoomNumber)
     {
+        RoomProgressionRule[] currentRules = progressionRules ?? System.Array.Empty<RoomProgressionRule>();
+
         if (mandatoryRoomToPlace != null && roomsGenerated + 1 == mandatoryRoomNumber)
         {
             if (generationRuleDictionary.ContainsKey(previousRoomType) && !generationRuleDictionary[previousRoomType].Contains(mandatoryRoomToPlace.roomType))
@@ -575,13 +586,13 @@ public class DungeonGenerator : MonoBehaviour
             {
                 return new RoomSelectionResult
                 {
-                    RoomData = mandatoryRoomPrefabs[Random.Range(0, mandatoryRoomPrefabs.Count)],
+                    RoomData = mandatoryRoomPrefabs[UnityEngine.Random.Range(0, mandatoryRoomPrefabs.Count)],
                     ProgressionRule = mandatoryRoomToPlace
                 };
             }
         }
 
-        var probableMandatoryRules = progressionRules
+        var probableMandatoryRules = currentRules
             .Where(r => r.isProbableMandatory &&
                         currentRoomNumber >= r.minRoomNumber &&
                         currentRoomNumber <= r.maxRoomNumber &&
@@ -591,7 +602,7 @@ public class DungeonGenerator : MonoBehaviour
         foreach (var rule in probableMandatoryRules)
         {
             float escalatingProbability = GetEscalatingProbability(currentRoomNumber);
-            if (Random.Range(0f, 100f) < escalatingProbability)
+            if (UnityEngine.Random.Range(0f, 100f) < escalatingProbability)
             {
                 if (generationRuleDictionary.ContainsKey(previousRoomType) && !generationRuleDictionary[previousRoomType].Contains(rule.roomType))
                     continue;
@@ -605,14 +616,15 @@ public class DungeonGenerator : MonoBehaviour
                     }
                     return new RoomSelectionResult
                     {
-                        RoomData = probableRoomPrefabs[Random.Range(0, probableRoomPrefabs.Count)],
+                        RoomData = probableRoomPrefabs[UnityEngine.Random.Range(0, probableRoomPrefabs.Count)],
                         ProgressionRule = rule
                     };
                 }
             }
         }
 
-        var progressionAllowedTypes = progressionRules.Where(rule =>
+        var progressionAllowedTypes = currentRules
+            .Where(rule =>
                 currentRoomNumber >= rule.minRoomNumber &&
                 currentRoomNumber <= rule.maxRoomNumber
             ).Select(p => p.roomType).ToList();
@@ -623,7 +635,8 @@ public class DungeonGenerator : MonoBehaviour
             generationAllowedTypes = roomDataDictionary.Keys.ToArray();
         }
 
-        var validRoomTypes = new List<RoomType>();
+        List<RoomType> validRoomTypes = new List<RoomType>();
+
         if (progressionAllowedTypes.Any())
         {
             validRoomTypes = progressionAllowedTypes.Intersect(generationAllowedTypes).ToList();
@@ -635,18 +648,37 @@ public class DungeonGenerator : MonoBehaviour
 
         if (!validRoomTypes.Any())
         {
+            Debug.LogError($"Error: No hay tipos de sala válidos para la sala {currentRoomNumber}. Revise reglas de conexión y que 'roomTypeProbabilities' no esté vacío.");
             return null;
         }
 
         var filteredProbabilities = roomTypeProbabilities.Where(p => validRoomTypes.Contains(p.roomType)).ToList();
 
         float totalProbability = filteredProbabilities.Sum(p => p.probability);
+
         if (totalProbability <= 0)
         {
-            return GetRandomRoomDataFromList(roomDataDictionary, validRoomTypes, currentRoomNumber);
+            Debug.LogWarning($"Las probabilidades de RoomType (suma = {totalProbability}) para los tipos válidos fallaron. Usando selección uniforme como fallback.");
+
+            RoomType fallbackType = validRoomTypes[UnityEngine.Random.Range(0, validRoomTypes.Count)];
+
+            if (!roomDataDictionary.ContainsKey(fallbackType) || roomDataDictionary[fallbackType].Count == 0)
+            {
+                Debug.LogError($"Error: El RoomType '{fallbackType}' seleccionado por fallback NO tiene prefabs en roomDataDictionary.");
+                return null;
+            }
+
+            var fallbackRoomDataList = roomDataDictionary[fallbackType];
+            RoomData fallbackRoomData = fallbackRoomDataList[UnityEngine.Random.Range(0, fallbackRoomDataList.Count)];
+
+            return new RoomSelectionResult
+            {
+                RoomData = fallbackRoomData,
+                ProgressionRule = null 
+            };
         }
 
-        float randomValue = Random.Range(0f, totalProbability);
+        float randomValue = UnityEngine.Random.Range(0f, totalProbability);
         float currentSum = 0f;
         RoomType selectedType = RoomType.Normal;
 
@@ -660,6 +692,12 @@ public class DungeonGenerator : MonoBehaviour
             }
         }
 
+        if (!roomDataDictionary.ContainsKey(selectedType) || roomDataDictionary[selectedType] == null || roomDataDictionary[selectedType].Count == 0)
+        {
+            Debug.LogError($"Error de configuración: El RoomType '{selectedType}' está seleccionado, pero no tiene prefabs asociados en 'roomDataDictionary'.");
+            return null;
+        }
+
         var roomDataList = roomDataDictionary[selectedType];
         float totalWeight = roomDataList.Sum(data => data.weight);
 
@@ -670,7 +708,7 @@ public class DungeonGenerator : MonoBehaviour
             if (totalWeight <= 0) return null;
         }
 
-        float randomWeightValue = Random.Range(0f, totalWeight);
+        float randomWeightValue = UnityEngine.Random.Range(0f, totalWeight);
         float currentWeightSum = 0f;
         RoomData finalRoomData = null;
 
@@ -686,14 +724,10 @@ public class DungeonGenerator : MonoBehaviour
 
         if (finalRoomData == null) return null;
 
-        RoomProgressionRule finalRule = progressionRules.FirstOrDefault(r => r.roomType == finalRoomData.prefab.roomType &&
-                                                                           currentRoomNumber >= r.minRoomNumber &&
-                                                                           currentRoomNumber <= r.maxRoomNumber);
-
-        if (finalRule == null)
-        {
-            finalRule = progressionRules.FirstOrDefault(r => r.roomType == finalRoomData.prefab.roomType);
-        }
+        RoomProgressionRule finalRule = currentRules.FirstOrDefault(r =>
+            r.roomType == finalRoomData.prefab.roomType &&
+            currentRoomNumber >= r.minRoomNumber &&
+            currentRoomNumber <= r.maxRoomNumber);
 
         return new RoomSelectionResult
         {
@@ -702,27 +736,270 @@ public class DungeonGenerator : MonoBehaviour
         };
     }
 
-    private RoomSelectionResult GetRandomRoomDataFromList(Dictionary<RoomType, List<RoomData>> roomDict, List<RoomType> validTypes, int currentRoomNumber)
+    private CombatContents GenerateCombatContentFromProgression(RoomProgressionLevel progressiveLevel)
     {
-        if (!validTypes.Any()) return null;
-        RoomType randomType = validTypes[Random.Range(0, validTypes.Count)];
-        var roomDataList = roomDict[randomType];
-        RoomData finalRoomData = roomDataList[Random.Range(0, roomDataList.Count)];
-
-        RoomProgressionRule finalRule = progressionRules.FirstOrDefault(r => r.roomType == finalRoomData.prefab.roomType &&
-                                                                           currentRoomNumber >= r.minRoomNumber &&
-                                                                           currentRoomNumber <= r.maxRoomNumber);
-
-        if (finalRule == null)
+        switch (progressiveLevel.GenerationMode)
         {
-            finalRule = progressionRules.FirstOrDefault(r => r.roomType == finalRoomData.prefab.roomType);
+            case EnemyGenerationMode.ProceduralFromPool:
+            default:
+                {
+                    Debug.Log($"Generando contenido SOLO PROCEDURAL (Pool) para la Sala {roomsGenerated}.");
+                    int wavesToGenerate = UnityEngine.Random.Range(progressiveLevel.minWaves, progressiveLevel.maxWaves + 1);
+
+                    CombatContents proceduralContents = new CombatContents
+                    {
+                        timeBetweenWaves = progressiveLevel.timeBetweenWaves,
+                        waves = new List<EnemyWave>()
+                    };
+
+                    for (int i = 0; i < wavesToGenerate; i++)
+                    {
+                        proceduralContents.waves.Add(GenerateSingleProceduralWave(progressiveLevel));
+                    }
+                    return proceduralContents;
+                }
+
+            case EnemyGenerationMode.PredefinedCombination:
+                return GetFullPredefinedContents(progressiveLevel);
+
+            case EnemyGenerationMode.CombinationAndProcedural:
+                {
+                    if (progressiveLevel.predefinedCombinations == null || progressiveLevel.predefinedCombinations.Count == 0)
+                    {
+                        Debug.LogWarning($"El modo es CombinationAndProcedural, pero no hay combinaciones predefinidas. Recurriendo a ProceduralFromPool.");
+                        goto case EnemyGenerationMode.ProceduralFromPool;
+                    }
+
+                    int comboIndex = UnityEngine.Random.Range(0, progressiveLevel.predefinedCombinations.Count);
+                    PredefinedCombatCombination selectedCombo = progressiveLevel.predefinedCombinations[comboIndex];
+
+                    if (selectedCombo.waves == null || selectedCombo.waves.Count == 0)
+                    {
+                        Debug.LogWarning("La combinación seleccionada no tiene oleadas. Recurriendo a Procedural puro.");
+                        goto case EnemyGenerationMode.ProceduralFromPool;
+                    }
+
+                    int totalWaves = UnityEngine.Random.Range(progressiveLevel.minWaves, progressiveLevel.maxWaves + 1);
+                    CombatContents mixedContents = new CombatContents
+                    {
+                        timeBetweenWaves = progressiveLevel.timeBetweenWaves,
+                        waves = new List<EnemyWave>()
+                    };
+
+                    for (int i = 0; i < totalWaves; i++)
+                    {
+                        if (UnityEngine.Random.value < 0.5f)
+                        {
+                            PredefinedWave predefinedWave = selectedCombo.waves[UnityEngine.Random.Range(0, selectedCombo.waves.Count)];
+                            mixedContents.waves.Add(ConvertPredefinedWaveToEnemyWave(predefinedWave));
+                            Debug.Log($"Oleada {i + 1}: Predefinida (de '{selectedCombo.CombinationName}').");
+                        }
+                        else
+                        {
+                            mixedContents.waves.Add(GenerateSingleProceduralWave(progressiveLevel));
+                            Debug.Log($"Oleada {i + 1}: Procedural (del Pool).");
+                        }
+                    }
+
+                    return mixedContents;
+                }
+        }
+    }
+
+    public RoomProgressionRule SelectProgressionRule(RoomType roomType)
+    {
+        int roomNum = roomsGenerated + 1;
+
+        var availableRules = progressionRules 
+            .Where(r => r != null) 
+            .Where(r => roomNum >= r.minRoomNumber && roomNum <= r.maxRoomNumber)
+            .Where(r => r.roomType == roomType)
+            .Where(r => !r.generateOnce || !usedOnceRules.Contains(r))
+            .ToList();
+
+        if (!availableRules.Any()) return null;
+
+        RoomProgressionRule selectedRule = null;
+
+        var mandatoryRules = availableRules.Where(r => r.isMandatory).ToList();
+        if (mandatoryRules.Any())
+        {
+            selectedRule = mandatoryRules[UnityEngine.Random.Range(0, mandatoryRules.Count)];
+        }
+        else
+        {
+            float totalProbability = availableRules.Where(r => r.probability > 0).Sum(r => r.probability);
+            if (totalProbability > 0)
+            {
+                float randomPoint = UnityEngine.Random.Range(0f, totalProbability);
+                float currentSum = 0f;
+
+                foreach (var rule in availableRules.Where(r => r.probability > 0))
+                {
+                    currentSum += rule.probability;
+                    if (randomPoint < currentSum)
+                    {
+                        selectedRule = rule;
+                        break;
+                    }
+                }
+            }
         }
 
-        return new RoomSelectionResult
+        if (selectedRule != null)
         {
-            RoomData = finalRoomData,
-            ProgressionRule = finalRule
+            bool isCombatRoom = selectedRule.roomType == RoomType.Combat;
+
+            if (isCombatRoom && (selectedRule.combatContent == null || !selectedRule.combatContent.waves.Any()))
+            {
+                return null;
+            }
+
+            if (selectedRule.generateOnce)
+            {
+                usedOnceRules.Add(selectedRule);
+            }
+        }
+
+        return selectedRule;
+    }
+
+    private List<GameObject> SelectEnemiesByWeight(List<EnemyTierConfig> pool, int count)
+    {
+        List<GameObject> selectedEnemies = new List<GameObject>();
+        if (pool == null || !pool.Any()) return selectedEnemies;
+
+        float totalWeight = pool.Sum(e => e.SpawnWeight);
+
+        for (int i = 0; i < count; i++)
+        {
+            float randomPoint = UnityEngine.Random.Range(0f, totalWeight);
+            float currentWeight = 0f;
+
+            foreach (var enemyTier in pool)
+            {
+                currentWeight += enemyTier.SpawnWeight;
+                if (randomPoint < currentWeight)
+                {
+                    selectedEnemies.Add(enemyTier.EnemyPrefab);
+                    break;
+                }
+            }
+        }
+        return selectedEnemies;
+    }
+
+    private EnemyWave GenerateSingleProceduralWave(RoomProgressionLevel level)
+    {
+        EnemyWave newWave = new EnemyWave();
+
+        int roomsIntoLevel = currentRoomNumber - level.startRoomNumber;
+        float progressionFactor = Mathf.Clamp01(roomsIntoLevel / 10f);
+
+        int targetEnemyCount = Mathf.RoundToInt(
+            Mathf.Lerp(level.minEnemyCountPerWave, level.maxEnemyCountPerWave, progressionFactor)
+        );
+        newWave.enemyCount = Mathf.Max(1, targetEnemyCount);
+
+        if (level.availableEnemyPool != null && level.availableEnemyPool.Count > 0)
+        {
+            newWave.enemyPrefabs = SelectEnemiesByWeight(level.availableEnemyPool, newWave.enemyCount).ToArray();
+        }
+        else
+        {
+            Debug.LogWarning("El Pool de Enemigos para este nivel está vacío. No se generaron enemigos.");
+            newWave.enemyPrefabs = System.Array.Empty<GameObject>();
+        }
+
+        return newWave;
+    }
+
+    private EnemyWave ConvertPredefinedWaveToEnemyWave(PredefinedWave predefinedWave)
+    {
+        EnemyWave newWave = new EnemyWave();
+        List<GameObject> waveEnemies = new List<GameObject>();
+        int totalCount = 0;
+
+        if (predefinedWave.enemiesInWave != null)
+        {
+            foreach (var detail in predefinedWave.enemiesInWave)
+            {
+                if (detail.EnemyPrefab != null)
+                {
+                    for (int i = 0; i < detail.Count; i++)
+                    {
+                        waveEnemies.Add(detail.EnemyPrefab);
+                    }
+                    totalCount += detail.Count;
+                }
+            }
+        }
+
+        newWave.enemyPrefabs = waveEnemies.ToArray();
+        newWave.enemyCount = totalCount;
+        return newWave;
+    }
+
+    private CombatContents GetFullPredefinedContents(RoomProgressionLevel level)
+    {
+        if (level.predefinedCombinations == null || level.predefinedCombinations.Count == 0)
+        {
+            Debug.LogWarning("El modo es PredefinedCombination, pero la lista de combinaciones está vacía.");
+            return new CombatContents();
+        }
+
+        int randomIndex = UnityEngine.Random.Range(0, level.predefinedCombinations.Count);
+        PredefinedCombatCombination selectedCombo = level.predefinedCombinations[randomIndex];
+
+        Debug.Log($"Usando contenido PREDEFINIDO '{selectedCombo.CombinationName}' para la Sala {roomsGenerated}.");
+
+        CombatContents contents = new CombatContents
+        {
+            timeBetweenWaves = selectedCombo.timeBetweenWaves,
+            waves = new List<EnemyWave>()
         };
+
+        if (selectedCombo.waves != null)
+        {
+            foreach (var predefinedWave in selectedCombo.waves)
+            {
+                contents.waves.Add(ConvertPredefinedWaveToEnemyWave(predefinedWave));
+            }
+        }
+
+        return contents;
+    }
+
+    public CombatContents GetCombatContentsForRoom(RoomType roomType, RoomProgressionRule usedProgressionRule)
+    {
+        if (roomType != RoomType.Combat)
+        {
+            return new CombatContents();
+        }
+
+        if (usedProgressionRule != null &&
+            usedProgressionRule.combatContent != null &&
+            usedProgressionRule.combatContent.waves.Any())
+        {
+            Debug.Log($"Usando contenido de combate DEFINIDO por la regla de progresión específica (Sala {roomsGenerated}).");
+            return usedProgressionRule.combatContent;
+        }
+
+        int roomNum = roomsGenerated;
+
+        if (defaultEnemyConfig != null)
+        {
+            RoomProgressionLevel progressiveLevel = defaultEnemyConfig.GetConfigForRoom(roomNum);
+
+            if (progressiveLevel != null)
+            {
+                Debug.Log($"Generando contenido de combate PROCEDURAL (Nivel {progressiveLevel.startRoomNumber}).");
+                return GenerateCombatContentFromProgression(progressiveLevel);
+            }
+        }
+
+        Debug.LogWarning($"No se encontró contenido de combate para la Sala {roomNum}. Devolviendo contenido vacío.");
+        return new CombatContents();
     }
 
     void UpdateRoomWeights(RoomData usedRoom)
@@ -781,42 +1058,6 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
-    private void HandleDistortion(DevilDistortionType distortion)
-    {
-        if (UIManager.Instance != null)
-        {
-            string distortionName = GetDistortionName(distortion);
-            UIManager.Instance.ShowManipulationText($"¡Distorsión Activada: {distortionName}!");
-        }
-
-        switch (distortion)
-        {
-            case DevilDistortionType.AbyssalConfusion:
-                // Lógica: Invertir los controles de movimiento del jugador
-                // playerMovement.InvertControls(true); // Requiere este método en PlayerMovement
-                break;
-            case DevilDistortionType.FloorOfTheDamned:
-                // Lógica: Aplicar baja fricción (0.4) al suelo de la sala actual
-                // currentRoom.ApplyFriction(0.4f); // Requiere este método en Room
-                break;
-            case DevilDistortionType.DeceptiveDarkness:
-                // Lógica: Limitar la visibilidad a 12 unidades (ej: niebla de guerra / post-proceso)
-                // VisibilityController.Instance.SetVisibility(12f);
-                break;
-            case DevilDistortionType.SealedLuck:
-                // Lógica: El sistema de tienda/gachapon debe escuchar y cambiar reliquias por gangas.
-                break;
-            case DevilDistortionType.WitheredBloodthirst:
-                // Lógica: El sistema de curación por muerte debe escuchar y bloquear la regeneración de vida.
-                // PlayerHealth.Instance.BlockKillHeal(true);
-                break;
-            case DevilDistortionType.InfernalJudgement:
-                // Lógica: La sala actual debe añadir oleadas extra.
-                // currentRoom.EnemyManager.AddExtraWaves(UnityEngine.Random.Range(2, 4));
-                break;
-        }
-    }
-
     private string GetDistortionName(DevilDistortionType distortion)
     {
         return distortion switch
@@ -857,8 +1098,34 @@ public class DungeonGenerator : MonoBehaviour
         }
 
         GenerateNextRoom(entrancePoint);
+
+        if (entrancePoint.connectedTo == null)
+        {
+            Debug.LogError($"Error Crítico: Falló la generación de la Sala {CurrentRoomCount}. Revise los logs de 'GetRandomRoomData' para errores de configuración (reglas, probabilidades o prefabs). Deteniendo transición.");
+
+            if (oldRoom != null && oldRoomDoorIndex != -1 && oldRoom.connectionDoors.Length > oldRoomDoorIndex && oldRoom.connectionDoors[oldRoomDoorIndex] != null)
+            {
+                oldRoom.connectionDoors[oldRoomDoorIndex].SetActive(false);
+            }
+
+            if (playerMovement != null) playerMovement.SetCanMove(true);
+            yield break; 
+        }
+
         Room newRoom = entrancePoint.connectedTo.GetComponentInParent<Room>();
-        ConnectionPoint exitPoint = newRoom.connectionPoints.FirstOrDefault(conn => conn.isConnected && conn.connectedTo == entrancePoint.transform);
+
+        ConnectionPoint exitPoint = null;
+        if (newRoom != null)
+        {
+            exitPoint = newRoom.connectionPoints.FirstOrDefault(conn => conn.isConnected && conn.connectedTo == entrancePoint.transform);
+        }
+
+        if (newRoom == null || exitPoint == null)
+        {
+            Debug.LogError("Error crítico: La nueva sala o su punto de entrada no se encontraron correctamente después de la conexión. Deteniendo transición.");
+            if (playerMovement != null) playerMovement.SetCanMove(true);
+            yield break;
+        }
 
         if (newRoom != null)
         {
@@ -887,118 +1154,122 @@ public class DungeonGenerator : MonoBehaviour
         }
 
         yield return FadeController.Instance.FadeOut(
-             onStart: () =>
-             {
-                 Vector3 targetPosition = playerTransform.position + new Vector3(entranceDirection.x * playerMoveDistance, 0f, entranceDirection.z * playerMoveDistance);
-                 targetPosition.y = originalPlayerY;
-                 StartCoroutine(MovePlayerWithController(playerTransform, targetPosition, playerMoveDuration));
-             },
-             onComplete: () =>
-             {
-                 if (exitPoint != null)
-                 {
-                     Vector3 spawnPosition = new Vector3(exitPoint.transform.position.x, originalPlayerY, exitPoint.transform.position.z);
-                     if (playerMovement != null)
-                     {
-                         playerMovement.TeleportTo(spawnPosition);
-                     }
-                     else
-                     {
-                         playerTransform.position = spawnPosition;
-                     }
-                 }
-             }
+            onStart: () =>
+            {
+                Vector3 targetPosition = playerTransform.position + new Vector3(entranceDirection.x * playerMoveDistance, 0f, entranceDirection.z * playerMoveDistance);
+                targetPosition.y = originalPlayerY;
+                StartCoroutine(MovePlayerWithController(playerTransform, targetPosition, playerMoveDuration));
+            },
+            onComplete: () =>
+            {
+                if (exitPoint != null)
+                {
+                    Vector3 spawnPosition = new Vector3(exitPoint.transform.position.x, originalPlayerY, exitPoint.transform.position.z);
+                    if (playerMovement != null)
+                    {
+                        playerMovement.TeleportTo(spawnPosition);
+                    }
+                    else
+                    {
+                        playerTransform.position = spawnPosition;
+                    }
+                }
+            }
         );
 
         yield return FadeController.Instance.FadeIn(
-             onStart: () =>
-             {
-                 if (exitPoint != null)
-                 {
-                     Vector3 exitDirection = GetDirectionFromConnectionType(exitPoint.connectionType);
-                     Vector3 oppositeDirection = -exitDirection;
-                     Vector3 targetPosition = playerTransform.position + new Vector3(oppositeDirection.x * playerMoveDistance, 0f, oppositeDirection.z * playerMoveDistance);
-                     targetPosition.y = originalPlayerY;
-                     StartCoroutine(MovePlayerWithController(playerTransform, targetPosition, playerMoveDuration));
-                 }
-             },
-             onComplete: () =>
-             {
-                 int newRoomEntranceDoorIndex = System.Array.IndexOf(newRoom.connectionPoints, exitPoint);
-                 if (newRoomEntranceDoorIndex != -1 && newRoom.connectionDoors.Length > newRoomEntranceDoorIndex && newRoom.connectionDoors[newRoomEntranceDoorIndex] != null)
-                 {
-                     StartCoroutine(ActivateEntranceDoorDelayed(newRoom.connectionDoors[newRoomEntranceDoorIndex]));
-                 }
+            onStart: () =>
+            {
+                if (exitPoint != null)
+                {
+                    Vector3 exitDirection = GetDirectionFromConnectionType(exitPoint.connectionType);
+                    Vector3 oppositeDirection = -exitDirection;
+                    Vector3 targetPosition = playerTransform.position + new Vector3(oppositeDirection.x * playerMoveDistance, 0f, oppositeDirection.z * playerMoveDistance);
+                    targetPosition.y = originalPlayerY;
+                    StartCoroutine(MovePlayerWithController(playerTransform, targetPosition, playerMoveDuration));
+                }
+            },
+            onComplete: () =>
+            {
+                int newRoomEntranceDoorIndex = System.Array.IndexOf(newRoom.connectionPoints, exitPoint);
+                if (newRoomEntranceDoorIndex != -1 && newRoom.connectionDoors.Length > newRoomEntranceDoorIndex && newRoom.connectionDoors[newRoomEntranceDoorIndex] != null)
+                {
+                    StartCoroutine(ActivateEntranceDoorDelayed(newRoom.connectionDoors[newRoomEntranceDoorIndex]));
+                }
 
-                 StartRoomTimer();
+                StartRoomTimer();
 
-                 if (DevilManipulationManager.Instance != null)
-                 {
-                     if (newRoom != null && newRoom.roomType == RoomType.Combat)
-                     {
-                         DevilManipulationManager.Instance.TryActivatePendingManipulation();
-                     }
-                     else
-                     {
-                         DevilManipulationManager.Instance.NotifyNonCombatRoom();
-                     }
-                 }
+                if (DevilManipulationManager.Instance != null)
+                {
+                    if (newRoom != null && newRoom.roomType == RoomType.Combat)
+                    {
+                        DevilManipulationManager.Instance.TryActivatePendingManipulation();
+                    }
+                    else
+                    {
+                        DevilManipulationManager.Instance.NotifyNonCombatRoom();
+                    }
+                }
 
-                 if (newRoom != null && newRoom.roomType == RoomType.Combat)
-                 {
-                     var enemyManager = newRoom.GetComponent<EnemyManager>();
-                     if (enemyManager != null)
-                     {
-                         StartCoroutine(enemyManager.StartCombatEncounter(exitPoint));
-                     }
-                 }
-                 else
-                 {
-                     newRoom.EventsOnFinsih();
-                     newRoom.UnlockExitDoors(exitPoint);
-                 }
+                if (newRoom != null && (newRoom.roomType == RoomType.Combat))
+                {
+                    var enemyManager = newRoom.GetComponent<EnemyManager>();
+                    if (enemyManager != null)
+                    {
+                        StartCoroutine(enemyManager.StartCombatEncounter(exitPoint));
+                    }
+                }
+                else if (newRoom != null && (newRoom.roomType == RoomType.Shop))
+                {
+                    if (DevilManipulationManager.Instance.PendingDistortion == DevilDistortionType.SealedLuck)
+                    {
+                        ShopManager.Instance.SetDistortionActive(DevilDistortionType.SealedLuck, true);
+                    }
+                    else 
+                    {
+                        DevilManipulationManager.Instance.TryActivatePendingManipulation(); 
+                    }
+                }
+                else
+                {
+                    newRoom.EventsOnFinsih();
+                    newRoom.UnlockExitDoors(exitPoint);
+                }
 
-                 for (int i = 1; i < newRoom.connectionPoints.Length; i++)
-                 {
-                     BoxCollider boxCollider = newRoom.connectionPoints[i].GetComponent<BoxCollider>();
-                     if (boxCollider != null)
-                     {
-                         boxCollider.enabled = true;
-                     }
-                 }
+                for (int i = 1; i < newRoom.connectionPoints.Length; i++)
+                {
+                    BoxCollider boxCollider = newRoom.connectionPoints[i].GetComponent<BoxCollider>();
+                    if (boxCollider != null)
+                    {
+                        boxCollider.enabled = true;
+                    }
+                }
 
-                 if (playerMovement != null)
-                 {
-                     playerMovement.SetCanMove(true);
-                 }
-             }
+                if (playerMovement != null)
+                {
+                    playerMovement.SetCanMove(true);
+                    if (newRoom != null) 
+                    {
+                        OnRoomEntered?.Invoke(newRoom.roomType);
+                    }
+                }
+            }
         );
     }
 
-    public void OnCombatEnded(Room room, ConnectionPoint entrancePoint)
+    public void OnCombatRoomCleared(Room clearedRoom, ConnectionPoint entrancePoint) 
     {
-        float timeToCleanRoom = EndRoomTimer();
+        float roomCompletionTime = 0f;
 
-        if (DevilManipulationManager.Instance != null)
+        if (clearedRoom.roomType == RoomType.Combat && UIManager.Instance != null)
         {
-            float currentHealthPercent = (playerHealth != null && playerHealth.MaxHealth > 0)
-                ? playerHealth.CurrentHealth / playerHealth.MaxHealth
-                : 0f;
-
-            DevilManipulationManager.Instance.CheckForAndSetPendingManipulation(
-                currentHealthPercent,
-                hasPlayerMadePact,
-                hasPlayerObtainedRelic
-            );
+            roomCompletionTime = UIManager.Instance.StopAndReportTimer();
         }
 
-        room.EventsOnFinsih();
-        room.UnlockExitDoors(entrancePoint);
-    }
+        OnRoomCompleted?.Invoke(clearedRoom.roomType, roomCompletionTime);
 
-    public void NotifyRoomCompletion()
-    {
-        OnRoomCompleted?.Invoke();
+        clearedRoom.EventsOnFinsih();
+        clearedRoom.UnlockExitDoors(entrancePoint);
     }
 
     private IEnumerator ActivateEntranceDoorDelayed(GameObject door)
@@ -1009,6 +1280,11 @@ public class DungeonGenerator : MonoBehaviour
 
     private IEnumerator MovePlayerWithController(Transform playerTransform, Vector3 targetPosition, float duration)
     {
+        PlayerEffectDistortion.Instance?.ClearAbyssalConfusion(); 
+        PlayerHealth.Instance?.BlockKillHeal(false);             
+        //VisibilityController.Instance?.SetVisibility(0f);     
+        ShopManager.Instance?.SetDistortionActive(DevilDistortionType.SealedLuck, false); 
+
         Vector3 startPosition = playerTransform.position;
 
         float originalY = startPosition.y;

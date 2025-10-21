@@ -20,6 +20,8 @@ public class EnemyManager : MonoBehaviour
     private float auraCoveragePercent = 0f;
     private float initialHealthMultiplier = 1f;
 
+    public int ExtraWavesCount { get; private set; } = 0;
+
     private struct EnemyMultipliers
     {
         public float HealthMultiplier { get; set; }
@@ -55,7 +57,15 @@ public class EnemyManager : MonoBehaviour
         activeAura = aura;
         activeResurrectionLevel = level;
         auraCoveragePercent = coverage;
-        initialHealthMultiplier = 0.8f;
+
+        if (aura == DevilAuraType.PartialResurrection)
+        {
+            initialHealthMultiplier = 0.8f; 
+        }
+        else
+        {
+            initialHealthMultiplier = 1.0f; 
+        }
 
         if (DevilManipulationManager.Instance != null)
         {
@@ -71,14 +81,13 @@ public class EnemyManager : MonoBehaviour
         spawnEffectPrefab = effectPrefab;
         defaultEnemyPrefabs = defaultEnemies;
     }
-
     public IEnumerator StartCombatEncounter(ConnectionPoint entrancePoint)
     {
         if (combatConfig == null || combatConfig.waves == null || combatConfig.waves.Count == 0)
         {
             if (dungeonGenerator != null)
             {
-                dungeonGenerator.OnCombatEnded(parentRoom, entrancePoint);
+                dungeonGenerator.OnCombatRoomCleared(parentRoom, entrancePoint);
             }
             yield break;
         }
@@ -126,8 +135,49 @@ public class EnemyManager : MonoBehaviour
 
         if (dungeonGenerator != null)
         {
-            dungeonGenerator.OnCombatEnded(parentRoom, entrancePoint);
+            dungeonGenerator.OnCombatRoomCleared(parentRoom, entrancePoint);
         }
+    }
+
+    public void AddExtraWaves(int count)
+    {
+        if (parentRoom.currentRoomType != RoomType.Combat && parentRoom.currentRoomType != RoomType.Boss)
+        {
+            ReportDebug("Intentando añadir oleadas extra en una sala que no es de combate.", 2);
+            return;
+        }
+
+        if (combatConfig != null)
+        {
+            ExtraWavesCount += count;
+
+            if (combatConfig.waves.Count > 0)
+            {
+                EnemyWave baseWave = combatConfig.waves.Last();
+
+                for (int i = 0; i < count; i++)
+                {
+                    EnemyWave extraWave = new EnemyWave
+                    {
+                        enemyPrefabs = baseWave.enemyPrefabs,
+                        enemyCount = baseWave.enemyCount
+                    };
+
+                    combatConfig.waves.Insert(combatConfig.waves.Count - 1, extraWave);
+                }
+
+                ReportDebug($"Añadidas {count} oleadas extra. El total de oleadas es ahora: {combatConfig.waves.Count}", 1);
+            }
+        }
+        else
+        {
+            ReportDebug("combatConfig es nulo. No se pudieron añadir oleadas extra.", 3);
+        }
+    }
+
+    public void ClearExtraWaves()
+    {
+        ExtraWavesCount = 0;
     }
 
     private IEnumerator SpawnEnemiesInWave(EnemyWave wave)
@@ -166,6 +216,8 @@ public class EnemyManager : MonoBehaviour
         if (isAuraActiveInThisRoom && activeAura != DevilAuraType.None)
         {
             int numAuraEnemies = Mathf.CeilToInt(enemyCount * auraCoveragePercent);
+
+            ReportDebug($"Intentando aplicar {activeAura} a {numAuraEnemies} de {enemyCount} enemigos (Cobertura: {auraCoveragePercent}).", 1);
 
             List<int> allIndices = Enumerable.Range(0, enemyCount).ToList();
 
@@ -221,6 +273,15 @@ public class EnemyManager : MonoBehaviour
         }
     }
 
+    public void ResetAuraStatus()
+    {
+        isAuraActiveInThisRoom = false;
+        activeAura = DevilAuraType.None;
+        activeResurrectionLevel = ResurrectionLevel.None;
+        auraCoveragePercent = 0f;
+        initialHealthMultiplier = 1.0f;
+    }
+
     private void OnDrawGizmos()
     {
         if (parentRoom != null && parentRoom.spawnAreas != null)
@@ -233,6 +294,25 @@ public class EnemyManager : MonoBehaviour
                     Gizmos.DrawWireCube(area.bounds.center, area.bounds.size);
                 }
             }
+        }
+    }
+
+    private static void ReportDebug(string message, int reportPriorityLevel)
+    {
+        switch (reportPriorityLevel)
+        {
+            case 1:
+                Debug.Log($"[EnemyManager] {message}");
+                break;
+            case 2:
+                Debug.LogWarning($"[EnemyManager] {message}");
+                break;
+            case 3:
+                Debug.LogError($"[EnemyManager] {message}");
+                break;
+            default:
+                Debug.Log($"[EnemyManager] {message}");
+                break;
         }
     }
 }

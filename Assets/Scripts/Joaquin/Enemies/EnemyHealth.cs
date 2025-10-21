@@ -83,7 +83,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     public float MaxHealth => maxHealth;
     public bool ItemEffectHandledDeath { get; set; } = false;
     public static event Action<float, float> OnEnemyHealthChanged;
-    public event Action<GameObject> OnDeath;
+    public Action<GameObject> OnDeath;
     public event Action OnDamaged;
     public event Action<float, float> OnHealthChanged;
     private EnemyVisualEffects enemyVisualEffects;
@@ -276,13 +276,13 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         isDead = true;
         currentHealth = 0;
 
+        OnDeath?.Invoke(gameObject);
         if (_auraManager != null)
         {
-            _auraManager.HandleDeathEffect(transform);
+            _auraManager.HandleDeathEffect(transform, maxHealth);
         }
 
         ReportDebug($"{gameObject.name} ha muerto.", 1);
-        OnDeath?.Invoke(gameObject);
 
         if (playerHealth != null && playerStatsManager != null)
         {

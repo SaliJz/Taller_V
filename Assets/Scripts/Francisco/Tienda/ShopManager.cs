@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -29,6 +30,9 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private Color affordableColor = Color.green;
     [SerializeField] private Color unaffordableColor = Color.red;
 
+    [Header("Purchase Risk Settings")] 
+    [SerializeField] private float lowHealthThresholdPercentage = 20f;
+
     [Header("Raycast Settings")]
     [SerializeField] private Camera mainCamera;
     [SerializeField] private LayerMask shopItemLayer;
@@ -38,21 +42,39 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private KeyCode reRollKey = KeyCode.R;
     [SerializeField] private bool canReroll = true;
 
+    [Header("Purchase Cooldown")]
+    [SerializeField] private float purchaseCooldownTime = 0.5f; 
+    private float _lastPurchaseAttemptTime = -999f;
+
     private readonly List<ShopItem> availableItems = new List<ShopItem>();
     private readonly List<ShopItem> spawnedItems = new List<ShopItem>();
     private readonly List<GameObject> _spawnedItemObjects = new List<GameObject>();
     private List<ShopItem> currentShopItems;
     private List<Transform> _shopSpawnLocations;
 
+    private readonly Dictionary<ShopItem, bool> _pendingPurchaseWarning = new Dictionary<ShopItem, bool>();
+
+    public static ShopManager Instance { get; private set; }
+
     private PlayerStatsManager playerStatsManager;
     private PlayerHealth playerHealth;
     private InventoryManager inventoryManager;
     private ShopItem lastDetectedItem;
 
+    private bool forceGagans = false;
     private bool _amuletPurchasedInRun = false;
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            Instance = this;
+        }
+
         playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
         inventoryManager = FindAnyObjectByType<InventoryManager>();
@@ -192,37 +214,57 @@ public class ShopManager : MonoBehaviour
 
         List<ShopItem> itemsToSpawn = new List<ShopItem>();
 
-        if (normalItems.Count >= 2)
+        if (forceGagans)
         {
-            for (int i = 0; i < 2; i++)
+            if (drawbackItems.Count < 3)
             {
-                int randomIndex = Random.Range(0, normalItems.Count);
-                itemsToSpawn.Add(normalItems[randomIndex]);
-                normalItems.RemoveAt(randomIndex);
+                itemsToSpawn.AddRange(drawbackItems);
+                itemsToSpawn.AddRange(normalItems);
+            }
+            else
+            {
+                itemsToSpawn.AddRange(drawbackItems);
             }
         }
         else
         {
-            itemsToSpawn.AddRange(normalItems);
-        }
-
-        if (drawbackItems.Count >= 1)
-        {
-            int randomIndex = Random.Range(0, drawbackItems.Count);
-            itemsToSpawn.Add(drawbackItems[randomIndex]);
-        }
-        else
-        {
-            if (normalItems.Count > 0)
+            if (normalItems.Count >= 2)
             {
-                int randomIndex = Random.Range(0, normalItems.Count);
-                itemsToSpawn.Add(normalItems[randomIndex]);
+                for (int i = 0; i < 2; i++)
+                {
+                    int randomIndex = Random.Range(0, normalItems.Count);
+                    itemsToSpawn.Add(normalItems[randomIndex]);
+                    normalItems.RemoveAt(randomIndex);
+                }
+            }
+            else
+            {
+                itemsToSpawn.AddRange(normalItems);
+            }
+
+            if (drawbackItems.Count >= 1)
+            {
+                int randomIndex = Random.Range(0, drawbackItems.Count);
+                itemsToSpawn.Add(drawbackItems[randomIndex]);
+            }
+            else
+            {
+                if (normalItems.Count > 0)
+                {
+                    int randomIndex = Random.Range(0, normalItems.Count);
+                    itemsToSpawn.Add(normalItems[randomIndex]);
+                }
             }
         }
 
-        for (int i = 0; i < itemsToSpawn.Count && i < spawnLocations.Count; i++)
+        List<ShopItem> finalSelection = itemsToSpawn
+            .OrderBy(_ => Random.value)
+            .Take(Mathf.Min(itemsToSpawn.Count, spawnLocations.Count))
+            .ToList();
+
+        for (int i = 0; i < finalSelection.Count; i++)
         {
-            ShopItem itemData = itemsToSpawn[i];
+            ShopItem itemData = finalSelection[i];
             GameObject itemPrefab = FindPrefabForItemData(itemData);
 
             if (itemPrefab != null)
@@ -405,6 +447,11 @@ public class ShopManager : MonoBehaviour
 
                 if (lastDetectedItem != itemDisplay.shopItemData)
                 {
+                    if (lastDetectedItem != null && _pendingPurchaseWarning.ContainsKey(lastDetectedItem))
+                    {
+                        _pendingPurchaseWarning[lastDetectedItem] = false;
+                    }
+
                     DisplayItemUI(itemDisplay.shopItemData, finalCost);
                     lastDetectedItem = itemDisplay.shopItemData;
                 }
@@ -415,8 +462,24 @@ public class ShopManager : MonoBehaviour
         if (!hitShopItem && shopUIPanel != null && shopUIPanel.activeSelf)
         {
             HideItemUI();
+
+            if (lastDetectedItem != null && _pendingPurchaseWarning.ContainsKey(lastDetectedItem))
+            {
+                _pendingPurchaseWarning[lastDetectedItem] = false;
+            }
+
             lastDetectedItem = null;
         }
+    }
+
+    public bool CanAttemptPurchase()
+    {
+        if (Time.time > _lastPurchaseAttemptTime + purchaseCooldownTime)
+        {
+            _lastPurchaseAttemptTime = Time.time; 
+            return true;
+        }
+        return false;
     }
 
     public float CalculateFinalCost(float baseCost)
@@ -428,7 +491,7 @@ public class ShopManager : MonoBehaviour
 
         float finalCost = baseCost * (1f - discountFactor);
 
-        finalCost = Mathf.Max(1f, finalCost);
+        finalCost = Mathf.Max(0f, finalCost);
 
         return finalCost;
     }
@@ -513,7 +576,6 @@ public class ShopManager : MonoBehaviour
         }
 
         float finalCost = CalculateFinalCost(item.cost);
-
         float currentHealth = playerHealth.GetCurrentHealth();
 
         if (currentHealth <= finalCost)
@@ -530,6 +592,36 @@ public class ShopManager : MonoBehaviour
         {
             inventoryManager.ShowWarningMessage("Inventario lleno.");
             return false;
+        }
+
+        float healthAfterPurchase = currentHealth - finalCost;
+        float maxHealth = playerHealth.GetMaxHealth();
+        float lowHealthThreshold = maxHealth * (lowHealthThresholdPercentage / 100f);
+
+        _pendingPurchaseWarning.TryAdd(item, false);
+        bool warningActive = _pendingPurchaseWarning[item];
+
+        if (healthAfterPurchase <= lowHealthThreshold) 
+        {
+            if (!warningActive)
+            {
+                inventoryManager.ShowWarningMessage("¡ES DEMASIADO ARRIESGADO! La compra te dejaría con muy poca vida. Presiona [E] de nuevo para confirmar.");
+                _pendingPurchaseWarning[item] = true;
+                Debug.Log($"Advertencia de bajo riesgo para {item.itemName}. Primer intento bloqueado.");
+                return false;
+            }
+            else
+            {
+                Debug.Log($"Advertencia de bajo riesgo anulada para {item.itemName}. Compra procesada.");
+                _pendingPurchaseWarning[item] = false;
+            }
+        }
+        else
+        {
+            if (warningActive)
+            {
+                _pendingPurchaseWarning[item] = false;
+            }
         }
 
         if (!inventoryManager.TryAddItem(item))
@@ -565,6 +657,10 @@ public class ShopManager : MonoBehaviour
             _amuletPurchasedInRun = true;
             DisableRemainingAmulets(item);
         }
+        else
+        {
+            DevilManipulationManager.Instance?.RelicAcquired();
+        }
 
         playerHealth.TakeDamage(Mathf.RoundToInt(finalCost), true);
         Debug.Log($"Compra exitosa de {item.itemName}. Se ha restado {finalCost:F2} de vida (Costo base: {item.cost}).");
@@ -575,6 +671,15 @@ public class ShopManager : MonoBehaviour
         }
 
         return true;
+    }
+
+    public void SetDistortionActive(DevilDistortionType distortion, bool isCase)
+    {
+        if (distortion == DevilDistortionType.SealedLuck)
+        {
+            forceGagans = isCase;
+            Debug.Log($"[Distorsión] SealedLuck: {isCase}.");
+        }
     }
 
     private void PositionUIPanel(Vector2 mousePosition)

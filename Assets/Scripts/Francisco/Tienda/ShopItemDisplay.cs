@@ -40,25 +40,27 @@ public class ShopItemDisplay : MonoBehaviour
 
             if (Input.GetKey(KeyCode.E))
             {
-                bool purchaseSuccessful = shopManager.PurchaseItem(shopItemData);
-
-                if (shopManager != null)
+                if (shopManager.CanAttemptPurchase())
                 {
-                    shopManager.UpdateCostBar(0);
-                }
+                    bool purchaseSuccessful = shopManager.PurchaseItem(shopItemData);
 
-                if (purchaseSuccessful)
-                {
-                    if (merchantRoomManager != null)
+                    if (shopManager != null)
                     {
-                        merchantRoomManager.OnItemPurchased();
+                        if (purchaseSuccessful)
+                        {
+                            shopManager.UpdateCostBar(0);
+                        }
                     }
 
-                    //GameObject objectToDestroy = (transform.parent != null)
-                    //                           ? transform.parent.gameObject
-                    //                           : gameObject;
+                    if (purchaseSuccessful)
+                    {
+                        if (merchantRoomManager != null)
+                        {
+                            merchantRoomManager.OnItemPurchased();
+                        }
 
-                    Destroy(gameObject);
+                        Destroy(gameObject);
+                    }
                 }
             }
         }

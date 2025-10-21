@@ -62,7 +62,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private float currentTemporaryHealth = 0f;
     private float maxTemporaryHealthLimit = 0f;
     private Coroutine temporaryHealthDecayCoroutine;
+    public bool IsKillHealBlocked { get; private set; } = false;
     public bool HasAmuletOfEndurance { get; private set; } = false;
+    public static PlayerHealth Instance { get; private set; }
 
     [Header("Veneno de Morlock")]
     [SerializeField] private MorlockStats morlockStats;
@@ -100,18 +102,37 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public float MaxHealth => statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
     public float CurrentHealth => currentHealth;
-    public float CurrentHealthPercent => currentHealth / MaxHealth;
+    public float CurrentHealthPercent
+    {
+        get
+        {
+            float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
+
+            if (maxHealth <= 0) return 0f;
+
+            return currentHealth / maxHealth;
+        }
+    }
     public Transform PlayerModelTransform => playerModelTransform;
     public Vector3 CurrentModelLocalScale => playerModelTransform != null ? playerModelTransform.localScale : Vector3.one;
     public Vector3 CurrentModelWorldScale => playerModelTransform != null ? playerModelTransform.lossyScale : Vector3.one;
     public float CurrentModelYOffset => playerModelTransform != null ? playerModelTransform.localPosition.y : 0f;
-
+    public event Action<float> OnDamageReceived;
     public bool IsLowHealth => currentHealth < (MaxHealth * 0.25f);
 
     public static event Action<PlayerHealth> OnPlayerInstantiated;
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            Instance = this;
+        }
+
         statsManager = GetComponent<PlayerStatsManager>();
         // FindAnyObjectByType puede devolver null; lo guardamos y comprobamos antes de usar.
         inventoryManager = FindAnyObjectByType<InventoryManager>();
@@ -484,6 +505,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
                 temporaryHealthDecayCoroutine = null;
             }
 
+            OnDamageReceived?.Invoke(damageToApply);
             ReportDebug($"Vida temporal restante después del golpe: {currentTemporaryHealth}. Daño restante a vida normal: {damageToApply}", 1);
         }
 
@@ -491,6 +513,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         if (damageToApply > 0f)
         {
+            OnDamageReceived?.Invoke(damageToApply);
             currentHealth -= damageToApply;
             currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
@@ -586,6 +609,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     /// <param name="healAmount"> Cantidad de dano a curar </param>
     public void Heal(float healAmount)
     {
+        if (IsKillHealBlocked)
+        {
+            ReportDebug($"Curación BLOQUEADA por Distorsión.", 2);
+            return; 
+        }
+
         float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
 
         if (HasAmuletOfEndurance)
@@ -894,6 +923,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         HasAmuletOfEndurance = true;
         ReportDebug("Amuleto adquirido. La curación normal está deshabilitada.", 1);
+    }
+
+    public void BlockKillHeal(bool isBlocked)
+    {
+        IsKillHealBlocked = isBlocked;
+        Debug.Log($"[PlayerHealth] Curación por muerte {(isBlocked ? "BLOQUEADA" : "RESTAURADA")} por Distorsión.");
     }
 
     #region Debuffs

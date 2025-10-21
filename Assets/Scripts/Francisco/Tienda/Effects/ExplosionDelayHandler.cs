@@ -40,7 +40,10 @@ public class ExplosionDelayHandler : MonoBehaviour
 
         if (_explosionVisualizerPrefab != null)
         {
-            Instantiate(_explosionVisualizerPrefab, position, Quaternion.identity);
+            GameObject visualzerExplosion = Instantiate(_explosionVisualizerPrefab, position, Quaternion.identity);
+
+            ExplosionScaleOverTime explosionScaleOverTime = visualzerExplosion.GetComponent<ExplosionScaleOverTime>();
+            explosionScaleOverTime.EndScale = Vector3.one * _explosionRadius;
         }
 
         Destroy(this);

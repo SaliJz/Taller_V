@@ -16,12 +16,18 @@ public class Room : MonoBehaviour
     public BoxCollider[] spawnAreas;
 
     public UnityEvent onFinsih;
+    public RoomType currentRoomType { get; set; }
 
     private EnemyManager enemyManager;
 
     public void InitializeEnemyManager(EnemyManager manager)
     {
         this.enemyManager = manager;
+    }
+
+    public void Initialize(RoomType type)
+    {
+        currentRoomType = type; 
     }
 
     public void LockAllDoors()

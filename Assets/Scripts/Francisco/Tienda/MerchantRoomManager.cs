@@ -313,6 +313,8 @@ public class MerchantRoomManager : MonoBehaviour
 
         dialogueText.text = fullPactMessage;
 
+        DevilManipulationManager.Instance?.PactMade();
+
         if (dialogueToggleCoroutine != null)
         {
             StopCoroutine(dialogueToggleCoroutine);

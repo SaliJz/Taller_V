@@ -115,14 +115,12 @@ public partial class PlayerStatsManager : MonoBehaviour
     private void OnEnable()
     {
         OnStatChanged += HandleStatChanged;
-        DungeonGenerator.OnRoomCompleted += IncrementRoomCount;
         PlayerHealth.OnLifeStageChanged += ApplyLifeStageModifiers;
     }
 
     private void OnDisable()
     {
         OnStatChanged -= HandleStatChanged;
-        DungeonGenerator.OnRoomCompleted -= IncrementRoomCount;
         PlayerHealth.OnLifeStageChanged -= ApplyLifeStageModifiers;
     }
 

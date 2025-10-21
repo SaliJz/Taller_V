@@ -7,23 +7,26 @@ public class EnemyAuraManager : MonoBehaviour
     private EnemyHealth enemyHealth;
     private DevilConfiguration config;
 
-    [SerializeField] private GameObject explosiveVFXPrefab;
-
     public DevilAuraType ActiveAura { get; private set; } = DevilAuraType.None;
     public ResurrectionLevel ActiveResurrectionLevel { get; private set; } = ResurrectionLevel.None;
 
     public float MoveSpeedMultiplier { get; private set; } = 1.0f;
     public float AttackSpeedMultiplier { get; private set; } = 1.0f;
-    public float DamageReductionPercent { get; private set; } = 0.0f; 
+    public float DamageReductionPercent { get; private set; } = 0.0f;
     public float StunningStunChance { get; private set; } = 0.0f;
-    public float CritDamageMultiplier { get; private set; } = 1.0f; 
+    public float CritDamageMultiplier { get; private set; } = 1.0f;
 
     private Coroutine regenCoroutine;
 
     private void Awake()
     {
         enemyHealth = GetComponent<EnemyHealth>();
-        config = Resources.Load<DevilConfiguration>("DevilConfig"); 
+        if (enemyHealth == null)
+        {
+            Debug.LogError("[EnemyAuraManager] requiere un componente EnemyHealth en el mismo GameObject.", this);
+            Destroy(this);
+        }
+        config = Resources.Load<DevilConfiguration>("DevilConfig");
         if (config == null)
         {
             Debug.LogError("[EnemyAuraManager] No se encontro DevilConfiguration en Resources.");
@@ -43,6 +46,8 @@ public class EnemyAuraManager : MonoBehaviour
         StunningStunChance = 0.0f;
         CritDamageMultiplier = 1.0f;
 
+        if (regenCoroutine != null) StopCoroutine(regenCoroutine);
+
         switch (aura)
         {
             case DevilAuraType.Frenzy:
@@ -53,22 +58,20 @@ public class EnemyAuraManager : MonoBehaviour
                 DamageReductionPercent = config.HardeningDamageReduction;
                 if (enemyHealth != null)
                 {
-                    enemyHealth.ApplyDamageReduction(DamageReductionPercent, -1f); 
+                    enemyHealth.ApplyDamageReduction(DamageReductionPercent, -1f);
                 }
                 regenCoroutine = StartCoroutine(RegenerationRoutine());
                 break;
             case DevilAuraType.Stunning:
                 StunningStunChance = config.StunningStunChance;
-                CritDamageMultiplier += config.StunningCritDamageIncrease; 
+                CritDamageMultiplier += config.StunningCritDamageIncrease;
                 break;
             case DevilAuraType.Explosive:
-                break;
             case DevilAuraType.PartialResurrection:
                 break;
         }
 
         BroadcastMessage("UpdateAuraStats", SendMessageOptions.DontRequireReceiver);
-
         ReportDebug($"Aura '{ActiveAura}' aplicada. Multiplicador de Velocidad: {MoveSpeedMultiplier}", 2);
     }
 
@@ -77,7 +80,7 @@ public class EnemyAuraManager : MonoBehaviour
         if (enemyHealth == null || config == null) yield break;
 
         float regenRate = config.HardeningHealthRegenPerSecond;
-        float delay = 1f; 
+        float delay = 1f;
 
         while (true)
         {
@@ -89,66 +92,43 @@ public class EnemyAuraManager : MonoBehaviour
         }
     }
 
-    public void HandleDeathEffect(Transform deathLocation)
+    public void HandleDeathEffect(Transform enemyTransform, float enemyBaseHealth) 
     {
-        if (enemyHealth != null && enemyHealth.ItemEffectHandledDeath)
+        if (config == null) return;
+
+        if (ActiveAura == DevilAuraType.Explosive)
         {
-            ReportDebug("El amuleto del jugador ya manejo el efecto de muerte. Ignorando Aura del Diablo.", 1);
-            return;
+            ExplodeOnDeath(enemyTransform.position, enemyBaseHealth);
         }
 
-        switch (ActiveAura)
+        if (ActiveAura == DevilAuraType.PartialResurrection && ActiveResurrectionLevel != ResurrectionLevel.None)
         {
-            case DevilAuraType.Explosive:
-                Explode(deathLocation);
-                break;
-            case DevilAuraType.PartialResurrection:
-                ResurrectAsMinions(deathLocation);
-                break;
+            ResurrectAsMinions(enemyTransform);
         }
-
-        if (regenCoroutine != null) StopCoroutine(regenCoroutine);
     }
 
-    private void Explode(Transform explosionCenter)
+    private void ExplodeOnDeath(Vector3 position, float enemyBaseHealth)
     {
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        PlayerHealth playerHealth = player?.GetComponent<PlayerHealth>();
-
-        if (playerHealth == null)
+        if (config.ExplosiveVFXPrefab == null)
         {
-            ReportDebug("ADVERTENCIA: No se pudo encontrar el componente PlayerHealth en el jugador. Cancelando explosión.", 1);
+            ReportDebug("ExplosiveVFXPrefab no asignado. No se puede crear explosión.", 3);
             return;
         }
 
-        float damage = playerHealth.MaxHealth * config.ExplosiveDamagePercent;
-        float radius = config.ExplosiveRadius;
+        GameObject explosionHandlerGO = new GameObject($"ExplosionAuraHandler_{gameObject.name}");
+        explosionHandlerGO.transform.position = position;
 
-        if (radius <= 0f || damage <= 0f)
-        {
-            ReportDebug($"Explosión fallida: ExplosiveRadius ({radius}) o Damage ({damage}) es cero. Revisar DevilConfig.", 1);
-            return;
-        }
+        ExplosionDelayHandler handler = explosionHandlerGO.AddComponent<ExplosionDelayHandler>();
 
-        if (config.ExplosiveVFXPrefab != null)
-        {
-            Instantiate(config.ExplosiveVFXPrefab, explosionCenter.position, Quaternion.identity);
-        }
-        else
-        {
-            ReportDebug("ADVERTENCIA: ExplosiveVFXPrefab no está asignado en DevilConfiguration. No se mostró el efecto visual.", 2);
-        }
+        handler.StartExplosion(
+            config.ExplosiveDamagePercent,
+            config.ExplosiveRadius,
+            config.ExplosiveVFXPrefab,
+            enemyBaseHealth,
+            0f 
+        );
 
-        ReportDebug($"Explosion activada. Dano: {damage} (MaxPlayerHealth * {config.ExplosiveDamagePercent}) en radio {radius}.", 3);
-
-        Collider[] hitColliders = Physics.OverlapSphere(explosionCenter.position, radius);
-        foreach (var hit in hitColliders)
-        {
-            if (hit.CompareTag("Player") && playerHealth != null)
-            {
-                hit.GetComponent<IDamageable>()?.TakeDamage(damage);
-            }
-        }
+        ReportDebug($"Aura Explosiva: Lógica transferida a ExplosionAuraHandler.", 1);
     }
 
     private void ResurrectAsMinions(Transform spawnCenter)
@@ -161,14 +141,31 @@ public class EnemyAuraManager : MonoBehaviour
 
         for (int i = 0; i < config.ResurrectionSplitCount; i++)
         {
-            Vector3 offset = Random.insideUnitSphere * 1.5f;
-            offset.y = 0; 
-            GameObject minion = Instantiate(config.EscurridizoPrefab, spawnCenter.position + offset, Quaternion.identity);
+            Vector3 offset = UnityEngine.Random.insideUnitSphere * 1.5f;
+            offset.y = 0;
+            GameObject minionGO = Instantiate(config.EscurridizoPrefab, spawnCenter.position + offset, Quaternion.identity);
 
-            // minion.GetComponent<Larva>()?.ApplyResurrectionEffect(ActiveResurrectionLevel); 
+            if (minionGO.TryGetComponent<ResurrectedDevilLarva>(out var minionLarva))
+            {
+                float enemyBaseHealth = enemyHealth.MaxHealth;
+                float speedMult = 1f;
+                float damageMult = 1f;
+                Color levelColor = Color.white;
+
+                minionLarva.Initialize(enemyBaseHealth, speedMult, damageMult, levelColor);
+            }
         }
 
-        ReportDebug($"Resurreccion Parcial: Generados {config.ResurrectionSplitCount} minions (Nivel {ActiveResurrectionLevel}).", 3);
+        ReportDebug($"Resurrección Parcial: Generados {config.ResurrectionSplitCount} minions (Nivel {ActiveResurrectionLevel}).", 3);
+    }
+
+    private void OnDestroy()
+    {
+        if (regenCoroutine != null)
+        {
+            StopCoroutine(regenCoroutine);
+            regenCoroutine = null;
+        }
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
