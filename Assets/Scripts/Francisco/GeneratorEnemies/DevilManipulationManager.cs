@@ -23,7 +23,6 @@ public class DevilManipulationManager : MonoBehaviour
 
     private bool isManipulationActive = false;
     private string activeManipulationName = "Ninguna";
-    private bool isActiveManipulationAura = false;
 
     private float damageReceivedInCurrentRoom = 0f;
     private float maxDamageForCondition = 10f; 
@@ -617,7 +616,6 @@ public class DevilManipulationManager : MonoBehaviour
 
             isManipulationActive = true;
             activeManipulationName = GetAuraName(pendingAuraType);
-            isActiveManipulationAura = true;
 
             pendingDistortionType = DevilDistortionType.None;
         }
@@ -627,7 +625,6 @@ public class DevilManipulationManager : MonoBehaviour
 
             isManipulationActive = true;
             activeManipulationName = GetDistortionName(pendingDistortionType);
-            isActiveManipulationAura = false;
 
             ReportDebug($"Manipulación del Diablo: Distorsión '{pendingDistortionType}' activada.", 1);
         }

@@ -19,8 +19,8 @@ public partial class MorlockEnemy : MonoBehaviour
     [Header("Health")]
     [SerializeField] private float health = 15f;
     [SerializeField] private float moveSpeed = 4f;
-    [Tooltip("Radio dentro del cual Morlock detecta al jugador y empezará a perseguir/atacar.")]
-    [SerializeField] private float detectionRadius = 50f;
+    [SerializeField] private float detectionRadius = 15f;
+    [SerializeField] private float losePlayerRadius = 40f;
     [SerializeField] private float teleportRange = 5f;
 
     [Header("Combat")]
@@ -30,30 +30,30 @@ public partial class MorlockEnemy : MonoBehaviour
     [SerializeField] private int maxDamageIncrease = 2;
     [SerializeField] private float maxRangeForDamageIncrease = 6f;
     [SerializeField] private float maxDistanceForDamageStart = 20f;
-    [SerializeField] private float attackRange = 50f;
+    [SerializeField] private float attackRange = 35f;
 
     [Header("Patrol")]
-    [Tooltip("Si se asignan waypoints, Morlock los recorrerá en bucle. Si no, hará roaming aleatorio en patrolRadius.")]
     [SerializeField] private Transform[] patrolWaypoints;
-    //[SerializeField] private bool loopWaypoints = true;
-    [SerializeField] private float patrolRadius = 8f; // usado si no hay waypoints
-    [SerializeField] private float patrolIdleTime = 1.2f; // espera entre puntos
+    [SerializeField] private float patrolRadius = 12f;
+    [SerializeField] private float patrolIdleTime = 2f;
+    [SerializeField] private float patrolMoveSpeed = 2f;
 
     [Header("Perseguir 1")]
-    [SerializeField] private float p1_teleportCooldown = 2.5f;
-    [SerializeField] private float p1_pursuitAdvanceDistance = 4f;
-    [SerializeField] private float p1_pursuitLateralVariationMin = 3f;
-    [SerializeField] private float p1_pursuitLateralVariationMax = 5f;
+    [SerializeField] private float p1_teleportCooldown = 2f;
+    [SerializeField] private float p1_pursuitAdvanceDistance = 5f;
+    [SerializeField] private float p1_pursuitLateralVariationMin = 2f;
+    [SerializeField] private float p1_pursuitLateralVariationMax = 6f;
+    [SerializeField] private float p1_maxDuration = 10f;
 
     [Header("Perseguir 2")]
-    [Tooltip("Distancia para activar Perseguir2")]
-    [SerializeField] private float p2_activationRadius = 5f;
-    [SerializeField] private float p2_teleportCooldown = 2.5f;
-    [SerializeField] private float p2_teleportRange = 5f;
+    [SerializeField] private float p2_activationDistance = 20f;
+    [SerializeField] private float p2_teleportCooldown = 2f;
+    [SerializeField] private float p2_teleportRange = 12f;
 
     [Header("Perseguir 3")]
-    [SerializeField] private float p3_teleportCooldown = 1.5f;
-    [SerializeField] private float p3_teleportRange = 10f;
+    [SerializeField] private float p3_teleportCooldown = 1.2f;
+    [SerializeField] private float p3_teleportRange = 8f;
+    [SerializeField] private float p3_healthThreshold = 0.5f;
 
     [Header("Sound")]
     [SerializeField] private AudioSource audioSource;
@@ -74,6 +74,10 @@ public partial class MorlockEnemy : MonoBehaviour
     private Coroutine shootCoroutine = null;
 
     private int currentWaypointIndex = 0;
+    private float phaseTimer = 0f;
+    private float lostPlayerTimer = 0f;
+    private Vector3 lastKnownPlayerPosition;
+    private bool isPatrolling = true;
 
     private void Awake()
     {
@@ -98,7 +102,7 @@ public partial class MorlockEnemy : MonoBehaviour
 
         ChangeState(MorlockState.Patrol);
     }
-    
+
     private void InitializedEnemy()
     {
         if (stats != null)
@@ -175,9 +179,19 @@ public partial class MorlockEnemy : MonoBehaviour
 
     private void HandleDamageTaken()
     {
-        if (!isDead && currentState == MorlockState.Pursue2)
+        if (isDead) return;
+
+        float healthPercent = enemyHealth.CurrentHealth / health;
+
+        if (healthPercent <= p3_healthThreshold * 0.7f && currentState != MorlockState.Pursue3)
         {
+            ReportDebug($"¡Daño recibido! Salud crítica ({healthPercent * 100:F0}%). Forzando Pursue3", 2);
             ChangeState(MorlockState.Pursue3);
+        }
+        else if (currentState == MorlockState.Patrol)
+        {
+            ReportDebug("¡Daño recibido durante patrulla! Activando Pursue1", 2);
+            ChangeState(MorlockState.Pursue1);
         }
     }
 
@@ -207,11 +221,16 @@ public partial class MorlockEnemy : MonoBehaviour
         if (isDead || playerTransform == null) return;
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+        float healthPercent = enemyHealth.CurrentHealth / health;
 
-        if (distanceToPlayer > detectionRadius && (currentState != MorlockState.Patrol && currentState != MorlockState.Repositioning))
+        if (distanceToPlayer <= detectionRadius * 2f)
         {
-            ChangeState(MorlockState.Patrol);
-            return;
+            lastKnownPlayerPosition = playerTransform.position;
+            lostPlayerTimer = 0f;
+        }
+        else
+        {
+            lostPlayerTimer += Time.deltaTime;
         }
 
         switch (currentState)
@@ -219,25 +238,45 @@ public partial class MorlockEnemy : MonoBehaviour
             case MorlockState.Patrol:
                 if (distanceToPlayer <= detectionRadius)
                 {
+                    ReportDebug($"¡Jugador detectado a {distanceToPlayer:F1}u! Activando Pursue1", 1);
                     ChangeState(MorlockState.Pursue1);
                 }
                 break;
 
             case MorlockState.Pursue1:
-                if (distanceToPlayer <= p2_activationRadius)
+                phaseTimer += Time.deltaTime;
+
+                if (distanceToPlayer <= p2_activationDistance || phaseTimer >= p1_maxDuration)
                 {
+                    ReportDebug($"Transición a Pursue2. Distancia: {distanceToPlayer:F1}u, Tiempo: {phaseTimer:F1}s", 1);
                     ChangeState(MorlockState.Pursue2);
+                }
+                else if (distanceToPlayer > losePlayerRadius && lostPlayerTimer > 5f)
+                {
+                    ReportDebug("Jugador perdido. Volviendo a patrulla", 2);
+                    ChangeState(MorlockState.Patrol);
                 }
                 break;
 
             case MorlockState.Pursue2:
-                //if (distanceToPlayer > p2_activationRadius)
-                //{
-                //    ChangeState(MorlockState.Perseguir1);
-                //}
+                if (healthPercent <= p3_healthThreshold)
+                {
+                    ReportDebug($"¡Salud crítica ({healthPercent * 100:F0}%)! Activando modo agresivo", 2);
+                    ChangeState(MorlockState.Pursue3);
+                }
+                else if (distanceToPlayer > losePlayerRadius && lostPlayerTimer > 7f)
+                {
+                    ReportDebug("Jugador perdido desde Pursue2. Volviendo a patrulla", 2);
+                    ChangeState(MorlockState.Patrol);
+                }
                 break;
 
             case MorlockState.Pursue3:
+                if (distanceToPlayer > losePlayerRadius && lostPlayerTimer > 10f)
+                {
+                    ReportDebug("Jugador perdido desde Pursue3. Volviendo a patrulla", 2);
+                    ChangeState(MorlockState.Patrol);
+                }
                 break;
         }
     }
@@ -262,20 +301,34 @@ public partial class MorlockEnemy : MonoBehaviour
             shootCoroutine = null;
         }
 
+        MorlockState previousState = currentState;
         currentState = newState;
+
+        phaseTimer = 0f;
+
+        if (agent != null)
+        {
+            agent.speed = (currentState == MorlockState.Patrol) ? patrolMoveSpeed : moveSpeed;
+        }
+
+        ReportDebug($"Cambio de estado: {previousState} => {newState}", 1);
 
         switch (currentState)
         {
             case MorlockState.Patrol:
+                isPatrolling = true;
                 currentBehaviorCoroutine = StartCoroutine(PatrolRoutine());
                 break;
             case MorlockState.Pursue1:
+                isPatrolling = false;
                 currentBehaviorCoroutine = StartCoroutine(Pursuit1Routine());
                 break;
             case MorlockState.Pursue2:
+                isPatrolling = false;
                 currentBehaviorCoroutine = StartCoroutine(Pursuit2Routine());
                 break;
             case MorlockState.Pursue3:
+                isPatrolling = false;
                 currentBehaviorCoroutine = StartCoroutine(Pursuit3Routine());
                 break;
             case MorlockState.Repositioning:
@@ -287,9 +340,16 @@ public partial class MorlockEnemy : MonoBehaviour
 
     private IEnumerator PatrolRoutine()
     {
+        if (agent != null)
+        {
+            agent.isStopped = false;
+            agent.speed = patrolMoveSpeed;
+        }
+
         while (currentState == MorlockState.Patrol)
         {
             Vector3 targetPosition;
+
             if (patrolWaypoints != null && patrolWaypoints.Length > 0)
             {
                 targetPosition = patrolWaypoints[currentWaypointIndex].position;
@@ -297,25 +357,72 @@ public partial class MorlockEnemy : MonoBehaviour
             }
             else
             {
-                TryGetRandomPoint(transform.position, patrolRadius, out targetPosition);
+                if (!TryGetRandomPoint(transform.position, patrolRadius, out targetPosition))
+                {
+                    targetPosition = transform.position + Random.insideUnitSphere * patrolRadius;
+                    targetPosition.y = transform.position.y;
+                }
             }
 
-            TeleportToPosition(targetPosition);
-            yield return new WaitForSeconds(patrolIdleTime);
+            if (agent != null && agent.enabled)
+            {
+                agent.SetDestination(targetPosition);
+
+                while (agent.pathPending || agent.remainingDistance > agent.stoppingDistance)
+                {
+                    if (currentState != MorlockState.Patrol) yield break;
+                    yield return null;
+                }
+
+                yield return new WaitForSeconds(patrolIdleTime);
+            }
+            else
+            {
+                TeleportToPosition(targetPosition);
+                yield return new WaitForSeconds(patrolIdleTime);
+            }
         }
     }
 
     private IEnumerator Pursuit1Routine()
     {
+        if (agent != null)
+        {
+            agent.isStopped = true;
+            agent.speed = moveSpeed;
+        }
+
+        int consecutiveTeleports = 0;
+
         while (currentState == MorlockState.Pursue1)
         {
+            if (playerTransform == null) yield break;
+
             Vector3 directionToPlayer = (playerTransform.position - transform.position).normalized;
-            Vector3 advancePosition = transform.position + directionToPlayer * p1_pursuitAdvanceDistance;
+
+            float advanceDistance = Random.Range(p1_pursuitAdvanceDistance * 0.8f, p1_pursuitAdvanceDistance * 1.2f);
+            Vector3 advancePosition = transform.position + directionToPlayer * advanceDistance;
 
             Vector3 lateralDirection = Vector3.Cross(directionToPlayer, Vector3.up);
-            float lateralOffset = Random.Range(p1_pursuitLateralVariationMin, p1_pursuitLateralVariationMax) * (Random.value > 0.5f ? 1f : -1f);
+            float lateralOffset = Random.Range(p1_pursuitLateralVariationMin, p1_pursuitLateralVariationMax);
+
+            consecutiveTeleports++;
+            if (consecutiveTeleports % 3 == 0)
+            {
+                lateralOffset *= -1f;
+            }
+            else
+            {
+                lateralOffset *= (Random.value > 0.6f ? 1f : -1f);
+            }
 
             Vector3 targetPosition = advancePosition + lateralDirection * lateralOffset;
+
+            if (Random.value < 0.2f)
+            {
+                targetPosition = playerTransform.position + directionToPlayer * -3f;
+                ReportDebug("Teletransporte directo hacia el jugador", 1);
+            }
 
             TeleportToPosition(targetPosition);
             StartShootCoroutine();
@@ -326,24 +433,40 @@ public partial class MorlockEnemy : MonoBehaviour
 
     private IEnumerator Pursuit2Routine()
     {
+        if (agent != null) agent.isStopped = true;
+
         int lastIndex = -1;
+        int teleportCount = 0;
 
         while (currentState == MorlockState.Pursue2)
         {
+            if (playerTransform == null) yield break;
+
+            teleportCount++;
+
+            float currentRange = p2_teleportRange;
+            if (teleportCount % 4 == 0)
+            {
+                currentRange *= 1.5f;
+                ReportDebug("Teletransporte lejano en Pursue2", 1);
+            }
+
             Vector3[] teleportPositions = new Vector3[4];
             float[] angles = { 0f, 90f, 180f, 270f };
 
             for (int i = 0; i < 4; i++)
             {
-                Vector3 offset = Quaternion.Euler(0, angles[i], 0) * Vector3.forward * p2_teleportRange;
+                Vector3 offset = Quaternion.Euler(0, angles[i], 0) * Vector3.forward * currentRange;
                 teleportPositions[i] = playerTransform.position + offset;
             }
 
             int newIndex;
+            int attempts = 0;
             do
             {
                 newIndex = Random.Range(0, teleportPositions.Length);
-            } while (newIndex == lastIndex);
+                attempts++;
+            } while (newIndex == lastIndex && attempts < 10);
 
             lastIndex = newIndex;
             Vector3 targetPosition = teleportPositions[newIndex];
@@ -357,30 +480,46 @@ public partial class MorlockEnemy : MonoBehaviour
 
     private IEnumerator Pursuit3Routine()
     {
+        if (agent != null) agent.isStopped = true;
+
         int lastIndex = -1;
+        bool useCloseRange = false;
 
         while (currentState == MorlockState.Pursue3)
         {
+            if (playerTransform == null) yield break;
+
+            useCloseRange = !useCloseRange;
+            float currentRange = useCloseRange ? p3_teleportRange * 0.6f : p3_teleportRange;
+
             Vector3[] teleportPositions = new Vector3[4];
             float[] angles = { 45f, 135f, 225f, 315f };
 
             for (int i = 0; i < 4; i++)
             {
-                Vector3 offset = Quaternion.Euler(0, angles[i], 0) * Vector3.forward * p3_teleportRange;
+                Vector3 offset = Quaternion.Euler(0, angles[i], 0) * Vector3.forward * currentRange;
                 teleportPositions[i] = playerTransform.position + offset;
             }
 
             int newIndex;
+            int attempts = 0;
             do
             {
                 newIndex = Random.Range(0, teleportPositions.Length);
-            } while (newIndex == lastIndex);
+                attempts++;
+            } while (newIndex == lastIndex && attempts < 10);
 
             lastIndex = newIndex;
             Vector3 targetPosition = teleportPositions[newIndex];
 
             TeleportToPosition(targetPosition);
+
             StartShootCoroutine();
+            if (Random.value < 0.4f)
+            {
+                yield return new WaitForSeconds(fireRate * 0.5f);
+                if (currentState == MorlockState.Pursue3) StartShootCoroutine();
+            }
 
             yield return new WaitForSeconds(p3_teleportCooldown);
         }
@@ -513,16 +652,24 @@ public partial class MorlockEnemy : MonoBehaviour
     /// <returns>True si se encontró un punto válido.</returns>
     private bool TryGetRandomPoint(Vector3 center, float radius, out Vector3 result)
     {
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 15; i++)
         {
-            Vector3 rand = center + Random.insideUnitSphere * radius;
+            Vector3 randomDirection = Random.insideUnitSphere * radius;
+            randomDirection.y = 0;
+            Vector3 targetPoint = center + randomDirection;
+
             NavMeshHit hit;
-            if (NavMesh.SamplePosition(rand, out hit, 2.0f, NavMesh.AllAreas))
+            if (NavMesh.SamplePosition(targetPoint, out hit, radius * 0.5f, NavMesh.AllAreas))
             {
-                result = hit.position;
-                return true;
+                if (Vector3.Distance(hit.position, center) > radius * 0.3f)
+                {
+                    result = hit.position;
+                    return true;
+                }
             }
         }
+
+        ReportDebug($"No se pudo encontrar punto aleatorio en radio {radius}", 2);
         result = center;
         return false;
     }

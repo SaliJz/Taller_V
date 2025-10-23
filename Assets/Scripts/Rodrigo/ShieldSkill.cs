@@ -1,16 +1,16 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Gestiona una habilidad que potencia las estadísticas del jugador mientras está activa.
 /// La habilidad se activa y desactiva, pidiendo al PlayerStatsManager que aplique los modificadores.
 /// </summary>
-public class ShieldSkill : MonoBehaviour
+public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 {
     #region Settings
 
     [Header("Configuration")]
-    [SerializeField] private KeyCode skillKey = KeyCode.Q;
     [SerializeField] private PlayerStatsManager statsManager;
 
     [Header("Buffs por Etapa de Vida")]
@@ -32,6 +32,7 @@ public class ShieldSkill : MonoBehaviour
     private float healthDrainTimer;
     private const string SHIELD_SKILL_MODIFIER_KEY = "ShieldSkillBuff";
 
+    private PlayerControlls playerControls;
     private PlayerHealth playerHealth;
     private Material[][] originalMaterials;
     private PlayerHealth.LifeStage lastKnownLifeStage;
@@ -60,16 +61,21 @@ public class ShieldSkill : MonoBehaviour
                 Debug.LogWarning("No se encontraron MeshRenderers en ShieldSkill. La habilidad no tendrá efecto visual.", this);
             }
         }
+
+        playerControls = new PlayerControlls();
+        playerControls.Abilities.SetCallbacks(this);
     }
 
     private void OnEnable()
     {
         PlayerHealth.OnLifeStageChanged += HandleLifeStageChanged;
+        playerControls?.Abilities.Enable(); 
     }
 
     private void OnDisable()
     {
         PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
+        playerControls?.Abilities.Disable(); 
 
         RestoreOriginalMaterial();
 
@@ -82,6 +88,8 @@ public class ShieldSkill : MonoBehaviour
     private void OnDestroy()
     {
         PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
+
+        playerControls?.Dispose();
 
         RestoreOriginalMaterial();
 
@@ -118,11 +126,6 @@ public class ShieldSkill : MonoBehaviour
             return;
         }
 
-        if (Input.GetKeyDown(skillKey))
-        {
-            ToggleSkill();
-        }
-
         if (isSkillActive)
         {
             UpdateActiveSkill();
@@ -132,6 +135,19 @@ public class ShieldSkill : MonoBehaviour
     #endregion
 
     #region Core Logic
+
+    public void OnActivateSkill(InputAction.CallbackContext context)
+    {
+        if (!context.started) return;
+
+        if (10 >= playerHealth.CurrentHealth)
+        {
+            Debug.Log("[ShieldSkill] Salud del jugador demasiado baja. La habilidad no puede activarse.");
+            return;
+        }
+
+        ToggleSkill();
+    }
 
     private void ToggleSkill()
     {

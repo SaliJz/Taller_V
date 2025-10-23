@@ -49,7 +49,7 @@ public partial class MorlockEnemy : MonoBehaviour
 
         // Rangos específicos de Pursue2
         Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position, p2_activationRadius);
+        Gizmos.DrawWireSphere(transform.position, p2_activationDistance);
 
         Gizmos.color = Color.magenta;
         Gizmos.DrawWireSphere(transform.position, p2_teleportRange);

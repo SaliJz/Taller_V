@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class ShopManager : MonoBehaviour
@@ -42,6 +43,9 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private KeyCode reRollKey = KeyCode.R;
     [SerializeField] private bool canReroll = true;
 
+    [Header("Gamepad Virtual Cursor")]
+    [SerializeField] private RectTransform virtualCursorRect;
+
     [Header("Purchase Cooldown")]
     [SerializeField] private float purchaseCooldownTime = 0.5f; 
     private float _lastPurchaseAttemptTime = -999f;
@@ -56,6 +60,7 @@ public class ShopManager : MonoBehaviour
 
     public static ShopManager Instance { get; private set; }
 
+    private PlayerControlls playerControls;
     private PlayerStatsManager playerStatsManager;
     private PlayerHealth playerHealth;
     private InventoryManager inventoryManager;
@@ -74,6 +79,8 @@ public class ShopManager : MonoBehaviour
         {
             Instance = this;
         }
+
+        playerControls = new PlayerControlls();
 
         playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
@@ -98,6 +105,16 @@ public class ShopManager : MonoBehaviour
         InitializeShopItemPools();
     }
 
+    private void OnEnable()
+    {
+        playerControls?.UI.Enable();
+    }
+
+    private void OnDisable()
+    {
+        playerControls?.UI.Disable();
+    }
+
     private void Update()
     {
         HandleMouseInteraction();
@@ -106,6 +123,7 @@ public class ShopManager : MonoBehaviour
         {
             RerollShop();
         }
+        PositionUIPanel();
     }
 
     public void InitializeShopItemPools()
@@ -428,9 +446,28 @@ public class ShopManager : MonoBehaviour
 
     private void HandleMouseInteraction()
     {
-        if (mainCamera == null) return;
+        if (mainCamera == null || playerControls == null) return;
 
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        Vector2 screenPosition;
+
+        Canvas parentCanvas = uiPanelTransform.GetComponentInParent<Canvas>();
+
+        bool isGamepadActive = Gamepad.current != null && virtualCursorRect != null && virtualCursorRect.gameObject.activeInHierarchy;
+
+        if (isGamepadActive)
+        {
+            Camera usedCamera = (parentCanvas != null && (parentCanvas.renderMode == RenderMode.ScreenSpaceCamera || parentCanvas.renderMode == RenderMode.WorldSpace))
+                                ? mainCamera
+                                : null;
+
+            screenPosition = RectTransformUtility.WorldToScreenPoint(usedCamera, virtualCursorRect.position);
+        }
+        else
+        {
+            screenPosition = playerControls.UI.Point.ReadValue<Vector2>();
+        }
+
+        Ray ray = mainCamera.ScreenPointToRay(screenPosition);
         RaycastHit hit;
 
         bool hitShopItem = false;
@@ -455,7 +492,8 @@ public class ShopManager : MonoBehaviour
                     DisplayItemUI(itemDisplay.shopItemData, finalCost);
                     lastDetectedItem = itemDisplay.shopItemData;
                 }
-                PositionUIPanel(Input.mousePosition);
+
+                PositionUIPanel();
             }
         }
 
@@ -682,15 +720,18 @@ public class ShopManager : MonoBehaviour
         }
     }
 
-    private void PositionUIPanel(Vector2 mousePosition)
+    private void PositionUIPanel()
     {
         if (uiPanelTransform == null || uiPanelTransform.parent == null) return;
 
+        Vector2 mousePosition = playerControls.UI.Point.ReadValue<Vector2>();
+
         Vector2 localPoint;
+
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             uiPanelTransform.parent.GetComponent<RectTransform>(),
             mousePosition,
-            null,
+            null, 
             out localPoint
         );
 

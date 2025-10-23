@@ -3077,20 +3077,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   statsManager: {fileID: 1871913946}
-  skillKey: 113
   youngBuffs:
     MoveMultiplier: 1.2
-    AttackDmgMultiplier: 1.1
+    AttackDamageMultiplier: 1.1
     AttackSpeedMultiplier: 1.2
+    HealthDrainAmount: 2
   adultBuffs:
     MoveMultiplier: 1.1
-    AttackDmgMultiplier: 1.2
+    AttackDamageMultiplier: 1.2
     AttackSpeedMultiplier: 1.1
+    HealthDrainAmount: 2
   elderBuffs:
     MoveMultiplier: 1.1
-    AttackDmgMultiplier: 1.12
+    AttackDamageMultiplier: 1.12
     AttackSpeedMultiplier: 1.1
-  SkillActive: 0
+    HealthDrainAmount: 1
+  meshRenderers: []
+  goldenMaterial: {fileID: 0}
 --- !u!1 &2068679703
 GameObject:
   m_ObjectHideFlags: 0
@@ -3501,12 +3504,24 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3909259620692616499, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3909259620692616499, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7607645585765194922, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_AnchorMax.x
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7607645585765194922, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9147642797784961567, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
+      propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -3767,10 +3782,6 @@ PrefabInstance:
     - target: {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
       propertyPath: m_Name
       value: Enemy2_Morlock
-      objectReference: {fileID: 0}
-    - target: {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

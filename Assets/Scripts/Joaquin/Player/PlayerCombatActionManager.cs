@@ -1,12 +1,13 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Gestor centralizado de acciones de combate del jugador.
 /// Permite encolar una acción pendiente mientras otra está en ejecución.
 /// </summary>
-public class PlayerCombatActionManager : MonoBehaviour
+public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatActions
 {
     public enum CombatActionType
     {
@@ -15,6 +16,8 @@ public class PlayerCombatActionManager : MonoBehaviour
         ShieldThrow,
         Dash
     }
+
+    private PlayerControlls playerControls;
 
     [Header("Referencias")]
     [SerializeField] private PlayerMeleeAttack meleeAttack;
@@ -33,6 +36,10 @@ public class PlayerCombatActionManager : MonoBehaviour
 
     private void Awake()
     {
+        playerControls = new PlayerControlls();
+        
+        playerControls.Combat.SetCallbacks(this);
+
         meleeAttack = GetComponent<PlayerMeleeAttack>();
         shieldController = GetComponent<PlayerShieldController>();
         playerMovement = GetComponent<PlayerMovement>();
@@ -42,58 +49,44 @@ public class PlayerCombatActionManager : MonoBehaviour
         if (playerMovement == null) ReportDebug("PlayerMovement no encontrado.", 3);
     }
 
-    private void Update()
+    private void OnEnable()
     {
-        if (!isExecutingAction)
-        {
-            ProcessCombatInputs();
-        }
-        else
-        {
-            TryQueueAction();
-        }
+        playerControls.Combat.Enable();
+    }
+
+    private void OnDisable()
+    {
+        playerControls.Combat.Disable();
     }
 
     /// <summary>
     /// Procesa los inputs de combate cuando no hay acciones activas.
     /// </summary>
-    private void ProcessCombatInputs()
-    {
-        // Prioridad de inputs
-        if (Input.GetMouseButtonDown(0))
-        {
-            TryExecuteMeleeAttack();
-        }
-        else if (Input.GetMouseButtonDown(1))
-        {
-            TryExecuteShieldThrow();
-        }
-        else if (Input.GetKeyDown(KeyCode.Space))
-        {
-            TryExecuteDash();
-        }
-    }
-
     /// <summary>
     /// Intenta encolar una acción si ya hay una en ejecución.
     /// Solo guarda la PRIMERA acción solicitada durante la ejecución actual.
     /// </summary>
-    private void TryQueueAction()
+    private void TryQueueAction(CombatActionType actionType)
     {
         if (queuedAction != CombatActionType.None) return;
 
-        // capturar input del frame y bufferizar acción
-        if (Input.GetMouseButtonDown(0) && CanQueueMeleeAttack())
+        bool canQueue = false;
+        switch (actionType)
         {
-            TryBufferAction(CombatActionType.MeleeAttack);
+            case CombatActionType.MeleeAttack:
+                canQueue = CanQueueMeleeAttack();
+                break;
+            case CombatActionType.ShieldThrow:
+                canQueue = CanQueueShieldThrow();
+                break;
+            case CombatActionType.Dash:
+                canQueue = CanQueueDash();
+                break;
         }
-        else if (Input.GetMouseButtonDown(1) && CanQueueShieldThrow())
+
+        if (canQueue)
         {
-            TryBufferAction(CombatActionType.ShieldThrow);
-        }
-        else if (Input.GetKeyDown(KeyCode.Space) && CanQueueDash())
-        {
-            TryBufferAction(CombatActionType.Dash);
+            TryBufferAction(actionType);
         }
     }
 
@@ -104,6 +97,58 @@ public class PlayerCombatActionManager : MonoBehaviour
         queuedActionTimestamp = Time.time;
         ReportDebug($"Acción {action} bufferizada", 1);
         return true;
+    }
+
+    public void OnMelee(InputAction.CallbackContext context)
+    {
+        if (!context.started) return;
+
+        ProcessCombatInput(CombatActionType.MeleeAttack);
+    }
+
+    public void OnShieldThrow(InputAction.CallbackContext context)
+    {
+        if (!context.started) return;
+
+        ProcessCombatInput(CombatActionType.ShieldThrow);
+    }
+
+    public void OnDash(InputAction.CallbackContext context)
+    {
+        if (!context.started) return;
+
+        ProcessCombatInput(CombatActionType.Dash);
+    }
+
+    private void ProcessCombatInput(CombatActionType actionType)
+    {
+        if (isExecutingAction)
+        {
+            TryQueueAction(actionType);
+        }
+        else
+        {
+            ExecuteActionImmediately(actionType);
+        }
+    }
+
+    private void ExecuteActionImmediately(CombatActionType actionType)
+    {
+        switch (actionType)
+        {
+            case CombatActionType.MeleeAttack:
+                TryExecuteMeleeAttack();
+                break;
+            case CombatActionType.ShieldThrow:
+                TryExecuteShieldThrow();
+                break;
+            case CombatActionType.Dash:
+                TryExecuteDash();
+                break;
+            case CombatActionType.None:
+            default:
+                break;
+        }
     }
 
     #region Execution Routines
@@ -120,7 +165,10 @@ public class PlayerCombatActionManager : MonoBehaviour
     {
         if (shieldController != null && shieldController.HasShield)
         {
-            StartCoroutine(ExecuteActionRoutine(CombatActionType.ShieldThrow, shieldController.ExecuteShieldThrowFromManager()));
+            if (CanQueueShieldThrow())
+            {
+                StartCoroutine(ExecuteActionRoutine(CombatActionType.ShieldThrow, shieldController.ExecuteShieldThrowFromManager()));
+            }
         }
     }
 
@@ -160,6 +208,7 @@ public class PlayerCombatActionManager : MonoBehaviour
     {
         return playerMovement != null && !playerMovement.IsDashing && !playerMovement.IsDashDisabled && playerMovement.DashCooldownTimer <= 0;
     }
+
 
     #endregion
 

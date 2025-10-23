@@ -1,7 +1,8 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
-public class PlayerMovement : MonoBehaviour
+public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 {
     #region Variables
 
@@ -46,6 +47,9 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Dash VFX")]
     [SerializeField] private ParticleSystem dashDustVFX;
+
+    private PlayerControlls playerControls;
+    private Vector2 currentInputVector = Vector2.zero;
 
     private int playerLayer;
     private float dashCooldownTimer = 0f;
@@ -94,12 +98,16 @@ public class PlayerMovement : MonoBehaviour
     {
         PlayerStatsManager.OnStatChanged += HandleStatChanged;
         PlayerHealth.OnLifeStageChanged += HandleLifeStageChanged;
+
+        playerControls?.Movement.Enable();
     }
 
     private void OnDisable()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
         PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
+
+        playerControls?.Movement.Disable();
     }
 
     private void OnDestroy()
@@ -120,6 +128,12 @@ public class PlayerMovement : MonoBehaviour
         }
 
         StopAllCoroutines();
+    }
+
+    private void Awake()
+    {
+        playerControls = new PlayerControlls();
+        playerControls.Movement.SetCallbacks(this); 
     }
 
     private void Start()
@@ -228,14 +242,19 @@ public class PlayerMovement : MonoBehaviour
     #endregion
 
     #region Custom Methods
+    public void OnMove(InputAction.CallbackContext context)
+    {
+        currentInputVector = context.ReadValue<Vector2>();
+    }
+
 
     // Maneja la entrada de movimiento del jugador y actualiza las animaciones.
     // Importante: si rotationLocked == true, NO actualizar lastMoveX/lastMoveY ni Xaxis/Yaxis del animator,
     // y NO permitir que la entrada WASD cambie la rotación (solo permite mover el personaje).
     private void HandleMovementInput()
     {
-        float moveX = Input.GetAxisRaw("Horizontal");
-        float moveY = Input.GetAxisRaw("Vertical");
+        float moveX = currentInputVector.x;
+        float moveY = currentInputVector.y;
 
         Vector3 cameraForward = mainCameraTransform != null ? mainCameraTransform.forward : Vector3.forward;
         Vector3 cameraRight = mainCameraTransform != null ? mainCameraTransform.right : Vector3.right;

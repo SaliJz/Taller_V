@@ -1227,10 +1227,13 @@ MonoBehaviour:
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
-  detectionRadius: 50
+  detectionRadius: 12
+  fieldOfViewAngle: 60
+  dashActivationDistance: 9
   patrolWaypoints: []
   loopWaypoints: 1
   patrolRadius: 8
+  patrolMoveSpeed: 2.5
   patrolIdleTime: 1.2
   audioSource: {fileID: 2196188235658860128}
   dashSFX: {fileID: 0}
@@ -1254,8 +1257,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   renderers:
   - {fileID: 8239850304368769487}
-  blinkTargetRenderer:
-  - {fileID: 0}
   blinkFlashMaterial: {fileID: 2100000, guid: d1f9e2c5e82298b4b8f024596ca37e41, type: 2}
   blinkInterval: 0.03
   blinkCount: 6

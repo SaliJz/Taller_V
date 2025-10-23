@@ -1,7 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using DG.Tweening;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -20,7 +18,7 @@ public class KronusEnemy : MonoBehaviour
 
     [Header("Movement")]
     [Tooltip("Velocidad de movimiento por defecto si no se encuentra KronusStats.")]
-    [SerializeField] private float moveSpeed = 3.5f;
+    [SerializeField] private float moveSpeed = 3.5f; 
     [SerializeField] private float dashSpeedMultiplier = 2f;
     [SerializeField] private float dashDuration = 1f;
     [SerializeField] private float dashMaxDistance = 6f;
@@ -41,12 +39,15 @@ public class KronusEnemy : MonoBehaviour
     [Header("Perception")]
     [Tooltip("Radio dentro del cual Kronus detecta al jugador y empezará a perseguir/atacar.")]
     [SerializeField] private float detectionRadius = 12f;
+    [SerializeField] private float fieldOfViewAngle = 60f; 
+    [SerializeField] private float dashActivationDistance = 9f;
 
     [Header("Patrol")]
     [Tooltip("Si se asignan waypoints, Kronus los recorrerá en bucle. Si no, hará roaming aleatorio en patrolRadius.")]
     [SerializeField] private Transform[] patrolWaypoints;
     [SerializeField] private bool loopWaypoints = true;
     [SerializeField] private float patrolRadius = 8f;
+    [SerializeField] private float patrolMoveSpeed = 2.5f;
     [SerializeField] private float patrolIdleTime = 1.2f;
 
     [Header("Sound")]
@@ -78,6 +79,8 @@ public class KronusEnemy : MonoBehaviour
     private bool isPatrolWaiting = false;
     private int currentWaypointIndex = 0;
 
+    private bool isAlertedByHit = false; 
+
     private GUIStyle titleStyle;
     private GUIStyle labelStyle;
     private GUIStyle worldLabelStyle;
@@ -106,7 +109,6 @@ public class KronusEnemy : MonoBehaviour
 
         if (agent != null)
         {
-            agent.speed = moveSpeed;
             agent.stoppingDistance = attackRadius;
             agent.updatePosition = true;
             agent.updateRotation = true;
@@ -137,6 +139,8 @@ public class KronusEnemy : MonoBehaviour
             ReportDebug("MorlockStats no asignado. Usando valores por defecto.", 2);
             if (enemyHealth != null) enemyHealth.SetMaxHealth(health);
         }
+
+        if (agent != null) agent.speed = patrolMoveSpeed;
     }
 
     private void OnEnable()
@@ -160,15 +164,18 @@ public class KronusEnemy : MonoBehaviour
         if (visualHit != null) Destroy(visualHit);
     }
 
+    public void AlertEnemy()
+    {
+        isAlertedByHit = true;
+        ReportDebug("Kronus alertado por golpe, iniciando persecución.", 1);
+    }
+
     public void ApplyRoomMultiplier(float damageMult, float speedMult)
     {
         attackDamage *= damageMult;
 
         moveSpeed *= speedMult;
-        if (agent != null)
-        {
-            agent.speed = moveSpeed;
-        }
+        patrolMoveSpeed *= speedMult; 
 
         dashSpeedMultiplier *= speedMult;
 
@@ -214,11 +221,23 @@ public class KronusEnemy : MonoBehaviour
             return;
         }
 
-        float sqrDistToPlayer = (playerTransform.position - transform.position).sqrMagnitude;
-        float detectionSqr = detectionRadius * detectionRadius;
+        Vector3 directionToPlayer = playerTransform.position - transform.position;
+        directionToPlayer.y = 0;
+        float distToPlayer = directionToPlayer.magnitude;
 
-        if (sqrDistToPlayer <= detectionSqr)
+        bool isInDetectionRange = distToPlayer <= detectionRadius;
+        float angleToPlayer = Vector3.Angle(transform.forward, directionToPlayer.normalized);
+        bool isInFOV = angleToPlayer <= fieldOfViewAngle * 0.5f;
+
+        bool isPlayerDetected = (isInDetectionRange && isInFOV) || isAlertedByHit;
+
+        if (isPlayerDetected)
         {
+            if (agent != null && agent.enabled && agent.isOnNavMesh && agent.speed != moveSpeed)
+            {
+                agent.speed = moveSpeed;
+            }
+
             if (!isAttacking)
             {
                 attackTimer += Time.deltaTime;
@@ -229,7 +248,7 @@ public class KronusEnemy : MonoBehaviour
                     agent.SetDestination(playerTransform.position);
                 }
 
-                if (attackTimer >= attackCycleCooldown)
+                if (attackTimer >= attackCycleCooldown && distToPlayer <= dashActivationDistance) 
                 {
                     if (!isAttacking)
                     {
@@ -240,6 +259,11 @@ public class KronusEnemy : MonoBehaviour
         }
         else
         {
+            if (isAlertedByHit)
+            {
+                isAlertedByHit = false;
+                ReportDebug("Alerta por golpe finalizada, volviendo a patrullar.", 1);
+            }
             PatrolUpdate();
         }
     }
@@ -252,6 +276,11 @@ public class KronusEnemy : MonoBehaviour
     private void PatrolUpdate()
     {
         if (isAttacking) return;
+
+        if (agent != null && agent.enabled && agent.isOnNavMesh && agent.speed != patrolMoveSpeed)
+        {
+            agent.speed = patrolMoveSpeed;
+        }
 
         if (patrolWaypoints != null && patrolWaypoints.Length > 0)
         {
@@ -512,9 +541,9 @@ public class KronusEnemy : MonoBehaviour
             }
         }
 
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(3f);
 
-        ReportDebug("Kronus finaliza ataque dash.", 1);
+        ReportDebug("Kronus finaliza ataque dash y entra en recuperación de 2s.", 1);
         isAttacking = false;
     }
 
@@ -545,7 +574,7 @@ public class KronusEnemy : MonoBehaviour
 
                 // Calcular daño con sistema de críticos
                 float damageToApply = CriticalHitSystem.CalculateDamage(damage, transform, hitTransform, out isCritical);
-                
+
                 if (audioSource != null && hitSFX != null) audioSource.PlayOneShot(hitSFX);
 
                 playerHealth.TakeDamage(damageToApply);
@@ -675,8 +704,27 @@ public class KronusEnemy : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
 
+        if (fieldOfViewAngle < 180f)
+        {
+            Vector3 forward = transform.forward * detectionRadius;
+            float halfAngle = fieldOfViewAngle * 0.5f;
+
+            Quaternion leftRayRotation = Quaternion.AngleAxis(-halfAngle, Vector3.up);
+            Quaternion rightRayRotation = Quaternion.AngleAxis(halfAngle, Vector3.up);
+
+            Vector3 leftRayDirection = leftRayRotation * forward;
+            Vector3 rightRayDirection = rightRayRotation * forward;
+
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawRay(transform.position, leftRayDirection);
+            Gizmos.DrawRay(transform.position, rightRayDirection);
+        }
+
         Gizmos.color = new Color(1f, 0.5f, 0f, 1f);
         Gizmos.DrawWireSphere(transform.position, patrolRadius);
+
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawWireSphere(transform.position, dashActivationDistance);
 
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, dashMaxDistance);
@@ -732,7 +780,7 @@ public class KronusEnemy : MonoBehaviour
 #endif
         EnsureGuiStyles();
 
-        Rect area = new Rect(10, 10, 360, 340);
+        Rect area = new Rect(10, 10, 360, 470); 
         GUILayout.BeginArea(area, GUI.skin.box);
 
         GUILayout.Label("KRONUS - DEBUG", titleStyle);
@@ -746,8 +794,18 @@ public class KronusEnemy : MonoBehaviour
         }
 
         GUILayout.BeginHorizontal();
-        GUILayout.Label("Move Speed:", labelStyle, GUILayout.Width(140));
+        GUILayout.Label("Alerted by Hit:", labelStyle, GUILayout.Width(140));
+        GUILayout.Label($"{isAlertedByHit}", labelStyle);
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Move Speed (Combat):", labelStyle, GUILayout.Width(140));
         GUILayout.Label($"{moveSpeed:F1}", labelStyle);
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Move Speed (Patrol):", labelStyle, GUILayout.Width(140));
+        GUILayout.Label($"{patrolMoveSpeed:F1}", labelStyle);
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
@@ -763,6 +821,23 @@ public class KronusEnemy : MonoBehaviour
         GUILayout.BeginHorizontal();
         GUILayout.Label("Dash Max Distance:", labelStyle, GUILayout.Width(140));
         GUILayout.Label($"{dashMaxDistance:F1}", labelStyle);
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Dash Activate Dist:", labelStyle, GUILayout.Width(140));
+        GUILayout.Label($"{dashActivationDistance:F1}", labelStyle);
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(4);
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Detection Radius:", labelStyle, GUILayout.Width(140));
+        GUILayout.Label($"{detectionRadius:F1}", labelStyle);
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("FOV Angle:", labelStyle, GUILayout.Width(140));
+        GUILayout.Label($"{fieldOfViewAngle:F0}°", labelStyle);
         GUILayout.EndHorizontal();
 
         GUILayout.Space(4);
@@ -806,8 +881,7 @@ public class KronusEnemy : MonoBehaviour
 
         GUILayout.EndArea();
 
-        // etiqueta flotante en el mundo
-        string worldText = $"Kronus\nHP: {(enemyHealth != null ? enemyHealth.CurrentHealth.ToString("F0") : "N/A")}\nAttacking: {isAttacking}";
+        string worldText = $"Kronus\nHP: {(enemyHealth != null ? enemyHealth.CurrentHealth.ToString("F0") : "N/A")}\nAttacking: {isAttacking}\nSpeed: {(agent != null ? agent.speed.ToString("F1") : "N/A")}";
         DrawWorldLabel(transform.position + Vector3.up * 2f, worldText, worldLabelStyle);
     }
 
