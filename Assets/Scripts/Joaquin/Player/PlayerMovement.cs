@@ -90,6 +90,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     private Vector3 lastTargetCheck = Vector3.zero;
     private bool lastTargetHit = false;
 
+    public bool IsRotationExternallyControlled { get; set; } = false;
+
     #endregion
 
     #region Unity Methods
@@ -235,6 +237,11 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
             controller.Move(finalMove * Time.fixedDeltaTime);
 
+            if (IsRotationExternallyControlled)
+            {
+                return;
+            }
+
             RotateTowardsMovement();
         }
     }
@@ -322,7 +329,31 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     private IEnumerator DashRoutine()
     {
-        Vector3 dashDirection = moveDirection.magnitude > 0.1f ? moveDirection : transform.forward;
+        Vector3 dashDirection;
+
+        // El dash usa la entrada del input.
+        if (currentInputVector.sqrMagnitude > 0.01f)
+        {
+            // Recalcula la dirección mundial desde la cámara
+            Vector3 cameraForward = mainCameraTransform != null ? mainCameraTransform.forward : Vector3.forward;
+            Vector3 cameraRight = mainCameraTransform != null ? mainCameraTransform.right : Vector3.right;
+
+            cameraForward.y = 0;
+            cameraRight.y = 0;
+            cameraForward.Normalize();
+            cameraRight.Normalize();
+
+            // Usa currentInputVector
+            dashDirection = (cameraForward * currentInputVector.y + cameraRight * currentInputVector.x).normalized;
+
+            // Rotación instantánea
+            transform.rotation = Quaternion.LookRotation(dashDirection);
+        }
+        else
+        {
+            // Si no hay input, dashea hacia adelante
+            dashDirection = moveDirection.magnitude > 0.1f ? moveDirection : transform.forward;
+        }
 
         if (!ValidateDashPath(dashDirection, out Vector3 targetDashPosition))
         {
@@ -585,7 +616,30 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             return true;
         }
 
-        // Paso 4: no hay suelo en rango permitido, cancelar dash
+        // Paso 4: no hay suelo en rango permitido, intenta dash hasta el borde seguro
+        float safeLedgeDistance = GetMaxSafeDistance(direction, dashDistance);
+
+        // Usa un pequeño umbral para evitar dashes de 0 distancia
+        if (safeLedgeDistance > edgeSafetyMargin)
+        {
+            // Proyecta el punto seguro en el suelo para obtener la 'Y' correcta
+            Vector3 safeTarget = origin + direction * safeLedgeDistance + Vector3.up * scanHeight;
+            if (Physics.Raycast(safeTarget, Vector3.down, out RaycastHit ledgeGroundHit, playerHeight + scanHeight + 1f, groundLayerMask, QueryTriggerInteraction.Ignore))
+            {
+                finalPosition = ledgeGroundHit.point;
+                ReportDebug("Se detectó un precipicio. Dasheando hasta el borde seguro.", 1);
+                return true;
+            }
+            else
+            {
+                // Fallback
+                finalPosition = origin + direction * safeLedgeDistance;
+                ReportDebug("Se detectó un precipicio. Dasheando hasta el borde (fallback).", 1);
+                return true;
+            }
+        }
+
+        // Paso 5: no hay suelo en rango permitido, cancelar dash
         finalPosition = origin;
         ReportDebug("La trayectoria del Dash no es segura, no hay terreno dentro del rango permitido. Dash cancelado.", 2);
         return false;

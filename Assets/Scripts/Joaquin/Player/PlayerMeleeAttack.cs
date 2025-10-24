@@ -39,8 +39,10 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private float attack1Duration = 0.4f;
 
     [Header("Attack 2 (Area/Spin)")]
-    [SerializeField] private float attack2Duration = 0.6f;
+    [SerializeField] private float attack2MovementDuration = 0.6f;
+    [SerializeField] private float attack2SpinDuration = 0.4f;
     [SerializeField] private float attack2SpinSpeed = 900f;
+    [SerializeField] private float attack2TargetSpinAngle = 360f;
 
     [Header("Attack 3 (Heavy/Charge)")]
     [SerializeField] private float attack3PreChargeDuration = 0.3f;
@@ -91,6 +93,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     private PlayerMovement playerMovement;
     private Material meleeImpactMatInstance;
     private Coroutine cleanupCoroutine;
+    private Coroutine showGizmoRoutine = null;
 
     private void Awake()
     {
@@ -229,11 +232,6 @@ public class PlayerMeleeAttack : MonoBehaviour
     /// </summary>
     public IEnumerator ExecuteAttackFromManager()
     {
-        if (Time.time - lastAttackTime > comboResetTime)
-        {
-            comboCount = 0;
-        }
-
         if (!CanAttack()) yield break;
 
         lastAttackTime = Time.time;
@@ -387,11 +385,10 @@ public class PlayerMeleeAttack : MonoBehaviour
                 accumulated += new Vector3(frameDesired.x, 0f, frameDesired.z).magnitude;
             }
 
+            PerformHitDetectionWithTracking();
+
             yield return null;
         }
-
-        // Ejecutar hit detection
-        PerformHitDetectionWithTracking();
 
         // Mantener lock
         float lockDuration = comboLockDurations[0];
@@ -406,8 +403,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private IEnumerator ExecuteAttack2()
     {
-        float movementDuration = 0.2f;
-        float spinDuration = attack2Duration - movementDuration;
+        float movementDuration = Mathf.Max(0f, attack2MovementDuration);
+        float spinDuration = Mathf.Max(0f, attack2SpinDuration);
 
         float desiredTotalDistance = comboMovementForces[1];
         Vector3 forward = transform.forward;
@@ -476,23 +473,69 @@ public class PlayerMeleeAttack : MonoBehaviour
             playerMovement.UnlockFacing();
         }
 
-        // Rotación mientras ataca
-        elapsedTime = 0f;
-        while (elapsedTime < spinDuration)
+        if (spinDuration > 0f && Mathf.Abs(attack2TargetSpinAngle) > 0.0001f)
         {
-            elapsedTime += Time.deltaTime;
-            float spinAmount = attack2SpinSpeed * Time.deltaTime;
-            transform.Rotate(0f, spinAmount, 0f, Space.Self);
+            try
+            {
+                if (playerMovement != null)
+                {
+                    playerMovement.IsRotationExternallyControlled = true;
+                }
 
-            // Hacer hit detection durante la rotación
-            PerformHitDetectionWithTracking();
-            yield return null;
+                float targetAngle = Mathf.Abs(attack2TargetSpinAngle);
+                float sign = Mathf.Sign(attack2TargetSpinAngle);
+
+                // velocidad angular necesaria para cubrir targetAngle en spinDuration
+                float requiredAngularSpeed = targetAngle / spinDuration; // grados por segundo
+
+                float angularSpeed = Mathf.Min(requiredAngularSpeed, Mathf.Abs(attack2SpinSpeed));
+
+                float rotated = 0f;
+                float elapsedSpin = 0f;
+
+                while (elapsedSpin < spinDuration && rotated < targetAngle - 0.0001f)
+                {
+                    float dt = Time.deltaTime;
+                    elapsedSpin += dt;
+
+                    float angleThisFrame = angularSpeed * dt;
+                    float remaining = targetAngle - rotated;
+                    if (angleThisFrame > remaining) angleThisFrame = remaining;
+
+                    transform.Rotate(0f, sign * angleThisFrame, 0f, Space.Self);
+                    rotated += angleThisFrame;
+
+                    PerformHitDetectionWithTracking();
+
+                    yield return null;
+                }
+
+                // corrección final por errores numéricos
+                if (Mathf.Abs(rotated - targetAngle) > 0.01f)
+                {
+                    float correction = (targetAngle - rotated) * sign;
+                    transform.Rotate(0f, correction, 0f, Space.Self);
+                    rotated = targetAngle;
+                }
+            }
+            finally
+            {
+                if (playerMovement != null)
+                {
+                    playerMovement.IsRotationExternallyControlled = false;
+                }
+            }
+        }
+        else
+        {
+            ReportDebug("ExecuteAttack2: spinDuration o targetSpinAngle inválidos, se omite giro.", 1);
         }
 
         float lockDuration = comboLockDurations[1];
         attackCooldown = lockDuration;
 
-        float remainingTime = Mathf.Max(0, lockDuration - attack2Duration);
+        float totalAttackDuration = movementDuration + spinDuration;
+        float remainingTime = Mathf.Max(0f, lockDuration - totalAttackDuration);
         if (remainingTime > 0)
         {
             yield return new WaitForSeconds(remainingTime);
@@ -576,7 +619,12 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         float lockDuration = comboLockDurations[2];
         attackCooldown = lockDuration;
-        yield return new WaitForSeconds(lockDuration - (attack3PreChargeDuration + attack3ChargeDuration));
+
+        float remainingTime = Mathf.Max(0f, lockDuration - (attack3PreChargeDuration + attack3ChargeDuration));
+        if (remainingTime > 0f)
+        {
+            yield return new WaitForSeconds(remainingTime);
+        }
     }
 
     // Rota instantaneamente al mouse proyectado en el plano horizontal (y = transform.position.y), con snap a 8 direcciones.
@@ -699,7 +747,40 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         if (!hitAnyEnemy) PlayImpactVFX(hitPoint.position);
 
-        StartCoroutine(ShowGizmoCoroutine());
+        float displayDuration = gizmoDuration;
+
+        switch (currentAttackIndex)
+        {
+            case 0: // ataque 1
+                if (attack1Duration > 0f) displayDuration = attack1Duration;
+                break;
+
+            case 1: // ataque 2
+                if (attack2SpinDuration > 0f) displayDuration = attack2SpinDuration;
+                break;
+
+            case 2: // ataque 3
+                if (attack3ChargeDuration > 0f) displayDuration = attack3ChargeDuration;
+                break;
+
+            default:
+                // fallback
+                break;
+        }
+
+        if (currentAttackIndex == 0 || currentAttackIndex == 1)
+        {
+            float quickMax = 0.25f;
+            if (displayDuration > quickMax) displayDuration = quickMax;
+        }
+
+        if (showGizmoRoutine != null)
+        {
+            StopCoroutine(showGizmoRoutine);
+            showGizmoRoutine = null;
+        }
+
+        showGizmoRoutine = StartCoroutine(ShowGizmoCoroutine(displayDuration));
     }
 
     private void ApplyKnockbackSafe(Collider enemy)
@@ -732,19 +813,23 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
-    private IEnumerator ShowGizmoCoroutine()
+    private IEnumerator ShowGizmoCoroutine(float duration)
     {
         if (!canShowHitGizmo) yield break;
+        
+        float time = (duration > 0f) ? duration : gizmoDuration;
 
         showGizmo = true;
         if (useBoxCollider && visualBoxHit != null) visualBoxHit.SetActive(true);
         else if (visualSphereHit != null) visualSphereHit.SetActive(true);
 
-        yield return new WaitForSeconds(gizmoDuration);
+        yield return new WaitForSeconds(time);
 
         showGizmo = false;
         if (useBoxCollider && visualBoxHit != null) visualBoxHit.SetActive(false);
         else if (visualSphereHit != null) visualSphereHit.SetActive(false);
+
+        showGizmoRoutine = null;
     }
 
     #region VFX Methods
