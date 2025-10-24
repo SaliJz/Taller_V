@@ -65,6 +65,7 @@ public class ShopManager : MonoBehaviour
     private PlayerHealth playerHealth;
     private InventoryManager inventoryManager;
     private ShopItem lastDetectedItem;
+    private InventoryUIManager inventoryUIManager;
 
     private bool forceGagans = false;
     private bool _amuletPurchasedInRun = false;
@@ -85,6 +86,7 @@ public class ShopManager : MonoBehaviour
         playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
         inventoryManager = FindAnyObjectByType<InventoryManager>();
+        inventoryUIManager = FindAnyObjectByType<InventoryUIManager>();
 
         if (playerStatsManager == null || playerHealth == null)
         {
@@ -94,6 +96,11 @@ public class ShopManager : MonoBehaviour
         if (inventoryManager == null)
         {
             Debug.LogError("InventoryManager no encontrado. El inventario no funcionará correctamente.");
+        }
+
+        if (inventoryUIManager == null)
+        {
+            Debug.LogError("InventoryUIManager no encontrado. La UI del inventario no funcionará correctamente.");
         }
 
         if (mainCamera == null)
@@ -448,6 +455,15 @@ public class ShopManager : MonoBehaviour
     {
         if (mainCamera == null || playerControls == null) return;
 
+        if (inventoryUIManager != null && inventoryUIManager.IsInventoryOpen)
+        {
+            if (shopUIPanel != null && shopUIPanel.activeSelf)
+            {
+                HideItemUI();
+            }
+            return;
+        }
+
         Vector2 screenPosition;
 
         Canvas parentCanvas = uiPanelTransform.GetComponentInParent<Canvas>();
@@ -669,12 +685,16 @@ public class ShopManager : MonoBehaviour
 
         foreach (var benefit in item.benefits)
         {
-            playerStatsManager.ApplyModifier(benefit.type, benefit.amount, isTemporary: false, isPercentage: benefit.isPercentage);
+            playerStatsManager.ApplyModifier(benefit.type, benefit.amount, isPercentage: benefit.isPercentage, 
+                                             isTemporary: item.isTemporary, item.temporaryDuration, 
+                                             isByRooms: item.isByRooms, item.temporaryRooms);
         }
 
         foreach (var drawback in item.drawbacks)
         {
-            playerStatsManager.ApplyModifier(drawback.type, drawback.amount, isTemporary: false, isPercentage: drawback.isPercentage);
+            playerStatsManager.ApplyModifier(drawback.type, drawback.amount, isPercentage: drawback.isPercentage,
+                                             isTemporary: item.isTemporary, item.temporaryDuration, 
+                                             isByRooms: item.isByRooms, item.temporaryRooms);
         }
 
         foreach (var effect in item.behavioralEffects)

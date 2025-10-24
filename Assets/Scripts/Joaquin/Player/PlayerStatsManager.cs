@@ -248,12 +248,10 @@ public partial class PlayerStatsManager : MonoBehaviour
         foreach (var kvp in baseStats)
         {
             currentStats[kvp.Key] = kvp.Value;
-            // Al resetear, limpiamos el estado visual (neutro).
             statVisualState[kvp.Key] = 0;
             OnStatChanged?.Invoke(kvp.Key, kvp.Value);
         }
 
-        // Adem�s de las invocaciones por stat, actualiza una vez para garantizar consistencia.
         UpdateStatsDisplay();
     }
 
@@ -287,6 +285,7 @@ public partial class PlayerStatsManager : MonoBehaviour
             Debug.Log("[PlayerStatsManager] Reset completo de stats para nueva Run ejecutado. Vida Maxima forzada.");
 
             InitializeStats();
+            ResetCurrentStatsToBase();
         }
     }
 
@@ -355,6 +354,8 @@ public partial class PlayerStatsManager : MonoBehaviour
     /// <param name="roomsDuration">Cantidad de salas/habitaciones/enfrentamientos que debe durar.</param>
     public void ApplyModifier(StatType type, float amount, bool isPercentage = false, bool isTemporary = false, float duration = 0f, bool isByRooms = false, int roomsDuration = 0)
     {
+        Debug.Log($"[PlayerStatsManager] Aplicando modificador: Stat={type}, Amount={amount}, IsPercentage={isPercentage}, IsTemporary={isTemporary}, Duration={duration}, IsByRooms={isByRooms}, RoomsDuration={roomsDuration}");
+
         if (!baseStats.ContainsKey(type))
         {
             return;
@@ -514,6 +515,8 @@ public partial class PlayerStatsManager : MonoBehaviour
     /// <returns> IEnumerator para la corrutina.</returns>
     private IEnumerator RemoveModifierAfterTime(StatType type, float modifierValue, float duration)
     {
+        Debug.Log($"Iniciando corrutina para remover modificador '{type}' despu�s de {duration} segundos.");
+
         yield return new WaitForSeconds(duration);
 
         float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
@@ -524,6 +527,8 @@ public partial class PlayerStatsManager : MonoBehaviour
         MarkVisualStateFromDelta(type, delta);
 
         OnStatChanged?.Invoke(type, currentStats[type]);
+
+        Debug.Log($"Efecto temporal '{type}' removido despu�s de {duration} segundos.");
     }
 
     /// <summary>
@@ -574,6 +579,7 @@ public partial class PlayerStatsManager : MonoBehaviour
         }
         Debug.Log("Todos los modificadores de estadísticas nombrados han sido limpiados.");
     }
+
     /// <summary>
     /// Lee el valor actual de la estad�stica especificada.
     /// </summary> 
@@ -587,6 +593,12 @@ public partial class PlayerStatsManager : MonoBehaviour
 
         return 0f;
     }
+
+    /// <summary>
+    /// Lee el valor base de la estadística especificada.
+    /// </summary> 
+    /// <param name="type"> Stat a consultar.</param>
+    public float GetBaseStat(StatType type) => baseStats.TryGetValue(type, out var value) ? value : 0;
 
     #region UI Helper: Construir y actualizar el TextMeshPro
 

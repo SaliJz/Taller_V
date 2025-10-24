@@ -8,14 +8,16 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     private ShopManager shopManager;
     private MerchantRoomManager merchantRoomManager;
-
     private PlayerControlls playerControls;
+    private InventoryUIManager inventoryUIManager;
+
     private bool isPlayerInProximity = false;
 
     private void Awake()
     {
         shopManager = FindAnyObjectByType<ShopManager>();
         merchantRoomManager = GetComponentInParent<MerchantRoomManager>();
+        inventoryUIManager = FindAnyObjectByType<InventoryUIManager>();
 
         if (shopManager == null)
         {
@@ -60,15 +62,43 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
         {
             isPlayerInProximity = true;
 
-            if (textPanel != null) textPanel.SetActive(true);
+            if (textPanel != null)
+            {
+                if (inventoryUIManager != null && inventoryUIManager.IsInventoryOpen)
+                {
+                    textPanel.SetActive(false);
+                }
+                else
+                {
+                    textPanel.SetActive(true);
+                }
+            }
         }
     }
 
     private void OnTriggerStay(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (!other.CompareTag("Player")) return;
+
+        bool invOpen = (inventoryUIManager != null && inventoryUIManager.IsInventoryOpen);
+
+        if (textPanel != null)
         {
-            if (shopManager != null)
+            bool shouldBeActive = !invOpen;
+
+            if (textPanel.activeSelf != shouldBeActive)
+            {
+                textPanel.SetActive(shouldBeActive);
+            }
+        }
+
+        if (shopManager != null)
+        {
+            if (invOpen)
+            {
+                shopManager.UpdateCostBar(0);
+            }
+            else
             {
                 float finalCost = shopManager.CalculateFinalCost(shopItemData.cost);
                 shopManager.UpdateCostBar(finalCost);

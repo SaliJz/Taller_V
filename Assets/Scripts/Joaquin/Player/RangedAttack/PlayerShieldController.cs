@@ -291,24 +291,9 @@ public class PlayerShieldController : MonoBehaviour
     // Rota instantaneamente al mouse proyectado en el plano horizontal (y = transform.position.y), con snap a 8 direcciones.
     private void RotateTowardsMouseInstant()
     {
-        Camera cam = Camera.main;
-        if (cam == null) return;
+        if (!TryGetMouseWorldDirection(out Vector3 dir)) return;
 
-        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-        Plane plane = new Plane(Vector3.up, transform.position);
-        if (plane.Raycast(ray, out float enter))
-        {
-            Vector3 worldPoint = ray.GetPoint(enter);
-            Vector3 dir = worldPoint - transform.position;
-            dir.y = 0f;
-            if (dir.sqrMagnitude > 0.0001f)
-            {
-                float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
-                float snapped = Mathf.Round(angle / 45f) * 45f;
-                Quaternion snappedRot = Quaternion.Euler(0f, snapped, 0f);
-                transform.rotation = snappedRot;
-            }
-        }
+        transform.rotation = Quaternion.LookRotation(dir);
     }
 
     /// <summary>
@@ -318,10 +303,11 @@ public class PlayerShieldController : MonoBehaviour
     {
         hasShield = false;
 
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        Plane plane = new Plane(Vector3.up, shieldSpawnPoint.position);
-
-        Vector3 direction = transform.forward;
+        Vector3 direction;
+        if (!TryGetMouseWorldDirection(out direction))
+        {
+            direction = transform.forward;
+        }
 
         GameObject shieldInstance = ShieldPooler.Instance.GetPooledObject();
 
