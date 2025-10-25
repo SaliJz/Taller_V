@@ -113,7 +113,7 @@ public class Sala6MerchantFlow : MonoBehaviour
 
         if (shopManager != null && roomInitializer != null && manager != null)
         {
-            shopManager.GenerateShopItems(roomInitializer.itemSpawnLocations, manager.transform);
+            roomInitializer.InitializeMerchantRoom();
         }
 
         yield return StartCoroutine(PlayDialog(malgorShopUnlockLines));
