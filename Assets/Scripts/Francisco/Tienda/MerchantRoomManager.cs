@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using TMPro;
 using System.Collections;
+using UnityEngine.InputSystem;
 
 public class MerchantRoomManager : MonoBehaviour
 {
@@ -16,7 +17,6 @@ public class MerchantRoomManager : MonoBehaviour
     [TextArea] public string[] pactOfferLines = { "Te interesa ganar algo?" };
     [TextArea] public string[] pactAcceptLines = { "Un alma valiente. Que la maldición te sea leve." };
     [TextArea] public string[] pactDeclineLines = { "Qué sabio. Vive y sé feliz... por ahora." };
-    public KeyCode interactKey = KeyCode.E;
 
     public float itemEffectDuration = 0.5f;
     public bool sequentialItemSpawn = false;
@@ -27,6 +27,7 @@ public class MerchantRoomManager : MonoBehaviour
 
     private ShopManager shopManager;
     private PlayerStatsManager playerStatsManager;
+    private Sala6MerchantFlow sala6Flow;
     private PlayerHealth playerHealth;
     private int currentDialogueIndex = 0;
     private bool isFirstVisit = true;
@@ -36,14 +37,19 @@ public class MerchantRoomManager : MonoBehaviour
     private bool playerIsNearMerchant = false;
     private bool pactOffered = false;
     private bool waitingForAccept = false;
-    private bool hasTakenPact = false;
+    public bool hasTakenPact = false;
     private Pact currentPactOffer;
+
+    private PlayerControlls playerControls; 
 
     private void Awake()
     {
+        playerControls = new PlayerControlls();
+
         shopManager = FindAnyObjectByType<ShopManager>();
         playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
+        sala6Flow = FindAnyObjectByType<Sala6MerchantFlow>();
         isFirstVisit = PlayerPrefs.GetInt(FirstVisitKey, 1) == 1;
 
         if (shopManager == null || playerStatsManager == null || playerHealth == null)
@@ -52,6 +58,20 @@ public class MerchantRoomManager : MonoBehaviour
         }
 
         if (dialoguePanel != null) dialoguePanel.SetActive(false);
+    }
+
+    private void OnEnable()
+    {
+        playerControls.Interactions.Enable();
+        playerControls.Interactions.Interact.performed += OnInteractPerformed;
+        playerControls.Interactions.AdvanceDialogue.performed += OnAdvanceDialoguePerformed;
+    }
+
+    private void OnDisable()
+    {
+        playerControls.Interactions.Interact.performed -= OnInteractPerformed;
+        playerControls.Interactions.AdvanceDialogue.performed -= OnAdvanceDialoguePerformed;
+        playerControls.Interactions.Disable();
     }
 
     private void Start()
@@ -63,15 +83,9 @@ public class MerchantRoomManager : MonoBehaviour
         }
     }
 
-    private void Update()
+    private void OnInteractPerformed(InputAction.CallbackContext context)
     {
-        if (dialoguePanel != null && dialoguePanel.activeSelf && Input.GetKeyDown(KeyCode.Space) && !pactOffered)
-        {
-            AdvanceDialogue();
-            return;
-        }
-
-        if (playerIsNearMerchant && Input.GetKeyDown(interactKey))
+        if (playerIsNearMerchant)
         {
             if (waitingForAccept)
             {
@@ -81,6 +95,14 @@ public class MerchantRoomManager : MonoBehaviour
             {
                 OfferPact();
             }
+        }
+    }
+
+    private void OnAdvanceDialoguePerformed(InputAction.CallbackContext context)
+    {
+        if (dialoguePanel != null && dialoguePanel.activeSelf && !pactOffered)
+        {
+            AdvanceDialogue();
         }
     }
 
@@ -102,6 +124,11 @@ public class MerchantRoomManager : MonoBehaviour
         SetDialogue(purchaseLines);
         currentDialogueIndex = 0;
         ShowCurrentDialogueLine();
+
+        if (sala6Flow != null)
+        {
+            sala6Flow.HandleItemPurchased();
+        }
     }
 
     public void CompleteFirstVisit()
@@ -273,14 +300,17 @@ public class MerchantRoomManager : MonoBehaviour
         string offerMessage = pactOfferLines.Length > 0 ? pactOfferLines[0] : "Te interesa ganar algo?";
 
         string benefit = currentPactOffer.lifeRecoveryAmount > 0
-                         ? $"Curación +{currentPactOffer.lifeRecoveryAmount}"
-                         : "Ninguno";
+                             ? $"Curación +{currentPactOffer.lifeRecoveryAmount}"
+                             : "Ninguno";
+
+        string interactKeyDisplay = playerControls.Interactions.Interact.GetBindingDisplayString();
+
 
         string fullPactMessage = $"{offerMessage}\n\n" +
-                                 $"PACTO: {currentPactOffer.pactName}\n" +
-                                 $"VIDA QUE RECIBIRÁS: {benefit}\n" +
-                                 $"MALDICIÓN (COSTO): ?\n\n" +
-                                 $"Presiona '{interactKey}' para ACEPTAR este pacto";
+                                     $"PACTO: {currentPactOffer.pactName}\n" +
+                                     $"VIDA QUE RECIBIRÁS: {benefit}\n" +
+                                     $"MALDICIÓN (COSTO): ?\n\n" +
+                                     $"Presiona '{interactKeyDisplay}' para ACEPTAR este pacto";
 
         dialogueText.text = fullPactMessage;
     }

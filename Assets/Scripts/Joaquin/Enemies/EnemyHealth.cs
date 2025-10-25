@@ -25,6 +25,9 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private float offsetAboveEnemy = 2f;
     [SerializeField] private float glowDelayAfterCritical = 2f;
 
+    [Header("Lifesteal Control")]
+    [SerializeField] private bool canGrantLifestealOnDeath = true;
+
     private EnemyKnockbackHandler knockbackHandler;
     private PlayerStatsManager playerStatsManager;
     private EnemyAuraManager _auraManager;
@@ -279,12 +282,12 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         OnDeath?.Invoke(gameObject);
         if (_auraManager != null)
         {
-            _auraManager.HandleDeathEffect(transform, maxHealth);
+            _auraManager.HandleDeathEffect(transform, maxHealth);
         }
 
         ReportDebug($"{gameObject.name} ha muerto.", 1);
 
-        if (playerHealth != null && playerStatsManager != null)
+        if (canGrantLifestealOnDeath && playerHealth != null && playerStatsManager != null)
         {
             float lifestealAmount = playerStatsManager.GetCurrentStat(StatType.LifestealOnKill);
 
@@ -293,6 +296,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
                 playerHealth.Heal(lifestealAmount);
                 ReportDebug($"El jugador ha robado {lifestealAmount} de vida al matar a {gameObject.name} (LifestealOnKill).", 1);
             }
+        }
+        else if (!canGrantLifestealOnDeath)
+        {
+            ReportDebug($"{gameObject.name} no otorga lifesteal (deshabilitado para tutorial).", 1);
         }
 
         if (canDestroy)

@@ -56,6 +56,12 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
         }
     }
 
+    public void OnAdvanceDialogue(InputAction.CallbackContext context)
+    {
+
+    }
+
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
@@ -122,6 +128,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     private void AttemptPurchase()
     {
+        Debug.Log($"[ShopItemDisplay] Interacción detectada para: {shopItemData.itemName}.");
         if (shopManager.CanAttemptPurchase())
         {
             bool purchaseSuccessful = shopManager.PurchaseItem(shopItemData);

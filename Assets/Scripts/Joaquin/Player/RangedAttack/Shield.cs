@@ -160,6 +160,8 @@ public class Shield : MonoBehaviour
     {
         Collider[] hitEnemies = Physics.OverlapSphere(hitTransform.position, 0.5f, enemyLayer);
 
+        const DamageType damageTypeForDummy = DamageType.Shield;
+
         foreach (Collider enemy in hitEnemies)
         {
             CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, false);
@@ -175,37 +177,38 @@ public class Shield : MonoBehaviour
                 bool isCritical;
                 float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
 
-                healthController.TakeDamage(attackDamage);
+                healthController.TakeDamage(attackDamage);
 
                 ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
             }
 
-            IDamageable damageable = enemy.GetComponent<IDamageable>();
+            IDamageable damageable = enemy.GetComponent<IDamageable>();
             if (damageable != null)
             {
-                ShieldDummy shieldDummy = damageable as ShieldDummy;
+                TutorialCombatDummy tutorialDummy = damageable as TutorialCombatDummy;
 
-                if (shieldDummy != null)
+                if (tutorialDummy != null)
                 {
-                    shieldDummy.HitByShield();
-                    ReportDebug("Golpe a " + enemy.name + ": DUMMY DE ESCUDO DETECTADO. Contando golpe.", 1);
+                    tutorialDummy.TakeDamage(0f, false, damageTypeForDummy);
+                    ReportDebug("Golpe a " + enemy.name + ": DUMMY DE TUTORIAL DETECTADO. Enviando golpe de " + damageTypeForDummy, 1);
                 }
-                else
+                else 
                 {
-                    if (!hitTargets.Contains(hitTransform))
+                    if (!hitTargets.Contains(hitTransform))
                     {
                         hitTargets.Add(hitTransform);
                     }
 
                     bool isCritical;
                     float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
+
                     damageable.TakeDamage(attackDamage);
 
                     ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
                 }
             }
 
-            BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
+            BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
             if (bloodKnight != null)
             {
                 if (!hitTargets.Contains(hitTransform))

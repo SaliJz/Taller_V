@@ -12,7 +12,9 @@ public class FadeController : MonoBehaviour
 
     [Header("Configuration")]
     public float fadeDuration = 1.0f;
-    public Color defaultFadeColor = Color.black; 
+    public Color defaultFadeColor = Color.black;
+
+    public bool IsFading { get; private set; } = false;
 
     private void Awake()
     {
@@ -42,6 +44,7 @@ public class FadeController : MonoBehaviour
 
     public IEnumerator FadeOut(Action onStart = null, Action<float> onUpdate = null, Action onComplete = null, Color? fadeColor = null)
     {
+        IsFading = true;
         onStart?.Invoke();
 
         Color targetColor = fadeColor ?? defaultFadeColor;
@@ -62,10 +65,12 @@ public class FadeController : MonoBehaviour
 
         fade.alpha = 1f;
         onComplete?.Invoke();
+        IsFading = false;
     }
 
     public IEnumerator FadeIn(Action onStart = null, Action<float> onUpdate = null, Action onComplete = null)
     {
+        IsFading = true;
         onStart?.Invoke();
 
         if (fadeImage != null)
@@ -85,5 +90,6 @@ public class FadeController : MonoBehaviour
 
         fade.alpha = 0f;
         onComplete?.Invoke();
+        IsFading = false;
     }
 }

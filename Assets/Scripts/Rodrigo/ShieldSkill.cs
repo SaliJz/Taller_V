@@ -28,7 +28,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
     #region State
 
-    private bool isSkillActive;
+    public bool isSkillActive { get; private set; }
     private float healthDrainTimer;
     private const string SHIELD_SKILL_MODIFIER_KEY = "ShieldSkillBuff";
 
@@ -36,6 +36,9 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
     private PlayerHealth playerHealth;
     private Material[][] originalMaterials;
     private PlayerHealth.LifeStage lastKnownLifeStage;
+
+    private bool inputBlocked = false; 
+    private bool isForcedActive = false;
 
     #endregion
 
@@ -69,34 +72,23 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
     private void OnEnable()
     {
         PlayerHealth.OnLifeStageChanged += HandleLifeStageChanged;
-        playerControls?.Abilities.Enable(); 
+        playerControls?.Abilities.Enable();
     }
 
     private void OnDisable()
     {
         PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
-        playerControls?.Abilities.Disable(); 
-
+        playerControls?.Abilities.Disable();
         RestoreOriginalMaterial();
-
-        if (isSkillActive)
-        {
-            DeactivateSkill();
-        }
+        if (isSkillActive) DeactivateSkill();
     }
 
     private void OnDestroy()
     {
         PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
-
         playerControls?.Dispose();
-
         RestoreOriginalMaterial();
-
-        if (isSkillActive)
-        {
-            DeactivateSkill();
-        }
+        if (isSkillActive) DeactivateSkill();
     }
 
     /// <summary>
@@ -119,7 +111,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
     private void Update()
     {
-        if (10 >= playerHealth.CurrentHealth)
+        if (!isForcedActive && 10 >= playerHealth.CurrentHealth)
         {
             if (isSkillActive) DeactivateSkill();
             Debug.Log("[ShieldSkill] Salud del jugador demasiado baja. La habilidad no puede activarse.");
@@ -140,6 +132,12 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
     {
         if (!context.started) return;
 
+        if (inputBlocked)
+        {
+            Debug.Log("[ShieldSkill] Input bloqueado durante tutorial.");
+            return;
+        }
+
         if (10 >= playerHealth.CurrentHealth)
         {
             Debug.Log("[ShieldSkill] Salud del jugador demasiado baja. La habilidad no puede activarse.");
@@ -149,8 +147,48 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         ToggleSkill();
     }
 
+    public void SetInputBlocked(bool blocked)
+    {
+        inputBlocked = blocked;
+        Debug.Log($"[ShieldSkill] Input {(blocked ? "BLOQUEADO" : "DESBLOQUEADO")}");
+    }
+
+    public void SetForcedActive(bool forced)
+    {
+        isForcedActive = forced;
+        Debug.Log($"[ShieldSkill] Habilidad {(forced ? "FORZADA ACTIVA" : "LIBERADA")}");
+    }
+
+    public void ToggleSkillDirectly()
+    {
+        if (10 >= playerHealth.CurrentHealth)
+        {
+            Debug.Log("[ShieldSkill] Salud del jugador demasiado baja. La habilidad no puede activarse.");
+            return;
+        }
+
+        ToggleSkill();
+    }
+
+    public void DeactivateSkillPublic()
+    {
+        if (isForcedActive)
+        {
+            Debug.Log("[ShieldSkill] No se puede desactivar - está forzada activa");
+            return;
+        }
+
+        if (isSkillActive) DeactivateSkill();
+    }
+
     private void ToggleSkill()
     {
+        if (isForcedActive && isSkillActive)
+        {
+            Debug.Log("[ShieldSkill] No se puede desactivar - está forzada activa");
+            return;
+        }
+
         if (isSkillActive) DeactivateSkill();
         else ActivateSkill();
     }
@@ -166,10 +204,8 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         RemoveHealthDrainModifier();
 
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "Move", StatType.MoveSpeed, currentBuffs.MoveMultiplier - 1.0f, true);
-
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeDmg", StatType.MeleeAttackDamage, currentBuffs.AttackDamageMultiplier - 1.0f, true);
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldDmg", StatType.ShieldAttackDamage, currentBuffs.AttackDamageMultiplier - 1.0f, true);
-
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeSpeed", StatType.MeleeAttackSpeed, currentBuffs.AttackSpeedMultiplier - 1.0f, true);
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldSpeed", StatType.ShieldSpeed, currentBuffs.AttackSpeedMultiplier - 1.0f, true);
 
@@ -189,30 +225,23 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         isSkillActive = false;
 
         float beforeMoveValue = statsManager.GetStat(StatType.MoveSpeed);
-
         float beforeMeleeDmgValue = statsManager.GetStat(StatType.MeleeAttackDamage);
         float beforeShieldDmgValue = statsManager.GetStat(StatType.ShieldAttackDamage);
-
         float beforeMeleeSpeedValue = statsManager.GetStat(StatType.MeleeAttackSpeed);
         float beforeShieldSpeedValue = statsManager.GetStat(StatType.ShieldSpeed);
 
         statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "Move");
-
         statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeDmg");
         statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldDmg");
-
         statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeSpeed");
         statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldSpeed");
 
         RemoveHealthDrainModifier();
-
         RestoreOriginalMaterial();
 
         float afterMoveValue = statsManager.GetStat(StatType.MoveSpeed);
-
         float afterMeleeDmgValue = statsManager.GetStat(StatType.MeleeAttackDamage);
         float afterShieldDmgValue = statsManager.GetStat(StatType.ShieldAttackDamage);
-
         float afterMeleeSpeedValue = statsManager.GetStat(StatType.MeleeAttackSpeed);
         float afterShieldSpeedValue = statsManager.GetStat(StatType.ShieldSpeed);
 
@@ -233,10 +262,8 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         RemoveHealthDrainModifier();
 
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "Move", StatType.MoveSpeed, currentBuffs.MoveMultiplier - 1.0f, true);
-
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeDmg", StatType.MeleeAttackDamage, currentBuffs.AttackDamageMultiplier - 1.0f, true);
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldDmg", StatType.ShieldAttackDamage, currentBuffs.AttackDamageMultiplier - 1.0f, true);
-
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeSpeed", StatType.MeleeAttackSpeed, currentBuffs.AttackSpeedMultiplier - 1.0f, true);
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldSpeed", StatType.ShieldSpeed, currentBuffs.AttackSpeedMultiplier - 1.0f, true);
 
@@ -255,7 +282,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
             if (healthDrainTimer >= 1f)
             {
                 playerHealth.TakeDamage(currentHealthDrain, true);
-                healthDrainTimer %= 1f; 
+                healthDrainTimer %= 1f;
             }
         }
     }

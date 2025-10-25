@@ -6,6 +6,7 @@ public class MerchantInteractionTrigger : MonoBehaviour
     private GameObject currentInteractionPrompt;
 
     private MerchantRoomManager manager;
+    private Sala6MerchantFlow flowManager;
 
     private void Start()
     {
@@ -14,6 +15,11 @@ public class MerchantInteractionTrigger : MonoBehaviour
         {
             Debug.LogError("MerchantRoomManager no encontrado. El trigger del mercader no funcionará.");
         }
+        flowManager = FindAnyObjectByType<Sala6MerchantFlow>();
+        if (flowManager == null)
+        {
+            Debug.LogWarning("Sala6MerchantFlow no encontrado. Usando lógica de mercader de rutina.");
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -21,6 +27,10 @@ public class MerchantInteractionTrigger : MonoBehaviour
         if (manager != null && other.CompareTag("Player"))
         {
             manager.OnPlayerEnterMerchantTrigger(transform);
+            if (flowManager != null)
+            {
+                flowManager.HandleTriggerEnter();
+            }
         }
     }
 

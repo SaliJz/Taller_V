@@ -680,6 +680,8 @@ public class PlayerMeleeAttack : MonoBehaviour
             ? Physics.OverlapBox(hitPoint.position, new Vector3(hitRadius, hitRadius, hitRadius), Quaternion.identity, enemyLayer)
             : Physics.OverlapSphere(hitPoint.position, hitRadius, enemyLayer);
 
+        const DamageType damageTypeForDummy = DamageType.Melee;
+
         foreach (Collider enemy in hitEnemies)
         {
             if (hitEnemiesThisCombo.Contains(enemy))
@@ -698,12 +700,12 @@ public class PlayerMeleeAttack : MonoBehaviour
             IDamageable damageable = enemy.GetComponent<IDamageable>();
             EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
 
-            MeleeDummy meleeDummy = damageable as MeleeDummy;
+            TutorialCombatDummy tutorialDummy = damageable as TutorialCombatDummy;
 
-            if (meleeDummy != null)
+            if (tutorialDummy != null)
             {
-                meleeDummy.HitByMelee();
-                ReportDebug($"Golpe a {enemy.name}: DUMMY DE MELEE DETECTADO. Contando golpe.", 1);
+                tutorialDummy.TakeDamage(0f, false, damageTypeForDummy);
+                ReportDebug($"Golpe a {enemy.name}: DUMMY DE TUTORIAL DETECTADO. Enviando golpe de {damageTypeForDummy}", 1);
             }
             else if (damageable != null)
             {
