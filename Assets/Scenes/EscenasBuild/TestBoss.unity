@@ -1206,6 +1206,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c8b435636ace3584599f56788ac7b7ce, type: 2}
   safeRelics: []
   allPacts: []
+  allAmulets: []
   shopItemPrefabs:
   - {fileID: 2790493699222432776, guid: 3f233f07f502ad8429d387518ae486b8, type: 3}
   - {fileID: 2790493699222432776, guid: fb73de1475fe6fc47bf7300276c49958, type: 3}
@@ -1223,6 +1224,7 @@ MonoBehaviour:
   costBar: {fileID: 158181471}
   affordableColor: {r: 1, g: 0.44705883, b: 0.25882354, a: 1}
   unaffordableColor: {r: 0.41509432, g: 0.17169085, b: 0, a: 1}
+  lowHealthThresholdPercentage: 20
   mainCamera: {fileID: 238635375}
   shopItemLayer:
     serializedVersion: 2
@@ -1230,6 +1232,8 @@ MonoBehaviour:
   raycastDistance: 200
   reRollKey: 114
   canReroll: 1
+  virtualCursorRect: {fileID: 0}
+  purchaseCooldownTime: 0.5
 --- !u!222 &396730940
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3106,6 +3110,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pausePanel: {fileID: 656696264}
+  firstSelectedButton: {fileID: 0}
 --- !u!1 &1261494756
 GameObject:
   m_ObjectHideFlags: 0
@@ -3948,6 +3953,14 @@ PrefabInstance:
     - target: {fileID: 1632810809559758811, guid: 1ac99e794307dc342911089ae4e6b07e, type: 3}
       propertyPath: m_Name
       value: Room_Boss
+      objectReference: {fileID: 0}
+    - target: {fileID: 6691155626768760490, guid: 1ac99e794307dc342911089ae4e6b07e, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6691155626768760490, guid: 1ac99e794307dc342911089ae4e6b07e, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7114698031422326455, guid: 1ac99e794307dc342911089ae4e6b07e, type: 3}
       propertyPath: m_AnchorMax.x
