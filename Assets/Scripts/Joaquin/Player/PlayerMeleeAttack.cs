@@ -88,6 +88,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     }
 
     public bool IsAttacking => isAttacking;
+    public int ComboCount => comboCount;
 
     private PlayerHealth playerHealth;
     private PlayerMovement playerMovement;

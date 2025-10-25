@@ -195,6 +195,11 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     private bool CanQueueMeleeAttack()
     {
         if (meleeAttack == null) return false;
+        if (currentAction == CombatActionType.MeleeAttack && meleeAttack.ComboCount == 2)
+        {
+            ReportDebug("No se puede bufferizar melee: tercer ataque del combo en ejecución.", 1);
+            return false;
+        }
         if (shieldController != null) return shieldController.HasShield;
         return true;
     }

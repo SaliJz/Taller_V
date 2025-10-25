@@ -1,6 +1,16 @@
 using UnityEngine;
 using UnityEngine.Events;
 
+[System.Serializable]
+public class DoorColliders
+{
+    [Tooltip("Piezas que se activan cuando la puerta se abre")]
+    public GameObject[] activateOnOpen;
+
+    [Tooltip("Piezas que se desactivan cuando la puerta se abre")]
+    public GameObject[] deactivateOnOpen;
+}
+
 public class Room : MonoBehaviour
 {
     [Header("Connection Points")]
@@ -15,10 +25,22 @@ public class Room : MonoBehaviour
     public GameObject[] connectionDoors;
     public BoxCollider[] spawnAreas;
 
+    [Header("Animated Doors")]
+    public Animator[] animatedDoors;
+
+    [Header("Door Colliders")]
+    public DoorColliders[] doorColliders;
+
+    [Header("Events")]
     public UnityEvent onFinsih;
     public RoomType currentRoomType { get; set; }
 
     private EnemyManager enemyManager;
+
+    private void Start()
+    {
+        InitializeDoorStates();
+    }
 
     public void InitializeEnemyManager(EnemyManager manager)
     {
@@ -30,6 +52,32 @@ public class Room : MonoBehaviour
         currentRoomType = type; 
     }
 
+    private void InitializeDoorStates()
+    {
+        if (animatedDoors == null || animatedDoors.Length == 0) return;
+
+        for (int i = 0; i < animatedDoors.Length; i++)
+        {
+            if (animatedDoors[i] != null)
+            {
+                animatedDoors[i].SetBool("Open", false);
+
+                if (doorColliders != null && i < doorColliders.Length)
+                {
+                    foreach (GameObject obj in doorColliders[i].activateOnOpen)
+                    {
+                        if (obj != null) obj.SetActive(false);
+                    }
+
+                    foreach (GameObject obj in doorColliders[i].deactivateOnOpen)
+                    {
+                        if (obj != null) obj.SetActive(true);
+                    }
+                }
+            }
+        }
+    }
+
     public void LockAllDoors()
     {
         if (connectionDoors == null || connectionDoors.Length == 0) return;
@@ -39,6 +87,27 @@ public class Room : MonoBehaviour
             if (connectionDoors[i] != null)
             {
                 connectionDoors[i].SetActive(true);
+            }
+        }
+
+        for (int i = 0; i < animatedDoors.Length; i++)
+        {
+            if (animatedDoors[i] != null)
+            {
+                animatedDoors[i].SetBool("Open", false);
+
+                if (doorColliders != null && i < doorColliders.Length)
+                {
+                    foreach (GameObject obj in doorColliders[i].activateOnOpen)
+                    {
+                        if (obj != null) obj.SetActive(false);
+                    }
+
+                    foreach (GameObject obj in doorColliders[i].deactivateOnOpen)
+                    {
+                        if (obj != null) obj.SetActive(true);
+                    }
+                }
             }
         }
     }
@@ -54,11 +123,36 @@ public class Room : MonoBehaviour
                     if (connectionPoints[i] != entrancePoint && connectionDoors[i] != null)
                     {
                         connectionDoors[i].SetActive(false);
+                        OpenDoor(i);
                     }
                 }
             }
         }
     }
+
+    private void OpenDoor(int doorIndex)
+    {
+        if (doorIndex < 0 || doorIndex >= animatedDoors.Length) return;
+
+        Animator animator = animatedDoors[doorIndex];
+        if (animator == null) return;
+
+        animator.SetBool("Open", true);
+
+        if (doorColliders != null && doorIndex < doorColliders.Length)
+        {
+            foreach (GameObject obj in doorColliders[doorIndex].activateOnOpen)
+            {
+                if (obj != null) obj.SetActive(true);
+            }
+
+            foreach (GameObject obj in doorColliders[doorIndex].deactivateOnOpen)
+            {
+                if (obj != null) obj.SetActive(false);
+            }
+        }
+    }
+
     public void EventsOnFinsih()
     {
         onFinsih?.Invoke();

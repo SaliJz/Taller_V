@@ -2292,31 +2292,29 @@ MonoBehaviour:
   firePoint: {fileID: 9215352895255589693}
   health: 30
   moveSpeed: 4
-  detectionRadius: 15
-  losePlayerRadius: 40
-  teleportRange: 5
-  fireRate: 1
+  fireRate: 1.5
   projectileDamage: 1
   projectileSpeed: 12
   maxDamageIncrease: 2
   maxRangeForDamageIncrease: 6
   maxDistanceForDamageStart: 20
-  attackRange: 35
+  attackRange: 15
+  detectionRadius: 15
+  teleportRange: 7.5
   patrolWaypoints: []
+  loopWaypoints: 1
+  freePatrolIterations: 10
+  patrolAroundOrigin: 1
   patrolRadius: 12
   patrolIdleTime: 2
-  patrolMoveSpeed: 2
-  p1_teleportCooldown: 2
-  p1_pursuitAdvanceDistance: 5
-  p1_pursuitLateralVariationMin: 2
-  p1_pursuitLateralVariationMax: 6
-  p1_maxDuration: 10
-  p2_activationDistance: 20
-  p2_teleportCooldown: 2
-  p2_teleportRange: 12
-  p3_teleportCooldown: 1.2
-  p3_teleportRange: 8
-  p3_healthThreshold: 0.5
+  repositionTeleportCooldown: 2
+  p1_teleportCooldown: 3
+  p1_pursuitAdvanceDistance: 4
+  p1_pursuitLateralVariationMin: 3
+  p1_pursuitLateralVariationMax: 5
+  p2_activationRadius: 7.5
+  p2_teleportCooldown: 2.5
+  p2_teleportRange: 7.5
   audioSource: {fileID: 750306028043729525}
   teleportSFX: {fileID: 0}
   deathSFX: {fileID: 0}

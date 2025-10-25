@@ -41,6 +41,8 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private float detectionRadius = 12f;
     [SerializeField] private float fieldOfViewAngle = 60f; 
     [SerializeField] private float dashActivationDistance = 9f;
+    [SerializeField] private bool isUsingDetectionTimer = true;
+    [SerializeField] private float detectionGracePeriod = 1.5f;
 
     [Header("Patrol")]
     [Tooltip("Si se asignan waypoints, Kronus los recorrerá en bucle. Si no, hará roaming aleatorio en patrolRadius.")]
@@ -62,7 +64,7 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private bool showGizmo = false;
     [SerializeField] private float gizmoDuration = 0.25f;
 
-    private List<GameObject> activeInstantiatedEffects = new List<GameObject>();
+    //private List<GameObject> activeInstantiatedEffects = new List<GameObject>();
 
     private EnemyHealth enemyHealth;
     private NavMeshAgent agent;
@@ -79,7 +81,10 @@ public class KronusEnemy : MonoBehaviour
     private bool isPatrolWaiting = false;
     private int currentWaypointIndex = 0;
 
-    private bool isAlertedByHit = false; 
+    private bool isAlertedByHit = false;
+
+    private bool hasDetectedPlayer = false;
+    private float detectionTimer = 0f;
 
     private GUIStyle titleStyle;
     private GUIStyle labelStyle;
@@ -146,6 +151,7 @@ public class KronusEnemy : MonoBehaviour
     private void OnEnable()
     {
         if (enemyHealth != null) enemyHealth.OnDeath += HandleEnemyDeath;
+        if (enemyHealth != null) enemyHealth.OnDamaged += AlertEnemy;
         if (groundIndicator != null) groundIndicator.SetActive(false);
         if (visualHit != null) visualHit.SetActive(false);
     }
@@ -153,6 +159,7 @@ public class KronusEnemy : MonoBehaviour
     private void OnDisable()
     {
         if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
+        if (enemyHealth != null) enemyHealth.OnDamaged -= AlertEnemy;
         if (groundIndicator != null) groundIndicator.SetActive(false);
         if (visualHit != null) visualHit.SetActive(false);
     }
@@ -160,6 +167,7 @@ public class KronusEnemy : MonoBehaviour
     private void OnDestroy()
     {
         if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
+        if (enemyHealth != null) enemyHealth.OnDamaged -= AlertEnemy;
         if (groundIndicator != null) Destroy(groundIndicator);
         if (visualHit != null) Destroy(visualHit);
     }
@@ -167,6 +175,8 @@ public class KronusEnemy : MonoBehaviour
     public void AlertEnemy()
     {
         isAlertedByHit = true;
+        hasDetectedPlayer = true;
+        detectionTimer = 0f;
         ReportDebug("Kronus alertado por golpe, iniciando persecución.", 1);
     }
 
@@ -229,7 +239,14 @@ public class KronusEnemy : MonoBehaviour
         float angleToPlayer = Vector3.Angle(transform.forward, directionToPlayer.normalized);
         bool isInFOV = angleToPlayer <= fieldOfViewAngle * 0.5f;
 
-        bool isPlayerDetected = (isInDetectionRange && isInFOV) || isAlertedByHit;
+        // Detección visual actual
+        bool canSeePlayerNow = isInDetectionRange && isInFOV;
+
+        // Sistema de detección mejorado
+        UpdateDetectionState(canSeePlayerNow);
+
+        // Determinar si el jugador está detectado
+        bool isPlayerDetected = hasDetectedPlayer || isAlertedByHit;
 
         if (isPlayerDetected)
         {
@@ -259,12 +276,53 @@ public class KronusEnemy : MonoBehaviour
         }
         else
         {
+            // Ya no detecta al jugador, volver a patrulla
             if (isAlertedByHit)
             {
                 isAlertedByHit = false;
                 ReportDebug("Alerta por golpe finalizada, volviendo a patrullar.", 1);
             }
             PatrolUpdate();
+        }
+    }
+
+    /// <summary>
+    /// Actualiza el estado de detección del jugador con temporizador de gracia.
+    /// </summary>
+    /// <param name="canSeePlayerNow">Si el enemigo puede ver al jugador en este frame.</param>
+    private void UpdateDetectionState(bool canSeePlayerNow)
+    {
+        if (canSeePlayerNow)
+        {
+            // El jugador está visible, resetear el temporizador
+            if (!hasDetectedPlayer)
+            {
+                hasDetectedPlayer = true;
+                ReportDebug("Kronus ha detectado al jugador visualmente.", 1);
+            }
+            detectionTimer = 0f;
+        }
+        else if (hasDetectedPlayer)
+        {
+            // El jugador no es visible pero fue detectado previamente
+            if (isUsingDetectionTimer)
+            {
+                // Incrementar el temporizador de gracia
+                detectionTimer += Time.deltaTime;
+
+                if (detectionTimer >= detectionGracePeriod)
+                {
+                    // El temporizador ha expirado, perder detección del jugador
+                    hasDetectedPlayer = false;
+                    detectionTimer = 0f;
+                    ReportDebug($"Kronus perdió al jugador tras {detectionGracePeriod}s sin detección visual.", 1);
+                }
+            }
+            else
+            {
+                // Sin temporizador, mantener detección
+                hasDetectedPlayer = true;
+            }
         }
     }
 

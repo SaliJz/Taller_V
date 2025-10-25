@@ -642,7 +642,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         // Paso 5: no hay suelo en rango permitido, cancelar dash
         finalPosition = origin;
         ReportDebug("La trayectoria del Dash no es segura, no hay terreno dentro del rango permitido. Dash cancelado.", 2);
-        return false;
+        return true;
     }
 
     private IEnumerator AfterimageRoutine()
