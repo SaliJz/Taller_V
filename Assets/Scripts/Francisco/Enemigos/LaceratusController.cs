@@ -14,7 +14,6 @@ public class LaceratusController : MonoBehaviour
     [Header("Movement - Normal State")]
     [SerializeField] private float normalSpeed = 3f;
     [SerializeField] private float patrolDirectionChangeInterval = 4f;
-    [SerializeField] private float patrolDirectionChangeAngle = 30f;
 
     [Header("Movement - Fury State")]
     [SerializeField] private float furySpeedMultiplier = 2f;
@@ -40,6 +39,15 @@ public class LaceratusController : MonoBehaviour
     [SerializeField] private float furyRegenerationPerSecond = 1f;
     [SerializeField] private float consecutiveHitPushDistance = 1f;
     [SerializeField] private float screamTransitionDuration = 1.2f;
+
+    [Header("Visual Feedback")]
+    [SerializeField] private Material normalStateMaterial;
+    [SerializeField] private Material furyStateMaterial;
+    [SerializeField] private Renderer enemyRenderer;
+    [SerializeField] private GameObject normalAttackHitbox;
+    [SerializeField] private GameObject furyAttackHitbox;
+    [SerializeField] private GameObject screamHitbox;
+    [SerializeField] private float hitboxDisplayDuration = 0.2f;
 
     [Header("Animation")]
     [SerializeField] private string normalAttackAnimationTrigger = "NormalAttack";
@@ -71,11 +79,11 @@ public class LaceratusController : MonoBehaviour
     private float lastDamageTime;
     private float lastDamageInflictedTime;
     private float patrolTimer;
-    private float currentPatrolAngle;
     private float furyJumpTimer;
 
     private Coroutine furyDecayCoroutine;
     private Coroutine furyRegenerationCoroutine;
+    private Material originalMaterial;
 
     #endregion
 
@@ -93,6 +101,15 @@ public class LaceratusController : MonoBehaviour
         {
             agent.speed = normalSpeed;
         }
+
+        if (enemyRenderer != null)
+        {
+            originalMaterial = enemyRenderer.material;
+        }
+
+        if (normalAttackHitbox != null) normalAttackHitbox.SetActive(false);
+        if (furyAttackHitbox != null) furyAttackHitbox.SetActive(false);
+        if (screamHitbox != null) screamHitbox.SetActive(false);
     }
 
     private void Start()
@@ -109,7 +126,6 @@ public class LaceratusController : MonoBehaviour
         }
 
         patrolTimer = Random.Range(0f, patrolDirectionChangeInterval);
-        currentPatrolAngle = Random.Range(0f, 360f);
     }
 
     private void Update()
@@ -182,20 +198,36 @@ public class LaceratusController : MonoBehaviour
     {
         if (agent == null || !agent.enabled || !agent.isOnNavMesh) return;
 
-        patrolTimer += Time.deltaTime;
-
-        if (patrolTimer >= patrolDirectionChangeInterval)
+        if (!agent.hasPath || agent.remainingDistance < 0.5f)
         {
-            patrolTimer = 0f;
-            currentPatrolAngle += Random.Range(-patrolDirectionChangeAngle, patrolDirectionChangeAngle);
+            patrolTimer += Time.deltaTime;
+
+            if (patrolTimer >= patrolDirectionChangeInterval)
+            {
+                patrolTimer = 0f;
+                SetNewPatrolDestination();
+            }
         }
+    }
 
-        Vector3 direction = Quaternion.Euler(0, currentPatrolAngle, 0) * Vector3.forward;
-        Vector3 targetPosition = transform.position + direction * 2f;
+    private void SetNewPatrolDestination()
+    {
+        Vector3 randomDirection = Random.insideUnitSphere * 5f; 
+        randomDirection += transform.position;
+        randomDirection.y = transform.position.y; 
 
-        if (NavMesh.SamplePosition(targetPosition, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+        if (NavMesh.SamplePosition(randomDirection, out NavMeshHit hit, 5f, NavMesh.AllAreas))
         {
-            agent.SetDestination(hit.position);
+            NavMeshPath path = new NavMeshPath();
+            if (agent.CalculatePath(hit.position, path) && path.status == NavMeshPathStatus.PathComplete)
+            {
+                agent.SetDestination(hit.position);
+                Debug.Log("Laceratus: Nuevo destino de patrulla establecido");
+            }
+            else
+            {
+                SetNewPatrolDestination();
+            }
         }
     }
 
@@ -233,21 +265,31 @@ public class LaceratusController : MonoBehaviour
             audioSource.PlayOneShot(normalAttackClip);
         }
 
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        if (normalAttackHitbox != null)
         {
-            IDamageable damageable = player.GetComponent<IDamageable>();
-            if (damageable != null)
+            StartCoroutine(ShowHitbox(normalAttackHitbox));
+        }
+
+        Collider[] hits = Physics.OverlapSphere(transform.position, normalAttackRange, playerLayer);
+
+        foreach (Collider hit in hits)
+        {
+            if (hit.CompareTag("Player"))
             {
-                damageable.TakeDamage(normalAttackDamage);
-
-                PlayerMovement playerMovement = player.GetComponent<PlayerMovement>();
-                if (playerMovement != null)
+                IDamageable damageable = hit.GetComponent<IDamageable>();
+                if (damageable != null)
                 {
-                    StartCoroutine(ApplyPlayerSlow(playerMovement));
-                }
+                    damageable.TakeDamage(normalAttackDamage);
 
-                Debug.Log($"Laceratus: Ataque normal - Daño: {normalAttackDamage}");
+                    PlayerMovement playerMovement = hit.GetComponent<PlayerMovement>();
+                    if (playerMovement != null)
+                    {
+                        StartCoroutine(ApplyPlayerSlow(playerMovement));
+                    }
+
+                    Debug.Log($"Laceratus: Ataque normal - Daño: {normalAttackDamage}");
+                }
+                break;
             }
         }
     }
@@ -310,14 +352,24 @@ public class LaceratusController : MonoBehaviour
             audioSource.PlayOneShot(furyAttackClip);
         }
 
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        if (furyAttackHitbox != null)
         {
-            IDamageable damageable = player.GetComponent<IDamageable>();
-            if (damageable != null)
+            StartCoroutine(ShowHitbox(furyAttackHitbox));
+        }
+
+        Collider[] hits = Physics.OverlapSphere(transform.position, furyAttackRange, playerLayer);
+
+        foreach (Collider hit in hits)
+        {
+            if (hit.CompareTag("Player"))
             {
-                damageable.TakeDamage(furyAttackDamage);
-                Debug.Log($"Laceratus: Ataque furia - Daño: {furyAttackDamage}");
+                IDamageable damageable = hit.GetComponent<IDamageable>();
+                if (damageable != null)
+                {
+                    damageable.TakeDamage(furyAttackDamage);
+                    Debug.Log($"Laceratus: Ataque furia - Daño: {furyAttackDamage}");
+                }
+                break;
             }
         }
     }
@@ -391,6 +443,8 @@ public class LaceratusController : MonoBehaviour
             animator.SetBool(furyStateAnimationBool, true);
         }
 
+        ChangeMaterialToFury();
+
         Debug.Log("Laceratus: Entrando en estado de furia");
 
         yield return new WaitForSeconds(screamTransitionDuration);
@@ -414,6 +468,8 @@ public class LaceratusController : MonoBehaviour
         {
             agent.speed = normalSpeed;
         }
+
+        ChangeMaterialToNormal();
 
         Debug.Log("Laceratus: Saliendo del estado de furia");
     }
@@ -457,21 +513,60 @@ public class LaceratusController : MonoBehaviour
             audioSource.PlayOneShot(screamClip);
         }
 
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null && playerTransform != null)
+        if (screamHitbox != null)
         {
-            float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+            StartCoroutine(ShowHitbox(screamHitbox));
+        }
 
-            if (distanceToPlayer <= furyAttackRange)
+        Collider[] hits = Physics.OverlapSphere(transform.position, furyAttackRange, playerLayer);
+
+        foreach (Collider hit in hits)
+        {
+            if (hit.CompareTag("Player"))
             {
-                EnemyKnockbackHandler playerKnockback = player.GetComponent<EnemyKnockbackHandler>();
+                EnemyKnockbackHandler playerKnockback = hit.GetComponent<EnemyKnockbackHandler>();
                 if (playerKnockback != null)
                 {
-                    Vector3 pushDirection = (playerTransform.position - transform.position).normalized;
+                    Vector3 pushDirection = (hit.transform.position - transform.position).normalized;
                     playerKnockback.TriggerKnockback(pushDirection, consecutiveHitPushDistance, 0.3f);
                     Debug.Log("Laceratus: Onda de empuje activada");
                 }
+                break;
             }
+        }
+    }
+
+    #endregion
+
+    #region Visual Feedback
+
+    private void ChangeMaterialToFury()
+    {
+        if (enemyRenderer != null && furyStateMaterial != null)
+        {
+            enemyRenderer.material = furyStateMaterial;
+        }
+    }
+
+    private void ChangeMaterialToNormal()
+    {
+        if (enemyRenderer != null && normalStateMaterial != null)
+        {
+            enemyRenderer.material = normalStateMaterial;
+        }
+        else if (enemyRenderer != null && originalMaterial != null)
+        {
+            enemyRenderer.material = originalMaterial;
+        }
+    }
+
+    private IEnumerator ShowHitbox(GameObject hitbox)
+    {
+        if (hitbox != null)
+        {
+            hitbox.SetActive(true);
+            yield return new WaitForSeconds(hitboxDisplayDuration);
+            hitbox.SetActive(false);
         }
     }
 

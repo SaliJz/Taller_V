@@ -29,6 +29,7 @@ public class Sala5SequenceManager : MonoBehaviour
     private List<GameObject> activeSlimes = new List<GameObject>();
     private bool sequenceStarted = false;
     private bool combatActive = false;
+    private bool enemiesPaused = false; 
 
     [Header("Umbrales de Vida")]
     [SerializeField][Range(0.1f, 1f)] private float targetHealthPercentAdult = 0.666f;
@@ -44,7 +45,7 @@ public class Sala5SequenceManager : MonoBehaviour
     #endregion
 
     #region Lifecycle & Entry Point
-
+     
     private void Awake()
     {
         if (dialogManager == null)
@@ -134,7 +135,7 @@ public class Sala5SequenceManager : MonoBehaviour
         {
             shieldSkill.SetForcedActive(false);
             yield return new WaitForSeconds(0.2f);
-            shieldSkill.DeactivateSkillPublic(); 
+            shieldSkill.DeactivateSkillPublic();
         }
 
         StopSlimeSpawnAndCombat();
@@ -157,7 +158,7 @@ public class Sala5SequenceManager : MonoBehaviour
         if (dialogManager == null || lines == null || lines.Length == 0) yield break;
 
         dialogManager.StartDialog(lines);
-        while (dialogManager.IsActive) 
+        while (dialogManager.IsActive)
         {
             yield return null;
         }
@@ -187,13 +188,56 @@ public class Sala5SequenceManager : MonoBehaviour
 
     private void PauseEnemies(bool pause)
     {
+        enemiesPaused = pause; 
+
+        Debug.Log($"[Sala5] Pausando enemigos: {pause} - Enemigos activos: {activeSlimes.Count}");
+
         foreach (GameObject slime in activeSlimes)
         {
-            if (slime != null && slime.TryGetComponent(out NavMeshAgent agent))
+            if (slime != null)
             {
-                agent.isStopped = pause;
+                ApplyPauseToEnemy(slime, pause);
             }
         }
+    }
+
+    private void ApplyPauseToEnemy(GameObject enemy, bool pause)
+    {
+        if (enemy == null) return;
+
+        NavMeshAgent agent = enemy.GetComponent<NavMeshAgent>();
+        if (agent != null)
+        {
+            agent.isStopped = pause;
+            if (pause)
+            {
+                agent.velocity = Vector3.zero; 
+            }
+        }
+
+        Animator animator = enemy.GetComponent<Animator>();
+        if (animator != null)
+        {
+            animator.enabled = !pause;
+        }
+
+        MonoBehaviour[] behaviors = enemy.GetComponents<MonoBehaviour>();
+        foreach (var behavior in behaviors)
+        {
+            if (behavior == null) continue;
+
+            System.Type behaviorType = behavior.GetType();
+            if (behaviorType == typeof(NavMeshAgent) ||
+                behaviorType == typeof(Animator) ||
+                behaviorType.Name == "EnemyHealth") 
+            {
+                continue;
+            }
+
+            behavior.enabled = !pause;
+        }
+
+        Debug.Log($"[Sala5] Enemigo {enemy.name} pausado: {pause}");
     }
 
     private void SpawnInitialSlimes()
@@ -214,6 +258,12 @@ public class Sala5SequenceManager : MonoBehaviour
 
         GameObject newSlime = Instantiate(enemySlimePrefab, position, Quaternion.identity);
         activeSlimes.Add(newSlime);
+
+        if (enemiesPaused)
+        {
+            ApplyPauseToEnemy(newSlime, true);
+            Debug.Log($"[Sala5] Nuevo slime spawneado y PAUSADO inmediatamente");
+        }
 
         EnemyHealth slimeHealth = newSlime.GetComponent<EnemyHealth>();
         if (slimeHealth != null)
@@ -254,7 +304,7 @@ public class Sala5SequenceManager : MonoBehaviour
     private IEnumerator SpawnSlimeAfterDelay(Vector3 position, float delay)
     {
         yield return new WaitForSeconds(delay);
-        if (combatActive) 
+        if (combatActive)
         {
             SpawnNewSlime(position);
         }
@@ -273,13 +323,13 @@ public class Sala5SequenceManager : MonoBehaviour
         if (shieldSkill != null)
         {
             shieldSkill.ToggleSkillDirectly();
-            shieldSkill.SetForcedActive(true); 
+            shieldSkill.SetForcedActive(true);
         }
 
         while (playerHealth.CurrentHealth > targetHealth)
         {
             float damageThisTick = Mathf.Min(drainRate, playerHealth.CurrentHealth - targetHealth);
-            playerHealth.TakeDamage(damageThisTick, true); 
+            playerHealth.TakeDamage(damageThisTick, true);
 
             Debug.Log($"[Sala5] Drenando {damageThisTick} de vida. Vida restante: {playerHealth.CurrentHealth}/{targetHealth}");
 
