@@ -232,7 +232,6 @@ public partial class MorlockEnemy : MonoBehaviour
                 }
                 else ChangeState(MorlockState.Patrol);
             }
-            // Si canReturnToPatrol = false, no hacer nada (mantener estado actual)
             return;
         }
 
