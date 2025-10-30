@@ -49,7 +49,9 @@ public class GamepadPointer : MonoBehaviour
 
     private void Update()
     {
-        bool isGamepadActive = Gamepad.current != null;
+        bool isAnyGamepadConnected = Gamepad.all.Count > 0;
+
+        bool isGamepadActive = isAnyGamepadConnected && Gamepad.current != null;
 
         if (!isGamepadActive || virtualCursor == null || canvasRect == null || uiInputModule == null)
         {

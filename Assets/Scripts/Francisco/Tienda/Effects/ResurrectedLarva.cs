@@ -134,13 +134,15 @@ public class ResurrectedLarva : MonoBehaviour
     private void DealDamageAndDie()
     {
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, explosionRadius);
+
         foreach (var hitCollider in hitColliders)
         {
             if (hitCollider.gameObject == gameObject) continue;
 
-            if (hitCollider.CompareTag("Player"))
+            Transform root = hitCollider.transform.root;
+            if (root != null && root.CompareTag("Player"))
             {
-                Debug.Log($"[Larva] Ignorando al jugador en la explosión.");
+                Debug.Log($"[Larva] Ignorando al jugador principal o componente ({hitCollider.name}) en la explosión.");
                 continue;
             }
 
