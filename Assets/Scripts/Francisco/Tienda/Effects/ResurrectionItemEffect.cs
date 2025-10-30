@@ -15,6 +15,16 @@ public class ResurrectionItemEffect : ItemEffectBase
     public GameObject curativeLarvaPrefab;
     public float curativeLarvaChance = 0.20f;
 
+    private void OnEnable()
+    {
+        EffectID = "Resurrección de Larvas";
+        category = EffectCategory.Utility;
+        if (string.IsNullOrEmpty(effectDescription))
+        {
+            effectDescription = "Los enemigos eliminados tienen probabilidad de generar larvas.";
+        }
+    }
+
     public override void ApplyEffect(PlayerStatsManager statsManager)
     {
         CombatEventsManager.OnEnemyKilled += HandleEnemyResurrection;
@@ -25,6 +35,11 @@ public class ResurrectionItemEffect : ItemEffectBase
     {
         CombatEventsManager.OnEnemyKilled -= HandleEnemyResurrection;
         Debug.Log("[ResurrectionEffect] Removido.");
+    }
+
+    public override string GetFormattedDescription()
+    {
+        return $"Los enemigos eliminados tienen un {resurrectionChance * 100:F0}% de probabilidad de generar larvas explosivas y curativas.";
     }
 
     private void HandleEnemyResurrection(GameObject killedEnemy, float enemyBaseHealth)

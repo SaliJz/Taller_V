@@ -1,5 +1,6 @@
-using UnityEngine;
 using System.Collections;
+using TMPro;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -12,6 +13,8 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
     [Header("Configuration")]
     [SerializeField] private PlayerStatsManager statsManager;
+    [SerializeField] private PlayerMeleeAttack playerMeleeAttack;
+    [SerializeField] private PlayerShieldController playerShieldController;
 
     [Header("Buffs por Etapa de Vida")]
     [SerializeField] private BuffSettings youngBuffs = new BuffSettings(1.2f, 1.1f, 1.2f, 2f);
@@ -24,6 +27,27 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
     [Tooltip("Material dorado que se aplicara durante la habilidad.")]
     [SerializeField] private Material goldenMaterial;
 
+    [Header("VFX System")]
+    [Tooltip("GameObject contenedor del VFX de la habilidad.")]
+    [SerializeField] private GameObject vfxContainer;
+    [Tooltip("Sistema de partículas principal de la habilidad.")]
+    [SerializeField] private ParticleSystem skillVFX;
+    [SerializeField] private Color youngVFXColor = new Color(0.2f, 0.5f, 1f, 1f); // Azul
+    [SerializeField] private Color adultVFXColor = new Color(1f, 0.2f, 0.2f, 1f); // Rojo
+    [SerializeField] private Color elderVFXColor = new Color(1f, 0.84f, 0f, 1f); // Dorado
+
+    [Header("Low Health Feedback")]
+    [SerializeField] private GameObject warningMessagePrefab;
+    [SerializeField] private string warningMessageText = "*Tos* *Tos*\n¡No puedo más!";
+    [SerializeField] private Color warningMessageColor = Color.red;
+    [SerializeField] private float warningMessageOffset = 2.5f;
+    [SerializeField] private float warningMessageDuration = 2f;
+    [SerializeField] private AudioClip lowHealthWarningSound;
+    [SerializeField] private float warningVolume = 0.7f;
+
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSource;
+
     #endregion
 
     #region State
@@ -31,6 +55,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
     public bool isSkillActive { get; private set; }
     private float healthDrainTimer;
     private const string SHIELD_SKILL_MODIFIER_KEY = "ShieldSkillBuff";
+    private const float LOW_HEALTH_THRESHOLD = 10f;
 
     private PlayerControlls playerControls;
     private PlayerHealth playerHealth;
@@ -39,7 +64,11 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
     private bool inputBlocked = false; 
     private bool isForcedActive = false;
+    private GameObject currentWarningMessage;
 
+    private bool wasHealthTooLow = false;
+    private bool lastVFXState = false;
+    private bool isVFXExternallyPaused = false;
     #endregion
 
     #region Unity Lifecycle
@@ -48,6 +77,8 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
     {
         playerHealth = GetComponent<PlayerHealth>();
         statsManager = GetComponent<PlayerStatsManager>();
+        playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
+        playerShieldController = GetComponent<PlayerShieldController>();
 
         if (statsManager == null)
         {
@@ -65,6 +96,25 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
             }
         }
 
+        if (vfxContainer == null)
+        {
+            Debug.LogWarning("VFX Container no asignado en ShieldSkill. Los efectos visuales no funcionarán.", this);
+        }
+
+        if (skillVFX == null && vfxContainer != null)
+        {
+            skillVFX = vfxContainer.GetComponentInChildren<ParticleSystem>();
+            if (skillVFX == null)
+            {
+                Debug.LogWarning("No se encontró ParticleSystem en VFX Container.", this);
+            }
+        }
+
+        if (vfxContainer != null)
+        {
+            vfxContainer.SetActive(false);
+        }
+
         playerControls = new PlayerControlls();
         playerControls.Abilities.SetCallbacks(this);
     }
@@ -80,6 +130,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
         playerControls?.Abilities.Disable();
         RestoreOriginalMaterial();
+        DeactivateVFX();
         if (isSkillActive) DeactivateSkill();
     }
 
@@ -88,7 +139,13 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
         playerControls?.Dispose();
         RestoreOriginalMaterial();
+        DeactivateVFX();
         if (isSkillActive) DeactivateSkill();
+
+        if (currentWarningMessage != null)
+        {
+            Destroy(currentWarningMessage);
+        }
     }
 
     /// <summary>
@@ -106,21 +163,39 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
         lastKnownLifeStage = newStage;
 
+        UpdateVFXColor();
+
         StartCoroutine(ReapplySkillModifiersNextFrame());
     }
 
     private void Update()
     {
-        if (!isForcedActive && 10 >= playerHealth.CurrentHealth)
+        if (!isForcedActive)
         {
-            if (isSkillActive) DeactivateSkill();
-            Debug.Log("[ShieldSkill] Salud del jugador demasiado baja. La habilidad no puede activarse.");
-            return;
+            bool isHealthLowNow = playerHealth.CurrentHealth <= LOW_HEALTH_THRESHOLD;
+
+            if (isHealthLowNow && !wasHealthTooLow)
+            {
+                if (isSkillActive)
+                {
+                    ShowLowHealthWarning();
+                    DeactivateSkill();
+                    Debug.Log("[ShieldSkill] Habilidad desactivada: salud demasiado baja.");
+                }
+
+                wasHealthTooLow = true;
+            }
+            else if (!isHealthLowNow && wasHealthTooLow)
+            {
+                wasHealthTooLow = false;
+                Debug.Log("[ShieldSkill] Salud recuperada. La habilidad puede usarse nuevamente.");
+            }
         }
 
         if (isSkillActive)
         {
             UpdateActiveSkill();
+            UpdateVFXVisibility();
         }
     }
 
@@ -138,9 +213,10 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
             return;
         }
 
-        if (10 >= playerHealth.CurrentHealth)
+        if (LOW_HEALTH_THRESHOLD >= playerHealth.CurrentHealth)
         {
             Debug.Log("[ShieldSkill] Salud del jugador demasiado baja. La habilidad no puede activarse.");
+            ShowLowHealthWarning();
             return;
         }
 
@@ -161,8 +237,9 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
     public void ToggleSkillDirectly()
     {
-        if (10 >= playerHealth.CurrentHealth)
+        if (LOW_HEALTH_THRESHOLD >= playerHealth.CurrentHealth)
         {
+            ShowLowHealthWarning();
             Debug.Log("[ShieldSkill] Salud del jugador demasiado baja. La habilidad no puede activarse.");
             return;
         }
@@ -212,6 +289,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "HealthDrain", StatType.HealthDrainAmount, currentBuffs.HealthDrainAmount);
 
         ApplyGoldenMaterial();
+        ActivateVFX();
 
         Debug.Log($"[HABILIDAD ACTIVADA] Etapa: {lastKnownLifeStage} " +
                   $"- Buffs: Velocidad de movimiento x{currentBuffs.MoveMultiplier}, " +
@@ -238,6 +316,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
         RemoveHealthDrainModifier();
         RestoreOriginalMaterial();
+        DeactivateVFX();
 
         float afterMoveValue = statsManager.GetStat(StatType.MoveSpeed);
         float afterMeleeDmgValue = statsManager.GetStat(StatType.MeleeAttackDamage);
@@ -298,6 +377,217 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
         Debug.Log($"[ShieldSkill] HealthDrainAmount removido: {beforeValue} -> {afterValue}");
     }
+
+    #endregion
+
+    #region VFX Management
+
+    /// <summary>
+    /// Activa el VFX de la habilidad con el color correspondiente a la etapa de vida.
+    /// </summary>
+    private void ActivateVFX()
+    {
+        if (vfxContainer == null) return;
+
+        isVFXExternallyPaused = false;
+
+        vfxContainer.SetActive(true);
+
+        if (skillVFX != null)
+        {
+            UpdateVFXColor();
+
+            if (!skillVFX.isPlaying)
+            {
+                skillVFX.Play(true);
+            }
+        }
+
+        Debug.Log($"[ShieldSkill] VFX activado para etapa {lastKnownLifeStage}");
+    }
+
+    /// <summary>
+    /// Desactiva el VFX de la habilidad.
+    /// </summary>
+    private void DeactivateVFX()
+    {
+        if (vfxContainer == null) return;
+
+        isVFXExternallyPaused = false;
+
+        if (skillVFX != null && skillVFX.isPlaying)
+        {
+            skillVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+
+        if (vfxContainer != null)
+        {
+            vfxContainer.SetActive(false);
+        }
+
+        Debug.Log("[ShieldSkill] VFX desactivado");
+    }
+
+    /// <summary>
+    /// Actualiza la visibilidad del VFX según el estado del jugador.
+    /// Se ejecuta automáticamente en Update cuando la habilidad está activa.
+    /// </summary>
+    private void UpdateVFXVisibility()
+    {
+        if (!isSkillActive) return;
+
+        bool shouldShowVFX = true;
+
+        // Ocultar VFX si están pausados externamente
+        if (isVFXExternallyPaused)
+        {
+            shouldShowVFX = false;
+        }
+
+        // Ocultar VFX durante ataque melee
+        else if(playerMeleeAttack != null && playerMeleeAttack.IsAttacking)
+        {
+            shouldShowVFX = false;
+        }
+
+        // Ocultar VFX durante lanzamiento de escudo
+        else if(playerShieldController != null && !playerShieldController.CanThrowShield())
+        {
+            shouldShowVFX = false;
+        }
+
+        // Solo actualizar si el estado cambió
+        if (shouldShowVFX != lastVFXState)
+        {
+            if (vfxContainer != null)
+            {
+                vfxContainer.SetActive(shouldShowVFX);
+            }
+
+            if (skillVFX != null)
+            {
+                if (shouldShowVFX && !skillVFX.isPlaying)
+                {
+                    skillVFX.Play(true);
+                }
+                else if (!shouldShowVFX && skillVFX.isPlaying)
+                {
+                    skillVFX.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                }
+            }
+
+            lastVFXState = shouldShowVFX;
+            Debug.Log($"[ShieldSkill] VFX {(shouldShowVFX ? "mostrado" : "ocultado")} automáticamente");
+        }
+    }
+
+    /// <summary>
+    /// Actualiza el color del VFX según la etapa de vida actual.
+    /// </summary>
+    private void UpdateVFXColor()
+    {
+        if (skillVFX == null) return;
+
+        Color targetColor = GetVFXColorForLifeStage(lastKnownLifeStage);
+
+        var main = skillVFX.main;
+        main.startColor = targetColor;
+
+        Debug.Log($"[ShieldSkill] Color de VFX actualizado a {targetColor} para etapa {lastKnownLifeStage}");
+    }
+
+    /// <summary>
+    /// Obtiene el color del VFX según la etapa de vida.
+    /// </summary>
+    private Color GetVFXColorForLifeStage(PlayerHealth.LifeStage stage)
+    {
+        switch (stage)
+        {
+            case PlayerHealth.LifeStage.Young:
+                return youngVFXColor;
+            case PlayerHealth.LifeStage.Adult:
+                return adultVFXColor;
+            case PlayerHealth.LifeStage.Elder:
+                return elderVFXColor;
+            default:
+                return Color.red;
+        }
+    }
+
+    /// <summary>
+    /// Método público para que otras clases desactiven temporalmente el VFX.
+    /// </summary>
+    public void SetVFXActive(bool active)
+    {
+        if (!isSkillActive) return;
+
+        isVFXExternallyPaused = !active;
+
+        Debug.Log($"[ShieldSkill] VFX {(active ? "reactivado" : "pausado")} externamente");
+    }
+
+    /// <summary>
+    /// Obtiene el GameObject del VFX container para referencias externas.
+    /// </summary>
+    public GameObject GetVFXContainer()
+    {
+        return vfxContainer;
+    }
+
+    #endregion
+
+    #region Low Health Feedback
+
+    /// <summary>
+    /// Muestra el mensaje de advertencia cuando el jugador intenta usar la habilidad con salud baja.
+    /// </summary>
+    private void ShowLowHealthWarning()
+    {
+        // Reproducir sonido de advertencia
+        if (audioSource != null && lowHealthWarningSound != null)
+        {
+            audioSource.PlayOneShot(lowHealthWarningSound, warningVolume);
+        }
+
+        // Crear mensaje visual si no existe uno activo
+        if (currentWarningMessage == null && warningMessagePrefab != null)
+        {
+            Vector3 spawnPosition = transform.position + Vector3.up * warningMessageOffset;
+            currentWarningMessage = Instantiate(warningMessagePrefab, spawnPosition, Quaternion.identity);
+
+            // Configurar el mensaje
+            WarningMessageFloater floater = currentWarningMessage.GetComponent<WarningMessageFloater>();
+            if (floater != null)
+            {
+                floater.SetLifetime(warningMessageDuration);
+                floater.SetColor(warningMessageColor);
+                floater.SetText(warningMessageText);
+            }
+
+            // Destruir el mensaje después de la duración especificada
+            StartCoroutine(DestroyWarningMessageAfterDelay());
+        }
+
+        Debug.Log("[ShieldSkill] Salud del jugador demasiado baja. La habilidad no puede activarse.");
+    }
+
+    /// <summary>
+    /// Destruye el mensaje de advertencia después del tiempo especificado.
+    /// </summary>
+    private IEnumerator DestroyWarningMessageAfterDelay()
+    {
+        yield return new WaitForSeconds(warningMessageDuration);
+
+        if (currentWarningMessage != null)
+        {
+            Destroy(currentWarningMessage);
+            currentWarningMessage = null;
+        }
+    }
+
+    #endregion
+
+    #region Material Management
 
     /// <summary>
     /// Aplica el material dorado a todos los sub-materiales de cada MeshRenderer.

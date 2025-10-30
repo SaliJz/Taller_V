@@ -15,6 +15,16 @@ public class ExplosiveItemEffect : ItemEffectBase
 
     private Vector3 lastExplosionPosition = Vector3.zero;
 
+    private void OnEnable()
+    {
+        EffectID = "Explosión al Morir";
+        category = EffectCategory.Combat;
+        if (string.IsNullOrEmpty(effectDescription))
+        {
+            effectDescription = "Los enemigos derrotados explotan causando daño en área.";
+        }
+    }
+
     public override void ApplyEffect(PlayerStatsManager statsManager)
     {
         CombatEventsManager.OnEnemyKilled += HandleEnemyExplosion;
@@ -27,6 +37,12 @@ public class ExplosiveItemEffect : ItemEffectBase
         CombatEventsManager.OnEnemyKilled -= HandleEnemyExplosion;
 
         Debug.Log("[ExplosiveItemEffect] Removido.");
+    }
+
+    public override string GetFormattedDescription()
+    {
+        return $"Los enemigos derrotados explotan causando daño en área igual al <b>{explosionDamagePercentage * 100:F0}%</b> de su salud base " +
+               $"dentro de un radio de <b>{explosionRadius}</b> unidades.";
     }
 
     private void HandleEnemyExplosion(GameObject killedEnemy, float enemyBaseHealth)

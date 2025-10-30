@@ -14,6 +14,16 @@ public class HardeningItemEffect : ItemEffectBase
     private const string DR_MODIFIER_KEY = "Hardening_DR";
     private readonly List<float> temporaryHealthStacks = new List<float>();
 
+    private void OnEnable()
+    {
+        EffectID = "Endurecimiento";
+        category = EffectCategory.Defense;
+        if (string.IsNullOrEmpty(effectDescription))
+        {
+            effectDescription = "Reduce el daño recibido y otorga vida temporal al eliminar enemigos.";
+        }
+    }
+
     public override void ApplyEffect(PlayerStatsManager statsManager)
     {
         statsManager.ApplyNamedModifier(DR_MODIFIER_KEY, StatType.DamageTaken, -damageReductionAmount, isPercentage: true);
@@ -30,6 +40,12 @@ public class HardeningItemEffect : ItemEffectBase
         temporaryHealthStacks.Clear();
 
         Debug.Log("[HardeningItemEffect] Removido.");
+    }
+
+    public override string GetFormattedDescription()
+    {
+        return $"Reduce el daño recibido en <b>{damageReductionAmount * 100:F0}%</b>.\n" +
+               $"Otorga <b>{temporaryHealthPerKill}</b> de vida temporal al eliminar un enemigo, hasta un máximo de <b>{maxTemporaryHealth}</b>.";
     }
 
     private void HandleEnemyKilled(GameObject killedEnemy, float enemyBaseHealth)

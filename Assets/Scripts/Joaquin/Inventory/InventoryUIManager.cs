@@ -10,7 +10,8 @@ using UnityEngine.UI;
 /// </summary>
 public class InventoryUIManager : MonoBehaviour
 {
-    public static InventoryUIManager Instance { get; private set; }
+    [Header("Animador de Inventario")]
+    [SerializeField] private InventoryAnimator inventoryAnimator;
 
     [Header("Referencias de Paneles")]
     [SerializeField] private GameObject inventoryPanel;
@@ -43,7 +44,6 @@ public class InventoryUIManager : MonoBehaviour
     private PlayerStatsManager statsManager;
     private PlayerHealth playerHealth;
     private InventoryManager inventoryManager;
-    private InventoryAnimator inventoryAnimator;
     private PauseController pauseController;
 
     private bool isInventoryOpen = false;
@@ -63,18 +63,10 @@ public class InventoryUIManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
-
         playerControls = new PlayerControlls();
         statsManager = FindAnyObjectByType<PlayerStatsManager>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
         inventoryManager = FindAnyObjectByType<InventoryManager>();
-        inventoryAnimator = GetComponent<InventoryAnimator>();
         pauseController = FindAnyObjectByType<PauseController>();
 
         if (inventoryPanel != null)
@@ -398,6 +390,35 @@ public class InventoryUIManager : MonoBehaviour
             sb.AppendLine($"<b>{statName}:</b> {FormatStatValueDecimal(current, baseVal)}");
         }
 
+        if (inventoryManager != null)
+        {
+            var activeBehavioralEffects = inventoryManager.ActiveBehavioralEffects;
+
+            if (activeBehavioralEffects != null && activeBehavioralEffects.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("<b><color=#FFD700>--- Efectos Activos ---</color></b>");
+
+                // Agrupar por categoría
+                var effectsByCategory = activeBehavioralEffects
+                    .Where(e => e != null)
+                    .GroupBy(e => e.category)
+                    .OrderBy(g => g.Key);
+
+                foreach (var categoryGroup in effectsByCategory)
+                {
+                    sb.AppendLine();
+                    sb.AppendLine($"<b><color=#FFA500>{GetEffectCategoryName(categoryGroup.Key)}</color></b>");
+
+                    foreach (var effect in categoryGroup)
+                    {
+                        string shortSummary = effect.GetShortSummary();
+                        sb.AppendLine($"<color=#FFE4B5>  • {shortSummary}</color>");
+                    }
+                }
+            }
+        }
+
         return sb.ToString();
     }
 
@@ -441,6 +462,21 @@ public class InventoryUIManager : MonoBehaviour
             {
                 string effectText = FormatEffect(drawback, false);
                 sb.AppendLine($"<color=#{ColorUtility.ToHtmlStringRGB(negativeStatColor)}>{effectText}</color>");
+            }
+            sb.AppendLine();
+        }
+
+        // Efectos especiales de amuletos
+        if (item.behavioralEffects != null && item.behavioralEffects.Count > 0)
+        {
+            sb.AppendLine("<b><color=#FFD700>Efectos Especiales:</color></b>");
+            foreach (var behavioralEffect in item.behavioralEffects)
+            {
+                if (behavioralEffect != null)
+                {
+                    string formattedDescription = behavioralEffect.GetFormattedDescription();
+                    sb.AppendLine($"<color=#FFA500>• {formattedDescription}</color>");
+                }
             }
             sb.AppendLine();
         }
@@ -538,7 +574,7 @@ public class InventoryUIManager : MonoBehaviour
             case StatType.AttackDamage: return "Daño";
             case StatType.AttackSpeed: return "Velocidad de Ataque";
             case StatType.MeleeAttackDamage: return "Daño Cuerpo a Cuerpo";
-            case StatType.MeleeAttackSpeed: return "Vel. Ataque CaC";
+            case StatType.MeleeAttackSpeed: return "Vel. Ataque Cuerpo aC";
             case StatType.ShieldAttackDamage: return "Daño de Escudo";
             case StatType.ShieldSpeed: return "Velocidad de Escudo";
             case StatType.CriticalChance: return "Prob. Crítico";
@@ -560,6 +596,24 @@ public class InventoryUIManager : MonoBehaviour
             case ItemCategory.Potenciador: return "Potenciadores";
             case ItemCategory.Debilitador: return "Debilitadores";
             case ItemCategory.Maldicion: return "Maldiciones";
+            case ItemCategory.Amuleto: return "Amuletos";
+            default: return category.ToString();
+        }
+    }
+
+    /// <summary>
+    /// Obtiene el nombre de una categoría de efecto
+    /// </summary>
+    private string GetEffectCategoryName(EffectCategory category)
+    {
+        switch (category)
+        {
+            case EffectCategory.Combat: return "Combate";
+            case EffectCategory.Defense: return "Defensa";
+            case EffectCategory.Utility: return "Utilidad";
+            case EffectCategory.Healing: return "Curación";
+            case EffectCategory.Damage: return "Daño";
+            case EffectCategory.Special: return "Especial";
             default: return category.ToString();
         }
     }

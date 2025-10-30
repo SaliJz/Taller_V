@@ -19,7 +19,8 @@ public enum ItemCategory
     Acondicionador,
     Potenciador,   
     Debilitador,   
-    Maldicion      
+    Maldicion,
+    Amuleto
 }
 
 /// <summary>
