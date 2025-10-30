@@ -18,5 +18,6 @@ public class KronusStats : ScriptableObject
     public float attackDamage = 10f;
     public float attackRadius = 2f;
     public float preparationTime = 1f;
+    public float timeAfterAttack = 1f;
     public float knockbackForce = 1f;
 }

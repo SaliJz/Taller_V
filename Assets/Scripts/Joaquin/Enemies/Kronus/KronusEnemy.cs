@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -33,6 +34,7 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private float attackDamagePercentage = 0.2f;
     [SerializeField] private float attackRadius = 1.5f;
     [SerializeField] private float preparationTime = 1f;
+    [SerializeField] private float timeAfterAttack = 1f;
     [SerializeField] private float knockbackForce = 1f;
     [SerializeField] private LayerMask playerLayer;
 
@@ -136,6 +138,7 @@ public class KronusEnemy : MonoBehaviour
             attackDamage = stats.attackDamage;
             attackRadius = stats.attackRadius;
             preparationTime = stats.preparationTime;
+            timeAfterAttack = stats.timeAfterAttack;
             knockbackForce = stats.knockbackForce;
             if (enemyHealth != null) enemyHealth.SetMaxHealth(stats.health);
         }
@@ -599,7 +602,7 @@ public class KronusEnemy : MonoBehaviour
             }
         }
 
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(timeAfterAttack);
 
         ReportDebug("Kronus finaliza ataque dash y entra en recuperación de 2s.", 1);
         isAttacking = false;

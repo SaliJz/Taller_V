@@ -32,7 +32,8 @@ public partial class MorlockEnemy : MonoBehaviour
     [SerializeField] private float attackRange = 50f;
 
     [Header("Patrol")]
-    [Tooltip("Radio dentro del cual Morlock detecta al jugador y empezará a perseguir/atacar.")]
+    [Tooltip("Si está desactivado, Morlock no volverá a patrullar después de detectar al jugador por primera vez")]
+    [SerializeField] private bool canReturnToPatrol = true;
     [SerializeField] private float detectionRadius = 50f;
     [Tooltip("Distancia máxima de teletransporte durante el patrullaje.")]
     [SerializeField] private float teleportRange = 5f;
@@ -43,6 +44,7 @@ public partial class MorlockEnemy : MonoBehaviour
     [SerializeField] private bool patrolAroundOrigin = true;
     [SerializeField] private float patrolRadius = 8f; // usado si no hay waypoints
     [SerializeField] private float patrolIdleTime = 1.2f; // espera entre puntos
+    [SerializeField] private bool canReposition = false;
     [SerializeField] private float repositionTeleportCooldown = 0.75f;
 
     [Header("Perseguir 1")]
@@ -221,8 +223,16 @@ public partial class MorlockEnemy : MonoBehaviour
 
         if (distanceToPlayer > detectionRadius && (currentState != MorlockState.Patrol && currentState != MorlockState.Repositioning))
         {
-            if (patrolAroundOrigin && distanceFromOrigin > patrolRadius * 1.1f) ChangeState(MorlockState.Repositioning);
-            else ChangeState(MorlockState.Patrol);
+            if (canReturnToPatrol)
+            {
+                if (patrolAroundOrigin && distanceFromOrigin > patrolRadius * 1.1f)
+                {
+                    if (canReposition) ChangeState(MorlockState.Repositioning);
+                    else ChangeState(MorlockState.Patrol);
+                }
+                else ChangeState(MorlockState.Patrol);
+            }
+            // Si canReturnToPatrol = false, no hacer nada (mantener estado actual)
             return;
         }
 
