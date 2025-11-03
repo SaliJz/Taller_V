@@ -3989,7 +3989,27 @@ MonoBehaviour:
     roomDataList: []
   generationRules: []
   progressionRules:
-  - roomType: 4
+  - useMultipleRoomTypes: 1
+    roomType: 1
+    multipleRoomTypes: []
+    useCustomPrefabs: 1
+    customRoomPrefabs:
+    - {fileID: 1482729654027300797, guid: 2b7455c699c26e74ca0cd38a8b5336d2, type: 3}
+    - {fileID: 1482729654027300797, guid: 7d2f6a12ba8508941b08a51399a9dd15, type: 3}
+    minRoomNumber: 1
+    maxRoomNumber: 1
+    isMandatory: 1
+    isProbableMandatory: 0
+    generateOnce: 1
+    probability: 100
+    combatContent:
+      waves: []
+      timeBetweenWaves: 0
+  - useMultipleRoomTypes: 0
+    roomType: 4
+    multipleRoomTypes: []
+    useCustomPrefabs: 0
+    customRoomPrefabs: []
     minRoomNumber: 7
     maxRoomNumber: 7
     isMandatory: 1
@@ -4003,6 +4023,7 @@ MonoBehaviour:
   - {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
   - {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
   spawnEffectPrefab: {fileID: 3331059551027662099, guid: 9d5ba65ab5339c74b901aaa2ae57bc30, type: 3}
+  enableDoorPreview: 1
   minRooms: 6
   maxRooms: 6
   maxRoomAttempts: 10

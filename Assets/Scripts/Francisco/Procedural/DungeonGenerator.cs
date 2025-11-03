@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+
 using static RoomProgressionLevel;
 
 [System.Serializable]
@@ -19,10 +20,18 @@ public class CombatContents
     public float timeBetweenWaves = 5f;
 }
 
+
 [System.Serializable]
 public class RoomProgressionRule
 {
+    [Header("Room Type Selection")]
+    public bool useMultipleRoomTypes = false;
     public RoomType roomType;
+    public List<RoomTypeOption> multipleRoomTypes = new List<RoomTypeOption>();
+
+    [Header("Custom Room Prefabs")]
+    public bool useCustomPrefabs = false;
+    public Room[] customRoomPrefabs;
 
     [Header("Progression Range")]
     public int minRoomNumber = 1;
@@ -37,6 +46,69 @@ public class RoomProgressionRule
 
     [Header("--- Content Rule ---")]
     public CombatContents combatContent;
+
+    public RoomType GetRoomType()
+    {
+        if (!useMultipleRoomTypes || multipleRoomTypes == null || multipleRoomTypes.Count == 0)
+        {
+            return roomType;
+        }
+
+        float totalProbability = 0f;
+        foreach (var option in multipleRoomTypes)
+        {
+            totalProbability += option.probability;
+        }
+
+        if (totalProbability <= 0)
+        {
+            return multipleRoomTypes[UnityEngine.Random.Range(0, multipleRoomTypes.Count)].roomType;
+        }
+
+        float randomValue = UnityEngine.Random.Range(0f, totalProbability);
+        float currentSum = 0f;
+
+        foreach (var option in multipleRoomTypes)
+        {
+            currentSum += option.probability;
+            if (randomValue <= currentSum)
+            {
+                return option.roomType;
+            }
+        }
+
+        return multipleRoomTypes[0].roomType;
+    }
+
+    public Room GetRandomCustomPrefab()
+    {
+        if (!useCustomPrefabs || customRoomPrefabs == null || customRoomPrefabs.Length == 0)
+        {
+            return null;
+        }
+
+        var validPrefabs = customRoomPrefabs.Where(p => p != null).ToArray();
+
+        if (validPrefabs.Length == 0)
+        {
+            return null;
+        }
+
+        return validPrefabs[UnityEngine.Random.Range(0, validPrefabs.Length)];
+    }
+
+    public bool HasCustomPrefabs()
+    {
+        return useCustomPrefabs && customRoomPrefabs != null && customRoomPrefabs.Length > 0;
+    }
+}
+
+[System.Serializable]
+public class RoomTypeOption
+{
+    public RoomType roomType;
+    [Range(0f, 100f)]
+    public float probability = 50f;
 }
 
 [System.Serializable]
@@ -95,6 +167,9 @@ public class DungeonGenerator : MonoBehaviour
     [Header("Visual Effects")]
     public GameObject spawnEffectPrefab;
 
+    [Header("Door Preview")]
+    public bool enableDoorPreview = true;
+
     [Header("Generation Settings")]
     public int minRooms = 8;
     public int maxRooms = 12;
@@ -131,6 +206,7 @@ public class DungeonGenerator : MonoBehaviour
     private int roomsGenerated = 0;
     private int targetRoomCount;
 
+    private Dictionary<ConnectionPoint, RoomType> doorPreviewCache = new Dictionary<ConnectionPoint, RoomType>();
     private Dictionary<RoomType, List<RoomData>> roomDataDictionary = new Dictionary<RoomType, List<RoomData>>();
     private Dictionary<RoomType, RoomType[]> generationRuleDictionary = new Dictionary<RoomType, RoomType[]>();
     private Dictionary<RoomType, RoomProgressionRule> progressionRuleDictionary = new Dictionary<RoomType, RoomProgressionRule>();
@@ -389,28 +465,78 @@ public class DungeonGenerator : MonoBehaviour
 
         if (mandatoryRoomToPlace != null && roomsGenerated + 1 == mandatoryRoomNumber)
         {
-            List<RoomData> mandatoryRoomPrefabs = roomDataDictionary[mandatoryRoomToPlace.roomType];
+            Debug.Log($"[DungeonGenerator] Entrando al bloque obligatorio. Sala a generar: {roomsGenerated + 1}. Prefabs Custom activados: {mandatoryRoomToPlace.HasCustomPrefabs()}.");
 
-            mandatoryRoomPrefabs = mandatoryRoomPrefabs.OrderBy(x => UnityEngine.Random.value).ToList();
+            RoomType nextRoomType = mandatoryRoomToPlace.GetRoomType();
 
-            foreach (var roomData in mandatoryRoomPrefabs)
+            if (mandatoryRoomToPlace.HasCustomPrefabs())
             {
-                if (attempts >= maxRoomAttempts) break;
-
-                if (PlaceRoom(roomData.prefab, roomData, entrancePoint, mandatoryRoomToPlace))
+                while (attempts < maxRoomAttempts && !roomPlaced)
                 {
-                    roomPlaced = true;
-                    UpdateRoomWeights(roomData);
-                    break;
+                    Room customPrefab = mandatoryRoomToPlace.GetRandomCustomPrefab();
+
+                    if (customPrefab == null)
+                    {
+                        attempts++;
+                        continue;
+                    }
+
+                    RoomData tempRoomData = new RoomData { prefab = customPrefab, weight = 1.0f };
+
+                    Debug.Log($"[DungeonGenerator] Intento {attempts + 1}/{maxRoomAttempts}: Usando Custom Prefab '{customPrefab.name}'.", customPrefab);
+
+                    if (PlaceRoom(customPrefab, tempRoomData, entrancePoint, mandatoryRoomToPlace))
+                    {
+                        roomPlaced = true;
+                        UpdateRoomWeights(tempRoomData);
+                        break;
+                    }
+                    attempts++;
                 }
-                attempts++;
+
+                if (roomPlaced)
+                {
+                    return;
+                }
+            }
+            else 
+            {
+                if (roomDataDictionary.ContainsKey(nextRoomType))
+                {
+                    List<RoomData> mandatoryRoomPrefabs = roomDataDictionary[nextRoomType];
+                    attempts = 0; 
+
+                    mandatoryRoomPrefabs = mandatoryRoomPrefabs.OrderBy(x => UnityEngine.Random.value).ToList();
+
+                    foreach (var roomData in mandatoryRoomPrefabs)
+                    {
+                        if (attempts >= maxRoomAttempts) break;
+
+                        if (PlaceRoom(roomData.prefab, roomData, entrancePoint, mandatoryRoomToPlace))
+                        {
+                            roomPlaced = true;
+                            UpdateRoomWeights(roomData);
+                            break;
+                        }
+                        attempts++;
+                    }
+                }
+
+                if (roomPlaced)
+                {
+                    return;
+                }
             }
 
-            if (roomPlaced)
+            if (attempts >= maxRoomAttempts || !roomPlaced) 
             {
-                return;
+                Debug.LogError($"Fallo critico: No se pudo colocar la sala obligatoria {mandatoryRoomNumber} después de {maxRoomAttempts} intentos. (Custom Prefabs usados: {mandatoryRoomToPlace.HasCustomPrefabs()}).");
             }
+
+            return; 
         }
+
+        attempts = 0;
 
         while (attempts < maxRoomAttempts && !roomPlaced)
         {
@@ -1257,7 +1383,7 @@ public class DungeonGenerator : MonoBehaviour
         );
     }
 
-    public void OnCombatRoomCleared(Room clearedRoom, ConnectionPoint entrancePoint) 
+    public void OnCombatRoomCleared(Room clearedRoom, ConnectionPoint entrancePoint)
     {
         float roomCompletionTime = 0f;
 
@@ -1270,6 +1396,140 @@ public class DungeonGenerator : MonoBehaviour
 
         clearedRoom.EventsOnFinsih();
         clearedRoom.UnlockExitDoors(entrancePoint);
+
+        UpdateDoorPreviews(clearedRoom);
+    }
+
+    public void UpdateDoorPreviews(Room room)
+    {
+        if (!enableDoorPreview || room == null) return;
+
+        RoomType currentRoomType = room.roomType;
+        int currentRoomNum = roomsGenerated;
+
+        int shopDoorCount = 0;
+
+        for (int i = 0; i < room.connectionPoints.Length; i++)
+        {
+            ConnectionPoint connectionPoint = room.connectionPoints[i];
+
+            if (connectionPoint.isConnected) continue;
+
+            RoomType nextRoomType = DetermineNextRoomType(currentRoomType, currentRoomNum + 1);
+
+            if (nextRoomType == RoomType.Shop)
+            {
+                shopDoorCount++;
+            }
+
+            if (nextRoomType == RoomType.Shop && shopDoorCount > 1)
+            {
+                nextRoomType = RoomType.Normal; 
+            }
+
+            doorPreviewCache[connectionPoint] = nextRoomType;
+
+            DoorPreviewIndicator indicator = connectionPoint.GetComponentInChildren<DoorPreviewIndicator>();
+
+            if (indicator != null)
+            {
+                indicator.SetRoomType(nextRoomType);
+            }
+            else
+            {
+                GameObject doorObject = i < room.connectionDoors.Length ? room.connectionDoors[i] : null;
+                if (doorObject != null)
+                {
+                    indicator = doorObject.GetComponent<DoorPreviewIndicator>();
+                    if (indicator == null)
+                    {
+                        indicator = doorObject.AddComponent<DoorPreviewIndicator>();
+                    }
+                    indicator.SetRoomType(nextRoomType);
+                }
+            }
+        }
+    }
+
+    private RoomType DetermineNextRoomType(RoomType previousRoomType, int nextRoomNumber)
+    {
+        if (mandatoryRoomToPlace != null && nextRoomNumber == mandatoryRoomNumber)
+        {
+            return mandatoryRoomToPlace.GetRoomType();
+        }
+
+        var probableMandatoryRules = progressionRules
+            .Where(r => r.isProbableMandatory &&
+                        nextRoomNumber >= r.minRoomNumber &&
+                        nextRoomNumber <= r.maxRoomNumber &&
+                        (!r.generateOnce || !hasProbableMandatoryBeenGenerated))
+            .ToList();
+
+        foreach (var rule in probableMandatoryRules)
+        {
+            float escalatingProbability = GetEscalatingProbability(nextRoomNumber);
+            if (UnityEngine.Random.Range(0f, 100f) < escalatingProbability)
+            {
+                if (generationRuleDictionary.ContainsKey(previousRoomType) &&
+                    !generationRuleDictionary[previousRoomType].Contains(rule.GetRoomType()))
+                    continue;
+
+                return rule.GetRoomType();
+            }
+        }
+
+        var progressionAllowedTypes = progressionRules
+            .Where(rule => nextRoomNumber >= rule.minRoomNumber &&
+                          nextRoomNumber <= rule.maxRoomNumber)
+            .Select(p => p.GetRoomType())
+            .ToList();
+
+        RoomType[] generationAllowedTypes;
+        if (!generationRuleDictionary.TryGetValue(previousRoomType, out generationAllowedTypes))
+        {
+            generationAllowedTypes = roomDataDictionary.Keys.ToArray();
+        }
+
+        List<RoomType> validRoomTypes = new List<RoomType>();
+
+        if (progressionAllowedTypes.Any())
+        {
+            validRoomTypes = progressionAllowedTypes.Intersect(generationAllowedTypes).ToList();
+        }
+        else
+        {
+            validRoomTypes = generationAllowedTypes.ToList();
+        }
+
+        if (!validRoomTypes.Any())
+        {
+            return RoomType.Normal;
+        }
+
+        var filteredProbabilities = roomTypeProbabilities
+            .Where(p => validRoomTypes.Contains(p.roomType))
+            .ToList();
+
+        float totalProbability = filteredProbabilities.Sum(p => p.probability);
+
+        if (totalProbability <= 0)
+        {
+            return validRoomTypes[UnityEngine.Random.Range(0, validRoomTypes.Count)];
+        }
+
+        float randomValue = UnityEngine.Random.Range(0f, totalProbability);
+        float currentSum = 0f;
+
+        foreach (var roomProb in filteredProbabilities)
+        {
+            currentSum += roomProb.probability;
+            if (randomValue <= currentSum)
+            {
+                return roomProb.roomType;
+            }
+        }
+
+        return validRoomTypes[0];
     }
 
     private IEnumerator ActivateEntranceDoorDelayed(GameObject door)

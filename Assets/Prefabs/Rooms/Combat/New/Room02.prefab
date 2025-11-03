@@ -199,6 +199,7 @@ GameObject:
   - component: {fileID: 7016153108046517062}
   - component: {fileID: 1158557608968090419}
   - component: {fileID: 6666143486627481947}
+  - component: {fileID: 4169778875026914416}
   m_Layer: 0
   m_Name: ConnectionPoint EXIT 2
   m_TagString: ConnectionPoint
@@ -271,6 +272,39 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 5, y: 1, z: 12}
   m_Center: {x: -2, y: 0, z: 0}
+--- !u!114 &4169778875026914416
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 385375178067526008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39e784ac479f37044b6ea9c75cee2f11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  doorRenderer: {fileID: 5635185134134236386}
+  doorLight: {fileID: 0}
+  roomTypeText: {fileID: 0}
+  iconContainer: {fileID: 0}
+  combatColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  shopColor: {r: 1, g: 0.8, b: 0, a: 1}
+  treasureColor: {r: 0.5, g: 0, b: 1, a: 1}
+  normalColor: {r: 0.3, g: 0.7, b: 1, a: 1}
+  bossColor: {r: 0.8, g: 0, b: 0, a: 1}
+  challengeColor: {r: 1, g: 0.5, b: 0, a: 1}
+  gachaponColor: {r: 1, g: 0.3, b: 0.8, a: 1}
+  combatIcon: {fileID: 0}
+  shopIcon: {fileID: 0}
+  treasureIcon: {fileID: 0}
+  normalIcon: {fileID: 0}
+  bossIcon: {fileID: 0}
+  challengeIcon: {fileID: 0}
+  gachaponIcon: {fileID: 0}
+  emissionIntensity: 2
+  showText: 0
+  showIcon: 0
 --- !u!1 &1072955103995532569
 GameObject:
   m_ObjectHideFlags: 0
@@ -2329,6 +2363,7 @@ GameObject:
   - component: {fileID: 3274496175011630095}
   - component: {fileID: 5120971943315337667}
   - component: {fileID: 1521347332003630606}
+  - component: {fileID: 4760533143146324640}
   m_Layer: 0
   m_Name: ConnectionPoint EXIT
   m_TagString: ConnectionPoint
@@ -2401,6 +2436,39 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 5, y: 1, z: 12}
   m_Center: {x: -2, y: 0, z: 0}
+--- !u!114 &4760533143146324640
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5966430976578252064}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39e784ac479f37044b6ea9c75cee2f11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  doorRenderer: {fileID: 6831820701189664531}
+  doorLight: {fileID: 0}
+  roomTypeText: {fileID: 0}
+  iconContainer: {fileID: 0}
+  combatColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  shopColor: {r: 1, g: 0.8, b: 0, a: 1}
+  treasureColor: {r: 0.5, g: 0, b: 1, a: 1}
+  normalColor: {r: 0.3, g: 0.7, b: 1, a: 1}
+  bossColor: {r: 0.8, g: 0, b: 0, a: 1}
+  challengeColor: {r: 1, g: 0.5, b: 0, a: 1}
+  gachaponColor: {r: 1, g: 0.3, b: 0.8, a: 1}
+  combatIcon: {fileID: 0}
+  shopIcon: {fileID: 0}
+  treasureIcon: {fileID: 0}
+  normalIcon: {fileID: 0}
+  bossIcon: {fileID: 0}
+  challengeIcon: {fileID: 0}
+  gachaponIcon: {fileID: 0}
+  emissionIntensity: 2
+  showText: 0
+  showIcon: 0
 --- !u!1 &5971097833023876019
 GameObject:
   m_ObjectHideFlags: 0
@@ -2450,7 +2518,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isConnected: 0
   connectedTo: {fileID: 0}
-  connectionType: 2
+  connectionType: 0
 --- !u!65 &4991019584486795126
 BoxCollider:
   m_ObjectHideFlags: 0
