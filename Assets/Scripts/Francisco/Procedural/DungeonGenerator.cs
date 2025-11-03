@@ -205,6 +205,8 @@ public class DungeonGenerator : MonoBehaviour
     private List<Room> generatedRooms = new List<Room>();
     private int roomsGenerated = 0;
     private int targetRoomCount;
+    private Transform designatedMandatoryExit = null;
+    private int designatedMandatoryRoomNumber = -1;
 
     private Dictionary<ConnectionPoint, RoomType> doorPreviewCache = new Dictionary<ConnectionPoint, RoomType>();
     private Dictionary<RoomType, List<RoomData>> roomDataDictionary = new Dictionary<RoomType, List<RoomData>>();
@@ -463,10 +465,12 @@ public class DungeonGenerator : MonoBehaviour
 
         RoomType previousRoomType = entrancePoint.GetComponentInParent<Room>().roomType;
 
-        if (mandatoryRoomToPlace != null && roomsGenerated + 1 == mandatoryRoomNumber)
-        {
-            Debug.Log($"[DungeonGenerator] Entrando al bloque obligatorio. Sala a generar: {roomsGenerated + 1}. Prefabs Custom activados: {mandatoryRoomToPlace.HasCustomPrefabs()}.");
+        bool isMandatoryDesignatedPath = (mandatoryRoomToPlace != null &&
+                                         roomsGenerated + 1 == mandatoryRoomNumber &&
+                                         entrancePoint.transform == designatedMandatoryExit);
 
+        if (isMandatoryDesignatedPath)
+        {
             RoomType nextRoomType = mandatoryRoomToPlace.GetRoomType();
 
             if (mandatoryRoomToPlace.HasCustomPrefabs())
@@ -483,8 +487,6 @@ public class DungeonGenerator : MonoBehaviour
 
                     RoomData tempRoomData = new RoomData { prefab = customPrefab, weight = 1.0f };
 
-                    Debug.Log($"[DungeonGenerator] Intento {attempts + 1}/{maxRoomAttempts}: Usando Custom Prefab '{customPrefab.name}'.", customPrefab);
-
                     if (PlaceRoom(customPrefab, tempRoomData, entrancePoint, mandatoryRoomToPlace))
                     {
                         roomPlaced = true;
@@ -499,12 +501,12 @@ public class DungeonGenerator : MonoBehaviour
                     return;
                 }
             }
-            else 
+            else
             {
                 if (roomDataDictionary.ContainsKey(nextRoomType))
                 {
                     List<RoomData> mandatoryRoomPrefabs = roomDataDictionary[nextRoomType];
-                    attempts = 0; 
+                    attempts = 0;
 
                     mandatoryRoomPrefabs = mandatoryRoomPrefabs.OrderBy(x => UnityEngine.Random.value).ToList();
 
@@ -528,12 +530,12 @@ public class DungeonGenerator : MonoBehaviour
                 }
             }
 
-            if (attempts >= maxRoomAttempts || !roomPlaced) 
+            if (attempts >= maxRoomAttempts || !roomPlaced)
             {
-                Debug.LogError($"Fallo critico: No se pudo colocar la sala obligatoria {mandatoryRoomNumber} después de {maxRoomAttempts} intentos. (Custom Prefabs usados: {mandatoryRoomToPlace.HasCustomPrefabs()}).");
+                Debug.LogError($"Fallo critico: No se pudo colocar la sala obligatoria {mandatoryRoomNumber} después de {maxRoomAttempts} intentos.");
             }
 
-            return; 
+            return;
         }
 
         attempts = 0;
@@ -561,6 +563,25 @@ public class DungeonGenerator : MonoBehaviour
             }
             attempts++;
         }
+    }
+
+    public RoomType PredictNextRoomType(ConnectionPoint connectionPoint)
+    {
+        int nextRoomNumber = roomsGenerated + 1;
+
+        if (mandatoryRoomToPlace != null && nextRoomNumber == mandatoryRoomNumber)
+        {
+            if (connectionPoint.transform == designatedMandatoryExit)
+            {
+                return mandatoryRoomToPlace.GetRoomType();
+            }
+            else
+            {
+                return RoomType.Normal;
+            }
+        }
+
+        return RoomType.Normal;
     }
 
     bool PlaceRoom(Room newRoomPrefab, RoomData roomData, ConnectionPoint entrancePoint, RoomProgressionRule progressionRule)
@@ -1217,6 +1238,11 @@ public class DungeonGenerator : MonoBehaviour
 
         Room oldRoom = entrancePoint.GetComponentInParent<Room>();
 
+        if (oldRoom != null)
+        {
+            DesignateMandatoryExit(oldRoom);
+        }
+
         int oldRoomDoorIndex = System.Array.IndexOf(oldRoom.connectionPoints, entrancePoint);
         if (oldRoomDoorIndex != -1 && oldRoom.connectionDoors.Length > oldRoomDoorIndex && oldRoom.connectionDoors[oldRoomDoorIndex] != null)
         {
@@ -1235,7 +1261,7 @@ public class DungeonGenerator : MonoBehaviour
             }
 
             if (playerMovement != null) playerMovement.SetCanMove(true);
-            yield break; 
+            yield break;
         }
 
         Room newRoom = entrancePoint.connectedTo.GetComponentInParent<Room>();
@@ -1351,9 +1377,9 @@ public class DungeonGenerator : MonoBehaviour
                     {
                         ShopManager.Instance.SetDistortionActive(DevilDistortionType.SealedLuck, true);
                     }
-                    else 
+                    else
                     {
-                        DevilManipulationManager.Instance.TryActivatePendingManipulation(); 
+                        DevilManipulationManager.Instance.TryActivatePendingManipulation();
                     }
                 }
                 else
@@ -1374,13 +1400,30 @@ public class DungeonGenerator : MonoBehaviour
                 if (playerMovement != null)
                 {
                     playerMovement.SetCanMove(true);
-                    if (newRoom != null) 
+                    if (newRoom != null)
                     {
                         OnRoomEntered?.Invoke(newRoom.roomType);
                     }
                 }
             }
         );
+    }
+
+    private void DesignateMandatoryExit(Room currentRoom)
+    {
+        int nextRoomNumber = roomsGenerated + 1;
+
+        if (mandatoryRoomToPlace != null && nextRoomNumber == mandatoryRoomNumber && nextRoomNumber != designatedMandatoryRoomNumber)
+        {
+            var availableExits = currentRoom.connectionPoints.Where(cp => !cp.isConnected).ToList();
+
+            if (availableExits.Any())
+            {
+                ConnectionPoint selectedExit = availableExits[UnityEngine.Random.Range(0, availableExits.Count)];
+                designatedMandatoryExit = selectedExit.transform;
+                designatedMandatoryRoomNumber = nextRoomNumber;
+            }
+        }
     }
 
     public void OnCombatRoomCleared(Room clearedRoom, ConnectionPoint entrancePoint)

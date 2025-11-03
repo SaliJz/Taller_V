@@ -11,12 +11,12 @@ public class DoorPreviewIndicator : MonoBehaviour
 
     [Header("Room Type Colors")]
     [SerializeField] private Color combatColor = new Color(1f, 0.2f, 0.2f);
-    [SerializeField] private Color shopColor = new Color(1f, 0.8f, 0f); 
-    [SerializeField] private Color treasureColor = new Color(0.5f, 0f, 1f); 
-    [SerializeField] private Color normalColor = new Color(0.3f, 0.7f, 1f); 
+    [SerializeField] private Color shopColor = new Color(1f, 0.8f, 0f);
+    [SerializeField] private Color treasureColor = new Color(0.5f, 0f, 1f);
+    [SerializeField] private Color normalColor = new Color(0.3f, 0.7f, 1f);
     [SerializeField] private Color bossColor = new Color(0.8f, 0f, 0f);
-    [SerializeField] private Color challengeColor = new Color(1f, 0.5f, 0f); 
-    [SerializeField] private Color gachaponColor = new Color(1f, 0.3f, 0.8f); 
+    [SerializeField] private Color challengeColor = new Color(1f, 0.5f, 0f);
+    [SerializeField] private Color gachaponColor = new Color(1f, 0.3f, 0.8f);
 
     [Header("Room Type Icons")]
     [SerializeField] private GameObject combatIcon;
@@ -33,7 +33,9 @@ public class DoorPreviewIndicator : MonoBehaviour
     [SerializeField] private bool showIcon = true;
 
     private Material doorMaterial;
-    private RoomType currentRoomType;
+
+    private DungeonGenerator dungeonGenerator;
+    private ConnectionPoint connectionPoint;
 
     void Awake()
     {
@@ -45,16 +47,42 @@ public class DoorPreviewIndicator : MonoBehaviour
         HideAllIcons();
     }
 
-    public void SetRoomType(RoomType roomType)
+    void Start()
     {
-        currentRoomType = roomType;
-        UpdateVisuals();
+        dungeonGenerator = FindAnyObjectByType<DungeonGenerator>();
+        connectionPoint = GetComponentInParent<ConnectionPoint>();
+
+        if (connectionPoint != null && connectionPoint.isConnected)
+        {
+            ClearPreview();
+            return;
+        }
+
+        UpdateDoorPreview();
     }
 
-    private void UpdateVisuals()
+    public void SetRoomType(RoomType roomType)
     {
-        Color roomColor = GetColorForRoomType(currentRoomType);
-        string roomName = GetNameForRoomType(currentRoomType);
+        UpdateVisuals(roomType);
+    }
+
+    public void UpdateDoorPreview()
+    {
+        if (dungeonGenerator == null || connectionPoint == null || connectionPoint.isConnected)
+        {
+            ClearPreview();
+            return;
+        }
+
+        RoomType predictedType = dungeonGenerator.PredictNextRoomType(connectionPoint);
+
+        UpdateVisuals(predictedType);
+    }
+
+    private void UpdateVisuals(RoomType roomType)
+    {
+        Color roomColor = GetColorForRoomType(roomType);
+        string roomName = GetNameForRoomType(roomType);
 
         if (doorMaterial != null)
         {
@@ -78,7 +106,7 @@ public class DoorPreviewIndicator : MonoBehaviour
         if (showIcon)
         {
             HideAllIcons();
-            GameObject icon = GetIconForRoomType(currentRoomType);
+            GameObject icon = GetIconForRoomType(roomType);
             if (icon != null)
             {
                 icon.SetActive(true);
@@ -161,5 +189,7 @@ public class DoorPreviewIndicator : MonoBehaviour
         if (bossIcon != null) bossIcon.SetActive(false);
         if (challengeIcon != null) challengeIcon.SetActive(false);
         if (gachaponIcon != null) gachaponIcon.SetActive(false);
+
+        if (iconContainer != null) iconContainer.SetActive(false);
     }
 }
