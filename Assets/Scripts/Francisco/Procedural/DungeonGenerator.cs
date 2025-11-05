@@ -275,12 +275,6 @@ public class DungeonGenerator : MonoBehaviour
 
         targetRoomCount = UnityEngine.Random.Range(minRooms, maxRooms + 1);
 
-        if (probableMandatoryToPlace != null)
-        {
-            currentProbableMandatoryProbability = probableMandatoryToPlace.probability;
-        }
-
-        PlanMandatoryRoom();
         GenerateInitialRoom();
         playerMovement = FindAnyObjectByType<PlayerMovement>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
@@ -382,23 +376,6 @@ public class DungeonGenerator : MonoBehaviour
         OnCombatRoomCleared(currentRoom, entrancePoint);
     }
 
-    void PlanMandatoryRoom()
-    {
-        var mandatoryRules = progressionRules.Where(r => r.isMandatory).ToList();
-        if (mandatoryRules.Any())
-        {
-            mandatoryRoomToPlace = mandatoryRules.First();
-            mandatoryRoomNumber = UnityEngine.Random.Range(mandatoryRoomToPlace.minRoomNumber, mandatoryRoomToPlace.maxRoomNumber + 1);
-        }
-
-        var probableMandatoryRules = progressionRules.Where(r => r.isProbableMandatory).ToList();
-        if (probableMandatoryRules.Any())
-        {
-            probableMandatoryToPlace = probableMandatoryRules.First();
-        }
-    }
-
-
     void GenerateInitialRoom()
     {
         if (startRoomPrefab == null) return;
@@ -462,83 +439,7 @@ public class DungeonGenerator : MonoBehaviour
 
         int attempts = 0;
         bool roomPlaced = false;
-
         RoomType previousRoomType = entrancePoint.GetComponentInParent<Room>().roomType;
-
-        bool isMandatoryDesignatedPath = (mandatoryRoomToPlace != null &&
-                                         roomsGenerated + 1 == mandatoryRoomNumber &&
-                                         entrancePoint.transform == designatedMandatoryExit);
-
-        if (isMandatoryDesignatedPath)
-        {
-            RoomType nextRoomType = mandatoryRoomToPlace.GetRoomType();
-
-            if (mandatoryRoomToPlace.HasCustomPrefabs())
-            {
-                while (attempts < maxRoomAttempts && !roomPlaced)
-                {
-                    Room customPrefab = mandatoryRoomToPlace.GetRandomCustomPrefab();
-
-                    if (customPrefab == null)
-                    {
-                        attempts++;
-                        continue;
-                    }
-
-                    RoomData tempRoomData = new RoomData { prefab = customPrefab, weight = 1.0f };
-
-                    if (PlaceRoom(customPrefab, tempRoomData, entrancePoint, mandatoryRoomToPlace))
-                    {
-                        roomPlaced = true;
-                        UpdateRoomWeights(tempRoomData);
-                        break;
-                    }
-                    attempts++;
-                }
-
-                if (roomPlaced)
-                {
-                    return;
-                }
-            }
-            else
-            {
-                if (roomDataDictionary.ContainsKey(nextRoomType))
-                {
-                    List<RoomData> mandatoryRoomPrefabs = roomDataDictionary[nextRoomType];
-                    attempts = 0;
-
-                    mandatoryRoomPrefabs = mandatoryRoomPrefabs.OrderBy(x => UnityEngine.Random.value).ToList();
-
-                    foreach (var roomData in mandatoryRoomPrefabs)
-                    {
-                        if (attempts >= maxRoomAttempts) break;
-
-                        if (PlaceRoom(roomData.prefab, roomData, entrancePoint, mandatoryRoomToPlace))
-                        {
-                            roomPlaced = true;
-                            UpdateRoomWeights(roomData);
-                            break;
-                        }
-                        attempts++;
-                    }
-                }
-
-                if (roomPlaced)
-                {
-                    return;
-                }
-            }
-
-            if (attempts >= maxRoomAttempts || !roomPlaced)
-            {
-                Debug.LogError($"Fallo critico: No se pudo colocar la sala obligatoria {mandatoryRoomNumber} después de {maxRoomAttempts} intentos.");
-            }
-
-            return;
-        }
-
-        attempts = 0;
 
         while (attempts < maxRoomAttempts && !roomPlaced)
         {
@@ -562,6 +463,11 @@ public class DungeonGenerator : MonoBehaviour
                 UpdateRoomWeights(selectionResult.RoomData);
             }
             attempts++;
+        }
+
+        if (!roomPlaced)
+        {
+            Debug.LogWarning($"No se pudo colocar ninguna sala después de {maxRoomAttempts} intentos en la sala {roomsGenerated + 1}");
         }
     }
 
@@ -722,20 +628,50 @@ public class DungeonGenerator : MonoBehaviour
     {
         RoomProgressionRule[] currentRules = progressionRules ?? System.Array.Empty<RoomProgressionRule>();
 
-        if (mandatoryRoomToPlace != null && roomsGenerated + 1 == mandatoryRoomNumber)
+        var mandatoryApplicableRules = currentRules
+            .Where(r => r.isMandatory &&
+                        currentRoomNumber >= r.minRoomNumber &&
+                        currentRoomNumber <= r.maxRoomNumber &&
+                        (!r.generateOnce || !usedOnceRules.Contains(r)))
+            .ToList();
+
+        if (mandatoryApplicableRules.Any())
         {
-            if (generationRuleDictionary.ContainsKey(previousRoomType) && !generationRuleDictionary[previousRoomType].Contains(mandatoryRoomToPlace.roomType))
+            var mandatoryRule = mandatoryApplicableRules.First();
+            RoomType mandatoryType = mandatoryRule.GetRoomType();
+
+            if (generationRuleDictionary.ContainsKey(previousRoomType) &&
+                !generationRuleDictionary[previousRoomType].Contains(mandatoryType))
             {
-                return null;
+                Debug.LogWarning($"Regla obligatoria para sala {currentRoomNumber} no es compatible con el tipo de sala anterior. Saltando.");
             }
-            var mandatoryRoomPrefabs = roomDataDictionary[mandatoryRoomToPlace.roomType];
-            if (mandatoryRoomPrefabs != null && mandatoryRoomPrefabs.Count > 0)
+            else
             {
-                return new RoomSelectionResult
+                if (mandatoryRule.HasCustomPrefabs())
                 {
-                    RoomData = mandatoryRoomPrefabs[UnityEngine.Random.Range(0, mandatoryRoomPrefabs.Count)],
-                    ProgressionRule = mandatoryRoomToPlace
-                };
+                    Room customPrefab = mandatoryRule.GetRandomCustomPrefab();
+                    if (customPrefab != null)
+                    {
+                        return new RoomSelectionResult
+                        {
+                            RoomData = new RoomData { prefab = customPrefab, weight = 1.0f },
+                            ProgressionRule = mandatoryRule
+                        };
+                    }
+                }
+
+                if (roomDataDictionary.ContainsKey(mandatoryType))
+                {
+                    var mandatoryRoomPrefabs = roomDataDictionary[mandatoryType];
+                    if (mandatoryRoomPrefabs != null && mandatoryRoomPrefabs.Count > 0)
+                    {
+                        return new RoomSelectionResult
+                        {
+                            RoomData = mandatoryRoomPrefabs[UnityEngine.Random.Range(0, mandatoryRoomPrefabs.Count)],
+                            ProgressionRule = mandatoryRule
+                        };
+                    }
+                }
             }
         }
 
@@ -743,7 +679,7 @@ public class DungeonGenerator : MonoBehaviour
             .Where(r => r.isProbableMandatory &&
                         currentRoomNumber >= r.minRoomNumber &&
                         currentRoomNumber <= r.maxRoomNumber &&
-                        (!r.generateOnce || !hasProbableMandatoryBeenGenerated))
+                        (!r.generateOnce || !usedOnceRules.Contains(r)))
             .ToList();
 
         foreach (var rule in probableMandatoryRules)
@@ -751,16 +687,28 @@ public class DungeonGenerator : MonoBehaviour
             float escalatingProbability = GetEscalatingProbability(currentRoomNumber);
             if (UnityEngine.Random.Range(0f, 100f) < escalatingProbability)
             {
-                if (generationRuleDictionary.ContainsKey(previousRoomType) && !generationRuleDictionary[previousRoomType].Contains(rule.roomType))
+                RoomType probableType = rule.GetRoomType();
+
+                if (generationRuleDictionary.ContainsKey(previousRoomType) &&
+                    !generationRuleDictionary[previousRoomType].Contains(probableType))
                     continue;
 
-                var probableRoomPrefabs = roomDataDictionary[rule.roomType];
+                if (rule.HasCustomPrefabs())
+                {
+                    Room customPrefab = rule.GetRandomCustomPrefab();
+                    if (customPrefab != null)
+                    {
+                        return new RoomSelectionResult
+                        {
+                            RoomData = new RoomData { prefab = customPrefab, weight = 1.0f },
+                            ProgressionRule = rule
+                        };
+                    }
+                }
+
+                var probableRoomPrefabs = roomDataDictionary[probableType];
                 if (probableRoomPrefabs != null && probableRoomPrefabs.Count > 0)
                 {
-                    if (rule.generateOnce)
-                    {
-                        hasProbableMandatoryBeenGenerated = true;
-                    }
                     return new RoomSelectionResult
                     {
                         RoomData = probableRoomPrefabs[UnityEngine.Random.Range(0, probableRoomPrefabs.Count)],
@@ -770,11 +718,16 @@ public class DungeonGenerator : MonoBehaviour
             }
         }
 
-        var progressionAllowedTypes = currentRules
+        var applicableRules = currentRules
             .Where(rule =>
+                !rule.isMandatory &&
+                !rule.isProbableMandatory &&
                 currentRoomNumber >= rule.minRoomNumber &&
-                currentRoomNumber <= rule.maxRoomNumber
-            ).Select(p => p.roomType).ToList();
+                currentRoomNumber <= rule.maxRoomNumber &&
+                (!rule.generateOnce || !usedOnceRules.Contains(rule)))
+            .ToList();
+
+        var progressionAllowedTypes = applicableRules.Select(p => p.GetRoomType()).Distinct().ToList();
 
         RoomType[] generationAllowedTypes;
         if (!generationRuleDictionary.TryGetValue(previousRoomType, out generationAllowedTypes))
@@ -795,33 +748,31 @@ public class DungeonGenerator : MonoBehaviour
 
         if (!validRoomTypes.Any())
         {
-            Debug.LogError($"Error: No hay tipos de sala válidos para la sala {currentRoomNumber}. Revise reglas de conexión y que 'roomTypeProbabilities' no esté vacío.");
+            Debug.LogError($"Error: No hay tipos de sala válidos para la sala {currentRoomNumber}.");
             return null;
         }
 
         var filteredProbabilities = roomTypeProbabilities.Where(p => validRoomTypes.Contains(p.roomType)).ToList();
-
         float totalProbability = filteredProbabilities.Sum(p => p.probability);
 
         if (totalProbability <= 0)
         {
-            Debug.LogWarning($"Las probabilidades de RoomType (suma = {totalProbability}) para los tipos válidos fallaron. Usando selección uniforme como fallback.");
-
             RoomType fallbackType = validRoomTypes[UnityEngine.Random.Range(0, validRoomTypes.Count)];
-
             if (!roomDataDictionary.ContainsKey(fallbackType) || roomDataDictionary[fallbackType].Count == 0)
             {
-                Debug.LogError($"Error: El RoomType '{fallbackType}' seleccionado por fallback NO tiene prefabs en roomDataDictionary.");
+                Debug.LogError($"Error: El RoomType '{fallbackType}' no tiene prefabs.");
                 return null;
             }
 
             var fallbackRoomDataList = roomDataDictionary[fallbackType];
             RoomData fallbackRoomData = fallbackRoomDataList[UnityEngine.Random.Range(0, fallbackRoomDataList.Count)];
 
+            var matchingRule = applicableRules.FirstOrDefault(r => r.GetRoomType() == fallbackType);
+
             return new RoomSelectionResult
             {
                 RoomData = fallbackRoomData,
-                ProgressionRule = null 
+                ProgressionRule = matchingRule
             };
         }
 
@@ -839,9 +790,9 @@ public class DungeonGenerator : MonoBehaviour
             }
         }
 
-        if (!roomDataDictionary.ContainsKey(selectedType) || roomDataDictionary[selectedType] == null || roomDataDictionary[selectedType].Count == 0)
+        if (!roomDataDictionary.ContainsKey(selectedType) || roomDataDictionary[selectedType].Count == 0)
         {
-            Debug.LogError($"Error de configuración: El RoomType '{selectedType}' está seleccionado, pero no tiene prefabs asociados en 'roomDataDictionary'.");
+            Debug.LogError($"Error: El RoomType '{selectedType}' no tiene prefabs.");
             return null;
         }
 
@@ -871,8 +822,8 @@ public class DungeonGenerator : MonoBehaviour
 
         if (finalRoomData == null) return null;
 
-        RoomProgressionRule finalRule = currentRules.FirstOrDefault(r =>
-            r.roomType == finalRoomData.prefab.roomType &&
+        RoomProgressionRule finalRule = applicableRules.FirstOrDefault(r =>
+            r.GetRoomType() == selectedType &&
             currentRoomNumber >= r.minRoomNumber &&
             currentRoomNumber <= r.maxRoomNumber);
 

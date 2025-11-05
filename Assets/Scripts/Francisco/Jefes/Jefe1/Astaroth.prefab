@@ -2631,7 +2631,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _currentState: 0
   _player: {fileID: 0}
-  _maxHealth: 100
+  _maxHealth: 300
   _currentHealth: 0
   _stoppingDistance: 7
   _whipVisualTransform: {fileID: 1926294932068586014}
@@ -2726,6 +2726,7 @@ MonoBehaviour:
   firstFillImage: {fileID: 2122642152856177435}
   offsetAboveEnemy: 2
   glowDelayAfterCritical: 2
+  canGrantLifestealOnDeath: 1
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -2767,10 +2768,15 @@ MonoBehaviour:
   - {fileID: 3753446717945279616}
   - {fileID: 1184836589451317315}
   - {fileID: 4124361845862745429}
-  blinkTargetRenderer: []
   blinkFlashMaterial: {fileID: 2100000, guid: d1f9e2c5e82298b4b8f024596ca37e41, type: 2}
   blinkInterval: 0.06
   blinkCount: 6
+  stunMaterial: {fileID: 0}
+  stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  stunBlinkSpeed: 0.1
+  stunVFXPrefab: {fileID: 0}
+  stunVFXHeight: 2
+  stunSFX: {fileID: 0}
   defaultMaterial: {fileID: 2100000, guid: d86e7347337312a41ad9711f4e131bea, type: 2}
   glowMaterial: {fileID: 2100000, guid: b4e58dcad18308f42af5b40ebb3e5dae, type: 2}
   glowIntensity: 2

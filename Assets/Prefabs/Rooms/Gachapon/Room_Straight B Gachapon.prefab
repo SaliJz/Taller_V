@@ -629,6 +629,11 @@ MonoBehaviour:
   - {fileID: 5789550519001831253}
   spawnAreas:
   - {fileID: 7123015657078708649}
+  animatedDoors: []
+  doorColliders: []
+  onFinsih:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &7883620410370355934
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -908,7 +913,8 @@ MonoBehaviour:
   finalIntensityMultiplier: 3
   pulseDuration: 3
   sinkDuration: 3
-  sinkDistance: -5
+  sinkTargetTransform: {fileID: 0}
+  riseTargetTransform: {fileID: 0}
   sinkCurve:
     serializedVersion: 2
     m_Curve:
