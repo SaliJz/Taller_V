@@ -624,13 +624,12 @@ public class AstarothController : MonoBehaviour
             }
 
             _roomMaxRadius = maxDistance;
-            Debug.Log($"Room radius calculated: {_roomMaxRadius}m");
+            Debug.Log($"Room radius calculated: {_roomMaxRadius}m (diameter: {_roomMaxRadius * 2}m)");
         }
         else
         {
-            // Fallback: usar un valor grande por defecto
-            _roomMaxRadius = 50f;
-            Debug.LogWarning("No NavMesh found. Using default room radius: 50m");
+            _roomMaxRadius = 25f; // Radio de 25m = 50m de diámetro
+            Debug.LogWarning($"No NavMesh found. Using default room radius: {_roomMaxRadius}m");
         }
     }
 
@@ -652,7 +651,7 @@ public class AstarothController : MonoBehaviour
         GameObject nervesVisualization = null;
         if (_nervesVisualizationPrefab != null)
         {
-            nervesVisualization = Instantiate(_nervesVisualizationPrefab, groundPos, Quaternion.identity);
+            nervesVisualization = Instantiate(_nervesVisualizationPrefab, groundPos, Quaternion.identity, null);
             _instantiatedEffects.Add(nervesVisualization);
         }
 
@@ -664,9 +663,10 @@ public class AstarothController : MonoBehaviour
             if (nervesVisualization != null)
             {
                 float expansionProgress = expansionTimer / _pulseExpansionDuration;
-                // Escalar hasta el radio máximo de la habitación
-                float scaleXZ = expansionProgress * _roomMaxRadius; // *2 para diámetro
-                nervesVisualization.transform.localScale = new Vector3(scaleXZ, 1f, scaleXZ); // Y fijo en 1
+                float diameter = _roomMaxRadius * 2f;
+                float currentSize = expansionProgress * diameter;
+
+                nervesVisualization.transform.localScale = new Vector3(currentSize, 1f, currentSize);
             }
 
             yield return null;
@@ -701,7 +701,7 @@ public class AstarothController : MonoBehaviour
 
         if (_crackEffectPrefab != null)
         {
-            GameObject crackEffect = Instantiate(_crackEffectPrefab, groundPos, Quaternion.identity);
+            GameObject crackEffect = Instantiate(_crackEffectPrefab, groundPos, Quaternion.identity, null);
             _instantiatedEffects.Add(crackEffect);
             Destroy(crackEffect, 2f);
         }
