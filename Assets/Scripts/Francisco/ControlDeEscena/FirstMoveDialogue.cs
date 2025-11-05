@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.Events; 
 
 public class FirstMoveDialogue : MonoBehaviour
 {
@@ -7,6 +8,9 @@ public class FirstMoveDialogue : MonoBehaviour
     [Header("Dialogo a Mostrar")]
     public DialogLine[] FirstMoveDialog;
     public float requiredMoveDistance = 0.5f;
+
+    [Header("Eventos")]
+    public UnityEvent OnDialogueFinished;
     #endregion
 
     #region Private Fields
@@ -77,6 +81,8 @@ public class FirstMoveDialogue : MonoBehaviour
         {
             yield return null;
         }
+
+        OnDialogueFinished?.Invoke();
 
         Destroy(this);
     }

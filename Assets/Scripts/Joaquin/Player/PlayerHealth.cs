@@ -178,10 +178,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         InitializeCurrentHealthFromSO();
         InitializeShieldUpgradeFromSO();
 
-        float startMaxHealth = MaxHealth;
-        currentHealth = startMaxHealth;
         SyncCurrentHealthToSO();
-        ReportDebug($"Vida forzada a MaxHealth al iniciar: {currentHealth}/{startMaxHealth}", 1);
 
         OnHealthChanged?.Invoke(currentHealth, MaxHealth);
         UpdateLifeStage(true);
