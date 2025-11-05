@@ -102,11 +102,14 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private Transform _headsTransform;
     [SerializeField] private float _headDownRotationAngle = -45f;
     [SerializeField] private float _headAnimationDuration = 0.5f;
+    [SerializeField] private float _roomMaxRadius = 45f;
+    [SerializeField] private bool _calculateRoomRadiusOnStart = true;
+    [SerializeField] private float _movementSpeedForPulse = 10f;
     private bool _isUsingSpecialAbility;
     private float[] _healthThresholdsForPulse = { 0.67f, 0.34f };
     private bool _isPulseAttackBlocked = false;
-    private float _roomMaxRadius = 45f;
     private List<GameObject> _instantiatedEffects = new List<GameObject>();
+    private Vector3 _roomCenter = Vector3.zero;
     #endregion
 
     #region Enraged Phase
@@ -173,7 +176,15 @@ public class AstarothController : MonoBehaviour
         _basePulseExpansionDuration = _pulseExpansionDuration;
         _basePulseWaitDuration = _pulseWaitDuration;
 
-        CalculateRoomRadius();
+        if (_calculateRoomRadiusOnStart)
+        {
+            CalculateRoomRadius();
+        }
+        else
+        {
+            _roomCenter = new Vector3(transform.position.x, 0f, transform.position.z);
+            Debug.Log($"Using set room radius: {_roomMaxRadius}m");
+        }
 
         if (_trailRenderer != null)
         {
@@ -549,7 +560,7 @@ public class AstarothController : MonoBehaviour
         _lastSmashOverlapRadius = _smashRadius;
         _showSmashOverlapGizmo = true;
 
-        Vector3 smashGroundPosition = GetGroundPosition();
+        Vector3 smashGroundPosition = GetGroundPosition(damageCenter);
         smashGroundPosition.x = damageCenter.x;
         smashGroundPosition.z = damageCenter.z;
 
@@ -610,25 +621,39 @@ public class AstarothController : MonoBehaviour
 
         if (triangulation.vertices.Length > 0)
         {
-            Vector3 bossPos = transform.position;
-            float maxDistance = 0f;
+            // Calcular los límites de la habitación usando los vértices del NavMesh
+            Vector3 minBounds = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+            Vector3 maxBounds = new Vector3(float.MinValue, float.MinValue, float.MinValue);
 
-            // Encontrar el vértice más lejano del NavMesh desde la posición del boss
+            // Posición del boss en el plano XZ
             foreach (Vector3 vertex in triangulation.vertices)
             {
-                float distance = Vector3.Distance(new Vector3(bossPos.x, 0, bossPos.z), new Vector3(vertex.x, 0, vertex.z));
+                minBounds = Vector3.Min(minBounds, vertex);
+                maxBounds = Vector3.Max(maxBounds, vertex);
+            }
+
+            // Sala centro
+            _roomCenter = new Vector3((minBounds.x + maxBounds.x) / 2f, 0f, (minBounds.z + maxBounds.z) / 2f);
+
+            float maxDistance = 0f;
+
+            // Encontrar el vértice más lejano del NavMesh desde el centro de la habitación
+            foreach (Vector3 vertex in triangulation.vertices)
+            {
+                float distance = Vector3.Distance(new Vector3(_roomCenter.x, 0, _roomCenter.z), new Vector3(vertex.x, 0, vertex.z));
                 if (distance > maxDistance)
                 {
                     maxDistance = distance;
                 }
             }
 
-            _roomMaxRadius = maxDistance;
+            //_roomMaxRadius = maxDistance;
             Debug.Log($"Room radius calculated: {_roomMaxRadius}m (diameter: {_roomMaxRadius * 2}m)");
         }
         else
         {
             _roomMaxRadius = 25f; // Radio de 25m = 50m de diámetro
+            _roomCenter = new Vector3(transform.position.x, 0f, transform.position.z);
             Debug.LogWarning($"No NavMesh found. Using default room radius: {_roomMaxRadius}m");
         }
     }
@@ -636,17 +661,20 @@ public class AstarothController : MonoBehaviour
     private IEnumerator PulsoCarnal()
     {
         _isUsingSpecialAbility = true;
+
+        Debug.Log("Astaroth esta preparando Pulso Carnal!");
+
+        yield return StartCoroutine(MoveToCenter(_roomCenter));
+
         _navMeshAgent.isStopped = true;
 
-        Debug.Log("Astaroth is preparing Pulso Carnal!");
+        // Obtener posición del suelo
+        Vector3 groundPos = GetGroundPosition(transform.position);
 
         if (_headsTransform != null)
         {
             yield return StartCoroutine(AnimateHeadDown());
         }
-
-        // Obtener posición del suelo
-        Vector3 groundPos = GetGroundPosition();
 
         GameObject nervesVisualization = null;
         if (_nervesVisualizationPrefab != null)
@@ -663,7 +691,7 @@ public class AstarothController : MonoBehaviour
             if (nervesVisualization != null)
             {
                 float expansionProgress = expansionTimer / _pulseExpansionDuration;
-                float diameter = _roomMaxRadius * 2f;
+                float diameter = _roomMaxRadius * 2;
                 float currentSize = expansionProgress * diameter;
 
                 nervesVisualization.transform.localScale = new Vector3(currentSize, 1f, currentSize);
@@ -712,6 +740,44 @@ public class AstarothController : MonoBehaviour
 
         _isUsingSpecialAbility = false;
         _currentState = BossState.Moving;
+    }
+
+    private IEnumerator MoveToCenter(Vector3 targetCenter)
+    {
+        if (_navMeshAgent == null || !_navMeshAgent.isOnNavMesh)
+        {
+            Debug.LogError("MoveToCenter failed: NavMeshAgent is NULL or not on NavMesh.");
+            yield break;
+        }
+
+        _navMeshAgent.isStopped = false;
+        _navMeshAgent.speed = _movementSpeedForPulse;
+        _navMeshAgent.SetDestination(targetCenter);
+        Debug.Log($"Moving to center: {targetCenter}. Current stopping distance: {_navMeshAgent.stoppingDistance}");
+
+        float safetyTimer = 0f;
+        float maxMoveTime = 5f;
+
+        while (_navMeshAgent.pathPending || _navMeshAgent.remainingDistance > _navMeshAgent.stoppingDistance)
+        {
+            if (_navMeshAgent.remainingDistance == float.PositiveInfinity)
+            {
+                Debug.LogWarning("MoveToCenter: remainingDistance is Infinity. Breaking loop to continue ability.");
+                break;
+            }
+
+            safetyTimer += Time.deltaTime;
+            if (safetyTimer >= maxMoveTime)
+            {
+                Debug.LogError("MoveToCenter TIMEOUT: Boss did not reach center in time. Forcing continuation of PulsoCarnal sequence.");
+                break;
+            }
+            yield return null;
+        }
+
+        _navMeshAgent.speed = 3.5f;
+
+        Debug.Log("MoveToCenter complete: Continuing Pulso Carnal sequence.");
     }
 
     private IEnumerator AnimateHeadDown()
@@ -767,10 +833,9 @@ public class AstarothController : MonoBehaviour
         _isPulseAttackBlocked = false;
     }
 
-    private Vector3 GetGroundPosition()
+    private Vector3 GetGroundPosition(Vector3 rayOrigin)
     {
         RaycastHit hit;
-        Vector3 rayOrigin = transform.position;
 
         // Intentar raycast hacia abajo para encontrar el suelo
         if (Physics.Raycast(rayOrigin, Vector3.down, out hit, 20f, LayerMask.GetMask("Ground")))
