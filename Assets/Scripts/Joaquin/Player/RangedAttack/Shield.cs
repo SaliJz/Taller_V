@@ -189,7 +189,7 @@ public class Shield : MonoBehaviour
 
                 if (tutorialDummy != null)
                 {
-                    tutorialDummy.TakeDamage(0f, false, damageTypeForDummy);
+                    tutorialDummy.TakeDamage(attackDamage, false, damageTypeForDummy);
                     ReportDebug("Golpe a " + enemy.name + ": DUMMY DE TUTORIAL DETECTADO. Enviando golpe de " + damageTypeForDummy, 1);
                 }
                 else 

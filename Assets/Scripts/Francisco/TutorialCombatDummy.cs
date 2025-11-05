@@ -3,10 +3,25 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 
+public enum DummyLogicType { RequiredHitCount, HealthState }
+
 public enum DamageType { Melee, Shield, Other }
+
+[System.Serializable]
+public struct HealthStateColor
+{
+    [Range(0f, 1f)]
+    public float healthThreshold;
+    public Color stateColor;
+    public string stateName;
+}
 
 public class TutorialCombatDummy : MonoBehaviour, IDamageable
 {
+    #region GENERAL FIELDS
+
+    [Header("General Settings")]
+    [SerializeField] private DummyLogicType dummyLogic = DummyLogicType.RequiredHitCount;
     [SerializeField] private float maxHealth = 1f;
     private float currentHealth;
 
@@ -16,14 +31,30 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
     [Header("Vulnerability")]
     [SerializeField] private DamageType requiredDamageType = DamageType.Melee;
 
+    #endregion
+
+    #region HIT COUNT LOGIC 
+
     [Header("Hit Count Logic")]
     [SerializeField] private int requiredHits = 3;
     private int currentHits = 0;
 
+    #endregion
+
+    #region HEALTH STATE LOGIC 
+
+    [Header("Health State Logic")]
+    [SerializeField] private HealthStateColor[] healthStates;
+    private HealthStateColor? currentState;
+
+    #endregion
+
+    #region VISUALS, COOLDOWN & STATE
+
     [Header("Visuals & Cooldown")]
     [SerializeField] private float hitCooldownTime = 0.5f;
     [SerializeField] private Color flashColor = Color.red;
-    [SerializeField] private float flashDuration = 0.1f; 
+    [SerializeField] private float flashDuration = 0.1f;
     private Color originalColor;
     private bool canBeHit = true;
     private Coroutine colorChangeCoroutine;
@@ -31,7 +62,7 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
     [Header("Delays")]
     [SerializeField] private float deathDelay = 0.5f;
 
-    [Header("Dialogues")]
+    [Header("Dialogues & Audio")]
     public DialogLine[] FirstHitDialog;
     public DialogLine[] DeathDialog;
     public DialogLine[] DefeatedSequenceDialog;
@@ -45,10 +76,17 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
     private Collider[] colliders;
     private Renderer[] renderers;
 
-    public UnityEvent OnDummyDefeated;
+    #endregion
 
-    [Header("Evento de Secuencia")]
+    #region EVENTS
+
+    [Header("Events")]
+    public UnityEvent OnDummyDefeated;
     public UnityEvent OnDeathSequenceStart;
+
+    #endregion
+
+    #region AWAKE / INITIALIZATION
 
     private void Awake()
     {
@@ -64,8 +102,16 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
         if (renderers.Length > 0 && renderers[0].material != null)
         {
             originalColor = renderers[0].material.color;
+            if (dummyLogic == DummyLogicType.HealthState)
+            {
+                CheckHealthState(true);
+            }
         }
     }
+
+    #endregion
+
+    #region DAMAGE IMPLEMENTATION
 
     public void TakeDamage(float damageAmount, bool isCritical = false)
     {
@@ -76,13 +122,14 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
     {
         if (isDefeated || !canBeHit) return;
 
-        if (requiredDamageType != type)
+        if (dummyLogic == DummyLogicType.RequiredHitCount && requiredDamageType != type)
         {
-            Debug.Log($"Dummy ignoró daño de {type}. Requiere: {requiredDamageType}");
+            Debug.Log($"Dummy de Contador ignoró daño de {type}. Requiere: {requiredDamageType}");
             return;
         }
 
         StartCoroutine(HitCooldown());
+
         if (colorChangeCoroutine != null) StopCoroutine(colorChangeCoroutine);
         colorChangeCoroutine = StartCoroutine(FlashColor());
 
@@ -92,27 +139,26 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
             StartCoroutine(ExecuteFirstHitDialogueFlow());
         }
 
-        bool isHitCountDummy = requiredDamageType == DamageType.Melee || requiredDamageType == DamageType.Shield;
-
-        if (isHitCountDummy)
+        switch (dummyLogic)
         {
-            HandleHitCount(type);
-        }
-        else
-        {
-            currentHealth -= damageAmount;
+            case DummyLogicType.RequiredHitCount:
+                HandleHitCount(type);
+                break;
 
-            if (currentHealth <= 0)
-            {
-                Die();
-            }
+            case DummyLogicType.HealthState:
+                HandleHealthStateDamage(damageAmount);
+                break;
         }
     }
+
+    #endregion
+
+    #region LOGIC HANDLERS
 
     private void HandleHitCount(DamageType type)
     {
         currentHits++;
-        Debug.Log($"Dummy de Contador golpeado! Tipo: {type}. Hits: {currentHits}/{requiredHits}.");
+        Debug.Log($"Dummy de Contador golpeado! Tipo: {type}. Hits: {currentHits}/{requiredHits}.", this);
 
         if (currentHits >= requiredHits)
         {
@@ -120,6 +166,59 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
             Die();
         }
     }
+
+    private void HandleHealthStateDamage(float damageAmount)
+    {
+        float healthBefore = currentHealth;
+
+        currentHealth -= damageAmount;
+        currentHealth = Mathf.Max(0, currentHealth);
+
+        Debug.Log($"[HEALTH STATE] Daño: {damageAmount:F2} | Vida Anterior: {healthBefore:F2} | Vida Actual: {currentHealth:F2}", this);
+
+        CheckHealthState();
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void CheckHealthState(bool forceUpdate = false)
+    {
+        float currentHealthRatio = currentHealth / maxHealth;
+        HealthStateColor? newState = null;
+
+        var sortedStates = healthStates.OrderByDescending(s => s.healthThreshold);
+
+        foreach (var state in sortedStates)
+        {
+            if (currentHealthRatio >= state.healthThreshold)
+            {
+                newState = state;
+                break;
+            }
+        }
+
+        if (newState.HasValue && (forceUpdate || !currentState.HasValue || currentState.Value.stateColor != newState.Value.stateColor))
+        {
+            currentState = newState;
+            Debug.Log($"Dummy cambió a estado: {newState.Value.stateName} ({currentHealthRatio * 100:F0}%)");
+
+            foreach (var rend in renderers)
+            {
+                if (rend.material.HasProperty("_Color"))
+                {
+                    rend.material.color = newState.Value.stateColor;
+                    originalColor = newState.Value.stateColor;
+                }
+            }
+        }
+    }
+
+    #endregion
+
+    #region EFFECTS / COROUTINES
 
     private IEnumerator HitCooldown()
     {
@@ -130,6 +229,8 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
 
     private IEnumerator FlashColor()
     {
+        Color flashBaseColor = originalColor;
+
         foreach (var rend in renderers)
         {
             if (rend.material.HasProperty("_Color"))
@@ -144,30 +245,15 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
         {
             if (rend.material.HasProperty("_Color"))
             {
-                rend.material.color = originalColor;
+                rend.material.color = flashBaseColor;
             }
         }
         colorChangeCoroutine = null;
     }
 
-    private IEnumerator ExecuteFirstHitDialogueFlow()
-    {
-        if (DialogManager.Instance == null)
-        {
-            Debug.LogError("DialogManager no está en la escena.");
-            yield break;
-        }
+    #endregion
 
-        if (FirstHitDialog != null && FirstHitDialog.Length > 0)
-        {
-            DialogManager.Instance.StartDialog(FirstHitDialog);
-
-            while (DialogManager.Instance.IsActive)
-            {
-                yield return null;
-            }
-        }
-    }
+    #region DEATH FLOW
 
     private void Die()
     {
@@ -242,4 +328,25 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
 
         gameObject.SetActive(false);
     }
+
+    private IEnumerator ExecuteFirstHitDialogueFlow()
+    {
+        if (DialogManager.Instance == null)
+        {
+            Debug.LogError("DialogManager no está en la escena.");
+            yield break;
+        }
+
+        if (FirstHitDialog != null && FirstHitDialog.Length > 0)
+        {
+            DialogManager.Instance.StartDialog(FirstHitDialog);
+
+            while (DialogManager.Instance.IsActive)
+            {
+                yield return null;
+            }
+        }
+    }
+
+    #endregion
 }
