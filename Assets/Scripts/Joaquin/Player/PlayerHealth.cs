@@ -150,7 +150,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private void Start()
     {
         bool isTutoScene = SceneManager.GetActiveScene().name == "Tuto";
-        if (isTutoScene && statsManager != null)
+        bool isTutoSceneComplete = SceneManager.GetActiveScene().name == "TutorialCompleto";
+        if ((isTutoScene || isTutoSceneComplete) && statsManager != null)
         {
             statsManager.ResetRunStatsToDefaults();
 

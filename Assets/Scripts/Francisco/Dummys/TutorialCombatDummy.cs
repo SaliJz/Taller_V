@@ -27,21 +27,25 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
 
     public float CurrentHealth => currentHealth;
     public float MaxHealth => maxHealth;
+    public DummyLogicType DummyLogic => dummyLogic;
 
     [Header("Vulnerability")]
     [SerializeField] private DamageType requiredDamageType = DamageType.Melee;
 
     #endregion
 
-    #region HIT COUNT LOGIC 
+    #region HIT COUNT LOGIC  
 
     [Header("Hit Count Logic")]
     [SerializeField] private int requiredHits = 3;
     private int currentHits = 0;
 
+    public int CurrentHits => currentHits;
+    public int RequiredHits => requiredHits;
+
     #endregion
 
-    #region HEALTH STATE LOGIC 
+    #region HEALTH STATE LOGIC  
 
     [Header("Health State Logic")]
     [SerializeField] private HealthStateColor[] healthStates;
@@ -78,6 +82,28 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
 
     #endregion
 
+    #region UI & ANIMATION
+
+    [Header("UI & Animation")]
+    [SerializeField] private Animator dummyAnimator;
+    [SerializeField] private string hitTriggerName = "OnHit";
+    [SerializeField] private GameObject dummyUIObject;
+    private ICombatDummyUI dummyUI;
+
+    #endregion
+
+    #region ROTATION LOGIC
+
+    [Header("Rotation Logic")]
+    [SerializeField] private Transform transformToRotate;
+    [SerializeField] private float rotationSpeed = 10f;
+    [SerializeField] private float rotationYOffset = 0f;
+    private Coroutine rotationCoroutine;
+    private Transform playerTransform;
+    private Quaternion initialRotation;
+
+    #endregion
+
     #region EVENTS
 
     [Header("Events")]
@@ -90,13 +116,49 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
 
     private void Awake()
     {
-        currentHealth = maxHealth;
+        if (dummyLogic == DummyLogicType.RequiredHitCount)
+        {
+            maxHealth = requiredHits;
+            currentHealth = requiredHits;
+        }
+        else
+        {
+            currentHealth = maxHealth;
+        }
+
         colliders = GetComponents<Collider>().Where(c => c.enabled).ToArray();
         renderers = GetComponentsInChildren<Renderer>().Where(r => r.enabled).ToArray();
 
         if (audioSource == null)
         {
             audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
+        }
+
+        if (dummyUIObject != null)
+        {
+            dummyUI = dummyUIObject.GetComponent<ICombatDummyUI>();
+        }
+        if (dummyUI == null)
+        {
+            dummyUI = GetComponent<ICombatDummyUI>();
+        }
+
+        if (dummyAnimator == null)
+        {
+            dummyAnimator = GetComponent<Animator>();
+        }
+
+        if (transformToRotate == null)
+        {
+            transformToRotate = transform.parent != null ? transform.parent : transform;
+        }
+
+        initialRotation = transformToRotate.rotation;
+
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+        {
+            playerTransform = playerObj.transform;
         }
 
         if (renderers.Length > 0 && renderers[0].material != null)
@@ -107,6 +169,8 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
                 CheckHealthState(true);
             }
         }
+
+        UpdateUI(true);
     }
 
     #endregion
@@ -115,10 +179,15 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
 
     public void TakeDamage(float damageAmount, bool isCritical = false)
     {
-        TakeDamage(damageAmount, isCritical, DamageType.Melee);
+        TakeDamage(damageAmount, isCritical, DamageType.Melee, transform.position + transform.forward);
     }
 
     public void TakeDamage(float damageAmount, bool isCritical, DamageType type)
+    {
+        TakeDamage(damageAmount, isCritical, type, transform.position + transform.forward);
+    }
+
+    public void TakeDamage(float damageAmount, bool isCritical, DamageType type, Vector3 attackSourcePosition)
     {
         if (isDefeated || !canBeHit) return;
 
@@ -128,10 +197,21 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
             return;
         }
 
+        if (dummyAnimator != null)
+        {
+            dummyAnimator.SetTrigger(hitTriggerName);
+        }
+
         StartCoroutine(HitCooldown());
 
         if (colorChangeCoroutine != null) StopCoroutine(colorChangeCoroutine);
         colorChangeCoroutine = StartCoroutine(FlashColor());
+
+        if (playerTransform != null)
+        {
+            if (rotationCoroutine != null) StopCoroutine(rotationCoroutine);
+            rotationCoroutine = StartCoroutine(RotateTowardsPlayer());
+        }
 
         if (isFirstHit)
         {
@@ -158,11 +238,15 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
     private void HandleHitCount(DamageType type)
     {
         currentHits++;
-        Debug.Log($"Dummy de Contador golpeado! Tipo: {type}. Hits: {currentHits}/{requiredHits}.", this);
+        currentHealth--;
+        currentHealth = Mathf.Max(0, currentHealth);
 
-        if (currentHits >= requiredHits)
+        Debug.Log($"Dummy de Contador golpeado! Tipo: {type}. Hits: {currentHits}/{requiredHits}. Vida: {currentHealth}/{maxHealth}", this);
+
+        UpdateUI();
+
+        if (currentHealth <= 0)
         {
-            currentHealth = 0;
             Die();
         }
     }
@@ -177,6 +261,8 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
         Debug.Log($"[HEALTH STATE] Daño: {damageAmount:F2} | Vida Anterior: {healthBefore:F2} | Vida Actual: {currentHealth:F2}", this);
 
         CheckHealthState();
+
+        UpdateUI();
 
         if (currentHealth <= 0)
         {
@@ -213,12 +299,53 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
                     originalColor = newState.Value.stateColor;
                 }
             }
+
+            UpdateUI();
         }
+    }
+
+    private void UpdateUI(bool initialSetup = false)
+    {
+        if (dummyUI == null) return;
+
+        float healthRatio = currentHealth / maxHealth;
+        Color? stateColor = dummyLogic == DummyLogicType.HealthState ? currentState?.stateColor : null;
+        dummyUI.UpdateHealthBar(healthRatio, stateColor);
     }
 
     #endregion
 
     #region EFFECTS / COROUTINES
+
+    private IEnumerator RotateTowardsPlayer()
+    {
+        if (transformToRotate == null || playerTransform == null) yield break;
+
+        Vector3 direction = (playerTransform.position - transformToRotate.position).normalized;
+        direction.y = 0;
+
+        if (direction == Vector3.zero) yield break;
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        targetRotation *= Quaternion.Euler(0, rotationYOffset, 0);
+
+        float elapsedTime = 0f;
+        float maxRotationTime = 2f;
+
+        while (Quaternion.Angle(transformToRotate.rotation, targetRotation) > 0.1f && elapsedTime < maxRotationTime)
+        {
+            transformToRotate.rotation = Quaternion.Slerp(
+                transformToRotate.rotation,
+                targetRotation,
+                Time.deltaTime * rotationSpeed
+            );
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        transformToRotate.rotation = targetRotation;
+        rotationCoroutine = null;
+    }
 
     private IEnumerator HitCooldown()
     {
@@ -263,6 +390,11 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
         StopAllCoroutines();
         DisableDummyVisualsAndPhysics();
 
+        if (dummyUI != null)
+        {
+            dummyUI.SetUIActive(dummyLogic, false);
+        }
+
         StartCoroutine(ExecuteDeathDialogueFlowWithDelay());
     }
 
@@ -302,11 +434,7 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
         if (DeathDialog != null && DeathDialog.Length > 0)
         {
             DialogManager.Instance.StartDialog(DeathDialog);
-
-            while (DialogManager.Instance.IsActive)
-            {
-                yield return null;
-            }
+            while (DialogManager.Instance.IsActive) { yield return null; }
         }
 
         if (audioSource != null && infernalSound != null)
@@ -317,11 +445,7 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
         if (DefeatedSequenceDialog != null && DefeatedSequenceDialog.Length > 0)
         {
             DialogManager.Instance.StartDialog(DefeatedSequenceDialog);
-
-            while (DialogManager.Instance.IsActive)
-            {
-                yield return null;
-            }
+            while (DialogManager.Instance.IsActive) { yield return null; }
         }
 
         OnDummyDefeated?.Invoke();
@@ -340,11 +464,7 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
         if (FirstHitDialog != null && FirstHitDialog.Length > 0)
         {
             DialogManager.Instance.StartDialog(FirstHitDialog);
-
-            while (DialogManager.Instance.IsActive)
-            {
-                yield return null;
-            }
+            while (DialogManager.Instance.IsActive) { yield return null; }
         }
     }
 
