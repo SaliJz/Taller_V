@@ -4,25 +4,25 @@ using TMPro;
 
 public class DummyTarget : MonoBehaviour, IDamageable
 {
-    #region IDAMAGEABLE IMPLEMENTATION
-    public virtual float CurrentHealth { get { return 100f; } }
+    #region IDAMAGEABLE IMPLEMENTATION
+    public virtual float CurrentHealth { get { return 100f; } }
     public virtual float MaxHealth { get { return 100f; } }
-    #endregion
+    #endregion
 
-    #region REFERENCES AND CONFIGURATION
-    protected Renderer dummyRenderer;
+    #region REFERENCES AND CONFIGURATION
+    protected Renderer dummyRenderer;
     protected Color baseColor;
     protected Coroutine colorChangeCoroutine;
 
     [Header("Dialogue Configuration")]
     public string[] dialogueLines;
-    protected int dialogueIndex = 0;  
+    protected int dialogueIndex = 0;
 
-    [Header("Invulnerability Settings")]
+    [Header("Invulnerability Settings")]
     public float invulnerabilityDuration = 0.5f;
-    protected bool canBeHit = true;  
+    protected bool canBeHit = true;
 
-    [Header("Visual Effects Settings")]
+    [Header("Visual Effects Settings")]
     public Color hitColor = Color.red;
     public float hitColorDuration = 0.2f;
 
@@ -31,18 +31,30 @@ public class DummyTarget : MonoBehaviour, IDamageable
     public TextMeshProUGUI logText;
     public float logPanelDisplayTime = 4f;
 
-    protected Coroutine panelToggleCoroutine; 
+    protected Coroutine panelToggleCoroutine;
 
-    #endregion
+    [Header("Animation")]
+    [SerializeField] protected Animator dummyAnimator;
+    [SerializeField] protected string hitTriggerName = "OnHit";
 
-    #region INITIALIZATION
-    protected virtual void Awake()
+    [Header("Rotation Logic")]
+    [SerializeField] protected Transform transformToRotate;
+    [SerializeField] protected float rotationSpeed = 10f;
+    [SerializeField] protected float rotationYOffset = 0f;
+    protected Coroutine rotationCoroutine;
+    protected Transform playerTransform;
+    protected Quaternion initialRotation;
+
+    #endregion
+
+    #region INITIALIZATION
+    protected virtual void Awake()
     {
         dummyRenderer = GetComponent<Renderer>();
 
         if (dummyRenderer != null)
         {
-            baseColor = dummyRenderer.material.GetColor("_Color");
+            baseColor = dummyRenderer.material.GetColor("_Color");
         }
         else
         {
@@ -50,12 +62,30 @@ public class DummyTarget : MonoBehaviour, IDamageable
         }
 
         if (logPanel != null) logPanel.SetActive(false);
+
+        if (dummyAnimator == null)
+        {
+            dummyAnimator = GetComponent<Animator>();
+        }
+
+        if (transformToRotate == null)
+        {
+            transformToRotate = transform.parent != null ? transform.parent : transform;
+        }
+
+        initialRotation = transformToRotate.rotation;
+
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+        {
+            playerTransform = playerObj.transform;
+        }
     }
-    #endregion
+    #endregion
 
 
-    #region CORE FUNCTIONALITY
-    public virtual void TakeDamage(float damageAmount, bool isCritical = false)
+    #region CORE FUNCTIONALITY
+    public virtual void TakeDamage(float damageAmount, bool isCritical = false)
     {
         if (!canBeHit)
         {
@@ -65,24 +95,35 @@ public class DummyTarget : MonoBehaviour, IDamageable
         canBeHit = false;
         StartCoroutine(HitCooldown());
 
+        if (dummyAnimator != null)
+        {
+            dummyAnimator.SetTrigger(hitTriggerName);
+        }
+
         if (colorChangeCoroutine != null)
         {
             StopCoroutine(colorChangeCoroutine);
         }
         colorChangeCoroutine = StartCoroutine(FlashColor());
 
+        if (playerTransform != null)
+        {
+            if (rotationCoroutine != null) StopCoroutine(rotationCoroutine);
+            rotationCoroutine = StartCoroutine(RotateTowardsPlayer());
+        }
+
         ShowNextLineCyclic();
 
         Debug.Log($"Maniquí golpeado. Daño: {damageAmount} (Crítico: {isCritical}). Nueva línea de diálogo.");
     }
 
-    protected IEnumerator HitCooldown()
+    protected IEnumerator HitCooldown()
     {
         yield return new WaitForSeconds(invulnerabilityDuration);
         canBeHit = true;
     }
 
-    public void ShowNextLineCyclic()
+    public void ShowNextLineCyclic()
     {
         if (dialogueLines == null || dialogueLines.Length == 0)
         {
@@ -100,7 +141,7 @@ public class DummyTarget : MonoBehaviour, IDamageable
         ShowCurrentLine();
     }
 
-    protected void ShowCurrentLine()
+    protected void ShowCurrentLine()
     {
         UpdateLogUI();
 
@@ -136,6 +177,38 @@ public class DummyTarget : MonoBehaviour, IDamageable
         }
     }
 
+    #endregion
+
+    #region ROTATION
+    protected IEnumerator RotateTowardsPlayer()
+    {
+        if (transformToRotate == null || playerTransform == null) yield break;
+
+        Vector3 direction = (playerTransform.position - transformToRotate.position).normalized;
+        direction.y = 0;
+
+        if (direction == Vector3.zero) yield break;
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        targetRotation *= Quaternion.Euler(0, rotationYOffset, 0);
+
+        float elapsedTime = 0f;
+        float maxRotationTime = 2f;
+
+        while (Quaternion.Angle(transformToRotate.rotation, targetRotation) > 0.1f && elapsedTime < maxRotationTime)
+        {
+            transformToRotate.rotation = Quaternion.Slerp(
+                transformToRotate.rotation,
+                targetRotation,
+                Time.deltaTime * rotationSpeed
+            );
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        transformToRotate.rotation = targetRotation;
+        rotationCoroutine = null;
+    }
     #endregion
 
     #region VISUAL EFFECTS

@@ -49,6 +49,8 @@ public class EnemyKnockbackHandler : MonoBehaviour
 
     private IEnumerator KnockbackRoutine(Vector3 direction, float force, float duration)
     {
+        float originalYPosition = transform.position.y;
+
         if (agent != null && agent.enabled && agent.isOnNavMesh)
         {
             agent.isStopped = true;
@@ -81,8 +83,10 @@ public class EnemyKnockbackHandler : MonoBehaviour
             NavMeshHit hit;
             if (NavMesh.SamplePosition(validatedTarget, out hit, navMeshSampleDistance, NavMesh.AllAreas))
             {
-                transform.position = hit.position;
-                agent.Warp(hit.position);
+                Vector3 finalWarpPosition = hit.position;
+                finalWarpPosition.y = originalYPosition;
+
+                agent.Warp(finalWarpPosition);
                 agent.enabled = true;
                 if (agent.isOnNavMesh)
                 {
