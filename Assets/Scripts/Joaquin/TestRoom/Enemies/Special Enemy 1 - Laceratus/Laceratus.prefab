@@ -111,7 +111,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1530389385868224238}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 5.2}
+  m_LocalPosition: {x: 0, y: 0, z: 5}
   m_LocalScale: {x: 1, y: 2.138, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -121,7 +121,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 15}
   m_SizeDelta: {x: 160, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &4218839783896417927
@@ -209,8 +209,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.25}
   m_AnchorMax: {x: 1, y: 0.75}
-  m_AnchoredPosition: {x: -4.5, y: 0}
-  m_SizeDelta: {x: -9.01, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &135097530110949869
 CanvasRenderer:
@@ -361,7 +361,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3638365919191981060}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 5.9}
+  m_LocalPosition: {x: 0, y: 0, z: 5}
   m_LocalScale: {x: 1, y: 2.138, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -440,6 +440,7 @@ GameObject:
   - component: {fileID: 1681326126645923109}
   - component: {fileID: 599553113384920727}
   - component: {fileID: 8505107474849817774}
+  - component: {fileID: 254221231430808994}
   m_Layer: 7
   m_Name: Laceratus
   m_TagString: Enemy
@@ -562,11 +563,15 @@ MonoBehaviour:
   normalSpeed: 3
   patrolDirectionChangeInterval: 4
   patrolDirectionChangeAngle: 30
+  stuckCheckInterval: 2
+  stuckDistanceThreshold: 0.1
   furySpeedMultiplier: 2
+  furyLevel2SpeedBonus: 0.3
   furyJumpDistance: 2
   furyJumpReducedDistance: 1
   furyJumpDelay: 2
   furyJumpCancelDistance: 0.5
+  furyJumpDuration: 0.5
   normalAttackDamage: 5
   normalAttackInterval: 1.5
   normalAttackRange: 1
@@ -576,9 +581,11 @@ MonoBehaviour:
   furyAttackInterval: 0.75
   furyAttackRange: 2
   furyDecayTime: 3
+  furyDecayNoDamageTime: 5
   furyRegenerationPerSecond: 1
   consecutiveHitPushDistance: 1
   screamTransitionDuration: 1.2
+  maxFuryLevel: 2
   normalStateMaterial: {fileID: 2100000, guid: 061b2b1e941f8c343a4fd3ba253cfee1, type: 2}
   furyStateMaterial: {fileID: 2100000, guid: 72e7627b0b463eb45937485228651f9b, type: 2}
   enemyRenderer: {fileID: 6688316861714612785}
@@ -589,6 +596,7 @@ MonoBehaviour:
   normalAttackAnimationTrigger: NormalAttack
   furyAttackAnimationTrigger: FuryAttack
   furyStateAnimationBool: IsFury
+  screamAnimationTrigger: Scream
   screamClip: {fileID: 0}
   normalAttackClip: {fileID: 0}
   furyAttackClip: {fileID: 0}
@@ -613,6 +621,8 @@ MonoBehaviour:
   offsetAboveEnemy: 2
   glowDelayAfterCritical: 2
   canGrantLifestealOnDeath: 1
+  toughnessSystem: {fileID: 254221231430808994}
+  toughnessUIGroup: {fileID: 1530389385868224238}
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -646,6 +656,37 @@ NavMeshAgent:
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &254221231430808994
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3776010021068202972}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 857663678c6b68a4ab60f54f457c56a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useToughness: 1
+  maxToughness: 100
+  currentToughness: 0
+  meleeToughnessDamageMultiplier: 1
+  rangedToughnessDamageMultiplier: 0.25
+  useDynamicBars: 1
+  healthPerBar: 100
+  toughnessPerBar: 100
+  healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
+  toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
+  colorGradientIntensity: 0.3
+  healthSlider: {fileID: 3006783617058989963}
+  healthFillImage: {fileID: 2278878055756484434}
+  toughnessSlider: {fileID: 4218839783896417927}
+  toughnessFillImage: {fileID: 6978723454904073146}
+  healthPercentageText: {fileID: 0}
+  healthMultiplierText: {fileID: 0}
+  toughnessMultiplierText: {fileID: 0}
+  toughnessUIGroup: {fileID: 1530389385868224238}
 --- !u!1 &4677526121780079402
 GameObject:
   m_ObjectHideFlags: 0
@@ -680,8 +721,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.25}
   m_AnchorMax: {x: 1, y: 0.75}
-  m_AnchoredPosition: {x: -4.5, y: 0}
-  m_SizeDelta: {x: -9.01, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6657046092413088315
 CanvasRenderer:
@@ -756,7 +797,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 10, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3650867430496353042
 CanvasRenderer:
@@ -831,7 +872,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 10, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6192621285998184410
 CanvasRenderer:
@@ -1007,8 +1048,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.25}
   m_AnchorMax: {x: 1, y: 0.75}
-  m_AnchoredPosition: {x: -5, y: 0}
-  m_SizeDelta: {x: -20, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &8132594032837959172
 GameObject:
@@ -1129,6 +1170,6 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.25}
   m_AnchorMax: {x: 1, y: 0.75}
-  m_AnchoredPosition: {x: -5, y: 0}
-  m_SizeDelta: {x: -20, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}

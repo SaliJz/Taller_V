@@ -33,7 +33,7 @@ RectTransform:
   m_Father: {fileID: 1117429659212573673}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -86,12 +86,12 @@ GameObject:
   - component: {fileID: 1420849875973853725}
   - component: {fileID: 6453633825222193822}
   m_Layer: 7
-  m_Name: rigidityBar
+  m_Name: ToughnessBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1420849875973853725
 RectTransform:
   m_ObjectHideFlags: 0
@@ -110,7 +110,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 15}
   m_SizeDelta: {x: 160, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &6453633825222193822
@@ -729,7 +729,7 @@ Transform:
   m_GameObject: {fileID: 3134513528432194860}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1418,7 +1418,7 @@ Transform:
   m_GameObject: {fileID: 5299067369385311335}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1586,7 +1586,7 @@ Transform:
   m_GameObject: {fileID: 5553757608371065050}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2020,7 +2020,7 @@ Transform:
   m_GameObject: {fileID: 7002619008141280259}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0.5}
+  m_LocalPosition: {x: 0, y: 1, z: 0.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2150,6 +2150,7 @@ GameObject:
   - component: {fileID: 6113203021159324906}
   - component: {fileID: 5355768341301424616}
   - component: {fileID: 69844080327497481}
+  - component: {fileID: 6741422194599992414}
   m_Layer: 7
   m_Name: Enemy2_Morlock
   m_TagString: Enemy
@@ -2198,7 +2199,7 @@ CapsuleCollider:
   m_Radius: 0.5
   m_Height: 2
   m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!195 &7381641209963904684
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -2218,7 +2219,7 @@ NavMeshAgent:
   m_AutoBraking: 1
   m_AutoRepath: 1
   m_Height: 2
-  m_BaseOffset: 1
+  m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
 --- !u!114 &8710548483889858685
@@ -2265,6 +2266,8 @@ MonoBehaviour:
   offsetAboveEnemy: 2
   glowDelayAfterCritical: 2
   canGrantLifestealOnDeath: 1
+  toughnessSystem: {fileID: 6741422194599992414}
+  toughnessUIGroup: {fileID: 346395223962187778}
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -2389,6 +2392,37 @@ MonoBehaviour:
   collisionLayers:
     serializedVersion: 2
     m_Bits: 640
+--- !u!114 &6741422194599992414
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7967318150890097738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 857663678c6b68a4ab60f54f457c56a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useToughness: 1
+  maxToughness: 50
+  currentToughness: 0
+  meleeToughnessDamageMultiplier: 1
+  rangedToughnessDamageMultiplier: 0.25
+  useDynamicBars: 1
+  healthPerBar: 30
+  toughnessPerBar: 50
+  healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
+  toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
+  colorGradientIntensity: 0.3
+  healthSlider: {fileID: 7789715516251961850}
+  healthFillImage: {fileID: 7893166915883177190}
+  toughnessSlider: {fileID: 6453633825222193822}
+  toughnessFillImage: {fileID: 8340157460736430896}
+  healthPercentageText: {fileID: 0}
+  healthMultiplierText: {fileID: 0}
+  toughnessMultiplierText: {fileID: 0}
+  toughnessUIGroup: {fileID: 346395223962187778}
 --- !u!1 &8158688492970012218
 GameObject:
   m_ObjectHideFlags: 0
