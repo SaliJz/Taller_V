@@ -4,12 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// EnemyHealth: conserva todo lo anterior y añade:
-/// - ApplyDamageReduction(percent, duration) para reducción local.
-/// - Monitor de vida que al caer <= areaTriggerPercent activa armadura de área (aplica reducción a sí mismo y aliados cercanos).
-/// - ForceActivateArea() para pruebas.
-/// - Delegación de todo el feedback visual a EnemyVisualEffects (pero sin lógica de parpadeo aquí).
-/// - Cambios mínimos en API para mantener compatibilidad.
+/// Clase que gestiona la salud de un enemigo,
 /// </summary>
 public class EnemyHealth : MonoBehaviour, IDamageable
 {
@@ -27,6 +22,9 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     [Header("Lifesteal Control")]
     [SerializeField] private bool canGrantLifestealOnDeath = true;
+
+    [Header("Toughness System")]
+    [SerializeField] private EnemyToughness toughnessSystem;
 
     private EnemyKnockbackHandler knockbackHandler;
     private PlayerStatsManager playerStatsManager;
@@ -125,6 +123,12 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         if (enemyVisualEffects == null)
         {
             ReportDebug("Componente EnemyVisualEffects no encontrado en el enemigo.", 2);
+        }
+
+        toughnessSystem = GetComponent<EnemyToughness>();
+        if (toughnessSystem != null)
+        {
+            ReportDebug("Sistema de dureza detectado.", 1);
         }
 
         enemyRenderer = GetComponentInChildren<Renderer>();

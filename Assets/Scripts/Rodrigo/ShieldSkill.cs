@@ -69,6 +69,9 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
     private bool wasHealthTooLow = false;
     private bool lastVFXState = false;
     private bool isVFXExternallyPaused = false;
+
+    private Coroutine safeDeactivateCoroutine;
+
     #endregion
 
     #region Unity Lifecycle
@@ -399,6 +402,8 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
             if (!skillVFX.isPlaying)
             {
+                var emission = skillVFX.emission;
+                emission.enabled = true;
                 skillVFX.Play(true);
             }
         }
@@ -411,21 +416,89 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
     /// </summary>
     private void DeactivateVFX()
     {
-        if (vfxContainer == null) return;
-
         isVFXExternallyPaused = false;
 
-        if (skillVFX != null && skillVFX.isPlaying)
+        if (this.isActiveAndEnabled && gameObject.activeInHierarchy)
         {
-            skillVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            if (safeDeactivateCoroutine != null)
+            {
+                StopCoroutine(safeDeactivateCoroutine);
+                safeDeactivateCoroutine = null;
+            }
+            safeDeactivateCoroutine = StartCoroutine(SafeDeactivateVFXCoroutine());
+            return;
         }
+
+        SafeDeactivateVFXImmediate();
+    }
+
+    private IEnumerator SafeDeactivateVFXCoroutine()
+    {
+        if (skillVFX != null)
+        {
+            try
+            {
+                // Detener y limpiar de forma explícita
+                if (skillVFX.isPlaying)
+                {
+                    skillVFX.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+                }
+
+                skillVFX.Clear();
+
+                // Desactivar la emisión para evitar que vuelva a generar
+                var emission = skillVFX.emission;
+                emission.enabled = false;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning("[ShieldSkill] Excepción al limpiar VFX: " + ex);
+            }
+        }
+
+        // Espera un frame para que Unity termine de procesar internals del ParticleSystem
+        yield return null;
 
         if (vfxContainer != null)
         {
             vfxContainer.SetActive(false);
         }
 
-        Debug.Log("[ShieldSkill] VFX desactivado");
+        safeDeactivateCoroutine = null;
+    }
+
+    private void SafeDeactivateVFXImmediate()
+    {
+        if (safeDeactivateCoroutine != null)
+        {
+            // Si por alguna razón hay una coroutine en marcha, intenta pararla.
+            safeDeactivateCoroutine = null;
+        }
+
+        try
+        {
+            if (skillVFX != null)
+            {
+                if (skillVFX.isPlaying)
+                {
+                    skillVFX.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+                }
+
+                skillVFX.Clear();
+
+                var emission = skillVFX.emission;
+                emission.enabled = false;
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning("[ShieldSkill] Excepción al limpiar VFX (inmediato): " + ex);
+        }
+
+        if (vfxContainer != null)
+        {
+            vfxContainer.SetActive(false);
+        }
     }
 
     /// <summary>

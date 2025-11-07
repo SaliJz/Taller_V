@@ -23,13 +23,24 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     [SerializeField] private PlayerMeleeAttack meleeAttack;
     [SerializeField] private PlayerShieldController shieldController;
     [SerializeField] private PlayerMovement playerMovement;
+    [SerializeField] private ShieldSkill shieldSkill;
 
     [SerializeField] private float inputBufferWindow = 0.12f; // Ventana de tiempo para bufferizar inputs
+
+    [Header("Feedback Visual")]
+    [SerializeField] private bool enableVisualFeedback = true;
+    [SerializeField] private GameObject skillRequiredWarningPrefab;
+    [SerializeField] private float warningOffsetY = 2.0f;
+    [SerializeField] private float warningDuration = 1.5f;
+    [SerializeField] private Color warningColor = Color.yellow;
+    [SerializeField] private string meleeBlockedMessage = "¡Activa la habilidad especial!";
+    [SerializeField] private string rangedBlockedMessage = "¡Desactiva la habilidad especial!";
 
     private bool isExecutingAction = false;
     private CombatActionType currentAction = CombatActionType.None;
     private CombatActionType queuedAction = CombatActionType.None;
     private float queuedActionTimestamp = -Mathf.Infinity;
+    private GameObject currentWarning;
 
     public bool IsExecutingAction => isExecutingAction;
     public CombatActionType CurrentAction => currentAction;
@@ -37,16 +48,17 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     private void Awake()
     {
         playerControls = new PlayerControlls();
-        
         playerControls.Combat.SetCallbacks(this);
 
         meleeAttack = GetComponent<PlayerMeleeAttack>();
         shieldController = GetComponent<PlayerShieldController>();
         playerMovement = GetComponent<PlayerMovement>();
+        shieldSkill = GetComponent<ShieldSkill>();
 
         if (meleeAttack == null) ReportDebug("PlayerMeleeAttack no encontrado.", 3);
         if (shieldController == null) ReportDebug("PlayerShieldController no encontrado.", 3);
         if (playerMovement == null) ReportDebug("PlayerMovement no encontrado.", 3);
+        if (shieldSkill == null) ReportDebug("ShieldSkill no encontrado. El control de combate no funcionará correctamente.", 3);
     }
 
     private void OnEnable()
@@ -59,12 +71,87 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
         playerControls.Combat.Disable();
     }
 
-    /// <summary>
-    /// Procesa los inputs de combate cuando no hay acciones activas.
-    /// </summary>
+    private void OnDestroy()
+    {
+        Destroy(currentWarning);
+    }
+
+    #region Input Handlers
+
+    public void OnMelee(InputAction.CallbackContext context)
+    {
+        if (!context.started) return;
+
+        if (shieldSkill == null)
+        {
+            ReportDebug("ShieldSkill no asignado. No se puede determinar modo de combate.", 3);
+            return;
+        }
+
+        // Determinar qué ataque ejecutar según el estado de la habilidad
+        if (shieldSkill.isSkillActive)
+        {
+            // Habilidad activa: Permitir melee
+            ProcessCombatInput(CombatActionType.MeleeAttack);
+        }
+        else
+        {
+            // Habilidad inactiva: Bloquear melee y mostrar advertencia
+            ShowSkillRequiredWarning(meleeBlockedMessage);
+            ReportDebug("Ataque melee bloqueado: habilidad especial no está activa.", 1);
+        }
+    }
+
+    public void OnShieldThrow(InputAction.CallbackContext context)
+    {
+        if (!context.started) return;
+
+        if (shieldSkill == null)
+        {
+            ReportDebug("ShieldSkill no asignado. No se puede determinar modo de combate.", 3);
+            return;
+        }
+
+        // Determinar si se puede lanzar el escudo según el estado de la habilidad
+        if (!shieldSkill.isSkillActive)
+        {
+            // Habilidad inactiva: Permitir lanzamiento de escudo
+            ProcessCombatInput(CombatActionType.ShieldThrow);
+        }
+        else
+        {
+            // Habilidad activa: Bloquear lanzamiento y mostrar advertencia
+            ShowSkillRequiredWarning(rangedBlockedMessage);
+            ReportDebug("Lanzamiento de escudo bloqueado: habilidad especial está activa.", 1);
+        }
+    }
+
+    public void OnDash(InputAction.CallbackContext context)
+    {
+        if (!context.started) return;
+
+        ProcessCombatInput(CombatActionType.Dash);
+    }
+
+    #endregion
+
+    #region Combat Processing
+
+    private void ProcessCombatInput(CombatActionType actionType)
+    {
+        if (isExecutingAction)
+        {
+            TryQueueAction(actionType);
+        }
+        else
+        {
+            ExecuteActionImmediately(actionType);
+        }
+    }
+
     /// <summary>
     /// Intenta encolar una acción si ya hay una en ejecución.
-    /// Solo guarda la PRIMERA acción solicitada durante la ejecución actual.
+    /// Solo guarda la primera acción solicitada durante la ejecución actual.
     /// </summary>
     private void TryQueueAction(CombatActionType actionType)
     {
@@ -99,39 +186,6 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
         return true;
     }
 
-    public void OnMelee(InputAction.CallbackContext context)
-    {
-        if (!context.started) return;
-
-        ProcessCombatInput(CombatActionType.MeleeAttack);
-    }
-
-    public void OnShieldThrow(InputAction.CallbackContext context)
-    {
-        if (!context.started) return;
-
-        ProcessCombatInput(CombatActionType.ShieldThrow);
-    }
-
-    public void OnDash(InputAction.CallbackContext context)
-    {
-        if (!context.started) return;
-
-        ProcessCombatInput(CombatActionType.Dash);
-    }
-
-    private void ProcessCombatInput(CombatActionType actionType)
-    {
-        if (isExecutingAction)
-        {
-            TryQueueAction(actionType);
-        }
-        else
-        {
-            ExecuteActionImmediately(actionType);
-        }
-    }
-
     private void ExecuteActionImmediately(CombatActionType actionType)
     {
         switch (actionType)
@@ -151,10 +205,18 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
         }
     }
 
+    #endregion
+
     #region Execution Routines
 
     private void TryExecuteMeleeAttack()
     {
+        if (shieldSkill != null && !shieldSkill.isSkillActive)
+        {
+            ReportDebug("Intento de ejecutar melee sin habilidad activa. Bloqueado.", 2);
+            return;
+        }
+
         if (meleeAttack != null && meleeAttack.CanAttack())
         {
             StartCoroutine(ExecuteActionRoutine(CombatActionType.MeleeAttack, meleeAttack.ExecuteAttackFromManager()));
@@ -163,6 +225,12 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     private void TryExecuteShieldThrow()
     {
+        if (shieldSkill != null && shieldSkill.isSkillActive)
+        {
+            ReportDebug("Intento de lanzar escudo con habilidad activa. Bloqueado.", 2);
+            return;
+        }
+
         if (shieldController != null && shieldController.HasShield)
         {
             if (CanQueueShieldThrow())
@@ -195,17 +263,24 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     private bool CanQueueMeleeAttack()
     {
         if (meleeAttack == null) return false;
+        
+        if (shieldSkill != null && !shieldSkill.isSkillActive) return false;
+        
         if (currentAction == CombatActionType.MeleeAttack && meleeAttack.ComboCount == 2)
         {
             ReportDebug("No se puede bufferizar melee: tercer ataque del combo en ejecución.", 1);
             return false;
         }
+
         if (shieldController != null) return shieldController.HasShield;
+        
         return true;
     }
 
     private bool CanQueueShieldThrow()
     {
+        if (shieldSkill != null && shieldSkill.isSkillActive) return false;
+
         return shieldController != null && shieldController.CanThrowShield();
     }
 
@@ -213,7 +288,6 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     {
         return playerMovement != null && !playerMovement.IsDashing && !playerMovement.IsDashDisabled && playerMovement.DashCooldownTimer <= 0;
     }
-
 
     #endregion
 
@@ -251,6 +325,49 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
             case CombatActionType.Dash:
                 TryExecuteDash();
                 break;
+        }
+    }
+
+    #endregion
+
+    #region Visual Feedback
+
+    private void ShowSkillRequiredWarning(string message)
+    {
+        if (!enableVisualFeedback) return;
+        if (skillRequiredWarningPrefab == null) return;
+
+        // Destruir advertencia anterior si existe
+        if (currentWarning != null)
+        {
+            Destroy(currentWarning);
+        }
+
+        // Crear nueva advertencia
+        Vector3 spawnPosition = transform.position + Vector3.up * warningOffsetY;
+        currentWarning = Instantiate(skillRequiredWarningPrefab, spawnPosition, Quaternion.identity);
+
+        // Configurar mensaje
+        WarningMessageFloater floater = currentWarning.GetComponent<WarningMessageFloater>();
+        if (floater != null)
+        {
+            floater.SetLifetime(warningDuration);
+            floater.SetColor(warningColor);
+            floater.SetText(message);
+        }
+
+        // Destruir después de duración
+        StartCoroutine(DestroyWarningAfterDelay());
+    }
+
+    private IEnumerator DestroyWarningAfterDelay()
+    {
+        yield return new WaitForSeconds(warningDuration);
+
+        if (currentWarning != null)
+        {
+            Destroy(currentWarning);
+            currentWarning = null;
         }
     }
 

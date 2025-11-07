@@ -7226,7 +7226,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!114 &6101376846851428104
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12601,7 +12601,15 @@ MonoBehaviour:
   meleeAttack: {fileID: 9211243997880812482}
   shieldController: {fileID: 3158206734398763717}
   playerMovement: {fileID: 595312439969399503}
+  shieldSkill: {fileID: 8984845218185550205}
   inputBufferWindow: 1
+  enableVisualFeedback: 0
+  skillRequiredWarningPrefab: {fileID: 4527440678079064410, guid: 4c049e7f575a8d24c9eaa25634824a0d, type: 3}
+  warningOffsetY: 2
+  warningDuration: 1.5
+  warningColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  meleeBlockedMessage: "\xA1Activa la habilidad especial!"
+  rangedBlockedMessage: "\xA1Desactiva la habilidad especial!"
 --- !u!114 &595312439969399503
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12660,8 +12668,8 @@ MonoBehaviour:
   statsManager: {fileID: 7736777102245202428}
   shieldPrefab: {fileID: 97364978854938720, guid: 63062dad4adee9e48bc2714414765908, type: 3}
   shieldSpawnPoint: {fileID: 5494151711966022061}
-  playerMeleeAttack: {fileID: 0}
-  playerMovement: {fileID: 0}
+  playerMeleeAttack: {fileID: 9211243997880812482}
+  playerMovement: {fileID: 595312439969399503}
   shieldDamage: 10
   shieldSpeed: 25
   shieldMaxDistance: 15
@@ -12733,8 +12741,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   statsManager: {fileID: 7736777102245202428}
-  playerMeleeAttack: {fileID: 0}
-  playerShieldController: {fileID: 0}
+  playerMeleeAttack: {fileID: 9211243997880812482}
+  playerShieldController: {fileID: 3158206734398763717}
   youngBuffs:
     MoveMultiplier: 1.2
     AttackDamageMultiplier: 1.1
@@ -12805,7 +12813,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ebfba8585f04bca459219e51e0d05f44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  inventoryAnimator: {fileID: 0}
+  inventoryAnimator: {fileID: 7005845008010079027}
   inventoryPanel: {fileID: 2963971540837465049}
   leftPanel: {fileID: 3502231483444308502}
   rightPanel: {fileID: 7741886578788057507}
