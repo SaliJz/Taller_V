@@ -592,9 +592,7 @@ public class InventoryUIManager : MonoBehaviour
         {
             case ItemCategory.Reliquia: return "Reliquias";
             case ItemCategory.Ganga: return "Gangas";
-            case ItemCategory.Acondicionador: return "Acondicionadores";
             case ItemCategory.Potenciador: return "Potenciadores";
-            case ItemCategory.Debilitador: return "Debilitadores";
             case ItemCategory.Maldicion: return "Maldiciones";
             case ItemCategory.Amuleto: return "Amuletos";
             default: return category.ToString();

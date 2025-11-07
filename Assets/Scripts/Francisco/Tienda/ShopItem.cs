@@ -16,9 +16,7 @@ public enum ItemCategory
 {
     Reliquia,      
     Ganga,         
-    Acondicionador,
     Potenciador,   
-    Debilitador,   
     Maldicion,
     Amuleto
 }

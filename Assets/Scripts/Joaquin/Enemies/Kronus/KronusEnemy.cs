@@ -638,7 +638,7 @@ public class KronusEnemy : MonoBehaviour
 
                 if (audioSource != null && hitSFX != null) audioSource.PlayOneShot(hitSFX);
 
-                playerHealth.TakeDamage(damageToApply);
+                playerHealth.TakeDamage(attackDamage);
 
                 // Aplicar empuje
                 ApplyKnockback(hitTransform);
