@@ -167,6 +167,11 @@ public class EnemyVisualEffects : MonoBehaviour
 
     #endregion
 
+    public void PlayToughnessHitFeedback(Vector3 vector3)
+    {
+
+    }
+
     #region Damage Feedback (material blink, numbers, sonido)
 
     /// <summary>

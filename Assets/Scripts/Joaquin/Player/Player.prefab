@@ -12418,6 +12418,7 @@ GameObject:
   - component: {fileID: 8984845218185550205}
   - component: {fileID: 7736777102245202428}
   - component: {fileID: 5453211636292463945}
+  - component: {fileID: 3496064612389669479}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -12829,6 +12830,57 @@ MonoBehaviour:
   positiveStatColor: {r: 0, g: 1, b: 0, a: 1}
   negativeStatColor: {r: 1, g: 0, b: 0, a: 1}
   demonicFont: {fileID: 11400000, guid: ff596c8b51adc4f4380969cce6c8de40, type: 2}
+--- !u!114 &3496064612389669479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6679960082821164706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7afed240824c20d4396387fd63ed0d81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  blockingEnabled: 1
+  frontBlockAngle: 120
+  debugMode: 1
+  useTemporalLimit: 0
+  useDurabilityLimit: 0
+  useAngleLimit: 0
+  useAbsorptionLimit: 0
+  useProgressivePenalty: 0
+  useGuardCrush: 0
+  useDynamicContextual: 0
+  maxBlockDuration: 2
+  blockCooldownDuration: 1
+  maxDurability: 100
+  currentDurability: 0
+  durabilityRegenRate: 10
+  durabilityRegenDelay: 2
+  heavyAttackDurabilityMultiplier: 2
+  limitedBlockAngle: 90
+  maxAbsorption: 200
+  currentAbsorption: 0
+  absorptionCooldown: 3
+  penaltyStartTime: 1
+  movementPenaltyPerSecond: 0.1
+  maxMovementPenalty: 0.5
+  maxConsecutiveBlocks: 3
+  guardCrushWindow: 1
+  guardCrushStunDuration: 1.5
+  blockAbuseThreshold: 5
+  blockAbuseWindow: 10
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  enemyDetectionRadius: 15
+  blockVFX: {fileID: 0}
+  blockBreakVFX: {fileID: 0}
+  blockParticles: {fileID: 0}
+  audioSource: {fileID: 0}
+  blockSound: {fileID: 0}
+  blockBreakSound: {fileID: 0}
 --- !u!1 &6769764421561134128
 GameObject:
   m_ObjectHideFlags: 0

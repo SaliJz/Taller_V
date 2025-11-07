@@ -99,7 +99,7 @@ public class BloodKnightBoss : MonoBehaviour
     private bool isInLowHealthPhase = false;
 
     private Coroutine bossAICoroutine;
-    private Coroutine stunCoroutine;
+    //private Coroutine stunCoroutine;
     private Coroutine currentAttackCoroutine;
 
     private Vector3 chargeDirection;
@@ -1098,7 +1098,7 @@ public class BloodKnightBoss : MonoBehaviour
         }
 
         lastSodomaTime = Time.time;
-        stunCoroutine = null;
+        //stunCoroutine = null;
         ResynchronizeAgent();
 
         ReportDebug("Dark Knight recuperado del aturdimiento", 1);

@@ -676,11 +676,13 @@ public class PlayerMeleeAttack : MonoBehaviour
     public void PerformHitDetectionWithTracking()
     {
         bool hitAnyEnemy = false;
+
         Collider[] hitEnemies = useBoxCollider
             ? Physics.OverlapBox(hitPoint.position, new Vector3(hitRadius, hitRadius, hitRadius), Quaternion.identity, enemyLayer)
             : Physics.OverlapSphere(hitPoint.position, hitRadius, enemyLayer);
 
         const DamageType damageTypeForDummy = DamageType.Melee;
+        const AttackDamageType meleeDamageType = AttackDamageType.Melee;
 
         foreach (Collider enemy in hitEnemies)
         {
@@ -698,44 +700,31 @@ public class PlayerMeleeAttack : MonoBehaviour
             float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
 
             IDamageable damageable = enemy.GetComponent<IDamageable>();
-            EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
-
-            TutorialCombatDummy tutorialDummy = damageable as TutorialCombatDummy;
-
-            if (tutorialDummy != null)
+            
+            if (damageable != null)
             {
-                tutorialDummy.TakeDamage(finalDamage, isCritical, damageTypeForDummy);
-                ReportDebug($"Golpe a {enemy.name}: DUMMY DE TUTORIAL DETECTADO. Enviando {finalDamage:F2} de daño de {damageTypeForDummy}", 1);
-            }
-            else if (damageable != null)
-            {
-                damageable.TakeDamage(finalDamage, isCritical);
+                TutorialCombatDummy tutorialDummy = damageable as TutorialCombatDummy;
 
-                if (currentAttackIndex == 2)
+                if (tutorialDummy != null)
                 {
-                    EnemyHealth tempHealth = enemy.GetComponent<EnemyHealth>();
-                    if (tempHealth != null)
+                    tutorialDummy.TakeDamage(finalDamage, isCritical, damageTypeForDummy);
+                    ReportDebug($"Golpe a {enemy.name}: DUMMY DE TUTORIAL DETECTADO. Enviando {finalDamage:F2} de daño de {damageTypeForDummy}", 1);
+                }
+                else
+                {
+                    damageable.TakeDamage(Mathf.RoundToInt(finalDamage), isCritical, meleeDamageType);
+
+                    if (currentAttackIndex == 2)
                     {
-                        tempHealth.ApplyStun(attack3StunDuration);
-                        ReportDebug($"Enemigo {enemy.name} aturdido por {attack3StunDuration} segundos.", 1);
+                        EnemyHealth tempHealth = enemy.GetComponent<EnemyHealth>();
+                        if (tempHealth != null)
+                        {
+                            tempHealth.ApplyStun(attack3StunDuration);
+                            ReportDebug($"Enemigo {enemy.name} aturdido por {attack3StunDuration} segundos.", 1);
+                        }
                     }
-                }
-            }
-            else if (enemyHealth != null)
-            {
-                enemyHealth.TakeDamage(Mathf.RoundToInt(finalDamage), isCritical);
-                if (currentAttackIndex == 2)
-                {
-                    enemyHealth.ApplyStun(attack3StunDuration);
-                    ReportDebug($"Enemigo {enemy.name} aturdido por {attack3StunDuration} segundos.", 1);
-                }
-            }
-            else
-            {
-                HealthController healthController = enemy.GetComponent<HealthController>();
-                if (healthController != null)
-                {
-                    healthController.TakeDamage(Mathf.RoundToInt(finalDamage));
+
+                    ReportDebug($"Golpe a {enemy.name}: Enviando {finalDamage:F2} de daño de {meleeDamageType}", 1);
                 }
             }
 

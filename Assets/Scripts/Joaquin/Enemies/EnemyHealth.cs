@@ -25,6 +25,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     [Header("Toughness System")]
     [SerializeField] private EnemyToughness toughnessSystem;
+    [SerializeField] private GameObject toughnessUIGroup;
 
     private EnemyKnockbackHandler knockbackHandler;
     private PlayerStatsManager playerStatsManager;
@@ -200,12 +201,37 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     /// Toma daño (respetando la reducción local si existe).
     /// Firma original respetada para compatibilidad.
     /// </summary>
-    public void TakeDamage(float damageAmount, bool isCritical = false)
+    public void TakeDamage(float damageAmount, bool isCritical = false, AttackDamageType damageType = AttackDamageType.Melee)
     {
         if (currentHealth <= 0) return;
 
+        float finalDamage = damageAmount;
+
+        // Procesar dureza
+        if (toughnessSystem != null && toughnessSystem.HasToughness)
+        {
+            finalDamage = toughnessSystem.ProcessDamage(damageAmount, damageType);
+
+            if (finalDamage <= 0)
+            {
+                // Todo el daño fue absorbido por la dureza
+                ReportDebug($"Daño completamente absorbido por dureza. Tipo: {damageType}", 1);
+
+                if (enemyVisualEffects != null)
+                {
+                    enemyVisualEffects.PlayToughnessHitFeedback(transform.position + Vector3.up * offsetAboveEnemy);
+                }
+
+                return;
+            }
+            else if (finalDamage < damageAmount)
+            {
+                ReportDebug($"Daño reducido por dureza: {damageAmount} -> {finalDamage}", 1);
+            }
+        }
+
         float damageReductionTotal = _reduccionLocal + _auraDamageReduction; 
-        float finalDamage = damageAmount * (1f - damageReductionTotal);
+        finalDamage = damageAmount * (1f - damageReductionTotal);
 
         currentHealth -= finalDamage;
         ReportDebug($"Dano recibido. Base: {damageAmount}. Reduccion total: {damageReductionTotal * 100}%. Dano Final: {finalDamage}. Vida Restante: {currentHealth}", 1);
@@ -391,6 +417,17 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private void UpdateSlidersSafely()
     {
+        // si hay sistema de dureza, no actualizar barras de vida
+        if (toughnessSystem != null)
+        {
+            ReportDebug("No se actualizan las barras de vida mientras se usa el sistema de dureza.", 2);
+            return;
+        }
+        else
+        {
+            if (toughnessUIGroup != null) toughnessUIGroup?.SetActive(false);
+        }
+
         if (firstLifeSlider != null)
         {
             firstLifeSlider.maxValue = Mathf.Max(1, maxHealth);

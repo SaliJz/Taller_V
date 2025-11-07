@@ -177,7 +177,7 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
 
     #region DAMAGE IMPLEMENTATION
 
-    public void TakeDamage(float damageAmount, bool isCritical = false)
+    public void TakeDamage(float damageAmount, bool isCritical = false, AttackDamageType attackDamageType = AttackDamageType.Melee)
     {
         TakeDamage(damageAmount, isCritical, DamageType.Melee, transform.position + transform.forward);
     }

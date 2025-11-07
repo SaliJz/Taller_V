@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>
@@ -27,6 +26,8 @@ public class Shield : MonoBehaviour
     [SerializeField] private ParticleSystem shieldTrailVFX;
     [SerializeField] private TrailRenderer shieldTrail;
 
+    [SerializeField] private bool debugMode = false;
+
     private enum ShieldState { Inactive, Thrown, Returning, Rebounding }
     private ShieldState currentState = ShieldState.Inactive;
 
@@ -39,6 +40,7 @@ public class Shield : MonoBehaviour
 
     private PlayerShieldController owner;
 
+    private Coroutine deactivationCoroutine;
     private Material shieldTrailVFXMatInstance;
     private Material shieldTrailMatInstance;
 
@@ -55,13 +57,19 @@ public class Shield : MonoBehaviour
     /// <param name="canRebound"> Indica si el escudo puede rebotar entre enemigos </param>
     public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds, float reboundDetectionRadius, float damage, float speed, float distance)
     {
+        if (deactivationCoroutine != null)
+        {
+            StopCoroutine(deactivationCoroutine);
+            deactivationCoroutine = null;
+        }
+
         this.owner = owner;
         this.returnTarget = owner.transform;
         transform.forward = direction;
         startPosition = transform.position;
         lastPosition = transform.position;
 
-        this.attackDamage = (int)damage;
+        this.attackDamage = Mathf.RoundToInt(damage);
         this.baseSpeed = speed;
         this.maxDistance = distance;
         currentSpeed = baseSpeed;
@@ -108,10 +116,10 @@ public class Shield : MonoBehaviour
             transform.position += directionToTarget * currentSpeed * Time.deltaTime;
             transform.forward = directionToTarget;
 
-            if (Vector3.Distance(transform.position, currentTarget.position) < 1.0f)
-            {
-                PerformHitDetection(currentTarget);
-            }
+            //if (Vector3.Distance(transform.position, currentTarget.position) < 1.0f)
+            //{
+            //    PerformHitDetection(currentTarget);
+            //}
         }
         else if (currentState == ShieldState.Returning)
         {
@@ -120,28 +128,19 @@ public class Shield : MonoBehaviour
 
             if (Vector3.Distance(transform.position, returnTarget.position) < 1.0f)
             {
-                owner.CatchShield();
-                currentState = ShieldState.Inactive;
-                PlayTrailVFX(false);
-                gameObject.SetActive(false);
+                if (deactivationCoroutine == null)
+                {
+                    deactivationCoroutine = StartCoroutine(SafeDeactivateShieldCoroutine());
+                }
+
+                //owner.CatchShield();
+                //currentState = ShieldState.Inactive;
+                //PlayTrailVFX(false);
+                //gameObject.SetActive(false);
             }
         }
     }
 
-    private void FixedUpdate()
-    {
-        if (currentState == ShieldState.Inactive) return;
-
-        Vector3 moveDir = transform.forward;
-        float step = currentSpeed * Time.fixedDeltaTime;
-
-        if (Physics.Raycast(transform.position, moveDir, out RaycastHit hit, step + 0.5f, collisionLayers))
-        {
-            PerformHitDetection(hit.transform);
-        }
-    }
-
-    // Detecta colisiones con enemigos u otros objetos en las capas especificadas
     private void OnTriggerEnter(Collider other)
     {
         if (currentState == ShieldState.Inactive) return;
@@ -152,36 +151,39 @@ public class Shield : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Función que maneja la lógica cuando el escudo golpea un objetivo.
-    /// </summary>
-    /// <param name="hitTransform"> Transform del objetivo golpeado </param>
+    private void OnTriggerExit(Collider other)
+    {
+        if (currentState == ShieldState.Inactive) return;
+     
+        if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
+        {
+            if (hitTargets.Contains(other.transform))
+            {
+                hitTargets.Remove(other.transform);
+            }
+        }
+    }
+
     private void PerformHitDetection(Transform hitTransform)
     {
         Collider[] hitEnemies = Physics.OverlapSphere(hitTransform.position, 0.5f, enemyLayer);
 
         const DamageType damageTypeForDummy = DamageType.Shield;
+        const AttackDamageType shieldDamageType = AttackDamageType.Ranged;
 
         foreach (Collider enemy in hitEnemies)
         {
-            CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, false);
-
-            HealthController healthController = enemy.GetComponent<HealthController>();
-            if (healthController != null)
+            if (!hitTargets.Contains(hitTransform))
             {
-                if (!hitTargets.Contains(hitTransform))
-                {
-                    hitTargets.Add(hitTransform);
-                }
-
-                bool isCritical;
-                float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
-
-                healthController.TakeDamage(attackDamage);
-
-                ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
+                hitTargets.Add(hitTransform);
             }
 
+            CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, false);
+
+            bool isCritical;
+            float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
+
+            // Intentar aplicar daño a IDamageable
             IDamageable damageable = enemy.GetComponent<IDamageable>();
             if (damageable != null)
             {
@@ -189,36 +191,22 @@ public class Shield : MonoBehaviour
 
                 if (tutorialDummy != null)
                 {
-                    tutorialDummy.TakeDamage(attackDamage, false, damageTypeForDummy);
-                    ReportDebug("Golpe a " + enemy.name + ": DUMMY DE TUTORIAL DETECTADO. Enviando golpe de " + damageTypeForDummy, 1);
+                    tutorialDummy.TakeDamage(finalDamage, false, damageTypeForDummy);
+                    ReportDebug("Golpe a " + enemy.name + ": DUMMY DE TUTORIAL. Daño: " + finalDamage, 1);
                 }
-                else 
+                else
                 {
-                    if (!hitTargets.Contains(hitTransform))
-                    {
-                        hitTargets.Add(hitTransform);
-                    }
-
-                    bool isCritical;
-                    float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
-
-                    damageable.TakeDamage(attackDamage);
-
-                    ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
+                    damageable.TakeDamage(finalDamage, isCritical, shieldDamageType);
+                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
                 }
             }
 
+            // Manejar BloodKnight de forma especial
             BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
             if (bloodKnight != null)
             {
-                if (!hitTargets.Contains(hitTransform))
-                {
-                    hitTargets.Add(hitTransform);
-                }
-
                 bloodKnight.OnPlayerCounterAttack();
-
-                ReportDebug("Golpe a " + enemy.name + " por " + attackDamage + " de danio.", 1);
+                ReportDebug("Golpe a BloodKnight: " + enemy.name, 1);
             }
         }
 
@@ -236,51 +224,30 @@ public class Shield : MonoBehaviour
         }
     }
 
-    // Detecta cuando el escudo sale de la colisión con un enemigo u objeto en las capas especificadas
-    private void OnTriggerExit(Collider other)
-    {
-        if (currentState != ShieldState.Thrown) return;
-
-        if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
-        {
-            RemoveHitDetection(other.transform);
-        }
-    }
-
     /// <summary>
-    /// Metodo para eliminar un objetivo de la lista de objetivos golpeados por primera vez.
-    /// </summary>
-    /// <param name="hitTransform"> Transform del objetivo golpeado </param>
-    private void RemoveHitDetection(Transform hitTransform)
-    {
-        if (hitTargets.Contains(hitTransform))
-        {
-            hitTargets.Remove(hitTransform);
-        }
-    }
-
-    /// <summary>
-    /// Función que encuentra el siguiente objetivo para rebotar.
+    /// Función que encuentra el siguiente enemigo para rebotar.
+    /// Solo busca en enemyLayer, no en collisionLayers general.
     /// </summary>
     private Transform FindNextReboundTarget()
     {
         if (!canRebound || reboundCount >= maxRebounds)
         {
-            ReportDebug("Maximo de rebotes alcanzado o rebotes desactivados.", 1);
+            ReportDebug("Máximo de rebotes alcanzado o rebotes desactivados.", 1);
             return null;
         }
 
+        // Buscar solo enemigos en el radio (enemyLayer)
         Collider[] potentialTargets = Physics.OverlapSphere(transform.position, reboundDetectionRadius, enemyLayer);
 
         Transform bestTarget = null;
         float closestDistance = float.MaxValue;
 
-        // Filtrar y encontrar el mejor objetivo
         foreach (Collider targetCollider in potentialTargets)
         {
-            // Omitir enemigos que ya han sido golpeados en esta secuencia
+            // Omitir enemigos ya golpeados
             if (hitTargets.Contains(targetCollider.transform))
             {
+                ReportDebug("Enemigo " + targetCollider.name + " omitido (ya golpeado).", 1);
                 continue;
             }
 
@@ -294,17 +261,22 @@ public class Shield : MonoBehaviour
                 {
                     closestDistance = distanceToTarget;
                     bestTarget = targetCollider.transform;
-                    ReportDebug("Siguiente objetivo de rebote encontrado: " + bestTarget.name, 1);
+                    ReportDebug("Candidato a rebote: " + bestTarget.name + " a " + distanceToTarget + "m", 1);
                 }
             }
+            else
+            {
+                ReportDebug("Enemigo " + targetCollider.name + " omitido (más lejos que el jugador).", 1);
+            }
         }
+
         return bestTarget;
     }
 
-    // Inicia el retorno del escudo al jugador
     private void StartReturning()
     {
         currentState = ShieldState.Returning;
+        ReportDebug("Escudo retornando al jugador.", 1);
     }
 
     #region VFX Methods
@@ -366,11 +338,77 @@ public class Shield : MonoBehaviour
         }
     }
 
+    private IEnumerator SafeDeactivateShieldCoroutine()
+    {
+        owner.CatchShield();
+        currentState = ShieldState.Inactive;
+
+        // Detener VFX antes de desactivar el GameObject
+        if (shieldTrailVFX != null && shieldTrail != null)
+        {
+            try
+            {
+                var emission = shieldTrailVFX.emission;
+                emission.enabled = false;
+
+                if (shieldTrailVFX.isPlaying)
+                {
+                    shieldTrailVFX.Stop(false, ParticleSystemStopBehavior.StopEmitting);
+                }
+
+                shieldTrail.emitting = false;
+            }
+            catch (System.Exception ex)
+            {
+                ReportDebug($"Excepción al detener VFX: {ex.Message}", 2);
+            }
+        }
+
+        // Esperar un frame para que se procesen los cambios de VFX
+        yield return null;
+
+        // Limpiar VFX después de que se detengan
+        if (shieldTrailVFX != null && shieldTrail != null && gameObject.activeInHierarchy)
+        {
+            try
+            {
+                shieldTrailVFX.Clear(false);
+                shieldTrail.Clear();
+            }
+            catch (System.Exception ex)
+            {
+                ReportDebug($"Excepción al limpiar VFX: {ex.Message}", 2);
+            }
+        }
+
+        // Esperar otro frame antes de desactivar
+        yield return null;
+
+        gameObject.SetActive(false);
+
+        deactivationCoroutine = null;
+    }
+
+    private void OnDestroy()
+    {
+        if (shieldTrailVFXMatInstance != null)
+        {
+            Destroy(shieldTrailVFXMatInstance);
+            shieldTrailVFXMatInstance = null;
+        }
+
+        if (shieldTrailMatInstance != null)
+        {
+            Destroy(shieldTrailMatInstance);
+            shieldTrailMatInstance = null;
+        }
+    }
+
     #endregion
 
     private void OnDrawGizmos()
     {
-        if (!Application.isPlaying) return;
+        if (!debugMode) return;
 
         switch (currentState)
         {
@@ -380,17 +418,15 @@ public class Shield : MonoBehaviour
                 break;
             case ShieldState.Rebounding:
                 Gizmos.color = Color.yellow;
-                if (currentTarget != null)
-                    Gizmos.DrawLine(transform.position, currentTarget.position);
+                if (currentTarget != null) Gizmos.DrawLine(transform.position, currentTarget.position);
                 break;
             case ShieldState.Returning:
                 Gizmos.color = Color.green;
-                if (returnTarget != null)
-                    Gizmos.DrawLine(transform.position, returnTarget.position);
+                if (returnTarget != null) Gizmos.DrawLine(transform.position, returnTarget.position);
                 break;
         }
 
-        // Radio de búsqueda
+        // Radio de búsqueda de rebote (solo para enemigos)
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, reboundDetectionRadius);
     }

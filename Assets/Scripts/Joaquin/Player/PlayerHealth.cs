@@ -459,7 +459,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     /// Funcion que aplica dano al jugador.
     /// </summary>
     /// <param name="damageAmount"> Cantidad de dano a aplicar. </param>
-    public void TakeDamage(float damageAmount, bool isCostDamage = false)
+    public void TakeDamage(float damageAmount, bool isCostDamage = false, AttackDamageType attackDamageType = AttackDamageType.Melee)
     {
         if (isDying) return;
 

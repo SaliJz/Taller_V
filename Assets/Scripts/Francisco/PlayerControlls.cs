@@ -273,6 +273,45 @@ public partial class @PlayerControlls: IInputActionCollection2, IDisposable
             ]
         },
         {
+            ""name"": ""Defense"",
+            ""id"": ""52dc3ab4-530d-4bf4-9b77-bde197f9be55"",
+            ""actions"": [
+                {
+                    ""name"": ""ShieldBlock"",
+                    ""type"": ""Button"",
+                    ""id"": ""eda86ed0-990b-4f90-baac-6438ed7d0ff6"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""b31c68fc-f8e1-46f8-b9fe-6c46a2bb1795"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard"",
+                    ""action"": ""ShieldBlock"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d7139397-9ada-4a02-a941-bf0a80f7303f"",
+                    ""path"": ""<Gamepad>/rightShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Gamepad"",
+                    ""action"": ""ShieldBlock"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
+        },
+        {
             ""name"": ""Abilities"",
             ""id"": ""23b8b2e8-2231-4dfa-9aea-9b9d0052cec9"",
             ""actions"": [
@@ -919,6 +958,9 @@ public partial class @PlayerControlls: IInputActionCollection2, IDisposable
         m_Combat_Melee = m_Combat.FindAction("Melee", throwIfNotFound: true);
         m_Combat_ShieldThrow = m_Combat.FindAction("ShieldThrow", throwIfNotFound: true);
         m_Combat_Dash = m_Combat.FindAction("Dash", throwIfNotFound: true);
+        // Defense
+        m_Defense = asset.FindActionMap("Defense", throwIfNotFound: true);
+        m_Defense_ShieldBlock = m_Defense.FindAction("ShieldBlock", throwIfNotFound: true);
         // Abilities
         m_Abilities = asset.FindActionMap("Abilities", throwIfNotFound: true);
         m_Abilities_ActivateSkill = m_Abilities.FindAction("ActivateSkill", throwIfNotFound: true);
@@ -944,6 +986,7 @@ public partial class @PlayerControlls: IInputActionCollection2, IDisposable
     {
         UnityEngine.Debug.Assert(!m_Movement.enabled, "This will cause a leak and performance issues, PlayerControlls.Movement.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_Combat.enabled, "This will cause a leak and performance issues, PlayerControlls.Combat.Disable() has not been called.");
+        UnityEngine.Debug.Assert(!m_Defense.enabled, "This will cause a leak and performance issues, PlayerControlls.Defense.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_Abilities.enabled, "This will cause a leak and performance issues, PlayerControlls.Abilities.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_Interactions.enabled, "This will cause a leak and performance issues, PlayerControlls.Interactions.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_UI.enabled, "This will cause a leak and performance issues, PlayerControlls.UI.Disable() has not been called.");
@@ -1232,6 +1275,102 @@ public partial class @PlayerControlls: IInputActionCollection2, IDisposable
     /// Provides a new <see cref="CombatActions" /> instance referencing this action map.
     /// </summary>
     public CombatActions @Combat => new CombatActions(this);
+
+    // Defense
+    private readonly InputActionMap m_Defense;
+    private List<IDefenseActions> m_DefenseActionsCallbackInterfaces = new List<IDefenseActions>();
+    private readonly InputAction m_Defense_ShieldBlock;
+    /// <summary>
+    /// Provides access to input actions defined in input action map "Defense".
+    /// </summary>
+    public struct DefenseActions
+    {
+        private @PlayerControlls m_Wrapper;
+
+        /// <summary>
+        /// Construct a new instance of the input action map wrapper class.
+        /// </summary>
+        public DefenseActions(@PlayerControlls wrapper) { m_Wrapper = wrapper; }
+        /// <summary>
+        /// Provides access to the underlying input action "Defense/ShieldBlock".
+        /// </summary>
+        public InputAction @ShieldBlock => m_Wrapper.m_Defense_ShieldBlock;
+        /// <summary>
+        /// Provides access to the underlying input action map instance.
+        /// </summary>
+        public InputActionMap Get() { return m_Wrapper.m_Defense; }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
+        public void Enable() { Get().Enable(); }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
+        public void Disable() { Get().Disable(); }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
+        public bool enabled => Get().enabled;
+        /// <summary>
+        /// Implicitly converts an <see ref="DefenseActions" /> to an <see ref="InputActionMap" /> instance.
+        /// </summary>
+        public static implicit operator InputActionMap(DefenseActions set) { return set.Get(); }
+        /// <summary>
+        /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+        /// </summary>
+        /// <param name="instance">Callback instance.</param>
+        /// <remarks>
+        /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
+        /// </remarks>
+        /// <seealso cref="DefenseActions" />
+        public void AddCallbacks(IDefenseActions instance)
+        {
+            if (instance == null || m_Wrapper.m_DefenseActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_DefenseActionsCallbackInterfaces.Add(instance);
+            @ShieldBlock.started += instance.OnShieldBlock;
+            @ShieldBlock.performed += instance.OnShieldBlock;
+            @ShieldBlock.canceled += instance.OnShieldBlock;
+        }
+
+        /// <summary>
+        /// Removes <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+        /// </summary>
+        /// <remarks>
+        /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
+        /// </remarks>
+        /// <seealso cref="DefenseActions" />
+        private void UnregisterCallbacks(IDefenseActions instance)
+        {
+            @ShieldBlock.started -= instance.OnShieldBlock;
+            @ShieldBlock.performed -= instance.OnShieldBlock;
+            @ShieldBlock.canceled -= instance.OnShieldBlock;
+        }
+
+        /// <summary>
+        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="DefenseActions.UnregisterCallbacks(IDefenseActions)" />.
+        /// </summary>
+        /// <seealso cref="DefenseActions.UnregisterCallbacks(IDefenseActions)" />
+        public void RemoveCallbacks(IDefenseActions instance)
+        {
+            if (m_Wrapper.m_DefenseActionsCallbackInterfaces.Remove(instance))
+                UnregisterCallbacks(instance);
+        }
+
+        /// <summary>
+        /// Replaces all existing callback instances and previously registered input action callbacks associated with them with callbacks provided via <param cref="instance" />.
+        /// </summary>
+        /// <remarks>
+        /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
+        /// </remarks>
+        /// <seealso cref="DefenseActions.AddCallbacks(IDefenseActions)" />
+        /// <seealso cref="DefenseActions.RemoveCallbacks(IDefenseActions)" />
+        /// <seealso cref="DefenseActions.UnregisterCallbacks(IDefenseActions)" />
+        public void SetCallbacks(IDefenseActions instance)
+        {
+            foreach (var item in m_Wrapper.m_DefenseActionsCallbackInterfaces)
+                UnregisterCallbacks(item);
+            m_Wrapper.m_DefenseActionsCallbackInterfaces.Clear();
+            AddCallbacks(instance);
+        }
+    }
+    /// <summary>
+    /// Provides a new <see cref="DefenseActions" /> instance referencing this action map.
+    /// </summary>
+    public DefenseActions @Defense => new DefenseActions(this);
 
     // Abilities
     private readonly InputActionMap m_Abilities;
@@ -1699,6 +1838,21 @@ public partial class @PlayerControlls: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnDash(InputAction.CallbackContext context);
+    }
+    /// <summary>
+    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Defense" which allows adding and removing callbacks.
+    /// </summary>
+    /// <seealso cref="DefenseActions.AddCallbacks(IDefenseActions)" />
+    /// <seealso cref="DefenseActions.RemoveCallbacks(IDefenseActions)" />
+    public interface IDefenseActions
+    {
+        /// <summary>
+        /// Method invoked when associated input action "ShieldBlock" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnShieldBlock(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Abilities" which allows adding and removing callbacks.

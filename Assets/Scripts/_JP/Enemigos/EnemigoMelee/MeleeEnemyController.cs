@@ -172,7 +172,7 @@ public class MeleeEnemyController : MonoBehaviour, IDamageable
         }
     }
 
-    public void TakeDamage(float amount, bool isCritical = false)
+    public void TakeDamage(float amount, bool isCritical = false, AttackDamageType attackDamageType = AttackDamageType.Melee)
     {
         if (state == State.Dead) return;
 

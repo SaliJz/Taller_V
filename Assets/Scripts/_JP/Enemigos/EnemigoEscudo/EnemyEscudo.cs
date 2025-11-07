@@ -56,7 +56,7 @@ public class VidaEnemigoEscudo : MonoBehaviour, IDamageable
     }
 
     #region IDamageable / Salud
-    public void TakeDamage(float damageAmount, bool isCritical = false)
+    public void TakeDamage(float damageAmount, bool isCritical = false, AttackDamageType attackDamageType = AttackDamageType.Melee)
     {
         if (isDead) return;
         if (currentHealth <= 0f) return;

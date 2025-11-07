@@ -15,5 +15,5 @@ public interface IDamageable
     /// </summary>
     /// <param name="damageAmount">La cantidad de daño a aplicar.</param>
     /// <param name="isCritical">Indica si el daño es crítico (para efectos visuales/sonoros).</param>
-    public void TakeDamage(float damageAmount, bool isCritical = false);
+    public void TakeDamage(float damageAmount, bool isCritical = false, AttackDamageType attackDamageType = AttackDamageType.Melee);
 }

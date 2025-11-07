@@ -30,7 +30,7 @@ public class MeleeDummy : DummyTarget
         }
     }
 
-    public override void TakeDamage(float damageAmount, bool isCritical = false)
+    public override void TakeDamage(float damageAmount, bool isCritical = false, AttackDamageType attackDamageType = AttackDamageType.Melee)
     {
         if (isDefeated) return;
 

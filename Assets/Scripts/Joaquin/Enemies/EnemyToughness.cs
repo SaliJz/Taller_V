@@ -10,8 +10,6 @@ public enum AttackDamageType
 {
     Melee,
     Ranged,
-    Magic,
-    Environmental
 }
 
 public class EnemyToughness : MonoBehaviour
@@ -79,6 +77,11 @@ public class EnemyToughness : MonoBehaviour
         if (useToughness)
         {
             currentToughness = maxToughness;
+            if (!toughnessUIGroup.activeSelf) toughnessUIGroup.SetActive(true);
+        }
+        else
+        {
+            if (toughnessUIGroup.activeSelf) toughnessUIGroup.SetActive(false);
         }
     }
 
@@ -338,6 +341,15 @@ public class EnemyToughness : MonoBehaviour
             {
                 toughnessMultiplierText.gameObject.SetActive(false);
             }
+        }
+
+        if (currentToughness <= 0 && toughnessUIGroup != null)
+        {
+            if (toughnessUIGroup.activeSelf) toughnessUIGroup.gameObject.SetActive(false); // Ocultar si la dureza está rota
+        }
+        else
+        {
+            if (!toughnessUIGroup.activeSelf) toughnessUIGroup.gameObject.SetActive(true); // Asegurar que esté activo si la dureza no está rota
         }
     }
 
