@@ -5,10 +5,10 @@ using UnityEngine;
 public static class CriticalHitSystem
 {
     [Tooltip("Probabilidad de crítico al atacar por la espalda.")]
-    public static float BackCriticalChance = 0.25f; // Probabilidad alta de 25 %
+    public static float BackCriticalChance = 0f; // Probabilidad alta de 25 %
 
     [Tooltip("Probabilidad de crítico al atacar de frente. Puede ser 0.")]
-    public static float FrontalCriticalChance = 0.005f; // Probabilidad baja de 0.5 %
+    public static float FrontalCriticalChance = 0f; // Probabilidad baja de 0.5 %
 
     public static float CriticalMultiplier = 2f; // Daño crítico x2
 
