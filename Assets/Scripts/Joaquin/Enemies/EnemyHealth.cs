@@ -219,6 +219,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         if (currentHealth <= 0) return;
 
         float finalDamage = damageAmount;
+        OnDamaged?.Invoke();
 
         // Procesar dureza
         if (toughnessSystem != null && toughnessSystem.HasToughness)
@@ -253,7 +254,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         // emitir cambio de vida para listeners
         CurrentHealth = currentHealth;
 
-        OnDamaged?.Invoke();
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         UpdateHealthUI();
 
