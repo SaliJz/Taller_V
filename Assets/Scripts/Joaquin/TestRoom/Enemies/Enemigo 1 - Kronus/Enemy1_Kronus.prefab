@@ -1175,10 +1175,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 20
+  maxHealth: 40
   currentHealth: 0
   deathCooldown: 0.25
   canDestroy: 1
+  onDeathEvent:
+    m_PersistentCalls:
+      m_Calls: []
   firstLifeSlider: {fileID: 8587315499701455932}
   firstFillImage: {fileID: 3576358720955880675}
   offsetAboveEnemy: 2
@@ -1267,7 +1270,7 @@ MonoBehaviour:
   currentToughness: 0
   meleeToughnessDamageMultiplier: 1
   rangedToughnessDamageMultiplier: 0.25
-  useDynamicBars: 1
+  useDynamicBars: 0
   healthPerBar: 40
   toughnessPerBar: 50
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
@@ -1387,7 +1390,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0.034508705, b: 1, a: 1}
+  m_Color: {r: 0, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

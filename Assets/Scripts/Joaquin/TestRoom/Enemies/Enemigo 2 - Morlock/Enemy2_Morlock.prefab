@@ -58,7 +58,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0.034508705, b: 1, a: 1}
+  m_Color: {r: 0, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2261,6 +2261,9 @@ MonoBehaviour:
   currentHealth: 0
   deathCooldown: 0.25
   canDestroy: 1
+  onDeathEvent:
+    m_PersistentCalls:
+      m_Calls: []
   firstLifeSlider: {fileID: 7789715516251961850}
   firstFillImage: {fileID: 7893166915883177190}
   offsetAboveEnemy: 2
@@ -2409,7 +2412,7 @@ MonoBehaviour:
   currentToughness: 0
   meleeToughnessDamageMultiplier: 1
   rangedToughnessDamageMultiplier: 0.25
-  useDynamicBars: 1
+  useDynamicBars: 0
   healthPerBar: 30
   toughnessPerBar: 50
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}

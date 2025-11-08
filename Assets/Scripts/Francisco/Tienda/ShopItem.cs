@@ -14,11 +14,9 @@ public struct ItemEffect
 /// </summary>
 public enum ItemCategory
 {
-    Reliquia,      
-    Ganga,         
-    Potenciador,   
-    Maldicion,
-    Amuleto
+    AttributeModifiers,    // Variadores de atributos (Reliquia, Ganga, Maldicion)
+    SkillEnhancers,        // Mejoradores de habilidades (Potenciador)
+    CounterDistortions     // Contra distorsiones (Amuleto)
 }
 
 /// <summary>
@@ -45,7 +43,7 @@ public class ShopItem : ScriptableObject
     public List<ItemEffect> drawbacks;
 
     [Header("Categorización")]
-    public ItemCategory category = ItemCategory.Reliquia;
+    public ItemCategory category = ItemCategory.AttributeModifiers;
     public ItemRarity rarity = ItemRarity.Comun;
 
     [Header("Tipo de Item")]

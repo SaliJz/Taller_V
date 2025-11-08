@@ -55,6 +55,7 @@ public class EnemyToughness : MonoBehaviour
     private int totalHealthBars;
     private int currentToughnessBars;
     private int totalToughnessBars;
+    private bool isInitialized = false;
 
     // Eventos
     public event Action<float, float> OnToughnessChanged;
@@ -77,18 +78,28 @@ public class EnemyToughness : MonoBehaviour
         if (useToughness)
         {
             currentToughness = maxToughness;
-            if (!toughnessUIGroup.activeSelf) toughnessUIGroup.SetActive(true);
+            if (toughnessUIGroup != null && !toughnessUIGroup.activeSelf) toughnessUIGroup.SetActive(true);
         }
         else
         {
-            if (toughnessUIGroup.activeSelf) toughnessUIGroup.SetActive(false);
+            if (toughnessUIGroup != null && toughnessUIGroup.activeSelf) toughnessUIGroup.SetActive(false);
         }
     }
 
     private void Start()
     {
+        StartCoroutine(DelayedInitialization());
+    }
+
+    private System.Collections.IEnumerator DelayedInitialization()
+    {
+        yield return null; // Esperar un frame
+
         InitializeSystem();
         UpdateUI();
+        isInitialized = true;
+
+        ReportDebug($"Sistema inicializado - Vida: {enemyHealth.CurrentHealth}/{enemyHealth.MaxHealth}, Dureza: {currentToughness}/{maxToughness}", 1);
     }
 
     private void OnEnable()
@@ -111,19 +122,26 @@ public class EnemyToughness : MonoBehaviour
 
     private void InitializeSystem()
     {
-        // Calcular barras dinámicas
+        if (enemyHealth == null || enemyHealth.MaxHealth <= 0)
+        {
+            ReportDebug("No se puede inicializar: EnemyHealth no válido", 3);
+            return;
+        }
+
+        // Calcular barras iniciales
+        totalHealthBars = Mathf.Max(1, Mathf.CeilToInt(enemyHealth.MaxHealth / healthPerBar));
+        currentHealthBars = Mathf.Max(1, Mathf.CeilToInt(enemyHealth.CurrentHealth / healthPerBar));
+
+        if (useToughness)
+        {
+            totalToughnessBars = Mathf.Max(1, Mathf.CeilToInt(maxToughness / toughnessPerBar));
+            currentToughnessBars = totalToughnessBars; // Dureza siempre empieza llena
+        }
+
+        // Reportar estado inicial
         if (useDynamicBars)
         {
-            totalHealthBars = Mathf.CeilToInt(enemyHealth.MaxHealth / healthPerBar);
-            currentHealthBars = Mathf.CeilToInt(enemyHealth.CurrentHealth / healthPerBar);
-
-            if (useToughness)
-            {
-                totalToughnessBars = Mathf.CeilToInt(maxToughness / toughnessPerBar);
-                currentToughnessBars = Mathf.CeilToInt(currentToughness / toughnessPerBar);
-            }
-
-            ReportDebug($"Barras dinámicas inicializadas - Vida: {currentHealthBars}/{totalHealthBars}, Dureza: {currentToughnessBars}/{totalToughnessBars}", 1);
+            ReportDebug($"Barras dinámicas - Vida: {currentHealthBars}/{totalHealthBars}, Dureza: {currentToughnessBars}/{totalToughnessBars}", 1);
         }
 
         // Configurar UI de dureza
@@ -135,14 +153,30 @@ public class EnemyToughness : MonoBehaviour
         // Configurar sliders
         if (healthSlider != null)
         {
-            healthSlider.maxValue = useDynamicBars ? healthPerBar : enemyHealth.MaxHealth;
-            healthSlider.value = useDynamicBars ? GetCurrentBarValue(enemyHealth.CurrentHealth, healthPerBar) : enemyHealth.CurrentHealth;
+            if (useDynamicBars)
+            {
+                healthSlider.maxValue = healthPerBar;
+                healthSlider.value = GetCurrentBarValue(enemyHealth.CurrentHealth, healthPerBar);
+            }
+            else
+            {
+                healthSlider.maxValue = enemyHealth.MaxHealth;
+                healthSlider.value = enemyHealth.CurrentHealth;
+            }
         }
 
         if (toughnessSlider != null && useToughness)
         {
-            toughnessSlider.maxValue = useDynamicBars ? toughnessPerBar : maxToughness;
-            toughnessSlider.value = useDynamicBars ? GetCurrentBarValue(currentToughness, toughnessPerBar) : currentToughness;
+            if (useDynamicBars)
+            {
+                toughnessSlider.maxValue = toughnessPerBar;
+                toughnessSlider.value = GetCurrentBarValue(currentToughness, toughnessPerBar);
+            }
+            else
+            {
+                toughnessSlider.maxValue = maxToughness;
+                toughnessSlider.value = currentToughness;
+            }
         }
     }
 
@@ -196,7 +230,6 @@ public class EnemyToughness : MonoBehaviour
 
     private float ApplyToughnessDamage(float damage)
     {
-        float previousToughness = currentToughness;
         currentToughness -= damage;
 
         float overflow = 0f;
@@ -235,6 +268,7 @@ public class EnemyToughness : MonoBehaviour
 
     private void HandleHealthChanged(float current, float max)
     {
+        if (!isInitialized) return;
         if (!useDynamicBars) return;
 
         int newBars = Mathf.CeilToInt(current / healthPerBar);
@@ -249,8 +283,16 @@ public class EnemyToughness : MonoBehaviour
 
     private float GetCurrentBarValue(float currentValue, float valuePerBar)
     {
+        if (currentValue <= 0) return 0;
+
         float remainder = currentValue % valuePerBar;
-        return remainder > 0 ? remainder : (currentValue > 0 ? valuePerBar : 0);
+
+        if (Mathf.Approximately(remainder, 0f) && currentValue > 0)
+        {
+            return valuePerBar;
+        }
+
+        return remainder;
     }
 
     #endregion
@@ -259,6 +301,8 @@ public class EnemyToughness : MonoBehaviour
 
     private void UpdateUI()
     {
+        if (!isInitialized) return;
+
         UpdateHealthUI();
         if (useToughness)
         {
@@ -343,29 +387,36 @@ public class EnemyToughness : MonoBehaviour
             }
         }
 
-        if (currentToughness <= 0 && toughnessUIGroup != null)
+        if (toughnessUIGroup != null)
         {
-            if (toughnessUIGroup.activeSelf) toughnessUIGroup.gameObject.SetActive(false); // Ocultar si la dureza está rota
-        }
-        else
-        {
-            if (!toughnessUIGroup.activeSelf) toughnessUIGroup.gameObject.SetActive(true); // Asegurar que esté activo si la dureza no está rota
+            bool shouldBeActive = currentToughness > 0;
+            if (toughnessUIGroup.activeSelf != shouldBeActive)
+            {
+                toughnessUIGroup.SetActive(shouldBeActive);
+            }
         }
     }
 
     private Color GetGradientColor(Color baseColor, int currentBar, int totalBars)
     {
-        if (totalBars <= 1 || currentBar <= 0) return baseColor;
+        // Si solo hay una barra total, siempre usar color base
+        if (totalBars <= 1) return baseColor;
+
+        // Si no quedan barras, usar color base
+        if (currentBar <= 0) return baseColor;
+
+        // Si es la última barra (currentBar == totalBars), usar color base
+        if (currentBar >= totalBars) return baseColor;
 
         // Calcular posición en el degradado (la última barra es la más intensa)
         float t = (float)(currentBar - 1) / (totalBars - 1);
-        
+
         // Aplicar intensidad de degradado
         t = Mathf.Lerp(1f, t, colorGradientIntensity);
 
         // Crear color más claro para barras anteriores
         Color lighterColor = Color.Lerp(Color.white, baseColor, 0.6f);
-        
+
         return Color.Lerp(lighterColor, baseColor, t);
     }
 

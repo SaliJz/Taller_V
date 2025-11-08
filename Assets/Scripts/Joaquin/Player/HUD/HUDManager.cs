@@ -23,6 +23,10 @@ public class HUDManager : MonoBehaviour
     [SerializeField] private Image lifeStageIconImage;
     [SerializeField] private List<LifeStageIcon> lifeStageIcons;
 
+    [Header("Etapas de Vida - Root Objects")]
+    [SerializeField] private GameObject adultRootStage;
+    [SerializeField] private GameObject elderRootStage;
+
     [Header("Low Health VFX")]
     [SerializeField] private Image screenFlashOverlay;
     [SerializeField] private Color lowHealthScreenFlashColor = new Color(1f, 0f, 0f, 0.3f);
@@ -30,6 +34,7 @@ public class HUDManager : MonoBehaviour
     [SerializeField] private float healthBarFlashInterval = 0.5f;
     [SerializeField] private float screenFlashInterval = 1f;
     [SerializeField] private float lowHealthThreshold = 0.25f;
+    [SerializeField] private float lowHealthEffectDuration = 2.5f;
 
     [Header("Vida Temporal - Animacion")]
     [SerializeField] private float temporaryHealthLerpSpeed = 5f;
@@ -41,7 +46,9 @@ public class HUDManager : MonoBehaviour
     private bool isLowHealth = false;
     private Coroutine healthBarFlashCoroutine;
     private Coroutine screenFlashCoroutine;
+    private Coroutine lowHealthEffectCoroutine;
     private Color originalHealthBarColor;
+    private float lowHealthTimer;
 
     private void Awake()
     {
@@ -110,6 +117,7 @@ public class HUDManager : MonoBehaviour
 
         if (healthBarFlashCoroutine != null) StopCoroutine(healthBarFlashCoroutine);
         if (screenFlashCoroutine != null) StopCoroutine(screenFlashCoroutine);
+        if (lowHealthEffectCoroutine != null) StopCoroutine(lowHealthEffectCoroutine);
     }
 
     /// <summary>
@@ -139,6 +147,11 @@ public class HUDManager : MonoBehaviour
             // Entrar en estado de vida baja
             isLowHealth = true;
             StartLowHealthEffects();
+        }
+        else if (shouldShowLowHealthEffects && isLowHealth)
+        {
+            // Reiniciar efectos si aún está en vida baja
+            ResetLowHealthEffects();
         }
         else if (!shouldShowLowHealthEffects && isLowHealth)
         {
@@ -175,6 +188,9 @@ public class HUDManager : MonoBehaviour
     /// </summary>
     private void StartLowHealthEffects()
     {
+        // Reiniciar temporizador
+        lowHealthTimer = 0f;
+
         // Iniciar parpadeo de la barra de vida
         if (healthBarFlashCoroutine != null) StopCoroutine(healthBarFlashCoroutine);
         healthBarFlashCoroutine = StartCoroutine(HealthBarFlashRoutine());
@@ -183,7 +199,20 @@ public class HUDManager : MonoBehaviour
         if (screenFlashCoroutine != null) StopCoroutine(screenFlashCoroutine);
         screenFlashCoroutine = StartCoroutine(ScreenFlashRoutine());
 
+        // Iniciar corrutina de duración del efecto
+        if (lowHealthEffectCoroutine != null) StopCoroutine(lowHealthEffectCoroutine);
+        lowHealthEffectCoroutine = StartCoroutine(LowHealthEffectDurationRoutine());
+
         ReportDebug("Efectos de vida baja activados.", 1);
+    }
+
+    /// <summary>
+    /// Reinicia los efectos de vida baja (reinicia el temporizador)
+    /// </summary>
+    private void ResetLowHealthEffects()
+    {
+        lowHealthTimer = 0f;
+        ReportDebug("Efectos de vida baja reiniciados.", 1);
     }
 
     /// <summary>
@@ -211,6 +240,13 @@ public class HUDManager : MonoBehaviour
             screenFlashCoroutine = null;
         }
 
+        // Detener corrutina de duración
+        if (lowHealthEffectCoroutine != null)
+        {
+            StopCoroutine(lowHealthEffectCoroutine);
+            lowHealthEffectCoroutine = null;
+        }
+
         // Asegurarse de que el overlay esté invisible
         if (screenFlashOverlay != null)
         {
@@ -220,6 +256,25 @@ public class HUDManager : MonoBehaviour
         }
 
         ReportDebug("Efectos de vida baja desactivados.", 1);
+    }
+
+    /// <summary>
+    /// Rutina que controla la duración total del efecto de vida baja
+    /// </summary>
+    private IEnumerator LowHealthEffectDurationRoutine()
+    {
+        while (lowHealthTimer < lowHealthEffectDuration)
+        {
+            lowHealthTimer += Time.deltaTime;
+            yield return null;
+        }
+
+        // Tiempo cumplido, detener efectos
+        if (isLowHealth)
+        {
+            isLowHealth = false;
+            StopLowHealthEffects();
+        }
     }
 
     /// <summary>
@@ -310,6 +365,22 @@ public class HUDManager : MonoBehaviour
         {
             lifeStageIconImage.sprite = foundIcon.icon;
             ReportDebug($"Icono del HUD actualizado a: {newStage}", 1);
+        }
+
+        if (newStage == PlayerHealth.LifeStage.Adult)
+        {
+            if (adultRootStage != null) adultRootStage.SetActive(true);
+            if (elderRootStage != null) elderRootStage.SetActive(false);
+        }
+        else if (newStage == PlayerHealth.LifeStage.Elder)
+        {
+            if (adultRootStage != null) adultRootStage.SetActive(false);
+            if (elderRootStage != null) elderRootStage.SetActive(true);
+        }
+        else
+        {
+            if (adultRootStage != null) adultRootStage.SetActive(false);
+            if (elderRootStage != null) elderRootStage.SetActive(false);
         }
     }
 

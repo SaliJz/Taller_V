@@ -34,7 +34,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private EnemyAuraManager _auraManager;
 
     private float _initialHealthMultiplier = 1.0f; 
-    private float _auraDamageReduction = 0.0f;  
+    private float auraDamageReduction = 0.0f;  
 
     private bool canHealPlayer = true;
     private bool isDead = false;
@@ -115,7 +115,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     #region --- Reducción local (aplicable por armadura propia) ---
     // campo interno que afecta TakeDamage
-    private float _reduccionLocal = 0f;
+    private float localReduction = 0f;
     private Coroutine _reduccionLocalRoutine;
     #endregion
 
@@ -232,8 +232,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             }
         }
 
-        float damageReductionTotal = _reduccionLocal + _auraDamageReduction; 
-        finalDamage = damageAmount * (1f - damageReductionTotal);
+        float damageReductionTotal = localReduction + auraDamageReduction; 
+        finalDamage *= (1f - damageReductionTotal);
 
         currentHealth -= finalDamage;
         ReportDebug($"Dano recibido. Base: {damageAmount}. Reduccion total: {damageReductionTotal * 100}%. Dano Final: {finalDamage}. Vida Restante: {currentHealth}", 1);
@@ -273,7 +273,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     public void ApplyDamageReduction_Aura(float reductionPercent)
     {
-        _auraDamageReduction = reductionPercent;
+        auraDamageReduction = reductionPercent;
         ReportDebug($"Reduccion de dano por Aura Endurecimiento: {reductionPercent * 100}%.", 1);
     }
 
@@ -495,9 +495,9 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private IEnumerator RutinaReduccionLocal(float percent, float duration)
     {
-        _reduccionLocal = percent;
+        localReduction = percent;
         yield return new WaitForSeconds(duration);
-        _reduccionLocal = 0f;
+        localReduction = 0f;
         _reduccionLocalRoutine = null;
     }
     #endregion
@@ -586,7 +586,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     {
         yield return new WaitForSeconds(areaDuration);
         // finalizar efecto local en este objeto (si aún activo)
-        _reduccionLocal = 0f;
+        localReduction = 0f;
         areaActive = false;
 
         // iniciar cooldown

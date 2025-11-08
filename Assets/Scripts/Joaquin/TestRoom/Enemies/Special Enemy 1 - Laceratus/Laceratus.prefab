@@ -616,6 +616,9 @@ MonoBehaviour:
   currentHealth: 0
   deathCooldown: 2
   canDestroy: 1
+  onDeathEvent:
+    m_PersistentCalls:
+      m_Calls: []
   firstLifeSlider: {fileID: 3006783617058989963}
   firstFillImage: {fileID: 2278878055756484434}
   offsetAboveEnemy: 2
@@ -895,7 +898,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0.034508705, b: 1, a: 1}
+  m_Color: {r: 0, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
