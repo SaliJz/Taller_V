@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 /// <summary>
@@ -13,6 +14,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private float currentHealth;
     [SerializeField] private float deathCooldown = 2f;
     [SerializeField] private bool canDestroy = true;
+    [SerializeField] private UnityEvent onDeathEvent;
 
     [Header("UI - Sliders (optional)")]
     [SerializeField] private Slider firstLifeSlider;
@@ -308,6 +310,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         isDead = true;
         currentHealth = 0;
+
+        onDeathEvent?.Invoke();
 
         OnDeath?.Invoke(gameObject);
         if (_auraManager != null)

@@ -208,6 +208,13 @@ public class Shield : MonoBehaviour
                 bloodKnight.OnPlayerCounterAttack();
                 ReportDebug("Golpe a BloodKnight: " + enemy.name, 1);
             }
+
+            ExplosiveHead explosiveHead = enemy.GetComponent<ExplosiveHead>();
+            if (explosiveHead != null)
+            {
+                explosiveHead.StartPriming(true); 
+                ReportDebug("Golpe a ExplosiveHead: " + enemy.name + ". Iniciando temporizador forzado.", 1);
+            }
         }
 
         Transform nextTarget = FindNextReboundTarget();

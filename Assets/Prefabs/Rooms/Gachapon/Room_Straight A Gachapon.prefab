@@ -373,6 +373,11 @@ MonoBehaviour:
   connectionDoors:
   - {fileID: 7060705642496101006}
   spawnAreas: []
+  animatedDoors: []
+  doorColliders: []
+  onFinsih:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &3803206917878433464
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1890,7 +1895,7 @@ MonoBehaviour:
   resultUIPanel: {fileID: 6262441316307779812}
   nameTMP: {fileID: 3778481727762981961}
   effectsTMP: {fileID: 4263469356478008695}
-  activationKey: 101
+  interactionTextPanel: {fileID: 0}
   allowMultiplePulls: 1
   animationDuration: 1.5
   cycleSpeed: 0.15
@@ -1931,7 +1936,8 @@ MonoBehaviour:
   finalIntensityMultiplier: 3
   pulseDuration: 3
   sinkDuration: 3
-  sinkDistance: -5
+  sinkTargetTransform: {fileID: 0}
+  riseTargetTransform: {fileID: 0}
   sinkCurve:
     serializedVersion: 2
     m_Curve:

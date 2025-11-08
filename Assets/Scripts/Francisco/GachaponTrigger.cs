@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using TMPro;
+using UnityEngine.InputSystem;
 
 [System.Serializable]
 public struct RarityColorMapping
@@ -13,7 +14,7 @@ public struct RarityColorMapping
 }
 
 [RequireComponent(typeof(Collider))]
-public class GachaponTrigger : MonoBehaviour
+public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActions
 {
     [Header("Dependencies")]
     [SerializeField] private GachaponSystem gachaponSystem;
@@ -25,8 +26,10 @@ public class GachaponTrigger : MonoBehaviour
     [SerializeField] private TextMeshProUGUI nameTMP;
     [SerializeField] private TextMeshProUGUI effectsTMP;
 
+    [Header("Interaction UI")]
+    [SerializeField] private GameObject interactionTextPanel;
+
     [Header("Configuración")]
-    public KeyCode activationKey = KeyCode.E;
     private bool playerIsNear = false;
     private bool isActivated = false;
     public bool allowMultiplePulls = false;
@@ -62,7 +65,9 @@ public class GachaponTrigger : MonoBehaviour
     private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
     private Vector3 initialPosition;
 
-    private void Start()
+    private PlayerControlls playerControls;
+
+    private void Awake()
     {
         if (gachaponSystem == null)
             gachaponSystem = FindAnyObjectByType<GachaponSystem>();
@@ -77,6 +82,29 @@ public class GachaponTrigger : MonoBehaviour
             return;
         }
 
+        playerControls = new PlayerControlls();
+        playerControls.Interactions.SetCallbacks(this);
+    }
+
+    private void OnEnable()
+    {
+        playerControls?.Interactions.Enable();
+    }
+
+    private void OnDisable()
+    {
+        playerControls?.Interactions.Disable();
+        if (interactionTextPanel != null) interactionTextPanel.SetActive(false);
+        if (resultUIPanel != null) resultUIPanel.SetActive(false);
+    }
+
+    private void OnDestroy()
+    {
+        playerControls?.Dispose();
+    }
+
+    private void Start()
+    {
         if (sinkTargetTransform == null || riseTargetTransform == null)
         {
             Debug.LogError("Las referencias 'sinkTargetTransform' y 'riseTargetTransform' deben ser asignadas en el Inspector. Desactivando GachaponTrigger.");
@@ -96,21 +124,34 @@ public class GachaponTrigger : MonoBehaviour
         {
             resultUIPanel.SetActive(false);
         }
+
+        if (interactionTextPanel != null)
+        {
+            interactionTextPanel.SetActive(false);
+        }
     }
 
-    private void Update()
+    public void OnInteract(InputAction.CallbackContext context)
     {
-        if (playerIsNear && !isActivated && !isAnimating && Input.GetKeyDown(activationKey))
+        if (!context.started) return;
+
+        if (playerIsNear && !isActivated && !isAnimating)
         {
             StartCoroutine(AnimateAndPull());
         }
     }
+
+    public void OnAdvanceDialogue(InputAction.CallbackContext context) { }
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player") && !isAnimating)
         {
             playerIsNear = true;
+            if (!isActivated && interactionTextPanel != null)
+            {
+                interactionTextPanel.SetActive(true);
+            }
         }
     }
 
@@ -120,13 +161,24 @@ public class GachaponTrigger : MonoBehaviour
         {
             playerIsNear = false;
             ShowResultUI(false, "", "");
+
+            if (interactionTextPanel != null)
+            {
+                interactionTextPanel.SetActive(false);
+            }
         }
     }
 
     private IEnumerator AnimateAndPull()
     {
+        isAnimating = true;
         isActivated = true;
         ShowResultUI(false, "", "");
+
+        if (interactionTextPanel != null)
+        {
+            interactionTextPanel.SetActive(false);
+        }
 
         Coroutine animationCoroutine = StartCoroutine(AnimateGachaponLight(animationDuration));
         yield return animationCoroutine;
@@ -164,6 +216,11 @@ public class GachaponTrigger : MonoBehaviour
         {
             cubeRenderer.material = originalMaterialInstance;
             isActivated = false;
+            isAnimating = false;
+            if (playerIsNear && interactionTextPanel != null)
+            {
+                interactionTextPanel.SetActive(true);
+            }
         }
         else
         {
@@ -316,6 +373,11 @@ public class GachaponTrigger : MonoBehaviour
         GetComponent<Collider>().enabled = true;
         isActivated = false;
         isAnimating = false;
+
+        if (playerIsNear && interactionTextPanel != null)
+        {
+            interactionTextPanel.SetActive(true);
+        }
     }
 
     private void ShowResultUI(bool show, string name, string effects)

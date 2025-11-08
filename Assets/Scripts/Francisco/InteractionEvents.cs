@@ -1,5 +1,7 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 public class InteractionEvents : MonoBehaviour
 {
@@ -31,5 +33,30 @@ public class InteractionEvents : MonoBehaviour
         {
             if (other.CompareTag(tagName)) OnObjectExited?.Invoke();
         }
+    }
+
+    public void LoadSceneByName(string sceneName)
+    {
+        if (string.IsNullOrEmpty(sceneName))
+        {
+            Debug.LogError("The scene name cannot be null or empty.");
+            return;
+        }
+
+        StartCoroutine(LoadSceneWithFade(sceneName));
+    }
+
+    private IEnumerator LoadSceneWithFade(string sceneName)
+    {
+        if (FadeController.Instance != null)
+        {
+            yield return FadeController.Instance.FadeOut();
+        }
+        else
+        {
+            Debug.LogWarning("FadeController.Instance is missing. Loading scene without fade.");
+        }
+
+        SceneManager.LoadScene(sceneName);
     }
 }

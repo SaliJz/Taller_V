@@ -78,6 +78,7 @@ public class ExplosiveHead : MonoBehaviour
     private SphereCollider triggerCollider;
     private Collider[] overlapResults;
     private float primingTimeLeft = 0f;
+    private bool forceExplodeOnDamage = false;
 
     private Dictionary<Renderer, MaterialPropertyBlock> mpbs;
     private int emissionColorID;
@@ -165,6 +166,25 @@ public class ExplosiveHead : MonoBehaviour
         if (verboseDebug) Debug.Log($"[ExplosiveHead] OnTriggerExit: {other.name}");
     }
 
+    public void StartPriming(bool forceExplode = true)
+    {
+        if (currentState != HazardState.Armed)
+        {
+            if (verboseDebug) Debug.Log("[ExplosiveHead] Intento de priming forzado, pero el estado no es Armed.", this);
+            return;
+        }
+
+        this.forceExplodeOnDamage = forceExplode;
+
+        if (verboseDebug) Debug.Log("[ExplosiveHead] Priming forzado por daño externo (escudo).", this);
+
+        if (hazardRoutine != null)
+        {
+            StopCoroutine(hazardRoutine);
+        }
+        hazardRoutine = StartCoroutine(ActivationSequence());
+    }
+
     /// <summary>
     /// Corrutina que maneja la secuencia de grito -> espera -> explosión.
     /// </summary>
@@ -175,16 +195,20 @@ public class ExplosiveHead : MonoBehaviour
         PlayAudio(screamSound);
 
         float elapsed = 0f;
+
+        bool canBeCanceled = cancelIfPlayerLeaves && !forceExplodeOnDamage;
+
         while (elapsed < primingDuration)
         {
-            if (cancelIfPlayerLeaves)
+            if (canBeCanceled)
             {
-                if (cancelIfPlayerLeaves && targetsInTrigger == 0)
+                if (targetsInTrigger == 0)
                 {
                     if (verboseDebug) Debug.Log("[ExplosiveHead] Priming cancelado: ya no hay objetivos.");
                     ResetVisuals();
                     currentState = HazardState.Armed;
                     hazardRoutine = null;
+                    forceExplodeOnDamage = false; 
                     yield break;
                 }
             }
@@ -203,6 +227,7 @@ public class ExplosiveHead : MonoBehaviour
         Explode();
 
         currentState = HazardState.Exploded;
+        forceExplodeOnDamage = false; 
 
         float vfxDuration = explosionVFXPrefab != null ? explosionVFXPrefab.main.duration : 0.1f;
         Destroy(gameObject, vfxDuration + 0.2f);
