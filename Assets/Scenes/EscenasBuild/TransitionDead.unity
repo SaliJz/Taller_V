@@ -5337,7 +5337,7 @@ MonoBehaviour:
   m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ff596c8b51adc4f4380969cce6c8de40, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: -2402631731295061846, guid: ff596c8b51adc4f4380969cce6c8de40, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -5421,16 +5421,16 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1285873631}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 9}
+  m_LocalPosition: {x: 0, y: 0, z: 8.999976}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1199061692}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0.5}
-  m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: 0.025939941, y: 391.64014}
-  m_SizeDelta: {x: 0, y: 50}
+  m_AnchorMin: {x: 0.5, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchoredPosition: {x: -0.00000091680295, y: -127.54236}
+  m_SizeDelta: {x: 1920, y: 111.53}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1288454018
 GameObject:
@@ -8282,12 +8282,15 @@ MonoBehaviour:
     icon: {fileID: -1318049653, guid: e693dfdedeb63cb4f85eb04edd56c841, type: 3}
   - stage: 2
     icon: {fileID: -2049628653, guid: 56899eec6f23852409c7cb2b4fcc6606, type: 3}
+  adultRootStage: {fileID: 0}
+  elderRootStage: {fileID: 0}
   screenFlashOverlay: {fileID: 0}
   lowHealthScreenFlashColor: {r: 1, g: 0, b: 0, a: 0.3}
   lowHealthBarFlashColor: {r: 1, g: 1, b: 1, a: 1}
   healthBarFlashInterval: 0.5
   screenFlashInterval: 1
   lowHealthThreshold: 0.25
+  lowHealthEffectDuration: 2.5
   temporaryHealthLerpSpeed: 5
   healthBarParentRect: {fileID: 0}
 --- !u!223 &4521548076829029744
