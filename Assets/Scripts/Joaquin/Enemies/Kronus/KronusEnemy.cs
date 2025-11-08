@@ -465,6 +465,8 @@ public class KronusEnemy : MonoBehaviour
             agent.updateRotation = true;
         }
 
+        yield return new WaitForSeconds(preparationTime);
+
         if (animator != null) animator.SetTrigger("StartDash");
         if (audioSource != null && dashSFX != null) audioSource.PlayOneShot(dashSFX);
 
@@ -583,7 +585,7 @@ public class KronusEnemy : MonoBehaviour
 
         if (animator != null) animator.SetTrigger("PrepareAttack");
 
-        yield return new WaitForSeconds(preparationTime);
+        yield return new WaitForSeconds(timeAfterAttack);
 
         if (groundIndicator != null) groundIndicator.SetActive(false);
 
@@ -601,8 +603,6 @@ public class KronusEnemy : MonoBehaviour
                 agent.SetDestination(playerTransform.position);
             }
         }
-
-        yield return new WaitForSeconds(timeAfterAttack);
 
         ReportDebug("Kronus finaliza ataque dash y entra en recuperación de 2s.", 1);
         isAttacking = false;
