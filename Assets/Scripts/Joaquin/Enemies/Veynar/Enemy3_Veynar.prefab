@@ -681,11 +681,21 @@ MonoBehaviour:
   currentHealth: 0
   deathCooldown: 2
   canDestroy: 1
-  healthSteal: 5
-  firstLifeSlider: {fileID: 8906246040005356289}
-  firstFillImage: {fileID: 305222756412887803}
+  onDeathEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  healthSlider: {fileID: 8906246040005356289}
+  healthFillImage: {fileID: 305222756412887803}
   offsetAboveEnemy: 2
   glowDelayAfterCritical: 2
+  healthPercentageText: {fileID: 0}
+  healthMultiplierText: {fileID: 0}
+  useDynamicHealthBars: 0
+  healthPerBar: 100
+  healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
+  colorGradientIntensity: 0.3
+  canGrantLifestealOnDeath: 1
+  toughnessSystem: {fileID: 0}
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -711,10 +721,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   renderers:
   - {fileID: 6944707465676470543}
-  normalFlashColor: {r: 1, g: 0, b: 0, a: 0.6}
-  criticalFlashColor: {r: 1, g: 0.5, b: 0, a: 0.9}
-  flashDuration: 0.2
-  flashCount: 2
+  blinkFlashMaterial: {fileID: 0}
+  blinkInterval: 0.06
+  blinkCount: 6
+  stunMaterial: {fileID: 0}
+  stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  stunBlinkSpeed: 0.1
+  stunVFXPrefab: {fileID: 0}
+  stunVFXHeight: 2
+  stunSFX: {fileID: 0}
   defaultMaterial: {fileID: 2100000, guid: b7d887137b3a1e44bb8ef4865b374a56, type: 2}
   glowMaterial: {fileID: 2100000, guid: a3f9150b5853c7245a07bebb04472891, type: 2}
   glowIntensity: 2
@@ -760,6 +775,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73d4e83809fd58b4293186b0b01eaaf9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  navMeshSampleDistance: 2
+  raycastStepDistance: 0.25
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 0
 --- !u!1 &3921124408185350706
 GameObject:
   m_ObjectHideFlags: 0
