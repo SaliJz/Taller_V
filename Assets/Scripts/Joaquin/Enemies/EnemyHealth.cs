@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -16,18 +17,25 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private bool canDestroy = true;
     [SerializeField] private UnityEvent onDeathEvent;
 
-    [Header("UI - Sliders (optional)")]
-    [SerializeField] private Slider firstLifeSlider;
-    [SerializeField] private Image firstFillImage;
+    [Header("UI - Sliders")]
+    [SerializeField] private Slider healthSlider;
+    [SerializeField] private Image healthFillImage;
     [SerializeField] private float offsetAboveEnemy = 2f;
     [SerializeField] private float glowDelayAfterCritical = 2f;
+    [SerializeField] private TextMeshProUGUI healthPercentageText;
+    [SerializeField] private TextMeshProUGUI healthMultiplierText;
+
+    [Header("Dynamic Bar Configuration")]
+    [SerializeField] private bool useDynamicHealthBars = false;
+    [SerializeField] private float healthPerBar = 100f;
+    [SerializeField] private Color healthBaseColor = Color.red;
+    [SerializeField, Range(0f, 1f)] private float colorGradientIntensity = 0.3f;
 
     [Header("Lifesteal Control")]
     [SerializeField] private bool canGrantLifestealOnDeath = true;
 
     [Header("Toughness System")]
     [SerializeField] private EnemyToughness toughnessSystem;
-    [SerializeField] private GameObject toughnessUIGroup;
 
     private EnemyKnockbackHandler knockbackHandler;
     private PlayerStatsManager playerStatsManager;
@@ -43,6 +51,9 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private Color originalColor;
     private Coroutine stunCoroutine;
     private Coroutine currentCriticalDamageCoroutine;
+
+    private int currentHealthBars;
+    private int totalHealthBars;
 
     public float CurrentHealth
     {
@@ -150,14 +161,14 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         currentHealth = Mathf.Clamp(currentHealth > 0f ? currentHealth : maxHealth, 0f, maxHealth);
 
         knockbackHandler = GetComponent<EnemyKnockbackHandler>();
+
+        InitializeHealthUI();
     }
 
     private void ApplyInitialHealth()
     {
         currentHealth = maxHealth * _initialHealthMultiplier;
         maxHealth *= _initialHealthMultiplier; 
-
-        if (firstLifeSlider != null) firstLifeSlider.maxValue = maxHealth;
     }
 
     public void SetInitialHealthMultiplier(float multiplier)
@@ -184,7 +195,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         // emitir estado inicial
         OnEnemyHealthChanged?.Invoke(currentHealth, maxHealth);
-        UpdateSlidersSafely();
+        UpdateHealthUI();
     }
 
     private void OnDestroy()
@@ -193,10 +204,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     }
 
     public void SetMaxHealth(float health)
-    {
+    {   
         maxHealth = health;
         currentHealth = maxHealth;
-        UpdateSlidersSafely();
+        InitializeHealthUI();
     }
 
     /// <summary>
@@ -244,7 +255,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         OnDamaged?.Invoke();
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
-        UpdateSlidersSafely();
+        UpdateHealthUI();
 
         if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El enemigo ha recibido {finalDamage} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);
 
@@ -296,7 +307,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         CurrentHealth = currentHealth;
 
         ReportDebug($"{gameObject.name} ha sido curado por {healAmount}. Vida actual: {currentHealth}/{maxHealth}", 1);
-        UpdateSlidersSafely();
+        UpdateHealthUI();
     }
 
     public void Die(bool triggerEffects = true)
@@ -310,6 +321,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         isDead = true;
         currentHealth = 0;
+        CurrentHealth = 0;
 
         onDeathEvent?.Invoke();
 
@@ -419,30 +431,111 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         ReportDebug("Aturdimiento finalizado.", 1);
     }
 
-    private void UpdateSlidersSafely()
+    private void InitializeHealthUI()
     {
-        // si hay sistema de dureza, no actualizar barras de vida
-        if (toughnessSystem != null)
+        if (useDynamicHealthBars)
         {
-            ReportDebug("No se actualizan las barras de vida mientras se usa el sistema de dureza.", 2);
-            return;
+            totalHealthBars = Mathf.Max(1, Mathf.CeilToInt(maxHealth / healthPerBar));
+            currentHealthBars = Mathf.Max(1, Mathf.CeilToInt(currentHealth / healthPerBar));
         }
         else
         {
-            if (toughnessUIGroup != null) toughnessUIGroup?.SetActive(false);
+            totalHealthBars = 1;
+            currentHealthBars = 1;
         }
 
-        if (firstLifeSlider != null)
+        if (healthSlider != null)
         {
-            firstLifeSlider.maxValue = Mathf.Max(1, maxHealth);
-            firstLifeSlider.value = Mathf.Clamp(currentHealth, 0, maxHealth);
-            if (!firstLifeSlider.gameObject.activeSelf) firstLifeSlider.gameObject.SetActive(true);
+            if (useDynamicHealthBars)
+            {
+                healthSlider.maxValue = healthPerBar;
+                healthSlider.value = GetCurrentBarValue(currentHealth, healthPerBar);
+            }
+            else
+            {
+                healthSlider.maxValue = Mathf.Max(1, maxHealth);
+                healthSlider.value = currentHealth;
+            }
         }
-        if (firstFillImage != null)
+        UpdateHealthUI(); // Llamar para actualizar colores y texto
+    }
+
+    private void UpdateHealthUI()
+    {
+        if (healthSlider != null)
         {
-            if (!firstFillImage.gameObject.activeSelf) firstFillImage.gameObject.SetActive(true);
-            firstFillImage.color = Color.red;
+            if (useDynamicHealthBars)
+            {
+                // Actualizar contador de barras
+                int newBars = Mathf.CeilToInt(currentHealth / healthPerBar);
+                if (newBars != currentHealthBars)
+                {
+                    currentHealthBars = newBars;
+                }
+                healthSlider.value = GetCurrentBarValue(currentHealth, healthPerBar);
+                healthSlider.maxValue = healthPerBar;
+            }
+            else
+            {
+                healthSlider.value = currentHealth;
+                healthSlider.maxValue = Mathf.Max(1, maxHealth);
+            }
+            if (!healthSlider.gameObject.activeSelf) healthSlider.gameObject.SetActive(true);
         }
+
+        if (healthFillImage != null)
+        {
+            // Usar color base o degradado según la configuración
+            Color barColor = useDynamicHealthBars ?
+                GetGradientColor(healthBaseColor, currentHealthBars, totalHealthBars) :
+                healthBaseColor;
+
+            healthFillImage.color = barColor;
+
+            if (!healthFillImage.gameObject.activeSelf) healthFillImage.gameObject.SetActive(true);
+        }
+
+        if (healthPercentageText != null)
+        {
+            float percentage = (maxHealth > 0) ? (currentHealth / maxHealth) * 100f : 0f;
+            healthPercentageText.text = $"{percentage:F0}%";
+        }
+
+        if (healthMultiplierText != null)
+        {
+            if (useDynamicHealthBars && currentHealthBars > 1)
+            {
+                healthMultiplierText.text = $"x{currentHealthBars}";
+                healthMultiplierText.gameObject.SetActive(true);
+            }
+            else
+            {
+                healthMultiplierText.gameObject.SetActive(false);
+            }
+        }
+    }
+
+    private Color GetGradientColor(Color baseColor, int currentBar, int totalBars)
+    {
+        if (totalBars <= 1) return baseColor;
+        if (currentBar <= 0) return baseColor;
+        if (currentBar >= totalBars) return baseColor;
+
+        float t = (float)(currentBar - 1) / (totalBars - 1);
+        t = Mathf.Lerp(1f, t, colorGradientIntensity);
+        Color lighterColor = Color.Lerp(Color.white, baseColor, 0.6f);
+        return Color.Lerp(lighterColor, baseColor, t);
+    }
+
+    private float GetCurrentBarValue(float currentValue, float valuePerBar)
+    {
+        if (currentValue <= 0) return 0;
+        float remainder = currentValue % valuePerBar;
+        if (Mathf.Approximately(remainder, 0f) && currentValue > 0)
+        {
+            return valuePerBar;
+        }
+        return remainder;
     }
 
     private void OnDrawGizmos()

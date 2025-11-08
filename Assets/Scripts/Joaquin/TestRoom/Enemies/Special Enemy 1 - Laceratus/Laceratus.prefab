@@ -619,13 +619,18 @@ MonoBehaviour:
   onDeathEvent:
     m_PersistentCalls:
       m_Calls: []
-  firstLifeSlider: {fileID: 3006783617058989963}
-  firstFillImage: {fileID: 2278878055756484434}
+  healthSlider: {fileID: 3006783617058989963}
+  healthFillImage: {fileID: 2278878055756484434}
   offsetAboveEnemy: 2
   glowDelayAfterCritical: 2
+  healthPercentageText: {fileID: 0}
+  healthMultiplierText: {fileID: 0}
+  useDynamicHealthBars: 0
+  healthPerBar: 100
+  healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
+  colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
   toughnessSystem: {fileID: 254221231430808994}
-  toughnessUIGroup: {fileID: 1530389385868224238}
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -677,17 +682,12 @@ MonoBehaviour:
   meleeToughnessDamageMultiplier: 1
   rangedToughnessDamageMultiplier: 0.25
   useDynamicBars: 1
-  healthPerBar: 100
   toughnessPerBar: 100
-  healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
-  healthSlider: {fileID: 3006783617058989963}
-  healthFillImage: {fileID: 2278878055756484434}
   toughnessSlider: {fileID: 4218839783896417927}
   toughnessFillImage: {fileID: 6978723454904073146}
-  healthPercentageText: {fileID: 0}
-  healthMultiplierText: {fileID: 0}
+  toughnessPercentageText: {fileID: 0}
   toughnessMultiplierText: {fileID: 0}
   toughnessUIGroup: {fileID: 1530389385868224238}
 --- !u!1 &4677526121780079402

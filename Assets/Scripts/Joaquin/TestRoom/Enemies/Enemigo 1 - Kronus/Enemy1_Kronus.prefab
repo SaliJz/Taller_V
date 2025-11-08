@@ -1064,8 +1064,8 @@ GameObject:
   - component: {fileID: 7133803733463680231}
   - component: {fileID: 695154817908411261}
   - component: {fileID: 898864339131825323}
-  - component: {fileID: 5823493146228490408}
   - component: {fileID: 2892049814083954529}
+  - component: {fileID: 5823493146228490408}
   - component: {fileID: 1367704949242477135}
   - component: {fileID: 7502008598184262393}
   - component: {fileID: 6571817399541728252}
@@ -1163,43 +1163,6 @@ MonoBehaviour:
   useAwake: 1
   drawDetailedGizmos: 0
   gizmoScale: 1
---- !u!114 &5823493146228490408
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8508571803709799617}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxHealth: 40
-  currentHealth: 0
-  deathCooldown: 0.25
-  canDestroy: 1
-  onDeathEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  firstLifeSlider: {fileID: 8587315499701455932}
-  firstFillImage: {fileID: 3576358720955880675}
-  offsetAboveEnemy: 2
-  glowDelayAfterCritical: 2
-  canGrantLifestealOnDeath: 1
-  toughnessSystem: {fileID: 1367704949242477135}
-  toughnessUIGroup: {fileID: 1920447770582278496}
-  enableAutoArea: 0
-  areaTriggerPercent: 0.25
-  areaReductionPercent: 0.25
-  areaDuration: 10
-  areaCooldown: 4.5
-  areaRadius: 8
-  areaLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  flattenHeightThreshold: 1.2
-  areaCheckInterval: 0.25
 --- !u!114 &2892049814083954529
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1253,6 +1216,48 @@ MonoBehaviour:
   showDetailsOptions: 0
   showGizmo: 1
   gizmoDuration: 0.2
+--- !u!114 &5823493146228490408
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8508571803709799617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 40
+  currentHealth: 0
+  deathCooldown: 0.25
+  canDestroy: 1
+  onDeathEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  healthSlider: {fileID: 8587315499701455932}
+  healthFillImage: {fileID: 3576358720955880675}
+  offsetAboveEnemy: 2
+  glowDelayAfterCritical: 2
+  healthPercentageText: {fileID: 0}
+  healthMultiplierText: {fileID: 0}
+  useDynamicHealthBars: 0
+  healthPerBar: 100
+  healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
+  colorGradientIntensity: 0.3
+  canGrantLifestealOnDeath: 1
+  toughnessSystem: {fileID: 1367704949242477135}
+  enableAutoArea: 0
+  areaTriggerPercent: 0.25
+  areaReductionPercent: 0.25
+  areaDuration: 10
+  areaCooldown: 4.5
+  areaRadius: 8
+  areaLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  flattenHeightThreshold: 1.2
+  areaCheckInterval: 0.25
 --- !u!114 &1367704949242477135
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1271,17 +1276,12 @@ MonoBehaviour:
   meleeToughnessDamageMultiplier: 1
   rangedToughnessDamageMultiplier: 0.25
   useDynamicBars: 0
-  healthPerBar: 40
   toughnessPerBar: 50
-  healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
-  healthSlider: {fileID: 8587315499701455932}
-  healthFillImage: {fileID: 3576358720955880675}
   toughnessSlider: {fileID: 4297955924429847121}
   toughnessFillImage: {fileID: 4225195332045433554}
-  healthPercentageText: {fileID: 0}
-  healthMultiplierText: {fileID: 0}
+  toughnessPercentageText: {fileID: 0}
   toughnessMultiplierText: {fileID: 0}
   toughnessUIGroup: {fileID: 1920447770582278496}
 --- !u!114 &7502008598184262393

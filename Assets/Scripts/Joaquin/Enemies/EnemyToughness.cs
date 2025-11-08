@@ -28,31 +28,23 @@ public class EnemyToughness : MonoBehaviour
 
     [Header("Dynamic Bars Configuration")]
     [SerializeField] private bool useDynamicBars = false;
-    [Tooltip("Valor de cada segmento de vida.")]
-    [SerializeField] private float healthPerBar = 100f;
     [Tooltip("Valor de cada segmento de dureza.")]
     [SerializeField] private float toughnessPerBar = 1f;
 
     [Header("Bar Colors")]
-    [SerializeField] private Color healthBaseColor = Color.red;
     [SerializeField] private Color toughnessBaseColor = Color.cyan;
     [Tooltip("Degradado de color entre barras (0 = sin degradado, 1 = degradado completo).")]
     [SerializeField, Range(0f, 1f)] private float colorGradientIntensity = 0.3f;
 
     [Header("UI References")]
-    [SerializeField] private Slider healthSlider;
-    [SerializeField] private Image healthFillImage;
     [SerializeField] private Slider toughnessSlider;
     [SerializeField] private Image toughnessFillImage;
-    [SerializeField] private TextMeshProUGUI healthPercentageText;
-    [SerializeField] private TextMeshProUGUI healthMultiplierText;
+    [SerializeField] private TextMeshProUGUI toughnessPercentageText;
     [SerializeField] private TextMeshProUGUI toughnessMultiplierText;
     [SerializeField] private GameObject toughnessUIGroup;
 
     // Estado interno
     private EnemyHealth enemyHealth;
-    private int currentHealthBars;
-    private int totalHealthBars;
     private int currentToughnessBars;
     private int totalToughnessBars;
     private bool isInitialized = false;
@@ -102,22 +94,6 @@ public class EnemyToughness : MonoBehaviour
         ReportDebug($"Sistema inicializado - Vida: {enemyHealth.CurrentHealth}/{enemyHealth.MaxHealth}, Dureza: {currentToughness}/{maxToughness}", 1);
     }
 
-    private void OnEnable()
-    {
-        if (enemyHealth != null)
-        {
-            enemyHealth.OnHealthChanged += HandleHealthChanged;
-        }
-    }
-
-    private void OnDisable()
-    {
-        if (enemyHealth != null)
-        {
-            enemyHealth.OnHealthChanged -= HandleHealthChanged;
-        }
-    }
-
     #region Initialization
 
     private void InitializeSystem()
@@ -128,10 +104,6 @@ public class EnemyToughness : MonoBehaviour
             return;
         }
 
-        // Calcular barras iniciales
-        totalHealthBars = Mathf.Max(1, Mathf.CeilToInt(enemyHealth.MaxHealth / healthPerBar));
-        currentHealthBars = Mathf.Max(1, Mathf.CeilToInt(enemyHealth.CurrentHealth / healthPerBar));
-
         if (useToughness)
         {
             totalToughnessBars = Mathf.Max(1, Mathf.CeilToInt(maxToughness / toughnessPerBar));
@@ -141,7 +113,7 @@ public class EnemyToughness : MonoBehaviour
         // Reportar estado inicial
         if (useDynamicBars)
         {
-            ReportDebug($"Barras dinámicas - Vida: {currentHealthBars}/{totalHealthBars}, Dureza: {currentToughnessBars}/{totalToughnessBars}", 1);
+            ReportDebug($"Barras dinámicas de dureza: {currentToughnessBars}/{totalToughnessBars}", 1);
         }
 
         // Configurar UI de dureza
@@ -150,21 +122,7 @@ public class EnemyToughness : MonoBehaviour
             toughnessUIGroup.SetActive(useToughness);
         }
 
-        // Configurar sliders
-        if (healthSlider != null)
-        {
-            if (useDynamicBars)
-            {
-                healthSlider.maxValue = healthPerBar;
-                healthSlider.value = GetCurrentBarValue(enemyHealth.CurrentHealth, healthPerBar);
-            }
-            else
-            {
-                healthSlider.maxValue = enemyHealth.MaxHealth;
-                healthSlider.value = enemyHealth.CurrentHealth;
-            }
-        }
-
+        // Configurar slider de dureza
         if (toughnessSlider != null && useToughness)
         {
             if (useDynamicBars)
@@ -266,21 +224,6 @@ public class EnemyToughness : MonoBehaviour
         }
     }
 
-    private void HandleHealthChanged(float current, float max)
-    {
-        if (!isInitialized) return;
-        if (!useDynamicBars) return;
-
-        int newBars = Mathf.CeilToInt(current / healthPerBar);
-        if (newBars != currentHealthBars)
-        {
-            currentHealthBars = newBars;
-            ReportDebug($"Barras de vida actualizadas: {currentHealthBars}/{totalHealthBars}", 1);
-        }
-
-        UpdateUI();
-    }
-
     private float GetCurrentBarValue(float currentValue, float valuePerBar)
     {
         if (currentValue <= 0) return 0;
@@ -303,52 +246,9 @@ public class EnemyToughness : MonoBehaviour
     {
         if (!isInitialized) return;
 
-        UpdateHealthUI();
         if (useToughness)
         {
             UpdateToughnessUI();
-        }
-    }
-
-    private void UpdateHealthUI()
-    {
-        if (healthSlider != null)
-        {
-            if (useDynamicBars)
-            {
-                healthSlider.value = GetCurrentBarValue(enemyHealth.CurrentHealth, healthPerBar);
-                healthSlider.maxValue = healthPerBar;
-            }
-            else
-            {
-                healthSlider.value = enemyHealth.CurrentHealth;
-                healthSlider.maxValue = enemyHealth.MaxHealth;
-            }
-        }
-
-        if (healthFillImage != null)
-        {
-            Color barColor = GetGradientColor(healthBaseColor, currentHealthBars, totalHealthBars);
-            healthFillImage.color = barColor;
-        }
-
-        if (healthPercentageText != null)
-        {
-            float percentage = (enemyHealth.CurrentHealth / enemyHealth.MaxHealth) * 100f;
-            healthPercentageText.text = $"{percentage:F0}%";
-        }
-
-        if (healthMultiplierText != null && useDynamicBars)
-        {
-            if (currentHealthBars > 1)
-            {
-                healthMultiplierText.text = $"x{currentHealthBars}";
-                healthMultiplierText.gameObject.SetActive(true);
-            }
-            else
-            {
-                healthMultiplierText.gameObject.SetActive(false);
-            }
         }
     }
 

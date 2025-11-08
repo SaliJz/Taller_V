@@ -2725,11 +2725,21 @@ MonoBehaviour:
   currentHealth: 0
   deathCooldown: 2
   canDestroy: 1
-  firstLifeSlider: {fileID: 6242981443675235560}
-  firstFillImage: {fileID: 2122642152856177435}
+  onDeathEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  healthSlider: {fileID: 6242981443675235560}
+  healthFillImage: {fileID: 2122642152856177435}
   offsetAboveEnemy: 2
   glowDelayAfterCritical: 2
+  healthPercentageText: {fileID: 0}
+  healthMultiplierText: {fileID: 0}
+  useDynamicHealthBars: 0
+  healthPerBar: 100
+  healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
+  colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
+  toughnessSystem: {fileID: 0}
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
