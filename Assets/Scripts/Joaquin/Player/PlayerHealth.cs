@@ -623,7 +623,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         else
         {
             currentHealth += healAmount;
-            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth); 
             ReportDebug($"El jugador ha sido curado {healAmount} de vida normal.", 1);
         }
 

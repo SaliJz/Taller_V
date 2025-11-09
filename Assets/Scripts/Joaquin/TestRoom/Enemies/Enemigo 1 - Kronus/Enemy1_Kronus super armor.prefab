@@ -1070,7 +1070,7 @@ GameObject:
   - component: {fileID: 7502008598184262393}
   - component: {fileID: 6571817399541728252}
   m_Layer: 7
-  m_Name: Enemy1_Kronus
+  m_Name: Enemy1_Kronus super armor
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1175,7 +1175,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6058405d1141ba24ca9f0c54d4423bf1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stats: {fileID: 11400000, guid: 901194a16b00e3449a7ada437fd6b2e1, type: 2}
+  stats: {fileID: 11400000, guid: f7e711e66eb30634a8c6e28083404b58, type: 2}
   hitPoint: {fileID: 5399706999602248979}
   visualHit: {fileID: 963048917619979615}
   groundIndicator: {fileID: 5630910583302828604}
@@ -1246,7 +1246,7 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeath: 10
+  lifestealAmountOnDeath: 12
   toughnessSystem: {fileID: 1367704949242477135}
   enableAutoArea: 0
   areaTriggerPercent: 0.25
@@ -1271,7 +1271,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 857663678c6b68a4ab60f54f457c56a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useToughness: 0
+  useToughness: 1
   maxToughness: 50
   currentToughness: 0
   meleeToughnessDamageMultiplier: 1

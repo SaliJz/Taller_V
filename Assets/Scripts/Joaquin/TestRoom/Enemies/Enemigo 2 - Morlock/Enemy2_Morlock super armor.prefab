@@ -2152,7 +2152,7 @@ GameObject:
   - component: {fileID: 5355768341301424616}
   - component: {fileID: 69844080327497481}
   m_Layer: 7
-  m_Name: Enemy2_Morlock
+  m_Name: Enemy2_Morlock super armor
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2257,7 +2257,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd58f9ec10e51924e94100cff9156ee8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stats: {fileID: 11400000, guid: 827240c34ab30b44faf66dd69d82507b, type: 2}
+  stats: {fileID: 11400000, guid: 845ea88315bf5d24e95acef1756e7509, type: 2}
   projectilePrefab: {fileID: 5442904530204617264, guid: 9f7e821dc3eb3bc46b6ab54cf186063b, type: 3}
   firePoint: {fileID: 9215352895255589693}
   health: 30
@@ -2327,7 +2327,7 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeath: 8
+  lifestealAmountOnDeath: 10
   toughnessSystem: {fileID: 6741422194599992414}
   enableAutoArea: 0
   areaTriggerPercent: 0.25
@@ -2352,7 +2352,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 857663678c6b68a4ab60f54f457c56a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useToughness: 0
+  useToughness: 1
   maxToughness: 50
   currentToughness: 0
   meleeToughnessDamageMultiplier: 1

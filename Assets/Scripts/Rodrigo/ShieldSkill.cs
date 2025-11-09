@@ -16,6 +16,13 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
     [SerializeField] private PlayerMeleeAttack playerMeleeAttack;
     [SerializeField] private PlayerShieldController playerShieldController;
 
+    [Header("Stamina System")]
+    [SerializeField] private float maxStamina = 100f;
+    [SerializeField] private float staminaDrainRate = 10f;
+    [SerializeField] private float staminaRechargeRate = 20f;
+    [SerializeField] private bool requireFullStaminaToActivate = false;
+    [SerializeField] private float minStaminaToActivate = 10f;
+
     [Header("Buffs por Etapa de Vida")]
     [SerializeField] private BuffSettings youngBuffs = new BuffSettings(1.2f, 1.1f, 1.2f, 2f);
     [SerializeField] private BuffSettings adultBuffs = new BuffSettings(1.1f, 1.2f, 1.1f, 2f);
@@ -53,6 +60,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
     #region State
 
     public bool isSkillActive { get; private set; }
+    private float currentStamina;
     private float healthDrainTimer;
     private const string SHIELD_SKILL_MODIFIER_KEY = "ShieldSkillBuff";
     private const float LOW_HEALTH_THRESHOLD = 10f;
@@ -72,6 +80,9 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
     private Coroutine safeDeactivateCoroutine;
 
+    private bool hasStaminaBeenFullyDepleted = false;
+    public static event System.Action<float, float> OnStaminaChanged; // (currentStamina, maxStamina)
+
     #endregion
 
     #region Unity Lifecycle
@@ -82,6 +93,8 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         statsManager = GetComponent<PlayerStatsManager>();
         playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
         playerShieldController = GetComponent<PlayerShieldController>();
+
+        currentStamina = maxStamina;
 
         if (statsManager == null)
         {
@@ -120,6 +133,11 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
         playerControls = new PlayerControlls();
         playerControls.Abilities.SetCallbacks(this);
+    }
+
+    private void Start()
+    {
+        OnStaminaChanged?.Invoke(currentStamina, maxStamina);
     }
 
     private void OnEnable()
@@ -200,6 +218,10 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
             UpdateActiveSkill();
             UpdateVFXVisibility();
         }
+        else
+        {
+            RechargeStamina();
+        }
     }
 
     #endregion
@@ -247,6 +269,12 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
             return;
         }
 
+        if (!CanActivateSkill())
+        {
+            ShowNoStaminaWarning();
+            return;
+        }
+
         ToggleSkill();
     }
 
@@ -270,7 +298,16 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         }
 
         if (isSkillActive) DeactivateSkill();
-        else ActivateSkill();
+        else
+        {
+            if (!CanActivateSkill())
+            {
+                ShowNoStaminaWarning();
+                return;
+            }
+
+            ActivateSkill();
+        }
     }
 
     private void ActivateSkill()
@@ -356,7 +393,13 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
     private void UpdateActiveSkill()
     {
-        float currentHealthDrain = statsManager.GetStat(StatType.HealthDrainAmount);
+        if (currentStamina > 0)
+        {
+            ConsumeStamina();
+        }
+        else
+        {
+            float currentHealthDrain = statsManager.GetStat(StatType.HealthDrainAmount);
 
         if (currentHealthDrain > 0)
         {
@@ -366,6 +409,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
                 playerHealth.TakeDamage(currentHealthDrain, true);
                 healthDrainTimer %= 1f;
             }
+        }
         }
     }
 
@@ -379,6 +423,107 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         float afterValue = statsManager.GetStat(StatType.HealthDrainAmount);
 
         Debug.Log($"[ShieldSkill] HealthDrainAmount removido: {beforeValue} -> {afterValue}");
+    }
+
+    #endregion
+
+    #region Stamina System
+
+    /// <summary>
+    /// Verifica si la habilidad puede activarse según las reglas de estamina.
+    /// </summary>
+    private bool CanActivateSkill()
+    {
+        if (requireFullStaminaToActivate)
+        {
+            return currentStamina >= maxStamina;
+        }
+        else
+        {
+            if (hasStaminaBeenFullyDepleted)
+            {
+                return currentStamina >= maxStamina;
+            }
+            else
+            {
+                return currentStamina >= minStaminaToActivate;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Consume estamina mientras la habilidad está activa.
+    /// </summary>
+    private void ConsumeStamina()
+    {
+        float previousStamina = currentStamina;
+        currentStamina -= staminaDrainRate * Time.deltaTime;
+        currentStamina = Mathf.Max(0f, currentStamina);
+
+        if (previousStamina > 0f && currentStamina <= 0f)
+        {
+            hasStaminaBeenFullyDepleted = true;
+            Debug.Log("[ShieldSkill] ¡Estamina completamente agotada! Requerirá recarga total para reactivar.");
+        }
+
+        // Notificar cambio de estamina
+        OnStaminaChanged?.Invoke(currentStamina, maxStamina);
+    }
+
+    /// <summary>
+    /// Recarga la estamina cuando la habilidad está inactiva.
+    /// </summary>
+    private void RechargeStamina()
+    {
+        if (currentStamina < maxStamina)
+        {
+            float previousStamina = currentStamina;
+            currentStamina += staminaRechargeRate * Time.deltaTime;
+            currentStamina = Mathf.Min(maxStamina, currentStamina);
+
+            if (hasStaminaBeenFullyDepleted && currentStamina >= maxStamina)
+            {
+                hasStaminaBeenFullyDepleted = false;
+                Debug.Log("[ShieldSkill] Estamina completamente recuperada. Habilidad disponible nuevamente.");
+            }
+
+            // Notificar cambio de estamina
+            OnStaminaChanged?.Invoke(currentStamina, maxStamina);
+        }
+    }
+
+    /// <summary>
+    /// Obtiene el porcentaje actual de estamina (0-1).
+    /// </summary>
+    public float GetStaminaPercentage()
+    {
+        return maxStamina > 0 ? currentStamina / maxStamina : 0f;
+    }
+
+    /// <summary>
+    /// Obtiene la estamina actual.
+    /// </summary>
+    public float GetCurrentStamina()
+    {
+        return currentStamina;
+    }
+
+    /// <summary>
+    /// Obtiene la estamina máxima.
+    /// </summary>
+    public float GetMaxStamina()
+    {
+        return maxStamina;
+    }
+
+    /// <summary>
+    /// Recarga instantáneamente la estamina (útil para power-ups o eventos especiales).
+    /// </summary>
+    public void RechargeStaminaInstantly(float amount)
+    {
+        currentStamina = Mathf.Min(maxStamina, currentStamina + amount);
+        OnStaminaChanged?.Invoke(currentStamina, maxStamina);
+        Debug.Log($"[ShieldSkill] Estamina recargada instantáneamente: +{amount}");
     }
 
     #endregion
@@ -608,6 +753,26 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
     }
 
     #endregion
+
+    private void ShowNoStaminaWarning()
+    {
+        if (currentWarningMessage == null && warningMessagePrefab != null)
+        {
+            Vector3 spawnPosition = transform.position + Vector3.up * warningMessageOffset;
+            currentWarningMessage = Instantiate(warningMessagePrefab, spawnPosition, Quaternion.identity);
+            WarningMessageFloater floater = currentWarningMessage.GetComponent<WarningMessageFloater>();
+            if (floater != null)
+            {
+                floater.SetLifetime(warningMessageDuration);
+                floater.SetColor(warningMessageColor);
+                floater.SetText("¡No tengo suficiente energía!");
+            }
+
+            StartCoroutine(DestroyWarningMessageAfterDelay());
+        }
+
+        Debug.Log("[ShieldSkill] No hay suficiente estamina para activar la habilidad.");
+    }
 
     #region Low Health Feedback
 
