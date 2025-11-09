@@ -191,6 +191,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         if (inventory != null)
         {
             inventory.ClearInventory();
+            statsManager.RemoveAllBehavioralEffects(inventory.ActiveBehavioralEffects);
         }
 
         SceneManager.LoadScene(sceneName);
