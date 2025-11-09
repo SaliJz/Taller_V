@@ -1558,9 +1558,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 900821168}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 312.625, y: -293.75}
   m_SizeDelta: {x: 625.25, y: 117.5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &768410882
@@ -2146,7 +2146,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &900821168
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3522,9 +3522,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 900821168}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 312.625, y: -58.75}
   m_SizeDelta: {x: 625.25, y: 117.5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1745106928
@@ -3767,9 +3767,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 900821168}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 312.625, y: -176.25}
   m_SizeDelta: {x: 625.25, y: 117.5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1753502585
@@ -3968,6 +3968,12 @@ MonoBehaviour:
     - {fileID: 7203752380485401633, guid: 8b8badf0f782f584e95dabb82407e8d6, type: 3}
     - {fileID: 6730149805877275145, guid: 7e92fe95e9a36a141b0ecc5d6cf4b651, type: 3}
     roomDataList: []
+  - roomType: 4
+    probability: 100
+    roomPrefabs:
+    - {fileID: -2013639086596557405, guid: 6a69a6dfe81a113429a73d7e2522291c, type: 3}
+    - {fileID: -2013639086596557405, guid: fca8b3385a8f516499a041ca914555a2, type: 3}
+    roomDataList: []
   generationRules: []
   progressionRules:
   - useMultipleRoomTypes: 1
@@ -3985,12 +3991,13 @@ MonoBehaviour:
     combatContent:
       waves: []
       timeBetweenWaves: 0
-  - useMultipleRoomTypes: 1
-    roomType: 1
+  - useMultipleRoomTypes: 0
+    roomType: 4
     multipleRoomTypes: []
     useCustomPrefabs: 1
     customRoomPrefabs:
-    - {fileID: 7203752380485401633, guid: 8b8badf0f782f584e95dabb82407e8d6, type: 3}
+    - {fileID: -2013639086596557405, guid: 6a69a6dfe81a113429a73d7e2522291c, type: 3}
+    - {fileID: -2013639086596557405, guid: fca8b3385a8f516499a041ca914555a2, type: 3}
     minRoomNumber: 2
     maxRoomNumber: 2
     isMandatory: 1
@@ -4005,9 +4012,24 @@ MonoBehaviour:
     multipleRoomTypes: []
     useCustomPrefabs: 1
     customRoomPrefabs:
-    - {fileID: 6730149805877275145, guid: 7e92fe95e9a36a141b0ecc5d6cf4b651, type: 3}
+    - {fileID: 7203752380485401633, guid: 8b8badf0f782f584e95dabb82407e8d6, type: 3}
     minRoomNumber: 3
     maxRoomNumber: 3
+    isMandatory: 1
+    isProbableMandatory: 0
+    generateOnce: 1
+    probability: 100
+    combatContent:
+      waves: []
+      timeBetweenWaves: 0
+  - useMultipleRoomTypes: 1
+    roomType: 1
+    multipleRoomTypes: []
+    useCustomPrefabs: 1
+    customRoomPrefabs:
+    - {fileID: 6730149805877275145, guid: 7e92fe95e9a36a141b0ecc5d6cf4b651, type: 3}
+    minRoomNumber: 4
+    maxRoomNumber: 4
     isMandatory: 1
     isProbableMandatory: 0
     generateOnce: 1
@@ -4022,8 +4044,8 @@ MonoBehaviour:
     customRoomPrefabs:
     - {fileID: -2013639086596557405, guid: 6a69a6dfe81a113429a73d7e2522291c, type: 3}
     - {fileID: -2013639086596557405, guid: fca8b3385a8f516499a041ca914555a2, type: 3}
-    minRoomNumber: 4
-    maxRoomNumber: 4
+    minRoomNumber: 5
+    maxRoomNumber: 5
     isMandatory: 1
     isProbableMandatory: 0
     generateOnce: 1
@@ -4056,7 +4078,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1755437148}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 618be61b1202d2443bd11d618af3139a, type: 3}
   m_Name: 

@@ -11,7 +11,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 
     private PlayerControlls playerControls;
 
-    private PlayerStatsManager statsManager;
+    [SerializeField] private PlayerStatsManager statsManager;
     private float previousTimeScale;
     private bool isPaused = false;
 
@@ -188,10 +188,16 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         if (statsManager != null) statsManager.ResetStatsOnDeath();
 
         InventoryManager inventory = FindAnyObjectByType<InventoryManager>();
+
         if (inventory != null)
         {
             inventory.ClearInventory();
-            statsManager.RemoveAllBehavioralEffects(inventory.ActiveBehavioralEffects);
+        }
+
+        float maxHealth = statsManager.GetStat(StatType.MaxHealth);
+        if (statsManager._currentStatSO != null)
+        {
+            statsManager._currentStatSO.currentHealth = maxHealth;
         }
 
         SceneManager.LoadScene(sceneName);
