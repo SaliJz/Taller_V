@@ -14,18 +14,79 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   progressionLevels:
   - startRoomNumber: 1
-    GenerationMode: 0
+    GenerationMode: 1
     minWaves: 2
     maxWaves: 4
     timeBetweenWaves: 3
     minEnemyCountPerWave: 4
     maxEnemyCountPerWave: 5
-    availableEnemyPool:
-    - TierName: Minion
-      EnemyPrefab: {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
-      SpawnWeight: 0
-    - TierName: Minion
-      EnemyPrefab: {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
-      SpawnWeight: 0
+    availableEnemyPool: []
     totalDifficultyMultiplier: 0
-    predefinedCombinations: []
+    predefinedCombinations:
+    - CombinationName: Wave001
+      waves:
+      - enemiesInWave:
+        - EnemyPrefab: {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
+          Count: 3
+      - enemiesInWave:
+        - EnemyPrefab: {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
+          Count: 3
+      timeBetweenWaves: 1
+  - startRoomNumber: 3
+    GenerationMode: 1
+    minWaves: 2
+    maxWaves: 4
+    timeBetweenWaves: 3
+    minEnemyCountPerWave: 4
+    maxEnemyCountPerWave: 5
+    availableEnemyPool: []
+    totalDifficultyMultiplier: 0
+    predefinedCombinations:
+    - CombinationName: Wave002
+      waves:
+      - enemiesInWave:
+        - EnemyPrefab: {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
+          Count: 2
+        - EnemyPrefab: {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
+          Count: 1
+      - enemiesInWave:
+        - EnemyPrefab: {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
+          Count: 2
+      - enemiesInWave:
+        - EnemyPrefab: {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
+          Count: 3
+      timeBetweenWaves: 1
+  - startRoomNumber: 4
+    GenerationMode: 1
+    minWaves: 2
+    maxWaves: 4
+    timeBetweenWaves: 3
+    minEnemyCountPerWave: 4
+    maxEnemyCountPerWave: 5
+    availableEnemyPool: []
+    totalDifficultyMultiplier: 0
+    predefinedCombinations:
+    - CombinationName: Wave003
+      waves:
+      - enemiesInWave:
+        - EnemyPrefab: {fileID: 8508571803709799617, guid: 78fcfe1545c97dd45b9eb6cbfa5f3a53, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
+          Count: 1
+      - enemiesInWave:
+        - EnemyPrefab: {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 7967318150890097738, guid: d1d4a45487baf534881286849e22ca4b, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
+          Count: 1
+      - enemiesInWave:
+        - EnemyPrefab: {fileID: 3776010021068202972, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
+          Count: 2
+      timeBetweenWaves: 1
