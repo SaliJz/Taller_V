@@ -149,13 +149,13 @@ public class ResurrectedLarva : MonoBehaviour
             IDamageable damageable = hitCollider.GetComponentInParent<IDamageable>();
             if (damageable != null)
             {
-                damageable.TakeDamage(calculatedDamage, false);
-                Debug.Log($"[Larva] Daño por explosión de {calculatedDamage:F2} aplicado a {hitCollider.gameObject.name}.");
+                damageable.TakeDamage(baseDamage, false);
+                Destroy(gameObject); Destroy(gameObject);
+                Debug.Log($"[Larva] Daño por explosión de {baseDamage:F2} aplicado a {hitCollider.gameObject.name}.");
             }
         }
 
         if (agent != null) agent.enabled = false;
-        Destroy(gameObject);
     }
 
     private void OnDrawGizmosSelected()
