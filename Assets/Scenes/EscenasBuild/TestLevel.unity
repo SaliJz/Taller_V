@@ -4027,14 +4027,30 @@ MonoBehaviour:
         - {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
         enemyCount: 4
       timeBetweenWaves: 1
+  - useMultipleRoomTypes: 0
+    roomType: 4
+    multipleRoomTypes: []
+    useCustomPrefabs: 1
+    customRoomPrefabs:
+    - {fileID: -2013639086596557405, guid: 6a69a6dfe81a113429a73d7e2522291c, type: 3}
+    - {fileID: -2013639086596557405, guid: fca8b3385a8f516499a041ca914555a2, type: 3}
+    minRoomNumber: 2
+    maxRoomNumber: 2
+    isMandatory: 1
+    isProbableMandatory: 0
+    generateOnce: 1
+    probability: 100
+    combatContent:
+      waves: []
+      timeBetweenWaves: 0
   - useMultipleRoomTypes: 1
     roomType: 1
     multipleRoomTypes: []
     useCustomPrefabs: 1
     customRoomPrefabs:
     - {fileID: 1482729654027300797, guid: 2b7455c699c26e74ca0cd38a8b5336d2, type: 3}
-    minRoomNumber: 2
-    maxRoomNumber: 2
+    minRoomNumber: 3
+    maxRoomNumber: 3
     isMandatory: 1
     isProbableMandatory: 0
     generateOnce: 1
@@ -4054,8 +4070,8 @@ MonoBehaviour:
     useCustomPrefabs: 1
     customRoomPrefabs:
     - {fileID: 4837703137612241022, guid: 3b99d80ccf7eea245aa4ad220ebc647c, type: 3}
-    minRoomNumber: 3
-    maxRoomNumber: 3
+    minRoomNumber: 4
+    maxRoomNumber: 4
     isMandatory: 1
     isProbableMandatory: 0
     generateOnce: 1
@@ -4065,33 +4081,21 @@ MonoBehaviour:
       - enemyPrefabs:
         - {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
         - {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
+        - {fileID: 8508571803709799617, guid: 78fcfe1545c97dd45b9eb6cbfa5f3a53, type: 3}
+        - {fileID: 7967318150890097738, guid: d1d4a45487baf534881286849e22ca4b, type: 3}
         enemyCount: 4
       - enemyPrefabs:
         - {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
         - {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
+        - {fileID: 8508571803709799617, guid: 78fcfe1545c97dd45b9eb6cbfa5f3a53, type: 3}
+        - {fileID: 7967318150890097738, guid: d1d4a45487baf534881286849e22ca4b, type: 3}
         enemyCount: 4
       - enemyPrefabs:
-        - {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
-        - {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
+        - {fileID: 8508571803709799617, guid: 78fcfe1545c97dd45b9eb6cbfa5f3a53, type: 3}
+        - {fileID: 7967318150890097738, guid: d1d4a45487baf534881286849e22ca4b, type: 3}
         - {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
         enemyCount: 4
       timeBetweenWaves: 1
-  - useMultipleRoomTypes: 0
-    roomType: 4
-    multipleRoomTypes: []
-    useCustomPrefabs: 1
-    customRoomPrefabs:
-    - {fileID: -2013639086596557405, guid: 6a69a6dfe81a113429a73d7e2522291c, type: 3}
-    - {fileID: -2013639086596557405, guid: fca8b3385a8f516499a041ca914555a2, type: 3}
-    minRoomNumber: 4
-    maxRoomNumber: 4
-    isMandatory: 1
-    isProbableMandatory: 0
-    generateOnce: 1
-    probability: 100
-    combatContent:
-      waves: []
-      timeBetweenWaves: 0
   enemyPrefabs:
   - {fileID: 7967318150890097738, guid: 9d27d6984127f9f44b8fb3ba978cfa8e, type: 3}
   - {fileID: 8508571803709799617, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}

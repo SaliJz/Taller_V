@@ -145,7 +145,7 @@ Transform:
   - {fileID: 143837006793586898}
   - {fileID: 3613030828522833178}
   - {fileID: 8488080443141041729}
-  - {fileID: 662273841966373943}
+  - {fileID: 3228786746574489516}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3253896185043042340
@@ -676,7 +676,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!1001 &4541367394103282668
+--- !u!1001 &1943311390981673079
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -686,15 +686,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3906577018013161435, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -2.3500004
+      value: 0.12499905
       objectReference: {fileID: 0}
     - target: {fileID: 3906577018013161435, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.65
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3906577018013161435, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 12.67
+      value: 16.375
       objectReference: {fileID: 0}
     - target: {fileID: 3906577018013161435, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_LocalRotation.w
@@ -702,15 +702,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3906577018013161435, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3906577018013161435, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3906577018013161435, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 3906577018013161435, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -733,54 +733,22 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8537394917465235362, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
-      propertyPath: maxHealth
-      value: 2000
-      objectReference: {fileID: 0}
-    - target: {fileID: 8537394917465235362, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
-      propertyPath: onDeathEvent.m_PersistentCalls.m_Calls.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8537394917465235362, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
-      propertyPath: onDeathEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 8537394917465235362, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
-      propertyPath: onDeathEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 6596285678482203309}
-    - target: {fileID: 8537394917465235362, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
-      propertyPath: onDeathEvent.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8537394917465235362, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
-      propertyPath: onDeathEvent.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: LoadSceneByName
-      objectReference: {fileID: 0}
-    - target: {fileID: 8537394917465235362, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
-      propertyPath: onDeathEvent.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: InteractionEvents, Assembly-CSharp
-      objectReference: {fileID: 0}
-    - target: {fileID: 8537394917465235362, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
-      propertyPath: onDeathEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_StringArgument
-      value: Tuto
-      objectReference: {fileID: 0}
-    - target: {fileID: 8537394917465235362, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
-      propertyPath: onDeathEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
+      propertyPath: lifestealAmountOnDeath
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 9147642797784961567, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_Name
-      value: Boss2_BloodKnight
+      value: 'Boss2_BloodKnight '
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
---- !u!4 &662273841966373943 stripped
+--- !u!4 &3228786746574489516 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3906577018013161435, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
-  m_PrefabInstance: {fileID: 4541367394103282668}
+  m_PrefabInstance: {fileID: 1943311390981673079}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8165922317190334213
 PrefabInstance:
