@@ -33,11 +33,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     [Header("Lifesteal Control")]
     [SerializeField] private bool canGrantLifestealOnDeath = true;
+    [SerializeField] private float lifestealAmountOnDeath = 10f;
 
     [Header("Toughness System")]
     [SerializeField] private EnemyToughness toughnessSystem;
 
-    private EnemyKnockbackHandler knockbackHandler;
     private PlayerStatsManager playerStatsManager;
     private EnemyAuraManager _auraManager;
 
@@ -54,6 +54,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private int currentHealthBars;
     private int totalHealthBars;
+
+    public bool IsStunned => isStunned;
 
     public float CurrentHealth
     {
@@ -160,8 +162,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         // asegurar inicialización de currentHealth (si no se configuró)
         currentHealth = Mathf.Clamp(currentHealth > 0f ? currentHealth : maxHealth, 0f, maxHealth);
 
-        knockbackHandler = GetComponent<EnemyKnockbackHandler>();
-
         InitializeHealthUI();
     }
 
@@ -219,6 +219,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         if (currentHealth <= 0) return;
 
         float finalDamage = damageAmount;
+        OnDamaged?.Invoke();
 
         // Procesar dureza
         if (toughnessSystem != null && toughnessSystem.HasToughness)
@@ -253,7 +254,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         // emitir cambio de vida para listeners
         CurrentHealth = currentHealth;
 
-        OnDamaged?.Invoke();
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         UpdateHealthUI();
 
@@ -337,9 +337,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         {
             float lifestealAmount = playerStatsManager.GetCurrentStat(StatType.LifestealOnKill);
 
+            lifestealAmountOnDeath += lifestealAmount;
+
             if (canHealPlayer && lifestealAmount > 0)
             {
-                playerHealth.Heal(lifestealAmount);
+                playerHealth.Heal(lifestealAmountOnDeath);
                 ReportDebug($"El jugador ha robado {lifestealAmount} de vida al matar a {gameObject.name} (LifestealOnKill).", 1);
             }
         }
@@ -387,11 +389,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         ReportDebug("Iniciando aturdimiento.", 1);
         isStunned = true;
 
-        if (knockbackHandler != null)
-        {
-            knockbackHandler.StopMovement(true);
-        }
-
         if (enemyVisualEffects != null)
         {
             enemyVisualEffects.StartStunEffect(duration);
@@ -409,11 +406,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         yield return new WaitForSeconds(duration);
 
         isStunned = false;
-
-        if (knockbackHandler != null)
-        {
-            knockbackHandler.StopMovement(false);
-        }
 
         if (enemyVisualEffects != null)
         {

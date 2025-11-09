@@ -442,7 +442,7 @@ GameObject:
   - component: {fileID: 8505107474849817774}
   - component: {fileID: 254221231430808994}
   m_Layer: 7
-  m_Name: Laceratus
+  m_Name: Laceratus super armor
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -630,7 +630,7 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeath: 17
+  lifestealAmountOnDeath: 20
   toughnessSystem: {fileID: 254221231430808994}
   enableAutoArea: 0
   areaTriggerPercent: 0.25
@@ -677,7 +677,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 857663678c6b68a4ab60f54f457c56a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useToughness: 0
+  useToughness: 1
   maxToughness: 50
   currentToughness: 0
   meleeToughnessDamageMultiplier: 1

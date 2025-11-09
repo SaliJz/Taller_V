@@ -218,6 +218,16 @@ public partial class MorlockEnemy : MonoBehaviour
     {
         if (isDead || playerTransform == null) return;
 
+        if (enemyHealth != null && enemyHealth.IsStunned)
+        {
+            if (agent != null && agent.enabled && agent.isOnNavMesh)
+            {
+                agent.isStopped = true;
+                agent.ResetPath();
+            }
+            return;
+        }
+
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
         float distanceFromOrigin = Vector3.Distance(transform.position, originPosition);
 
@@ -475,6 +485,11 @@ public partial class MorlockEnemy : MonoBehaviour
 
     private void TeleportToPosition(Vector3 targetPosition)
     {
+        if (enemyHealth != null && enemyHealth.IsStunned)
+        {
+            return;
+        }
+
         if (animator != null) animator.SetTrigger("Teleport");
         if (audioSource != null && teleportSFX != null) audioSource.PlayOneShot(teleportSFX);
 
@@ -528,6 +543,11 @@ public partial class MorlockEnemy : MonoBehaviour
 
     private void Shoot()
     {
+        if (enemyHealth != null && enemyHealth.IsStunned)
+        {
+            return;
+        }
+
         if (animator != null) animator.SetTrigger("Shoot");
         if (audioSource != null && shootSFX != null) audioSource.PlayOneShot(shootSFX);
 

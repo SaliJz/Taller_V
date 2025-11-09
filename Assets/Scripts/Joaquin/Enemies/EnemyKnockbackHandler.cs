@@ -18,23 +18,6 @@ public class EnemyKnockbackHandler : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
     }
 
-    public void StopMovement(bool stop)
-    {
-        isMovementPausedByStun = stop;
-
-        if (agent != null && agent.enabled)
-        {
-            agent.isStopped = stop;
-            agent.ResetPath();
-            agent.velocity = Vector3.zero;
-        }
-
-        if (agent != null && agent.enabled)
-        {
-            agent.enabled = !stop;
-        }
-    }
-
     /// <summary>
     /// Método público que inicia el proceso de empuje.
     /// </summary>

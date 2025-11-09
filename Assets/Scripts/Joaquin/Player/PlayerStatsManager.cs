@@ -714,34 +714,34 @@ public partial class PlayerStatsManager : MonoBehaviour
         {
             case LifeStage.Young:
                 Debug.Log("[PlayerStatsManager] Etapa Joven: Aplicando buffs de velocidad y debuffs de da�o.");
-                if (baseStats.ContainsKey(StatType.MoveSpeed))
-                    currentStats[StatType.MoveSpeed] += baseStats[StatType.MoveSpeed] * 0.25f;
-                if (baseStats.ContainsKey(StatType.MeleeAttackSpeed))
-                    currentStats[StatType.MeleeAttackSpeed] += baseStats[StatType.MeleeAttackSpeed] * 0.25f;
-                if (baseStats.ContainsKey(StatType.MeleeAttackDamage))
-                    currentStats[StatType.MeleeAttackDamage] -= baseStats[StatType.MeleeAttackDamage] * 0.25f;
-                if (baseStats.ContainsKey(StatType.ShieldSpeed))
-                    currentStats[StatType.ShieldSpeed] += baseStats[StatType.ShieldSpeed] * 0.25f;
-                if (baseStats.ContainsKey(StatType.ShieldAttackDamage))
-                    currentStats[StatType.ShieldAttackDamage] -= baseStats[StatType.ShieldAttackDamage] * 0.25f;
                 break;
 
             case LifeStage.Adult:
-                Debug.Log("[PlayerStatsManager] Etapa Adulto: Estad�sticas base restauradas.");
+                Debug.Log("[PlayerStatsManager] Etapa Adulto: EstadIsticas base restauradas.");
+                if (baseStats.ContainsKey(StatType.MoveSpeed))
+                    currentStats[StatType.MoveSpeed] += baseStats[StatType.MoveSpeed] * 0.1f;
+                if (baseStats.ContainsKey(StatType.MeleeAttackSpeed))
+                    currentStats[StatType.MeleeAttackSpeed] += baseStats[StatType.MeleeAttackSpeed] * 0.1f;
+                if (baseStats.ContainsKey(StatType.MeleeAttackDamage))
+                    currentStats[StatType.MeleeAttackDamage] += baseStats[StatType.MeleeAttackDamage] * 0.1f;
+                if (baseStats.ContainsKey(StatType.ShieldSpeed))
+                    currentStats[StatType.ShieldSpeed] += baseStats[StatType.ShieldSpeed] * 0.1f;
+                if (baseStats.ContainsKey(StatType.ShieldAttackDamage))
+                    currentStats[StatType.ShieldAttackDamage] += baseStats[StatType.ShieldAttackDamage] * 0.1f;
                 break;
 
             case LifeStage.Elder:
                 Debug.Log("[PlayerStatsManager] Etapa Anciano: Aplicando buffs de da�o y debuffs de velocidad.");
                 if (baseStats.ContainsKey(StatType.MoveSpeed))
-                    currentStats[StatType.MoveSpeed] -= baseStats[StatType.MoveSpeed] * 0.25f;
+                    currentStats[StatType.MoveSpeed] += baseStats[StatType.MoveSpeed] * 0.2f;
                 if (baseStats.ContainsKey(StatType.MeleeAttackSpeed))
-                    currentStats[StatType.MeleeAttackSpeed] -= baseStats[StatType.MeleeAttackSpeed] * 0.25f;
+                    currentStats[StatType.MeleeAttackSpeed] += baseStats[StatType.MeleeAttackSpeed] * 0.2f;
                 if (baseStats.ContainsKey(StatType.MeleeAttackDamage))
-                    currentStats[StatType.MeleeAttackDamage] += baseStats[StatType.MeleeAttackDamage] * 0.25f;
+                    currentStats[StatType.MeleeAttackDamage] += baseStats[StatType.MeleeAttackDamage] * 0.2f;
                 if (baseStats.ContainsKey(StatType.ShieldSpeed))
-                    currentStats[StatType.ShieldSpeed] -= baseStats[StatType.ShieldSpeed] * 0.25f;
+                    currentStats[StatType.ShieldSpeed] += baseStats[StatType.ShieldSpeed] * 0.2f;
                 if (baseStats.ContainsKey(StatType.ShieldAttackDamage))
-                    currentStats[StatType.ShieldAttackDamage] += baseStats[StatType.ShieldAttackDamage] * 0.25f;
+                    currentStats[StatType.ShieldAttackDamage] += baseStats[StatType.ShieldAttackDamage] * 0.2f;
                 break;
         }
 

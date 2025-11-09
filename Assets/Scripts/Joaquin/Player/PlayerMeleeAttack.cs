@@ -34,6 +34,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private float comboResetTime = 2f; // Tiempo sin atacar para resetear combo
     [SerializeField] private float[] comboMovementForces = new float[3] { 1.5f, 2f, 1.8f }; // Fuerza de empuje por ataque
     [SerializeField] private float[] comboLockDurations = new float[3] { 0.4f, 0.6f, 0.8f }; // Duración del lock por ataque
+    [SerializeField] private float[] comboStunDurations = new float[3] { 0.5f, 0.5f, 1f }; // Duración de aturdimiento por ataque
 
     [Header("Attack 1 (Basic)")]
     [SerializeField] private float attack1Duration = 0.4f;
@@ -48,7 +49,6 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private float attack3PreChargeDuration = 0.3f;
     [SerializeField] private float attack3ChargeDuration = 0.3f;
     [SerializeField] private float attack3SpinSpeed = 90f;
-    [SerializeField] private float attack3StunDuration = 0.5f;
 
     [Header("knockback Configuration")]
     [SerializeField] private float knockbackYoung = 0.25f;
@@ -713,15 +713,31 @@ public class PlayerMeleeAttack : MonoBehaviour
                 else
                 {
                     damageable.TakeDamage(Mathf.RoundToInt(finalDamage), isCritical, meleeDamageType);
+                    EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
 
-                    if (currentAttackIndex == 2)
+                    switch (currentAttackIndex)
                     {
-                        EnemyHealth tempHealth = enemy.GetComponent<EnemyHealth>();
-                        if (tempHealth != null)
-                        {
-                            tempHealth.ApplyStun(attack3StunDuration);
-                            ReportDebug($"Enemigo {enemy.name} aturdido por {attack3StunDuration} segundos.", 1);
-                        }
+                        case 0:
+                            if (enemyHealth != null)
+                            {
+                                enemyHealth.ApplyStun(comboStunDurations[0]);
+                                ReportDebug($"Enemigo {enemy.name} aturdido por {comboStunDurations[0]} segundos.", 1);
+                            }
+                            break;
+                        case 1:
+                            if (enemyHealth != null)
+                            {
+                                enemyHealth.ApplyStun(comboStunDurations[1]);
+                                ReportDebug($"Enemigo {enemy.name} aturdido por {comboStunDurations[1]} segundos.", 1);
+                            }
+                            break;
+                        case 2:
+                            if (enemyHealth != null)
+                            {
+                                enemyHealth.ApplyStun(comboStunDurations[2]);
+                                ReportDebug($"Enemigo {enemy.name} aturdido por {comboStunDurations[2]} segundos.", 1);
+                            }
+                            break;
                     }
 
                     ReportDebug($"Golpe a {enemy.name}: Enviando {finalDamage:F2} de daño de {meleeDamageType}", 1);

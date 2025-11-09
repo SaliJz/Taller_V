@@ -1,6 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -226,6 +224,16 @@ public class KronusEnemy : MonoBehaviour
     private void Update()
     {
         if (!enabled) return;
+
+        if (enemyHealth != null && enemyHealth.IsStunned)
+        {
+            if (agent != null && agent.enabled && agent.isOnNavMesh)
+            {
+                agent.isStopped = true;
+                agent.ResetPath();
+            }
+            return;
+        }
 
         if (playerTransform == null)
         {
@@ -465,7 +473,21 @@ public class KronusEnemy : MonoBehaviour
             agent.updateRotation = true;
         }
 
-        yield return new WaitForSeconds(preparationTime);
+        float prepTimer = 0f;
+        while (prepTimer < preparationTime)
+        {
+            if (enemyHealth != null && enemyHealth.IsStunned)
+            {
+                isAttacking = false;
+                if (agent != null && agent.enabled)
+                {
+                    agent.updatePosition = true;
+                }
+                yield break; // cancelar ataque si está aturdido
+            }
+            prepTimer += Time.deltaTime;
+            yield return null; // esperar al siguiente frame
+        }
 
         if (animator != null) animator.SetTrigger("StartDash");
         if (audioSource != null && dashSFX != null) audioSource.PlayOneShot(dashSFX);
@@ -492,6 +514,21 @@ public class KronusEnemy : MonoBehaviour
         // Dash por duración
         while (elapsed < dashDuration)
         {
+            if (enemyHealth != null && enemyHealth.IsStunned)
+            {
+                isAttacking = false;
+                if (agent != null && agent.enabled)
+                {
+                    NavMeshHit navHitByStun;
+                    if (NavMesh.SamplePosition(transform.position, out navHitByStun, 2f, NavMesh.AllAreas))
+                    {
+                        agent.Warp(navHitByStun.position);
+                    }
+                    agent.updatePosition = true;
+                }
+                yield break;
+            }
+
             float delta = Time.deltaTime;
             elapsed += delta;
 
@@ -549,6 +586,21 @@ public class KronusEnemy : MonoBehaviour
             }
 
             agent.updatePosition = true;
+        }
+
+        if (enemyHealth != null && enemyHealth.IsStunned)
+        {
+            isAttacking = false;
+            if (agent != null && agent.enabled)
+            {
+                NavMeshHit navHit;
+                if (NavMesh.SamplePosition(transform.position, out navHit, 2f, NavMesh.AllAreas))
+                {
+                    agent.Warp(navHit.position);
+                }
+                agent.updatePosition = true;
+            }
+            yield break;
         }
 
         ReportDebug("Kronus preparando martillazo.", 1);

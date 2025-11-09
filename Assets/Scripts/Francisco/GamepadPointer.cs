@@ -67,6 +67,9 @@ public class GamepadPointer : MonoBehaviour
 
         float deltaTime = Time.unscaledDeltaTime;
 
+        bool isPauseControllerActive = PauseController.Instance != null;
+        bool shouldFollowSelected = Time.timeScale == 0f || !isPauseControllerActive;
+
         if (isMovingCursor)
         {
             if (!virtualCursor.gameObject.activeSelf) virtualCursor.gameObject.SetActive(true);
@@ -93,7 +96,7 @@ public class GamepadPointer : MonoBehaviour
                 Mouse.current.WarpCursorPosition(screenPoint);
             }
         }
-        else if (Time.timeScale == 0f)
+        else if (shouldFollowSelected)
         {
             GameObject selectedObject = EventSystem.current?.currentSelectedGameObject;
 

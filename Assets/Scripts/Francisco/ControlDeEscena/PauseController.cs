@@ -18,8 +18,17 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     private bool canTogglePause = true;
     private const float ToggleCooldown = 0.15f;
 
+    public static PauseController Instance { get; private set; }
+
     void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+
         playerControls = new PlayerControlls();
         playerControls.UI.SetCallbacks(this);
 
@@ -182,6 +191,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         if (inventory != null)
         {
             inventory.ClearInventory();
+            statsManager.RemoveAllBehavioralEffects(inventory.ActiveBehavioralEffects);
         }
 
         SceneManager.LoadScene(sceneName);
