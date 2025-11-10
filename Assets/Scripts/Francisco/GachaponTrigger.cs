@@ -160,7 +160,6 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         if (other.CompareTag("Player"))
         {
             playerIsNear = false;
-            ShowResultUI(false, "", "");
 
             if (interactionTextPanel != null)
             {

@@ -2,11 +2,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using System.Collections;
+using System.Linq;
 
 public class InventoryManager : MonoBehaviour
 {
     public const int MaxInventorySize = 10;
     private static readonly List<ShopItem> currentRunItems = new List<ShopItem>();
+    private readonly List<ItemEffectBase> activeAmuletEffects = new List<ItemEffectBase>(); 
 
     private PlayerStatsManager playerStatsManager;
     private PlayerHealth playerHealth;
@@ -36,6 +38,7 @@ public class InventoryManager : MonoBehaviour
         get
         {
             List<ItemEffectBase> allEffects = new List<ItemEffectBase>();
+
             foreach (ShopItem item in CurrentRunItems)
             {
                 if (item.behavioralEffects != null)
@@ -43,13 +46,33 @@ public class InventoryManager : MonoBehaviour
                     allEffects.AddRange(item.behavioralEffects);
                 }
             }
-            return allEffects;
+
+            allEffects.AddRange(activeAmuletEffects);
+
+            return allEffects.Distinct().ToList();
         }
     }
 
     public void ResetRunItems()
     {
-        currentRunItems.Clear();
+        PlayerStatsManager statsManager = FindAnyObjectByType<PlayerStatsManager>();
+        if (statsManager == null)
+        {
+            Debug.LogError("PlayerStatsManager no encontrado para remover efectos.");
+            CurrentRunItems.Clear();
+            activeAmuletEffects.Clear(); 
+            return;
+        }
+
+        foreach (ItemEffectBase effect in ActiveBehavioralEffects.ToList())
+        {
+            effect.RemoveEffect(statsManager);
+        }
+
+        CurrentRunItems.Clear();
+        activeAmuletEffects.Clear(); 
+
+        Debug.Log("[InventoryManager] Inventario y todos los efectos activos reiniciados.");
     }
 
 
@@ -102,6 +125,15 @@ public class InventoryManager : MonoBehaviour
     public int GetCurrentItemCount()
     {
         return CurrentRunItems.Count; 
+    }
+
+    public void AddActiveAmuletEffect(ItemEffectBase effect)
+    {
+        if (effect != null && !activeAmuletEffects.Contains(effect))
+        {
+            activeAmuletEffects.Add(effect);
+            Debug.Log($"[InventoryManager] Efecto de Amuleto/Pacto '{effect.EffectID}' registrado para limpieza.");
+        }
     }
 
     public void ClearInventory()

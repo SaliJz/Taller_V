@@ -700,6 +700,11 @@ public class ShopManager : MonoBehaviour
         foreach (var effect in item.behavioralEffects)
         {
             effect.ApplyEffect(playerStatsManager);
+
+            if (item.isAmulet)
+            {
+                inventoryManager.AddActiveAmuletEffect(effect);
+            }
         }
 
         Pact purchasedPactReference = allPacts.Find(pact => pact.pactName == item.itemName);
