@@ -2655,9 +2655,9 @@ MonoBehaviour:
     Time: 1
     IsTargetable: 0
   _Attack1Damage: 9
-  _attack1Cooldown: 7
+  _attack1Cooldown: 5
   _whipRange: 25
-  _whipAttackCount: 3
+  _whipAttackCount: 4
   _smashVisualTransform: {fileID: 1926294932068586014}
   _smashAnimationKeyframes:
   - Position: {x: -3.6566527, y: 4.35, z: -0.47}
@@ -2665,11 +2665,11 @@ MonoBehaviour:
     Time: 0.5
     IsTargetable: 0
   - Position: {x: -3.6566527, y: 6.25, z: -0.25498104}
-    Scale: {x: 2, y: 2, z: 2}
+    Scale: {x: 6, y: 6, z: 6}
     Time: 1
     IsTargetable: 0
   - Position: {x: -3.6566527, y: 6.25, z: -0.25498104}
-    Scale: {x: 2, y: 2, z: 2}
+    Scale: {x: 6, y: 6, z: 6}
     Time: 1.5
     IsTargetable: 1
   - Position: {x: -3.6566527, y: 4.35, z: -0.47}
@@ -2677,9 +2677,9 @@ MonoBehaviour:
     Time: 1
     IsTargetable: 0
   _Attack2Damage: 25
-  _attack2Cooldown: 12
-  _smashRadius: 5
-  _smashDetectionRadius: 10
+  _attack2Cooldown: 9
+  _smashRadius: 6
+  _smashDetectionRadius: 12
   _smashRadiusPrefab: {fileID: 858073966183631630, guid: 50f8bfdafefbba447b7bfe665ac766b0, type: 3}
   _smashDelay: 1.5
   _pulseExpansionDuration: 3
@@ -2698,6 +2698,15 @@ MonoBehaviour:
   _roomMaxRadius: 10
   _calculateRoomRadiusOnStart: 1
   _movementSpeedForPulse: 10
+  _whipTelegraphPrefab: {fileID: 4634992738900687444}
+  _smashTelegraphPrefab: {fileID: 858073966183631630, guid: 50f8bfdafefbba447b7bfe665ac766b0, type: 3}
+  _telegraphDuration: 0.8
+  _enableAdaptiveDifficulty: 1
+  _difficultyAdjustmentInterval: 15
+  _comboCheckInterval: 8
+  _comboChance: 0.3
+  _dodgeIndicatorPrefab: {fileID: 0}
+  _dodgeIndicatorDuration: 1.5
   _enragedHealthThreshold: 0.25
   _eyeRenderers: []
   _enragedEyeMaterial: {fileID: 0}
@@ -2739,7 +2748,7 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeath: 0
+  lifestealAmountOnDeath: 100
   toughnessSystem: {fileID: 0}
   enableAutoArea: 0
   areaTriggerPercent: 0.25
