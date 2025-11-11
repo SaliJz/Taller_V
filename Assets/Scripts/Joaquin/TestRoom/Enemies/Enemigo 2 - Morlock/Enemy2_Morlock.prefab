@@ -2257,25 +2257,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd58f9ec10e51924e94100cff9156ee8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stats: {fileID: 11400000, guid: 827240c34ab30b44faf66dd69d82507b, type: 2}
+  stats: {fileID: 0}
   projectilePrefab: {fileID: 5442904530204617264, guid: 9f7e821dc3eb3bc46b6ab54cf186063b, type: 3}
   firePoint: {fileID: 9215352895255589693}
   health: 30
   moveSpeed: 4
   fireRate: 1.5
   projectileDamage: 1
-  projectileSpeed: 12
+  projectileSpeed: 11
   maxDamageIncrease: 2
-  maxRangeForDamageIncrease: 6
-  maxDistanceForDamageStart: 20
-  attackRange: 15
+  maxRangeForDamageIncrease: 7.5
+  maxDistanceForDamageStart: 100
+  attackRange: 100
   canReturnToPatrol: 0
-  detectionRadius: 15
+  detectionRadius: 20
   teleportRange: 7.5
   patrolWaypoints: []
-  loopWaypoints: 1
-  freePatrolIterations: 10
-  patrolAroundOrigin: 1
+  loopWaypoints: 0
+  freePatrolIterations: 0
+  patrolAroundOrigin: 0
   patrolRadius: 12
   patrolIdleTime: 2
   canReposition: 0
@@ -2327,7 +2327,8 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeath: 8
+  lifestealAmountOnDeathByMelee: 3
+  lifestealAmountOnDeathByDistance: 1.5
   toughnessSystem: {fileID: 6741422194599992414}
   enableAutoArea: 0
   areaTriggerPercent: 0.25
@@ -2399,7 +2400,7 @@ MonoBehaviour:
   stunMaterial: {fileID: 0}
   stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
-  stunVFXPrefab: {fileID: 0}
+  stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
   stunVFXHeight: 2
   stunSFX: {fileID: 0}
   defaultMaterial: {fileID: 2100000, guid: e826f8fe9d1a524468d39863e3899f64, type: 2}

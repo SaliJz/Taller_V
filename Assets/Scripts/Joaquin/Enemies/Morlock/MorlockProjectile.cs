@@ -29,10 +29,10 @@ public class MorlockProjectile : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            //other.GetComponent<PlayerHealth>()?.ApplyMorlockPoisonHit();
+            other.GetComponent<PlayerHealth>()?.ApplyMorlockPoisonHit();
             other.GetComponent<PlayerHealth>()?.TakeDamage(damage);
 
-            //if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
+            if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
             Destroy(gameObject);
         }
     }

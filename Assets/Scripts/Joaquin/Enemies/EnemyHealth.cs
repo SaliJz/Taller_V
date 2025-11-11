@@ -32,8 +32,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField, Range(0f, 1f)] private float colorGradientIntensity = 0.3f;
 
     [Header("Lifesteal Control")]
-    [SerializeField] private bool canGrantLifestealOnDeath = true;
-    [SerializeField] private float lifestealAmountOnDeath = 10f;
+    [SerializeField] private bool canGrantLifestealOnDeath = true; // deshabilitar para tutoriales u otros casos
+    [Tooltip("Cantidad base de lifesteal otorgada al jugador al morir este enemigo por daño cuerpo a cuerpo.")]
+    [SerializeField] private float lifestealAmountOnDeathByMelee = 10f;
+    [Tooltip("Cantidad base de lifesteal otorgada al jugador al morir este enemigo por daño a distancia.")]
+    [SerializeField] private float lifestealAmountOnDeathByDistance = 10f;
 
     [Header("Toughness System")]
     [SerializeField] private EnemyToughness toughnessSystem;
@@ -278,7 +281,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         if (currentHealth <= 0)
         {
             CurrentHealth = 0;
-            Die();
+            Die(deathByDamageType: damageType);
         }
     }
 
@@ -310,7 +313,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         UpdateHealthUI();
     }
 
-    public void Die(bool triggerEffects = true)
+    public void Die(bool triggerEffects = true, AttackDamageType deathByDamageType = AttackDamageType.Melee)
     {
         if (isDead) return;
 
@@ -337,12 +340,28 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         {
             float lifestealAmount = playerStatsManager.GetCurrentStat(StatType.LifestealOnKill);
 
-            lifestealAmountOnDeath += lifestealAmount;
-
-            if (canHealPlayer && lifestealAmount > 0)
+            if (canHealPlayer)
             {
-                playerHealth.Heal(lifestealAmountOnDeath);
-                ReportDebug($"El jugador ha robado {lifestealAmount} de vida al matar a {gameObject.name} (LifestealOnKill).", 1);
+                if (deathByDamageType == AttackDamageType.Melee)
+                {
+                    float totalLifesteal = lifestealAmountOnDeathByMelee + lifestealAmount;
+                    if (lifestealAmountOnDeathByMelee > 0)
+                    {
+                        playerHealth.Heal(totalLifesteal);
+                        ReportDebug($"El jugador ha robado {totalLifesteal} de vida al matar a {gameObject.name} (LifestealOnKill) por ataque cuerpo a cuerpo.", 1);
+                    }
+                }
+                else
+                {
+                    lifestealAmountOnDeathByDistance += lifestealAmount;
+                    if (lifestealAmountOnDeathByDistance > 0)
+                    {
+                        float totalLifesteal = lifestealAmountOnDeathByDistance + lifestealAmount;
+                        playerHealth.Heal(totalLifesteal);
+                        ReportDebug($"El jugador ha robado {totalLifesteal} de vida al matar a {gameObject.name} (LifestealOnKill) por ataque a distancia.", 1);
+                    }
+
+                }
             }
         }
         else if (!canGrantLifestealOnDeath)

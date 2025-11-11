@@ -150,8 +150,8 @@ public class PlayerShieldController : MonoBehaviour
     // Metodo para recalcular las estadísticas del escudo
     private void CalculateStats()
     {
-        finalAttackDamage = Mathf.RoundToInt(shieldDamage * damageMultiplier);
-        finalAttackSpeed = shieldSpeed * speedMultiplier;
+        finalAttackDamage = Mathf.RoundToInt(shieldDamage + damageMultiplier);
+        finalAttackSpeed = shieldSpeed + speedMultiplier;
 
         currentShieldDamage = finalAttackDamage;
         currentShieldSpeed = finalAttackSpeed;

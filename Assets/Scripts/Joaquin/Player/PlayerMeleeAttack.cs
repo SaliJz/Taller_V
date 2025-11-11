@@ -184,8 +184,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private void CalculateStats()
     {
-        finalAttackDamage = Mathf.RoundToInt(attackDamage * damageMultiplier);
-        finalAttackSpeed = attackSpeed * speedMultiplier;
+        finalAttackDamage = Mathf.RoundToInt(attackDamage + damageMultiplier);
+        finalAttackSpeed = attackSpeed + speedMultiplier;
 
         ReportDebug($"Estadisticas recalculadas: Daño Final = {finalAttackDamage}, Velocidad de Ataque Final = {finalAttackSpeed}", 1);
     }

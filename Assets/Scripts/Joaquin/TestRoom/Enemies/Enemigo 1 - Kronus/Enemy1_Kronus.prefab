@@ -1175,7 +1175,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6058405d1141ba24ca9f0c54d4423bf1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stats: {fileID: 11400000, guid: 901194a16b00e3449a7ada437fd6b2e1, type: 2}
+  stats: {fileID: 0}
   hitPoint: {fileID: 5399706999602248979}
   visualHit: {fileID: 963048917619979615}
   groundIndicator: {fileID: 5630910583302828604}
@@ -1246,7 +1246,8 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeath: 10
+  lifestealAmountOnDeathByMelee: 6
+  lifestealAmountOnDeathByDistance: 3
   toughnessSystem: {fileID: 1367704949242477135}
   enableAutoArea: 0
   areaTriggerPercent: 0.25
