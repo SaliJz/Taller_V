@@ -853,7 +853,8 @@ public class AstarothController : MonoBehaviour
 
                 if (endKeyframe.IsTargetable)
                 {
-                    LookAtPlayer();
+                    LookAtPlayerSmooth(0.6f, 100f);
+                    yield return new WaitForSeconds(0.6f);
 
                     Vector3 rayOrigin = _whipVisualTransform.position;
                     Vector3 predictedPlayerPos = PredictPlayerPosition(0.4f);
@@ -950,6 +951,32 @@ public class AstarothController : MonoBehaviour
         _currentState = BossState.Moving;
         _navMeshAgent.isStopped = false;
     }
+
+    private void LookAtPlayerSmooth(float duration, float maxDegreesPerSecond)
+    {
+        StartCoroutine(LookAtPlayerSmoothCoroutine(duration, maxDegreesPerSecond));
+    }
+
+    private IEnumerator LookAtPlayerSmoothCoroutine(float duration, float maxDegreesPerSecond)
+    {
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            Vector3 directionToPlayer = (_player.position - transform.position).normalized;
+            directionToPlayer.y = 0;
+
+            if (directionToPlayer != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(directionToPlayer);
+                float maxRotationThisFrame = maxDegreesPerSecond * Time.deltaTime;
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, maxRotationThisFrame);
+            }
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+    }
     #endregion
 
     #region Attack 2 Logic
@@ -957,7 +984,7 @@ public class AstarothController : MonoBehaviour
     {
         _isSmashing = true;
         _showSmashOverlapGizmo = false;
-        _navMeshAgent.isStopped = false; 
+        _navMeshAgent.isStopped = false;
 
         float rotationTime = 0f;
         Vector3 initialTargetPos = _player.position;
@@ -981,6 +1008,8 @@ public class AstarothController : MonoBehaviour
 
         _navMeshAgent.isStopped = true;
         _smashTargetPoint = _player.position;
+
+        HashSet<Collider> hitByDirectImpact = new HashSet<Collider>();
 
         for (int k = 0; k < _smashAnimationKeyframes.Length - 1; k++)
         {
@@ -1006,6 +1035,9 @@ public class AstarothController : MonoBehaviour
                     float t = (Time.time - startTime) / segmentDuration;
                     _smashVisualTransform.localPosition = Vector3.Lerp(startKeyframe.Position, endKeyframe.Position, t);
                     _smashVisualTransform.localScale = Vector3.Lerp(startKeyframe.Scale, endKeyframe.Scale, t);
+
+                    CheckDirectRockImpact(hitByDirectImpact);
+
                     yield return null;
                 }
                 _smashVisualTransform.localPosition = endKeyframe.Position;
@@ -1014,12 +1046,12 @@ public class AstarothController : MonoBehaviour
 
             if (endKeyframe.IsTargetable)
             {
-                PerformSmashDamage(_smashTargetPoint);
+                PerformSmashDamage(_smashTargetPoint, hitByDirectImpact);
             }
         }
 
         _isSmashing = false;
-        _showSmashOverlapGizmo = false; 
+        _showSmashOverlapGizmo = false;
         _smashVisualTransform.localPosition = _smashAnimationKeyframes[0].Position;
         _smashVisualTransform.localScale = _smashAnimationKeyframes[0].Scale;
 
@@ -1029,7 +1061,33 @@ public class AstarothController : MonoBehaviour
         _navMeshAgent.isStopped = false;
     }
 
-    private void PerformSmashDamage(Vector3 damageCenter)
+    private void CheckDirectRockImpact(HashSet<Collider> alreadyHit)
+    {
+        Vector3 rockWorldPosition = _smashVisualTransform.position;
+        float rockRadius = _smashVisualTransform.localScale.x * 0.5f; 
+
+        Collider[] nearbyColliders = Physics.OverlapSphere(rockWorldPosition, rockRadius);
+
+        foreach (var col in nearbyColliders)
+        {
+            if (col.CompareTag("Player") && !alreadyHit.Contains(col))
+            {
+                alreadyHit.Add(col);
+
+                PlayerHealth playerHealth = col.GetComponent<PlayerHealth>();
+                if (playerHealth != null)
+                {
+                    playerHealth.TakeDamage(_Attack2Damage);
+                    _totalAttemptsExecuted++;
+                    _totalAttemptsLanded++;
+
+                    Debug.Log($"<color=red>[Astaroth] Direct Rock HIT! Player struck by falling rock!</color>");
+                }
+            }
+        }
+    }
+
+    private void PerformSmashDamage(Vector3 damageCenter, HashSet<Collider> alreadyHitByRock)
     {
         _totalAttemptsExecuted++;
         _lastSmashHitPlayer = false;
@@ -1041,39 +1099,13 @@ public class AstarothController : MonoBehaviour
         Vector3 smashGroundPosition = GetGroundPosition(damageCenter);
         smashGroundPosition.x = damageCenter.x;
         smashGroundPosition.z = damageCenter.z;
+        smashGroundPosition.y += 0.1f;
 
         if (_smashRadiusPrefab != null)
         {
             GameObject visualEffect = Instantiate(_smashRadiusPrefab, smashGroundPosition, Quaternion.identity);
             _instantiatedEffects.Add(visualEffect);
-            StartCoroutine(ExpandSmashRadius(visualEffect.transform, _smashRadius));
-        }
-
-        Collider[] hitColliders = Physics.OverlapSphere(damageCenter, _smashRadius * 1.2f); 
-
-        foreach (var hitCollider in hitColliders)
-        {
-            if (hitCollider.CompareTag("Player"))
-            {
-                float heightDifference = Mathf.Abs(hitCollider.transform.position.y - smashGroundPosition.y);
-
-                if (heightDifference < 2f) 
-                {
-                    PlayerHealth playerHealth = hitCollider.GetComponent<PlayerHealth>();
-                    if (playerHealth != null)
-                    {
-                        playerHealth.TakeDamage(_Attack2Damage);
-                        _lastSmashHitPlayer = true;
-                        _totalAttemptsLanded++; 
-
-                        Debug.Log($"<color=red>[Astaroth] Smash HIT! Distance: {Vector3.Distance(damageCenter, _player.position):F2}m</color>");
-                    }
-                }
-                else
-                {
-                    Debug.Log($"<color=yellow>[Player] Avoided Smash by jumping! Height diff: {heightDifference:F2}m</color>");
-                }
-            }
+            StartCoroutine(ExpandSmashRadiusWithDamage(visualEffect.transform, _smashRadius, smashGroundPosition, alreadyHitByRock));
         }
 
         if (!_lastSmashHitPlayer)
@@ -1090,25 +1122,68 @@ public class AstarothController : MonoBehaviour
         _showSmashOverlapGizmo = false;
     }
 
-    private IEnumerator ExpandSmashRadius(Transform effectTransform, float targetRadius)
+    private IEnumerator ExpandSmashRadiusWithDamage(Transform effectTransform, float targetRadius, Vector3 groundPosition, HashSet<Collider> alreadyHitByRock)
     {
         float duration = 0.5f;
         float elapsedTime = 0f;
         Vector3 initialScale = Vector3.zero;
-        Vector3 targetScale = new Vector3(targetRadius * 3, effectTransform.localScale.y, targetRadius * 3);
+        float fixedYScale = 0.5f;
+        Vector3 targetScale = new Vector3(targetRadius * 2, fixedYScale, targetRadius * 2);
+
+        HashSet<Collider> hitByShockwave = new HashSet<Collider>();
 
         while (elapsedTime < duration)
         {
             elapsedTime += Time.deltaTime;
             float t = elapsedTime / duration;
-            effectTransform.localScale = Vector3.Lerp(initialScale, targetScale, t);
+            Vector3 currentScale = Vector3.Lerp(initialScale, targetScale, t);
+            currentScale.y = fixedYScale;
+            effectTransform.localScale = currentScale;
+
+            float currentRadius = Mathf.Lerp(0f, targetRadius, t);
+
+            Collider[] hitColliders = Physics.OverlapSphere(groundPosition, currentRadius * 1.2f);
+
+            foreach (var hitCollider in hitColliders)
+            {
+                if (hitCollider.CompareTag("Player") && !hitByShockwave.Contains(hitCollider) && !alreadyHitByRock.Contains(hitCollider))
+                {
+                    float heightDifference = Mathf.Abs(hitCollider.transform.position.y - groundPosition.y);
+
+                    if (heightDifference < 2f)
+                    {
+                        float distanceFromCenter = Vector3.Distance(hitCollider.transform.position, groundPosition);
+
+                        if (distanceFromCenter <= currentRadius)
+                        {
+                            hitByShockwave.Add(hitCollider);
+
+                            PlayerHealth playerHealth = hitCollider.GetComponent<PlayerHealth>();
+                            if (playerHealth != null)
+                            {
+                                playerHealth.TakeDamage(_Attack2Damage);
+                                _lastSmashHitPlayer = true;
+                                _totalAttemptsLanded++;
+
+                                Debug.Log($"<color=red>[Astaroth] Shockwave HIT! Distance: {distanceFromCenter:F2}m</color>");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log($"<color=yellow>[Player] Avoided Shockwave by jumping! Height diff: {heightDifference:F2}m</color>");
+                    }
+                }
+            }
+
             yield return null;
         }
 
+        effectTransform.localScale = targetScale;
         Destroy(effectTransform.gameObject, 0.5f);
     }
 
-    #endregion
+    #endregion
 
     #region Special Ability: Pulso Carnal
 
