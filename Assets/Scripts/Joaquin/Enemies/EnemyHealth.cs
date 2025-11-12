@@ -20,8 +20,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [Header("UI - Sliders")]
     [SerializeField] private Slider healthSlider;
     [SerializeField] private Image healthFillImage;
-    [SerializeField] private float offsetAboveEnemy = 2f;
-    [SerializeField] private float glowDelayAfterCritical = 2f;
+    [SerializeField] private float offsetAboveEnemy = 2f; // altura del slider sobre el enemigo
+    [SerializeField] private float glowDelayAfterCritical = 2f; // tiempo que el brillo dura tras daño crítico
     [SerializeField] private TextMeshProUGUI healthPercentageText;
     [SerializeField] private TextMeshProUGUI healthMultiplierText;
 

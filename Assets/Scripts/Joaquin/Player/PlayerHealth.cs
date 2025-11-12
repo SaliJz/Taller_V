@@ -27,8 +27,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [Header("Configuracion de Vida")]
     [Tooltip("Vida maxima por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackMaxHealth = 100;
-    private float currentHealth;
     [SerializeField] private float damageInvulnerabilityTime = 0.5f;
+    private float currentHealth;
 
     [Header("Configuracion de Muerte")]
     [SerializeField] private string sceneToLoadOnDeath = "Tuto";
@@ -40,7 +40,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private Vector3 scaleYoung = new Vector3(0.75f, 0.75f, 0.75f);
     [SerializeField] private Vector3 scaleAdult = new Vector3(1f, 1f, 1f);
     [SerializeField] private Vector3 scaleElder = new Vector3(1.25f, 1.25f, 1.25f);
-
     [Tooltip("El desplazamiento vertical para mantener los pies en el suelo. Depende de la altura base del modelo.")]
     [SerializeField] private float yOffsetYoung = 0.375f;
     [SerializeField] private float yOffsetAdult = 0.5f;
@@ -59,46 +58,20 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [Header("Vida Temporal")]
     [SerializeField] private float temporaryHealthDuration = 10f;
     [SerializeField] private float temporaryHealthDecaySpeed = 0.5f;
-    private float currentTemporaryHealth = 0f;
-    private float maxTemporaryHealthLimit = 0f;
-    private Coroutine temporaryHealthDecayCoroutine;
-    public bool IsKillHealBlocked { get; private set; } = false;
-    public bool HasAmuletOfEndurance { get; private set; } = false;
-    public static PlayerHealth Instance { get; private set; }
-
-    [Header("Veneno de Morlock")]
-    [SerializeField] private MorlockStats morlockStats;
-    [SerializeField] private int poisonHitThreshold = 3;
-    [SerializeField] private float poisonInitialDamage = 2;
-    [SerializeField] private float poisonResetTime = 5;
-    private int morlockHitCounter = 0;
 
     [Header("UI")]
     [SerializeField] private TMP_Text lifeStageText;
 
+    private float currentTemporaryHealth = 0f;
+    private float maxTemporaryHealthLimit = 0f;
+    private Coroutine temporaryHealthDecayCoroutine;
+
+    public bool IsKillHealBlocked { get; private set; } = false;
+    public bool HasAmuletOfEndurance { get; private set; } = false;
+    public static PlayerHealth Instance { get; private set; }
     public bool HasShieldBlockUpgrade { get; private set; } = false;
     public bool IsInvulnerable { get; set; } = false;
     private bool isDamageInvulnerable = false;
-    public LifeStage CurrentLifeStage { get; private set; }
-
-    private bool isInitialized = false;
-    private bool isDying = false;
-
-    public static event Action<float, float> OnHealthChanged;
-    public static event Action<LifeStage> OnLifeStageChanged;
-
-    private PlayerMovement playerMovement;
-    private PlayerMeleeAttack playerMeleeAttack;
-    private PlayerShieldController playerShieldController;
-    private InventoryManager inventoryManager;
-    private Coroutine damageInvulnerabilityCoroutine;
-    private Coroutine poisonResetCoroutine;
-    private Coroutine damageFlashCoroutine;
-
-    private MeshRenderer[] cachedMeshRenderers;
-    private Dictionary<MeshRenderer, MaterialPropertyBlock> materialPropertyBlocks;
-    private Dictionary<MeshRenderer, Color[]> originalEmissionColors;
-    private Dictionary<MeshRenderer, bool> originalEmissionEnabled;
 
     public float MaxHealth => statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
     public float CurrentHealth => currentHealth;
@@ -113,14 +86,41 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             return currentHealth / maxHealth;
         }
     }
+
+    public LifeStage CurrentLifeStage { get; private set; }
+
+    private bool isInitialized = false;
+    private bool isDying = false;
+
+    public static event Action<float, float> OnHealthChanged;
+    public static event Action<LifeStage> OnLifeStageChanged;
+
+    private PlayerMovement playerMovement;
+    private PlayerMeleeAttack playerMeleeAttack;
+    private PlayerShieldController playerShieldController;
+    private InventoryManager inventoryManager;
+    private Coroutine damageInvulnerabilityCoroutine;
+    private Coroutine damageFlashCoroutine;
+
+    private MeshRenderer[] cachedMeshRenderers;
+    private Dictionary<MeshRenderer, MaterialPropertyBlock> materialPropertyBlocks;
+    private Dictionary<MeshRenderer, Color[]> originalEmissionColors;
+    private Dictionary<MeshRenderer, bool> originalEmissionEnabled;
+
     public Transform PlayerModelTransform => playerModelTransform;
     public Vector3 CurrentModelLocalScale => playerModelTransform != null ? playerModelTransform.localScale : Vector3.one;
     public Vector3 CurrentModelWorldScale => playerModelTransform != null ? playerModelTransform.lossyScale : Vector3.one;
     public float CurrentModelYOffset => playerModelTransform != null ? playerModelTransform.localPosition.y : 0f;
+
     public event Action<float> OnDamageReceived;
     public bool IsLowHealth => currentHealth < (MaxHealth * 0.25f);
 
     public static event Action<PlayerHealth> OnPlayerInstantiated;
+
+    // Variables para el veneno de Morlock
+    private int morlockHitCounter = 0;
+    private Coroutine morlockPoisonResetCoroutine;
+    private Coroutine morlockPoisonHitCoroutine;
 
     private void Awake()
     {
@@ -183,7 +183,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         OnHealthChanged?.Invoke(currentHealth, MaxHealth);
         UpdateLifeStage(true);
-        InitializedPosionDebuff();
 
         isInitialized = true;
     }
@@ -392,20 +391,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (statsManager != null && statsManager._currentStatSO != null)
         {
             statsManager._currentStatSO.currentHealth = currentHealth;
-        }
-    }
-
-    private void InitializedPosionDebuff()
-    {
-        if (morlockStats != null)
-        {
-            poisonHitThreshold = morlockStats.poisonHitThreshold;
-            poisonInitialDamage = morlockStats.poisonInitialDamage;
-            poisonResetTime = morlockStats.poisonResetTime;
-        }
-        else
-        {
-            ReportDebug("MorlockStats no esta asignado en PlayerHealth. Usando valores de veneno por defecto.", 2);
         }
     }
 
@@ -934,32 +919,69 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     /// <summary>
     /// Funcion que aplica el efecto de veneno al jugador cuando es golpeado por un proyectil de Morlock.
     /// </summary>
-    public void ApplyMorlockPoisonHit()
+    public void ApplyMorlockPoisonHit(float duration, float initialDamage, int hitThreshold)
     {
         if (isDying) return;
 
+        if (morlockPoisonHitCoroutine != null)
+        {
+            ReportDebug("Golpe de Morlock recibido, pero el veneno ya está activo. Omitiendo contador.", 1);
+            return;
+        }
+
         morlockHitCounter++;
 
-        if (poisonResetCoroutine != null)
+        if (morlockPoisonResetCoroutine != null)
         {
-            StopCoroutine(poisonResetCoroutine);
+            StopCoroutine(morlockPoisonResetCoroutine);
         }
 
-        if (morlockHitCounter >= poisonHitThreshold)
+        if (morlockHitCounter >= hitThreshold)
         {
-            float poisonDamage = poisonInitialDamage + (morlockHitCounter - poisonHitThreshold);
-            TakeDamage(poisonDamage);
-            // Aqui podrias iniciar un efecto de veneno que dañe con el tiempo
-        }
+            float baseDamagePerTick = initialDamage;
+            float damageIncrement = morlockHitCounter - hitThreshold;
+            float damagePerSecond = baseDamagePerTick + damageIncrement;
 
-        poisonResetCoroutine = StartCoroutine(ResetPoisonCounter());
+            ApplyMorlockPoison(duration: 5f, damagePerSecond: damagePerSecond, tickInterval: 1f);
+
+            morlockHitCounter = 0;
+        }
+        else
+        {
+            morlockPoisonResetCoroutine = StartCoroutine(ResetMorlockPoisonCounter(duration));
+        }
     }
 
-    private IEnumerator ResetPoisonCounter()
+    private void ApplyMorlockPoison(float duration, float damagePerSecond, float tickInterval = 1f)
     {
-        yield return new WaitForSeconds(poisonResetTime);
+        if (morlockPoisonHitCoroutine != null)
+        {
+            StopCoroutine(morlockPoisonHitCoroutine);
+        }
+        morlockPoisonHitCoroutine = StartCoroutine(ApplyMorlockPoisonCoroutine(duration, damagePerSecond, tickInterval));
+
+        ReportDebug($"Veneno de Morlock aplicado: {damagePerSecond} dano por segundo durante {duration} segundos.", 1);
+    }
+
+    private IEnumerator ApplyMorlockPoisonCoroutine(float duration, float damagePerSecond, float tickInterval = 1f)
+    {
+        float timeElapsed = 0f;
+        while (timeElapsed < duration)
+        {
+            if (isDying) yield break;
+            TakeDamage(damagePerSecond);
+            yield return new WaitForSeconds(1f);
+            timeElapsed += tickInterval;
+        }
+        morlockPoisonHitCoroutine = null;
+        ReportDebug("Efecto de veneno de Morlock ha terminado.", 1);
+    }
+
+    private IEnumerator ResetMorlockPoisonCounter(float duration)
+    {
+        yield return new WaitForSeconds(duration);
         morlockHitCounter = 0;
-        poisonResetCoroutine = null;
+        morlockPoisonResetCoroutine = null;
     }
 
     #endregion

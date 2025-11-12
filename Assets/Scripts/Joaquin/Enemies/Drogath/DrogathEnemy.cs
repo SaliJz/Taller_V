@@ -1,0 +1,772 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.AI;
+using UnityEngine.InputSystem;
+
+/// <summary>
+/// Controlador del enemigo Drogath, un tanque de apoyo que vincula aliados
+/// otorgándoles regeneración de superarmor mientras estén en rango.
+/// Al morir libera una onda demoníaca que otorga superarmor temporal.
+/// </summary>
+public class DrogathEnemy : MonoBehaviour
+{
+    #region --- Inspector Configuration ---
+
+    [Header("Core References")]
+    [SerializeField] private EnemyHealth enemyHealth;
+    [SerializeField] private EnemyToughness enemyToughness;
+    [SerializeField] private NavMeshAgent navAgent;
+    [SerializeField] private Transform playerTransform; 
+
+    [Header("Bond System")]
+    [Tooltip("Radio máximo para vincular aliados")]
+    [SerializeField] private float bondRadius = 15f;
+    [Tooltip("Máximo de vínculos simultáneos")]
+    [SerializeField] private int maxBonds = 10;
+    [Tooltip("Regeneración de superarmor por segundo para aliados vinculados")]
+    [SerializeField] private float toughnessRegenPerSecond = 6f;
+    [Tooltip("Máximo de superarmor que puede regenerar en un aliado")]
+    [SerializeField] private float maxToughnessRegen = 30f;
+    [Tooltip("Cooldown antes de poder revincular al mismo aliado")]
+    [SerializeField] private float rebondCooldown = 4f;
+    [Tooltip("Intervalo para chequear vínculos y regenerar superarmor")]
+    [SerializeField] private float bondUpdateInterval = 0.25f;
+    [Tooltip("Si está activo, puede activar la dureza en aliados que la tengan desactivada")]
+    [SerializeField] private bool canEnableToughnessOnAllies = false;
+
+    [Header("Shield System")]
+    [Tooltip("Ángulo frontal del escudo (en grados, desde el centro)")]
+    [SerializeField] private float shieldAngle = 75f; // 150° total / 2
+
+    [Header("Movement & Combat")]
+    [Tooltip("Velocidad de movimiento hacia el jugador")]
+    [SerializeField] private float moveSpeed = 3.5f;
+    [Tooltip("Distancia de parada respecto al jugador")]
+    [SerializeField] private float stoppingDistance = 2f;
+    [Tooltip("Daño del ataque cuerpo a cuerpo")]
+    [SerializeField] private float meleeDamage = 10f;
+    [Tooltip("Intervalo entre ataques")]
+    [SerializeField] private float attackInterval = 1.5f;
+    [Tooltip("Rango de ataque cuerpo a cuerpo")]
+    [SerializeField] private float attackRange = 2.5f;
+
+    [Header("Death Effect")]
+    [Tooltip("Radio de la onda demoníaca al morir")]
+    [SerializeField] private float deathEffectRadius = 15f;
+    [Tooltip("Cantidad de superarmor otorgado al morir")]
+    [SerializeField] private float deathSuperArmor = 10f;
+    [Tooltip("Duración del superarmor otorgado al morir")]
+    [SerializeField] private float deathSuperArmorDuration = 5f;
+
+    [Header("Layers")]
+    [SerializeField] private LayerMask allyLayers = ~0;
+    [SerializeField] private LayerMask playerLayer;
+
+    [Header("Visual Feedback")]
+    [SerializeField] private LineRenderer bondLineRendererPrefab;
+    [SerializeField] private Color bondLineColor = Color.cyan;
+    [SerializeField] private float bondLineWidth = 0.1f;
+
+    #endregion
+
+    #region Private State
+
+    private class BondInfo
+    {
+        public GameObject ally;
+        public EnemyToughness toughness;
+        public LineRenderer lineRenderer;
+        public float currentRegen;
+    }
+
+    private List<BondInfo> activeBonds = new List<BondInfo>();
+    private Dictionary<GameObject, float> rebondCooldowns = new Dictionary<GameObject, float>();
+    private Coroutine bondUpdateRoutine;
+    private Coroutine combatRoutine;
+    private bool isAttacking = false;
+    private bool isDead = false;
+    private float attackTimer = 0f;
+
+    #endregion
+
+    #region Unity Lifecycle
+
+    private void Awake()
+    {
+        if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
+        if (enemyToughness == null) enemyToughness = GetComponent<EnemyToughness>();
+        if (navAgent == null) navAgent = GetComponent<NavMeshAgent>();
+
+        if (enemyHealth == null)
+        {
+            ReportDebug("EnemyHealth no encontrado. Drogath requiere este componente.", 3);
+            enabled = false;
+            return;
+        }
+
+        if (navAgent == null)
+        {
+            ReportDebug("NavMeshAgent no encontrado. Drogath requiere este componente.", 3);
+            enabled = false;
+            return;
+        }
+
+        navAgent.speed = moveSpeed;
+        navAgent.stoppingDistance = stoppingDistance;
+        navAgent.acceleration = 8f;
+        navAgent.angularSpeed = 120f;
+    }
+
+    private void Start()
+    {
+        // Buscar jugador si no está asignado
+        if (playerTransform == null)
+        {
+            var playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null) playerTransform = playerObj.transform;
+        }
+
+        if (playerTransform == null)
+        {
+            ReportDebug("Jugador no encontrado en la escena.", 2);
+        }
+
+        // Iniciar sistema de vínculos
+        bondUpdateRoutine = StartCoroutine(BondUpdateRoutine());
+        combatRoutine = StartCoroutine(CombatRoutine());
+
+        ReportDebug($"Drogath inicializado. Vida: {enemyHealth.MaxHealth}, Radio: {bondRadius}m", 1);
+    }
+
+    private void OnEnable()
+    {
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnDeath += HandleDeath;
+            enemyHealth.OnDamaged += OnDamageTaken;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnDeath -= HandleDeath;
+            enemyHealth.OnDamaged -= OnDamageTaken;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Desuscribirse del evento
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnDeath -= HandleDeath;
+            enemyHealth.OnDamaged -= OnDamageTaken;
+        }
+
+        // Limpiar vínculos
+        ClearAllBonds();
+    }
+
+    #endregion
+
+    #region Bond System
+
+    private IEnumerator BondUpdateRoutine()
+    {
+        while (!isDead)
+        {
+            UpdateRebondCooldowns();
+            UpdateExistingBonds();
+            TryCreateNewBonds();
+            RegenerateBondedAlliesToughness();
+
+            yield return new WaitForSeconds(bondUpdateInterval);
+        }
+    }
+
+    private void UpdateRebondCooldowns()
+    {
+        List<GameObject> toRemove = new List<GameObject>();
+        List<GameObject> keys = new List<GameObject>(rebondCooldowns.Keys);
+
+        foreach (var key in keys)
+        {
+            if (key == null) 
+            {
+                toRemove.Add(key);
+                continue;
+            }
+
+            rebondCooldowns[key] -= bondUpdateInterval;
+            if (rebondCooldowns[key] <= 0)
+            {
+                toRemove.Add(key);
+            }
+        }
+
+        foreach (var key in toRemove)
+        {
+            rebondCooldowns.Remove(key);
+            if (key != null)
+            {
+                ReportDebug($"Cooldown de revínculo completado para {key.name}", 1);
+            }
+        }
+    }
+
+    private void UpdateExistingBonds()
+    {
+        for (int i = activeBonds.Count - 1; i >= 0; i--)
+        {
+            var bond = activeBonds[i];
+
+            // Verificar si el aliado sigue existiendo
+            if (bond.ally == null)
+            {
+                RemoveBond(i, "Aliado destruido");
+                continue;
+            }
+
+            // Verificar si el aliado murió
+            var allyHealth = bond.ally.GetComponent<EnemyHealth>();
+            if (allyHealth != null && allyHealth.IsDead)
+            {
+                RemoveBond(i, "Aliado murió");
+                continue;
+            }
+
+            // Verificar distancia
+            float distance = Vector3.Distance(transform.position, bond.ally.transform.position);
+            if (distance > bondRadius)
+            {
+                RemoveBond(i, "Fuera de rango");
+                continue;
+            }
+
+            // Actualizar LineRenderer
+            if (bond.lineRenderer != null)
+            {
+                bond.lineRenderer.SetPosition(0, transform.position + Vector3.up);
+                bond.lineRenderer.SetPosition(1, bond.ally.transform.position + Vector3.up);
+            }
+        }
+    }
+
+    private void TryCreateNewBonds()
+    {
+        if (activeBonds.Count >= maxBonds) return;
+
+        // Buscar aliados en rango
+        Collider[] hits = Physics.OverlapSphere(transform.position, bondRadius, allyLayers, QueryTriggerInteraction.Ignore);
+
+        foreach (var hit in hits)
+        {
+            if (activeBonds.Count >= maxBonds) break;
+
+            GameObject rootObj = hit.transform.root.gameObject;
+
+            // No vincularse a sí mismo
+            if (rootObj == gameObject) continue;
+
+            // No vincular si está en cooldown
+            if (rebondCooldowns.ContainsKey(rootObj)) continue;
+
+            // No vincular si ya está vinculado
+            if (activeBonds.Exists(b => b.ally == rootObj)) continue;
+
+            // Verificar que el aliado no esté muerto
+            var allyHealth = rootObj.GetComponent<EnemyHealth>();
+            if (allyHealth != null && allyHealth.IsDead) continue;
+
+            // Buscar componente EnemyToughness
+            EnemyToughness toughness = rootObj.GetComponent<EnemyToughness>();
+            if (toughness == null) continue;
+
+            // Si no puede activar dureza en otros, verificar que ya esté activa
+            if (!canEnableToughnessOnAllies && !toughness.HasToughness)
+            {
+                continue;
+            }
+
+            // Si puede activar dureza, hacerlo
+            if (canEnableToughnessOnAllies && !toughness.HasToughness)
+            {
+                toughness.SetUseToughness(true);
+                ReportDebug($"Dureza activada en {rootObj.name} por vínculo de Drogath", 1);
+            }
+
+            // Crear vínculo
+            CreateBond(rootObj, toughness);
+        }
+    }
+
+    private void CreateBond(GameObject ally, EnemyToughness toughness)
+    {
+        BondInfo bond = new BondInfo
+        {
+            ally = ally,
+            toughness = toughness,
+            currentRegen = 0f
+        };
+
+        // Crear LineRenderer visual
+        if (bondLineRendererPrefab != null)
+        {
+            LineRenderer lr = Instantiate(bondLineRendererPrefab, transform);
+            lr.positionCount = 2;
+            lr.startWidth = bondLineWidth;
+            lr.endWidth = bondLineWidth;
+            lr.startColor = bondLineColor;
+            lr.endColor = bondLineColor;
+            lr.SetPosition(0, transform.position + Vector3.up);
+            lr.SetPosition(1, ally.transform.position + Vector3.up);
+            bond.lineRenderer = lr;
+        }
+
+        activeBonds.Add(bond);
+        ReportDebug($"Vínculo creado con {ally.name}. Vínculos activos: {activeBonds.Count}/{maxBonds}", 1);
+    }
+
+    private void RemoveBond(int index, string reason)
+    {
+        if (index < 0 || index >= activeBonds.Count) return;
+
+        var bond = activeBonds[index];
+
+        // Añadir cooldown
+        if (bond.ally != null)
+        {
+            rebondCooldowns[bond.ally] = rebondCooldown;
+            ReportDebug($"Vínculo roto con {bond.ally.name} ({reason}). Cooldown: {rebondCooldown}s", 1);
+        }
+
+        // Destruir LineRenderer
+        if (bond.lineRenderer != null)
+        {
+            Destroy(bond.lineRenderer.gameObject);
+        }
+
+        activeBonds.RemoveAt(index);
+    }
+
+    private void ClearAllBonds()
+    {
+        for (int i = activeBonds.Count - 1; i >= 0; i--)
+        {
+            var bond = activeBonds[i];
+            if (bond.lineRenderer != null)
+            {
+                Destroy(bond.lineRenderer.gameObject);
+            }
+        }
+        activeBonds.Clear();
+    }
+
+    private void RegenerateBondedAlliesToughness()
+    {
+        foreach (var bond in activeBonds)
+        {
+            if (bond.toughness == null || bond.ally == null) continue;
+
+            // Calcular regeneración
+            float regenThisFrame = toughnessRegenPerSecond * bondUpdateInterval;
+
+            // Verificar límite de regeneración total
+            if (bond.currentRegen + regenThisFrame > maxToughnessRegen)
+            {
+                regenThisFrame = maxToughnessRegen - bond.currentRegen;
+            }
+
+            if (regenThisFrame > 0)
+            {
+                // Calcular cuánto puede regenerar realmente
+                float currentToughness = bond.toughness.CurrentToughness;
+                float maxToughness = bond.toughness.MaxToughness;
+                float possibleRegen = Mathf.Min(regenThisFrame, maxToughness - currentToughness);
+
+                if (possibleRegen > 0)
+                {
+                    float newToughness = Mathf.Min(currentToughness + possibleRegen, maxToughness);
+                    float originalMax = bond.toughness.MaxToughness;
+                    bond.toughness.SetMaxToughness(newToughness);
+                    bond.toughness.SetMaxToughness(originalMax);
+
+                    bond.currentRegen += possibleRegen;
+
+                    if (Mathf.FloorToInt(bond.currentRegen) % 5 == 0 && bond.currentRegen > 0)
+                    {
+                        ReportDebug($"{bond.ally.name} regeneró {bond.currentRegen:F1}/{maxToughnessRegen} de superarmor", 1);
+                    }
+                }
+            }
+        }
+    }
+
+    #endregion
+
+    #region Combat System
+
+    private IEnumerator CombatRoutine()
+    {
+        while (!isDead)
+        {
+            bool shouldAttack = activeBonds.Count == 0;
+
+            if (shouldAttack)
+            {
+                if (!isAttacking)
+                {
+                    StartAttackMode();
+                }
+
+                UpdateCombat();
+            }
+            else
+            {
+                if (isAttacking)
+                {
+                    StopAttackMode();
+                }
+            }
+
+            yield return null;
+        }
+    }
+
+    private void StartAttackMode()
+    {
+        isAttacking = true;
+        attackTimer = 0f;
+
+        if (navAgent != null)
+        {
+            navAgent.isStopped = false;
+        }
+
+        ReportDebug("Modo ofensivo activado (sin aliados vinculados)", 1);
+    }
+
+    private void StopAttackMode()
+    {
+        isAttacking = false;
+        attackTimer = 0f;
+
+        if (navAgent != null)
+        {
+            navAgent.isStopped = true;
+            navAgent.ResetPath();
+        }
+
+        ReportDebug("Modo ofensivo desactivado (vínculos activos)", 1);
+    }
+
+    private void UpdateCombat()
+    {
+        if (playerTransform == null || navAgent == null) return;
+
+        // Verificar si está aturdido
+        if (enemyHealth != null && enemyHealth.IsStunned)
+        {
+            if (!navAgent.isStopped)
+            {
+                navAgent.isStopped = true;
+            }
+            return;
+        }
+        else
+        {
+            if (navAgent.isStopped && isAttacking)
+            {
+                navAgent.isStopped = false;
+            }
+        }
+
+        // Mover hacia el jugador
+        if (navAgent.isOnNavMesh && !navAgent.isStopped)
+        {
+            navAgent.SetDestination(playerTransform.position);
+        }
+
+        // Verificar si está en rango de ataque
+        float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+
+        if (distanceToPlayer <= attackRange)
+        {
+            // Mirar al jugador
+            Vector3 directionToPlayer = (playerTransform.position - transform.position).normalized;
+            directionToPlayer.y = 0;
+            if (directionToPlayer != Vector3.zero)
+            {
+                transform.forward = Vector3.Slerp(transform.forward, directionToPlayer, Time.deltaTime * 5f);
+            }
+
+            // Contador de ataque
+            attackTimer += Time.deltaTime;
+
+            if (attackTimer >= attackInterval)
+            {
+                PerformMeleeAttack();
+                attackTimer = 0f;
+            }
+        }
+    }
+
+    private void PerformMeleeAttack()
+    {
+        if (playerTransform == null) return;
+
+        // Verificar distancia nuevamente
+        float distance = Vector3.Distance(transform.position, playerTransform.position);
+        if (distance > attackRange) return;
+
+        // Aplicar daño al jugador
+        var playerHealth = playerTransform.GetComponent<PlayerHealth>();
+        if (playerHealth != null)
+        {
+            playerHealth.TakeDamage(meleeDamage);
+            ReportDebug($"Ataque cuerpo a cuerpo realizado: {meleeDamage} de daño al jugador", 1);
+        }
+    }
+
+    #endregion
+
+    #region Shield System
+
+    /// <summary>
+    /// Verifica si un ataque desde una dirección dada debe ser bloqueado por el escudo.
+    /// </summary>
+    public bool ShouldBlockDamage(Vector3 damageDirection)
+    {
+        // Normalizar direcciones en plano horizontal
+        Vector3 forward = transform.forward;
+        forward.y = 0;
+        forward.Normalize();
+
+        damageDirection.y = 0;
+        damageDirection.Normalize();
+
+        // Calcular ángulo entre la dirección del ataque y hacia dónde mira Drogath
+        float angle = Vector3.Angle(forward, damageDirection);
+
+        // Si el ángulo es menor al ángulo del escudo, bloquear
+        bool blocked = angle <= shieldAngle;
+
+        if (blocked)
+        {
+            ReportDebug($"Daño bloqueado por escudo frontal (ángulo: {angle:F1}°)", 1);
+        }
+
+        return blocked;
+    }
+
+    #endregion
+
+    #region Death Effect
+
+    private void OnDamageTaken()
+    {
+        // Aquí podrías agregar lógica adicional si es necesario cuando Drogath recibe daño.
+    }
+
+    private void HandleDeath(GameObject deadEnemy)
+    {
+        if (isDead) return;
+        isDead = true;
+
+        ReportDebug("Drogath murió. Activando Armadura Demoníaca...", 1);
+
+        // Detener NavMeshAgent
+        if (navAgent != null && navAgent.isOnNavMesh)
+        {
+            navAgent.isStopped = true;
+            navAgent.ResetPath();
+        }
+
+        // Detener rutinas
+        if (bondUpdateRoutine != null) StopCoroutine(bondUpdateRoutine);
+        if (combatRoutine != null) StopCoroutine(combatRoutine);
+
+        // Limpiar vínculos
+        ClearAllBonds();
+
+        // Aplicar efecto de muerte
+        ApplyDemonicArmorEffect();
+    }
+
+    private void ApplyDemonicArmorEffect()
+    {
+        Collider[] hits = Physics.OverlapSphere(transform.position, deathEffectRadius, allyLayers, QueryTriggerInteraction.Ignore);
+
+        int affectedCount = 0;
+
+        foreach (var hit in hits)
+        {
+            GameObject rootObj = hit.transform.root.gameObject;
+
+            // No aplicar a sí mismo
+            if (rootObj == gameObject) continue;
+
+            // Verificar que el aliado no esté muerto
+            var allyHealth = rootObj.GetComponent<EnemyHealth>();
+            if (allyHealth != null && allyHealth.IsDead) continue;
+
+            EnemyToughness toughness = rootObj.GetComponent<EnemyToughness>();
+            if (toughness == null) continue;
+
+            // Activar dureza si está permitido
+            if (canEnableToughnessOnAllies && !toughness.HasToughness)
+            {
+                toughness.SetUseToughness(true);
+            }
+
+            // Aplicar superarmor temporal
+            StartCoroutine(ApplyTemporarySuperArmor(toughness, rootObj.name));
+
+            affectedCount++;
+        }
+
+        ReportDebug($"Armadura Demoníaca aplicada a {affectedCount} aliados (+{deathSuperArmor} superarmor por {deathSuperArmorDuration}s)", 1);
+    }
+
+    private IEnumerator ApplyTemporarySuperArmor(EnemyToughness toughness, string allyName)
+    {
+        if (toughness == null) yield break;
+
+        float originalMax = toughness.MaxToughness;
+        float newMax = originalMax + deathSuperArmor;
+
+        // Aumentar temporalmente el máximo y regenerar
+        toughness.SetMaxToughness(newMax);
+
+        ReportDebug($"{allyName} recibió +{deathSuperArmor} superarmor temporal", 1);
+
+        yield return new WaitForSeconds(deathSuperArmorDuration);
+
+        // Restaurar máximo original (la dureza extra se perderá gradualmente)
+        if (toughness != null)
+        {
+            toughness.SetMaxToughness(originalMax);
+            ReportDebug($"Superarmor temporal de {allyName} expiró", 1);
+        }
+    }
+
+    #endregion
+
+    #region Public API
+
+    /// <summary>
+    /// Obtiene el número de vínculos activos actuales
+    /// </summary>
+    public int GetActiveBondsCount()
+    {
+        return activeBonds.Count;
+    }
+
+    /// <summary>
+    /// Verifica si Drogath está en modo ataque
+    /// </summary>
+    public bool IsInAttackMode()
+    {
+        return isAttacking;
+    }
+
+    /// <summary>
+    /// Fuerza la rotura de todos los vínculos activos
+    /// </summary>
+    public void ForceBreakAllBonds()
+    {
+        for (int i = activeBonds.Count - 1; i >= 0; i--)
+        {
+            RemoveBond(i, "Forzado manualmente");
+        }
+
+        ReportDebug("Todos los vínculos fueron rotos manualmente", 2);
+    }
+
+    #endregion
+
+    #region Gizmos
+
+    private void OnDrawGizmos()
+    {
+        // Radio de vinculación
+        Gizmos.color = new Color(0f, 1f, 1f, 0.3f);
+        Gizmos.DrawWireSphere(transform.position, bondRadius);
+
+        // Radio de efecto de muerte
+        Gizmos.color = new Color(1f, 0f, 0f, 0.2f);
+        Gizmos.DrawWireSphere(transform.position, deathEffectRadius);
+
+        // Rango de ataque
+        Gizmos.color = new Color(1f, 0.5f, 0f, 0.4f);
+        Gizmos.DrawWireSphere(transform.position, attackRange);
+
+        // Visualizar ángulo del escudo
+        Vector3 forward = transform.forward;
+        Vector3 right = Quaternion.Euler(0, shieldAngle, 0) * forward;
+        Vector3 left = Quaternion.Euler(0, -shieldAngle, 0) * forward;
+
+        Gizmos.color = new Color(0f, 0.5f, 1f, 0.5f);
+        Gizmos.DrawLine(transform.position, transform.position + forward * 3f);
+        Gizmos.DrawLine(transform.position, transform.position + right * 3f);
+        Gizmos.DrawLine(transform.position, transform.position + left * 3f);
+
+        // Dibujar área del escudo
+        int segments = 20;
+        Vector3 prevPoint = transform.position + left * 3f;
+        for (int i = 1; i <= segments; i++)
+        {
+            float angle = Mathf.Lerp(-shieldAngle, shieldAngle, i / (float)segments);
+            Vector3 dir = Quaternion.Euler(0, angle, 0) * forward;
+            Vector3 point = transform.position + dir * 3f;
+            Gizmos.DrawLine(prevPoint, point);
+            prevPoint = point;
+        }
+
+        // Dibujar vínculos activos
+        if (Application.isPlaying)
+        {
+            Gizmos.color = bondLineColor;
+            foreach (var bond in activeBonds)
+            {
+                if (bond.ally != null)
+                {
+                    Gizmos.DrawLine(transform.position + Vector3.up, bond.ally.transform.position + Vector3.up);
+
+                    // Dibujar esfera pequeña en el aliado vinculado
+                    Gizmos.DrawSphere(bond.ally.transform.position + Vector3.up, 0.3f);
+                }
+            }
+        }
+    }
+
+    #endregion
+
+    [System.Diagnostics.Conditional("UNITY_EDITOR")]
+    /// <summary> 
+    /// Función de depuración para reportar mensajes en la consola de Unity. 
+    /// </summary> 
+    /// <param name="message">Mensaje a reportar.</param>
+    /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
+    private static void ReportDebug(string message, int reportPriorityLevel)
+    {
+        switch (reportPriorityLevel)
+        {
+            case 1:
+                Debug.Log($"[DrogathEnemy] {message}");
+                break;
+            case 2:
+                Debug.LogWarning($"[DrogathEnemy] {message}");
+                break;
+            case 3:
+                Debug.LogError($"[DrogathEnemy] {message}");
+                break;
+            default:
+                Debug.Log($"[DrogathEnemy] {message}");
+                break;
+        }
+    }
+}

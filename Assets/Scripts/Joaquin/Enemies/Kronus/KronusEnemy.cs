@@ -26,6 +26,13 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private LayerMask groundLayer = ~0;
 
     [Header("Attack")]
+
+    [Header("Cooldown Variable")]
+    [Tooltip("El cooldown actual se elegirá aleatoriamente entre estos tres valores al finalizar un ataque.")]
+    [SerializeField] private float cooldownShort = 1.8f;
+    [SerializeField] private float cooldownMedium = 2.0f;
+    [SerializeField] private float cooldownLong = 2.2f;
+
     [SerializeField] private bool isPercentageDmg = false;
     [SerializeField] private float attackCycleCooldown = 2.5f;
     [SerializeField] private float attackDamage = 10f;
@@ -43,6 +50,19 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private float dashActivationDistance = 9f;
     [SerializeField] private bool isUsingDetectionTimer = true;
     [SerializeField] private float detectionGracePeriod = 1.5f;
+
+    [Header("Level 2 - Eco Persistente")]
+    [Tooltip("Activa el comportamiento de Eco Persistente al golpear.")]
+    [SerializeField] private bool isLevelTwo = false;
+    [Tooltip("Prefab del efecto visual del Eco. Usado para el resplandor púrpura.")]
+    [SerializeField] private GameObject echoVisualPrefab;
+    [SerializeField] private float echoStartRadius = 2f;
+    [SerializeField] private float echoEndRadius = 3f;
+    [SerializeField] private float echoExpansionTime = 0.4f;
+    [SerializeField] private float echoDurationAfterExpansion = 1.2f;
+    [SerializeField] private float echoDamagePerSecond = 3f;
+    private const float EchoTickRate = 4f;
+    private const float EchoDamagePerTick = 3f / 4f;
 
     [Header("Patrol")]
     [Tooltip("Si se asignan waypoints, Kronus los recorrerá en bucle. Si no, hará roaming aleatorio en patrolRadius.")]
@@ -65,6 +85,10 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private float gizmoDuration = 0.25f;
 
     //private List<GameObject> activeInstantiatedEffects = new List<GameObject>();
+
+    private Vector3 currentEchoCenter = Vector3.zero;
+    private float currentEchoRadius = 0f;
+    private bool isEchoActive = false;
 
     private EnemyHealth enemyHealth;
     private NavMeshAgent agent;
@@ -131,7 +155,7 @@ public class KronusEnemy : MonoBehaviour
             dashSpeedMultiplier = stats.dashSpeedMultiplier;
             dashDuration = stats.dashDuration;
             dashMaxDistance = stats.dashMaxDistance;
-            attackCycleCooldown = stats.attackCycleCooldown;
+            //attackCycleCooldown = stats.attackCycleCooldown;
             attackDamagePercentage = stats.attackDamagePercentage;
             attackDamage = stats.attackDamage;
             attackRadius = stats.attackRadius;
@@ -656,6 +680,10 @@ public class KronusEnemy : MonoBehaviour
             }
         }
 
+        // Elegir nuevo cooldown aleatorio
+        float[] cooldownOptions = { cooldownShort, cooldownMedium, cooldownLong };
+        attackCycleCooldown = cooldownOptions[Random.Range(0, cooldownOptions.Length)];
+
         ReportDebug("Kronus finaliza ataque dash y entra en recuperación de 2s.", 1);
         isAttacking = false;
     }
@@ -679,18 +707,18 @@ public class KronusEnemy : MonoBehaviour
             if (playerHealth != null)
             {
                 var hitTransform = collider.transform;
-                bool isCritical;
+                //bool isCritical;
                 float damage;
 
                 if (isPercentageDmg) damage = playerHealth.MaxHealth * attackDamagePercentage;
                 else damage = attackDamage;
 
                 // Calcular daño con sistema de críticos
-                float damageToApply = CriticalHitSystem.CalculateDamage(damage, transform, hitTransform, out isCritical);
+                //float damageToApply = CriticalHitSystem.CalculateDamage(damage, transform, hitTransform, out isCritical);
 
                 if (audioSource != null && hitSFX != null) audioSource.PlayOneShot(hitSFX);
 
-                playerHealth.TakeDamage(attackDamage);
+                playerHealth.TakeDamage(damage);
 
                 // Aplicar empuje
                 ApplyKnockback(hitTransform);
@@ -698,6 +726,11 @@ public class KronusEnemy : MonoBehaviour
                 ReportDebug($"Kronus atacó al jugador por {damage} de daño.", 1);
 
                 hasHitPlayerThisDash = true;
+
+                if (isLevelTwo)
+                {
+                    StartCoroutine(PersistentEchoRoutine(hitPoint.position));
+                }
 
                 break;
             }
@@ -753,6 +786,11 @@ public class KronusEnemy : MonoBehaviour
         showGizmo = true;
         if (visualHit != null && hitPoint != null)
         {
+            if (isLevelTwo)
+            {
+                ReportDebug("Resplandor púrpura del martillo activado.", 1);
+            }
+
             visualHit.transform.localScale = Vector3.one * attackRadius * 2f;
             visualHit.SetActive(true);
         }
@@ -796,6 +834,105 @@ public class KronusEnemy : MonoBehaviour
             }
 
             ReportDebug("No se encontró posición válida en NavMesh. Kronus puede estar atrapado.", 3);
+        }
+    }
+
+    #endregion
+
+    #region Level 2 - Eco Persistente
+
+    private IEnumerator PersistentEchoRoutine(Vector3 center)
+    {
+        if (playerTransform == null || playerHealth == null) yield break;
+
+        ReportDebug("Eco Persistente activado.", 1);
+
+        // Instanciar y configurar el visual
+        GameObject echoVisual = null;
+        if (echoVisualPrefab != null)
+        {
+            echoVisual = Instantiate(echoVisualPrefab, center, Quaternion.identity);
+            echoVisual.transform.localScale = Vector3.zero;
+        }
+
+        // Ajustar la posición Y para estar sobre el NavMesh/suelo
+        NavMeshHit navHit;
+        if (NavMesh.SamplePosition(center, out navHit, 2f, NavMesh.AllAreas))
+        {
+            center = navHit.position;
+            center.y += 0.01f; // Pequeño offset para renderizado
+        }
+
+        // Variables de tiempo y radio
+        float elapsed = 0f;
+        float damageTickInterval = 1f / EchoTickRate;
+        float tickTimer = 0f;
+
+        // Activar tracking para Gizmo
+        isEchoActive = true;
+        currentEchoCenter = center;
+
+        // Fase de Expansión (0.4s)
+        while (elapsed < echoExpansionTime)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / echoExpansionTime);
+            float currentRadius = Mathf.Lerp(echoStartRadius, echoEndRadius, t);
+
+            // Actualizar visual y Gizmo
+            if (echoVisual != null)
+            {
+                // Asume que la escala X y Z controlan el radio visual.
+                echoVisual.transform.localScale = new Vector3(currentRadius * 2f, 0.01f, currentRadius * 2f);
+                echoVisual.transform.position = center;
+            }
+            currentEchoRadius = currentRadius;
+
+            yield return null;
+        }
+
+        float finalRadius = echoEndRadius; // Radio final después de la expansión
+        currentEchoRadius = finalRadius;
+
+        // Fase de Duración con Daño (1.2s)
+        float damagePhaseElapsed = 0f;
+        while (damagePhaseElapsed < echoDurationAfterExpansion)
+        {
+            float delta = Time.deltaTime;
+            damagePhaseElapsed += delta;
+
+            tickTimer += delta;
+
+            // Aplicar daño por tics
+            if (tickTimer >= damageTickInterval)
+            {
+                // Verificar si el jugador está en el área
+                if (playerTransform != null)
+                {
+                    Vector3 playerPos = playerTransform.position;
+                    // Proyección horizontal para la verificación de distancia
+                    Vector3 echoCenterFlat = new Vector3(center.x, playerPos.y, center.z);
+
+                    if (Vector3.Distance(playerPos, echoCenterFlat) <= finalRadius)
+                    {
+                        // Repartir los 3 de daño por segundo en 4 tics (0.75 por tic)
+                        playerHealth.TakeDamage(EchoDamagePerTick);
+                        ReportDebug($"Eco golpea al jugador por {EchoDamagePerTick:F2} de daño (Tick).", 1);
+                    }
+                }
+                tickTimer -= damageTickInterval; // Restar el intervalo para evitar acumulaciones
+            }
+
+            yield return null;
+        }
+
+        // Limpieza
+        ReportDebug("Eco Persistente finalizado.", 1);
+        isEchoActive = false;
+        currentEchoRadius = 0f;
+        if (echoVisual != null)
+        {
+            Destroy(echoVisual);
         }
     }
 

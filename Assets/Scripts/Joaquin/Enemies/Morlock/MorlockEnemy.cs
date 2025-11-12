@@ -15,6 +15,14 @@ public partial class MorlockEnemy : MonoBehaviour
 
     #region Variables
 
+    public enum MorlockLevel { Nivel1, Nivel2, Nivel3 }
+
+    [Header("Dificultad de anticipación por disparo")]
+    [SerializeField] private MorlockLevel currentLevel = MorlockLevel.Nivel1;
+    [SerializeField] private float interceptProbabilityNivel1 = 0.25f;
+    [SerializeField] private float interceptProbabilityNivel2 = 0.5f;
+    [SerializeField] private float interceptProbabilityNivel3 = 0.75f;
+
     [Header("Statistics (fallback si no hay MorlockStats)")]
     [Header("Health")]
     [SerializeField] private float health = 15f;
@@ -23,7 +31,10 @@ public partial class MorlockEnemy : MonoBehaviour
     [SerializeField] private float moveSpeed = 4f;
 
     [Header("Combat")]
-    [SerializeField] private float fireRate = 1f;
+    [SerializeField] private float fireRate = 1.5f;
+    [SerializeField] private bool useRandomFireRate = true;
+    [SerializeField] private float minFireRate = 1.5f;
+    [SerializeField] private float maxFireRate = 3f;
     [SerializeField] private float projectileDamage = 1f;
     [SerializeField] private float projectileSpeed = 12f;
     [SerializeField] private int maxDamageIncrease = 2;
@@ -481,7 +492,7 @@ public partial class MorlockEnemy : MonoBehaviour
 
     #endregion
 
-    #region Lógica Centralizada (Teletransporte y Disparo)
+    #region Teletransporte y Disparo
 
     private void TeleportToPosition(Vector3 targetPosition)
     {
@@ -527,6 +538,12 @@ public partial class MorlockEnemy : MonoBehaviour
 
     private IEnumerator ShootAfterDelayRoutine()
     {
+        if (useRandomFireRate)
+        {
+            fireRate = Random.Range(minFireRate, maxFireRate); // Actualiza la tasa de fuego aleatoriamente
+            ReportDebug($"Nueva tasa de fuego aleatoria: {fireRate:F2} segundos.", 1);
+        }
+
         yield return new WaitForSeconds(fireRate);
 
         if (!isDead && currentState != MorlockState.Patrol && currentState != MorlockState.Repositioning)
@@ -554,9 +571,16 @@ public partial class MorlockEnemy : MonoBehaviour
         RegisterShootForDebug();
 
         Vector3 aimPoint = playerTransform.position;
-        if (playerCharacterController != null)
+        float interceptProb = GetInterceptProbability(currentLevel);
+
+        if (playerCharacterController != null && Random.value < interceptProb) // Disparo interceptivo
         {
             aimPoint = CalculateInterceptPoint(playerTransform.position, playerCharacterController.velocity);
+            ReportDebug($"Disparo interceptivo calculado de {interceptProb*100}% en {aimPoint}", 1);
+        }
+        else
+        {
+            aimPoint = playerTransform.position;
         }
 
         Vector3 directionToAim = (aimPoint - firePoint.position).normalized;
@@ -588,6 +612,21 @@ public partial class MorlockEnemy : MonoBehaviour
 
         float t = (distance - maxRangeForDamageIncrease) / (maxDistanceForDamageStart - maxRangeForDamageIncrease);
         return Mathf.Lerp(maxDamageIncrease, projectileDamage, t);
+    }
+
+    private float GetInterceptProbability(MorlockLevel level)
+    {
+        switch (level)
+        {
+            case MorlockLevel.Nivel1:
+                return interceptProbabilityNivel1;
+            case MorlockLevel.Nivel2:
+                return interceptProbabilityNivel2;
+            case MorlockLevel.Nivel3:
+                return interceptProbabilityNivel3;
+            default:
+                return 0.0f;
+        }
     }
 
     /// <summary>
