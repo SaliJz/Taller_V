@@ -12,6 +12,10 @@ public class DummyUIController : MonoBehaviour, ICombatDummyUI
     [SerializeField] private GameObject hitCountGroup;
     [SerializeField] private TMP_Text hitCountText;
 
+    [Header("Super Armor UI")]
+    [SerializeField] private GameObject armorBarGroup; 
+    [SerializeField] private Slider armorSlider;
+
     public void UpdateHealthBar(float currentHealthRatio, Color? stateColor)
     {
         if (healthSlider != null)
@@ -32,6 +36,19 @@ public class DummyUIController : MonoBehaviour, ICombatDummyUI
         if (hitCountText != null)
         {
             hitCountText.text = $"Golpes: {currentHits}/{requiredHits}";
+        }
+    }
+
+    public void UpdateArmorBar(float currentArmorRatio)
+    {
+        if (armorSlider != null)
+        {
+            armorSlider.value = currentArmorRatio;
+        }
+
+        if (armorBarGroup != null)
+        {
+            armorBarGroup.SetActive(currentArmorRatio > 0f);
         }
     }
 

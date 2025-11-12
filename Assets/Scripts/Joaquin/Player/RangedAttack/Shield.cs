@@ -188,6 +188,7 @@ public class Shield : MonoBehaviour
             if (damageable != null)
             {
                 TutorialCombatDummy tutorialDummy = damageable as TutorialCombatDummy;
+                DummyArmor dummyArmor = damageable as DummyArmor;
 
                 if (tutorialDummy != null)
                 {
