@@ -83,7 +83,7 @@ public class DummyShooter : MonoBehaviour
 
         if (rb != null)
         {
-            rb.linearVelocity = firePoint.forward * launchSpeed;
+            rb.linearVelocity = -firePoint.forward * launchSpeed;
         }
     }
 }
