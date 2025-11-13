@@ -993,45 +993,27 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
             activeChargingVFX = null;
         }
 
+        Vector3 explosionPosition = transform.position + transform.forward * 1.5f;
+
         if (explosionVFXPrefab != null)
         {
-            GameObject vfx = Instantiate(explosionVFXPrefab, transform.position, Quaternion.identity);
-            vfx.transform.localScale = Vector3.one * explosionRadius;
+            GameObject vfx = Instantiate(explosionVFXPrefab, explosionPosition, Quaternion.identity);
+
+            if (vfx.TryGetComponent<ExplosionDamage>(out var damageScript))
+            {
+                damageScript.SetDamage(explosionDamage);
+                damageScript.SetKnockback(explosionKnockback, 0.5f);
+            }
+
+            if (vfx.TryGetComponent<ExplosionScaleOverTime>(out var scaleScript))
+            {
+                scaleScript.EndScale = Vector3.one * explosionRadius * 2f;
+            }
+
             Destroy(vfx, 3f);
         }
 
-        Collider[] hitEnemies = Physics.OverlapSphere(transform.position, explosionRadius, enemyLayer);
-
-        foreach (Collider enemy in hitEnemies)
-        {
-            IDamageable damageable = enemy.GetComponent<IDamageable>();
-            if (damageable != null)
-            {
-                EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
-                if (enemyHealth != null)
-                {
-                    enemyHealth.TakeDamage(explosionDamage, AttackDamageType.Melee, transform.position);
-                }
-            }
-
-            Vector3 knockbackDir = (enemy.transform.position - transform.position).normalized;
-            knockbackDir.y = 0;
-
-            EnemyKnockbackHandler knockback = enemy.GetComponent<EnemyKnockbackHandler>();
-            if (knockback != null)
-            {
-                knockback.TriggerKnockback(knockbackDir, explosionKnockback, 0.5f);
-            }
-
-            if (enemy.CompareTag("Projectile"))
-            {
-                Destroy(enemy.gameObject);
-            }
-
-            ReportDebug($"Enemigo {enemy.name} golpeado por explosión: {explosionDamage} daño.", 1);
-        }
-
-        ReportDebug($"Explosión de Viejo ejecutada: {hitEnemies.Length} enemigos afectados.", 1);
+        ReportDebug("Explosión de Viejo instanciada.", 1);
     }
 
     #endregion
