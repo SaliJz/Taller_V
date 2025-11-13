@@ -900,13 +900,15 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         [Range(1f, 3f)] public float AttackDamageMultiplier;
         [Range(1f, 3f)] public float AttackSpeedMultiplier;
         [Range(1f, 3f)] public float HealthDrainAmount;
+        public bool DisableShieldThrow; 
 
-        public BuffSettings(float moveMultiplier, float attackDamageMultiplier, float attackSpeedMultiplier, float healthDrainAmount)
+        public BuffSettings(float moveMultiplier, float attackDamageMultiplier, float attackSpeedMultiplier, float healthDrainAmount, bool disableShieldThrow = true)
         {
             MoveMultiplier = moveMultiplier;
             AttackDamageMultiplier = attackDamageMultiplier;
             AttackSpeedMultiplier = attackSpeedMultiplier;
             HealthDrainAmount = healthDrainAmount;
+            DisableShieldThrow = disableShieldThrow;
         }
     }
 

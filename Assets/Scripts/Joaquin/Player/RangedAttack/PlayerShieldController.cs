@@ -12,6 +12,7 @@ public class PlayerShieldController : MonoBehaviour
     [SerializeField] private Transform shieldSpawnPoint;
     [SerializeField] private PlayerMeleeAttack playerMeleeAttack;
     [SerializeField] private PlayerMovement playerMovement;
+    [SerializeField] private PlayerHealth playerHealth;
 
     [Header("Stats")]
     [Tooltip("Daño de ataque por defecto si no se encuentra PlayerStatsManager.")]
@@ -30,6 +31,23 @@ public class PlayerShieldController : MonoBehaviour
     [HideInInspector] private float fallbackshieldReboundRadius = 15f;
     [SerializeField] private float shieldReboundRadius = 15f;
     [SerializeField] private bool canShieldRebound = true;
+
+    [Header("Configuración por Etapa - JOVEN")]
+    [SerializeField] private int youngShieldDamage = 4;
+    [SerializeField] private float youngShieldSpeed = 30f;
+    [SerializeField] private int youngMaxRebounds = 2;
+    [SerializeField] private float youngReboundRadius = 15f;
+
+    [Header("Configuración por Etapa - ADULTO")]
+    [SerializeField] private int adultShieldDamage = 7;
+    [SerializeField] private float adultShieldSpeed = 25f;
+    [SerializeField] private float adultKnockbackForce = 1.5f;
+
+    [Header("Configuración por Etapa - VIEJO")]
+    [SerializeField] private int elderShieldDamage = 12;
+    [SerializeField] private float elderShieldSpeed = 20f;
+    [SerializeField] private bool elderCanPierce = true;
+    [SerializeField] private int elderMaxPierceTargets = 5;
 
     private int finalAttackDamage;
     private float finalAttackSpeed;
@@ -63,6 +81,7 @@ public class PlayerShieldController : MonoBehaviour
         statsManager = GetComponent<PlayerStatsManager>();
         playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
         playerMovement = GetComponent<PlayerMovement>();
+        playerHealth = GetComponent<PlayerHealth>();
 
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerShieldController. Usando valores de fallback.", 2);
         if (playerMeleeAttack == null) ReportDebug("PlayerMeleeAttack no encontrado. No se podrá verificar estado de ataque melee.", 2);
@@ -315,9 +334,26 @@ public class PlayerShieldController : MonoBehaviour
         {
             shieldInstance.transform.position = shieldSpawnPoint.position;
             shieldInstance.transform.rotation = Quaternion.LookRotation(direction);
-            shieldInstance.GetComponent<Shield>().Throw(this, direction, canShieldRebound, shieldMaxRebounds, shieldReboundRadius, currentShieldDamage, currentShieldSpeed, shieldMaxDistance);
 
-            ReportDebug($"Escudo lanzado en dirección {direction}.", 1);
+            ShieldConfig config = GetShieldConfigForCurrentStage();
+
+            Shield shieldScript = shieldInstance.GetComponent<Shield>();
+            shieldScript.Throw(
+                this,
+                direction,
+                config.canRebound,
+                config.maxRebounds,
+                config.reboundRadius,
+                config.damage,
+                config.speed,
+                config.maxDistance,
+                config.canPierce,
+                config.maxPierceTargets,
+                config.knockbackForce,
+                playerHealth.CurrentLifeStage
+            );
+
+            ReportDebug($"Escudo lanzado ({playerHealth.CurrentLifeStage}): Daño={config.damage}, Velocidad={config.speed}", 1);
         }
         else
         {
@@ -348,6 +384,84 @@ public class PlayerShieldController : MonoBehaviour
         return false;
     }
 
+    private ShieldConfig GetShieldConfigForCurrentStage()
+    {
+        if (playerHealth == null)
+        {
+            return new ShieldConfig
+            {
+                damage = finalAttackDamage,
+                speed = finalAttackSpeed,
+                maxDistance = shieldMaxDistance,
+                canRebound = true,
+                maxRebounds = 2,
+                reboundRadius = 15f,
+                canPierce = false,
+                maxPierceTargets = 0,
+                knockbackForce = 0f
+            };
+        }
+
+        switch (playerHealth.CurrentLifeStage)
+        {
+            case PlayerHealth.LifeStage.Young:
+                return new ShieldConfig
+                {
+                    damage = youngShieldDamage + Mathf.RoundToInt(damageMultiplier),
+                    speed = youngShieldSpeed + speedMultiplier,
+                    maxDistance = shieldMaxDistance,
+                    canRebound = true,
+                    maxRebounds = youngMaxRebounds,
+                    reboundRadius = youngReboundRadius,
+                    canPierce = false,
+                    maxPierceTargets = 0,
+                    knockbackForce = 0f
+                };
+
+            case PlayerHealth.LifeStage.Adult:
+                return new ShieldConfig
+                {
+                    damage = adultShieldDamage + Mathf.RoundToInt(damageMultiplier),
+                    speed = adultShieldSpeed + speedMultiplier,
+                    maxDistance = shieldMaxDistance,
+                    canRebound = false,
+                    maxRebounds = 0,
+                    reboundRadius = 0f,
+                    canPierce = false,
+                    maxPierceTargets = 0,
+                    knockbackForce = adultKnockbackForce
+                };
+
+            case PlayerHealth.LifeStage.Elder:
+                return new ShieldConfig
+                {
+                    damage = elderShieldDamage + Mathf.RoundToInt(damageMultiplier),
+                    speed = elderShieldSpeed + speedMultiplier,
+                    maxDistance = shieldMaxDistance,
+                    canRebound = false,
+                    maxRebounds = 0,
+                    reboundRadius = 0f,
+                    canPierce = elderCanPierce,
+                    maxPierceTargets = elderMaxPierceTargets,
+                    knockbackForce = 0f
+                };
+
+            default:
+                return new ShieldConfig
+                {
+                    damage = finalAttackDamage,
+                    speed = finalAttackSpeed,
+                    maxDistance = shieldMaxDistance,
+                    canRebound = true,
+                    maxRebounds = 2,
+                    reboundRadius = 15f,
+                    canPierce = false,
+                    maxPierceTargets = 0,
+                    knockbackForce = 0f
+                };
+        }
+    }
+
     // El escudo llama a esta función cuando regresa
     public void CatchShield()
     {
@@ -362,6 +476,19 @@ public class PlayerShieldController : MonoBehaviour
 
     // Permite cambiar si el escudo puede rebotar o no
     public void SetRebound(bool value) => canShieldRebound = value;
+
+    private struct ShieldConfig
+    {
+        public int damage;
+        public float speed;
+        public float maxDistance;
+        public bool canRebound;
+        public int maxRebounds;
+        public float reboundRadius;
+        public bool canPierce;
+        public int maxPierceTargets;
+        public float knockbackForce;
+    }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     /// <summary> 

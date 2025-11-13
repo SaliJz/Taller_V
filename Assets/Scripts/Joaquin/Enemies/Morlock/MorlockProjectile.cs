@@ -18,6 +18,9 @@ public class MorlockProjectile : MonoBehaviour
     [SerializeField] private float poisonInitialDamage = 2f;
     [SerializeField] private float poisonResetTime = 5f;
 
+    private Vector3 direction;
+    private bool wasReflected = false;
+
     [SerializeField] private bool debugMode = false;
 
     public void Initialize(float projectileSpeed, float projectileDamage)
@@ -49,33 +52,63 @@ public class MorlockProjectile : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (wasReflected && other.CompareTag("Enemy"))
+        {
+            other.GetComponent<EnemyHealth>()?.TakeDamage(damage);
+            if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
+            Destroy(gameObject);
+            return;
+        }
+
         if (other.CompareTag("Player"))
         {
-            other.GetComponent<PlayerHealth>()?.ApplyMorlockPoisonHit(poisonResetTime, poisonInitialDamage, poisonHitThreshold);
-            ExecuteAttack(other.gameObject, damage);
+            bool wasBlocked = ExecuteAttack(other.gameObject, damage);
+
+            if (wasReflected)
+            {
+                Debug.Log("[Projectile] Bloqueado y Reflejado. No se destruye.");
+                if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
+                return;
+            }
 
             if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
+
             Destroy(gameObject);
         }
     }
 
-    private void ExecuteAttack(GameObject target, float damageAmount)
+    private bool ExecuteAttack(GameObject target, float damageAmount)
     {
-        if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
+        if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) &&
+            target.TryGetComponent<PlayerHealth>(out var health))
         {
             if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(this.transform.position))
             {
-                float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
+                float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount, this.gameObject);
 
                 if (remainingDamage > 0f)
                 {
                     health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
                 }
 
-                return;
+                return true;
             }
 
             health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+            return false;
         }
+
+        return false;
     }
+
+    public void Redirect(Vector3 newDirection)
+    {
+        direction = newDirection.normalized;
+        transform.forward = direction;
+        wasReflected = true;
+
+        Debug.Log($"[Projectile] Reflejado hacia {newDirection}");
+    }
+
+    public bool WasReflected => wasReflected;
 }

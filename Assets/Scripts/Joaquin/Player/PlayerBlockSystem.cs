@@ -43,6 +43,34 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     [SerializeField] private float stunDurationAdult = 1.2f;
     [SerializeField] private float stunDurationElder = 0.9f;
 
+    [Header("Young Block - Reflection")]
+    [SerializeField] private LayerMask projectileLayer;
+    [SerializeField] private float reflectionConeAngle = 90f;
+    [SerializeField] private float reflectionDetectionRadius = 5f;
+
+    [Header("Adult Block - Counter")]
+    [SerializeField] private float counterChargeTime = 0.5f;
+    [SerializeField] private float counterReleaseRange = 3f;
+    [SerializeField] private float counterKnockbackForce = 2f;
+    [SerializeField] private GameObject counterVFXPrefab;
+    [SerializeField] private LayerMask enemyLayer;
+
+    [Header("Elder Block - Charged Explosion")]
+    [SerializeField] private float explosionChargeTime = 3f;
+    [SerializeField] private float explosionRadius = 2.5f;
+    [SerializeField] private int explosionDamage = 8;
+    [SerializeField] private float explosionKnockback = 3f;
+    [SerializeField] private GameObject explosionVFXPrefab;
+    [SerializeField] private GameObject chargingVFXPrefab;
+    private GameObject activeChargingVFX;
+
+    [Header("Charge UI - Adult & Elder")]
+    [SerializeField] private Slider chargeSlider;
+    [SerializeField] private Image chargeFillImage;
+    [SerializeField] private GameObject chargeUIGroup;
+    [SerializeField] private Color adultChargeColor = new Color(1f, 0.5f, 0f);
+    [SerializeField] private Color elderChargeColor = new Color(0.8f, 0.2f, 1f);
+
     [Header("UI References")]
     [SerializeField] private Slider durabilitySlider;
     [SerializeField] private Image durabilityFillImage;
@@ -97,6 +125,11 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     private bool isStunned = false;
     private bool isDurabilityRecharging = false;
 
+    private float blockStartTime = 0f;
+    private bool isCharging = false;
+    private float chargeProgress = 0f;
+
+    private Coroutine chargeCoroutine;
     private Coroutine hideDurabilityCoroutine;
     private Coroutine durabilityRechargeCoroutine;
     private Coroutine stunCoroutine;
@@ -185,6 +218,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         if (blockingEnabled)
         {
             UpdateUI();
+            UpdateChargeUI();
         }
 
         if (!blockingEnabled || !IsBlocking) return;
@@ -239,8 +273,10 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     private void StartBlocking()
     {
         IsBlocking = true;
+        blockStartTime = Time.time;
+        isCharging = false;
+        chargeProgress = 0f;
 
-        // Detener recarga si está activa
         if (durabilityRechargeCoroutine != null)
         {
             StopCoroutine(durabilityRechargeCoroutine);
@@ -248,7 +284,19 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
             isDurabilityRecharging = false;
         }
 
-        // Inmovilizar al jugador
+        if (chargeUIGroup != null && playerHealth != null &&
+            (playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Adult ||
+            playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Elder))
+        {
+            chargeUIGroup.SetActive(true);
+        }
+
+        if (hideDurabilityCoroutine != null)
+        {
+            StopCoroutine(hideDurabilityCoroutine);
+            hideDurabilityCoroutine = null;
+        }
+
         if (playerMovement != null)
         {
             playerMovement.SetCanMove(false);
@@ -259,10 +307,14 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
             durabilityUIGroup.SetActive(true);
         }
 
-        // Visual feedback
         if (blockVFX != null) blockVFX.SetActive(true);
         if (blockParticles != null) blockParticles.Play();
         if (audioSource != null && blockSound != null) audioSource.PlayOneShot(blockSound);
+
+        if (playerHealth != null && playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Elder)
+        {
+            StartElderCharge();
+        }
 
         OnBlockStart?.Invoke();
         ReportDebug("Bloqueo iniciado.", 1);
@@ -270,25 +322,61 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
     private void StopBlocking()
     {
+        if (playerHealth != null &&
+            playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Adult &&
+            Time.time - blockStartTime >= counterChargeTime)
+        {
+            ExecuteAdultCounter();
+        }
+
+        if (chargeUIGroup != null)
+        {
+            chargeUIGroup.SetActive(false);
+        }
+
+        if (playerHealth != null &&
+            playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Elder &&
+            isCharging && chargeProgress >= 1f)
+        {
+            ExecuteElderExplosion();
+        }
+
+        if (chargeCoroutine != null)
+        {
+            StopCoroutine(chargeCoroutine);
+            chargeCoroutine = null;
+        }
+        isCharging = false;
+        chargeProgress = 0f;
+
+        if (activeChargingVFX != null)
+        {
+            Destroy(activeChargingVFX);
+            activeChargingVFX = null;
+        }
+
         IsBlocking = false;
 
-        // Restaurar movimiento
         if (playerMovement != null)
         {
             playerMovement.SetCanMove(true);
         }
 
-        if (durabilityUIGroup != null)
+        if (hideDurabilityCoroutine != null)
+        {
+            StopCoroutine(hideDurabilityCoroutine);
+            hideDurabilityCoroutine = null;
+        }
+
+        if (durabilityUIGroup != null && !isStunned)
         {
             HideDurabilityBar(hideDelay);
         }
 
-        // Visual feedback
         if (blockVFX != null) blockVFX.SetActive(false);
         if (blockParticles != null) blockParticles.Stop();
 
-        // Iniciar recarga con delay
-        if (durabilityRechargeCoroutine == null)
+        if (durabilityRechargeCoroutine == null && currentDurability < maxDurability)
         {
             durabilityRechargeCoroutine = StartCoroutine(RechargeDurability());
         }
@@ -423,15 +511,37 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     /// </summary>
     /// <param name="incomingDamage">Daño del ataque</param>
     /// <returns>Daño que pasa al jugador (0 si se bloquea completamente)</returns>
-    public float ProcessBlockedAttack(float incomingDamage)
+    public float ProcessBlockedAttack(float incomingDamage, GameObject attacker = null)
     {
         if (!IsBlocking) return incomingDamage;
 
-        // Reducir durabilidad
+        if (playerHealth != null && playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Young)
+        {
+            if (attacker != null)
+            {
+                var projectileScript = attacker.GetComponent<MorlockProjectile>();
+                if (projectileScript != null && !projectileScript.WasReflected)
+                {
+                    ReflectProjectile(attacker);
+                    ReportDebug($"Proyectil {attacker.name} reflejado.", 1);
+
+                    if (audioSource != null && blockHitSound != null)
+                    {
+                        audioSource.PlayOneShot(blockHitSound);
+                    }
+
+                    // No se si esto deberia, pero por si acaso incluyo que apesar de reflejar el proyectil igualmente le gasta la energia de escudo
+                    currentDurability -= incomingDamage;
+                    OnDurabilityChanged?.Invoke(GetDurabilityPercentage());
+
+                    return 0f;
+                }
+            }
+        }
+
         currentDurability -= incomingDamage;
         OnDurabilityChanged?.Invoke(GetDurabilityPercentage());
-        
-        // Audio de impacto
+
         if (audioSource != null && blockHitSound != null)
         {
             audioSource.PlayOneShot(blockHitSound);
@@ -439,15 +549,14 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
         ReportDebug($"Ataque bloqueado: {incomingDamage} daño absorbido. Durabilidad: {currentDurability}/{maxDurability}", 1);
 
-        // Verificar si se rompió
         if (currentDurability <= 0)
         {
             currentDurability = 0;
             BreakBlock();
-            return 0f; // El daño ya se absorbió antes de romperse
+            return 0f;
         }
 
-        return 0f; // Daño completamente bloqueado
+        return 0f; 
     }
 
     #endregion
@@ -505,6 +614,37 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         if (blockingEnabled)
         {
             UpdateDurabilityUI();
+        }
+    }
+    private void UpdateChargeUI()
+    {
+        if (chargeUIGroup == null) return;
+
+        bool shouldShow = IsBlocking && playerHealth != null &&
+                         (playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Adult ||
+                          playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Elder);
+
+        chargeUIGroup.SetActive(shouldShow);
+
+        if (!shouldShow) return;
+
+        if (chargeSlider != null)
+        {
+            if (playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Adult)
+            {
+                float progress = Mathf.Clamp01((Time.time - blockStartTime) / counterChargeTime);
+                chargeSlider.value = progress;
+
+                if (chargeFillImage != null)
+                    chargeFillImage.color = adultChargeColor;
+            }
+            else if (playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Elder)
+            {
+                chargeSlider.value = chargeProgress;
+
+                if (chargeFillImage != null)
+                    chargeFillImage.color = elderChargeColor;
+            }
         }
     }
 
@@ -598,8 +738,8 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     private IEnumerator HideDurabilityBarTimer(float duration)
     {
         yield return new WaitForSeconds(duration);
-        
-        if (durabilityUIGroup != null)
+
+        if (durabilityUIGroup != null && !IsBlocking)
         {
             durabilityUIGroup.SetActive(false);
         }
@@ -694,6 +834,209 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
     #endregion
 
+    #region Young - Projectile Reflection
+
+    private void ReflectProjectile(GameObject projectile)
+    {
+        Collider[] nearbyEnemies = Physics.OverlapSphere(transform.position, reflectionDetectionRadius, enemyLayer);
+
+        Transform nearestEnemy = null;
+        float nearestDistance = float.MaxValue;
+
+        Vector3 forward = transform.forward;
+
+        foreach (Collider col in nearbyEnemies)
+        {
+            Vector3 toEnemy = (col.transform.position - transform.position).normalized;
+            float angle = Vector3.Angle(forward, toEnemy);
+
+            if (angle <= reflectionConeAngle * 0.5f)
+            {
+                float distance = Vector3.Distance(transform.position, col.transform.position);
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearestEnemy = col.transform;
+                }
+            }
+        }
+
+        var projectileScript = projectile.GetComponent<MorlockProjectile>();
+
+        if (projectileScript != null)
+        {
+            if (nearestEnemy != null)
+            {
+                Vector3 directionToEnemy = (nearestEnemy.position - projectile.transform.position).normalized;
+                projectileScript.Redirect(directionToEnemy);
+                ReportDebug($"Proyectil reflejado hacia {nearestEnemy.name}", 1);
+            }
+            else
+            {
+                Vector3 reflectDirection = transform.forward;
+                projectileScript.Redirect(reflectDirection);
+                ReportDebug("Proyectil reflejado hacia adelante (sin objetivo específico)", 1);
+            }
+        }
+        else
+        {
+            Vector3 reflectDirection = nearestEnemy != null
+                ? (nearestEnemy.position - projectile.transform.position).normalized
+                : transform.forward;
+
+            projectile.transform.forward = reflectDirection;
+
+            Rigidbody rb = projectile.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = reflectDirection * rb.linearVelocity.magnitude;
+            }
+
+            ReportDebug("Proyectil sin MorlockProjectile reflejado (fallback)", 1);
+        }
+    }
+
+    #endregion
+
+    #region Adult - Counter Attack
+
+    private void ExecuteAdultCounter()
+    {
+        ReportDebug("Ejecutando embestida de Adulto (EffectBlock)...", 1);
+
+        if (counterVFXPrefab != null)
+        {
+            GameObject dashInstance = Instantiate(
+                counterVFXPrefab,
+                transform.position,
+                Quaternion.LookRotation(transform.forward)
+            );
+
+            if (dashInstance.TryGetComponent<EffectBlock>(out var effectBlockScript))
+            {
+                effectBlockScript.Initialize(
+                    transform.forward,
+                    transform.position,
+                    transform.rotation
+                );
+            }
+            else
+            {
+                ReportDebug("Error: El 'counterVFXPrefab' no contiene el script 'EffectBlock'. Asegúrate de que está asignado en el prefab.", 3);
+                Destroy(dashInstance);
+            }
+        }
+        else
+        {
+            ReportDebug("Error: 'counterVFXPrefab' no está asignado. No se puede ejecutar la embestida.", 3);
+        }
+    }
+
+    public Vector3 GetReflectionDirection(Vector3 projectilePosition, float reflectionAngle)
+    {
+        return Vector3.zero;
+    }
+
+    #endregion
+
+    #region Elder - Charged Explosion
+
+    private void StartElderCharge()
+    {
+        if (chargeCoroutine != null)
+        {
+            StopCoroutine(chargeCoroutine);
+        }
+
+        chargeCoroutine = StartCoroutine(ChargeExplosion());
+    }
+
+    private IEnumerator ChargeExplosion()
+    {
+        isCharging = true;
+        chargeProgress = 0f;
+
+        if (chargingVFXPrefab != null)
+        {
+            activeChargingVFX = Instantiate(chargingVFXPrefab, transform.position + Vector3.up, Quaternion.identity);
+            activeChargingVFX.transform.SetParent(transform);
+        }
+
+        float elapsedTime = 0f;
+
+        while (elapsedTime < explosionChargeTime && IsBlocking)
+        {
+            elapsedTime += Time.deltaTime;
+            chargeProgress = elapsedTime / explosionChargeTime;
+
+            if (activeChargingVFX != null)
+            {
+                activeChargingVFX.transform.localScale = Vector3.one * Mathf.Lerp(0.5f, 1.5f, chargeProgress);
+            }
+
+            yield return null;
+        }
+
+        chargeProgress = 1f;
+        ReportDebug("Explosión de Viejo completamente cargada.", 1);
+
+        chargeCoroutine = null;
+    }
+
+    private void ExecuteElderExplosion()
+    {
+        ReportDebug("Ejecutando explosión defensiva de Viejo...", 1);
+
+        if (activeChargingVFX != null)
+        {
+            Destroy(activeChargingVFX);
+            activeChargingVFX = null;
+        }
+
+        if (explosionVFXPrefab != null)
+        {
+            GameObject vfx = Instantiate(explosionVFXPrefab, transform.position, Quaternion.identity);
+            vfx.transform.localScale = Vector3.one * explosionRadius;
+            Destroy(vfx, 3f);
+        }
+
+        Collider[] hitEnemies = Physics.OverlapSphere(transform.position, explosionRadius, enemyLayer);
+
+        foreach (Collider enemy in hitEnemies)
+        {
+            IDamageable damageable = enemy.GetComponent<IDamageable>();
+            if (damageable != null)
+            {
+                EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
+                if (enemyHealth != null)
+                {
+                    enemyHealth.TakeDamage(explosionDamage, AttackDamageType.Melee, transform.position);
+                }
+            }
+
+            Vector3 knockbackDir = (enemy.transform.position - transform.position).normalized;
+            knockbackDir.y = 0;
+
+            EnemyKnockbackHandler knockback = enemy.GetComponent<EnemyKnockbackHandler>();
+            if (knockback != null)
+            {
+                knockback.TriggerKnockback(knockbackDir, explosionKnockback, 0.5f);
+            }
+
+            if (enemy.CompareTag("Projectile"))
+            {
+                Destroy(enemy.gameObject);
+            }
+
+            ReportDebug($"Enemigo {enemy.name} golpeado por explosión: {explosionDamage} daño.", 1);
+        }
+
+        ReportDebug($"Explosión de Viejo ejecutada: {hitEnemies.Length} enemigos afectados.", 1);
+    }
+
+    #endregion
+
+
     #region Gizmos
 
     private void OnDrawGizmos()
@@ -739,6 +1082,93 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     }
 
     #endregion
+
+    public BlockConfig GetBlockConfigForCurrentStage()
+    {
+        if (playerHealth == null)
+        {
+            return new BlockConfig
+            {
+                canReflectProjectiles = false,
+                canCounterMelee = false,
+                canChargeExplosion = false,
+                explosionDamage = 0,
+                explosionRadius = 0,
+                explosionKnockback = 0,
+                chargeTime = 0
+            };
+        }
+
+        switch (playerHealth.CurrentLifeStage)
+        {
+            case PlayerHealth.LifeStage.Young:
+                return new BlockConfig
+                {
+                    canReflectProjectiles = true,
+                    reflectionAngle = 90f,
+                    canCounterMelee = false,
+                    canChargeExplosion = false,
+                    explosionDamage = 0,
+                    explosionRadius = 0,
+                    explosionKnockback = 0,
+                    chargeTime = 0
+                };
+
+            case PlayerHealth.LifeStage.Adult:
+                return new BlockConfig
+                {
+                    canReflectProjectiles = false,
+                    reflectionAngle = 0f,
+                    canCounterMelee = true,
+                    counterRange = 3f,
+                    counterKnockback = 2f,
+                    canChargeExplosion = false,
+                    explosionDamage = 0,
+                    explosionRadius = 0,
+                    explosionKnockback = 0,
+                    chargeTime = 0
+                };
+
+            case PlayerHealth.LifeStage.Elder:
+                return new BlockConfig
+                {
+                    canReflectProjectiles = false,
+                    reflectionAngle = 0f,
+                    canCounterMelee = false,
+                    canChargeExplosion = true,
+                    explosionDamage = 8,
+                    explosionRadius = 2.5f,
+                    explosionKnockback = 3f,
+                    chargeTime = 3f
+                };
+
+            default:
+                return new BlockConfig
+                {
+                    canReflectProjectiles = false,
+                    canCounterMelee = false,
+                    canChargeExplosion = false,
+                    explosionDamage = 0,
+                    explosionRadius = 0,
+                    explosionKnockback = 0,
+                    chargeTime = 0
+                };
+        }
+    }
+
+    public struct BlockConfig
+    {
+        public bool canReflectProjectiles;
+        public float reflectionAngle;
+        public bool canCounterMelee;
+        public float counterRange;
+        public float counterKnockback;
+        public bool canChargeExplosion;
+        public int explosionDamage;
+        public float explosionRadius;
+        public float explosionKnockback;
+        public float chargeTime;
+    }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     private static void ReportDebug(string message, int reportPriorityLevel)

@@ -71,6 +71,9 @@ public partial class PlayerStatsManager : MonoBehaviour
     [Tooltip("Cantidad de decimales a mostrar para los valores.")]
     [SerializeField] private int decimals = 2;
 
+    [Header("Life Stage Modifiers")]
+    private Dictionary<StatType, float> lifeStageModifiers = new Dictionary<StatType, float>();
+
     private Dictionary<StatType, int> statVisualState = new();
 
     public static event Action<StatType, float> OnStatChanged;
@@ -696,6 +699,15 @@ public partial class PlayerStatsManager : MonoBehaviour
         StatType.ShieldAttackDamage
         };
 
+        foreach (var stat in affectedStats)
+        {
+            if (lifeStageModifiers.ContainsKey(stat))
+            {
+                currentStats[stat] -= lifeStageModifiers[stat];
+                lifeStageModifiers[stat] = 0f;
+            }
+        }
+
         var tempNamedModifiers = new Dictionary<string, Dictionary<StatType, NamedModifierData>>(StringComparer.Ordinal);
         foreach (var kvp in namedModifiers)
         {
@@ -706,42 +718,34 @@ public partial class PlayerStatsManager : MonoBehaviour
 
         foreach (StatType s in Enum.GetValues(typeof(StatType)))
         {
-            if (baseStats.TryGetValue(s, out var baseVal)) currentStats[s] = baseVal;
-            else currentStats[s] = 0f;
+            if (baseStats.TryGetValue(s, out var baseVal))
+            {
+                currentStats[s] = baseVal;
+            }
         }
 
         switch (newStage)
         {
             case LifeStage.Young:
-                Debug.Log("[PlayerStatsManager] Etapa Joven: Aplicando buffs de velocidad y debuffs de da�o.");
+                Debug.Log("[PlayerStatsManager] Etapa Joven: Sin modificadores adicionales de etapa.");
                 break;
 
             case LifeStage.Adult:
-                Debug.Log("[PlayerStatsManager] Etapa Adulto: EstadIsticas base restauradas.");
-                if (baseStats.ContainsKey(StatType.MoveSpeed))
-                    currentStats[StatType.MoveSpeed] += baseStats[StatType.MoveSpeed] * 0.1f;
-                if (baseStats.ContainsKey(StatType.MeleeAttackSpeed))
-                    currentStats[StatType.MeleeAttackSpeed] += baseStats[StatType.MeleeAttackSpeed] * 0.1f;
-                if (baseStats.ContainsKey(StatType.MeleeAttackDamage))
-                    currentStats[StatType.MeleeAttackDamage] += baseStats[StatType.MeleeAttackDamage] * 0.1f;
-                if (baseStats.ContainsKey(StatType.ShieldSpeed))
-                    currentStats[StatType.ShieldSpeed] += baseStats[StatType.ShieldSpeed] * 0.1f;
-                if (baseStats.ContainsKey(StatType.ShieldAttackDamage))
-                    currentStats[StatType.ShieldAttackDamage] += baseStats[StatType.ShieldAttackDamage] * 0.1f;
+                Debug.Log("[PlayerStatsManager] Etapa Adulto: +10% a todas las stats de combate.");
+                ApplyLifeStageMod(StatType.MoveSpeed, 0.1f);
+                ApplyLifeStageMod(StatType.MeleeAttackSpeed, 0.1f);
+                ApplyLifeStageMod(StatType.MeleeAttackDamage, 0.1f);
+                ApplyLifeStageMod(StatType.ShieldSpeed, 0.1f);
+                ApplyLifeStageMod(StatType.ShieldAttackDamage, 0.1f);
                 break;
 
             case LifeStage.Elder:
-                Debug.Log("[PlayerStatsManager] Etapa Anciano: Aplicando buffs de da�o y debuffs de velocidad.");
-                if (baseStats.ContainsKey(StatType.MoveSpeed))
-                    currentStats[StatType.MoveSpeed] += baseStats[StatType.MoveSpeed] * 0.2f;
-                if (baseStats.ContainsKey(StatType.MeleeAttackSpeed))
-                    currentStats[StatType.MeleeAttackSpeed] += baseStats[StatType.MeleeAttackSpeed] * 0.2f;
-                if (baseStats.ContainsKey(StatType.MeleeAttackDamage))
-                    currentStats[StatType.MeleeAttackDamage] += baseStats[StatType.MeleeAttackDamage] * 0.2f;
-                if (baseStats.ContainsKey(StatType.ShieldSpeed))
-                    currentStats[StatType.ShieldSpeed] += baseStats[StatType.ShieldSpeed] * 0.2f;
-                if (baseStats.ContainsKey(StatType.ShieldAttackDamage))
-                    currentStats[StatType.ShieldAttackDamage] += baseStats[StatType.ShieldAttackDamage] * 0.2f;
+                Debug.Log("[PlayerStatsManager] Etapa Anciano: +20% a todas las stats de combate.");
+                ApplyLifeStageMod(StatType.MoveSpeed, 0.2f);
+                ApplyLifeStageMod(StatType.MeleeAttackSpeed, 0.2f);
+                ApplyLifeStageMod(StatType.MeleeAttackDamage, 0.2f);
+                ApplyLifeStageMod(StatType.ShieldSpeed, 0.2f);
+                ApplyLifeStageMod(StatType.ShieldAttackDamage, 0.2f);
                 break;
         }
 
@@ -761,7 +765,8 @@ public partial class PlayerStatsManager : MonoBehaviour
 
                 currentStats[statType] += applied;
 
-                if (!namedModifiers.ContainsKey(modifierKey)) namedModifiers[modifierKey] = new Dictionary<StatType, NamedModifierData>();
+                if (!namedModifiers.ContainsKey(modifierKey))
+                    namedModifiers[modifierKey] = new Dictionary<StatType, NamedModifierData>();
 
                 namedModifiers[modifierKey][statType] = new NamedModifierData
                 {
@@ -774,7 +779,10 @@ public partial class PlayerStatsManager : MonoBehaviour
 
         foreach (var statType in affectedStats)
         {
-            if (currentStats.ContainsKey(statType)) OnStatChanged?.Invoke(statType, currentStats[statType]);
+            if (currentStats.ContainsKey(statType))
+            {
+                OnStatChanged?.Invoke(statType, currentStats[statType]);
+            }
         }
 
         foreach (var kvp in namedModifiers)
@@ -782,14 +790,25 @@ public partial class PlayerStatsManager : MonoBehaviour
             foreach (var kv in kvp.Value)
             {
                 var st = kv.Key;
-                if (Array.IndexOf(affectedStats, st) < 0) // si no estaba en la lista anterior
+                if (Array.IndexOf(affectedStats, st) < 0)
                 {
                     OnStatChanged?.Invoke(st, currentStats[st]);
                 }
             }
         }
 
-        Debug.Log($"[PlayerStatsManager] Cambio de etapa completado. Modificadores nombrados re-aplicados: {namedModifiers.Count}");
+        Debug.Log($"[PlayerStatsManager] Cambio de etapa completado. Modificadores re-aplicados: {namedModifiers.Count}");
+    }
+
+    private void ApplyLifeStageMod(StatType stat, float percentage)
+    {
+        if (!baseStats.ContainsKey(stat)) return;
+
+        float modifier = baseStats[stat] * percentage;
+        currentStats[stat] += modifier;
+        lifeStageModifiers[stat] = modifier;
+
+        Debug.Log($"[PlayerStatsManager] Modificador de etapa aplicado: {stat} +{percentage * 100}% = +{modifier}");
     }
 
     /// <summary>

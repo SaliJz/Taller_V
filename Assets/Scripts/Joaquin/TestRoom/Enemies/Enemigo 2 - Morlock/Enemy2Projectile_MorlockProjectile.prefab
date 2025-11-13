@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: 5192621019698394065}
   - component: {fileID: 3410251042622800462}
   - component: {fileID: 8170297578272491613}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: Enemy2Projectile_MorlockProjectile
-  m_TagString: Untagged
+  m_TagString: EnemyProjectile
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -122,11 +122,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8ad8d04fe9723f44b28295a15441e1c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  morlockStats: {fileID: 0}
   audioSource: {fileID: 426139657424295564}
   clip: {fileID: 8300000, guid: 3b00816869bad2c4194ff4902d08baa5, type: 3}
   speed: 20
   lifetime: 5
   damage: 0
+  poisonHitThreshold: 3
+  poisonInitialDamage: 2
+  poisonResetTime: 5
+  debugMode: 0
 --- !u!1 &9145668406424460264
 GameObject:
   m_ObjectHideFlags: 0

@@ -26,6 +26,16 @@ public class Shield : MonoBehaviour
     [SerializeField] private ParticleSystem shieldTrailVFX;
     [SerializeField] private TrailRenderer shieldTrail;
 
+    [Header("Pierce Settings (Elder)")]
+    [SerializeField] private bool canPierce = false;
+    [SerializeField] private int maxPierceTargets = 5;
+    [SerializeField] private int currentPierceCount = 0;
+
+    [Header("Knockback Settings (Adult)")]
+    [SerializeField] private float knockbackForce = 0f;
+
+    private PlayerHealth.LifeStage currentLifeStage;
+
     [SerializeField] private bool debugMode = false;
 
     private enum ShieldState { Inactive, Thrown, Returning, Rebounding }
@@ -55,7 +65,9 @@ public class Shield : MonoBehaviour
     /// <param name="owner"> Referencia al controlador del jugador </param>
     /// <param name="direction"> Orientación del escudo en la dirección del lanzamiento </param>
     /// <param name="canRebound"> Indica si el escudo puede rebotar entre enemigos </param>
-    public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds, float reboundDetectionRadius, float damage, float speed, float distance)
+    public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds,
+      float reboundDetectionRadius, float damage, float speed, float distance,
+      bool canPierce, int maxPierceTargets, float knockbackForce, PlayerHealth.LifeStage lifeStage)
     {
         if (deactivationCoroutine != null)
         {
@@ -78,12 +90,23 @@ public class Shield : MonoBehaviour
         this.canRebound = canRebound;
         this.maxRebounds = maxRebounds;
         this.reboundDetectionRadius = reboundDetectionRadius;
+
+        this.canPierce = canPierce;
+        this.maxPierceTargets = maxPierceTargets;
+        currentPierceCount = 0;
+
+        this.knockbackForce = knockbackForce;
+
+        this.currentLifeStage = lifeStage;
+
         hitTargets.Clear();
 
         currentState = ShieldState.Thrown;
         gameObject.SetActive(true);
 
         PlayTrailVFX(true);
+
+        ReportDebug($"Escudo lanzado en modo {lifeStage}: Daño={damage}, Pierce={canPierce}, Rebote={canRebound}", 1);
     }
 
     /// <summary>
@@ -167,71 +190,119 @@ public class Shield : MonoBehaviour
     private void PerformHitDetection(Transform hitTransform)
     {
         Vector3 damageSourcePos = transform.position;
-
         Collider[] hitEnemies = Physics.OverlapSphere(hitTransform.position, 0.5f, enemyLayer);
 
         const DamageType damageTypeForDummy = DamageType.Shield;
         const AttackDamageType shieldDamageType = AttackDamageType.Ranged;
 
+        bool hasHitAnyEnemy = false;
+
         foreach (Collider enemy in hitEnemies)
         {
-            if (!hitTargets.Contains(hitTransform))
+            if (canPierce && currentLifeStage == PlayerHealth.LifeStage.Elder)
             {
-                hitTargets.Add(hitTransform);
+                if (currentPierceCount >= maxPierceTargets)
+                {
+                    ReportDebug($"Máximo de atravesamientos alcanzado ({maxPierceTargets}).", 1);
+                    StartReturning();
+                    return;
+                }
             }
+            else
+            {
+                if (hitTargets.Contains(enemy.transform))
+                {
+                    continue;
+                }
+                hitTargets.Add(enemy.transform);
+            }
+
+            hasHitAnyEnemy = true;
 
             CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, false);
 
             bool isCritical;
             float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
 
-            // Intentar aplicar daño a IDamageable
             IDamageable damageable = enemy.GetComponent<IDamageable>();
             if (damageable != null)
             {
                 TutorialCombatDummy tutorialDummy = damageable as TutorialCombatDummy;
-                DummyArmor dummyArmor = damageable as DummyArmor;
 
                 if (tutorialDummy != null)
                 {
                     tutorialDummy.TakeDamage(finalDamage, false, damageTypeForDummy);
-                    ReportDebug("Golpe a " + enemy.name + ": DUMMY DE TUTORIAL. Daño: " + finalDamage, 1);
                 }
                 else
                 {
                     EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
-
                     if (enemyHealth != null)
                     {
                         enemyHealth.TakeDamage(attackDamage, shieldDamageType, damageSourcePos);
                     }
-                    ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
                 }
             }
 
-            // Manejar BloodKnight de forma especial
+            if (currentLifeStage == PlayerHealth.LifeStage.Adult && knockbackForce > 0)
+            {
+                EnemyKnockbackHandler knockbackHandler = enemy.GetComponent<EnemyKnockbackHandler>();
+                if (knockbackHandler != null)
+                {
+                    Vector3 knockbackDir = (enemy.transform.position - transform.position).normalized;
+                    knockbackDir.y = 0;
+                    knockbackHandler.TriggerKnockback(knockbackDir, knockbackForce, 0.3f);
+                    ReportDebug($"Knockback aplicado a {enemy.name}: Fuerza={knockbackForce}", 1);
+                }
+            }
+
             BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
             if (bloodKnight != null)
             {
                 bloodKnight.OnPlayerCounterAttack();
-                ReportDebug("Golpe a BloodKnight: " + enemy.name, 1);
             }
 
             ExplosiveHead explosiveHead = enemy.GetComponent<ExplosiveHead>();
             if (explosiveHead != null)
             {
-                explosiveHead.StartPriming(true); 
-                ReportDebug("Golpe a ExplosiveHead: " + enemy.name + ". Iniciando temporizador forzado.", 1);
+                explosiveHead.StartPriming(true);
+            }
+
+            if (canPierce && currentLifeStage == PlayerHealth.LifeStage.Elder)
+            {
+                currentPierceCount++;
+                ReportDebug($"Pierce count: {currentPierceCount}/{maxPierceTargets}", 1);
             }
         }
 
-        Transform nextTarget = FindNextReboundTarget();
-
-        if (nextTarget != null)
+        if (!hasHitAnyEnemy)
         {
-            reboundCount++;
-            currentTarget = nextTarget;
-            currentState = ShieldState.Rebounding;
+            StartReturning();
+            return;
+        }
+
+        if (canPierce && currentLifeStage == PlayerHealth.LifeStage.Elder)
+        {
+            if (currentPierceCount >= maxPierceTargets)
+            {
+                StartReturning();
+            }
+            return;
+        }
+
+        if (canRebound && currentLifeStage == PlayerHealth.LifeStage.Young)
+        {
+            Transform nextTarget = FindNextReboundTarget();
+            if (nextTarget != null)
+            {
+                reboundCount++;
+                currentTarget = nextTarget;
+                currentState = ShieldState.Rebounding;
+                ReportDebug($"Rebotando hacia {nextTarget.name} (rebote {reboundCount}/{maxRebounds})", 1);
+            }
+            else
+            {
+                StartReturning();
+            }
         }
         else
         {
