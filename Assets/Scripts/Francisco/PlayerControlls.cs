@@ -229,7 +229,7 @@ public partial class @PlayerControlls: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""5518eceb-1442-4504-89d0-12f367744805"",
-                    ""path"": ""<Mouse>/rightButton"",
+                    ""path"": ""<Mouse>/leftButton"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";Keyboard"",
@@ -290,7 +290,7 @@ public partial class @PlayerControlls: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""b31c68fc-f8e1-46f8-b9fe-6c46a2bb1795"",
-                    ""path"": ""<Keyboard>/e"",
+                    ""path"": ""<Mouse>/rightButton"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";Keyboard"",

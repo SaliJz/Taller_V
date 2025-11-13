@@ -166,6 +166,8 @@ public class Shield : MonoBehaviour
 
     private void PerformHitDetection(Transform hitTransform)
     {
+        Vector3 damageSourcePos = transform.position;
+
         Collider[] hitEnemies = Physics.OverlapSphere(hitTransform.position, 0.5f, enemyLayer);
 
         const DamageType damageTypeForDummy = DamageType.Shield;
@@ -197,7 +199,12 @@ public class Shield : MonoBehaviour
                 }
                 else
                 {
-                    damageable.TakeDamage(finalDamage, isCritical, shieldDamageType);
+                    EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
+
+                    if (enemyHealth != null)
+                    {
+                        enemyHealth.TakeDamage(attackDamage, shieldDamageType, damageSourcePos);
+                    }
                     ReportDebug("Golpe a " + enemy.name + " por " + finalDamage + " de daño.", 1);
                 }
             }

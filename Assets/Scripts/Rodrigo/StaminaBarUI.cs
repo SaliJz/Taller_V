@@ -92,8 +92,7 @@ public class StaminaBarUI : MonoBehaviour
         // Efecto de pulso cuando la estamina está baja
         if (pulseWhenLow && isLowStamina && staminaBarContainer != null)
         {
-            float scale = Mathf.Lerp(pulseMinScale, pulseMaxScale,
-                (Mathf.Sin(Time.time * pulseSpeed * Mathf.PI) + 1f) * 0.5f);
+            float scale = Mathf.Lerp(pulseMinScale, pulseMaxScale, (Mathf.Sin(Time.time * pulseSpeed * Mathf.PI) + 1f) * 0.5f);
             staminaBarContainer.transform.localScale = originalScale * scale;
         }
         else if (staminaBarContainer != null)

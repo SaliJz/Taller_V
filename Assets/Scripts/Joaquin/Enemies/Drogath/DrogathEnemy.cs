@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.InputSystem;
@@ -23,7 +24,7 @@ public class DrogathEnemy : MonoBehaviour
     [Tooltip("Radio máximo para vincular aliados")]
     [SerializeField] private float bondRadius = 15f;
     [Tooltip("Máximo de vínculos simultáneos")]
-    [SerializeField] private int maxBonds = 10;
+    [SerializeField] private int maxBonds = 2;
     [Tooltip("Regeneración de superarmor por segundo para aliados vinculados")]
     [SerializeField] private float toughnessRegenPerSecond = 6f;
     [Tooltip("Máximo de superarmor que puede regenerar en un aliado")]
@@ -37,7 +38,8 @@ public class DrogathEnemy : MonoBehaviour
 
     [Header("Shield System")]
     [Tooltip("Ángulo frontal del escudo (en grados, desde el centro)")]
-    [SerializeField] private float shieldAngle = 75f; // 150° total / 2
+    [SerializeField] private float frontalBlockAngle = 75f;
+    [SerializeField] private Transform shieldForwardOverride = null;
 
     [Header("Movement & Combat")]
     [Tooltip("Velocidad de movimiento hacia el jugador")]
@@ -67,6 +69,9 @@ public class DrogathEnemy : MonoBehaviour
     [SerializeField] private LineRenderer bondLineRendererPrefab;
     [SerializeField] private Color bondLineColor = Color.cyan;
     [SerializeField] private float bondLineWidth = 0.1f;
+
+    [Header("Debugging")]
+    [SerializeField] private bool canDebug = false;
 
     #endregion
 
@@ -367,12 +372,12 @@ public class DrogathEnemy : MonoBehaviour
 
     private void RegenerateBondedAlliesToughness()
     {
+        // Calcular regeneración
+        float regenThisFrame = toughnessRegenPerSecond * bondUpdateInterval;
+
         foreach (var bond in activeBonds)
         {
             if (bond.toughness == null || bond.ally == null) continue;
-
-            // Calcular regeneración
-            float regenThisFrame = toughnessRegenPerSecond * bondUpdateInterval;
 
             // Verificar límite de regeneración total
             if (bond.currentRegen + regenThisFrame > maxToughnessRegen)
@@ -389,14 +394,13 @@ public class DrogathEnemy : MonoBehaviour
 
                 if (possibleRegen > 0)
                 {
-                    float newToughness = Mathf.Min(currentToughness + possibleRegen, maxToughness);
-                    float originalMax = bond.toughness.MaxToughness;
-                    bond.toughness.SetMaxToughness(newToughness);
-                    bond.toughness.SetMaxToughness(originalMax);
+                    float addedToughness = bond.toughness.AddCurrentToughness(regenThisFrame);
+                    if (addedToughness > 0)
+                    {
+                        bond.currentRegen += addedToughness;
+                    }
 
-                    bond.currentRegen += possibleRegen;
-
-                    if (Mathf.FloorToInt(bond.currentRegen) % 5 == 0 && bond.currentRegen > 0)
+                    if (Mathf.FloorToInt(bond.currentRegen) % 6 == 0 && bond.currentRegen > 0) // Reportar cada 6 puntos regenerados
                     {
                         ReportDebug($"{bond.ally.name} regeneró {bond.currentRegen:F1}/{maxToughnessRegen} de superarmor", 1);
                     }
@@ -538,28 +542,67 @@ public class DrogathEnemy : MonoBehaviour
     /// <summary>
     /// Verifica si un ataque desde una dirección dada debe ser bloqueado por el escudo.
     /// </summary>
-    public bool ShouldBlockDamage(Vector3 damageDirection)
+    public bool ShouldBlockDamage(Vector3 attackerPosition)
     {
-        // Normalizar direcciones en plano horizontal
-        Vector3 forward = transform.forward;
-        forward.y = 0;
-        forward.Normalize();
+        // Calcular la dirección desde Drogath hacia el atacante
+        Vector3 toAttacker = attackerPosition - transform.position;
+        toAttacker.y = 0; // Ignorar diferencia de altura
 
-        damageDirection.y = 0;
-        damageDirection.Normalize();
-
-        // Calcular ángulo entre la dirección del ataque y hacia dónde mira Drogath
-        float angle = Vector3.Angle(forward, damageDirection);
-
-        // Si el ángulo es menor al ángulo del escudo, bloquear
-        bool blocked = angle <= shieldAngle;
-
-        if (blocked)
+        if (toAttacker.magnitude < 0.01f)
         {
-            ReportDebug($"Daño bloqueado por escudo frontal (ángulo: {angle:F1}°)", 1);
+            ReportDebug("Atacante demasiado cerca o en misma posición", 2);
+            return false;
         }
 
-        return blocked;
+        toAttacker.Normalize();
+
+        // Obtener dirección frontal del escudo en plano XZ
+        Vector3 shieldForward = GetShieldForward();
+        shieldForward.y = 0;
+        shieldForward.Normalize();
+
+        // Calcular ángulo entre el forward del escudo y la dirección hacia el atacante
+        // Si el atacante está en el arco frontal, el escudo lo bloquea
+        float angle = Vector3.Angle(shieldForward, toAttacker);
+
+        // Debug visual
+        if (canDebug)
+        {
+            Debug.DrawRay(transform.position, shieldForward * 3f, Color.green, 0.5f);
+            Debug.DrawRay(transform.position, toAttacker * 2.5f, Color.red, 0.5f);
+            Debug.DrawLine(transform.position, attackerPosition, Color.yellow, 0.5f);
+            DrawBlockCone(shieldForward, frontalBlockAngle * 0.5f);
+        }
+
+        // El escudo bloquea si el atacante está en el arco frontal
+        bool isBlocked = angle <= (frontalBlockAngle * 0.5f);
+
+        ReportDebug($"Atacante a {angle:F1}° del frente, Cobertura: ±{frontalBlockAngle * 0.5f}°, {(isBlocked ? "BLOQUEADO" : "NO BLOQUEADO")}", 1);
+
+        return isBlocked;
+    }
+
+    private Vector3 GetShieldForward()
+    {
+        if (shieldForwardOverride != null)
+        {
+            return shieldForwardOverride.forward;
+        }
+        return transform.forward;
+    }
+
+    private void DrawBlockCone(Vector3 forward, float halfAngle)
+    {
+        int segments = 20;
+        float totalAngle = frontalBlockAngle;
+        float segmentAngle = totalAngle / segments;
+
+        for (int i = 0; i <= segments; i++)
+        {
+            float currentAngle = -halfAngle + (i * segmentAngle);
+            Vector3 dir = Quaternion.Euler(0, currentAngle, 0) * forward;
+            Debug.DrawRay(transform.position, dir * 2f, Color.cyan, 0.5f);
+        }
     }
 
     #endregion
@@ -586,8 +629,16 @@ public class DrogathEnemy : MonoBehaviour
         }
 
         // Detener rutinas
-        if (bondUpdateRoutine != null) StopCoroutine(bondUpdateRoutine);
-        if (combatRoutine != null) StopCoroutine(combatRoutine);
+        if (bondUpdateRoutine != null)
+        {
+            StopCoroutine(bondUpdateRoutine);
+            bondUpdateRoutine = null;
+        }
+        if (combatRoutine != null)
+        {
+            StopCoroutine(combatRoutine);
+            combatRoutine = null;
+        }
 
         // Limpiar vínculos
         ClearAllBonds();
@@ -607,50 +658,31 @@ public class DrogathEnemy : MonoBehaviour
             GameObject rootObj = hit.transform.root.gameObject;
 
             // No aplicar a sí mismo
-            if (rootObj == gameObject) continue;
+            if (rootObj == gameObject) continue; // Verificar que el aliado no sea Drogath
 
             // Verificar que el aliado no esté muerto
             var allyHealth = rootObj.GetComponent<EnemyHealth>();
-            if (allyHealth != null && allyHealth.IsDead) continue;
+            if (allyHealth != null && allyHealth.IsDead) continue; // Sin vida, no aplicar
 
-            EnemyToughness toughness = rootObj.GetComponent<EnemyToughness>();
-            if (toughness == null) continue;
+            // Verificar que el aliado tenga EnemyToughness
+            EnemyToughness allyToughness = rootObj.GetComponent<EnemyToughness>();
+            if (allyToughness == null) continue; // Sin dureza, no aplicar
 
             // Activar dureza si está permitido
-            if (canEnableToughnessOnAllies && !toughness.HasToughness)
+            if (canEnableToughnessOnAllies && !allyToughness.HasToughness)
             {
-                toughness.SetUseToughness(true);
+                allyToughness.SetUseToughness(true);
             }
 
-            // Aplicar superarmor temporal
-            StartCoroutine(ApplyTemporarySuperArmor(toughness, rootObj.name));
+            if (allyToughness.HasToughness)
+            {
+                allyToughness.ApplyToughnessBuff(deathSuperArmor, deathSuperArmorDuration);
+            }
 
             affectedCount++;
         }
 
         ReportDebug($"Armadura Demoníaca aplicada a {affectedCount} aliados (+{deathSuperArmor} superarmor por {deathSuperArmorDuration}s)", 1);
-    }
-
-    private IEnumerator ApplyTemporarySuperArmor(EnemyToughness toughness, string allyName)
-    {
-        if (toughness == null) yield break;
-
-        float originalMax = toughness.MaxToughness;
-        float newMax = originalMax + deathSuperArmor;
-
-        // Aumentar temporalmente el máximo y regenerar
-        toughness.SetMaxToughness(newMax);
-
-        ReportDebug($"{allyName} recibió +{deathSuperArmor} superarmor temporal", 1);
-
-        yield return new WaitForSeconds(deathSuperArmorDuration);
-
-        // Restaurar máximo original (la dureza extra se perderá gradualmente)
-        if (toughness != null)
-        {
-            toughness.SetMaxToughness(originalMax);
-            ReportDebug($"Superarmor temporal de {allyName} expiró", 1);
-        }
     }
 
     #endregion
@@ -692,6 +724,8 @@ public class DrogathEnemy : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        if (!canDebug) return;
+
         // Radio de vinculación
         Gizmos.color = new Color(0f, 1f, 1f, 0.3f);
         Gizmos.DrawWireSphere(transform.position, bondRadius);
@@ -706,8 +740,8 @@ public class DrogathEnemy : MonoBehaviour
 
         // Visualizar ángulo del escudo
         Vector3 forward = transform.forward;
-        Vector3 right = Quaternion.Euler(0, shieldAngle, 0) * forward;
-        Vector3 left = Quaternion.Euler(0, -shieldAngle, 0) * forward;
+        Vector3 right = Quaternion.Euler(0, frontalBlockAngle/2, 0) * forward;
+        Vector3 left = Quaternion.Euler(0, -frontalBlockAngle/ 2, 0) * forward;
 
         Gizmos.color = new Color(0f, 0.5f, 1f, 0.5f);
         Gizmos.DrawLine(transform.position, transform.position + forward * 3f);
@@ -719,7 +753,7 @@ public class DrogathEnemy : MonoBehaviour
         Vector3 prevPoint = transform.position + left * 3f;
         for (int i = 1; i <= segments; i++)
         {
-            float angle = Mathf.Lerp(-shieldAngle, shieldAngle, i / (float)segments);
+            float angle = Mathf.Lerp(-frontalBlockAngle/ 2, frontalBlockAngle/ 2, i / (float)segments);
             Vector3 dir = Quaternion.Euler(0, angle, 0) * forward;
             Vector3 point = transform.position + dir * 3f;
             Gizmos.DrawLine(prevPoint, point);

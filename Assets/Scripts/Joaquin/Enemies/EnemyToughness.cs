@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 
 /// <summary>
 /// Enumeración para tipos de daño.
@@ -52,6 +53,8 @@ public class EnemyToughness : MonoBehaviour
     // Eventos
     public event Action<float, float> OnToughnessChanged;
     public event Action OnToughnessBreak;
+
+    private Coroutine temporaryBuffRoutine;
 
     public float CurrentToughness => currentToughness;
     public float MaxToughness => maxToughness;
@@ -224,6 +227,7 @@ public class EnemyToughness : MonoBehaviour
         }
     }
 
+    // Metodo para obtener el valor actual dentro de la barra
     private float GetCurrentBarValue(float currentValue, float valuePerBar)
     {
         if (currentValue <= 0) return 0;
@@ -336,6 +340,63 @@ public class EnemyToughness : MonoBehaviour
         }
         
         UpdateUI();
+    }
+
+    public float AddCurrentToughness(float amount)
+    {
+        if (!useToughness || amount <= 0) return 0f;
+
+        float previousToughness = currentToughness;
+        currentToughness = Mathf.Clamp(currentToughness + amount, 0f, maxToughness);
+
+        float addedAmount = currentToughness - previousToughness;
+
+        if (addedAmount > 0)
+        {
+            OnToughnessChanged?.Invoke(currentToughness, maxToughness);
+            UpdateUI();
+        }
+
+        return addedAmount;
+    }
+
+    public void ApplyToughnessBuff(float amount, float duration)
+    {
+        if (temporaryBuffRoutine != null)
+        {
+            StopCoroutine(temporaryBuffRoutine);
+            temporaryBuffRoutine = null;
+        }
+
+        temporaryBuffRoutine = StartCoroutine(ToughnessBuffRoutine(amount, duration));
+    }
+
+    private IEnumerator ToughnessBuffRoutine(float amount, float duration)
+    {
+        if (amount <= 0f)
+        {
+            temporaryBuffRoutine = null;
+            yield break;
+        }
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            AddCurrentToughness(amount);
+
+            OnToughnessChanged?.Invoke(currentToughness, maxToughness);
+            UpdateUI();
+
+            int remaining = Mathf.Max(0, Mathf.CeilToInt(duration - elapsed));
+            ReportDebug($"Aplicando buff de dureza: +{amount} (Tiempo restante: {remaining} s)", 1);
+
+            yield return new WaitForSeconds(1f);
+            elapsed += 1f;
+        }
+
+        ReportDebug("Buff de dureza finalizado.", 1);
+
+        temporaryBuffRoutine = null;
     }
 
     public void ResetToughness()

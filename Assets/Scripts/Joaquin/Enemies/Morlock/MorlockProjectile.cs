@@ -52,10 +52,30 @@ public class MorlockProjectile : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             other.GetComponent<PlayerHealth>()?.ApplyMorlockPoisonHit(poisonResetTime, poisonInitialDamage, poisonHitThreshold);
-            other.GetComponent<PlayerHealth>()?.TakeDamage(damage);
+            ExecuteAttack(other.gameObject, damage);
 
             if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
             Destroy(gameObject);
+        }
+    }
+
+    private void ExecuteAttack(GameObject target, float damageAmount)
+    {
+        if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
+        {
+            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(this.transform.position))
+            {
+                float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
+
+                if (remainingDamage > 0f)
+                {
+                    health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
+                }
+
+                return;
+            }
+
+            health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
         }
     }
 }

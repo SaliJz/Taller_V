@@ -23,6 +23,7 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     [SerializeField] private PlayerMeleeAttack meleeAttack;
     [SerializeField] private PlayerShieldController shieldController;
     [SerializeField] private PlayerMovement playerMovement;
+    [SerializeField] private PlayerBlockSystem playerBlockSystem;
     [SerializeField] private ShieldSkill shieldSkill;
 
     [SerializeField] private float inputBufferWindow = 0.12f; // Ventana de tiempo para bufferizar inputs
@@ -53,11 +54,13 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
         meleeAttack = GetComponent<PlayerMeleeAttack>();
         shieldController = GetComponent<PlayerShieldController>();
         playerMovement = GetComponent<PlayerMovement>();
+        playerBlockSystem = GetComponent<PlayerBlockSystem>();
         shieldSkill = GetComponent<ShieldSkill>();
 
         if (meleeAttack == null) ReportDebug("PlayerMeleeAttack no encontrado.", 3);
         if (shieldController == null) ReportDebug("PlayerShieldController no encontrado.", 3);
         if (playerMovement == null) ReportDebug("PlayerMovement no encontrado.", 3);
+        if (playerBlockSystem == null) ReportDebug("PlayerBlockSystem no encontrado.", 3);
         if (shieldSkill == null) ReportDebug("ShieldSkill no encontrado. El control de combate no funcionará correctamente.", 3);
     }
 
@@ -211,6 +214,12 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     private void TryExecuteMeleeAttack()
     {
+        if (playerBlockSystem != null && playerBlockSystem.IsStunned())
+        {
+            ReportDebug("Acción bloqueada: Jugador aturdido por rotura de escudo.", 2);
+            return;
+        }
+
         if (shieldSkill != null && !shieldSkill.isSkillActive)
         {
             ReportDebug("Intento de ejecutar melee sin habilidad activa. Bloqueado.", 2);
@@ -225,6 +234,12 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     private void TryExecuteShieldThrow()
     {
+        if (playerBlockSystem != null && playerBlockSystem.IsStunned())
+        {
+            ReportDebug("Acción bloqueada: Jugador aturdido por rotura de escudo.", 2);
+            return;
+        }
+
         if (shieldSkill != null && shieldSkill.isSkillActive)
         {
             ReportDebug("Intento de lanzar escudo con habilidad activa. Bloqueado.", 2);
@@ -242,6 +257,12 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     private void TryExecuteDash()
     {
+        if (playerBlockSystem != null && playerBlockSystem.IsStunned())
+        {
+            ReportDebug("Acción bloqueada: Jugador aturdido por rotura de escudo.", 2);
+            return;
+        }
+
         if (CanQueueDash())
         {
             StartCoroutine(ExecuteActionRoutine(CombatActionType.Dash, playerMovement.ExecuteDashFromManager()));

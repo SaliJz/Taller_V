@@ -677,6 +677,8 @@ public class PlayerMeleeAttack : MonoBehaviour
     {
         bool hitAnyEnemy = false;
 
+        Vector3 damageSourcePos = hitPoint != null ? hitPoint.position : transform.position;
+
         Collider[] hitEnemies = useBoxCollider
             ? Physics.OverlapBox(hitPoint.position, new Vector3(hitRadius, hitRadius, hitRadius), Quaternion.identity, enemyLayer)
             : Physics.OverlapSphere(hitPoint.position, hitRadius, enemyLayer);
@@ -712,8 +714,12 @@ public class PlayerMeleeAttack : MonoBehaviour
                 }
                 else
                 {
-                    damageable.TakeDamage(Mathf.RoundToInt(finalDamage), isCritical, meleeDamageType);
                     EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
+
+                    if (enemyHealth != null)
+                    {
+                        enemyHealth.TakeDamage(finalAttackDamage, meleeDamageType, damageSourcePos);
+                    }
 
                     switch (currentAttackIndex)
                     {

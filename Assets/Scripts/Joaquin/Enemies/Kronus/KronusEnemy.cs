@@ -61,8 +61,8 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private float echoExpansionTime = 0.4f;
     [SerializeField] private float echoDurationAfterExpansion = 1.2f;
     [SerializeField] private float echoDamagePerSecond = 3f;
-    private const float EchoTickRate = 4f;
-    private const float EchoDamagePerTick = 3f / 4f;
+    [SerializeField] private float EchoTickRate = 4f;
+    private float EchoDamagePerTick = 3f / 4f;
 
     [Header("Patrol")]
     [Tooltip("Si se asignan waypoints, Kronus los recorrerá en bucle. Si no, hará roaming aleatorio en patrolRadius.")]
@@ -149,6 +149,8 @@ public class KronusEnemy : MonoBehaviour
 
     private void InitializedEnemy()
     {
+        EchoDamagePerTick = echoDamagePerSecond / EchoTickRate;
+
         if (stats != null)
         {
             moveSpeed = stats.moveSpeed;
@@ -718,7 +720,7 @@ public class KronusEnemy : MonoBehaviour
 
                 if (audioSource != null && hitSFX != null) audioSource.PlayOneShot(hitSFX);
 
-                playerHealth.TakeDamage(damage);
+                ExecuteAttack(collider.gameObject, damage);
 
                 // Aplicar empuje
                 ApplyKnockback(hitTransform);
@@ -737,6 +739,26 @@ public class KronusEnemy : MonoBehaviour
         }
 
         StartCoroutine(ShowGizmoCoroutine());
+    }
+
+    private void ExecuteAttack(GameObject target, float damageAmount)
+    {
+        if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
+        {
+            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(this.transform.position))
+            {
+                float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
+
+                if (remainingDamage > 0f)
+                {
+                    health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
+                }
+
+                return;
+            }
+
+            health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+        }
     }
 
     private void ApplyKnockback(Transform target)

@@ -213,6 +213,24 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         InitializeHealthUI();
     }
 
+    public void TakeDamage(float damageAmount, AttackDamageType damageType, Vector3 damageSourcePosition)
+    {
+        var drogathBlocker = GetComponent<DrogathEnemy>();
+        if (drogathBlocker != null)
+        {
+            Vector3 damageDirection = (transform.position - damageSourcePosition).normalized;
+
+            if (drogathBlocker.ShouldBlockDamage(damageDirection))
+            {
+                // Daño bloqueado por el escudo frontal.
+                ReportDebug($"Daño {damageAmount} bloqueado por escudo de {gameObject.name}.", 1);
+                return;
+            }
+        }
+
+        TakeDamage(damageAmount: damageAmount, damageType: damageType);
+    }
+
     /// <summary>
     /// Toma daño (respetando la reducción local si existe).
     /// Firma original respetada para compatibilidad.

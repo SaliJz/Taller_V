@@ -22,6 +22,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     [Header("References")]
     [SerializeField] private PlayerStatsManager statsManager;
+    [SerializeField] private PlayerBlockSystem blockSystem;
     [SerializeField] private SpriteRenderer playerSpriteRenderer;
 
     [Header("Configuracion de Vida")]
@@ -141,6 +142,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         playerMovement = GetComponent<PlayerMovement>();
         playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
         playerShieldController = GetComponent<PlayerShieldController>();
+        blockSystem = GetComponent<PlayerBlockSystem>();
 
         InitializeMaterialCache();
 

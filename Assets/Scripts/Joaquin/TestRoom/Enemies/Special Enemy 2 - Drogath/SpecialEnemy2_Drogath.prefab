@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5893645238317522679}
   m_Layer: 0
-  m_Name: Enemy2_VisualEffects
+  m_Name: SpecialEnemy2_VisualEffects
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -44,7 +44,7 @@ GameObject:
   - component: {fileID: 3110494322844845270}
   - component: {fileID: 6437146230919340726}
   m_Layer: 0
-  m_Name: Enemy2_AudioSource
+  m_Name: SpecialEnemy2_AudioSource
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -443,6 +443,37 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &2962281939463189599
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8926953427477216282}
+  m_Layer: 0
+  m_Name: SpecialEnemy2_BlockPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8926953427477216282
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2962281939463189599}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.25, z: 0.75}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4431376214508367305}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3248756346906325430
 GameObject:
   m_ObjectHideFlags: 0
@@ -480,6 +511,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4800308855420958385}
+  - {fileID: 8926953427477216282}
   - {fileID: 5893645238317522679}
   - {fileID: 3110494322844845270}
   m_Father: {fileID: 0}
@@ -575,7 +607,8 @@ MonoBehaviour:
   rebondCooldown: 4
   bondUpdateInterval: 0.25
   canEnableToughnessOnAllies: 0
-  shieldAngle: 75
+  frontalBlockAngle: 150
+  shieldForwardOverride: {fileID: 0}
   moveSpeed: 3.5
   stoppingDistance: 2
   meleeDamage: 10
@@ -593,6 +626,7 @@ MonoBehaviour:
   bondLineRendererPrefab: {fileID: 0}
   bondLineColor: {r: 0, g: 1, b: 1, a: 1}
   bondLineWidth: 0.1
+  canDebug: 1
 --- !u!114 &1306600556410572327
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -708,7 +742,7 @@ GameObject:
   - component: {fileID: 8221812792766448184}
   - component: {fileID: 9074723288466618600}
   m_Layer: 7
-  m_Name: Enemy2_Model
+  m_Name: SpecialEnemy2_Model
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
