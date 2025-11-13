@@ -853,36 +853,36 @@ public class AstarothController : MonoBehaviour
 
                 if (endKeyframe.IsTargetable)
                 {
-                    LookAtPlayerSmooth(0.6f, 100f);
-                    yield return new WaitForSeconds(0.6f);
+            LookAtPlayerSmooth(0.6f, 100f);
+            yield return new WaitForSeconds(0.6f);
 
-                    Vector3 rayOrigin = _whipVisualTransform.position;
-                    Vector3 predictedPlayerPos = PredictPlayerPosition(0.4f);
-                    Vector3 directionToPlayer = (predictedPlayerPos - rayOrigin).normalized;
+            Vector3 rayOrigin = _whipVisualTransform.position;
+            Vector3 predictedPlayerPos = PredictPlayerPosition(0.4f);
+            Vector3 directionToPlayer = (predictedPlayerPos - rayOrigin).normalized; 
 
-                    _lastWhipRaycastOrigin = rayOrigin;
-                    _lastWhipRaycastDirection = directionToPlayer;
-                    _showWhipRaycastGizmo = true;
+            _lastWhipRaycastOrigin = rayOrigin;
+            _lastWhipRaycastDirection = directionToPlayer;
+            _showWhipRaycastGizmo = true;
 
-                    int layerMask = LayerMask.GetMask("Obstacle", "Wall");
-                    RaycastHit hit;
+            int layerMask = LayerMask.GetMask("Obstacle", "Wall");
+            RaycastHit hit;
 
-                    float effectiveRange = Vector3.Distance(rayOrigin, predictedPlayerPos);
-                    _whipTargetPoint = predictedPlayerPos;
+            float effectiveRange = Vector3.Distance(rayOrigin, predictedPlayerPos); 
+            _whipTargetPoint = predictedPlayerPos; 
 
-                    if (effectiveRange > _whipRange)
-                    {
-                        effectiveRange = _whipRange;
-                        _whipTargetPoint = rayOrigin + directionToPlayer * _whipRange;
-                    }
+            if (effectiveRange > _whipRange)
+            {
+                effectiveRange = _whipRange;
+                _whipTargetPoint = rayOrigin + directionToPlayer * _whipRange;
+            }
 
-                    if (Physics.Raycast(rayOrigin, directionToPlayer, out hit, effectiveRange, layerMask))
-                    {
-                        _whipTargetPoint = hit.point;
-                    }
+            if (Physics.Raycast(rayOrigin, directionToPlayer, out hit, effectiveRange, layerMask))
+            {
+                _whipTargetPoint = hit.point;
+            }
 
-                    _whipImpactPoint = _whipTargetPoint;
-                    _showWhipImpactGizmo = true;
+            _whipImpactPoint = _whipTargetPoint;
+            _showWhipImpactGizmo = true;
 
                     endKeyframe.Position = transform.InverseTransformPoint(_whipTargetPoint);
                 }
@@ -977,6 +977,7 @@ public class AstarothController : MonoBehaviour
             yield return null;
         }
     }
+
     #endregion
 
     #region Attack 2 Logic
@@ -1064,17 +1065,21 @@ public class AstarothController : MonoBehaviour
     private void CheckDirectRockImpact(HashSet<Collider> alreadyHit)
     {
         Vector3 rockWorldPosition = _smashVisualTransform.position;
-        float rockRadius = _smashVisualTransform.localScale.x * 0.5f; 
+        float rockRadius = _smashVisualTransform.localScale.x * 0.5f;
+
+        HashSet<GameObject> hitEntities = new HashSet<GameObject>();
 
         Collider[] nearbyColliders = Physics.OverlapSphere(rockWorldPosition, rockRadius);
 
         foreach (var col in nearbyColliders)
         {
-            if (col.CompareTag("Player") && !alreadyHit.Contains(col))
-            {
-                alreadyHit.Add(col);
+            GameObject entity = col.gameObject;
 
-                PlayerHealth playerHealth = col.GetComponent<PlayerHealth>();
+            if (entity.CompareTag("Player") && !hitEntities.Contains(entity))
+            {
+                hitEntities.Add(entity);
+
+                PlayerHealth playerHealth = entity.GetComponent<PlayerHealth>();
                 if (playerHealth != null)
                 {
                     playerHealth.TakeDamage(_Attack2Damage);
@@ -1130,7 +1135,7 @@ public class AstarothController : MonoBehaviour
         float fixedYScale = 0.5f;
         Vector3 targetScale = new Vector3(targetRadius * 2, fixedYScale, targetRadius * 2);
 
-        HashSet<Collider> hitByShockwave = new HashSet<Collider>();
+        HashSet<GameObject> hitByShockwaveEntity = new HashSet<GameObject>();
 
         while (elapsedTime < duration)
         {
@@ -1146,19 +1151,31 @@ public class AstarothController : MonoBehaviour
 
             foreach (var hitCollider in hitColliders)
             {
-                if (hitCollider.CompareTag("Player") && !hitByShockwave.Contains(hitCollider) && !alreadyHitByRock.Contains(hitCollider))
+                GameObject entity = hitCollider.transform.root.gameObject;
+
+                bool wasHitByRock = false;
+                foreach (var rockCol in alreadyHitByRock)
                 {
-                    float heightDifference = Mathf.Abs(hitCollider.transform.position.y - groundPosition.y);
+                    if (rockCol.transform.root.gameObject == entity)
+                    {
+                        wasHitByRock = true;
+                        break;
+                    }
+                }
+
+                if (entity.CompareTag("Player") && !hitByShockwaveEntity.Contains(entity) && !wasHitByRock)
+                {
+                    float heightDifference = Mathf.Abs(entity.transform.position.y - groundPosition.y);
 
                     if (heightDifference < 2f)
                     {
-                        float distanceFromCenter = Vector3.Distance(hitCollider.transform.position, groundPosition);
+                        float distanceFromCenter = Vector3.Distance(entity.transform.position, groundPosition);
 
                         if (distanceFromCenter <= currentRadius)
                         {
-                            hitByShockwave.Add(hitCollider);
+                            hitByShockwaveEntity.Add(entity);
 
-                            PlayerHealth playerHealth = hitCollider.GetComponent<PlayerHealth>();
+                            PlayerHealth playerHealth = entity.GetComponent<PlayerHealth>();
                             if (playerHealth != null)
                             {
                                 playerHealth.TakeDamage(_Attack2Damage);

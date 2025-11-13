@@ -2676,7 +2676,7 @@ MonoBehaviour:
     Scale: {x: 1, y: 1, z: 1}
     Time: 1
     IsTargetable: 0
-  _Attack2Damage: 25
+  _Attack2Damage: 15
   _attack2Cooldown: 9
   _smashRadius: 6
   _smashDetectionRadius: 12
@@ -2748,7 +2748,8 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeath: 100
+  lifestealAmountOnDeathByMelee: 100
+  lifestealAmountOnDeathByDistance: 100
   toughnessSystem: {fileID: 0}
   enableAutoArea: 0
   areaTriggerPercent: 0.25
