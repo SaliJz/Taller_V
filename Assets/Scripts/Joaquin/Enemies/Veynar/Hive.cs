@@ -1,5 +1,6 @@
-using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(EnemyHealth))]
@@ -7,13 +8,15 @@ public class Hive : MonoBehaviour
 {
     [Header("Hive settings")]
     [SerializeField] private float larvaSpawnInterval = 2.5f;
-    [SerializeField] private int maxLarvas = 4;
-    [SerializeField] private float autoDestroyAfterMaxSeconds = 10f;
+    [SerializeField] private int maxLarvas = 3;
+    [SerializeField] private float hiveLifetimeAfterProduction = 5f;
     [SerializeField] private GameObject larvaPrefab;
     [SerializeField] private NavMeshObstacle obstacle;
     [SerializeField] private NavMeshAgent navMeshAgent;
-    [Tooltip("Tiempo de cooldown antes de destruirse.")]
-    [SerializeField] private float deathCooldown = 0.5f;
+
+    [Header("Larva Spawn Settings")]
+    [SerializeField] private float minLarvaSpawnRadius = 3f;
+    [SerializeField] private float maxLarvaSpawnRadius = 5f;
 
     [Header("References")]
     [SerializeField] private AudioClip spawnLarvaSFX;
@@ -23,6 +26,9 @@ public class Hive : MonoBehaviour
     private bool isProducing = true;
     private VeynarEnemy owner;
     private EnemyHealth enemyHealth;
+    private List<Larva> activeLarvas = new List<Larva>(); // Lista de larvas generadas
+    
+    private Coroutine delayDeathCoroutine;
 
     public VeynarEnemy Owner => owner;
     public int SpawnedCount => spawnedCount;
@@ -33,9 +39,6 @@ public class Hive : MonoBehaviour
         obstacle = GetComponent<NavMeshObstacle>();
         navMeshAgent = GetComponent<NavMeshAgent>();
 
-        if (enemyHealth != null) enemyHealth.CanHealPlayer = false;
-        if (enemyHealth != null) enemyHealth.CanDestroy = true;
-        if (enemyHealth != null) enemyHealth.DeathCooldown = deathCooldown;
         if (obstacle != null) obstacle.enabled = false;
         if (navMeshAgent != null) navMeshAgent.enabled = true;
     }
@@ -44,13 +47,11 @@ public class Hive : MonoBehaviour
     {
         owner = ownerRef;
         larvaPrefab = larvaPrefabRef;
-
         spawnedCount = 0;
         isProducing = true;
 
         StopAllCoroutines();
         StartCoroutine(ProduceRoutine());
-
         StartCoroutine(ActivateObstacleAfterDelay(1f));
     }
 
@@ -76,6 +77,19 @@ public class Hive : MonoBehaviour
 
         obstacle.enabled = false;
         StopAllCoroutines();
+        delayDeathCoroutine = null;
+
+        // Matar a todas las larvas generadas por esta colmena
+        foreach (Larva larva in activeLarvas)
+        {
+            if (larva != null && larva.gameObject != null)
+            {
+                larva.Die();
+            }
+        }
+
+        activeLarvas.Clear();
+
         owner?.OnHiveDestroyed(this);
     }
 
@@ -93,16 +107,17 @@ public class Hive : MonoBehaviour
 
             SpawnLarva();
         }
+
+        // Si ha terminado de producir, se autodestruye
+        if (spawnedCount >= maxLarvas)
+        {
+            StopProducing();
+        }
     }
 
-    /// <summary>
-    /// Corrutina que activa el NavMeshObstacle después de un breve instante.
-    /// Esto da tiempo a las larvas recién generadas a salir del área.
-    /// </summary>
     private IEnumerator ActivateObstacleAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
-
         if (navMeshAgent != null) navMeshAgent.enabled = false;
         if (obstacle != null) obstacle.enabled = true;
     }
@@ -117,26 +132,26 @@ public class Hive : MonoBehaviour
             return;
         }
 
-        Vector3 spawnPosition = transform.position + Vector3.up * 0.5f;
-        NavMeshHit hit;
+        // Lógica de "dona" para larvas
+        Vector2 randomCircle = Random.insideUnitCircle.normalized * Random.Range(minLarvaSpawnRadius, maxLarvaSpawnRadius);
+        Vector3 spawnPosition = transform.position + new Vector3(randomCircle.x, 0.5f, randomCircle.y);
 
-        if (NavMesh.SamplePosition(spawnPosition, out hit, 2f, NavMesh.AllAreas))
+        if (NavMesh.SamplePosition(spawnPosition, out var hit, 5f, NavMesh.AllAreas))
         {
             spawnPosition = hit.position + Vector3.up * 0.2f;
         }
         else
         {
-            for (int i = 0; i < 5; i++)
+            // Fallback si la dona falla
+            spawnPosition = transform.position + (Random.insideUnitSphere * maxLarvaSpawnRadius);
+            spawnPosition.y = 0.5f;
+            if (NavMesh.SamplePosition(spawnPosition, out hit, 5f, NavMesh.AllAreas))
             {
-                Vector3 randomOffset = Random.insideUnitSphere * 0.8f;
-                randomOffset.y = 0.5f;
-                Vector3 testPos = transform.position + randomOffset;
-
-                if (NavMesh.SamplePosition(testPos, out hit, 2f, NavMesh.AllAreas))
-                {
-                    spawnPosition = hit.position + Vector3.up * 0.2f;
-                    break;
-                }
+                spawnPosition = hit.position + Vector3.up * 0.2f;
+            }
+            else
+            {
+                Debug.LogWarning("[Hive] No se encontró posición en NavMesh para larva.");
             }
         }
 
@@ -148,11 +163,9 @@ public class Hive : MonoBehaviour
             if (larva != null)
             {
                 larva.Initialize(owner?.PlayerTransform);
+                activeLarvas.Add(larva); // Añadir a la lista
             }
-            else
-            {
-                Debug.LogWarning("[Hive] No se encontró componente Larva en el prefab.");
-            }
+            else Debug.LogWarning("[Hive] No se encontró componente Larva en el prefab.");
         }
         else
         {
@@ -163,25 +176,74 @@ public class Hive : MonoBehaviour
         }
 
         if (spawnVFX != null) spawnVFX.Play();
-
         owner?.PlaySFX(spawnLarvaSFX);
-
-        if (spawnedCount >= maxLarvas)
-        {
-            StartCoroutine(SelfDestructAfterDelay());
-        }
     }
 
     public void StopProducing()
     {
         isProducing = false;
         StopAllCoroutines();
-        if (!enemyHealth.IsDead) enemyHealth.Die();
+        if (enemyHealth != null && !enemyHealth.IsDead)
+        {
+            StartDelayAfterDeath(hiveLifetimeAfterProduction);
+        }
     }
 
-    private IEnumerator SelfDestructAfterDelay()
+    private void StartDelayAfterDeath(float delay)
     {
-        yield return new WaitForSeconds(autoDestroyAfterMaxSeconds);
-        if (!enemyHealth.IsDead) enemyHealth.Die();
+        if (delayDeathCoroutine != null)
+        {
+            StopCoroutine(delayDeathCoroutine);
+        }
+        delayDeathCoroutine = StartCoroutine(DelayAfterDeath(delay));
+    }
+
+    private IEnumerator DelayAfterDeath(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (enemyHealth != null && !enemyHealth.IsDead)
+        {
+            enemyHealth.Die();
+        }
+    }
+
+    /// <summary>
+    /// Mueve la colmena a una nueva posición.
+    /// </summary>
+    public void Teleport(Vector3 newPosition)
+    {
+        if (navMeshAgent != null && navMeshAgent.enabled && navMeshAgent.isOnNavMesh)
+        {
+            // Intentar encontrar un punto válido en el NavMesh
+            if (NavMesh.SamplePosition(newPosition, out var hit, 5f, NavMesh.AllAreas))
+            {
+                navMeshAgent.Warp(hit.position);
+            }
+            else
+            {
+                Debug.LogWarning($"[Hive] No se pudo teletransportar a {newPosition} (fuera de NavMesh).");
+            }
+        }
+        else
+        {
+            // Fallback si no hay NavMeshAgent
+            if (NavMesh.SamplePosition(newPosition, out var hit, 5f, NavMesh.AllAreas))
+            {
+                transform.position = hit.position;
+            }
+            else
+            {
+                transform.position = newPosition; // Mover de todos modos
+            }
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        // Dibujar las zonas de spawn de larvas
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, minLarvaSpawnRadius);
+        Gizmos.DrawWireSphere(transform.position, maxLarvaSpawnRadius);
     }
 }

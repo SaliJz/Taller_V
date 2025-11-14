@@ -24,7 +24,6 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     [SerializeField] private PlayerShieldController shieldController;
     [SerializeField] private PlayerMovement playerMovement;
     [SerializeField] private PlayerBlockSystem playerBlockSystem;
-    [SerializeField] private ShieldSkill shieldSkill;
     [SerializeField] private PlayerHealth playerHealth;
 
     [SerializeField] private float inputBufferWindow = 0.12f; // Ventana de tiempo para bufferizar inputs
@@ -56,13 +55,11 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
         shieldController = GetComponent<PlayerShieldController>();
         playerMovement = GetComponent<PlayerMovement>();
         playerBlockSystem = GetComponent<PlayerBlockSystem>();
-        shieldSkill = GetComponent<ShieldSkill>();
 
         if (meleeAttack == null) ReportDebug("PlayerMeleeAttack no encontrado.", 3);
         if (shieldController == null) ReportDebug("PlayerShieldController no encontrado.", 3);
         if (playerMovement == null) ReportDebug("PlayerMovement no encontrado.", 3);
         if (playerBlockSystem == null) ReportDebug("PlayerBlockSystem no encontrado.", 3);
-        if (shieldSkill == null) ReportDebug("ShieldSkill no encontrado. El control de combate no funcionará correctamente.", 3);
     }
 
     private void OnEnable()
@@ -86,48 +83,14 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     {
         if (!context.started) return;
 
-        if (shieldSkill == null)
-        {
-            ReportDebug("ShieldSkill no asignado. No se puede determinar modo de combate.", 3);
-            return;
-        }
-
-        // Determinar qué ataque ejecutar según el estado de la habilidad
-        if (shieldSkill.isSkillActive)
-        {
-            // Habilidad activa: Permitir melee
-            ProcessCombatInput(CombatActionType.MeleeAttack);
-        }
-        else
-        {
-            // Habilidad inactiva: Bloquear melee y mostrar advertencia
-            ShowSkillRequiredWarning(meleeBlockedMessage);
-            ReportDebug("Ataque melee bloqueado: habilidad especial no está activa.", 1);
-        }
+        ProcessCombatInput(CombatActionType.MeleeAttack);
     }
 
     public void OnShieldThrow(InputAction.CallbackContext context)
     {
         if (!context.started) return;
 
-        if (shieldSkill == null)
-        {
-            ReportDebug("ShieldSkill no asignado. No se puede determinar modo de combate.", 3);
-            return;
-        }
-
-        // Determinar si se puede lanzar el escudo según el estado de la habilidad
-        if (!shieldSkill.isSkillActive)
-        {
-            // Habilidad inactiva: Permitir lanzamiento de escudo
-            ProcessCombatInput(CombatActionType.ShieldThrow);
-        }
-        else
-        {
-            // Habilidad activa: Bloquear lanzamiento y mostrar advertencia
-            ShowSkillRequiredWarning(rangedBlockedMessage);
-            ReportDebug("Lanzamiento de escudo bloqueado: habilidad especial está activa.", 1);
-        }
+        ProcessCombatInput(CombatActionType.ShieldThrow);
     }
 
     public void OnDash(InputAction.CallbackContext context)
@@ -227,12 +190,6 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
             return;
         }
 
-        if (shieldSkill != null && !shieldSkill.isSkillActive)
-        {
-            ReportDebug("Intento de ejecutar melee sin habilidad activa. Bloqueado.", 2);
-            return;
-        }
-
         if (meleeAttack != null && meleeAttack.CanAttack())
         {
             StartCoroutine(ExecuteActionRoutine(CombatActionType.MeleeAttack, meleeAttack.ExecuteAttackFromManager()));
@@ -250,12 +207,6 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
         if (playerBlockSystem != null && playerBlockSystem.IsBlockingState())
         {
             ReportDebug("Acción bloqueada: No se puede esquivar mientras se bloquea.", 2);
-            return;
-        }
-
-        if (shieldSkill != null && shieldSkill.isSkillActive)
-        {
-            ReportDebug("Intento de lanzar escudo con habilidad activa. Bloqueado.", 2);
             return;
         }
 
@@ -304,8 +255,6 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     {
         if (meleeAttack == null) return false;
         
-        if (shieldSkill != null && !shieldSkill.isSkillActive) return false;
-        
         if (currentAction == CombatActionType.MeleeAttack && meleeAttack.ComboCount == 2)
         {
             ReportDebug("No se puede bufferizar melee: tercer ataque del combo en ejecución.", 1);
@@ -319,8 +268,6 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     private bool CanQueueShieldThrow()
     {
-        if (shieldSkill != null && shieldSkill.isSkillActive) return false;
-
         return shieldController != null && shieldController.CanThrowShield();
     }
 

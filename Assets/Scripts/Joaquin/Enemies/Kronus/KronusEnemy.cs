@@ -704,11 +704,11 @@ public class KronusEnemy : MonoBehaviour
 
         Collider[] hitPlayer = Physics.OverlapSphere(hitPoint.position, attackRadius, playerLayer);
 
-        foreach (Collider collider in hitPlayer)
+        foreach (Collider hit in hitPlayer)
         {
             if (playerHealth != null)
             {
-                var hitTransform = collider.transform;
+                var hitTransform = hit.transform;
                 //bool isCritical;
                 float damage;
 
@@ -720,7 +720,7 @@ public class KronusEnemy : MonoBehaviour
 
                 if (audioSource != null && hitSFX != null) audioSource.PlayOneShot(hitSFX);
 
-                ExecuteAttack(collider.gameObject, damage);
+                ExecuteAttack(hit.gameObject, damage);
 
                 // Aplicar empuje
                 ApplyKnockback(hitTransform);
@@ -734,7 +734,7 @@ public class KronusEnemy : MonoBehaviour
                     StartCoroutine(PersistentEchoRoutine(hitPoint.position));
                 }
 
-                break;
+                break; // Solo golpear un jugador
             }
         }
 
@@ -745,7 +745,8 @@ public class KronusEnemy : MonoBehaviour
     {
         if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
         {
-            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(this.transform.position))
+            // Verificar si el ataque es bloqueado
+            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(hitPoint.transform.position))
             {
                 float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
 
@@ -805,7 +806,6 @@ public class KronusEnemy : MonoBehaviour
     {
         Vector3 originalScale = visualHit.transform.localScale;
 
-        showGizmo = true;
         if (visualHit != null && hitPoint != null)
         {
             if (isLevelTwo)
@@ -818,7 +818,6 @@ public class KronusEnemy : MonoBehaviour
         }
         yield return new WaitForSeconds(gizmoDuration);
 
-        showGizmo = false;
         if (visualHit != null && hitPoint != null)
         {
             visualHit.SetActive(false);

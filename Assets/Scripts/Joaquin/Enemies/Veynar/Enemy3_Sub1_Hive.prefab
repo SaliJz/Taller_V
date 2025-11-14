@@ -830,9 +830,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 25
+  maxHealth: 20
   currentHealth: 0
-  deathCooldown: 2
+  deathCooldown: 0
   canDestroy: 1
   onDeathEvent:
     m_PersistentCalls:
@@ -848,8 +848,11 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
+  lifestealAmountOnDeathByMelee: 10
+  lifestealAmountOnDeathByDistance: 10
   toughnessSystem: {fileID: 0}
-  enableAutoArea: 1
+  invulnerableLayerIndex: 0
+  enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
   areaDuration: 10
@@ -874,7 +877,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   renderers:
   - {fileID: 2875739996722278214}
-  blinkFlashMaterial: {fileID: 0}
+  blinkFlashMaterial: {fileID: 2100000, guid: d1f9e2c5e82298b4b8f024596ca37e41, type: 2}
   blinkInterval: 0.06
   blinkCount: 6
   stunMaterial: {fileID: 0}
@@ -904,12 +907,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   larvaSpawnInterval: 2.5
-  maxLarvas: 4
-  autoDestroyAfterMaxSeconds: 10
-  larvaPrefab: {fileID: 0}
+  maxLarvas: 3
+  hiveLifetimeAfterProduction: 5
+  larvaPrefab: {fileID: 2070855010256960706, guid: d77c866a58ba6f84c818e09b699bd71c, type: 3}
   obstacle: {fileID: 7062026571937158164}
   navMeshAgent: {fileID: 241961261687332342}
-  deathCooldown: 0.5
+  minLarvaSpawnRadius: 3
+  maxLarvaSpawnRadius: 5
   spawnLarvaSFX: {fileID: 0}
   spawnVFX: {fileID: 0}
 --- !u!54 &4384501985470753249
