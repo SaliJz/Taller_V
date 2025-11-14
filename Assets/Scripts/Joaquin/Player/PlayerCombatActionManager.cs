@@ -221,6 +221,12 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
             return;
         }
 
+        if (playerBlockSystem != null && playerBlockSystem.IsBlockingState())
+        {
+            ReportDebug("Acción bloqueada: No se puede esquivar mientras se bloquea.", 2);
+            return;
+        }
+
         if (shieldSkill != null && !shieldSkill.isSkillActive)
         {
             ReportDebug("Intento de ejecutar melee sin habilidad activa. Bloqueado.", 2);
@@ -238,6 +244,12 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
         if (playerBlockSystem != null && playerBlockSystem.IsStunned())
         {
             ReportDebug("Acción bloqueada: Jugador aturdido por rotura de escudo.", 2);
+            return;
+        }
+
+        if (playerBlockSystem != null && playerBlockSystem.IsBlockingState())
+        {
+            ReportDebug("Acción bloqueada: No se puede esquivar mientras se bloquea.", 2);
             return;
         }
 
@@ -261,6 +273,12 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
         if (playerBlockSystem != null && playerBlockSystem.IsStunned())
         {
             ReportDebug("Acción bloqueada: Jugador aturdido por rotura de escudo.", 2);
+            return;
+        }
+
+        if (playerBlockSystem != null && playerBlockSystem.IsBlockingState())
+        {
+            ReportDebug("Acción bloqueada: No se puede esquivar mientras se bloquea.", 2);
             return;
         }
 

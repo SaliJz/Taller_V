@@ -427,23 +427,32 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         }
     }
 
+    // Rota el jugador hacia la posición del mouse proyectada en el suelo
     private void RotateTowardsMouse()
     {
         if (mainCamera == null) return;
 
+        // Crear un rayo desde la cámara hacia la posición del mouse
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f, groundLayer))
+        // Definir un plano horizontal en la posición del jugador
+        Plane groundPlane = new Plane(Vector3.up, transform.position);
+
+        if (groundPlane.Raycast(ray, out float enter))
         {
-            Vector3 targetPosition = hit.point;
-            targetPosition.y = transform.position.y;
+            // Obtener el punto en el plano donde el rayo intersecta
+            Vector3 worldPoint = ray.GetPoint(enter);
+            Vector3 direction = worldPoint - transform.position;
+            direction.y = 0f;
+            direction.Normalize();
 
-            Vector3 direction = (targetPosition - transform.position).normalized;
-
+            // Rotar suavemente hacia esa dirección con velocidad constante
             if (direction != Vector3.zero)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(direction);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+
+                float step = rotationSpeed * 100f * Time.deltaTime;
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, step);
             }
         }
     }
@@ -830,6 +839,11 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     public bool IsRecharging()
     {
         return isDurabilityRecharging;
+    }
+
+    public bool IsBlockingState()
+    {
+        return IsBlocking;
     }
 
     #endregion
