@@ -227,11 +227,23 @@ public class Shield : MonoBehaviour
             IDamageable damageable = enemy.GetComponent<IDamageable>();
             if (damageable != null)
             {
-                TutorialCombatDummy tutorialDummy = damageable as TutorialCombatDummy;
+                const string TUTORIAL_DUMMY_TAG = "TutorialDummy";
 
-                if (tutorialDummy != null)
+                if (damageable is MonoBehaviour monoBehaviour && monoBehaviour.gameObject.CompareTag(TUTORIAL_DUMMY_TAG))
                 {
-                    tutorialDummy.TakeDamage(finalDamage, false, damageTypeForDummy);
+                    IDamageable iDamageable = monoBehaviour.GetComponent<IDamageable>();
+
+                    TutorialCombatDummy tutorialDummy = damageable as TutorialCombatDummy;
+
+                    if (tutorialDummy != null)
+                    {
+                        tutorialDummy.TakeDamage(finalDamage, false, damageTypeForDummy);
+                    }
+                    else if (iDamageable != null) 
+                    {
+                        damageable.TakeDamage(Mathf.RoundToInt(finalDamage), isCritical, shieldDamageType);
+                        ReportDebug($"Golpe a {enemy.name}: DUMMY DE TUTORIAL DETECTADO (Tag). Enviando {finalDamage:F2} de daño de {damageTypeForDummy}", 1);
+                    }
                 }
                 else
                 {
