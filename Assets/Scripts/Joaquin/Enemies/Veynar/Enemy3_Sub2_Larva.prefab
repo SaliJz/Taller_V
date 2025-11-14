@@ -377,6 +377,7 @@ GameObject:
   - component: {fileID: 7798502344753917479}
   - component: {fileID: 1972044736101290427}
   - component: {fileID: 3486928034627552593}
+  - component: {fileID: 4040921428440426794}
   m_Layer: 7
   m_Name: Enemy3_Sub2_Larva
   m_TagString: Enemy
@@ -480,16 +481,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 1
+  maxHealth: 10
   currentHealth: 0
-  deathCooldown: 2
+  deathCooldown: 0
   canDestroy: 1
-  healthSteal: 5
-  firstLifeSlider: {fileID: 7559954970329346635}
-  firstFillImage: {fileID: 9161838589788935874}
+  onDeathEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  healthSlider: {fileID: 7559954970329346635}
+  healthFillImage: {fileID: 9161838589788935874}
   offsetAboveEnemy: 2
   glowDelayAfterCritical: 2
-  enableAutoArea: 1
+  healthPercentageText: {fileID: 0}
+  healthMultiplierText: {fileID: 0}
+  useDynamicHealthBars: 0
+  healthPerBar: 100
+  healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
+  colorGradientIntensity: 0.3
+  canGrantLifestealOnDeath: 1
+  lifestealAmountOnDeathByMelee: 10
+  lifestealAmountOnDeathByDistance: 10
+  toughnessSystem: {fileID: 0}
+  invulnerableLayerIndex: 0
+  enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
   areaDuration: 10
@@ -514,10 +528,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   renderers:
   - {fileID: 5607408015179773810}
-  normalFlashColor: {r: 1, g: 0, b: 0, a: 0.6}
-  criticalFlashColor: {r: 1, g: 0.5, b: 0, a: 0.9}
-  flashDuration: 0.2
-  flashCount: 2
+  blinkFlashMaterial: {fileID: 2100000, guid: d1f9e2c5e82298b4b8f024596ca37e41, type: 2}
+  blinkInterval: 0.06
+  blinkCount: 6
+  stunMaterial: {fileID: 0}
+  stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  stunBlinkSpeed: 0.1
+  stunVFXPrefab: {fileID: 0}
+  stunVFXHeight: 2
+  stunSFX: {fileID: 0}
   defaultMaterial: {fileID: 2100000, guid: f3dc760264bb9704f8c9a2fc15b82a43, type: 2}
   glowMaterial: {fileID: 2100000, guid: a895dece90d884a4daa6cbf31c41dd4d, type: 2}
   glowIntensity: 2
@@ -538,11 +557,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3262d89af242a0145998a2de9c343db7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 24
-  frontalDamage: 2.5
-  backDamage: 5
+  speed: 10
+  explosionDamage: 4
   lifeTime: 10
-  deathCooldown: 0.25
+  knockbackForce: 0.5
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
@@ -566,6 +584,38 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73d4e83809fd58b4293186b0b01eaaf9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  navMeshSampleDistance: 2
+  raycastStepDistance: 0.25
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 640
+--- !u!54 &4040921428440426794
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2070855010256960706}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &2145914912902681135
 GameObject:
   m_ObjectHideFlags: 0

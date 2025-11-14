@@ -677,9 +677,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
+  maxHealth: 30
   currentHealth: 0
-  deathCooldown: 2
+  deathCooldown: 0
   canDestroy: 1
   onDeathEvent:
     m_PersistentCalls:
@@ -695,7 +695,10 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
+  lifestealAmountOnDeathByMelee: 10
+  lifestealAmountOnDeathByDistance: 10
   toughnessSystem: {fileID: 0}
+  invulnerableLayerIndex: 0
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -752,17 +755,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hivePrefab: {fileID: 6494588530873725524, guid: b193b5a4589c6bb4caf102806069d752, type: 3}
   larvaPrefab: {fileID: 2070855010256960706, guid: d77c866a58ba6f84c818e09b699bd71c, type: 3}
-  maxActiveHives: 5
-  hiveSpawnInterval: 2.5
-  hiveSpawnRadius: 5
-  teleportAlertRange: 7
-  teleportDelayIfPlayerClose: 3
-  teleportRange: 10
+  maxActiveHives: 3
+  hiveSpawnInterval: 5
+  minHiveSpawnRadius: 5
+  maxHiveSpawnRadius: 15
+  teleportRange: 20
+  teleportHivesWithVeynar: 0
+  invulnerableLayerName: IgnoreEnemy
   normalMaterial: {fileID: 2100000, guid: b7d887137b3a1e44bb8ef4865b374a56, type: 2}
   transparentMaterial: {fileID: 2100000, guid: e7d10bd2a0cd13f448af8c25e7d29078, type: 2}
   audioSource: {fileID: 83863595809769251}
   spawnHiveSFX: {fileID: 0}
   teleportSFX: {fileID: 0}
+  deathCriesSFX: {fileID: 0}
 --- !u!114 &6171586382370169260
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -779,7 +784,7 @@ MonoBehaviour:
   raycastStepDistance: 0.25
   collisionLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 640
 --- !u!1 &3921124408185350706
 GameObject:
   m_ObjectHideFlags: 0

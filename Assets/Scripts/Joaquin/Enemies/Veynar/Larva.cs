@@ -6,22 +6,19 @@ using System.Collections;
 public class Larva : MonoBehaviour
 {
     [Header("Stats")]
-    [SerializeField] private float speed = 12f;
-    [SerializeField] private float frontalDamage = 2.5f;
-    [SerializeField] private float backDamage = 5f;
+    [SerializeField] private float speed = 10f;
+    [SerializeField] private float explosionDamage = 4f;
     [SerializeField] private float lifeTime = 10f;
-    [SerializeField] private float deathCooldown = 0.5f;
+    [SerializeField] private float knockbackForce = 0.5f;
 
     [Header("Detección / Movimiento")]
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private float stoppingBuffer = 0.5f;
-    [SerializeField] private float attackRange = 1.5f;
+    [SerializeField] private float attackRange = 5f;
     [SerializeField] private float attackCooldown = 0.5f;
 
-    [Header("Agent tuning (tunea en Inspector)")]
-    [Tooltip("Cadencia mínima en segundos para re-evaluar SetDestination (reduce CPU y jitter).")]
+    [Header("Agent tuning")]
     [SerializeField] private float destinationUpdateInterval = 0.18f;
-    [Tooltip("Multiplicador para acceleration (accel = speed * accelMultiplier).")]
     [SerializeField] private float accelMultiplier = 3f;
     [SerializeField] private float minAcceleration = 8f;
     [SerializeField] private float angularSpeed = 120f;
@@ -48,10 +45,6 @@ public class Larva : MonoBehaviour
         rb.isKinematic = true;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-        if (enemyHealth != null) enemyHealth.CanHealPlayer = false;
-        if (enemyHealth != null) enemyHealth.CanDestroy = true;
-        if (enemyHealth != null) enemyHealth.DeathCooldown = deathCooldown;
-
         agent = GetComponent<NavMeshAgent>();
         if (agent != null) ConfigureAgentFromParams();
     }
@@ -59,14 +52,7 @@ public class Larva : MonoBehaviour
     private void Update()
     {
         if (!initialized) return;
-
         if (player == null || enemyHealth == null || enemyHealth.IsDead) return;
-
-        float distance = Vector3.Distance(transform.position, player.position);
-        if (distance <= attackRange && Time.time >= lastAttackTime + attackCooldown)
-        {
-            TryAttack();
-        }
     }
 
     private void OnEnable()
@@ -87,7 +73,6 @@ public class Larva : MonoBehaviour
     private void HandleEnemyDeath(GameObject enemy)
     {
         if (enemy != gameObject) return;
-
         StopAllCoroutines();
         if (agent != null && agent.isOnNavMesh)
         {
@@ -99,22 +84,20 @@ public class Larva : MonoBehaviour
     private void ConfigureAgentFromParams()
     {
         if (agent == null) return;
-
         agent.speed = speed;
         agent.acceleration = Mathf.Max(minAcceleration, speed * accelMultiplier);
         agent.angularSpeed = angularSpeed;
         agent.updatePosition = true;
         agent.updateRotation = true;
 
+        // El agente se detiene justo antes del rango de ataque
         agent.stoppingDistance = attackRange + stoppingBuffer;
+
         agent.obstacleAvoidanceType = ObstacleAvoidanceType.MedQualityObstacleAvoidance;
         agent.autoRepath = true;
         agent.enabled = true;
     }
 
-    /// <summary>
-    /// Inicializa la larva con referencia al jugador.
-    /// </summary>
     public void Initialize(Transform playerTransform)
     {
         player = playerTransform ?? GameObject.FindGameObjectWithTag("Player")?.transform;
@@ -124,8 +107,7 @@ public class Larva : MonoBehaviour
         if (agent != null && !agent.isOnNavMesh)
         {
             ReportDebug("NavMeshAgent no está en el NavMesh. Intentando colocar...", 2);
-            NavMeshHit hit;
-            if (NavMesh.SamplePosition(transform.position, out hit, 2f, NavMesh.AllAreas))
+            if (NavMesh.SamplePosition(transform.position, out var hit, 2f, NavMesh.AllAreas))
             {
                 transform.position = hit.position;
                 agent.Warp(hit.position);
@@ -133,15 +115,13 @@ public class Larva : MonoBehaviour
             else
             {
                 ReportDebug("No se pudo colocar en el NavMesh. Destruyendo larva.", 3);
-                if (enemyHealth != null && !enemyHealth.IsDead) enemyHealth.Die();
+                Die();
                 return;
             }
         }
 
         if (agent != null) ConfigureAgentFromParams();
-
         StopAllCoroutines();
-
         lifeTimer = 0f;
         lastAttackTime = -999f;
         lastDestinationTime = -999f;
@@ -168,96 +148,143 @@ public class Larva : MonoBehaviour
             {
                 float distance = Vector3.Distance(transform.position, player.position);
 
-                if (distance > attackRange + stoppingBuffer)
+                // Si está lejos, perseguir
+                if (distance > agent.stoppingDistance)
                 {
                     if (agent.isStopped) agent.isStopped = false;
 
                     if (Time.time >= lastDestinationTime + destinationUpdateInterval)
                     {
-                        Vector3 currentTarget = agent.hasPath ? agent.destination : Vector3.positiveInfinity;
-                        if (!agent.hasPath || Vector3.Distance(currentTarget, player.position) > 0.35f)
-                        {
-                            agent.SetDestination(player.position);
-                            lastDestinationTime = Time.time;
-                            //ReportDebug($"[Larva] SetDestination -> {player.position} (speed={agent.speed}, accel={agent.acceleration})", 1);
-                        }
+                        agent.SetDestination(player.position);
+                        lastDestinationTime = Time.time;
                     }
                 }
+                // Si está cerca (dentro del rango de 5m), detenerse y atacar
                 else
                 {
                     agent.ResetPath();
                     agent.isStopped = true;
-                    TryAttack();
+                    TryAttack(); // Esto llamará a Die()
                 }
             }
-
             yield return null;
         }
 
-        if (enemyHealth != null && !enemyHealth.IsDead) enemyHealth.Die();
+        // Morir si se acaba el tiempo
+        Die();
     }
 
     private void TryAttack()
     {
         if (player == null || enemyHealth == null || enemyHealth.IsDead) return;
-
         if (Time.time < lastAttackTime + attackCooldown) return;
-
-        Vector3 fromPlayerToLarva = (transform.position - player.position).normalized;
-        float dotProduct = Vector3.Dot(player.forward, fromPlayerToLarva);
-        bool isBackHit = dotProduct < 0f;
-        float finalDamage = isBackHit ? backDamage : frontalDamage;
 
         bool damageApplied = false;
 
-        var damageable = player.GetComponent<IDamageable>();
-        if (damageable != null)
+        if (damageApplied) return;
+
+        Collider[] hitPlayer = Physics.OverlapSphere(transform.position, attackRange, playerLayer);
+
+        foreach (var hit in hitPlayer)
         {
-            try
-            {
-                damageable.TakeDamage(finalDamage, isBackHit);
-                damageApplied = true;
-            }
-            catch
-            {
-                try
-                {
-                    damageable.TakeDamage(Mathf.RoundToInt(finalDamage), isBackHit);
-                    damageApplied = true;
-                }
-                catch { damageApplied = false; }
-            }
-        }
-        else if (playerHealth != null)
-        {
-            try
-            {
-                playerHealth.TakeDamage(finalDamage, isBackHit);
-                damageApplied = true;
-            }
-            catch
-            {
-                try
-                {
-                    playerHealth.TakeDamage(Mathf.RoundToInt(finalDamage), isBackHit);
-                    damageApplied = true;
-                }
-                catch { damageApplied = false; }
-            }
+            var hitTransform = hit.transform;
+
+            // Ejecutar ataque
+            ExecuteAttack(hit.gameObject, explosionDamage);
+
+            // Aplicar empuje
+            ApplyKnockback(hitTransform);
+
+            ReportDebug($"Drogath atacó al jugador por {explosionDamage} de daño", 1);
+
+            damageApplied = true;
         }
 
         if (damageApplied)
         {
-            ReportDebug($"[Larva] Impacto a {player.name}: daño={finalDamage} backHit={isBackHit}", 1);
+            ReportDebug($"[Larva] Impacto kamikaze a {player.name}: daño={explosionDamage}", 1);
         }
         else
         {
-            ReportDebug($"[Larva] No se pudo aplicar daño a {player.name} (no IDamageable/PlayerHealth compatible).", 2);
+            ReportDebug($"[Larva] No se pudo aplicar daño a {player.name}.", 2);
         }
 
         lastAttackTime = Time.time;
 
-        if (!enemyHealth.IsDead) enemyHealth.Die();
+        // Comportamiento Kamikaze: Morir al impactar
+        Die();
+    }
+
+    private void ExecuteAttack(GameObject target, float damageAmount)
+    {
+        if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
+        {
+            // Verificar si el ataque es bloqueado
+            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(transform.position))
+            {
+                float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
+
+                if (remainingDamage > 0f)
+                {
+                    health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
+                }
+
+                return;
+            }
+
+            health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+        }
+    }
+
+    private void ApplyKnockback(Transform target)
+    {
+        // Calcula la dirección del empuje desde Kronus hacia el jugador
+        Vector3 knockbackDirection = (target.position - transform.position).normalized;
+        knockbackDirection.y = 0f;
+
+        // Aplica el empuje
+        CharacterController cc = target.GetComponent<CharacterController>();
+        Rigidbody rb = target.GetComponent<Rigidbody>();
+
+        if (cc != null)
+        {
+            // Si el jugador usa CharacterController
+            StartCoroutine(ApplyKnockbackOverTime(cc, knockbackDirection * knockbackForce));
+        }
+        else if (rb != null)
+        {
+            // Si el jugador usa Rigidbody
+            rb.AddForce(knockbackDirection * knockbackForce * 10f, ForceMode.Impulse);
+        }
+
+        ReportDebug($"Empuje aplicado al jugador en dirección {knockbackDirection}", 1);
+    }
+
+    private IEnumerator ApplyKnockbackOverTime(CharacterController cc, Vector3 knockbackVelocity)
+    {
+        float duration = 0.2f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            if (cc != null && cc.enabled)
+            {
+                cc.Move(knockbackVelocity * Time.deltaTime);
+            }
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+    }
+
+    /// <summary>
+    /// Inicia la secuencia de muerte de la larva.
+    /// </summary>
+    public void Die()
+    {
+        if (enemyHealth != null && !enemyHealth.IsDead)
+        {
+            enemyHealth.Die();
+        }
     }
 
     private void OnDrawGizmos()
@@ -267,11 +294,6 @@ public class Larva : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, attackRange);
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, attackRange + stoppingBuffer);
-        if (agent != null)
-        {
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawLine(transform.position, transform.position + transform.forward * 0.5f);
-        }
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]

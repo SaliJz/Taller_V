@@ -41,6 +41,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [Header("Toughness System")]
     [SerializeField] private EnemyToughness toughnessSystem;
 
+    public int invulnerableLayerIndex;
+    private int vulnerableLayerIndex;
+    private float dynamicDamageReduction = 0.0f;
+
     private PlayerStatsManager playerStatsManager;
     private EnemyAuraManager _auraManager;
 
@@ -156,6 +160,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             originalColor = enemyRenderer.material.color;
         }
 
+        vulnerableLayerIndex = gameObject.layer;
+
         currentHealth = maxHealth;
 
         _auraManager = GetComponent<EnemyAuraManager>();
@@ -211,6 +217,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         maxHealth = health;
         currentHealth = maxHealth;
         InitializeHealthUI();
+        UpdateHealthUI();
     }
 
     public void TakeDamage(float damageAmount, AttackDamageType damageType, Vector3 damageSourcePosition)
@@ -265,8 +272,14 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             }
         }
 
-        float damageReductionTotal = localReduction + auraDamageReduction; 
+        float damageReductionTotal = localReduction + auraDamageReduction + dynamicDamageReduction; 
         finalDamage *= (1f - damageReductionTotal);
+
+        if (finalDamage <= 0 && damageAmount > 0)
+        {
+            ReportDebug($"Daño {damageAmount} completamente bloqueado por reducción dinámica.", 1);
+            return; // Daño inmune
+        }
 
         currentHealth -= finalDamage;
         ReportDebug($"Dano recibido. Base: {damageAmount}. Reduccion total: {damageReductionTotal * 100}%. Dano Final: {finalDamage}. Vida Restante: {currentHealth}", 1);
@@ -409,6 +422,36 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         yield return new WaitForSeconds(deathCooldown + 1.5f);
 
         Destroy(gameObject);
+    }
+
+    /// <summary>
+    /// Establece una reducción de daño dinámica y cambia la capa del objeto
+    /// para evitar ser detectado por ataques (ej. rebotes de escudo).
+    /// </summary>
+    public void SetDynamicVulnerability(float damageReductionPercent)
+    {
+        dynamicDamageReduction = Mathf.Clamp01(damageReductionPercent);
+
+        bool isInvulnerable = Mathf.Approximately(dynamicDamageReduction, 1.0f);
+        int newLayer = isInvulnerable ? invulnerableLayerIndex : vulnerableLayerIndex;
+
+        // Solo cambiar si la capa es diferente
+        if (gameObject.layer != newLayer)
+        {
+            SetLayerRecursively(transform, newLayer);
+        }
+    }
+
+    /// <summary>
+    /// Metodo para cambiar la capa de este objeto y todos sus hijos.
+    /// </summary>
+    private void SetLayerRecursively(Transform root, int layer)
+    {
+        root.gameObject.layer = layer;
+        foreach (Transform child in root)
+        {
+            SetLayerRecursively(child, layer);
+        }
     }
 
     public void ApplyStun(float duration) 

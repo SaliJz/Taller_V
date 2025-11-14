@@ -9,50 +9,75 @@ public class VeynarEnemy : MonoBehaviour
     [Header("Spawning")]
     [SerializeField] private GameObject hivePrefab;
     [SerializeField] private GameObject larvaPrefab;
-    [SerializeField] private int maxActiveHives = 5;
-    [SerializeField] private float hiveSpawnInterval = 2.5f;
-    [SerializeField] private float hiveSpawnRadius = 3f;
+    [Tooltip("Máximo de colmenas activas simultáneamente.")]
+    [SerializeField] private int maxActiveHives = 3;
+    [Tooltip("Tiempo entre intentos de invocación de colmena.")]
+    [SerializeField] private float hiveSpawnInterval = 5f;
+    [Tooltip("Distancia mínima para invocar colmenas.")]
+    [SerializeField] private float minHiveSpawnRadius = 5f;
+    [Tooltip("Distancia máxima para invocar colmenas.")]
+    [SerializeField] private float maxHiveSpawnRadius = 15f;
 
     [Header("Behavior")]
-    [SerializeField] private float teleportAlertRange = 7f;
-    [SerializeField] private float teleportDelayIfPlayerClose = 3f;
-    [SerializeField] private float teleportRange = 10f;
+    [Tooltip("Rango del teletransporte al re-ocultarse.")]
+    [SerializeField] private float teleportRange = 20f;
+    [Tooltip("¿Las colmenas se teletransportan con Veynar?")]
+    [SerializeField] private bool teleportHivesWithVeynar = false;
+    [Tooltip("Nombre de la capa a la que Veynar cambia al ser invulnerable (ej. 'Default' o 'Ignore Raycast').")]
+    [SerializeField] private string invulnerableLayerName = "Default"; // Para que el escudo no rebote
 
     [Header("Visuals & Effects")]
-    [Tooltip("El material normal y opaco del enemigo.")]
     [SerializeField] private Material normalMaterial;
-    [Tooltip("El material translúcido para cuando se oculta.")]
     [SerializeField] private Material transparentMaterial;
 
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip spawnHiveSFX;
     [SerializeField] private AudioClip teleportSFX;
+    [SerializeField] private AudioClip deathCriesSFX; // Audio de muerte
 
     private EnemyHealth enemyHealth;
     private Transform playerTransform;
-    private bool isHidden = false;
-    private Coroutine teleportWatchRoutine;
     private List<Hive> activeHives = new List<Hive>();
     private Renderer[] allRenderers;
     private NavMeshAgent navAgent;
 
+    private int previousHiveCount = 0;
+    private Vector3 initialPosition; // Posición inicial para el teletransporte
+    private Material normalMaterialInstance;
+    private Material transparentMaterialInstance;
+    private bool hasLostFirstHive = false;
+
     public bool IsDead => enemyHealth != null && enemyHealth.IsDead;
     public Transform PlayerTransform => playerTransform;
     public int ActiveHiveCount => activeHives.Count;
-
-    private float lastTeleportTime = -999f;
 
     private void Awake()
     {
         enemyHealth = GetComponent<EnemyHealth>();
         allRenderers = GetComponentsInChildren<Renderer>();
         navAgent = GetComponent<NavMeshAgent>();
+
+        // Crear instancias de los materiales
+        if (normalMaterial != null) normalMaterialInstance = new Material(normalMaterial);
+        if (transparentMaterial != null) transparentMaterialInstance = new Material(transparentMaterial);
+
+        // Asignar la capa de invulnerabilidad a EnemyHealth
+        if (enemyHealth != null)
+        {
+            enemyHealth.invulnerableLayerIndex = LayerMask.NameToLayer(invulnerableLayerName);
+            if (enemyHealth.invulnerableLayerIndex == -1) // Si la capa no existe
+            {
+                Debug.LogWarning($"[VeynarEnemy] La capa '{invulnerableLayerName}' no existe. Veynar podría ser 'targeteable' por el escudo.");
+                enemyHealth.invulnerableLayerIndex = gameObject.layer; // Usar capa actual como fallback
+            }
+        }
     }
 
     private void Start()
     {
         playerTransform = GameObject.FindGameObjectWithTag("Player")?.transform;
+        initialPosition = transform.position; // Guardar posición inicial
 
         if (hivePrefab == null || larvaPrefab == null)
         {
@@ -61,6 +86,13 @@ public class VeynarEnemy : MonoBehaviour
             return;
         }
 
+        // Empezar invisible y en la capa transparente
+        foreach (var r in allRenderers)
+        {
+            if (transparentMaterialInstance != null) r.material = transparentMaterialInstance;
+        }
+
+        StartCoroutine(ApplyInitialInvulnerabilityState());
         StartCoroutine(HiveSpawnRoutine());
     }
 
@@ -77,6 +109,8 @@ public class VeynarEnemy : MonoBehaviour
     private void OnDestroy()
     {
         if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
+        if (normalMaterialInstance != null) Destroy(normalMaterialInstance);
+        if (transparentMaterialInstance != null) Destroy(transparentMaterialInstance);
     }
 
     private void HandleEnemyDeath(GameObject enemy)
@@ -84,10 +118,14 @@ public class VeynarEnemy : MonoBehaviour
         if (enemy != gameObject) return;
 
         StopAllCoroutines();
+        PlaySFX(deathCriesSFX);
 
         foreach (var hive in new List<Hive>(activeHives))
         {
-            if (hive != null) hive.StopProducing();
+            if (hive != null)
+            {
+                Destroy(hive.gameObject);
+            }
         }
         activeHives.Clear();
     }
@@ -105,17 +143,22 @@ public class VeynarEnemy : MonoBehaviour
             }
             else
             {
-                if (!isHidden) EnterHiddenState();
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(1.0f);
             }
         }
     }
 
     private void SpawnHive()
     {
-        Vector3 spawnPosition = transform.position + (Random.insideUnitSphere * hiveSpawnRadius);
+        // Lógica de "dona"
+        Vector2 randomCircle = Random.insideUnitCircle.normalized * Random.Range(minHiveSpawnRadius, maxHiveSpawnRadius);
+        Vector3 spawnPosition = transform.position + new Vector3(randomCircle.x, 0, randomCircle.y);
         spawnPosition.y = -0.4f;
-        if (NavMesh.SamplePosition(spawnPosition, out var hit, 5f, NavMesh.AllAreas)) spawnPosition = hit.position;
+
+        if (NavMesh.SamplePosition(spawnPosition, out var hit, 5f, NavMesh.AllAreas))
+        {
+            spawnPosition = hit.position;
+        }
 
         var go = Instantiate(hivePrefab, spawnPosition, Quaternion.identity);
         var hive = go.GetComponent<Hive>();
@@ -126,6 +169,7 @@ public class VeynarEnemy : MonoBehaviour
         }
 
         PlaySFX(spawnHiveSFX);
+        UpdateVulnerabilityState();
     }
 
     internal void OnHiveDestroyed(Hive hive)
@@ -135,81 +179,155 @@ public class VeynarEnemy : MonoBehaviour
             activeHives.Remove(hive);
         }
 
-        if (isHidden && activeHives.Count < maxActiveHives) ExitHiddenState();
-    }
-
-    private void EnterHiddenState()
-    {
-        isHidden = true;
-        SetHiddenStateVisuals(true);
-        if (teleportWatchRoutine == null) teleportWatchRoutine = StartCoroutine(TeleportWatchRoutine());
-    }
-
-    private void ExitHiddenState()
-    {
-        isHidden = false;
-        SetHiddenStateVisuals(false);
-        if (teleportWatchRoutine != null)
+        if (!hasLostFirstHive)
         {
-            StopCoroutine(teleportWatchRoutine);
-            teleportWatchRoutine = null;
+            hasLostFirstHive = true;
         }
+
+        UpdateVulnerabilityState();
     }
 
-    private void SetHiddenStateVisuals(bool hidden)
+    /// <summary>
+    /// Aplica el estado inicial de invulnerabilidad completa 100% y visibilidad 0%.
+    /// Solo se ejecuta al inicio, antes de que se destruya la primera colmena.
+    /// </summary>
+    private IEnumerator ApplyInitialInvulnerabilityState()
     {
-        Material targetMaterial = hidden ? transparentMaterial : normalMaterial;
-        if (targetMaterial == null || allRenderers == null) return;
+        // Delay de 1 frame para asegurar que EnemyHealth haya guardado su capa vulnerable
+        yield return null;
 
-        foreach (var render in allRenderers)
+        // Aplicar invulnerabilidad completa
+        if (enemyHealth != null)
         {
-            render.material = targetMaterial;
+            enemyHealth.SetDynamicVulnerability(1.0f); // 100% reducción
         }
+
+        // Aplicar visibilidad 0%
+        UpdateVisuals(0.0f);
+
+        Debug.Log($"[VeynarEnemy] Estado inicial aplicado: Invulnerable (100%) e invisible (0%)");
     }
 
-    private IEnumerator TeleportWatchRoutine()
+    /// <summary>
+    /// Actualiza la vulnerabilidad, visibilidad y capa de Veynar
+    /// basado en el número de colmenas activas.
+    /// </summary>
+    private void UpdateVulnerabilityState()
     {
-        while (isHidden && !IsDead)
+        if (!hasLostFirstHive)
         {
-            if (playerTransform != null)
+            return;
+        }
+
+        int currentHives = activeHives.Count;
+
+        float statePercent = (maxActiveHives - currentHives) / (float)maxActiveHives;
+
+        // Reducción: 1.0 (100%), 0.67 (67%), 0.33 (33%), 0.0 (0%)
+        float damageReduction = 1.0f - statePercent;
+        // Visibilidad: 0.0 (0%), 0.33 (33%), 0.67 (67%), 1.0 (100%)
+        float visibility = 1.0f - damageReduction;
+
+        // Aplicar reducción de daño Y cambiar la capa
+        if (enemyHealth != null)
+        {
+            enemyHealth.SetDynamicVulnerability(damageReduction);
+        }
+
+        // Aplicar visibilidad progresiva
+        UpdateVisuals(visibility);
+
+        // Lógica de Teletransporte: Si acaba de alcanzar el maximo de colmenas
+        if (currentHives == maxActiveHives && previousHiveCount < maxActiveHives)
+        {
+            TeleportToRandomValidPos(initialPosition, teleportRange);
+            PlaySFX(teleportSFX);
+        }
+
+        previousHiveCount = currentHives;
+    }
+
+    /// <summary>
+    /// Actualiza los materiales de Veynar para reflejar la visibilidad.
+    /// </summary>
+    /// <param name="visibilityPercent">0.0 (invisible) a 1.0 (totalmente visible)</param>
+    private void UpdateVisuals(float visibilityPercent)
+    {
+        if (allRenderers == null) return;
+
+        if (Mathf.Approximately(visibilityPercent, 1.0f) && normalMaterialInstance != null)
+        {
+            foreach (var r in allRenderers)
             {
-                float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
-                if (distanceToPlayer <= teleportAlertRange)
-                {
-                    yield return new WaitForSeconds(teleportDelayIfPlayerClose);
-                    
-                    if (Vector3.Distance(transform.position, playerTransform.position) <= teleportAlertRange)
-                    {
-                        TeleportToRandomValidPos();
-                        PlaySFX(teleportSFX);
-                        lastTeleportTime = Time.time;
-                    }
-                }
+                r.material = normalMaterialInstance;
             }
-            yield return new WaitForSeconds(0.25f);
+        }
+        // Si no, usar material transparente y ajustar el alfa
+        else if (transparentMaterialInstance != null)
+        {
+            foreach (var r in allRenderers)
+            {
+                r.material = transparentMaterialInstance;
+            }
+
+            Color newColor = transparentMaterialInstance.color;
+            newColor.a = Mathf.Lerp(0.1f, 1.0f, visibilityPercent);
+            transparentMaterialInstance.color = newColor;
         }
     }
 
-    private void TeleportToRandomValidPos()
+    private void TeleportToRandomValidPos(Vector3 center, float range)
     {
-        Vector3 candidate = transform.position + Random.insideUnitSphere * teleportRange;
+        // Teletransporta a 20 unidades de la posición inicial en una dirección aleatoria válida del NavMesh
+        Vector3 candidate = center + Random.insideUnitSphere * range;
         candidate.y = transform.position.y;
-        if (NavMesh.SamplePosition(candidate, out var hit, teleportRange, NavMesh.AllAreas))
+
+        Vector3 oldPosition = transform.position;
+        Vector3 newPosition = oldPosition;
+
+        if (NavMesh.SamplePosition(candidate, out var hit, range, NavMesh.AllAreas))
         {
+            newPosition = hit.position;
             if (navAgent != null && navAgent.isOnNavMesh)
             {
-                navAgent.Warp(hit.position);
+                navAgent.Warp(newPosition);
             }
             else
             {
-                transform.position = hit.position;
+                transform.position = newPosition;
             }
-            return;
+        }
+        else
+        {
+            // Fallback si no encuentra posición
+            newPosition = candidate;
+            transform.position = newPosition;
+        }
+
+        // Teletransportar colmenas si está activado
+        if (teleportHivesWithVeynar)
+        {
+            Vector3 offset = newPosition - oldPosition;
+            foreach (Hive hive in activeHives)
+            {
+                if (hive != null) hive.Teleport(hive.transform.position + offset);
+            }
         }
     }
 
     public void PlaySFX(AudioClip clip)
     {
         if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
+    }
+
+    private void OnDrawGizmos()
+    {
+        // Mostrar rango de spawn de colmenas
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, maxHiveSpawnRadius);
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireSphere(transform.position, minHiveSpawnRadius);
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, teleportRange);
     }
 }

@@ -15,6 +15,8 @@ public class DrogathEnemy : MonoBehaviour
     #region --- Inspector Configuration ---
 
     [Header("Core References")]
+    [SerializeField] private Transform hitPoint;
+    [SerializeField] private GameObject visualHit;
     [SerializeField] private EnemyHealth enemyHealth;
     [SerializeField] private EnemyToughness enemyToughness;
     [SerializeField] private NavMeshAgent navAgent;
@@ -52,6 +54,8 @@ public class DrogathEnemy : MonoBehaviour
     [SerializeField] private float attackInterval = 1.5f;
     [Tooltip("Rango de ataque cuerpo a cuerpo")]
     [SerializeField] private float attackRange = 2.5f;
+    [Tooltip("Empuje aplicado al jugador al ser golpeado")]
+    [SerializeField] private float knockbackForce = 4f;
 
     [Header("Death Effect")]
     [Tooltip("Radio de la onda demoníaca al morir")]
@@ -89,6 +93,7 @@ public class DrogathEnemy : MonoBehaviour
     private Dictionary<GameObject, float> rebondCooldowns = new Dictionary<GameObject, float>();
     private Coroutine bondUpdateRoutine;
     private Coroutine combatRoutine;
+    private bool hasHitPlayer = false;
     private bool isAttacking = false;
     private bool isDead = false;
     private float attackTimer = 0f;
@@ -512,6 +517,7 @@ public class DrogathEnemy : MonoBehaviour
 
             if (attackTimer >= attackInterval)
             {
+                hasHitPlayer = false;
                 PerformMeleeAttack();
                 attackTimer = 0f;
             }
@@ -526,12 +532,104 @@ public class DrogathEnemy : MonoBehaviour
         float distance = Vector3.Distance(transform.position, playerTransform.position);
         if (distance > attackRange) return;
 
-        // Aplicar daño al jugador
-        var playerHealth = playerTransform.GetComponent<PlayerHealth>();
-        if (playerHealth != null)
+        if (hasHitPlayer) return;
+
+        Collider[] hitPlayer = Physics.OverlapSphere(hitPoint.transform.position, attackRange, playerLayer);
+
+        foreach (var hit in hitPlayer)
         {
-            playerHealth.TakeDamage(meleeDamage);
-            ReportDebug($"Ataque cuerpo a cuerpo realizado: {meleeDamage} de daño al jugador", 1);
+            var hitTransform = hit.transform;
+
+            // Ejecutar ataque
+            ExecuteAttack(hit.gameObject, meleeDamage);
+
+            // Aplicar empuje
+            ApplyKnockback(hitTransform);
+
+            ReportDebug($"Drogath atacó al jugador por {meleeDamage} de daño", 1);
+
+            hasHitPlayer = true;
+        }
+
+        StartCoroutine(ShowGizmoCoroutine());
+    }
+
+    private void ExecuteAttack(GameObject target, float damageAmount)
+    {
+        if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
+        {
+            // Verificar si el ataque es bloqueado
+            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(hitPoint.transform.position))
+            {
+                float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
+
+                if (remainingDamage > 0f)
+                {
+                    health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
+                }
+
+                return;
+            }
+
+            health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+        }
+    }
+
+    private void ApplyKnockback(Transform target)
+    {
+        // Calcula la dirección del empuje desde Kronus hacia el jugador
+        Vector3 knockbackDirection = (target.position - transform.position).normalized;
+        knockbackDirection.y = 0f;
+
+        // Aplica el empuje
+        CharacterController cc = target.GetComponent<CharacterController>();
+        Rigidbody rb = target.GetComponent<Rigidbody>();
+
+        if (cc != null)
+        {
+            // Si el jugador usa CharacterController
+            StartCoroutine(ApplyKnockbackOverTime(cc, knockbackDirection * knockbackForce));
+        }
+        else if (rb != null)
+        {
+            // Si el jugador usa Rigidbody
+            rb.AddForce(knockbackDirection * knockbackForce * 10f, ForceMode.Impulse);
+        }
+
+        ReportDebug($"Empuje aplicado al jugador en dirección {knockbackDirection}", 1);
+    }
+
+    private IEnumerator ApplyKnockbackOverTime(CharacterController cc, Vector3 knockbackVelocity)
+    {
+        float duration = 0.2f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            if (cc != null && cc.enabled)
+            {
+                cc.Move(knockbackVelocity * Time.deltaTime);
+            }
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+    }
+
+    private IEnumerator ShowGizmoCoroutine()
+    {
+        Vector3 originalScale = visualHit.transform.localScale;
+
+        if (visualHit != null && hitPoint != null)
+        {
+            visualHit.transform.localScale = Vector3.one * attackRange * 2f;
+            visualHit.SetActive(true);
+        }
+        yield return new WaitForSeconds(0.5f);
+
+        if (visualHit != null && hitPoint != null)
+        {
+            visualHit.SetActive(false);
+            visualHit.transform.localScale = originalScale;
         }
     }
 
@@ -639,6 +737,8 @@ public class DrogathEnemy : MonoBehaviour
             StopCoroutine(combatRoutine);
             combatRoutine = null;
         }
+
+        StopAllCoroutines();
 
         // Limpiar vínculos
         ClearAllBonds();
