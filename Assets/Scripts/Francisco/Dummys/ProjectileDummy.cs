@@ -27,15 +27,38 @@ public class ProjectileDummy : MonoBehaviour
     {
         if (collidedObject.CompareTag("Player"))
         {
-            collidedObject.GetComponent<PlayerHealth>()?.TakeDamage(damage);
+            if (collidedObject.TryGetComponent<PlayerHealth>(out var playerHealth) &&
+                collidedObject.TryGetComponent<PlayerBlockSystem>(out var blockSystem))
+            {
+                if (blockSystem.IsBlockingState() && blockSystem.CanBlockAttack(this.transform.position))
+                {
+                    float remainingDamage = blockSystem.ProcessBlockedAttack(damage, this.gameObject);
+
+                    if (remainingDamage > 0f)
+                    {
+                        playerHealth.TakeDamage(remainingDamage); 
+                    }
+
+                    Destroy(gameObject);
+                    return; 
+                }
+
+                playerHealth.TakeDamage(damage);
+            }
+            else
+            {
+                collidedObject.GetComponent<PlayerHealth>()?.TakeDamage(damage);
+            }
 
             Destroy(gameObject);
+            return;
         }
         else if (collidedObject.CompareTag(shieldTag))
         {
             ShieldHitManager.Instance?.RegisterShieldHit();
 
             Destroy(gameObject);
+            return;
         }
 
         foreach (string tag in ignoreTags)
