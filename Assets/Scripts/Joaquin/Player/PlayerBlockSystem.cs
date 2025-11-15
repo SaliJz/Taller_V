@@ -122,6 +122,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     private PlayerControlls playerControls;
     private PlayerMovement playerMovement;
     private PlayerHealth playerHealth;
+    private PlayerShieldController playerShieldController;
     private Camera mainCamera;
 
     public bool IsBlocking { get; private set; }
@@ -165,7 +166,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
         playerMovement = GetComponent<PlayerMovement>();
         playerHealth = GetComponent<PlayerHealth>();
-        playerAnimator = GetComponent<Animator>();
+        playerShieldController = GetComponent<PlayerShieldController>();
         audioSource = GetComponent<AudioSource>();
         mainCamera = Camera.main;
 
@@ -222,7 +223,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         if (blockingEnabled)
         {
             UpdateUI();
-            UpdateChargeUI();
+            //UpdateChargeUI();
         }
 
         if (!blockingEnabled || !IsBlocking) return;
@@ -271,6 +272,12 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
             return false;
         }
 
+        if (!playerShieldController.HasShield)
+        {
+            ReportDebug("No se puede usar el escudo. No hay escudo equipado.", 2);
+            return false;
+        }
+
         return true;
     }
 
@@ -290,12 +297,12 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
             isDurabilityRecharging = false;
         }
 
-        if (chargeUIGroup != null && playerHealth != null &&
-            (playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Adult ||
-            playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Elder))
-        {
-            chargeUIGroup.SetActive(true);
-        }
+        //if (chargeUIGroup != null && playerHealth != null &&
+        //    (playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Adult ||
+        //    playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Elder))
+        //{
+        //    chargeUIGroup.SetActive(true);
+        //}
 
         if (hideDurabilityCoroutine != null)
         {
@@ -317,10 +324,10 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         if (blockParticles != null) blockParticles.Play();
         if (audioSource != null && blockSound != null) audioSource.PlayOneShot(blockSound);
 
-        if (playerHealth != null && playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Elder)
-        {
-            StartElderCharge();
-        }
+        //if (playerHealth != null && playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Elder)
+        //{
+        //    StartElderCharge();
+        //}
 
         OnBlockStart?.Invoke();
         ReportDebug("Bloqueo iniciado.", 1);
@@ -328,24 +335,24 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
     private void StopBlocking()
     {
-        if (playerHealth != null &&
-            playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Adult &&
-            Time.time - blockStartTime >= counterChargeTime)
-        {
-            ExecuteAdultCounter();
-        }
+        //if (playerHealth != null &&
+        //    playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Adult &&
+        //    Time.time - blockStartTime >= counterChargeTime)
+        //{
+        //    ExecuteAdultCounter();
+        //}
 
         if (chargeUIGroup != null)
         {
             chargeUIGroup.SetActive(false);
         }
 
-        if (playerHealth != null &&
-            playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Elder &&
-            isCharging && chargeProgress >= 1f)
-        {
-            ExecuteElderExplosion();
-        }
+        //if (playerHealth != null &&
+        //    playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Elder &&
+        //    isCharging && chargeProgress >= 1f)
+        //{
+        //    ExecuteElderExplosion();
+        //}
 
         if (chargeCoroutine != null)
         {
@@ -531,29 +538,29 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
         if (playerAnimator != null) playerAnimator.SetTrigger("BlockSuccess");
 
-        if (playerHealth != null && playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Young)
-        {
-            if (attacker != null)
-            {
-                var projectileScript = attacker.GetComponent<MorlockProjectile>();
-                if (projectileScript != null && !projectileScript.WasReflected)
-                {
-                    ReflectProjectile(attacker);
-                    ReportDebug($"Proyectil {attacker.name} reflejado.", 1);
+        //if (playerHealth != null && playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Young)
+        //{
+        //    if (attacker != null)
+        //    {
+        //        var projectileScript = attacker.GetComponent<MorlockProjectile>();
+        //        if (projectileScript != null && !projectileScript.WasReflected)
+        //        {
+        //            ReflectProjectile(attacker);
+        //            ReportDebug($"Proyectil {attacker.name} reflejado.", 1);
 
-                    if (audioSource != null && blockHitSound != null)
-                    {
-                        audioSource.PlayOneShot(blockHitSound);
-                    }
+        //            if (audioSource != null && blockHitSound != null)
+        //            {
+        //                audioSource.PlayOneShot(blockHitSound);
+        //            }
 
-                    // No se si esto deberia, pero por si acaso incluyo que apesar de reflejar el proyectil igualmente le gasta la energia de escudo
-                    currentDurability -= incomingDamage;
-                    OnDurabilityChanged?.Invoke(GetDurabilityPercentage());
+        //            // No se si esto deberia, pero por si acaso incluyo que apesar de reflejar el proyectil igualmente le gasta la energia de escudo
+        //            currentDurability -= incomingDamage;
+        //            OnDurabilityChanged?.Invoke(GetDurabilityPercentage());
 
-                    return 0f;
-                }
-            }
-        }
+        //            return 0f;
+        //        }
+        //    }
+        //}
 
         currentDurability -= incomingDamage;
         OnDurabilityChanged?.Invoke(GetDurabilityPercentage());
@@ -632,6 +639,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
             UpdateDurabilityUI();
         }
     }
+
     private void UpdateChargeUI()
     {
         if (chargeUIGroup == null) return;

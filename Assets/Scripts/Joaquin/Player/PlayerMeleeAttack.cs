@@ -252,7 +252,11 @@ public class PlayerMeleeAttack : MonoBehaviour
     {
         currentAttackIndex = attackIndex;
 
+        if (playerAnimator != null) playerAnimator.SetInteger("ComboNum", currentAttackIndex);
+
         isAttacking = true;
+
+        if (playerAnimator != null) playerAnimator.SetBool("IsAttacking", true);
 
         // Limpiar enemigos golpeados para este nuevo ataque
         hitEnemiesThisCombo.Clear();
@@ -295,7 +299,23 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         isAttacking = false;
 
+        if (playerAnimator != null) playerAnimator.SetBool("IsAttacking", false);
+
         hitEnemiesThisCombo.Clear();
+    }
+
+    public void OnAttackAnimationEnd()
+    {
+        //if (playerMovement != null)
+        //{
+        //    playerMovement.StopForcedMovement();
+        //    playerMovement.UnlockFacing();
+        //}
+
+        //isAttacking = false;
+        //if (playerAnimator != null) playerAnimator.SetBool("IsAttacking", false);
+
+        //hitEnemiesThisCombo.Clear();
     }
 
     private IEnumerator WaitForRotationLock()
@@ -324,12 +344,6 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private IEnumerator ExecuteAttack1()
     {
-        if (playerAnimator != null)
-        {
-            playerAnimator.SetInteger("ComboNum", 1);
-            playerAnimator.SetTrigger("HasAttack");
-        }
-
         float movementDuration = attack1Duration;
         float elapsedTime = 0f;
 
@@ -409,12 +423,6 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private IEnumerator ExecuteAttack2()
     {
-        if (playerAnimator != null)
-        {
-            playerAnimator.SetInteger("ComboNum", 2);
-            playerAnimator.SetTrigger("HasAttack");
-        }
-
         float movementDuration = Mathf.Max(0f, attack2MovementDuration);
         float spinDuration = Mathf.Max(0f, attack2SpinDuration);
 
@@ -556,12 +564,6 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private IEnumerator ExecuteAttack3()
     {
-        if (playerAnimator != null)
-        {
-            playerAnimator.SetInteger("ComboNum", 3);
-            playerAnimator.SetTrigger("HasAttack");
-        }
-
         float preChargeElapsed = 0f;
 
         while (preChargeElapsed < attack3PreChargeDuration)
