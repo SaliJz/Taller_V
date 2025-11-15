@@ -63,7 +63,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     }
 
     private float prevStepOffset = 0f;
-    private bool prevAnimatorApplyRootMotion = false;
     private Vector3 moveDirection;
     private float yVelocity;
     private bool canMove = true;
@@ -99,7 +98,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     private void OnEnable()
     {
         PlayerStatsManager.OnStatChanged += HandleStatChanged;
-        PlayerHealth.OnLifeStageChanged += HandleLifeStageChanged;
 
         playerControls?.Movement.Enable();
     }
@@ -107,7 +105,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     private void OnDisable()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
-        PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
 
         playerControls?.Movement.Disable();
     }
@@ -115,7 +112,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     private void OnDestroy()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
-        PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
 
         if (dashDustVFX != null)
         {
@@ -174,26 +170,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
 
         ReportDebug($"Stat {statType} cambiado a {newValue}.", 1);
-    }
-
-    private void HandleLifeStageChanged(PlayerHealth.LifeStage newStage)
-    {
-        int ageStageValue = 0;
-        switch (newStage)
-        {
-            case PlayerHealth.LifeStage.Young:
-                ageStageValue = 0;
-                break;
-            case PlayerHealth.LifeStage.Adult:
-                ageStageValue = 1;
-                break;
-            case PlayerHealth.LifeStage.Elder:
-                ageStageValue = 2;
-                break;
-        }
-
-        if (playerAnimator != null) playerAnimator.SetInteger("AgeStage", ageStageValue);
-        ReportDebug($"Etapa de vida cambiada a {newStage}. Animator AgeStage seteado a {ageStageValue}.", 1);
     }
 
     private void Update()
@@ -368,8 +344,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         if (playerAnimator != null)
         {
-            prevAnimatorApplyRootMotion = playerAnimator.applyRootMotion;
             playerAnimator.applyRootMotion = false;
+            playerAnimator.SetBool("Dashing", true);
         }
 
         if (dashDustVFX != null) PlayDashVFX(true);
@@ -401,12 +377,13 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         ToggleLayerCollisions(false);
         if (playerHealth != null) playerHealth.IsInvulnerable = false;
 
+        IsDashing = false;
+
         if (playerAnimator != null)
         {
-            playerAnimator.applyRootMotion = prevAnimatorApplyRootMotion;
+            playerAnimator.SetBool("Dashing", false);
         }
 
-        IsDashing = false;
         dashCooldownTimer = dashCooldown;
     }
 
@@ -977,7 +954,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
             playerAnimator.SetFloat("Xaxis", lastMoveX);
             playerAnimator.SetFloat("Yaxis", lastMoveY);
-            playerAnimator.SetBool("Running", (x != 0f || y != 0f));
+            //playerAnimator.SetBool("Running", (x != 0f || y != 0f));
         }
     }
 
@@ -1016,7 +993,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
             playerAnimator.SetFloat("Xaxis", lastMoveX);
             playerAnimator.SetFloat("Yaxis", lastMoveY);
-            playerAnimator.SetBool("Running", (moveDirection.magnitude > 0.1f));
+            //playerAnimator.SetBool("Running", (moveDirection.magnitude > 0.1f));
         }
     }
 

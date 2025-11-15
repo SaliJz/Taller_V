@@ -1405,6 +1405,7 @@ MonoBehaviour:
   echoExpansionTime: 0.4
   echoDurationAfterExpansion: 1.2
   echoDamagePerSecond: 3
+  EchoTickRate: 4
   patrolWaypoints: []
   loopWaypoints: 1
   patrolRadius: 8
@@ -1451,6 +1452,7 @@ MonoBehaviour:
   lifestealAmountOnDeathByMelee: 6
   lifestealAmountOnDeathByDistance: 3
   toughnessSystem: {fileID: 8244901384875735359}
+  invulnerableLayerIndex: 0
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -1508,7 +1510,7 @@ MonoBehaviour:
   stunMaterial: {fileID: 2100000, guid: 9e980960b4627f14bb1ebfed5d685fec, type: 2}
   stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
-  stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
+  stunVFXPrefab: {fileID: 0}
   stunVFXHeight: 2
   stunSFX: {fileID: 0}
   defaultMaterial: {fileID: 2100000, guid: e64a7af170507bf419ab782145e81df4, type: 2}

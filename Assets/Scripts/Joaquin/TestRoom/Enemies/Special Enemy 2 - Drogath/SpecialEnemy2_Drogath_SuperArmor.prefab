@@ -121,6 +121,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd38f99d349c8c645b1bbee48ab7ddcf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  hitPoint: {fileID: 0}
+  visualHit: {fileID: 0}
   enemyHealth: {fileID: 4429416507489891866}
   enemyToughness: {fileID: 7955858315694782248}
   navAgent: {fileID: 4557622723006070476}
@@ -132,12 +134,14 @@ MonoBehaviour:
   rebondCooldown: 4
   bondUpdateInterval: 0.25
   canEnableToughnessOnAllies: 0
-  shieldAngle: 75
+  frontalBlockAngle: 75
+  shieldForwardOverride: {fileID: 0}
   moveSpeed: 3.5
   stoppingDistance: 2
   meleeDamage: 10
   attackInterval: 1.5
   attackRange: 2.5
+  knockbackForce: 4
   deathEffectRadius: 15
   deathSuperArmor: 10
   deathSuperArmorDuration: 5
@@ -150,6 +154,7 @@ MonoBehaviour:
   bondLineRendererPrefab: {fileID: 0}
   bondLineColor: {r: 0, g: 1, b: 1, a: 1}
   bondLineWidth: 0.1
+  canDebug: 0
 --- !u!114 &4429416507489891866
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -183,6 +188,7 @@ MonoBehaviour:
   lifestealAmountOnDeathByMelee: 10
   lifestealAmountOnDeathByDistance: 10
   toughnessSystem: {fileID: 7955858315694782248}
+  invulnerableLayerIndex: 0
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -240,7 +246,7 @@ MonoBehaviour:
   stunMaterial: {fileID: 2100000, guid: 9e980960b4627f14bb1ebfed5d685fec, type: 2}
   stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
-  stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
+  stunVFXPrefab: {fileID: 0}
   stunVFXHeight: 4
   stunSFX: {fileID: 0}
   defaultMaterial: {fileID: 2100000, guid: 6ef35a70b0a3f724992fbf3c361cde64, type: 2}

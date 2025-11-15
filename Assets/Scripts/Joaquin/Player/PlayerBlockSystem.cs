@@ -15,6 +15,9 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 {
     #region Serialized Fields
 
+    [Header("References")]
+    [SerializeField] private Animator playerAnimator;
+
     [Header("Core Configuration")]
     [SerializeField] private bool blockingEnabled = true;
     [Tooltip("Ángulo frontal de bloqueo (en grados).")]
@@ -162,6 +165,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
         playerMovement = GetComponent<PlayerMovement>();
         playerHealth = GetComponent<PlayerHealth>();
+        playerAnimator = GetComponent<Animator>();
         audioSource = GetComponent<AudioSource>();
         mainCamera = Camera.main;
 
@@ -273,6 +277,8 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     private void StartBlocking()
     {
         IsBlocking = true;
+        if (playerAnimator != null) playerAnimator.SetBool("Block", true);
+
         blockStartTime = Time.time;
         isCharging = false;
         chargeProgress = 0f;
@@ -356,10 +362,12 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         }
 
         IsBlocking = false;
+        if (playerAnimator != null) playerAnimator.SetBool("Block", false);
 
         if (playerMovement != null)
         {
             playerMovement.SetCanMove(true);
+            playerMovement.UnlockFacing();
         }
 
         if (hideDurabilityCoroutine != null)
@@ -449,10 +457,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
             // Rotar suavemente hacia esa dirección con velocidad constante
             if (direction != Vector3.zero)
             {
-                Quaternion targetRotation = Quaternion.LookRotation(direction);
-
-                float step = rotationSpeed * 100f * Time.deltaTime;
-                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, step);
+                playerMovement.LockFacingTo8Directions(direction, true);
             }
         }
     }
@@ -523,6 +528,8 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     public float ProcessBlockedAttack(float incomingDamage, GameObject attacker = null)
     {
         if (!IsBlocking) return incomingDamage;
+
+        if (playerAnimator != null) playerAnimator.SetTrigger("BlockSuccess");
 
         if (playerHealth != null && playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Young)
         {

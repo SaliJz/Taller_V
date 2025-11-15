@@ -727,6 +727,7 @@ GameObject:
   - component: {fileID: 1869114196689872533}
   - component: {fileID: 4384501985470753249}
   - component: {fileID: 7062026571937158164}
+  - component: {fileID: 1953399192660357800}
   m_Layer: 7
   m_Name: Enemy3_Sub1_Hive
   m_TagString: Enemy
@@ -802,7 +803,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6494588530873725524}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fa9c23e57cc55574da2e6741861d1762, type: 3}
   m_Name: 
@@ -848,8 +849,8 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeathByMelee: 10
-  lifestealAmountOnDeathByDistance: 10
+  lifestealAmountOnDeathByMelee: 0
+  lifestealAmountOnDeathByDistance: 0
   toughnessSystem: {fileID: 0}
   invulnerableLayerIndex: 0
   enableAutoArea: 0
@@ -959,6 +960,23 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 0
   m_Center: {x: 0, y: 0, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &1953399192660357800
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6494588530873725524}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73d4e83809fd58b4293186b0b01eaaf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  navMeshSampleDistance: 2
+  raycastStepDistance: 0.25
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 640
 --- !u!1 &6949149841193906917
 GameObject:
   m_ObjectHideFlags: 0

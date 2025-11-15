@@ -7167,8 +7167,10 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeath: 0
+  lifestealAmountOnDeathByMelee: 10
+  lifestealAmountOnDeathByDistance: 10
   toughnessSystem: {fileID: 0}
+  invulnerableLayerIndex: 0
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -7272,7 +7274,7 @@ MonoBehaviour:
   armorGlowVFX: {fileID: 8081810031924133735}
   greenFireVFX: {fileID: 1959994607445859112, guid: 08af2cd21f3e1b4439fac7c951e6456c, type: 3}
   darkWindTrailPrefab: {fileID: 795299524216115620, guid: 32e91a948baeea24faf4460eb5ee675b, type: 3}
-  stunEffectPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
+  stunEffectPrefab: {fileID: 0}
   audioSource: {fileID: 2898185117464482595}
   sodomaChargeSound: {fileID: 8300000, guid: 672e245966e99a14094d75be214a968c, type: 3}
   sodomaAttackSound: {fileID: 8300000, guid: 392404bfc967aea4da3e8bcda449e403, type: 3}

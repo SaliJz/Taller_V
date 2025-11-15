@@ -13,6 +13,7 @@ public class PlayerShieldController : MonoBehaviour
     [SerializeField] private PlayerMeleeAttack playerMeleeAttack;
     [SerializeField] private PlayerMovement playerMovement;
     [SerializeField] private PlayerHealth playerHealth;
+    [SerializeField] private Animator playerAnimator;
 
     [Header("Stats")]
     [Tooltip("Daño de ataque por defecto si no se encuentra PlayerStatsManager.")]
@@ -82,6 +83,7 @@ public class PlayerShieldController : MonoBehaviour
         playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
         playerMovement = GetComponent<PlayerMovement>();
         playerHealth = GetComponent<PlayerHealth>();
+        playerAnimator = GetComponentInChildren<Animator>();
 
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerShieldController. Usando valores de fallback.", 2);
         if (playerMeleeAttack == null) ReportDebug("PlayerMeleeAttack no encontrado. No se podrá verificar estado de ataque melee.", 2);
@@ -228,6 +230,8 @@ public class PlayerShieldController : MonoBehaviour
             playerMovement.ForceApplyLockedRotation();
         }
 
+        if (playerAnimator != null) playerAnimator.SetTrigger("ThrowShield");
+
         ThrowShield();
 
         // Duración a la acción.
@@ -321,6 +325,7 @@ public class PlayerShieldController : MonoBehaviour
     private void ThrowShield()
     {
         hasShield = false;
+        if (playerAnimator != null) playerAnimator.SetBool("HaveShield", false);
 
         Vector3 direction;
         if (!TryGetMouseWorldDirection(out direction))
@@ -358,6 +363,7 @@ public class PlayerShieldController : MonoBehaviour
         else
         {
             hasShield = true;
+            if (playerAnimator != null) playerAnimator.SetBool("HaveShield", true);
             ReportDebug("No se pudo obtener instancia del escudo del pool.", 2);
         }
     }
@@ -466,6 +472,7 @@ public class PlayerShieldController : MonoBehaviour
     public void CatchShield()
     {
         hasShield = true;
+        if (playerAnimator != null) playerAnimator.SetBool("HaveShield", true);
         ReportDebug("Escudo recuperado.", 1);
     }
 

@@ -24,6 +24,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private PlayerStatsManager statsManager;
     [SerializeField] private PlayerBlockSystem blockSystem;
     [SerializeField] private SpriteRenderer playerSpriteRenderer;
+    [SerializeField] private Animator playerAnimator;
 
     [Header("Configuracion de Vida")]
     [Tooltip("Vida maxima por defecto si no se encuentra PlayerStatsManager.")]
@@ -143,6 +144,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
         playerShieldController = GetComponent<PlayerShieldController>();
         blockSystem = GetComponent<PlayerBlockSystem>();
+        playerAnimator = GetComponentInChildren<Animator>();
 
         InitializeMaterialCache();
 
@@ -499,6 +501,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (damageToApply > 0f)
         {
             OnDamageReceived?.Invoke(damageToApply);
+
+            if (playerAnimator) playerAnimator.SetTrigger("GetHit");
+
             currentHealth -= damageToApply;
             currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
@@ -641,6 +646,23 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         {
             OnLifeStageChanged?.Invoke(CurrentLifeStage);
             UpdateModelForLifeStage(CurrentLifeStage);
+
+            int ageStageValue = 0;
+            switch (CurrentLifeStage)
+            {
+                case PlayerHealth.LifeStage.Young:
+                    ageStageValue = 3;
+                    break;
+                case PlayerHealth.LifeStage.Adult:
+                    ageStageValue = 2;
+                    break;
+                case PlayerHealth.LifeStage.Elder:
+                    ageStageValue = 1;
+                    break;
+            }
+
+            if (playerAnimator != null) playerAnimator.SetFloat("AgeState", ageStageValue);
+            ReportDebug($"Etapa de vida cambiada a {CurrentLifeStage}. Animator AgeStage seteado a {ageStageValue}.", 1);
 
             // Actualizar TextMeshPro si esta asignado
             if (lifeStageText != null)

@@ -1187,6 +1187,9 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  cooldownShort: 1.8
+  cooldownMedium: 2
+  cooldownLong: 2.2
   isPercentageDmg: 0
   attackCycleCooldown: 2.5
   attackDamage: 10
@@ -1203,6 +1206,14 @@ MonoBehaviour:
   dashActivationDistance: 100
   isUsingDetectionTimer: 0
   detectionGracePeriod: 5
+  isLevelTwo: 0
+  echoVisualPrefab: {fileID: 0}
+  echoStartRadius: 2
+  echoEndRadius: 3
+  echoExpansionTime: 0.4
+  echoDurationAfterExpansion: 1.2
+  echoDamagePerSecond: 3
+  EchoTickRate: 4
   patrolWaypoints: []
   loopWaypoints: 1
   patrolRadius: 8
@@ -1246,8 +1257,10 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeath: 12
+  lifestealAmountOnDeathByMelee: 10
+  lifestealAmountOnDeathByDistance: 10
   toughnessSystem: {fileID: 1367704949242477135}
+  invulnerableLayerIndex: 0
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -1305,7 +1318,7 @@ MonoBehaviour:
   stunMaterial: {fileID: 2100000, guid: 9e980960b4627f14bb1ebfed5d685fec, type: 2}
   stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
-  stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
+  stunVFXPrefab: {fileID: 0}
   stunVFXHeight: 2
   stunSFX: {fileID: 0}
   defaultMaterial: {fileID: 2100000, guid: e64a7af170507bf419ab782145e81df4, type: 2}

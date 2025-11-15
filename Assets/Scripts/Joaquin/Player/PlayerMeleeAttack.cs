@@ -251,6 +251,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     private IEnumerator AttackSequence(int attackIndex)
     {
         currentAttackIndex = attackIndex;
+
         isAttacking = true;
 
         // Limpiar enemigos golpeados para este nuevo ataque
@@ -277,9 +278,6 @@ public class PlayerMeleeAttack : MonoBehaviour
         // Esperar a que se alcance la rotación
         yield return StartCoroutine(WaitForRotationLock());
 
-        // Trigger animación correspondiente
-        if (playerAnimator != null) playerAnimator.SetTrigger($"Attack{attackIndex + 1}");
-
         if (playerMovement != null) playerMovement.StartForcedMovement(true);
 
         switch (attackIndex)
@@ -296,6 +294,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
 
         isAttacking = false;
+
         hitEnemiesThisCombo.Clear();
     }
 
@@ -325,6 +324,12 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private IEnumerator ExecuteAttack1()
     {
+        if (playerAnimator != null)
+        {
+            playerAnimator.SetInteger("ComboNum", 1);
+            playerAnimator.SetTrigger("HasAttack");
+        }
+
         float movementDuration = attack1Duration;
         float elapsedTime = 0f;
 
@@ -404,6 +409,12 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private IEnumerator ExecuteAttack2()
     {
+        if (playerAnimator != null)
+        {
+            playerAnimator.SetInteger("ComboNum", 2);
+            playerAnimator.SetTrigger("HasAttack");
+        }
+
         float movementDuration = Mathf.Max(0f, attack2MovementDuration);
         float spinDuration = Mathf.Max(0f, attack2SpinDuration);
 
@@ -545,6 +556,12 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private IEnumerator ExecuteAttack3()
     {
+        if (playerAnimator != null)
+        {
+            playerAnimator.SetInteger("ComboNum", 3);
+            playerAnimator.SetTrigger("HasAttack");
+        }
+
         float preChargeElapsed = 0f;
 
         while (preChargeElapsed < attack3PreChargeDuration)
