@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Audio;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -12,7 +13,7 @@ using UnityEngine.InputSystem;
 /// </summary>
 public class DrogathEnemy : MonoBehaviour
 {
-    #region --- Inspector Configuration ---
+    #region Inspector Configuration
 
     [Header("Core References")]
     [SerializeField] private Transform hitPoint;
@@ -111,15 +112,11 @@ public class DrogathEnemy : MonoBehaviour
         if (enemyHealth == null)
         {
             ReportDebug("EnemyHealth no encontrado. Drogath requiere este componente.", 3);
-            enabled = false;
-            return;
         }
 
         if (navAgent == null)
         {
             ReportDebug("NavMeshAgent no encontrado. Drogath requiere este componente.", 3);
-            enabled = false;
-            return;
         }
 
         navAgent.speed = moveSpeed;
@@ -142,11 +139,41 @@ public class DrogathEnemy : MonoBehaviour
             ReportDebug("Jugador no encontrado en la escena.", 2);
         }
 
-        // Iniciar sistema de vínculos
-        bondUpdateRoutine = StartCoroutine(BondUpdateRoutine());
-        combatRoutine = StartCoroutine(CombatRoutine());
+        // Verificar que el agente esté en NavMesh antes de iniciar
+        if (IsNavAgentValid())
+        {
+            bondUpdateRoutine = StartCoroutine(BondUpdateRoutine());
+            combatRoutine = StartCoroutine(CombatRoutine());
+            ReportDebug($"Drogath inicializado. Vida: {enemyHealth.MaxHealth}, Radio: {bondRadius}m", 1);
+        }
+        else
+        {
+            ReportDebug("NavMeshAgent no está en NavMesh válido. Esperando posicionamiento...", 2);
+            StartCoroutine(WaitForNavMeshPlacement());
+        }
+    }
 
-        ReportDebug($"Drogath inicializado. Vida: {enemyHealth.MaxHealth}, Radio: {bondRadius}m", 1);
+    private IEnumerator WaitForNavMeshPlacement()
+    {
+        int maxAttempts = 60; // 3 segundos máximo (60 frames a 20fps)
+        int attempts = 0;
+
+        while (attempts < maxAttempts && !IsNavAgentValid())
+        {
+            attempts++;
+            yield return new WaitForSeconds(0.05f);
+        }
+
+        if (IsNavAgentValid())
+        {
+            bondUpdateRoutine = StartCoroutine(BondUpdateRoutine());
+            combatRoutine = StartCoroutine(CombatRoutine());
+            ReportDebug("Drogath colocado en NavMesh correctamente", 1);
+        }
+        else
+        {
+            ReportDebug("ERROR: Drogath no pudo ser colocado en NavMesh después de varios intentos", 3);
+        }
     }
 
     private void OnEnable()
@@ -178,6 +205,94 @@ public class DrogathEnemy : MonoBehaviour
 
         // Limpiar vínculos
         ClearAllBonds();
+    }
+
+    #endregion
+
+    #region NavMesh Validation
+
+    /// <summary>
+    /// Verifica si el NavMeshAgent está en condiciones válidas para ser usado
+    /// </summary>
+    private bool IsNavAgentValid()
+    {
+        return navAgent != null
+            && navAgent.isActiveAndEnabled
+            && navAgent.isOnNavMesh;
+    }
+
+    /// <summary>
+    /// Intenta detener el NavMeshAgent de forma segura
+    /// </summary>
+    private void SafeStopAgent()
+    {
+        if (!IsNavAgentValid()) return;
+
+        try
+        {
+            if (!navAgent.isStopped)
+            {
+                navAgent.isStopped = true;
+            }
+        }
+        catch (System.Exception e)
+        {
+            ReportDebug($"Error al detener NavMeshAgent: {e.Message}", 2);
+        }
+    }
+
+    /// <summary>
+    /// Intenta reanudar el NavMeshAgent de forma segura
+    /// </summary>
+    private void SafeResumeAgent()
+    {
+        if (!IsNavAgentValid()) return;
+
+        try
+        {
+            if (navAgent.isStopped)
+            {
+                navAgent.isStopped = false;
+            }
+        }
+        catch (System.Exception e)
+        {
+            ReportDebug($"Error al reanudar NavMeshAgent: {e.Message}", 2);
+        }
+    }
+
+    /// <summary>
+    /// Intenta resetear el path del NavMeshAgent de forma segura
+    /// </summary>
+    private void SafeResetPath()
+    {
+        if (!IsNavAgentValid()) return;
+
+        try
+        {
+            navAgent.ResetPath();
+        }
+        catch (System.Exception e)
+        {
+            ReportDebug($"Error al resetear path: {e.Message}", 2);
+        }
+    }
+
+    /// <summary>
+    /// Intenta establecer un destino de forma segura
+    /// </summary>
+    private void SafeSetDestination(Vector3 destination)
+    {
+        if (!IsNavAgentValid()) return;
+
+        try
+        {
+            navAgent.SetDestination(destination);
+        }
+        catch (System.Exception e)
+        {
+            ReportDebug($"Error al establecer destino: {e.Message}", 2);
+        }
     }
 
     #endregion
@@ -450,10 +565,7 @@ public class DrogathEnemy : MonoBehaviour
         isAttacking = true;
         attackTimer = 0f;
 
-        if (navAgent != null)
-        {
-            navAgent.isStopped = false;
-        }
+        SafeResumeAgent();
 
         ReportDebug("Modo ofensivo activado (sin aliados vinculados)", 1);
     }
@@ -463,11 +575,8 @@ public class DrogathEnemy : MonoBehaviour
         isAttacking = false;
         attackTimer = 0f;
 
-        if (navAgent != null)
-        {
-            navAgent.isStopped = true;
-            navAgent.ResetPath();
-        }
+        SafeStopAgent();
+        SafeResetPath();
 
         ReportDebug("Modo ofensivo desactivado (vínculos activos)", 1);
     }
@@ -479,24 +588,22 @@ public class DrogathEnemy : MonoBehaviour
         // Verificar si está aturdido
         if (enemyHealth != null && enemyHealth.IsStunned)
         {
-            if (!navAgent.isStopped)
-            {
-                navAgent.isStopped = true;
-            }
+            SafeStopAgent();
             return;
         }
         else
         {
-            if (navAgent.isStopped && isAttacking)
+            // Solo reanudar si está en modo ataque
+            if (isAttacking)
             {
-                navAgent.isStopped = false;
+                SafeResumeAgent();
             }
         }
 
-        // Mover hacia el jugador
-        if (navAgent.isOnNavMesh && !navAgent.isStopped)
+        // Mover hacia el jugador solo si el agente está válido y no detenido
+        if (IsNavAgentValid() && !navAgent.isStopped)
         {
-            navAgent.SetDestination(playerTransform.position);
+            SafeSetDestination(playerTransform.position);
         }
 
         // Verificar si está en rango de ataque
@@ -719,12 +826,9 @@ public class DrogathEnemy : MonoBehaviour
 
         ReportDebug("Drogath murió. Activando Armadura Demoníaca...", 1);
 
-        // Detener NavMeshAgent
-        if (navAgent != null && navAgent.isOnNavMesh)
-        {
-            navAgent.isStopped = true;
-            navAgent.ResetPath();
-        }
+        // Detener NavMeshAgent de forma segura
+        SafeStopAgent();
+        SafeResetPath();
 
         // Detener rutinas
         if (bondUpdateRoutine != null)

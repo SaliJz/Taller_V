@@ -189,7 +189,6 @@ public class Shield : MonoBehaviour
 
     private void PerformHitDetection(Transform hitTransform)
     {
-        Vector3 damageSourcePos = transform.position;
         Collider[] hitEnemies = Physics.OverlapSphere(hitTransform.position, 0.5f, enemyLayer);
 
         const DamageType damageTypeForDummy = DamageType.Shield;
@@ -247,11 +246,8 @@ public class Shield : MonoBehaviour
                 }
                 else
                 {
-                    EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
-                    if (enemyHealth != null)
-                    {
-                        enemyHealth.TakeDamage(attackDamage, shieldDamageType, damageSourcePos);
-                    }
+                    ExecuteAttack(enemy.gameObject, attackDamage);
+                    ReportDebug($"Golpe a {enemy.name}: Enviando {attackDamage:F2} de daño de tipo {shieldDamageType}", 1);
                 }
             }
 
@@ -319,6 +315,25 @@ public class Shield : MonoBehaviour
         else
         {
             StartReturning();
+        }
+    }
+
+    private void ExecuteAttack(GameObject target, float damageAmount)
+    {
+        if (target.TryGetComponent<DrogathEnemy>(out var blockSystem) && target.TryGetComponent<EnemyHealth>(out var health))
+        {
+            // Verificar si el ataque es bloqueado
+            if (blockSystem.ShouldBlockDamage(transform.position))
+            {
+                ReportDebug("Ataque bloqueado por DrogathEnemy.", 1);
+                return;
+            }
+
+            health.TakeDamage(damageAmount, false, AttackDamageType.Ranged);
+        }
+        else if (target.TryGetComponent<IDamageable>(out var damageable))
+        {
+            damageable.TakeDamage(damageAmount, false, AttackDamageType.Ranged);
         }
     }
 

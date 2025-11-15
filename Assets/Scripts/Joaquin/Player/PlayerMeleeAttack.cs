@@ -746,10 +746,7 @@ public class PlayerMeleeAttack : MonoBehaviour
                 {
                     EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
 
-                    if (enemyHealth != null)
-                    {
-                        enemyHealth.TakeDamage(finalAttackDamage, meleeDamageType, damageSourcePos);
-                    }
+                    ExecuteAttack(enemy.gameObject, finalAttackDamage);
 
                     switch (currentAttackIndex)
                     {
@@ -825,6 +822,25 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
 
         showGizmoRoutine = StartCoroutine(ShowGizmoCoroutine(displayDuration));
+    }
+
+    private void ExecuteAttack(GameObject target, float damageAmount)
+    {
+        if (target.TryGetComponent<DrogathEnemy>(out var blockSystem) && target.TryGetComponent<EnemyHealth>(out var health))
+        {
+            // Verificar si el ataque es bloqueado
+            if (blockSystem.ShouldBlockDamage(hitPoint.transform.position))
+            {
+                ReportDebug("Ataque bloqueado por DrogathEnemy.", 1);
+                return;
+            }
+
+            health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+        }
+        else if (target.TryGetComponent<EnemyHealth>(out var enemyHealth))
+        {
+            enemyHealth.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+        }
     }
 
     private void ApplyKnockbackSafe(Collider enemy)
