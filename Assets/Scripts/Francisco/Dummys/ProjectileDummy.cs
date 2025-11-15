@@ -2,11 +2,14 @@ using UnityEngine;
 
 public class ProjectileDummy : MonoBehaviour
 {
+    #region [ Settings ]
+
     [Header("Settings")]
-    [SerializeField] private string shieldTag = "Escudo";
     [SerializeField] private string[] ignoreTags;
     [SerializeField] private float damage = 5f;
     [SerializeField] private float lifetime = 5f;
+
+    #endregion
 
     private void Start()
     {
@@ -25,6 +28,14 @@ public class ProjectileDummy : MonoBehaviour
 
     private void HandleCollision(GameObject collidedObject)
     {
+        foreach (string tag in ignoreTags)
+        {
+            if (collidedObject.CompareTag(tag))
+            {
+                return; 
+            }
+        }
+
         if (collidedObject.CompareTag("Player"))
         {
             if (collidedObject.TryGetComponent<PlayerHealth>(out var playerHealth) &&
@@ -34,13 +45,15 @@ public class ProjectileDummy : MonoBehaviour
                 {
                     float remainingDamage = blockSystem.ProcessBlockedAttack(damage, this.gameObject);
 
+                    ShieldHitManager.Instance?.RegisterShieldHit();
+
                     if (remainingDamage > 0f)
                     {
-                        playerHealth.TakeDamage(remainingDamage); 
+                        playerHealth.TakeDamage(remainingDamage);
                     }
 
                     Destroy(gameObject);
-                    return; 
+                    return;
                 }
 
                 playerHealth.TakeDamage(damage);
@@ -52,21 +65,6 @@ public class ProjectileDummy : MonoBehaviour
 
             Destroy(gameObject);
             return;
-        }
-        else if (collidedObject.CompareTag(shieldTag))
-        {
-            ShieldHitManager.Instance?.RegisterShieldHit();
-
-            Destroy(gameObject);
-            return;
-        }
-
-        foreach (string tag in ignoreTags)
-        {
-            if (collidedObject.CompareTag(tag))
-            {
-                return;
-            }
         }
 
         Destroy(gameObject);
