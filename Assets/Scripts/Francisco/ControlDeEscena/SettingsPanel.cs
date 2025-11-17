@@ -42,6 +42,11 @@ public class SettingsPanel : MonoBehaviour
 
     #region [ Unity Methods ]
 
+    private void Awake()
+    {
+        SubscribeToSliders();
+    }
+
     private void Start()
     {
         if (displayType == PanelDisplayType.AnimatedScale)
@@ -56,10 +61,9 @@ public class SettingsPanel : MonoBehaviour
 
         gameObject.SetActive(false);
         LoadSettings();
-        SubscribeToSliders();
     }
 
-    private void OnDisable()
+    private void OnDestroy()
     {
         UnsubscribeFromSliders();
     }
@@ -86,14 +90,13 @@ public class SettingsPanel : MonoBehaviour
             canvasGroup.blocksRaycasts = true;
 
             canvasGroup.DOFade(1f, openCloseDuration)
-                .SetEase(Ease.OutSine) 
+                .SetEase(Ease.OutSine)
                 .SetUpdate(true)
                 .OnComplete(() => SetInitialFocus());
 
-            // Opcional
             transform.DOLocalMove(Vector3.zero, openCloseDuration).SetEase(Ease.OutSine).SetUpdate(true);
         }
-        else 
+        else
         {
             SetInitialFocus();
         }
@@ -113,11 +116,11 @@ public class SettingsPanel : MonoBehaviour
             canvasGroup.blocksRaycasts = false;
 
             canvasGroup.DOFade(0f, openCloseDuration)
-                .SetEase(Ease.InSine) 
+                .SetEase(Ease.InSine)
                 .SetUpdate(true)
                 .OnComplete(() => gameObject.SetActive(false));
         }
-        else 
+        else
         {
             gameObject.SetActive(false);
         }
@@ -185,6 +188,9 @@ public class SettingsPanel : MonoBehaviour
     private void SetInitialFocus()
     {
         if (firstSelectedButton == null) return;
+
+        if (Gamepad.current == null) return;
+
         if (EventSystem.current != null)
         {
             EventSystem.current.SetSelectedGameObject(null);

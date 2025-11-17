@@ -5,7 +5,6 @@ using UnityEngine.InputSystem;
 public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
 {
     [SerializeField] private GameObject firstSelectedButton;
-
     private PlayerControlls playerControls;
 
     void Awake()
@@ -18,14 +17,15 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
     {
         playerControls?.UI.Enable();
 
-        if (firstSelectedButton != null)
+        if (firstSelectedButton != null && Gamepad.current != null)
         {
             if (EventSystem.current != null)
             {
+                EventSystem.current.SetSelectedGameObject(null);
                 EventSystem.current.SetSelectedGameObject(firstSelectedButton);
             }
         }
-        else
+        else if (firstSelectedButton == null)
         {
             Debug.LogWarning("[ControlMenu] No se pudo establecer el foco inicial. Asigna 'First Selected Button' en el Inspector.");
         }
@@ -34,6 +34,11 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
     void OnDisable()
     {
         playerControls?.UI.Disable();
+
+        if (EventSystem.current != null)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+        }
     }
 
     void OnDestroy()
@@ -51,5 +56,4 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
     public void OnRightClick(InputAction.CallbackContext context) { }
     public void OnTrackedDevicePosition(InputAction.CallbackContext context) { }
     public void OnTrackedDeviceOrientation(InputAction.CallbackContext context) { }
-
 }

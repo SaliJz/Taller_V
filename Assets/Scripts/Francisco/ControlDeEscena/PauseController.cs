@@ -103,7 +103,15 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         if (pausePanel != null)
         {
             pausePanel.SetActive(true);
-            SetFocus(firstSelectedButton, "PauseController");
+
+            if (Gamepad.current != null) 
+            {
+                SetFocus(firstSelectedButton, "PauseController");
+            }
+            else
+            {
+                EventSystem.current?.SetSelectedGameObject(null);
+            }
         }
     }
 
@@ -166,7 +174,10 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         settingsPanel.ClosePanel();
         isSettingsOpen = false;
 
-        SetFocus(firstSelectedButton, "Settings Close");
+        if (Gamepad.current != null)
+        {
+            SetFocus(firstSelectedButton, "Settings Close");
+        }
     }
 
     private IEnumerator PauseCooldown()
