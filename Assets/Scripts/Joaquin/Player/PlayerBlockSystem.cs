@@ -240,6 +240,8 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
     public void OnShieldBlock(InputAction.CallbackContext context)
     {
+        if (PauseController.IsGamePaused) return;
+
         if (!blockingEnabled || isStunned) return;
 
         if (context.started || context.performed)

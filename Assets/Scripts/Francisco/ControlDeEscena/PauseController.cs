@@ -6,18 +6,21 @@ using UnityEngine.EventSystems;
 
 public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 {
+    [Header("Menu Panel References")]
     [SerializeField] private GameObject pausePanel;
-    [SerializeField] private GameObject firstSelectedButton;
+    [SerializeField] private SettingsPanel settingsPanel;
+    [SerializeField] private GameObject firstSelectedButton; 
+
+    private static bool isPaused = false;
+    private bool isSettingsOpen = false; 
 
     private PlayerControlls playerControls;
-
-    [SerializeField] private PlayerStatsManager statsManager;
-    private float previousTimeScale;
-    private bool isPaused = false;
-
     private bool canTogglePause = true;
     private const float ToggleCooldown = 0.15f;
 
+    [SerializeField] private PlayerStatsManager statsManager;
+    private float previousTimeScale;
+    public static bool IsGamePaused => isPaused;
     public static PauseController Instance { get; private set; }
 
     void Awake()
@@ -32,12 +35,12 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         playerControls = new PlayerControlls();
         playerControls.UI.SetCallbacks(this);
 
-        statsManager = FindAnyObjectByType<PlayerStatsManager>();
-
-        if (pausePanel != null)
+        if (statsManager == null)
         {
-            pausePanel.SetActive(false);
+            statsManager = FindAnyObjectByType<PlayerStatsManager>();
         }
+
+        if (pausePanel != null) pausePanel.SetActive(false);
     }
 
     void OnEnable()
@@ -64,7 +67,11 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     {
         if (context.performed && canTogglePause)
         {
-            if (isPaused)
+            if (isSettingsOpen)
+            {
+                CloseSettings();
+            }
+            else if (isPaused)
             {
                 ResumeGame();
             }
@@ -77,13 +84,6 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 
     public void OnNavigate(InputAction.CallbackContext context) { }
     public void OnSubmit(InputAction.CallbackContext context) { }
-    public void OnPoint(InputAction.CallbackContext context) { }
-    public void OnClick(InputAction.CallbackContext context) { }
-    public void OnScrollWheel(InputAction.CallbackContext context) { }
-    public void OnMiddleClick(InputAction.CallbackContext context) { }
-    public void OnRightClick(InputAction.CallbackContext context) { }
-    public void OnTrackedDevicePosition(InputAction.CallbackContext context) { }
-    public void OnTrackedDeviceOrientation(InputAction.CallbackContext context) { }
 
     public void PauseGame()
     {
@@ -93,7 +93,6 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         {
             playerControls.Movement.Disable();
             playerControls.Combat.Disable();
-            playerControls.UI.Enable();
         }
 
         previousTimeScale = Time.timeScale;
@@ -104,21 +103,15 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         if (pausePanel != null)
         {
             pausePanel.SetActive(true);
-
-            if (firstSelectedButton != null)
-            {
-                EventSystem.current.SetSelectedGameObject(firstSelectedButton);
-            }
-            else
-            {
-                Debug.LogWarning("[PauseController] No se pudo establecer el foco inicial. Asigna 'First Selected Button' en el Inspector.");
-            }
+            SetFocus(firstSelectedButton, "PauseController");
         }
     }
 
     public void ResumeGame()
     {
         if (!isPaused) return;
+
+        if (isSettingsOpen) return;
 
         if (EventSystem.current != null)
         {
@@ -154,11 +147,48 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         }
     }
 
+    public void OpenSettings()
+    {
+        if (settingsPanel == null)
+        {
+            Debug.LogError("[PauseController] No se pudo abrir Settings: 'Settings Panel' no está asignado.");
+            return;
+        }
+
+        settingsPanel.OpenPanel();
+        isSettingsOpen = true;
+    }
+
+    public void CloseSettings()
+    {
+        if (settingsPanel == null || !isSettingsOpen) return;
+
+        settingsPanel.ClosePanel();
+        isSettingsOpen = false;
+
+        SetFocus(firstSelectedButton, "Settings Close");
+    }
+
     private IEnumerator PauseCooldown()
     {
         canTogglePause = false;
         yield return new WaitForSecondsRealtime(ToggleCooldown);
         canTogglePause = true;
+    }
+
+    private void SetFocus(GameObject focusObject, string context)
+    {
+        if (focusObject == null) return;
+
+        if (EventSystem.current != null)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+            EventSystem.current.SetSelectedGameObject(focusObject);
+        }
+        else
+        {
+            Debug.LogWarning($"[{context} - PauseController] EventSystem.current es nulo. No se pudo establecer el foco.");
+        }
     }
 
     public void ResetGame()
@@ -176,30 +206,44 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     private IEnumerator FadeAndReloadScene(string sceneName)
     {
         isPaused = false;
+        isSettingsOpen = false; 
 
         if (FadeController.Instance != null && FadeController.Instance.fade != null)
         {
+            if (pausePanel != null) pausePanel.SetActive(false);
+            if (settingsPanel != null) settingsPanel.gameObject.SetActive(false);
+
             yield return StartCoroutine(FadeController.Instance.FadeOut());
         }
 
         Time.timeScale = 1f;
 
-        if (statsManager != null) statsManager.ResetRunStatsToDefaults();
-        if (statsManager != null) statsManager.ResetStatsOnDeath();
+        if (statsManager != null)
+        {
+            statsManager.ResetRunStatsToDefaults();
+            statsManager.ResetStatsOnDeath();
+
+            float maxHealth = statsManager.GetStat(StatType.MaxHealth);
+            if (statsManager._currentStatSO != null)
+            {
+                statsManager._currentStatSO.currentHealth = maxHealth;
+            }
+        }
 
         InventoryManager inventory = FindAnyObjectByType<InventoryManager>();
-
         if (inventory != null)
         {
             inventory.ClearInventory();
         }
 
-        float maxHealth = statsManager.GetStat(StatType.MaxHealth);
-        if (statsManager._currentStatSO != null)
-        {
-            statsManager._currentStatSO.currentHealth = maxHealth;
-        }
-
         SceneManager.LoadScene(sceneName);
     }
+
+    public void OnPoint(InputAction.CallbackContext context) { }
+    public void OnClick(InputAction.CallbackContext context) { }
+    public void OnScrollWheel(InputAction.CallbackContext context) { }
+    public void OnMiddleClick(InputAction.CallbackContext context) { }
+    public void OnRightClick(InputAction.CallbackContext context) { }
+    public void OnTrackedDevicePosition(InputAction.CallbackContext context) { }
+    public void OnTrackedDeviceOrientation(InputAction.CallbackContext context) { }
 }

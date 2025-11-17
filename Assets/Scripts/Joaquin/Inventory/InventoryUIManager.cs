@@ -103,6 +103,8 @@ public class InventoryUIManager : MonoBehaviour
 
     private void Update()
     {
+        if (PauseController.IsGamePaused) return;
+
         // Toggle inventario con I o Tab
         if (Keyboard.current != null)
         {

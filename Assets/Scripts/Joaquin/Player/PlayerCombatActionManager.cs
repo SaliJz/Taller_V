@@ -25,6 +25,7 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     [SerializeField] private PlayerMovement playerMovement;
     [SerializeField] private PlayerBlockSystem playerBlockSystem;
     [SerializeField] private PlayerHealth playerHealth;
+    [SerializeField] private PauseController pauseController;
 
     [SerializeField] private float inputBufferWindow = 0.12f; // Ventana de tiempo para bufferizar inputs
 
@@ -81,6 +82,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     public void OnMelee(InputAction.CallbackContext context)
     {
+        if (PauseController.IsGamePaused) return;
+
         if (!context.started) return;
 
         ProcessCombatInput(CombatActionType.MeleeAttack);
@@ -88,6 +91,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     public void OnShieldThrow(InputAction.CallbackContext context)
     {
+        if (PauseController.IsGamePaused) return;
+
         if (!context.started) return;
 
         ProcessCombatInput(CombatActionType.ShieldThrow);
@@ -95,6 +100,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     public void OnDash(InputAction.CallbackContext context)
     {
+        if (PauseController.IsGamePaused) return;
+
         if (!context.started) return;
 
         ProcessCombatInput(CombatActionType.Dash);

@@ -230,6 +230,8 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
     public void OnActivateSkill(InputAction.CallbackContext context)
     {
+        if (PauseController.IsGamePaused) return;
+
         if (!context.started) return;
 
         if (inputBlocked)

@@ -24,21 +24,16 @@ public class SettingsPanelEditor : Editor
     private void OnEnable()
     {
         displayTypeProp = serializedObject.FindProperty("displayType");
-
         masterMixerProp = serializedObject.FindProperty("masterMixer");
         masterSliderProp = serializedObject.FindProperty("masterSlider");
         musicSliderProp = serializedObject.FindProperty("musicSlider");
         sfxSliderProp = serializedObject.FindProperty("sfxSlider");
-
         canvasGroupProp = serializedObject.FindProperty("canvasGroup");
-
         durationProp = serializedObject.FindProperty("openCloseDuration");
         openEaseProp = serializedObject.FindProperty("openEase");
         closeEaseProp = serializedObject.FindProperty("closeEase");
-
         startScaleProp = serializedObject.FindProperty("startScale");
         endScaleProp = serializedObject.FindProperty("endScale");
-
         firstSelectedButtonProp = serializedObject.FindProperty("firstSelectedButton");
     }
 
@@ -60,7 +55,6 @@ public class SettingsPanelEditor : Editor
 
         EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("Audio Mixer References", EditorStyles.boldLabel);
-
         EditorGUILayout.PropertyField(masterMixerProp);
         EditorGUILayout.PropertyField(masterSliderProp);
         EditorGUILayout.PropertyField(musicSliderProp);
