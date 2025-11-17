@@ -292,7 +292,7 @@ AudioSource:
   m_GameObject: {fileID: 1618859159596345659}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
@@ -1266,6 +1266,7 @@ MonoBehaviour:
   echoExpansionTime: 0.4
   echoDurationAfterExpansion: 1.2
   echoDamagePerSecond: 3
+  EchoTickRate: 4
   patrolWaypoints: []
   loopWaypoints: 1
   patrolRadius: 8
@@ -1312,6 +1313,7 @@ MonoBehaviour:
   lifestealAmountOnDeathByMelee: 6
   lifestealAmountOnDeathByDistance: 3
   toughnessSystem: {fileID: 1609772722142963277}
+  invulnerableLayerIndex: 0
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
