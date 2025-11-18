@@ -214,4 +214,15 @@ public class SettingsPanel : MonoBehaviour
         }
     }
     #endregion
+
+    #region [ Public Sliders Access ]
+    public Slider[] GetMenuSliders()
+    {
+        var list = new System.Collections.Generic.List<Slider>();
+        if (masterSlider != null) list.Add(masterSlider);
+        if (musicSlider != null) list.Add(musicSlider);
+        if (sfxSlider != null) list.Add(sfxSlider);
+        return list.ToArray();
+    }
+    #endregion
 }

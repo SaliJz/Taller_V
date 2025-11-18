@@ -1,12 +1,12 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 public class GamepadPointer : MonoBehaviour
 {
-    public RectTransform virtualCursor;
-
+    [SerializeField] private RectTransform virtualCursor;
     [SerializeField] private float cursorSpeed = 1500f;
 
     private const float CursorFollowSpeed = 30f;
@@ -15,6 +15,15 @@ public class GamepadPointer : MonoBehaviour
     private InputSystemUIInputModule uiInputModule;
     private RectTransform canvasRect;
     private Camera canvasCamera;
+
+    private InputDevice currentActiveDevice = null;
+    private Vector2 lastValidCursorPosition = Vector2.zero;
+
+    private Gamepad currentGamepad;
+    private InputDevice lastReportedDevice = null;
+
+    private GameObject lastSelectedObject = null;
+    private SettingsPanel settingsPanel;
 
     private void Awake()
     {
@@ -33,6 +42,7 @@ public class GamepadPointer : MonoBehaviour
         }
 
         uiInputModule = FindAnyObjectByType<InputSystemUIInputModule>();
+        settingsPanel = FindAnyObjectByType<SettingsPanel>();
 
         if (uiInputModule == null)
         {
@@ -45,72 +55,151 @@ public class GamepadPointer : MonoBehaviour
         {
             virtualCursor.gameObject.SetActive(false);
         }
+
+        currentGamepad = Gamepad.current;
+        if (Mouse.current != null)
+        {
+            currentActiveDevice = Mouse.current;
+        }
+        else if (Keyboard.current != null)
+        {
+            currentActiveDevice = Keyboard.current;
+        }
+
+        lastReportedDevice = currentActiveDevice;
     }
 
     private void Update()
     {
-        bool isAnyGamepadConnected = Gamepad.all.Count > 0;
-
-        bool isGamepadActive = isAnyGamepadConnected && Gamepad.current != null;
-
-        if (!isGamepadActive || virtualCursor == null || canvasRect == null || uiInputModule == null)
+        if (currentGamepad == null)
         {
-            if (virtualCursor != null && virtualCursor.gameObject.activeSelf)
-            {
-                virtualCursor.gameObject.SetActive(false);
-            }
-            return;
+            currentGamepad = Gamepad.current;
         }
 
-        Vector2 stickValue = Gamepad.current.rightStick.ReadValue();
-        bool isMovingCursor = stickValue.magnitude > RightStickDeadZone;
+        bool isMouseMovedSignificantly = Mouse.current != null &&
+                                 Mouse.current.delta.ReadValue().magnitude > 0.1f;
 
-        float deltaTime = Time.unscaledDeltaTime;
+        bool isMouseOrKeyInteracting = (Mouse.current != null &&
+                               (Mouse.current.leftButton.wasPressedThisFrame ||
+                                Mouse.current.rightButton.wasPressedThisFrame)) ||
+                               (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame);
 
-        bool isPauseControllerActive = PauseController.Instance != null;
-        bool shouldFollowSelected = Time.timeScale == 0f || !isPauseControllerActive;
+        bool isMouseOrKeyboardActive = isMouseMovedSignificantly || isMouseOrKeyInteracting;
 
-        if (isMovingCursor)
+        bool isGamepadActive = false;
+        Vector2 stickValue = Vector2.zero;
+        if (currentGamepad != null)
         {
-            if (!virtualCursor.gameObject.activeSelf) virtualCursor.gameObject.SetActive(true);
+            stickValue = currentGamepad.rightStick.ReadValue();
 
-            Vector2 screenDelta = stickValue * cursorSpeed * deltaTime;
-            Vector2 newPosition = virtualCursor.anchoredPosition + screenDelta;
+            bool isStickMoving = stickValue.magnitude > RightStickDeadZone || currentGamepad.leftStick.ReadValue().magnitude > RightStickDeadZone;
 
-            float cursorHalfWidth = virtualCursor.rect.width * 0.5f;
-            float cursorHalfHeight = virtualCursor.rect.height * 0.5f;
+            bool isGamepadInteracting = isStickMoving ||
+                currentGamepad.dpad.IsActuated() ||
+                currentGamepad.buttonSouth.wasPressedThisFrame ||
+                currentGamepad.buttonEast.wasPressedThisFrame ||
+                currentGamepad.buttonWest.wasPressedThisFrame ||
+                currentGamepad.buttonNorth.wasPressedThisFrame;
 
-            float minX = -(canvasRect.rect.width * 0.5f) + cursorHalfWidth;
-            float maxX = (canvasRect.rect.width * 0.5f) - cursorHalfWidth;
-            float minY = -(canvasRect.rect.height * 0.5f) + cursorHalfHeight;
-            float maxY = (canvasRect.rect.height * 0.5f) - cursorHalfHeight;
+            isGamepadActive = isGamepadInteracting;
+        }
 
-            newPosition.x = Mathf.Clamp(newPosition.x, minX, maxX);
-            newPosition.y = Mathf.Clamp(newPosition.y, minY, maxY);
+        InputDevice previousActiveDevice = currentActiveDevice;
 
-            virtualCursor.anchoredPosition = newPosition;
+        if (isMouseOrKeyboardActive)
+        {
+            currentActiveDevice = isMouseMovedSignificantly || isMouseOrKeyInteracting ? Mouse.current : (InputDevice)Keyboard.current;
+        }
+        else if (isGamepadActive)
+        {
+            currentActiveDevice = currentGamepad;
+        }
 
-            if (Mouse.current != null)
+        bool isCurrentDeviceGamepad = (currentActiveDevice == currentGamepad) && (currentGamepad != null);
+        bool shouldFollowSelected = Time.timeScale == 0f || isCurrentDeviceGamepad;
+
+        if (isCurrentDeviceGamepad)
+        {
+            GameObject selected = EventSystem.current?.currentSelectedGameObject;
+            if (selected != null)
             {
-                Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(canvasCamera, virtualCursor.position);
-                Mouse.current.WarpCursorPosition(screenPoint);
+                lastSelectedObject = selected;
             }
         }
-        else if (shouldFollowSelected)
+
+        if (currentActiveDevice == currentGamepad && previousActiveDevice != currentGamepad)
         {
-            GameObject selectedObject = EventSystem.current?.currentSelectedGameObject;
+            GameObject targetObject = lastSelectedObject;
 
-            if (selectedObject != null)
+            if (targetObject == null)
             {
-                if (!virtualCursor.gameObject.activeSelf) virtualCursor.gameObject.SetActive(true);
-
-                RectTransform selectedRect = selectedObject.GetComponent<RectTransform>();
-
-                if (selectedRect != null)
+                ControlMenu controlMenu = FindAnyObjectByType<ControlMenu>();
+                if (controlMenu != null)
                 {
-                    Vector3 targetPosition = selectedRect.position;
-                    virtualCursor.position = Vector3.Lerp(virtualCursor.position, targetPosition, deltaTime * CursorFollowSpeed);
+                    controlMenu.FirstSelected();
+                    return;
                 }
+            }
+
+            if (targetObject != null && targetObject.activeInHierarchy)
+            {
+                EventSystem.current?.SetSelectedGameObject(null);
+                EventSystem.current?.SetSelectedGameObject(targetObject);
+            }
+        }
+
+        if (currentActiveDevice != lastReportedDevice)
+        {
+            string deviceName;
+            if (currentActiveDevice == currentGamepad)
+            {
+                deviceName = "GAMEPAD (Control de Mando)";
+            }
+            else if (currentActiveDevice == Mouse.current)
+            {
+                deviceName = "MOUSE (Ratón)";
+            }
+            else if (currentActiveDevice == Keyboard.current)
+            {
+                deviceName = "KEYBOARD (Teclado)";
+            }
+            else
+            {
+                deviceName = "NINGUNO/OTRO";
+            }
+
+            Debug.Log($"[GamepadPointer] Control activo cambiado a: {deviceName}");
+            lastReportedDevice = currentActiveDevice;
+        }
+
+        if (isCurrentDeviceGamepad)
+        {
+            float deltaTime = Time.unscaledDeltaTime;
+
+            if (stickValue.magnitude > RightStickDeadZone)
+            {
+                if (!virtualCursor.gameObject.activeSelf)
+                {
+                    virtualCursor.gameObject.SetActive(true);
+                    virtualCursor.anchoredPosition = lastValidCursorPosition;
+                }
+
+                Vector2 screenDelta = stickValue * cursorSpeed * deltaTime;
+                Vector2 newPosition = virtualCursor.anchoredPosition + screenDelta;
+
+                float cursorHalfWidth = virtualCursor.rect.width * 0.5f;
+                float cursorHalfHeight = virtualCursor.rect.height * 0.5f;
+
+                float minX = -(canvasRect.rect.width * 0.5f) + cursorHalfWidth;
+                float maxX = (canvasRect.rect.width * 0.5f) - cursorHalfWidth;
+                float minY = -(canvasRect.rect.height * 0.5f) + cursorHalfHeight;
+                float maxY = (canvasRect.rect.height * 0.5f) - cursorHalfHeight;
+
+                newPosition.x = Mathf.Clamp(newPosition.x, minX, maxX);
+                newPosition.y = Mathf.Clamp(newPosition.y, minY, maxY);
+
+                virtualCursor.anchoredPosition = newPosition;
+                lastValidCursorPosition = newPosition;
 
                 if (Mouse.current != null)
                 {
@@ -118,19 +207,80 @@ public class GamepadPointer : MonoBehaviour
                     Mouse.current.WarpCursorPosition(screenPoint);
                 }
             }
-            else
+            else if (shouldFollowSelected)
             {
-                virtualCursor.gameObject.SetActive(false);
+                GameObject selectedObject = EventSystem.current?.currentSelectedGameObject;
+
+                if (selectedObject != null)
+                {
+                    if (!virtualCursor.gameObject.activeSelf) virtualCursor.gameObject.SetActive(true);
+
+                    RectTransform targetRect = selectedObject.GetComponent<RectTransform>();
+                    Slider slider = selectedObject.GetComponent<Slider>(); 
+
+                    if (slider != null && IsMenuSlider(slider))
+                    {
+                        if (slider.handleRect != null)
+                        {
+                            targetRect = slider.handleRect;
+                        }
+                    }
+
+                    if (targetRect != null)
+                    {
+                        Vector3 targetPosition = targetRect.position;
+                        virtualCursor.position = Vector3.Lerp(virtualCursor.position, targetPosition, deltaTime * CursorFollowSpeed);
+                        lastValidCursorPosition = virtualCursor.anchoredPosition;
+                    }
+
+                    if (Mouse.current != null)
+                    {
+                        Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(canvasCamera, virtualCursor.position);
+                        Mouse.current.WarpCursorPosition(screenPoint);
+                    }
+                }
+                else
+                {
+                    virtualCursor.gameObject.SetActive(false);
+                }
             }
         }
         else
         {
-            virtualCursor.gameObject.SetActive(false);
-        }
+            if (virtualCursor != null && virtualCursor.gameObject.activeSelf)
+            {
+                virtualCursor.gameObject.SetActive(false);
+            }
 
-        if (Mouse.current != null && Mouse.current.delta.ReadValue().magnitude > 0.1f)
-        {
-            virtualCursor.gameObject.SetActive(false);
+            if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null &&
+                (currentActiveDevice == Mouse.current || currentActiveDevice == Keyboard.current))
+            {
+                EventSystem.current.SetSelectedGameObject(null);
+            }
+
+            if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null)
+            {
+                if (previousActiveDevice == currentGamepad && currentActiveDevice != currentGamepad)
+                {
+                    EventSystem.current.SetSelectedGameObject(null);
+                }
+            }
         }
+    }
+    private bool IsMenuSlider(Slider slider)
+    {
+        if (settingsPanel == null) return false;
+
+        Slider[] menuSliders = settingsPanel.GetMenuSliders();
+        if (menuSliders == null || menuSliders.Length == 0) return false;
+
+        foreach (Slider menuSlider in menuSliders)
+        {
+            if (menuSlider == slider)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

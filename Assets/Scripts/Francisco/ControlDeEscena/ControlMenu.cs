@@ -6,6 +6,7 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
 {
     [SerializeField] private GameObject firstSelectedButton;
     private PlayerControlls playerControls;
+    private GameObject previousSelectedGameObject; 
 
     void Awake()
     {
@@ -17,15 +18,22 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
     {
         playerControls?.UI.Enable();
 
-        if (firstSelectedButton != null && Gamepad.current != null)
+        if (Gamepad.current != null) 
         {
-            if (EventSystem.current != null)
+            if (firstSelectedButton != null)
             {
-                EventSystem.current.SetSelectedGameObject(null);
-                EventSystem.current.SetSelectedGameObject(firstSelectedButton);
+                if (EventSystem.current != null)
+                {
+                    EventSystem.current.SetSelectedGameObject(null);
+                    EventSystem.current.SetSelectedGameObject(firstSelectedButton);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[ControlMenu] No se pudo establecer el foco inicial. Asigna 'First Selected Button' en el Inspector.");
             }
         }
-        else if (firstSelectedButton == null)
+        else
         {
             Debug.LogWarning("[ControlMenu] No se pudo establecer el foco inicial. Asigna 'First Selected Button' en el Inspector.");
         }
@@ -37,7 +45,27 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
 
         if (EventSystem.current != null)
         {
-            EventSystem.current.SetSelectedGameObject(null);
+            if (previousSelectedGameObject != null)
+            {
+                EventSystem.current.SetSelectedGameObject(previousSelectedGameObject);
+                previousSelectedGameObject = null; 
+            }
+            else
+            {
+                EventSystem.current.SetSelectedGameObject(null);
+            }
+        }
+    }
+
+    public void FirstSelected()
+    {
+        if (firstSelectedButton != null)
+        {
+            if (EventSystem.current != null)
+            {
+                EventSystem.current.SetSelectedGameObject(null);
+                EventSystem.current.SetSelectedGameObject(firstSelectedButton);
+            }
         }
     }
 

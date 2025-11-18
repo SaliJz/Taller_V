@@ -25,7 +25,6 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     [SerializeField] private PlayerMovement playerMovement;
     [SerializeField] private PlayerBlockSystem playerBlockSystem;
     [SerializeField] private PlayerHealth playerHealth;
-    [SerializeField] private PauseController pauseController;
 
     [SerializeField] private float inputBufferWindow = 0.12f; // Ventana de tiempo para bufferizar inputs
 

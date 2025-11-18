@@ -46,6 +46,26 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     void OnEnable()
     {
         playerControls?.UI.Enable();
+
+        if (Gamepad.current != null)
+        {
+            if (firstSelectedButton != null)
+            {
+                if (EventSystem.current != null)
+                {
+                    EventSystem.current.SetSelectedGameObject(null);
+                    EventSystem.current.SetSelectedGameObject(firstSelectedButton);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[ControlMenu] No se pudo establecer el foco inicial. Asigna 'First Selected Button' en el Inspector.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[ControlMenu] No se pudo establecer el foco inicial. Asigna 'First Selected Button' en el Inspector.");
+        }
     }
 
     void OnDisable()
