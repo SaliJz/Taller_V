@@ -6,8 +6,10 @@ using UnityEngine.EventSystems;
 
 public class GamepadPointer : MonoBehaviour
 {
-    [SerializeField] private RectTransform virtualCursor;
+    [Header("Cursor in Pause Settings")]
+    [SerializeField] private float pauseMovementRadiusFactor = 0.4f;
     [SerializeField] private float cursorSpeed = 1500f;
+    [SerializeField] private RectTransform virtualCursor;
 
     private const float CursorFollowSpeed = 30f;
     private const float RightStickDeadZone = 0.2f;
@@ -190,13 +192,35 @@ public class GamepadPointer : MonoBehaviour
                 float cursorHalfWidth = virtualCursor.rect.width * 0.5f;
                 float cursorHalfHeight = virtualCursor.rect.height * 0.5f;
 
-                float minX = -(canvasRect.rect.width * 0.5f) + cursorHalfWidth;
-                float maxX = (canvasRect.rect.width * 0.5f) - cursorHalfWidth;
-                float minY = -(canvasRect.rect.height * 0.5f) + cursorHalfHeight;
-                float maxY = (canvasRect.rect.height * 0.5f) - cursorHalfHeight;
+                if (Time.timeScale != 0f || !PauseController.IsGamePaused)
+                {
+                    float canvasHalfWidth = canvasRect.rect.width * 0.5f;
+                    float canvasHalfHeight = canvasRect.rect.height * 0.5f;
 
-                newPosition.x = Mathf.Clamp(newPosition.x, minX, maxX);
-                newPosition.y = Mathf.Clamp(newPosition.y, minY, maxY);
+                    float maxRadius = Mathf.Min(canvasHalfWidth, canvasHalfHeight) * pauseMovementRadiusFactor;
+
+                    float cursorHalfSize = Mathf.Max(cursorHalfWidth, cursorHalfHeight);
+                    float effectiveRadius = maxRadius - cursorHalfSize;
+
+                    effectiveRadius = Mathf.Max(0f, effectiveRadius);
+
+                    float distanceFromCenter = newPosition.magnitude;
+
+                    if (distanceFromCenter > effectiveRadius)
+                    {
+                        newPosition = newPosition.normalized * effectiveRadius;
+                    }
+                }
+                else
+                {
+                    float minX = -(canvasRect.rect.width * 0.5f) + cursorHalfWidth;
+                    float maxX = (canvasRect.rect.width * 0.5f) - cursorHalfWidth;
+                    float minY = -(canvasRect.rect.height * 0.5f) + cursorHalfHeight;
+                    float maxY = (canvasRect.rect.height * 0.5f) - cursorHalfHeight;
+
+                    newPosition.x = Mathf.Clamp(newPosition.x, minX, maxX);
+                    newPosition.y = Mathf.Clamp(newPosition.y, minY, maxY);
+                }
 
                 virtualCursor.anchoredPosition = newPosition;
                 lastValidCursorPosition = newPosition;
@@ -216,7 +240,7 @@ public class GamepadPointer : MonoBehaviour
                     if (!virtualCursor.gameObject.activeSelf) virtualCursor.gameObject.SetActive(true);
 
                     RectTransform targetRect = selectedObject.GetComponent<RectTransform>();
-                    Slider slider = selectedObject.GetComponent<Slider>(); 
+                    Slider slider = selectedObject.GetComponent<Slider>();
 
                     if (slider != null && IsMenuSlider(slider))
                     {
@@ -244,6 +268,10 @@ public class GamepadPointer : MonoBehaviour
                     virtualCursor.gameObject.SetActive(false);
                 }
             }
+            else
+            {
+                virtualCursor.gameObject.SetActive(false);
+            }
         }
         else
         {
@@ -267,6 +295,7 @@ public class GamepadPointer : MonoBehaviour
             }
         }
     }
+
     private bool IsMenuSlider(Slider slider)
     {
         if (settingsPanel == null) return false;
