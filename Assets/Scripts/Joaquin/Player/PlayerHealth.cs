@@ -124,6 +124,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private Coroutine morlockPoisonResetCoroutine;
     private Coroutine morlockPoisonHitCoroutine;
 
+    // Variables para el stun
+    private bool isStunned = false;
+    private Coroutine stunCoroutine;
+
+    // Referencia al PlayerCombatActionManager para interacciones de combate
+    private PlayerCombatActionManager combatActionManager;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -144,6 +151,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
         playerShieldController = GetComponent<PlayerShieldController>();
         blockSystem = GetComponent<PlayerBlockSystem>();
+        combatActionManager = GetComponent<PlayerCombatActionManager>();
         playerAnimator = GetComponentInChildren<Animator>();
 
         InitializeMaterialCache();
@@ -729,6 +737,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private void Die()
     {
         if (isDying) return;
+
+        if (combatActionManager != null)
+        {
+            combatActionManager.InterruptCombatActions();
+        }
+
         isDying = true;
 
         ReportDebug("El jugador ha muerto. Cargando escena: " + sceneToLoadOnDeath, 1);
@@ -819,6 +833,58 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         return MaxHealth;
     }
+
+    public bool IsDead()
+    {
+        return isDying;
+    }
+
+    #region Stun System
+
+    public void ApplyStun(float stunDuration)
+    {
+        if (isDying) return;
+
+        if (stunCoroutine != null)
+        {
+            StopCoroutine(stunCoroutine);
+        }
+
+        stunCoroutine = StartCoroutine(StunRoutine(stunDuration));
+    }
+
+    private IEnumerator StunRoutine(float duration)
+    {
+        isStunned = true;
+
+        // Inmovilizar completamente
+        if (playerMovement != null)
+        {
+            playerMovement.SetCanMove(false);
+        }
+
+        ReportDebug($"Jugador aturdido por {duration}s debido a rotura de escudo.", 2);
+
+        yield return new WaitForSeconds(duration);
+
+        isStunned = false;
+
+        // Restaurar movimiento
+        if (playerMovement != null)
+        {
+            playerMovement.SetCanMove(true);
+        }
+
+        stunCoroutine = null;
+        ReportDebug("Stun finalizado. Recarga de durabilidad iniciada.", 1);
+    }
+
+    public bool IsStunned()
+    {
+        return isStunned;
+    }
+
+    #endregion
 
     public void EnableShieldBlockUpgrade()
     {

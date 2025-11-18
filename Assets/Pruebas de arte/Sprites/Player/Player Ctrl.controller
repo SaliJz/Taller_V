@@ -364,7 +364,7 @@ AnimatorStateMachine:
     m_Position: {x: -370, y: -130, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -457898697896071910}
-    m_Position: {x: -390, y: -60, z: 0}
+    m_Position: {x: -390, y: -50, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 9048507343254961036}
     m_Position: {x: 610, y: -260, z: 0}
@@ -1205,15 +1205,12 @@ AnimatorStateTransition:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   m_Conditions:
+  - m_ConditionMode: 6
+    m_ConditionEvent: ComboNum
+    m_EventTreshold: 2
   - m_ConditionMode: 1
     m_ConditionEvent: IsAttacking
     m_EventTreshold: 0
-  - m_ConditionMode: 1
-    m_ConditionEvent: HasAttack
-    m_EventTreshold: 0
-  - m_ConditionMode: 6
-    m_ConditionEvent: ComboNum
-    m_EventTreshold: 3
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: -457898697896071910}
   m_Solo: 0
@@ -2689,15 +2686,12 @@ AnimatorStateTransition:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   m_Conditions:
-  - m_ConditionMode: 1
-    m_ConditionEvent: HasAttack
-    m_EventTreshold: 0
+  - m_ConditionMode: 6
+    m_ConditionEvent: ComboNum
+    m_EventTreshold: 1
   - m_ConditionMode: 1
     m_ConditionEvent: IsAttacking
     m_EventTreshold: 0
-  - m_ConditionMode: 6
-    m_ConditionEvent: ComboNum
-    m_EventTreshold: 2
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: -1509965919283913095}
   m_Solo: 0
@@ -4099,12 +4093,9 @@ AnimatorStateTransition:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   m_Conditions:
-  - m_ConditionMode: 1
-    m_ConditionEvent: HasAttack
-    m_EventTreshold: 0
   - m_ConditionMode: 6
     m_ConditionEvent: ComboNum
-    m_EventTreshold: 1
+    m_EventTreshold: 0
   - m_ConditionMode: 1
     m_ConditionEvent: IsAttacking
     m_EventTreshold: 0

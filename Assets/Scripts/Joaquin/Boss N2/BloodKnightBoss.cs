@@ -12,40 +12,39 @@ public class BloodKnightBoss : MonoBehaviour
     [SerializeField] private float maxHealth = 300f;
     [SerializeField] private float currentHealth;
     [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float lowHPSpeedMultiplier = 1.3f;
 
-    [Header("Attack 1 - Sodoma y Gomorra")]
+    [Header("Ciclo 1: Apocalipsis")]
+    [SerializeField] private float apocalipsisDuration = 10f;
+    [SerializeField] private float apocalipsisDamage = 7f;
+    [SerializeField] private int apocalipsisTargetDashes = 10;
+    [SerializeField] private float apocalipsisRange = 4f;
+
+    [Header("Ciclo 2: Pausa Posicionamiento")]
+    [SerializeField] private float positioningDuration = 2f;
+
+    [Header("Ciclo 3: Sodoma y Gomorra")]
     [SerializeField] private float sodomaDamage = 35f;
     [SerializeField] private float sodomaCutRange = 8f;
     [SerializeField] private float fireTrailDamagePerSecond = 5f;
-    [SerializeField] private float sodomaCooldown = 15f;
     [SerializeField] private float sodomaChargeTime = 1.5f;
-    [SerializeField] private float sodomaStunDuration = 4f;
     [SerializeField] private float sodomaBackwardDistance = 3f;
 
-    [Header("Attack 2 - Apocalipsis")]
-    [SerializeField] private float apocalipsisDamage = 7f;
-    [SerializeField] private int apocalipsisAttackCount = 10;
-    [SerializeField] private float apocalipsisAttackInterval = 1f;
-    [SerializeField] private float apocalipsisDashDistance = 5f;
-    [SerializeField] private float apocalipsisRange = 4f;
-
-    [Header("Attack 3 - Necio Pecador")]
+    [Header("Ciclo 4: Fase Cooldown / Necio Pecador")]
+    [SerializeField] private float necioPhaseTotalDuration = 15f;
+    [SerializeField] private float necioAttackWindow = 12f;
+    [SerializeField] private float necioVulnerableWindow = 3f;
     [SerializeField] private float necioPecadorDamage = 15f;
-    [SerializeField] private float necioPecadorCooldown = 12f;
-    [SerializeField] private int necioPecadorChainCount = 3;
     [SerializeField] private float necioPecadorRadius = 1.5f;
-    [SerializeField] private float necioPecadorWarningTime = 2.5f;
-    [SerializeField] private float necioPecadorWarningTimeLowHP = 1.5f;
-    [SerializeField] private float necioPecadorChainDuration = 7.5f;
-    [SerializeField] private float necioPecadorChainDurationLowHP = 4.5f;
+    [SerializeField] private float necioPecadorWarningTime = 1.5f;
 
     [Header("Special - Embestida del Fornido")]
-    [SerializeField] private float chargeAbilityDamage = 5f;
-    //[SerializeField] private float chargeAbilityStunDuration = 3f;
+    [Tooltip("Probabilidad de intentar la embestida antes de iniciar un ciclo nuevo")]
+    [SerializeField, Range(0f, 1f)] private float chargeProbability = 0.15f;
     [SerializeField] private float chargeAbilitySpeed = 15f;
-    [SerializeField] private float chargeAbilityKneelingTime = 2f;
-    [SerializeField] private float chargeAbilityRecoveryTime = 2f;
-    [SerializeField] private float chargeAbilityKnockbackForce = 10f;
+    [SerializeField] private float chargeAbilityKnockbackForce = 15f;
+    [SerializeField] private float playerStunDuration = 2.5f;
+    [SerializeField] private LayerMask chargeObstacleLayers;
 
     [Header("References")]
     [SerializeField] private Transform player;
@@ -85,7 +84,8 @@ public class BloodKnightBoss : MonoBehaviour
         Chasing,
         Attacking,
         Stunned,
-        Charging
+        Charging,
+        Vulnerable
     }
 
     private BossState currentState = BossState.Idle;
@@ -93,41 +93,25 @@ public class BloodKnightBoss : MonoBehaviour
     private EnemyHealth enemyHealth;
     private PlayerHealth playerHealth;
 
-    private float lastSodomaTime;
-    private float lastNecioPecadorTime;
-    private bool isVulnerableToCounter = false;
+    private CharacterController playerController;
+
     private bool isInLowHealthPhase = false;
+    private bool speedBuffApplied = false;
+    private bool forceApocalipsisNext = false;
 
     private Coroutine bossAICoroutine;
-    //private Coroutine stunCoroutine;
-    private Coroutine currentAttackCoroutine;
-
-    private Vector3 chargeDirection;
-    private bool isCharging = false;
+    private List<GameObject> instantiatedEffects = new List<GameObject>();
 
     private MeshRenderer[] armorRenderers;
     private MaterialPropertyBlock armorPropertyBlock;
     private Color originalEmissionColor;
-    private List<GameObject> instantiatedEffects = new List<GameObject>();
 
     #endregion
 
     #region Camera Shake
-
     [SerializeField] private CinemachineCamera vcam;
-    [SerializeField] private float defaultDuration = 0.5f;
-    [SerializeField] private float defaultAmplitude = 0.2f;
-    [SerializeField] private float defaultFrequency = 10f;
-    [SerializeField] private float fadeOutTime = 0.15f;
-
     private CinemachineBasicMultiChannelPerlin noise;
-    private Coroutine shakeCoroutine;
-    private float originalAmplitude;
-    private float originalFrequency;
-
     #endregion
-
-    #region Properties
 
     private void Awake()
     {
@@ -139,22 +123,18 @@ public class BloodKnightBoss : MonoBehaviour
     {
         if (bossAICoroutine == null)
         {
-            bossAICoroutine = StartCoroutine(BossAI());
+            bossAICoroutine = StartCoroutine(BossFlowSequence());
         }
     }
 
     private void InitializeComponents()
     {
-        if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
+        enemyHealth = GetComponent<EnemyHealth>();
         if (enemyHealth != null) enemyHealth.SetMaxHealth(maxHealth);
         currentHealth = maxHealth;
 
-        if (agent == null) agent = GetComponent<NavMeshAgent>();
-        if (agent != null)
-        {
-            agent.speed = moveSpeed;
-            agent.stoppingDistance = sodomaCutRange - 2f;
-        }
+        agent = GetComponent<NavMeshAgent>();
+        agent.speed = moveSpeed;
 
         if (player == null)
         {
@@ -163,66 +143,32 @@ public class BloodKnightBoss : MonoBehaviour
             {
                 player = playerObj.transform;
                 playerHealth = player.GetComponent<PlayerHealth>();
+                playerController = player.GetComponent<CharacterController>();
             }
         }
 
-        if (animator == null)
-        {
-            animator = GetComponentInChildren<Animator>();
-        }
+        if (animator == null) animator = GetComponentInChildren<Animator>();
 
         if (audioSource == null)
         {
             audioSource = GetComponent<AudioSource>();
-            if (audioSource == null)
-            {
-                audioSource = gameObject.AddComponent<AudioSource>();
-                ReportDebug("AudioSource agregado dinámicamente.", 2);
-            }
+            if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
         }
 
-        if (vcam == null)
-        {
-            CinemachineCamera virtualCamera = Object.FindFirstObjectByType<CinemachineCamera>();
-            if (virtualCamera != null)
-            {
-                vcam = virtualCamera;
-            }
-        }
-
-        if (vcam != null)
-        {
-            noise = vcam.GetCinemachineComponent(CinemachineCore.Stage.Noise) as CinemachineBasicMultiChannelPerlin;
-            if (noise == null)
-            {
-                Debug.LogWarning("[CameraShakeController] No se encontró CinemachineBasicMultiChannelPerlin en la vcam.");
-                return;
-            }
-        }
-
-        if (noise != null)
-        {
-            originalAmplitude = noise.AmplitudeGain;
-            originalFrequency = noise.FrequencyGain;
-        }
+        // Setup Camera Shake
+        if (vcam == null) vcam = Object.FindFirstObjectByType<CinemachineCamera>();
+        if (vcam != null) noise = vcam.GetCinemachineComponent(CinemachineCore.Stage.Noise) as CinemachineBasicMultiChannelPerlin;
     }
 
     private void InitializeVFXCache()
     {
         armorRenderers = GetComponentsInChildren<MeshRenderer>();
         armorPropertyBlock = new MaterialPropertyBlock();
-
-        if (armorRenderers != null && armorRenderers.Length > 0)
+        if (armorRenderers.Length > 0 && armorRenderers[0].sharedMaterial.HasProperty("_EmissionColor"))
         {
-            Material mat = armorRenderers[0].sharedMaterial;
-            if (mat != null && mat.HasProperty("_EmissionColor"))
-            {
-                originalEmissionColor = mat.GetColor("_EmissionColor");
-            }
+            originalEmissionColor = armorRenderers[0].sharedMaterial.GetColor("_EmissionColor");
         }
     }
-
-    #endregion
 
     private void OnEnable()
     {
@@ -236,485 +182,342 @@ public class BloodKnightBoss : MonoBehaviour
         if (enemyHealth != null) enemyHealth.OnHealthChanged -= HandleEnemyHealthChange;
     }
 
-    private void OnDestroy()
+    private void HandleEnemyHealthChange(float newCurrent, float newMax)
     {
-        if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
-        if (enemyHealth != null) enemyHealth.OnHealthChanged -= HandleEnemyHealthChange;
+        currentHealth = newCurrent;
+        maxHealth = newMax;
     }
 
-    private void HandleEnemyDeath(GameObject enemy)
+    private void HandleEnemyDeath(GameObject g)
     {
-        if (enemy != gameObject) return;
-
-        isVulnerableToCounter = false;
-        isInLowHealthPhase = false;
-        showDebugGUI = false;
-
         StopAllCoroutines();
-
         DestroyAllInstantiatedEffects();
-
-        if (agent != null)
-        {
-            if (agent.enabled && agent.isOnNavMesh)
-            {
-                agent.isStopped = true;
-                agent.ResetPath();
-                agent.updatePosition = false;
-                agent.updateRotation = false;
-            }
-            else
-            {
-                agent.enabled = false;
-            }
-        }
-
+        if (agent != null) agent.enabled = false;
         if (animator != null) animator.SetTrigger("Die");
-        if (audioSource != null && deathSound != null) audioSource.PlayOneShot(deathSound);
-
         this.enabled = false;
     }
 
     private void DestroyAllInstantiatedEffects()
     {
-        foreach (GameObject effect in instantiatedEffects)
-        {
-            if (effect != null)
-            {
-                Destroy(effect);
-            }
-        }
-
+        foreach (var effect in instantiatedEffects) if (effect != null) Destroy(effect);
         instantiatedEffects.Clear();
     }
 
-    private void HandleEnemyHealthChange(float newCurrentHealth, float newMaxHealth)
-    {
-        currentHealth = newCurrentHealth;
-        maxHealth = newMaxHealth;
-    }
+    #region Main AI Loop (The Flow Chart)
 
-    #region AI System
-
-    private IEnumerator BossAI()
+    /// <summary>
+    /// Corrutina principal que maneja el Ciclo de 29 segundos.
+    /// </summary>
+    private IEnumerator BossFlowSequence()
     {
+        yield return new WaitForSeconds(1f); // Breve espera inicial
+
         while (currentHealth > 0)
         {
-            // Verificar fase de vida baja
-            if (!isInLowHealthPhase && currentHealth <= maxHealth * 0.25f)
+            CheckLowHPPhase();
+
+            if (!forceApocalipsisNext && Random.value < chargeProbability)
             {
-                isInLowHealthPhase = true;
-                ReportDebug("¡Dark Knight entró en fase de vida baja (25%)!", 1);
+                yield return StartCoroutine(ExecuteChargeAbility());
             }
 
-            // No hacer nada si está aturdido o cargando
-            if (currentState == BossState.Stunned || currentState == BossState.Charging)
-            {
-                yield return new WaitForSeconds(0.5f);
-                continue;
-            }
+            forceApocalipsisNext = false;
 
-            // Verificar jugador
-            if (player == null)
-            {
-                yield return new WaitForSeconds(0.5f);
-                continue;
-            }
+            yield return StartCoroutine(ExecuteApocalipsisSequence());
 
-            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+            yield return StartCoroutine(ExecutePositioningPhase());
 
-            // Perseguir si está lejos
-            if (distanceToPlayer > agent.stoppingDistance + 2f)
-            {
-                ChasePlayer();
-                yield return new WaitForSeconds(0.2f);
-                continue;
-            }
+            yield return StartCoroutine(ExecuteSodomaYGomorra());
 
-            // Detener movimiento al alcanzar rango de ataque
-            if (agent.hasPath && distanceToPlayer <= agent.stoppingDistance + 1f)
-            {
-                agent.ResetPath();
-                if (animator != null) animator.SetBool("IsMoving", false);
-            }
-
-            // Decidir ataque (si no está atacando actualmente)
-            if (currentState != BossState.Attacking)
-            {
-                // 10% de probabilidad de usar embestida aleatoriamente
-                if (UnityEngine.Random.value < 0.1f)
-                {
-                    currentAttackCoroutine = StartCoroutine(ExecuteChargeAbility());
-                    yield return currentAttackCoroutine;
-                    continue;
-                }
-
-                // Prioridad a Sodoma y Gomorra si está disponible
-                if (Time.time >= lastSodomaTime + sodomaCooldown)
-                {
-                    currentAttackCoroutine = StartCoroutine(ExecuteSodomaYGomorra());
-                    yield return currentAttackCoroutine;
-                }
-                // Necio Pecador si está disponible
-                else if (Time.time >= lastNecioPecadorTime + necioPecadorCooldown)
-                {
-                    currentAttackCoroutine = StartCoroutine(ExecuteNecioPecador());
-                    yield return currentAttackCoroutine;
-                }
-                // Si no, Apocalipsis
-                else
-                {
-                    currentAttackCoroutine = StartCoroutine(ExecuteApocalipsis());
-                    yield return currentAttackCoroutine;
-                }
-            }
-
-            yield return new WaitForSeconds(0.2f);
+            yield return StartCoroutine(ExecuteCooldownPhase());
         }
-
-        // Boss derrotado
-        bossAICoroutine = null;
     }
 
-    private void ChasePlayer()
+    private void CheckLowHPPhase()
     {
-        if (currentState == BossState.Attacking) return;
-
-        currentState = BossState.Chasing;
-        agent.isStopped = false;
-        agent.SetDestination(player.position);
-
-        if (animator != null)
+        if (!isInLowHealthPhase && currentHealth <= maxHealth * 0.25f)
         {
-            animator.SetBool("IsMoving", true);
+            isInLowHealthPhase = true;
+            ReportDebug("FASE DE VIDA BAJA: VELOCIDAD AUMENTADA", 1);
+
+            // Aplicar aumento de velocidad permanente
+            if (!speedBuffApplied)
+            {
+                agent.speed *= lowHPSpeedMultiplier;
+                if (animator != null) animator.speed *= 1.2f; // Acelerar animaciones ligeramente
+                speedBuffApplied = true;
+            }
         }
     }
 
     #endregion
 
-    #region Attack 1 - Sodoma y Gomorra
+    #region Apocalipsis Logic
+
+    private IEnumerator ExecuteApocalipsisSequence()
+    {
+        ReportDebug("ETAPA 1: APOCALIPSIS", 1);
+        currentState = BossState.Attacking;
+
+        float startTime = Time.time;
+        float endTime = startTime + apocalipsisDuration;
+        int dashesPerformed = 0;
+
+        // Dividir el tiempo total entre el numero de dashes para mantener ritmo
+        float timePerDash = apocalipsisDuration / apocalipsisTargetDashes;
+
+        if (animator != null) animator.SetTrigger("StartApocalipsis");
+
+        while (Time.time < endTime && dashesPerformed < apocalipsisTargetDashes)
+        {
+            agent.isStopped = false;
+            agent.SetDestination(player.position);
+            yield return new WaitForSeconds(0.4f);
+
+            agent.isStopped = true;
+            Vector3 targetPos = GetZigZagDashPosition();
+            targetPos.y = transform.position.y;
+
+            // Realizar dash rápido hacia la posición objetivo
+            yield return MoveToPositionFast(targetPos, 0.3f);
+
+            if (player != null)
+            {
+                Vector3 lookPos = player.position;
+                lookPos.y = transform.position.y;
+                transform.LookAt(lookPos);
+            }
+
+            float distToPlayer = Vector3.Distance(transform.position, player.position);
+
+            if (distToPlayer <= apocalipsisRange)
+            {
+                if (animator != null) animator.SetTrigger("Slash");
+                if (audioSource != null) audioSource.PlayOneShot(apocalipsisSlashSound);
+
+                SpawnSlashVFX();
+                DealApocalipsisDamage();
+
+                Vector3 retreatPos = transform.position - transform.forward * 2.5f;
+                yield return MoveToPositionFast(retreatPos, 0.25f);
+            }
+            else
+            {
+                yield return new WaitForSeconds(0.2f);
+            }
+
+            dashesPerformed++;
+
+            float expectedTime = startTime + (dashesPerformed * timePerDash);
+            float waitTime = expectedTime - Time.time;
+            if (waitTime > 0) yield return new WaitForSeconds(waitTime);
+        }
+
+        currentState = BossState.Idle;
+    }
+
+    private Vector3 GetZigZagDashPosition()
+    {
+        if (player == null) return transform.position;
+
+        Vector3 dirToPlayer = (player.position - transform.position).normalized;
+        Vector3 sideStep = Vector3.Cross(dirToPlayer, Vector3.up) * (Random.value > 0.5f ? 1 : -1);
+
+        // Intentar flanquear
+        return player.position + (dirToPlayer * -2f) + (sideStep * 3f);
+    }
+
+    private void DealApocalipsisDamage()
+    {
+        Collider[] hits = Physics.OverlapSphere(transform.position + transform.forward, apocalipsisRange);
+        foreach (var hit in hits)
+        {
+            if (hit.CompareTag("Player") && playerHealth != null)
+            {
+                ExecuteAttack(hit.gameObject, apocalipsisDamage);
+                break;
+            }
+        }
+    }
+
+    #endregion
+
+    #region Positioning Phase
+
+    private IEnumerator ExecutePositioningPhase()
+    {
+        ReportDebug("ETAPA 2: POSICIONAMIENTO", 1);
+
+        float timer = 0f;
+        agent.isStopped = false;
+
+        if (animator != null) animator.SetBool("IsMoving", true);
+
+        // Mantener distancia media durante 2 segundos
+        while (timer < positioningDuration)
+        {
+            if (player != null)
+            {
+                Vector3 direction = (transform.position - player.position).normalized;
+                Vector3 targetPos = player.position + direction * 7f; // Buscar estar a 7m
+                agent.SetDestination(targetPos);
+            }
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        agent.isStopped = true;
+        if (animator != null) animator.SetBool("IsMoving", false);
+    }
+
+    #endregion
+
+    #region Sodoma y Gomorra Logic
 
     private IEnumerator ExecuteSodomaYGomorra()
     {
-        ReportDebug("Ejecutando: Sodoma y Gomorra", 1);
-
+        ReportDebug("ETAPA 3: SODOMA Y GOMORRA", 1);
         currentState = BossState.Attacking;
-        agent.isStopped = true;
-        lastSodomaTime = Time.time;
 
-        Vector3 directionToPlayer = (player.position - transform.position).normalized;
-        directionToPlayer.y = 0;
-        transform.rotation = Quaternion.LookRotation(directionToPlayer);
+        Vector3 backwardPos = transform.position - transform.forward * sodomaBackwardDistance;
+        if (animator != null) animator.SetTrigger("Crouch"); // Animación de preparación
+        yield return MoveToPositionFast(backwardPos, 0.4f);
 
-        Vector3 startDashPosition = transform.position;
-
-        // FASE 1: Deslizarse hacia atrás y agacharse
-        Vector3 backwardPosition = transform.position - transform.forward * sodomaBackwardDistance;
-
-        if (animator != null) animator.SetTrigger("Crouch");
-
-        yield return MoveToPosition(backwardPosition, 0.5f);
-
-        // FASE 2: Carga (brillo verde, vulnerable a contraataque)
         StartArmorGlow();
-        if (audioSource != null && sodomaChargeSound != null) audioSource.PlayOneShot(sodomaChargeSound);
-        isVulnerableToCounter = true;
+        if (audioSource != null) audioSource.PlayOneShot(sodomaChargeSound);
 
         yield return new WaitForSeconds(sodomaChargeTime);
-
-        isVulnerableToCounter = false;
-        
         StopArmorGlow();
 
-        ReportDebug("Ha terminado de cargar 'Sodoma y Gomorra'.", 1);
-
-        if (currentState == BossState.Stunned) yield break;
-
         if (animator != null) animator.SetTrigger("DashSlash");
-        if (audioSource != null && sodomaAttackSound != null) audioSource.PlayOneShot(sodomaAttackSound);
+        if (audioSource != null) audioSource.PlayOneShot(sodomaAttackSound);
 
-        Vector3 endDashPosition = player.position;
-        endDashPosition.y = transform.position.y;
+        Vector3 dirToPlayer = (player.position - transform.position).normalized;
+        float stopDistance = 1.2f;
+        Vector3 strikePos = player.position - (dirToPlayer * stopDistance); // Detenerse un poco antes del jugador
+        strikePos.y = transform.position.y;
 
-        yield return MoveToPosition(endDashPosition, 0.5f);
+        yield return MoveToPositionFast(strikePos, 0.3f);
 
         PerformSodomaSlash();
-        SpawnGreenFireTrail(startDashPosition, endDashPosition);
+
+        SpawnGreenFireTrail(backwardPos, strikePos);
 
         yield return new WaitForSeconds(1f);
-
         currentState = BossState.Idle;
-        agent.isStopped = false;
-
-        ReportDebug("Sodoma y Gomorra completado", 1);
     }
 
     private void PerformSodomaSlash()
     {
-        // Detectar en semicírculo frontal
+        // Daño en cono frontal o área cercana
         Collider[] hits = Physics.OverlapSphere(transform.position, sodomaCutRange);
-
         foreach (Collider hit in hits)
         {
-            if (hit.CompareTag("Player"))
+            if (hit.CompareTag("Player") && playerHealth != null)
             {
-                Vector3 dirToPlayer = (hit.transform.position - transform.position).normalized;
-                float angle = Vector3.Angle(transform.forward, dirToPlayer);
-
-                // 180° de área (90° a cada lado)
-                if (angle <= 90f)
-                {
-                    if (playerHealth != null)
-                    {
-                        playerHealth.TakeDamage(sodomaDamage);
-                        ReportDebug($"Sodoma golpeó al jugador: {sodomaDamage} de daño", 1);
-                    }
-                }
+                ExecuteAttack(hit.gameObject, sodomaDamage);
+                break; // Solo dañar una vez al jugador
             }
         }
-    }
-
-    private void SpawnGreenFireTrail(Vector3 start, Vector3 end)
-    {
-        if (greenFireTrailPrefab == null) return;
-
-        GameObject trail = Instantiate(greenFireTrailPrefab);
-        instantiatedEffects.Add(trail);
-
-        Vector3 center = (start + end) / 2f;
-        trail.transform.position = center;
-
-        Vector3 direction = end - start;
-        trail.transform.rotation = Quaternion.LookRotation(direction);
-
-        float distance = direction.magnitude;
-        trail.transform.localScale = new Vector3(1f, 1f, distance);
-
-        // Configurar daño del rastro
-        FireTrail fireScript = trail.GetComponent<FireTrail>();
-        if (fireScript != null)
-        {
-            fireScript.DamagePerSecond = fireTrailDamagePerSecond;
-        }
-
-        Destroy(trail, 10f);
     }
 
     #endregion
 
-    #region Attack 2 - Apocalipsis
+    #region Cooldown Phase (Necio Pecador + Vulnerable)
 
-    private IEnumerator ExecuteApocalipsis()
+    private IEnumerator ExecuteCooldownPhase()
     {
-        ReportDebug("Ejecutando: Apocalipsis", 1);
+        ReportDebug("ETAPA 4: FASE COOLDOWN / RELLENO", 1);
 
-        currentState = BossState.Attacking;
-        agent.isStopped = true;
+        float phaseTimer = 0f;
 
-        if (animator != null) animator.SetTrigger("StartApocalipsis");
+        ReportDebug("Iniciando Necio Pecador", 1);
 
-        for (int i = 0; i < apocalipsisAttackCount; i++)
-        {
-            // Deslizamiento diagonal aleatorio alrededor del jugador
-            float angle = UnityEngine.Random.Range(0f, 360f);
-            Vector3 offset = Quaternion.Euler(0, angle, 0) * Vector3.forward * apocalipsisDashDistance;
-            Vector3 targetPos = player.position + offset;
-            targetPos.y = transform.position.y;
-
-            yield return MoveToPosition(targetPos, 0.3f);
-
-            // Rotar hacia el jugador
-            Vector3 dirToPlayer = (player.position - transform.position).normalized;
-            dirToPlayer.y = 0;
-            transform.rotation = Quaternion.LookRotation(dirToPlayer);
-
-            // Alternar entre estocada y corte
-            bool isThrust = (i % 2 == 0);
-
-            if (animator != null)
-            {
-                animator.SetTrigger(isThrust ? "Thrust" : "Slash");
-            }
-
-            if (audioSource != null && apocalipsisSlashSound != null)
-            {
-                audioSource.PlayOneShot(apocalipsisSlashSound);
-            }
-
-            // Crear VFX de corte verde
-            SpawnSlashVFX();
-
-            DealApocalipsisDamage();
-
-            yield return new WaitForSeconds(apocalipsisAttackInterval);
-        }
-
-        yield return new WaitForSeconds(0.5f);
-
-        currentState = BossState.Idle;
         agent.isStopped = false;
+        agent.speed = isInLowHealthPhase ? (moveSpeed * lowHPSpeedMultiplier * 0.8f) : (moveSpeed * 0.7f);
 
-        ReportDebug("Apocalipsis completado", 1);
-    }
+        float currentWarningTime = isInLowHealthPhase ? (necioPecadorWarningTime * 0.6f) : necioPecadorWarningTime;
 
-    public void DealApocalipsisDamage()
-    {
-        Vector3 attackCenter = transform.position + transform.forward * (apocalipsisRange / 2f);
-        Collider[] hits = Physics.OverlapSphere(attackCenter, apocalipsisRange / 1.5f);
-
-        foreach (Collider hit in hits)
+        while (phaseTimer < necioAttackWindow)
         {
-            if (hit.CompareTag("Player"))
+            // Movimiento: Si está lejos, se acerca. Si está cerca, orbita.
+            if (player != null)
             {
-                if (playerHealth != null)
+                float dist = Vector3.Distance(transform.position, player.position);
+                if (dist > 12f) agent.SetDestination(player.position);
+                else
                 {
-                    playerHealth.TakeDamage(apocalipsisDamage);
-                    ReportDebug($"Apocalipsis golpeó al jugador con OverlapSphere: {apocalipsisDamage} de daño", 1);
-
-                    break;
+                    // Orbitar lateralmente
+                    Vector3 orbit = transform.position + transform.right * 3f;
+                    agent.SetDestination(orbit);
                 }
             }
-        }
-    }
 
-    private void SpawnSlashVFX()
-    {
-        if (greenFireVFX != null && swordTransform != null)
-        {
-            ParticleSystem vfx = Instantiate(greenFireVFX, swordTransform.position, swordTransform.rotation);
-            instantiatedEffects.Add(vfx.gameObject);
-            vfx.Play();
-            Destroy(vfx.gameObject, 2f);
-        }
-    }
-
-    #endregion
-
-    #region Attack 3 - Necio Pecador
-
-    private IEnumerator ExecuteNecioPecador()
-    {
-        ReportDebug("Ejecutando: Necio Pecador", 1);
-
-        currentState = BossState.Attacking;
-        agent.isStopped = true;
-        lastNecioPecadorTime = Time.time;
-
-        float warningTime = isInLowHealthPhase ? necioPecadorWarningTimeLowHP : necioPecadorWarningTime;
-        float chainInterval = isInLowHealthPhase ?
-            (necioPecadorChainDurationLowHP / necioPecadorChainCount) :
-            (necioPecadorChainDuration / necioPecadorChainCount);
-
-        for (int i = 0; i < necioPecadorChainCount; i++)
-        {
-            // Gesto de invocación
             if (animator != null) animator.SetTrigger("SummonHand");
-            if (audioSource != null && necioPecadorSummonSound != null) audioSource.PlayOneShot(necioPecadorSummonSound);
+            if (audioSource != null) audioSource.PlayOneShot(necioPecadorSummonSound);
 
-            // Posición aleatoria cerca del jugador
-            Vector3 spawnPos = player.position + UnityEngine.Random.insideUnitSphere * 3f;
-            spawnPos.y = player.position.y;
-
-            // Spawn warning (círculo brillante en el suelo)
-            GameObject warning = SpawnNecioPecadorWarning(spawnPos);
-            if (warning != null) instantiatedEffects.Add(warning);
-
-            yield return new WaitForSeconds(warningTime);
-
-            // Destruir warning y spawnear mano
-            if (warning != null)
+            Vector3 rawTargetPos = player.position;
+            if (playerController != null)
             {
-                Destroy(warning);
+                rawTargetPos += playerController.velocity * 1.2f;
             }
 
-            SpawnSoulHand(spawnPos);
+            Vector3 finalTargetPos = GetGroundPosition(rawTargetPos);
 
-            yield return new WaitForSeconds(chainInterval - warningTime);
+            GameObject warning = SpawnNecioPecadorWarning(finalTargetPos, necioPecadorRadius);
+            yield return new WaitForSeconds(currentWarningTime);
+            if (warning != null) Destroy(warning);
+
+            SpawnSoulHand(finalTargetPos);
+
+            float interval = isInLowHealthPhase ? 1.5f : 2.5f;
+
+            float remainingWait = interval - currentWarningTime;
+            if (remainingWait > 0) yield return new WaitForSeconds(remainingWait);
+
+            phaseTimer += interval;
         }
 
-        yield return new WaitForSeconds(0.5f);
+        agent.speed = isInLowHealthPhase ? (moveSpeed * lowHPSpeedMultiplier) : moveSpeed;
+        agent.isStopped = true;
 
+        ReportDebug("NECIO PECADOR FINALIZADO. BOSS VULNERABLE", 1);
+        currentState = BossState.Vulnerable;
+
+        if (animator != null) animator.SetBool("IsTired", true);
+
+        // Aquí podría ir un feedback para indicar vulnerabilidad
+
+        yield return new WaitForSeconds(necioVulnerableWindow);
+
+        if (animator != null) animator.SetBool("IsTired", false);
         currentState = BossState.Idle;
-        agent.isStopped = false;
-
-        ReportDebug("Necio Pecador completado", 1);
-    }
-
-    private GameObject SpawnNecioPecadorWarning(Vector3 position)
-    {
-        if (necioPecadorWarningPrefab != null)
-        {
-            GameObject warning = Instantiate(necioPecadorWarningPrefab);
-
-            warning.transform.position = position;
-            warning.transform.localScale = new Vector3(necioPecadorRadius * 2f, 0.01f, necioPecadorRadius * 2f);
-
-            return warning;
-        }
-        else
-        {
-            ReportDebug("El prefab 'necioPecadorWarningPrefab' no está asignado.", 3);
-            return null;
-        }
-    }
-
-    private void SpawnSoulHand(Vector3 position)
-    {
-        if (soulHandPrefab != null)
-        {
-            GameObject hand = Instantiate(soulHandPrefab, position, Quaternion.identity);
-            instantiatedEffects.Add(hand);
-
-            SoulHand handScript = hand.GetComponent<SoulHand>();
-            if (handScript != null)
-            {
-                handScript.Initialize(necioPecadorDamage, necioPecadorRadius);
-            }
-            else
-            {
-                ReportDebug("El prefab 'soulHandPrefab' no tiene el componente SoulHand adjunto.", 3);
-                Destroy(hand);
-            }
-
-            if (audioSource != null && necioPecadorExplosionSound != null)
-            {
-                audioSource.PlayOneShot(necioPecadorExplosionSound);
-            }
-        }
     }
 
     #endregion
 
-    #region Special Ability - Embestida del Fornido
+    #region Special Ability: Embestida del Fornido
 
     private IEnumerator ExecuteChargeAbility()
     {
-        ReportDebug("Ejecutando: Embestida del Fornido", 1);
-
+        ReportDebug("EJECUTANDO EMBESTIDA DEL FORNIDO", 1);
         currentState = BossState.Charging;
         agent.isStopped = true;
-        isCharging = true;
 
-        // FASE 1: Arrodillarse
         if (animator != null) animator.SetTrigger("KneelCharge");
+        yield return new WaitForSeconds(1.5f);
 
-        // Guardar espada
-        yield return new WaitForSeconds(chargeAbilityKneelingTime - 1f);
-
-        // FASE 2: Alzar mirada
         StartEyeGlow();
 
-        yield return new WaitForSeconds(1f);
-
-        // FASE 3: Embiste
-        chargeDirection = (player.position - transform.position).normalized;
-        chargeDirection.y = 0;
-        transform.rotation = Quaternion.LookRotation(chargeDirection);
+        if (player != null)
+        {
+            Vector3 chargeDir = (player.position - transform.position).normalized;
+            chargeDir.y = 0; // Mantener en plano horizontal
+            transform.rotation = Quaternion.LookRotation(chargeDir);
+        }
 
         if (animator != null) animator.SetTrigger("ChargeRun");
-        if (audioSource != null && chargeAbilitySound != null) audioSource.PlayOneShot(chargeAbilitySound);
-
-        if (vcam != null && noise != null) ShakeCamera(defaultDuration, defaultAmplitude, defaultFrequency);
+        if (audioSource != null) audioSource.PlayOneShot(chargeAbilitySound);
 
         GameObject chargeTrail = null;
         if (darkWindTrailPrefab != null)
@@ -725,38 +528,32 @@ public class BloodKnightBoss : MonoBehaviour
             if (chargeTrail != null) Destroy(chargeTrail, 3f);
         }
 
-        StopEyeGlow();
-
-        // Movimiento de carga
         float chargeTime = 0f;
-        float maxChargeTime = 3f;
-        bool hitSomething = false;
-        Vector3 startPos = transform.position;
+        bool hitPlayer = false;
 
-        //agent.velocity = chargeDirection * chargeAbilitySpeed;
-
-        while (chargeTime < maxChargeTime && !hitSomething)
+        while (chargeTime < 2.0f && !hitPlayer)
         {
-            agent.Move(chargeDirection * chargeAbilitySpeed * Time.deltaTime);
+            agent.Move(transform.forward * chargeAbilitySpeed * Time.deltaTime);
 
-            // Detectar colisión con jugador
-            Collider[] hits = Physics.OverlapSphere(transform.position + transform.forward * 3, 3f);
-            foreach (Collider hit in hits)
+            // Detectar colisión con Jugador
+            Collider[] hits = Physics.OverlapSphere(transform.position + transform.forward * 1.5f, 1.5f);
+            foreach (Collider col in hits)
             {
-                if (hit.CompareTag("Player"))
+                if (col.CompareTag("Player"))
                 {
-                    hitSomething = true;
-                    PerformChargeHit(hit.gameObject);
-                    ReportDebug("¡Embestida golpeó al jugador!", 1);
+                    hitPlayer = true;
+                    ApplyEmbestidaEffect(col.gameObject);
                     break;
                 }
             }
 
-            // Detectar colisión con paredes
-            if (Physics.Raycast(transform.position, chargeDirection, 1f, LayerMask.GetMask("Wall")))
+            // Detectar Pared (Frenar)
+            Vector3 boxCenter = transform.position + Vector3.up * 3f;
+            Vector3 boxSize = new Vector3(1.5f, 3f, 1.3f);
+
+            if (Physics.BoxCast(boxCenter, boxSize, transform.forward, transform.rotation, 1.5f, chargeObstacleLayers))
             {
-                ReportDebug("Embestida chocó contra pared", 1);
-                hitSomething = true;
+                ReportDebug("Embestida choco con obstaculo", 1);
                 break;
             }
 
@@ -764,464 +561,283 @@ public class BloodKnightBoss : MonoBehaviour
             yield return null;
         }
 
+        StopEyeGlow();
+
         if (chargeTrail != null) Destroy(chargeTrail);
 
-        agent.ResetPath();
-
-        // FASE 4: Recuperación
-        if (hitSomething && playerHealth != null && playerHealth.GetComponent<CharacterController>() != null)
+        if (hitPlayer)
         {
-            // Si golpeó al jugador
-            ReportDebug("Recuperación rápida tras golpear", 1);
+            ReportDebug("Embestida conectó. Encadenando Apocalipsis", 1);
+            forceApocalipsisNext = true; // Forzar Apocalipsis en el siguiente ciclo
             yield return new WaitForSeconds(0.5f);
         }
         else
         {
-            // No golpeó nada, aturdirse
+            // Aturdirse brevemente por fallar
             if (animator != null) animator.SetTrigger("Stunned");
-
-            SpawnStunVFX();
-
-            if (audioSource != null && stunSound != null)
-            {
-                audioSource.PlayOneShot(stunSound);
-            }
-
-            yield return new WaitForSeconds(chargeAbilityRecoveryTime);
+            yield return new WaitForSeconds(1.5f);
         }
 
-        isCharging = false;
         currentState = BossState.Idle;
-        agent.isStopped = false;
-
-        ReportDebug("Embestida del Fornido completada", 1);
     }
 
-    private void PerformChargeHit(GameObject target)
+    private void ApplyEmbestidaEffect(GameObject playerObj)
     {
-        // Aplicar daño
-        PlayerHealth targetHealth = target.GetComponent<PlayerHealth>();
-        if (targetHealth != null)
+        PlayerHealth ph = playerObj.GetComponent<PlayerHealth>();
+        if (ph != null)
         {
-            targetHealth.TakeDamage(chargeAbilityDamage);
-            ReportDebug($"Daño de embestida aplicado: {chargeAbilityDamage}", 1);
+            ph.ApplyStun(playerStunDuration); 
+            ReportDebug($"Jugador aturdido por Embestida durante {playerStunDuration}s", 1);
         }
 
-        // Aplicar knockback gradual con detección de paredes
-        CharacterController cc = target.GetComponent<CharacterController>();
-        if (cc != null)
-        {
-            StartCoroutine(ApplyKnockbackToPlayer(cc, target.transform));
-        }
-
-        // Aturdir jugador (necesitarías implementar esto en PlayerHealth)
-        // targetHealth.ApplyStun(chargeAbilityStunDuration);
-
-        // Estela de viento
-        SpawnWindTrail(target.transform.position);
-    }
-
-    private IEnumerator ApplyKnockbackToPlayer(CharacterController cc, Transform targetTransform)
-    {
-        if (cc == null || targetTransform == null)
-        {
-            ReportDebug("CharacterController o Transform nulo en knockback", 2);
-            yield break;
-        }
-
-        Vector3 pushDir = (targetTransform.position - transform.position).normalized;
-        pushDir.y = 0; // Solo empujar horizontalmente
-
-        float totalForce = chargeAbilityKnockbackForce;
-        float appliedForce = 0f;
-        float pushSpeed = 20f; // Velocidad del empuje
-
-        ReportDebug($"Iniciando knockback - Dirección: {pushDir}, Fuerza total: {totalForce}", 1);
-
-        while (appliedForce < totalForce)
-        {
-            // Verificar que los componentes sigan existiendo
-            if (cc == null || targetTransform == null)
-            {
-                ReportDebug("Knockback interrumpido - componente destruido", 2);
-                break;
-            }
-
-            float forceThisFrame = pushSpeed * Time.deltaTime;
-            Vector3 movement = pushDir * forceThisFrame;
-
-            // VERIFICACIÓN 1: Raycast preventivo para detectar paredes adelante
-            float checkDistance = forceThisFrame + cc.radius + 0.2f;
-            if (Physics.Raycast(targetTransform.position, pushDir, checkDistance, LayerMask.GetMask("Wall", "Default")))
-            {
-                ReportDebug("Knockback detenido - pared detectada por Raycast", 1);
-                break;
-            }
-
-            // VERIFICACIÓN 2: Aplicar movimiento y verificar colisión mediante CollisionFlags
-            CollisionFlags flags = cc.Move(movement);
-
-            // Si colisionó con algo lateral (pared), detener el empuje
-            if ((flags & CollisionFlags.Sides) != 0)
-            {
-                ReportDebug("Knockback detenido - colisión lateral detectada", 1);
-                break;
-            }
-
-            appliedForce += forceThisFrame;
-            yield return null;
-        }
-
-        ReportDebug($"Knockback completado - Fuerza aplicada: {appliedForce}/{totalForce}", 1);
-    }
-
-    private void SpawnWindTrail(Vector3 position)
-    {
-        if (darkWindTrailPrefab != null)
-        {
-            GameObject trail = Instantiate(darkWindTrailPrefab, position, Quaternion.identity);
-            Destroy(trail, 2f);
-        }
-    }
-
-    private void SpawnStunVFX()
-    {
         if (stunEffectPrefab != null)
         {
-            GameObject stunEffect = Instantiate(stunEffectPrefab, transform.position + Vector3.up * 4f, Quaternion.identity, transform);
-            instantiatedEffects.Add(stunEffect);
-
-            stunEffect.transform.localScale = Vector3.one * 0.5f;
-
-            StartCoroutine(DestroyStunEffect(stunEffect, chargeAbilityRecoveryTime));
+            Instantiate(stunEffectPrefab, playerObj.transform.position + Vector3.up * 2, Quaternion.identity, playerObj.transform);
         }
-    }
-
-    private IEnumerator DestroyStunEffect(GameObject effect, float duration)
-    {
-        yield return new WaitForSeconds(duration);
-        if (effect != null)
-        {
-            Destroy(effect);
-        }
-    }
-
-    public void ShakeCamera(float duration, float amplitude, float frequency, bool useUnscaledTime = false)
-    {
-        if (shakeCoroutine != null) StopCoroutine(shakeCoroutine);
-        shakeCoroutine = StartCoroutine(ShakeRoutine(duration, amplitude, frequency, useUnscaledTime));
-    }
-
-    private IEnumerator ShakeRoutine(float duration, float amplitude, float frequency, bool useUnscaledTime)
-    {
-        // Guardar originales
-        float ampBefore = originalAmplitude;
-        float freqBefore = originalFrequency;
-
-        // Aplicar requested
-        noise.AmplitudeGain = amplitude;
-        noise.FrequencyGain = frequency;
-
-        float elapsed = 0f;
-        float dt = 0f;
-
-        // Si duration <= fadeOutTime, hacemos un único fade
-        float localFade = Mathf.Min(fadeOutTime, duration * 0.5f);
-
-        // Wait loop respetando unscaled o scaled time
-        while (elapsed < duration)
-        {
-            dt = useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
-            elapsed += dt;
-
-            // Si estamos en la fase final, atenuar la amplitude suavemente
-            if (elapsed > duration - localFade)
-            {
-                float t = (elapsed - (duration - localFade)) / localFade; // 0..1
-                float currentAmp = Mathf.Lerp(amplitude, ampBefore, t); // vuelve hacia el valor previo (normalmente 0)
-                noise.AmplitudeGain = currentAmp;
-
-                // opcional: también atenuar frecuencia si querés (aquí lo dejamos sin cambios o podrías usar same lerp)
-                // noise.m_FrequencyGain = Mathf.Lerp(frequency, freqBefore, t);
-            }
-
-            yield return null;
-        }
-
-        noise.AmplitudeGain = originalAmplitude;
-        noise.FrequencyGain = originalFrequency;
-
-        shakeCoroutine = null;
     }
 
     #endregion
 
-    #region VFX Methods
+    #region Utility & VFX Methods
+
+    private void ExecuteAttack(GameObject target, float damageAmount)
+    {
+        if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
+        {
+            // Verificar si el ataque es bloqueado
+            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(transform.position))
+            {
+                float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
+
+                if (remainingDamage > 0f)
+                {
+                    health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
+                }
+
+                ReportDebug("Ataque bloqueado por el jugador.", 1);
+                return;
+            }
+
+            health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+        }
+        else if (target.TryGetComponent<PlayerHealth>(out var healthOnly))
+        {
+            healthOnly.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+        }
+    }
+
+    private IEnumerator MoveToPositionFast(Vector3 target, float duration)
+    {
+        // Mover manualmente el agente sin pathfinding para movimientos rápidos/dashes
+        Vector3 start = transform.position;
+        float elapsed = 0;
+        while (elapsed < duration)
+        {
+            // Usar Lerp para movimiento lineal (dash)
+            Vector3 nextPos = Vector3.Lerp(start, target, elapsed / duration);
+
+            // Validar con NavMesh para no salir del mapa
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(nextPos, out hit, 2.0f, NavMesh.AllAreas))
+            {
+                agent.Warp(hit.position);
+            }
+            else
+            {
+                transform.position = nextPos;
+            }
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+    }
+
+    private Vector3 GetGroundPosition(Vector3 targetPos)
+    {
+        // Opción A: Raycast (Más preciso visualmente para terrenos irregulares)
+        // Lanza un rayo desde 2 metros arriba hacia abajo buscando la capa "Ground" o "Default"
+        if (Physics.Raycast(targetPos + Vector3.up * 2f, Vector3.down, out RaycastHit hit, 5f, LayerMask.GetMask("Default", "Ground", "Terrain")))
+        {
+            return hit.point + Vector3.up * 0.025f; // Pequeño offset para evitar que la textura parpadee
+        }
+
+        // Opción B: NavMesh (Si el raycast falla, busca el punto navegable más cercano)
+        if (NavMesh.SamplePosition(targetPos, out NavMeshHit navHit, 2.0f, NavMesh.AllAreas))
+        {
+            return navHit.position + Vector3.up * 0.02f;
+        }
+
+        // Fallback: Si todo falla, mantener la altura del Boss pero asegurar que no flote tanto
+        return new Vector3(targetPos.x, transform.position.y + 0.02f, targetPos.z);
+    }
+
+    private void SpawnGreenFireTrail(Vector3 start, Vector3 end)
+    {
+        if (greenFireTrailPrefab == null) return;
+
+        Vector3 center = (start + end) / 2f;
+        float dist = Vector3.Distance(start, end);
+
+        GameObject trail = Instantiate(greenFireTrailPrefab, center, Quaternion.LookRotation(end - start));
+        // Ajustar escala Z para cubrir la distancia
+        trail.transform.localScale = new Vector3(1, 1, dist);
+        instantiatedEffects.Add(trail);
+
+        FireTrail ft = trail.GetComponent<FireTrail>();
+        if (ft != null) ft.DamagePerSecond = fireTrailDamagePerSecond;
+    }
+
+    private GameObject SpawnNecioPecadorWarning(Vector3 pos, float radius)
+    {
+        if (necioPecadorWarningPrefab == null) return null;
+        GameObject warningObj = Instantiate(necioPecadorWarningPrefab, pos, Quaternion.identity);
+        warningObj.transform.localScale = new Vector3(radius * 2, 0.1f, radius * 2); // Ajustar tamaño visual
+        instantiatedEffects.Add(warningObj);
+        return warningObj;
+    }
+
+    private void SpawnSoulHand(Vector3 pos)
+    {
+        if (soulHandPrefab == null) return;
+        GameObject hand = Instantiate(soulHandPrefab, pos, Quaternion.identity);
+        instantiatedEffects.Add(hand);
+
+        SoulHand sh = hand.GetComponent<SoulHand>();
+        if (sh != null) sh.Initialize(necioPecadorDamage, necioPecadorRadius);
+
+        if (audioSource != null) audioSource.PlayOneShot(necioPecadorExplosionSound);
+    }
+
+    private void SpawnSlashVFX()
+    {
+        if (greenFireVFX != null && swordTransform != null)
+        {
+            ParticleSystem vfx = Instantiate(greenFireVFX, swordTransform.position, swordTransform.rotation);
+            instantiatedEffects.Add(vfx.gameObject);
+            vfx.Play();
+            Destroy(vfx.gameObject, 1f);
+        }
+    }
 
     private void StartArmorGlow()
     {
-        if (armorGlowVFX != null)
-        {
-            armorGlowVFX.Play();
-        }
-
-        // Emisión verde en la armadura
-        ApplyArmorEmission(Color.green * 2f);
+        if (armorGlowVFX != null) armorGlowVFX.Play();
+        ApplyArmorEmission(Color.green * 3f);
     }
 
     private void StopArmorGlow()
     {
-        if (armorGlowVFX != null)
-        {
-            armorGlowVFX.Stop();
-        }
-
-        // Restaurar emisión original
+        if (armorGlowVFX != null) armorGlowVFX.Stop();
         ApplyArmorEmission(originalEmissionColor);
     }
 
-    private void ApplyArmorEmission(Color emissionColor)
+    private void ApplyArmorEmission(Color c)
     {
-        if (armorRenderers == null || armorPropertyBlock == null) return;
-
-        foreach (MeshRenderer renderer in armorRenderers)
+        if (armorRenderers == null) return;
+        foreach (var r in armorRenderers)
         {
-            if (renderer == null) continue;
-
-            renderer.GetPropertyBlock(armorPropertyBlock);
-            armorPropertyBlock.SetColor("_EmissionColor", emissionColor);
-            renderer.SetPropertyBlock(armorPropertyBlock);
-
-            Material[] materials = renderer.sharedMaterials;
-            foreach (Material mat in materials)
-            {
-                if (mat != null && mat.HasProperty("_EmissionColor"))
-                {
-                    mat.EnableKeyword("_EMISSION");
-                }
-            }
+            r.GetPropertyBlock(armorPropertyBlock);
+            armorPropertyBlock.SetColor("_EmissionColor", c);
+            r.SetPropertyBlock(armorPropertyBlock);
         }
     }
 
-    private void StartEyeGlow()
-    {
-        ReportDebug("Ojos brillando en rojo", 1);
+    private void StartEyeGlow() 
+    { 
+        //Implementar si hay material de ojos
     }
 
     private void StopEyeGlow()
     {
-        ReportDebug("Ojos dejaron de brillar", 1);
-    }
-
-    #endregion
-
-    #region Counter-Attack System
-
-    public void OnPlayerCounterAttack()
-    {
-        //if (!isVulnerableToCounter)
-        //{
-        //    ReportDebug("No vulnerable a contraataque en este momento", 1);
-        //    return;
-        //}
-
-        //if (stunCoroutine != null)
-        //{
-        //    ReportDebug("Ya está aturdido", 1);
-        //    return;
-        //}
-
-        //stunCoroutine = StartCoroutine(GetStunned());
-    }
-
-    private IEnumerator GetStunned()
-    {
-        ReportDebug("¡Dark Knight aturdido por contraataque!", 1);
-        
-        SpawnStunVFX();
-
-        currentState = BossState.Stunned;
-        isVulnerableToCounter = false;
-
-        if (currentAttackCoroutine != null)
-        {
-            StopCoroutine(currentAttackCoroutine);
-            currentAttackCoroutine = null;
-        }
-
-        if (agent.enabled && agent.isOnNavMesh)
-        {
-            agent.isStopped = true;
-            agent.ResetPath();
-            agent.velocity = Vector3.zero;
-        }
-
-        StopArmorGlow();
-
-        if (animator != null)
-        {
-            animator.SetTrigger("Stunned");
-            animator.ResetTrigger("DashSlash");
-            animator.ResetTrigger("StartApocalipsis");
-            animator.ResetTrigger("SummonHand");
-            animator.ResetTrigger("KneelCharge");
-            animator.ResetTrigger("ChargeRun");
-            animator.SetBool("IsMoving", false);
-        }
-
-        if (audioSource != null && stunSound != null)
-        {
-            audioSource.PlayOneShot(stunSound);
-        }
-
-        // Esperar duración del stun
-        yield return new WaitForSeconds(sodomaStunDuration);
-
-        ReportDebug("Iniciando recuperación del stun...", 1);
-
-        currentState = BossState.Idle;
-
-        if (animator != null)
-        {
-            animator.ResetTrigger("Stunned");
-            animator.SetBool("IsMoving", false);
-            animator.Play("Idle", 0, 0f);
-        }
-
-        if (agent.enabled && agent.isOnNavMesh)
-        {
-            agent.ResetPath();
-            agent.velocity = Vector3.zero;
-            agent.isStopped = false;
-
-            ReportDebug($"Agent reactivado - isStopped: {agent.isStopped}, enabled: {agent.enabled}", 1);
-        }
-
-        lastSodomaTime = Time.time;
-        //stunCoroutine = null;
-        ResynchronizeAgent();
-
-        ReportDebug("Dark Knight recuperado del aturdimiento", 1);
-    }
-
-    #endregion
-
-    #region Utility Coroutines & Counter-Attack
-
-    private IEnumerator MoveToPosition(Vector3 target, float duration)
-    {
-        // agent.enabled = false; 
-
-        float time = 0;
-        Vector3 startPosition = transform.position;
-
-        while (time < duration)
-        {
-            Vector3 currentPos = Vector3.Lerp(startPosition, target, time / duration);
-            Vector3 movement = currentPos - transform.position;
-
-            agent.Move(movement);
-
-            time += Time.deltaTime;
-            yield return null;
-        }
-
-        agent.Move(target - transform.position);
-
-        ResynchronizeAgent();
-
-        yield return null;
-    }
-
-    private void ResynchronizeAgent()
-    {
-        Vector3 samplePosition = transform.position - new Vector3(0, agent.baseOffset, 0);
-
-        if (NavMesh.SamplePosition(samplePosition, out NavMeshHit hit, 2.0f, NavMesh.AllAreas))
-        {
-            if (!agent.enabled) agent.enabled = true;
-
-            agent.Warp(hit.position);
-            agent.isStopped = false;
-            agent.ResetPath();
-
-            ReportDebug($"Agente resincronizado en NavMesh en la posición {hit.position}", 1);
-        }
-        else
-        {
-            ReportDebug($"FALLO CRÍTICO: No se encontró NavMesh cerca de {transform.position} para resincronizar.", 3);
-        }
+        //Restaurar material de ojos
     }
 
     #endregion
 
     #region Debug
 
-    private void OnDrawGizmos()
-    {
-        // Sodoma y Gomorra range
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, sodomaCutRange);
-
-        // Apocalipsis range
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, apocalipsisRange);
-
-        // Apocalipsis attack area (semicírculo frontal)
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position + transform.forward * (apocalipsisRange / 2f), apocalipsisRange / 1.5f);
-
-        // Necio Pecador radius
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, necioPecadorRadius);
-
-        // área de detección de embestida
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position + transform.forward * 1.5f, 3f);
-
-        // Forward direction
-        Gizmos.color = Color.blue;
-        Gizmos.DrawRay(transform.position, transform.forward * 5f);
-
-        // Charge direction
-        if (isCharging)
-        {
-            Gizmos.color = Color.magenta;
-            Gizmos.DrawRay(transform.position, chargeDirection * 10f);
-        }
-    }
-
     private void OnGUI()
     {
         if (!showDebugGUI) return;
 
-        GUILayout.BeginArea(new Rect(10, 10, 300, 400));
-        GUILayout.Box("Dark Knight Debug");
+        GUILayout.BeginArea(new Rect(10, 10, 300, 220));
+        GUILayout.Box("Dark Knight AI State");
+        GUILayout.Label($"Health: {currentHealth}/{maxHealth} ({(currentHealth / maxHealth) * 100:F1}%)");
+        GUILayout.Label($"State: {currentState}");
+        GUILayout.Label($"Low HP Phase: {isInLowHealthPhase}");
+        GUILayout.Label($"Speed Multiplier: {(speedBuffApplied ? lowHPSpeedMultiplier : 1.0f)}x");
 
-        GUILayout.Label($"Estado: {currentState}");
-        GUILayout.Label($"Vida: {currentHealth:F0}/{maxHealth:F0}");
-        GUILayout.Label($"Fase Baja HP: {isInLowHealthPhase}");
-        GUILayout.Label($"Vulnerable: {isVulnerableToCounter}");
-        GUILayout.Label($"Cargando: {isCharging}");
+        if (forceApocalipsisNext)
+            GUILayout.Label("WARNING: Next Cycle Forced -> Apocalipsis");
+
+        GUILayout.EndArea();
+    }
+
+    private void OnDrawGizmos()
+    {
+        Color stateColor = currentState switch
+        {
+            BossState.Attacking => Color.red,
+            BossState.Vulnerable => Color.green,
+            BossState.Charging => new Color(1f, 0.5f, 0f),
+            BossState.Stunned => Color.yellow,
+            BossState.Chasing => Color.blue,
+            _ => Color.white
+        };
+
+        Gizmos.color = stateColor;
+
+        Gizmos.color = new Color(1f, 0.92f, 0.016f, 0.3f);
+        Gizmos.DrawWireSphere(transform.position, apocalipsisRange);
+
+        Gizmos.color = new Color(1f, 0f, 0f, 0.1f);
+        Gizmos.DrawSphere(transform.position, sodomaCutRange);
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, sodomaCutRange);
+
+        Vector3 backwardPos = transform.position - transform.forward * sodomaBackwardDistance;
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawLine(transform.position, backwardPos);
+        Gizmos.DrawWireSphere(backwardPos, 0.3f);
 
         if (player != null)
         {
-            float dist = Vector3.Distance(transform.position, player.position);
-            GUILayout.Label($"Distancia: {dist:F2}");
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawLine(transform.position, player.position);
+
+            Vector3 dirToPlayer = (player.position - transform.position).normalized;
+            Vector3 stopPos = player.position - (dirToPlayer * 1.2f);
+
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(stopPos, 0.5f);
+            Gizmos.DrawLine(player.position, stopPos);
         }
 
-        GUILayout.Label($"Cooldowns:");
-        GUILayout.Label($"- Sodoma: {Mathf.Max(0, sodomaCooldown - (Time.time - lastSodomaTime)):F1}s");
-        GUILayout.Label($"- Necio: {Mathf.Max(0, necioPecadorCooldown - (Time.time - lastNecioPecadorTime)):F1}s");
+        if (currentState == BossState.Charging || currentState == BossState.Idle)
+        {
+            Gizmos.color = new Color(0.5f, 0f, 1f, 0.5f);
+            Matrix4x4 rotationMatrix = Matrix4x4.TRS(transform.position + Vector3.up * 1.5f, transform.rotation, transform.lossyScale);
+            Gizmos.matrix = rotationMatrix;
+            Gizmos.DrawWireCube(Vector3.forward * 1.5f, new Vector3(3f, 3f, 3f));
+            Gizmos.matrix = Matrix4x4.identity;
+        }
 
-        GUILayout.EndArea();
+#if UNITY_EDITOR
+        GUIStyle style = new GUIStyle();
+        style.normal.textColor = stateColor;
+        style.fontSize = 15;
+        style.fontStyle = FontStyle.Bold;
+        style.alignment = TextAnchor.MiddleCenter;
+
+        UnityEditor.Handles.Label(transform.position + Vector3.up * 3.5f, $"{currentState}\nHP: {currentHealth}", style);
+#endif
     }
 
     #endregion
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     /// <summary> 
-    /// Función de depuración para reportar mensajes en la consola de Unity. 
+    /// Funcipn de depuracion para reportar mensajes en la consola de Unity. 
     /// </summary> 
     /// <<param name="message">Mensaje a reportar.</param> >
     /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>

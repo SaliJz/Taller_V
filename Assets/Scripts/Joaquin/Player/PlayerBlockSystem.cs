@@ -19,6 +19,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     [SerializeField] private Animator playerAnimator;
 
     [Header("Core Configuration")]
+    [SerializeField] private Transform shieldForwardOverride = null;
     [SerializeField] private bool blockingEnabled = true;
     [Tooltip("Ángulo frontal de bloqueo (en grados).")]
     [SerializeField, Range(0f, 180f)] private float frontBlockAngle = 150f;
@@ -123,6 +124,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     private PlayerMovement playerMovement;
     private PlayerHealth playerHealth;
     private PlayerShieldController playerShieldController;
+    private PlayerCombatActionManager combatActionManager;
     private Camera mainCamera;
 
     public bool IsBlocking { get; private set; }
@@ -167,6 +169,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         playerMovement = GetComponent<PlayerMovement>();
         playerHealth = GetComponent<PlayerHealth>();
         playerShieldController = GetComponent<PlayerShieldController>();
+        combatActionManager = GetComponent<PlayerCombatActionManager>();
         audioSource = GetComponent<AudioSource>();
         mainCamera = Camera.main;
 
@@ -285,6 +288,11 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
     private void StartBlocking()
     {
+        if (combatActionManager != null)
+        {
+            combatActionManager.InterruptCombatActions();
+        }
+
         IsBlocking = true;
         if (playerAnimator != null) playerAnimator.SetBool("Block", true);
 
@@ -507,12 +515,20 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         if (!IsBlocking) return false;
 
         // Calcular dirección hacia el atacante
-        Vector3 toAttacker = attackerPosition - transform.position;
+        Vector3 toAttacker = attackerPosition - GetShieldPosition();
         toAttacker.y = 0;
+
+        // Si el atacante está superpuesto, considerar como bloqueable
+        if (toAttacker.sqrMagnitude < 0.1f)
+        {
+            if (debugMode) ReportDebug("Atacante superpuesto (distancia ~0). Bloqueo exitoso por defecto.", 1);
+            return true;
+        }
+
         toAttacker.Normalize();
 
         // Dirección frontal del escudo
-        Vector3 shieldForward = transform.forward;
+        Vector3 shieldForward = GetShieldForward();
         shieldForward.y = 0;
         shieldForward.Normalize();
 
@@ -527,6 +543,24 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         }
 
         return canBlock;
+    }
+
+    private Vector3 GetShieldPosition()
+    {
+        if (shieldForwardOverride != null)
+        {
+            return shieldForwardOverride.position;
+        }
+        return transform.position;
+    }
+
+    private Vector3 GetShieldForward()
+    {
+        if (shieldForwardOverride != null)
+        {
+            return shieldForwardOverride.forward;
+        }
+        return transform.forward;
     }
 
     /// <summary>
@@ -574,9 +608,20 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
         ReportDebug($"Ataque bloqueado: {incomingDamage} daño absorbido. Durabilidad: {currentDurability}/{maxDurability}", 1);
 
-        if (currentDurability <= 0)
+        if (currentDurability < 0)
         {
-            currentDurability = 0;
+            // El escudo se rompió y hubo exceso de daño
+            float leakageDamage = Mathf.Abs(currentDurability); // Convertir el negativo en positivo
+
+            currentDurability = 0; // Resetear visualmente a 0
+            BreakBlock();
+
+            // Devolver el daño sobrante para que se lo aplique a la vida
+            return leakageDamage;
+        }
+        else if (currentDurability == 0)
+        {
+            // El escudo se rompió exacto, sin daño sobrante
             BreakBlock();
             return 0f;
         }
@@ -1059,26 +1104,35 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         // Dibujar ángulo de bloqueo
         Gizmos.color = IsBlocking ? Color.green : Color.yellow;
 
-        Vector3 forward = transform.forward;
+        // Dirección frontal del escudo
+        Vector3 forward = GetShieldForward();
+        if (forward.sqrMagnitude < 0.001f) forward = transform.forward;
+        forward.Normalize();
+
+        Vector3 origin = GetShieldPosition();
+        float radius = 2f;
         float halfAngle = frontBlockAngle * 0.5f;
 
-        Vector3 leftBoundary = Quaternion.Euler(0, -halfAngle, 0) * forward * 2f;
-        Vector3 rightBoundary = Quaternion.Euler(0, halfAngle, 0) * forward * 2f;
+        // Líneas del cono
+        Vector3 leftDir = Quaternion.Euler(0, -halfAngle, 0) * forward;
+        Vector3 rightDir = Quaternion.Euler(0, halfAngle, 0) * forward;
 
-        Gizmos.DrawLine(transform.position, transform.position + forward * 2f);
-        Gizmos.DrawLine(transform.position, transform.position + leftBoundary);
-        Gizmos.DrawLine(transform.position, transform.position + rightBoundary);
+        Gizmos.DrawLine(origin, origin + forward * radius);
+        Gizmos.DrawLine(origin, origin + leftDir * radius);
+        Gizmos.DrawLine(origin, origin + rightDir * radius);
 
         // Dibujar arco
-        int segments = 20;
-        Vector3 prevPoint = transform.position + leftBoundary;
+        int segments = 15;
+        Vector3 prevPoint = origin + leftDir * radius;
         for (int i = 1; i <= segments; i++)
         {
-            float angle = Mathf.Lerp(-halfAngle, halfAngle, i / (float)segments);
-            Vector3 dir = Quaternion.Euler(0, angle, 0) * forward;
-            Vector3 point = transform.position + dir * 2f;
-            Gizmos.DrawLine(prevPoint, point);
-            prevPoint = point;
+            float t = i / (float)segments;
+            // Interpolar angularmente entre el límite izquierdo y derecho
+            Vector3 currentDir = Vector3.Slerp(leftDir, rightDir, t);
+            Vector3 nextPoint = origin + currentDir * radius;
+
+            Gizmos.DrawLine(prevPoint, nextPoint);
+            prevPoint = nextPoint;
         }
 
         // Color según estado

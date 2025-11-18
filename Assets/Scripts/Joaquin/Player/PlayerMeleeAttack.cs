@@ -57,7 +57,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private float knockbackMaxDistance = 3f; // Distancia máxima de knockback
 
     [Header("Melee Impact VFX")]
-    [SerializeField] private ParticleSystem meleeImpactVFX;
+    [SerializeField] private GameObject meleeImpactVFX;
     [SerializeField] private int impactParticleCount = 20;
 
     [Header("Debug")]
@@ -79,7 +79,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     private int currentAttackIndex = -1;
 
     private HashSet<Collider> hitEnemiesThisCombo = new HashSet<Collider>();
-    private Collider[] hitBuffer = new Collider[64];
+    private Collider[] hitBuffer = new Collider[64]; // Buffer para detección de enemigos
 
     public int AttackDamage
     {
@@ -92,7 +92,6 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private PlayerHealth playerHealth;
     private PlayerMovement playerMovement;
-    private Material meleeImpactMatInstance;
     private Coroutine cleanupCoroutine;
     private Coroutine showGizmoRoutine = null;
 
@@ -128,7 +127,7 @@ public class PlayerMeleeAttack : MonoBehaviour
             cleanupCoroutine = null;
         }
 
-        CleanupVFXImmediate();
+        //CleanupVFXImmediate();
         StopAllCoroutines();
     }
 
@@ -152,7 +151,6 @@ public class PlayerMeleeAttack : MonoBehaviour
         speedMultiplier = speedMultiplierStat;
 
         CalculateStats();
-        InitializeMeleeImpactVFX();
     }
 
     private void HandleStatChanged(StatType statType, float newValue)
@@ -226,6 +224,40 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
 
         return true;
+    }
+
+    public void CancelAttack()
+    {
+        if (!isAttacking) return;
+
+        StopAllCoroutines();
+
+        isAttacking = false;
+
+        // Resetear combo para que no guarde el estado intermedio
+        comboCount = 0;
+        lastAttackTime = 0; // Forzar reset de tiempo
+
+        // Limpiar listas de impacto
+        hitEnemiesThisCombo.Clear();
+
+        // Limpieza visual y de movimiento
+        if (playerMovement != null)
+        {
+            playerMovement.StopForcedMovement();
+            playerMovement.UnlockFacing();
+        }
+
+        if (playerAnimator != null)
+        {
+            playerAnimator.SetBool("IsAttacking", false);
+        }
+
+        // Ocultar gizmos de debug si se quedaron encendidos
+        if (visualBoxHit != null) visualBoxHit.SetActive(false);
+        if (visualSphereHit != null) visualSphereHit.SetActive(false);
+
+        ReportDebug("Ataque cancelado por bloqueo.", 1);
     }
 
     /// <summary>
@@ -779,14 +811,17 @@ public class PlayerMeleeAttack : MonoBehaviour
 
             CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, true);
 
-            BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
-            if (bloodKnight != null) bloodKnight.OnPlayerCounterAttack();
+            //BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
+            //if (bloodKnight != null) bloodKnight.OnPlayerCounterAttack();
 
             PlayImpactVFX(enemy.transform.position);
             ReportDebug($"Golpe a {enemy.name} por {finalDamage} de daño.", 1);
         }
 
-        if (!hitAnyEnemy) PlayImpactVFX(hitPoint.position);
+        if (!hitAnyEnemy)
+        {
+            ReportDebug("Ataque no golpeó a ningún enemigo.", 1);
+        }
 
         float displayDuration = gizmoDuration;
 
@@ -895,57 +930,13 @@ public class PlayerMeleeAttack : MonoBehaviour
     #region VFX Methods
 
     /// <summary>
-    /// Inicializa el sistema de partículas de impacto melee si no está asignado.
-    /// </summary>
-    private void InitializeMeleeImpactVFX()
-    {
-        if (meleeImpactVFX == null) return;
-        var psRenderer = meleeImpactVFX.GetComponent<ParticleSystemRenderer>();
-        if (psRenderer == null) return;
-
-        meleeImpactMatInstance = new Material(psRenderer.sharedMaterial);
-        psRenderer.material = meleeImpactMatInstance;
-
-        meleeImpactVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        meleeImpactVFX.Clear(true);
-    }
-
-    /// <summary>
     /// Reproduce el efecto de impacto en una posición específica.
     /// </summary>
     private void PlayImpactVFX(Vector3 position)
     {
         if (meleeImpactVFX == null) return;
 
-        meleeImpactVFX.transform.position = position;
-        meleeImpactVFX.transform.rotation = Quaternion.identity;
-
-        meleeImpactVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        meleeImpactVFX.Clear(true);
-
-        meleeImpactVFX.Emit(impactParticleCount);
-    }
-
-    // Limpia los recursos del VFX al desactivar o destruir el objeto.
-    private void CleanupVFXImmediate()
-    {
-        if (meleeImpactVFX != null)
-        {
-            var psRenderer = meleeImpactVFX.GetComponent<ParticleSystemRenderer>();
-            meleeImpactVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            meleeImpactVFX.Clear(true);
-            if (psRenderer != null)
-            {
-                psRenderer.material = null;
-            }
-        }
-
-        if (meleeImpactMatInstance != null)
-        {
-            var toDestroy = meleeImpactMatInstance;
-            meleeImpactMatInstance = null;
-            Destroy(toDestroy, 0.05f);
-        }
+        Instantiate(meleeImpactVFX, position, Quaternion.identity);
     }
 
     #endregion

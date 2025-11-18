@@ -477,6 +477,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         if (controller != null) controller.stepOffset = prevStepOffset;
     }
 
+    // Activa o desactiva las colisiones entre el jugador y las capas definidas en traversableLayers.
     private void ToggleLayerCollisions(bool ignore)
     {
         for (int i = 0; i < 32; i++)
@@ -624,60 +625,43 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     private IEnumerator AfterimageRoutine()
     {
-        float interval = 0.05f;
+        float interval = 0.05f; // Frecuencia de aparición
+
         while (IsDashing)
         {
             if (afterimagePrefab != null)
             {
-                // Usar el transform del modelo si PlayerHealth lo expone,
-                // Sino usar el root transform del jugador.
-                Transform modelTransform = (playerHealth != null && playerHealth.PlayerModelTransform != null)
-                    ? playerHealth.PlayerModelTransform
-                    : transform;
+                SpriteRenderer srcSprite = GetComponentInChildren<SpriteRenderer>();
 
-                // Instanciar el afterimage en la posición/rotación del modelo
-                GameObject afterimage = Instantiate(afterimagePrefab, modelTransform.position, modelTransform.rotation);
-
-                // Ajustar la escala mundial del afterimage para que coincida con la del modelo actual
-                // Si el prefab está pensado para escala 1 en root, asignar la escala global del modelo.
-                afterimage.transform.localScale = modelTransform.lossyScale;
-
-                // Sincronizar visual (Sprite o Mesh)
-                // Copiar sprite si existe
-                var srcSprite = modelTransform.GetComponentInChildren<SpriteRenderer>();
-                var dstSprite = afterimage.GetComponentInChildren<SpriteRenderer>();
-                if (srcSprite != null && dstSprite != null)
+                if (srcSprite != null)
                 {
-                    dstSprite.sprite = srcSprite.sprite;
-                    dstSprite.flipX = srcSprite.flipX;
-                    // No tocar srcSprite.color. Aplica transparencia solo al afterimage.
-                    Color dstColor = srcSprite.color;
-                    dstColor.a = afterimageAlpha;
-                    dstSprite.color = dstColor;
-                }
-                else
-                {
-                    // Sino intenta, copiar mesh + material y aplica transparencia con MaterialPropertyBlock
-                    var srcMeshRenderer = modelTransform.GetComponentInChildren<MeshRenderer>();
-                    var srcMeshFilter = modelTransform.GetComponentInChildren<MeshFilter>();
+                    GameObject afterimage = Instantiate(afterimagePrefab, srcSprite.transform.position, srcSprite.transform.rotation);
 
-                    var dstMeshRenderer = afterimage.GetComponentInChildren<MeshRenderer>();
-                    var dstMeshFilter = afterimage.GetComponentInChildren<MeshFilter>();
+                    afterimage.transform.localScale = srcSprite.transform.lossyScale;
 
-                    if (srcMeshRenderer != null && dstMeshRenderer != null)
+                    SpriteRenderer dstSprite = afterimage.GetComponent<SpriteRenderer>();
+
+                    if (dstSprite != null)
                     {
-                        // Copiar mesh si existe
-                        if (srcMeshFilter != null && dstMeshFilter != null)
-                        {
-                            dstMeshFilter.mesh = srcMeshFilter.sharedMesh;
-                        }
+                        // Copiar el frame exacto de la animación
+                        dstSprite.sprite = srcSprite.sprite;
 
-                        // Aplicar transparencia usando MaterialPropertyBlock para no instanciar materiales
-                        ApplyTransparencyToRenderer(dstMeshRenderer, afterimageAlpha);
+                        // Copiar la orientación
+                        dstSprite.flipX = srcSprite.flipX;
+                        dstSprite.flipY = srcSprite.flipY;
+
+                        // Configurar Color y Alpha
+                        Color color = srcSprite.color;
+                        color.a = afterimageAlpha;
+                        dstSprite.color = color;
+
+                        dstSprite.sortingLayerID = srcSprite.sortingLayerID;
+                        dstSprite.sortingOrder = srcSprite.sortingOrder - 1;
                     }
-                }
 
-            Destroy(afterimage, afterimageLifetime);
+                    // Destruir después del tiempo de vida
+                    Destroy(afterimage, afterimageLifetime);
+                }
             }
             yield return new WaitForSeconds(interval);
         }
@@ -734,6 +718,36 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         {
             yVelocity += gravity * Time.deltaTime;
         }
+    }
+
+    public void CancelDash()
+    {
+        if (!IsDashing) return;
+
+        StopAllCoroutines();
+
+        IsDashing = false;
+
+        if (playerAnimator != null)
+        {
+            playerAnimator.SetBool("Dashing", false);
+        }
+
+        if (dashDustVFX != null) PlayDashVFX(false);
+
+        ToggleLayerCollisions(false);
+
+        if (playerHealth != null) playerHealth.IsInvulnerable = false;
+
+        if (controller != null && prevStepOffset > 0)
+        {
+            controller.stepOffset = prevStepOffset;
+            prevStepOffset = 0f;
+        }
+
+        yVelocity = 0f;
+
+        ReportDebug("Dash cancelado.", 1);
     }
 
     public void SetCanMove(bool state)

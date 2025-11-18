@@ -185,6 +185,21 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     private void TryExecuteMeleeAttack()
     {
+        if (playerHealth != null)
+        {
+            if (playerHealth.IsStunned())
+            {
+                ReportDebug("Accion bloqueada: Jugador aturdido.", 2);
+                return;
+            }
+
+            if (playerHealth.IsDead())
+            {
+                ReportDebug("Accion bloqueada: Jugador muerto.", 2);
+                return;
+            }
+        }
+
         if (playerBlockSystem != null && playerBlockSystem.IsStunned())
         {
             ReportDebug("Acción bloqueada: Jugador aturdido por rotura de escudo.", 2);
@@ -205,6 +220,21 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     private void TryExecuteShieldThrow()
     {
+        if (playerHealth != null)
+        {
+            if (playerHealth.IsStunned())
+            {
+                ReportDebug("Accion bloqueada: Jugador aturdido.", 2);
+                return;
+            }
+
+            if (playerHealth.IsDead())
+            {
+                ReportDebug("Accion bloqueada: Jugador muerto.", 2);
+                return;
+            }
+        }
+
         if (playerBlockSystem != null && playerBlockSystem.IsStunned())
         {
             ReportDebug("Acción bloqueada: Jugador aturdido por rotura de escudo.", 2);
@@ -228,6 +258,21 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     private void TryExecuteDash()
     {
+        if (playerHealth != null)
+        {
+            if (playerHealth.IsStunned())
+            {
+                ReportDebug("Accion bloqueada: Jugador aturdido.", 2);
+                return;
+            }
+
+            if (playerHealth.IsDead())
+            {
+                ReportDebug("Accion bloqueada: Jugador muerto.", 2);
+                return;
+            }
+        }
+
         if (playerBlockSystem != null && playerBlockSystem.IsStunned())
         {
             ReportDebug("Acción bloqueada: Jugador aturdido por rotura de escudo.", 2);
@@ -257,6 +302,38 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     #endregion
 
     #region Conditionals
+
+    /// <summary>
+    /// Interrumpe cualquier acción en curso y limpia la cola de inputs.
+    /// </summary>
+    public void InterruptCombatActions()
+    {
+        // Limpiar la cola inmediatamente para evitar que se dispare nada después
+        queuedAction = CombatActionType.None;
+        queuedActionTimestamp = -Mathf.Infinity;
+
+        if (!isExecutingAction) return;
+
+        StopAllCoroutines();
+
+        if (currentAction == CombatActionType.MeleeAttack && meleeAttack != null)
+        {
+            meleeAttack.CancelAttack();
+        }
+        else if (currentAction == CombatActionType.ShieldThrow && shieldController != null)
+        {
+            shieldController.CancelThrow();
+        }
+        else if (currentAction == CombatActionType.Dash && playerMovement != null)
+        {
+            playerMovement.CancelDash();
+        }
+
+        isExecutingAction = false;
+        currentAction = CombatActionType.None;
+
+        ReportDebug("Combate interrumpido por bloqueo/acción defensiva.", 1);
+    }
 
     private bool CanQueueMeleeAttack()
     {

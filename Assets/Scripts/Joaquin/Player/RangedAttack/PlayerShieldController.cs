@@ -468,6 +468,31 @@ public class PlayerShieldController : MonoBehaviour
         }
     }
 
+    public void CancelThrow()
+    {
+        if (!isThrowingShield) return;
+
+        StopAllCoroutines();
+
+        isThrowingShield = false;
+
+        if (playerMovement != null)
+        {
+            playerMovement.UnlockFacing();
+        }
+
+        if (hasShield)
+        {
+            if (playerAnimator != null)
+            {
+                playerAnimator.SetBool("HaveShield", true);
+                playerAnimator.ResetTrigger("ThrowShield");
+            }
+        }
+
+        ReportDebug("Lanzamiento de escudo cancelado.", 1);
+    }
+
     // El escudo llama a esta función cuando regresa
     public void CatchShield()
     {
