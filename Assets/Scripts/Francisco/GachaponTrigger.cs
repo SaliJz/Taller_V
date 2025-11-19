@@ -143,7 +143,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     public void OnAdvanceDialogue(InputAction.CallbackContext context) { }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerStay(Collider other)
     {
         if (other.CompareTag("Player") && !isAnimating)
         {
@@ -151,6 +151,10 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             if (!isActivated && interactionTextPanel != null)
             {
                 interactionTextPanel.SetActive(true);
+            }
+            else
+            {
+                interactionTextPanel.SetActive(false);
             }
         }
     }
@@ -353,7 +357,6 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
     {
         isAnimating = true;
         GetComponent<Collider>().enabled = false;
-        playerIsNear = false;
 
         Vector3 startPos = transform.position;
         Vector3 endPos = riseTargetTransform.position;
@@ -407,7 +410,9 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             description += "<b><color=green>VENTAJA:</color></b>\n";
             foreach (var mod in effectData.advantageModifiers)
             {
-                description += $"- {mod.statType}: {mod.modifierValue}{(mod.isPercentage ? "%" : "")} ({mod.durationType})\n";
+                string statName = TranslateStatType(mod.statType);
+                string durationText = TranslateDurationType(mod.durationType, mod.durationValue); 
+                description += $"- {statName}: {mod.modifierValue}{(mod.isPercentage ? "%" : "")} ({durationText})\n";
             }
         }
 
@@ -416,11 +421,60 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             description += "\n<b><color=red>DESVENTAJA:</color></b>\n";
             foreach (var mod in effectData.disadvantageModifiers)
             {
-                description += $"- {mod.statType}: {mod.modifierValue}{(mod.isPercentage ? "%" : "")} ({mod.durationType})\n";
+                string statName = TranslateStatType(mod.statType);
+                string durationText = TranslateDurationType(mod.durationType, mod.durationValue);
+                description += $"- {statName}: {mod.modifierValue}{(mod.isPercentage ? "%" : "")} ({durationText})\n";
             }
         }
 
         return description;
+    }
+
+    private string TranslateStatType(StatType statType)
+    {
+        switch (statType)
+        {
+            case StatType.MaxHealth: return "Vida Máxima";
+            case StatType.MoveSpeed: return "Velocidad de Movimiento";
+            case StatType.Gravity: return "Gravedad";
+            case StatType.MeleeAttackDamage: return "Daño Ataque Cuerpo a Cuerpo";
+            case StatType.MeleeAttackSpeed: return "Velocidad Ataque Cuerpo a Cuerpo";
+            case StatType.MeleeRadius: return "Radio de Ataque Cuerpo a Cuerpo";
+            case StatType.ShieldAttackDamage: return "Daño Ataque Escudo";
+            case StatType.ShieldSpeed: return "Velocidad del Escudo";
+            case StatType.ShieldMaxDistance: return "Distancia Máxima del Escudo";
+            case StatType.ShieldMaxRebounds: return "Rebotes Máximos del Escudo";
+            case StatType.ShieldReboundRadius: return "Radio de Rebote del Escudo";
+            case StatType.AttackDamage: return "Daño de Ataque Base";
+            case StatType.AttackSpeed: return "Velocidad de Ataque Base";
+            case StatType.ShieldBlockUpgrade: return "Mejora de Bloqueo del Escudo";
+            case StatType.DamageTaken: return "Daño Recibido";
+            case StatType.HealthDrainAmount: return "Drenaje de Vida";
+            case StatType.LuckStack: return "Pilas de Suerte";
+            case StatType.EssenceCostReduction: return "Reducción de Coste de Esencia";
+            case StatType.ShopPriceReduction: return "Reducción de Precio en Tienda";
+            case StatType.HealthPerRoomRegen: return "Regeneración de Vida por Sala";
+            case StatType.CriticalChance: return "Probabilidad de Crítico";
+            case StatType.LifestealOnKill: return "Robo de Vida al Matar";
+            case StatType.CriticalDamageMultiplier: return "Multiplicador de Daño Crítico";
+            case StatType.DashRangeMultiplier: return "Multiplicador de Alcance de Dash";
+            default: return statType.ToString(); 
+        }
+    }
+
+    private string TranslateDurationType(EffectDurationType durationType, float durationValue)
+    {
+        switch (durationType)
+        {
+            case EffectDurationType.Permanent:
+                return "Permanente";
+            case EffectDurationType.Rounds:
+                return $"por {Mathf.CeilToInt(durationValue)} Sala(s)";
+            case EffectDurationType.Time:
+                return $"por {durationValue:F1} Segundos";
+            default:
+                return durationType.ToString();
+        }
     }
 
     private void OnDrawGizmosSelected()
