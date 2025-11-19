@@ -2077,13 +2077,19 @@ MonoBehaviour:
   _inputKey: 0
   _sceneTransitions:
   - inputKey: 49
-    targetSceneName: TestEnemy1
+    targetSceneName: MainMenu
   - inputKey: 50
-    targetSceneName: TestEnemy2
+    targetSceneName: TutorialCompleto
   - inputKey: 51
-    targetSceneName: TestShop
-  - inputKey: 52
     targetSceneName: Tuto
+  - inputKey: 52
+    targetSceneName: TestLevel
+  - inputKey: 53
+    targetSceneName: LVL02
+  - inputKey: 54
+    targetSceneName: TestBoss1
+  - inputKey: 55
+    targetSceneName: TestBoss2
   OnKeyPressed:
     m_PersistentCalls:
       m_Calls: []
@@ -2249,6 +2255,54 @@ PrefabInstance:
     - target: {fileID: 2049424538277915923, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2420525907263958631, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2420525907263958631, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2420525907263958631, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2420525907263958631, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3955724570040860964, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3955724570040860964, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3955724570040860964, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3955724570040860964, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3956629520820977032, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3956629520820977032, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3956629520820977032, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3956629520820977032, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4280081536184547260, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: healthBarParentRect
@@ -4444,6 +4498,6 @@ SceneRoots:
   - {fileID: 2053880640}
   - {fileID: 1130311632}
   - {fileID: 1090497192}
-  - {fileID: 961770970}
-  - {fileID: 548066270}
   - {fileID: 1745106932}
+  - {fileID: 548066270}
+  - {fileID: 961770970}

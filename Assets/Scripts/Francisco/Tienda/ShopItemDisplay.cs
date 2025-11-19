@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using static ShopManager;
 
 public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActions
 {
-    public GameObject textPanel;
     public ShopItem shopItemData;
 
     private ShopManager shopManager;
@@ -37,8 +37,12 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
     {
         playerControls?.Interactions.Disable();
 
-        if (textPanel != null) textPanel.SetActive(false);
-        if (shopManager != null) shopManager.UpdateCostBar(0);
+        if (shopManager != null && isPlayerInProximity)
+        {
+            shopManager.SetInteractionPromptActive(false);
+            shopManager.LockAndDisplayItemDetails(null);
+            shopManager.UpdateCostBar(0);
+        }
     }
 
     private void OnDestroy()
@@ -61,67 +65,74 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     }
 
+    public void DisplayFixedInfo()
+    {
+        if (shopManager == null) return;
+
+        shopManager.LockAndDisplayItemDetails(shopItemData);
+    }
 
     private void OnTriggerEnter(Collider other)
     {
+        if (shopManager != null && shopManager.InteractionMode != ShopInteractionMode.TriggerProximity)
+            return;
+
         if (other.CompareTag("Player"))
         {
             isPlayerInProximity = true;
 
-            if (textPanel != null)
+            if (shopManager != null)
             {
-                if (inventoryUIManager != null && inventoryUIManager.IsInventoryOpen)
-                {
-                    textPanel.SetActive(false);
-                }
-                else
-                {
-                    textPanel.SetActive(true);
-                }
+                bool invOpen = (inventoryUIManager != null && inventoryUIManager.IsInventoryOpen);
+                bool showPrompt = !invOpen;
+
+                shopManager.SetInteractionPromptActive(showPrompt);
+                shopManager.LockAndDisplayItemDetails(shopItemData);
             }
         }
     }
-
     private void OnTriggerStay(Collider other)
     {
+        if (shopManager != null && shopManager.InteractionMode != ShopInteractionMode.TriggerProximity)
+            return;
+
         if (!other.CompareTag("Player")) return;
 
         bool invOpen = (inventoryUIManager != null && inventoryUIManager.IsInventoryOpen);
 
-        if (textPanel != null)
-        {
-            bool shouldBeActive = !invOpen;
-
-            if (textPanel.activeSelf != shouldBeActive)
-            {
-                textPanel.SetActive(shouldBeActive);
-            }
-        }
-
         if (shopManager != null)
         {
+            bool shouldBeActive = !invOpen;
+            shopManager.SetInteractionPromptActive(shouldBeActive);
+
             if (invOpen)
             {
                 shopManager.UpdateCostBar(0);
+                shopManager.LockAndDisplayItemDetails(null);
             }
             else
             {
                 float finalCost = shopManager.CalculateFinalCost(shopItemData.cost);
                 shopManager.UpdateCostBar(finalCost);
+                shopManager.LockAndDisplayItemDetails(shopItemData);
             }
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
+        if (shopManager != null && shopManager.InteractionMode != ShopInteractionMode.TriggerProximity)
+            return;
+
         if (other.CompareTag("Player"))
         {
-            isPlayerInProximity = false; 
+            isPlayerInProximity = false;
 
-            if (textPanel != null) textPanel.SetActive(false);
             if (shopManager != null)
             {
+                shopManager.SetInteractionPromptActive(false);
                 shopManager.UpdateCostBar(0);
+                shopManager.LockAndDisplayItemDetails(null);
             }
         }
     }

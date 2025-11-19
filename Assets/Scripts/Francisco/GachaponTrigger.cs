@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using TMPro;
+using Unity.VisualScripting;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 [System.Serializable]
@@ -25,9 +26,6 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
     [SerializeField] private GameObject resultUIPanel;
     [SerializeField] private TextMeshProUGUI nameTMP;
     [SerializeField] private TextMeshProUGUI effectsTMP;
-
-    [Header("Interaction UI")]
-    [SerializeField] private GameObject interactionTextPanel;
 
     [Header("Configuración")]
     private bool playerIsNear = false;
@@ -94,7 +92,6 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
     private void OnDisable()
     {
         playerControls?.Interactions.Disable();
-        if (interactionTextPanel != null) interactionTextPanel.SetActive(false);
         if (resultUIPanel != null) resultUIPanel.SetActive(false);
     }
 
@@ -124,11 +121,6 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         {
             resultUIPanel.SetActive(false);
         }
-
-        if (interactionTextPanel != null)
-        {
-            interactionTextPanel.SetActive(false);
-        }
     }
 
     public void OnInteract(InputAction.CallbackContext context)
@@ -148,13 +140,13 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         if (other.CompareTag("Player") && !isAnimating)
         {
             playerIsNear = true;
-            if (!isActivated && interactionTextPanel != null)
+            if (!isActivated && HUDManager.Instance != null)
             {
-                interactionTextPanel.SetActive(true);
+                HUDManager.Instance.SetInteractionPrompt(true, "[E] TIRAR");
             }
             else
             {
-                interactionTextPanel.SetActive(false);
+                HUDManager.Instance.SetInteractionPrompt(false, "[E] TIRAR");
             }
         }
     }
@@ -165,9 +157,9 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         {
             playerIsNear = false;
 
-            if (interactionTextPanel != null)
+            if (HUDManager.Instance != null)
             {
-                interactionTextPanel.SetActive(false);
+                HUDManager.Instance.SetInteractionPrompt(false, "[E] TIRAR");
             }
         }
     }
@@ -178,9 +170,9 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         isActivated = true;
         ShowResultUI(false, "", "");
 
-        if (interactionTextPanel != null)
+        if (HUDManager.Instance != null)
         {
-            interactionTextPanel.SetActive(false);
+            HUDManager.Instance.SetInteractionPrompt(false, "[E] TIRAR");
         }
 
         Coroutine animationCoroutine = StartCoroutine(AnimateGachaponLight(animationDuration));
@@ -220,9 +212,9 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             cubeRenderer.material = originalMaterialInstance;
             isActivated = false;
             isAnimating = false;
-            if (playerIsNear && interactionTextPanel != null)
+            if (playerIsNear && HUDManager.Instance != null)
             {
-                interactionTextPanel.SetActive(true);
+                HUDManager.Instance.SetInteractionPrompt(false, "[E] TIRAR");
             }
         }
         else
@@ -376,9 +368,9 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         isActivated = false;
         isAnimating = false;
 
-        if (playerIsNear && interactionTextPanel != null)
+        if (playerIsNear && HUDManager.Instance != null)
         {
-            interactionTextPanel.SetActive(true);
+            HUDManager.Instance.SetInteractionPrompt(true, "[E] TIRAR");
         }
     }
 

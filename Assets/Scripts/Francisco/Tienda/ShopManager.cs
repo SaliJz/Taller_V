@@ -8,6 +8,16 @@ using UnityEngine.UI;
 
 public class ShopManager : MonoBehaviour
 {
+    public enum ShopInteractionMode
+    {
+        MouseHover,
+        TriggerProximity
+    }
+
+    [Header("Interaction Mode")]
+    [SerializeField] private ShopInteractionMode interactionMode = ShopInteractionMode.MouseHover;
+    public ShopInteractionMode InteractionMode => interactionMode;
+
     [Header("Item Pools")]
     public List<ShopItem> allRelics;
     public List<ShopItem> allGagans;
@@ -124,13 +134,20 @@ public class ShopManager : MonoBehaviour
 
     private void Update()
     {
-        HandleMouseInteraction();
+        if (interactionMode == ShopInteractionMode.MouseHover)
+        {
+            HandleMouseInteraction();
+        }
 
         if (canReroll && Input.GetKeyDown(reRollKey))
         {
             RerollShop();
         }
-        PositionUIPanel();
+
+        if (interactionMode == ShopInteractionMode.MouseHover)
+        {
+            PositionUIPanel();
+        }
     }
 
     public void InitializeShopItemPools()
@@ -454,7 +471,6 @@ public class ShopManager : MonoBehaviour
     private void HandleMouseInteraction()
     {
         if (mainCamera == null || playerControls == null) return;
-
         if (inventoryUIManager != null && inventoryUIManager.IsInventoryOpen)
         {
             if (shopUIPanel != null && shopUIPanel.activeSelf)
@@ -463,65 +479,51 @@ public class ShopManager : MonoBehaviour
             }
             return;
         }
-
         Vector2 screenPosition;
-
         Canvas parentCanvas = uiPanelTransform.GetComponentInParent<Canvas>();
-
         bool isGamepadActive = Gamepad.current != null && virtualCursorRect != null && virtualCursorRect.gameObject.activeInHierarchy;
-
         if (isGamepadActive)
         {
             Camera usedCamera = (parentCanvas != null && (parentCanvas.renderMode == RenderMode.ScreenSpaceCamera || parentCanvas.renderMode == RenderMode.WorldSpace))
                                 ? mainCamera
                                 : null;
-
             screenPosition = RectTransformUtility.WorldToScreenPoint(usedCamera, virtualCursorRect.position);
         }
         else
         {
             screenPosition = playerControls.UI.Point.ReadValue<Vector2>();
         }
-
         Ray ray = mainCamera.ScreenPointToRay(screenPosition);
         RaycastHit hit;
-
         bool hitShopItem = false;
 
         if (Physics.Raycast(ray, out hit, raycastDistance, shopItemLayer))
         {
             ShopItemDisplay itemDisplay = hit.collider.GetComponent<ShopItemDisplay>();
-
             if (itemDisplay != null)
             {
                 hitShopItem = true;
-
                 float finalCost = CalculateFinalCost(itemDisplay.shopItemData.cost);
-
                 if (lastDetectedItem != itemDisplay.shopItemData)
                 {
                     if (lastDetectedItem != null && _pendingPurchaseWarning.ContainsKey(lastDetectedItem))
                     {
                         _pendingPurchaseWarning[lastDetectedItem] = false;
                     }
-
                     DisplayItemUI(itemDisplay.shopItemData, finalCost);
+                    UpdateCostBar(finalCost);
                     lastDetectedItem = itemDisplay.shopItemData;
                 }
-
-                PositionUIPanel();
             }
         }
-
         if (!hitShopItem && shopUIPanel != null && shopUIPanel.activeSelf)
         {
             HideItemUI();
-
+            UpdateCostBar(0);
             if (lastDetectedItem != null && _pendingPurchaseWarning.ContainsKey(lastDetectedItem))
             {
                 _pendingPurchaseWarning[lastDetectedItem] = false;
             }
-
             lastDetectedItem = null;
         }
     }
@@ -750,16 +752,34 @@ public class ShopManager : MonoBehaviour
         if (uiPanelTransform == null || uiPanelTransform.parent == null) return;
 
         Vector2 mousePosition = playerControls.UI.Point.ReadValue<Vector2>();
-
         Vector2 localPoint;
-
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
             uiPanelTransform.parent.GetComponent<RectTransform>(),
             mousePosition,
-            null, 
-            out localPoint
-        );
+            null,
+            out localPoint))
+        {
+            uiPanelTransform.anchoredPosition = localPoint;
+        }
+    }
 
-        uiPanelTransform.anchoredPosition = localPoint;
+    public void LockAndDisplayItemDetails(ShopItem itemData)
+    {
+        if (itemData == null)
+        {
+            if (shopUIPanel != null)
+            {
+                shopUIPanel.SetActive(false);
+            }
+            return;
+        }
+
+        float finalCost = CalculateFinalCost(itemData.cost);
+        DisplayItemUI(itemData, finalCost);
+    }
+
+    public void SetInteractionPromptActive(bool active)
+    {
+        HUDManager.Instance?.SetInteractionPrompt(active, "[E] COMPRAR");
     }
 }

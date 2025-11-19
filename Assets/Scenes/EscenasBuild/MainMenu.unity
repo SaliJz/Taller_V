@@ -1555,6 +1555,69 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &571136826
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 571136828}
+  - component: {fileID: 571136827}
+  m_Layer: 0
+  m_Name: ChangeScene
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &571136827
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 571136826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b636fa411e6f82540880ffe29c95d882, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _inputKey: 0
+  _sceneTransitions:
+  - inputKey: 49
+    targetSceneName: MainMenu
+  - inputKey: 50
+    targetSceneName: TutorialCompleto
+  - inputKey: 51
+    targetSceneName: Tuto
+  - inputKey: 52
+    targetSceneName: TestLevel
+  - inputKey: 53
+    targetSceneName: LVL02
+  - inputKey: 54
+    targetSceneName: TestBoss1
+  - inputKey: 55
+    targetSceneName: TestBoss2
+  OnKeyPressed:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!4 &571136828
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 571136826}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 136.57634, y: 0.3733438, z: 1.6501509}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &602608170
 GameObject:
   m_ObjectHideFlags: 0
@@ -4575,5 +4638,6 @@ SceneRoots:
   - {fileID: 897909514}
   - {fileID: 1242455869}
   - {fileID: 1981779316}
-  - {fileID: 279621095}
   - {fileID: 535306425}
+  - {fileID: 571136828}
+  - {fileID: 279621095}

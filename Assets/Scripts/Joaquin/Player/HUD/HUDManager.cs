@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -22,6 +23,10 @@ public class HUDManager : MonoBehaviour
     [SerializeField] private Image temporaryHealthBar;
     [SerializeField] private Image lifeStageIconImage;
     [SerializeField] private List<LifeStageIcon> lifeStageIcons;
+
+    [Header("Prompt de Interacción")]
+    [SerializeField] private GameObject interactionPromptPanel;
+    [SerializeField] private TextMeshProUGUI interactionPromptText;
 
     [Header("Etapas de Vida - Root Objects")]
     [SerializeField] private GameObject adultRootStage;
@@ -204,6 +209,19 @@ public class HUDManager : MonoBehaviour
         lowHealthEffectCoroutine = StartCoroutine(LowHealthEffectDurationRoutine());
 
         ReportDebug("Efectos de vida baja activados.", 1);
+    }
+
+    public void SetInteractionPrompt(bool active, string actionText = "")
+    {
+        if (interactionPromptPanel != null)
+        {
+            interactionPromptPanel.SetActive(active);
+        }
+
+        if (interactionPromptText != null && active)
+        {
+            interactionPromptText.text = actionText;
+        }
     }
 
     /// <summary>
