@@ -2748,8 +2748,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4285bb690a12f7248bc289eea12d1afd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  virtualCursor: {fileID: 1525793569}
+  pauseMovementRadiusFactor: 0.4
   cursorSpeed: 1000
+  virtualCursor: {fileID: 1525793569}
 --- !u!114 &1329288735
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5171,7 +5172,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _inputKey: 0
-  _sceneTransitions: []
+  _sceneTransitions:
+  - inputKey: 49
+    targetSceneName: MainMenu
+  - inputKey: 50
+    targetSceneName: TutorialCompleto
+  - inputKey: 51
+    targetSceneName: Tuto
+  - inputKey: 52
+    targetSceneName: TestLevel
+  - inputKey: 53
+    targetSceneName: LVL02
+  - inputKey: 54
+    targetSceneName: TestBoss1
+  - inputKey: 55
+    targetSceneName: TestBoss2
   OnKeyPressed:
     m_PersistentCalls:
       m_Calls: []
