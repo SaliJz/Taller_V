@@ -26,6 +26,11 @@ public class Shield : MonoBehaviour
     [SerializeField] private ParticleSystem shieldTrailVFX;
     [SerializeField] private TrailRenderer shieldTrail;
 
+    [Header("SFX")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip shieldImpactClip;
+    [SerializeField] private AudioClip shieldTrailClip;
+
     [Header("Pierce Settings (Elder)")]
     [SerializeField] private bool canPierce = false;
     [SerializeField] private int maxPierceTargets = 5;
@@ -117,6 +122,16 @@ public class Shield : MonoBehaviour
         if (currentState == ShieldState.Inactive) return;
 
         currentSpeed = Mathf.Min(currentSpeed + acceleration * Time.deltaTime, maxSpeed);
+
+        if (audioSource != null && shieldTrailClip != null)
+        {
+            if (!audioSource.isPlaying)
+            {
+                audioSource.clip = shieldTrailClip;
+                audioSource.loop = true;
+                audioSource.Play();
+            }
+        }
 
         if (currentState == ShieldState.Thrown)
         {
@@ -217,6 +232,11 @@ public class Shield : MonoBehaviour
             }
 
             hasHitAnyEnemy = true;
+
+            if (audioSource != null && shieldImpactClip != null)
+            {
+                audioSource.PlayOneShot(shieldImpactClip);
+            }
 
             CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, false);
 

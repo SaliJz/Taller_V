@@ -13,6 +13,7 @@ public class PlayerShieldController : MonoBehaviour
     [SerializeField] private PlayerMeleeAttack playerMeleeAttack;
     [SerializeField] private PlayerMovement playerMovement;
     [SerializeField] private PlayerHealth playerHealth;
+    [SerializeField] private PlayerAudioController playerAudioController;
     [SerializeField] private Animator playerAnimator;
 
     [Header("Stats")]
@@ -79,15 +80,19 @@ public class PlayerShieldController : MonoBehaviour
 
     private void Awake()
     {
-        statsManager = GetComponent<PlayerStatsManager>();
-        playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
-        playerMovement = GetComponent<PlayerMovement>();
-        playerHealth = GetComponent<PlayerHealth>();
-        playerAnimator = GetComponentInChildren<Animator>();
+        if (statsManager == null) statsManager = GetComponent<PlayerStatsManager>();
+        if (playerMeleeAttack == null) playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
+        if (playerMovement == null) playerMovement = GetComponent<PlayerMovement>();
+        if (playerHealth == null) playerHealth = GetComponent<PlayerHealth>();
+        if (playerAnimator == null) playerAnimator = GetComponentInChildren<Animator>();
+        if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
 
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerShieldController. Usando valores de fallback.", 2);
         if (playerMeleeAttack == null) ReportDebug("PlayerMeleeAttack no encontrado. No se podrá verificar estado de ataque melee.", 2);
         if (playerMovement == null) ReportDebug("PlayerMovement no encontrado. Lock de rotación no funcionará.", 2);
+        if (playerHealth == null) ReportDebug("PlayerHealth no encontrado. Configuración por etapa no funcionará.", 2);
+        if (playerAnimator == null) ReportDebug("Animator no encontrado en hijos. Las animaciones de escudo no funcionarán.", 2);
+        if (playerAudioController == null) ReportDebug("PlayerAudioController no encontrado. Los sonidos de escudo no funcionarán.", 2);
     }
 
     private void OnEnable()
@@ -326,6 +331,10 @@ public class PlayerShieldController : MonoBehaviour
     {
         hasShield = false;
         if (playerAnimator != null) playerAnimator.SetBool("HaveShield", false);
+        if (playerAudioController != null)
+        {
+            playerAudioController.PlayThrowShieldSound();
+        }
 
         Vector3 direction;
         if (!TryGetMouseWorldDirection(out direction))
@@ -497,7 +506,13 @@ public class PlayerShieldController : MonoBehaviour
     public void CatchShield()
     {
         hasShield = true;
+        
         if (playerAnimator != null) playerAnimator.SetBool("HaveShield", true);
+        if (playerAudioController != null)
+        {
+            playerAudioController.PlayCatchShieldSound();
+        }
+
         ReportDebug("Escudo recuperado.", 1);
     }
 

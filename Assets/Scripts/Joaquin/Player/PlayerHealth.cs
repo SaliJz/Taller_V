@@ -24,6 +24,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private PlayerStatsManager statsManager;
     [SerializeField] private PlayerBlockSystem blockSystem;
     [SerializeField] private SpriteRenderer playerSpriteRenderer;
+    [SerializeField] private PlayerAudioController playerAudioController;
     [SerializeField] private Animator playerAnimator;
 
     [Header("Configuracion de Vida")]
@@ -153,6 +154,15 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         blockSystem = GetComponent<PlayerBlockSystem>();
         combatActionManager = GetComponent<PlayerCombatActionManager>();
         playerAnimator = GetComponentInChildren<Animator>();
+
+        if (playerAudioController == null)
+        {
+            playerAudioController = GetComponent<PlayerAudioController>();
+            if (playerAudioController == null)
+            {
+                ReportDebug("PlayerAudioController no encontrado en PlayerHealth.", 2);
+            }
+        }
 
         InitializeMaterialCache();
 
@@ -511,6 +521,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             OnDamageReceived?.Invoke(damageToApply);
 
             if (playerAnimator) playerAnimator.SetTrigger("GetHit");
+            if (playerAudioController != null)
+            {
+                playerAudioController.PlayDamageSound();
+            }
 
             currentHealth -= damageToApply;
             currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
@@ -744,6 +758,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
 
         isDying = true;
+
+        if (playerAudioController != null)
+        {
+            playerAudioController.PlayDeathSound();
+        }
 
         ReportDebug("El jugador ha muerto. Cargando escena: " + sceneToLoadOnDeath, 1);
 

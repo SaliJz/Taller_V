@@ -15,6 +15,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private GameObject visualSphereHit;
     [SerializeField] private GameObject visualBoxHit;
     [SerializeField] private PlayerShieldController playerShieldController;
+    [SerializeField] private PlayerAudioController playerAudioController;
     [SerializeField] private Animator playerAnimator;
 
     [Header("Attack Configuration")]
@@ -100,16 +101,19 @@ public class PlayerMeleeAttack : MonoBehaviour
         if (visualSphereHit != null) visualSphereHit.SetActive(false);
         if (visualBoxHit != null) visualBoxHit.SetActive(false);
 
-        statsManager = GetComponent<PlayerStatsManager>();
-        playerHealth = GetComponent<PlayerHealth>();
-        playerShieldController = GetComponent<PlayerShieldController>();
-        playerMovement = GetComponent<PlayerMovement>();
-        playerAnimator = GetComponentInChildren<Animator>();
+        if (statsManager == null) statsManager = GetComponent<PlayerStatsManager>();
+        if (playerHealth == null) playerHealth = GetComponent<PlayerHealth>();
+        if (playerShieldController == null) playerShieldController = GetComponent<PlayerShieldController>();
+        if (playerMovement == null) playerMovement = GetComponent<PlayerMovement>();
+        if (playerAnimator == null) playerAnimator = GetComponentInChildren<Animator>();
+        if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
 
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMeleeAttack. Usando valores de fallback.", 2);
         if (playerHealth == null) ReportDebug("PlayerHealth no se encuentra en el objeto.", 3);
         if (playerShieldController == null) ReportDebug("PlayerShieldController no se encuentra en el objeto.", 3);
         if (playerMovement == null) ReportDebug("PlayerMovement no se encuentra en el objeto. Lock de rotación no funcionará.", 2);
+        if (playerAnimator == null) ReportDebug("Animator no se encuentra en los hijos del objeto.", 2);
+        if (playerAudioController == null) ReportDebug("PlayerAudioController no se encuentra en el objeto.", 3);
     }
 
     private void OnEnable()
@@ -437,6 +441,11 @@ public class PlayerMeleeAttack : MonoBehaviour
                 accumulated += new Vector3(frameDesired.x, 0f, frameDesired.z).magnitude;
             }
 
+            if (playerAudioController != null)
+            {
+                playerAudioController.PlayMeleeSound("BasicSlash");
+            }
+
             PerformHitDetectionWithTracking();
 
             yield return null;
@@ -557,6 +566,11 @@ public class PlayerMeleeAttack : MonoBehaviour
                     transform.Rotate(0f, sign * angleThisFrame, 0f, Space.Self);
                     rotated += angleThisFrame;
 
+                    if (playerAudioController != null)
+                    {
+                        playerAudioController.PlayMeleeSound("SpinSlash");
+                    }
+
                     PerformHitDetectionWithTracking();
 
                     yield return null;
@@ -665,6 +679,11 @@ public class PlayerMeleeAttack : MonoBehaviour
                 accumulated += new Vector3(frameDesired.x, 0f, frameDesired.z).magnitude;
             }
 
+            if (playerAudioController != null)
+            {
+                playerAudioController.PlayMeleeSound("HeavySlash");
+            }
+
             PerformHitDetectionWithTracking();
             yield return null;
         }
@@ -746,6 +765,11 @@ public class PlayerMeleeAttack : MonoBehaviour
 
             hitEnemiesThisCombo.Add(enemy);
             hitAnyEnemy = true;
+
+            if (hitAnyEnemy && playerAudioController != null)
+            {
+                playerAudioController.PlayHitSound();
+            }
 
             ApplyKnockbackSafe(enemy);
 

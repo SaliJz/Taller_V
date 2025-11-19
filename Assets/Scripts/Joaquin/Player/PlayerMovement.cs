@@ -12,6 +12,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [SerializeField] private Transform mainCameraTransform;
     [SerializeField] private Animator playerAnimator;
     [SerializeField] private PlayerHealth playerHealth;
+    [SerializeField] private PlayerAudioController playerAudioController;
 
     [Header("Movement")]
     [HideInInspector] private float fallbackMoveSpeed = 5f;
@@ -143,6 +144,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         mainCameraTransform = Camera.main != null ? Camera.main.transform : mainCameraTransform;
         playerAnimator = GetComponentInChildren<Animator>();
         playerHealth = GetComponent<PlayerHealth>();
+        if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
 
         playerLayer = LayerMask.NameToLayer("Player");
 
@@ -344,8 +346,12 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         if (playerAnimator != null)
         {
-            playerAnimator.applyRootMotion = false;
             playerAnimator.SetBool("Dashing", true);
+        }
+
+        if (playerAudioController != null)
+        {
+            playerAudioController.PlayDashSound();
         }
 
         if (dashDustVFX != null) PlayDashVFX(true);

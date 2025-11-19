@@ -968,13 +968,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1994003570619808543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.65, y: 0, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.6500001, y: 0, z: 0}
   m_LocalScale: {x: 0.25, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7533331264527498049}
-  m_Father: {fileID: 3328275919596765956}
+  m_Father: {fileID: 4792795074512361542}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &2941383473402613033
 MeshFilter:
@@ -1252,7 +1252,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5664821327038534799}
-  - {fileID: 8551577758759370769}
   m_Father: {fileID: 4792795074512361542}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &5719396437608148634
@@ -2910,7 +2909,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
-  m_Volume: 0.5
+  m_Volume: 1
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -2918,8 +2917,8 @@ AudioSource:
   SpatializePostEffects: 0
   Priority: 128
   DopplerLevel: 1
-  MinDistance: 15
-  MaxDistance: 50
+  MinDistance: 60
+  MaxDistance: 180
   Pan2D: 0
   rolloffMode: 0
   BypassEffects: 0
@@ -3379,6 +3378,37 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &5805392982348499004
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 301956730850477674}
+  m_Layer: 0
+  m_Name: Player_BlockPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &301956730850477674
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5805392982348499004}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 4792795074512361542}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6119418943895547034
 GameObject:
   m_ObjectHideFlags: 0
@@ -8568,6 +8598,7 @@ GameObject:
   - component: {fileID: 7736777102245202428}
   - component: {fileID: 5453211636292463945}
   - component: {fileID: 3496064612389669479}
+  - component: {fileID: 2888951513960009550}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -8589,9 +8620,11 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7848094727345952618}
+  - {fileID: 8551577758759370769}
   - {fileID: 3328275919596765956}
   - {fileID: 3969153631071029061}
   - {fileID: 5494151711966022061}
+  - {fileID: 301956730850477674}
   - {fileID: 7029900753368981312}
   - {fileID: 6809428052967662729}
   - {fileID: 1155207582862725890}
@@ -8716,6 +8749,7 @@ MonoBehaviour:
   statsManager: {fileID: 7736777102245202428}
   blockSystem: {fileID: 3496064612389669479}
   playerSpriteRenderer: {fileID: 853946800129297378}
+  playerAudioController: {fileID: 0}
   playerAnimator: {fileID: 2511880707407823879}
   damageInvulnerabilityTime: 0
   sceneToLoadOnDeath: Tuto
@@ -8752,7 +8786,6 @@ MonoBehaviour:
   playerMovement: {fileID: 595312439969399503}
   playerBlockSystem: {fileID: 3496064612389669479}
   playerHealth: {fileID: 6110564483166717353}
-  pauseController: {fileID: 0}
   inputBufferWindow: 1
   enableVisualFeedback: 0
   skillRequiredWarningPrefab: {fileID: 4527440678079064410, guid: 4c049e7f575a8d24c9eaa25634824a0d, type: 3}
@@ -8778,10 +8811,11 @@ MonoBehaviour:
   mainCameraTransform: {fileID: 0}
   playerAnimator: {fileID: 2511880707407823879}
   playerHealth: {fileID: 6110564483166717353}
+  playerAudioController: {fileID: 0}
   moveSpeed: 5
   gravity: -9.81
-  dashDistance: 4
-  dashDuration: 0.2
+  dashDistance: 9
+  dashDuration: 0.35
   dashCooldown: 0.3
   traversableLayers:
     serializedVersion: 2
@@ -8789,7 +8823,7 @@ MonoBehaviour:
   dashCollisionLayers:
     serializedVersion: 2
     m_Bits: 512
-  gapDashBonusDistance: 3
+  gapDashBonusDistance: 4.5
   groundLayerMask:
     serializedVersion: 2
     m_Bits: 8
@@ -8822,6 +8856,7 @@ MonoBehaviour:
   playerMeleeAttack: {fileID: 9211243997880812482}
   playerMovement: {fileID: 595312439969399503}
   playerHealth: {fileID: 6110564483166717353}
+  playerAudioController: {fileID: 0}
   playerAnimator: {fileID: 2511880707407823879}
   shieldDamage: 10
   shieldSpeed: 25
@@ -8856,6 +8891,7 @@ MonoBehaviour:
   visualSphereHit: {fileID: 1624169214904273020}
   visualBoxHit: {fileID: 6871184688509333741}
   playerShieldController: {fileID: 3158206734398763717}
+  playerAudioController: {fileID: 0}
   playerAnimator: {fileID: 2511880707407823879}
   hitPoint: {fileID: 7029900753368981312}
   hitRadius: 1.2
@@ -9017,6 +9053,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerAnimator: {fileID: 2511880707407823879}
+  shieldForwardOverride: {fileID: 301956730850477674}
   blockingEnabled: 1
   frontBlockAngle: 150
   useMouseRotation: 1
@@ -9080,6 +9117,52 @@ MonoBehaviour:
   blockBreakSound: {fileID: 0}
   blockHitSound: {fileID: 0}
   debugMode: 1
+--- !u!114 &2888951513960009550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6679960082821164706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d6fb343d52d24048889aae7e9c4bee4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mainAudioSource: {fileID: 5769126923226320478}
+  damageClip: {fileID: 8300000, guid: 17f34e2eb7b36dd45a3de501f3bb643a, type: 3}
+  damageVolume: 1
+  damagePitch: 0.95
+  useDamagePitchVariance: 1
+  damagePitchVariance: 0.1
+  deathClip: {fileID: 8300000, guid: db03f176ca5e74f4f8fc48ff91ff9713, type: 3}
+  deathVolume: 1
+  deathPitch: 0.85
+  useDeathPitchVariance: 0
+  deathPitchVariance: 0.05
+  dashClip: {fileID: 8300000, guid: bd93c9883ffbb7b4790ea4f76e1cb5b0, type: 3}
+  dashVolume: 0.6
+  dashPitch: 1.15
+  usePitchVariance: 1
+  pitchVariance: 0.1
+  basicSlashClip: {fileID: 0}
+  spinSlashClip: {fileID: 0}
+  heavySlashClip: {fileID: 0}
+  meleeVolume: 0.75
+  meleePitch: 1.1
+  useMeleePitchVariance: 1
+  meleePitchVariance: 0.15
+  hitClip: {fileID: 8300000, guid: b7a4800f68e0e5142a31aee70aecbd57, type: 3}
+  hitVolume: 0.85
+  hitPitch: 1
+  useHitPitchVariance: 1
+  hitPitchVariance: 0.1
+  throwShieldClip: {fileID: 0}
+  catchShieldClip: {fileID: 0}
+  rangeVolume: 0.75
+  rangePitch: 1
+  useRangePitchVariance: 1
+  rangePitchVariance: 0.1
 --- !u!1 &6769764421561134128
 GameObject:
   m_ObjectHideFlags: 0
