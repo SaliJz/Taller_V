@@ -3,12 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
-/// Clase que maneja los efectos visuales del enemigo, incluyendo:
-/// - Visualización de números de daño
-/// - Parpadeo por material (material swap) mediante BlinkMaterial(...)
-/// - Efecto de brillo (armor glow)
-/// - Feedback de sonido
-/// - Efecto de stun
+/// Clase que maneja los efectos visuales del enemigo
 /// </summary>
 public class EnemyVisualEffects : MonoBehaviour
 {
