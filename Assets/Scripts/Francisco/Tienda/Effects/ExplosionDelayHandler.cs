@@ -22,28 +22,25 @@ public class ExplosionDelayHandler : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
 
-        float explosionDamage = _enemyBaseHealth * _explosionDamagePercentage;
+        //float explosionDamage = _enemyBaseHealth * _explosionDamagePercentage;
         Vector3 position = transform.position;
 
-        Collider[] hitColliders = Physics.OverlapSphere(position, _explosionRadius);
-        foreach (var hitCollider in hitColliders)
-        {
-            if (hitCollider.gameObject == gameObject) continue;
+        //Collider[] hitColliders = Physics.OverlapSphere(position, _explosionRadius);
+        //foreach (var hitCollider in hitColliders)
+        //{
+        //    if (hitCollider.gameObject == gameObject) continue;
 
-            IDamageable damageable = hitCollider.GetComponentInParent<IDamageable>();
-            if (damageable != null)
-            {
-                damageable.TakeDamage(explosionDamage, false);
-                Debug.Log($"[ExplosionDelayHandler] Daño por explosión de {explosionDamage:F2} aplicado a {hitCollider.gameObject.name}.");
-            }
-        }
+        //    IDamageable damageable = hitCollider.GetComponentInParent<IDamageable>();
+        //    if (damageable != null)
+        //    {
+        //        damageable.TakeDamage(explosionDamage, false);
+        //        Debug.Log($"[ExplosionDelayHandler] Daño por explosión de {explosionDamage:F2} aplicado a {hitCollider.gameObject.name}.");
+        //    }
+        //}
 
         if (_explosionVisualizerPrefab != null)
         {
             GameObject visualzerExplosion = Instantiate(_explosionVisualizerPrefab, position, Quaternion.identity);
-
-            ExplosionScaleOverTime explosionScaleOverTime = visualzerExplosion.GetComponent<ExplosionScaleOverTime>();
-            explosionScaleOverTime.EndScale = Vector3.one * _explosionRadius;
         }
 
         Destroy(this);

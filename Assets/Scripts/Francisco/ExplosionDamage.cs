@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic; 
 
 [RequireComponent(typeof(SphereCollider))]
 public class ExplosionDamage : MonoBehaviour
@@ -7,11 +8,10 @@ public class ExplosionDamage : MonoBehaviour
     [SerializeField] private int damage = 8;
     [SerializeField] private float knockbackForce = 3f;
     [SerializeField] private float knockbackDuration = 0.5f;
-    [SerializeField] private LayerMask enemyLayer;
-    [SerializeField] private bool damageOnStart = true;
+    [SerializeField] private LayerMask damageableLayers;
 
     private SphereCollider sphereCollider;
-    private bool hasDealtDamage = false;
+    private HashSet<Collider> damagedTargets = new HashSet<Collider>(); 
 
     private void Awake()
     {
@@ -19,28 +19,30 @@ public class ExplosionDamage : MonoBehaviour
         sphereCollider.isTrigger = true;
     }
 
-    private void Start()
+    private void OnTriggerEnter(Collider col)
     {
-        if (damageOnStart)
+        if (damagedTargets.Contains(col))
         {
-            DealDamage();
+            return;
         }
+
+        ApplyDamage(col);
     }
 
-    public void DealDamage()
+    private void ApplyDamage(Collider col)
     {
-        if (hasDealtDamage) return;
-        hasDealtDamage = true;
-
-        Collider[] hits = Physics.OverlapSphere(transform.position, sphereCollider.radius, enemyLayer);
-
-        foreach (Collider col in hits)
+        PlayerHealth playerHealth = col.GetComponent<PlayerHealth>();
+        if (playerHealth != null)
         {
-            EnemyHealth enemyHealth = col.GetComponent<EnemyHealth>();
-            if (enemyHealth != null)
-            {
-                enemyHealth.TakeDamage(damage, AttackDamageType.Melee, transform.position);
-            }
+            playerHealth.TakeDamage(damage);
+            damagedTargets.Add(col); 
+            return;
+        }
+
+        EnemyHealth enemyHealth = col.GetComponent<EnemyHealth>();
+        if (enemyHealth != null)
+        {
+            enemyHealth.TakeDamage(damage, AttackDamageType.Melee, transform.position);
 
             Vector3 knockbackDir = (col.transform.position - transform.position).normalized;
             knockbackDir.y = 0;
@@ -51,11 +53,19 @@ public class ExplosionDamage : MonoBehaviour
                 knockback.TriggerKnockback(knockbackDir, knockbackForce, knockbackDuration);
             }
 
-            if (col.CompareTag("EnemyProjectile"))
-            {
-                Destroy(col.gameObject);
-            }
+            damagedTargets.Add(col); 
+            return;
         }
+
+        if (col.CompareTag("EnemyProjectile"))
+        {
+            Destroy(col.gameObject);
+        }
+    }
+
+    public void FinishExplosion()
+    {
+        Destroy(gameObject);
     }
 
     public void SetDamage(int newDamage) => damage = newDamage;
