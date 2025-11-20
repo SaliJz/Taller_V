@@ -4,12 +4,18 @@ public class ConnectionTrigger : MonoBehaviour
 {
     private DungeonGenerator dungeonGenerator;
     private ConnectionPoint connectionPoint;
+
+    [Header("SFX Configuration")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip transitionClip;
+
     private bool hasTriggered = false;
 
     void Start()
     {
         dungeonGenerator = FindAnyObjectByType<DungeonGenerator>();
         connectionPoint = GetComponent<ConnectionPoint>();
+        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
     }
 
     void OnTriggerEnter(Collider other)
@@ -24,6 +30,11 @@ public class ConnectionTrigger : MonoBehaviour
         }
 
         hasTriggered = true;
+
+        if (audioSource != null && transitionClip != null)
+        {
+            audioSource.PlayOneShot(transitionClip);
+        }
 
         BoxCollider boxCollider = GetComponent<BoxCollider>();
         if (boxCollider != null)

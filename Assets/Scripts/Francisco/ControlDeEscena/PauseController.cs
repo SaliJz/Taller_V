@@ -9,7 +9,12 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     [Header("Menu Panel References")]
     [SerializeField] private GameObject pausePanel;
     [SerializeField] private SettingsPanel settingsPanel;
-    [SerializeField] private GameObject firstSelectedButton; 
+    [SerializeField] private GameObject firstSelectedButton;
+
+    [Header("SFX Configuration")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip openPauseClip;
+    [SerializeField] private AudioClip clickButtonSFX;
 
     private static bool isPaused = false;
     private bool isSettingsOpen = false; 
@@ -109,6 +114,11 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     {
         if (isPaused) return;
 
+        if (audioSource != null && openPauseClip != null)
+        {
+            audioSource.PlayOneShot(openPauseClip);
+        }
+
         if (playerControls != null)
         {
             playerControls.Movement.Disable();
@@ -138,6 +148,11 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     public void ResumeGame()
     {
         if (!isPaused) return;
+
+        if (audioSource != null && clickButtonSFX != null)
+        {
+            audioSource.PlayOneShot(clickButtonSFX);
+        }
 
         if (isSettingsOpen) return;
 
@@ -183,6 +198,11 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
             return;
         }
 
+        if (audioSource != null && clickButtonSFX != null)
+        {
+            audioSource.PlayOneShot(clickButtonSFX);
+        }
+
         settingsPanel.OpenPanel();
         isSettingsOpen = true;
     }
@@ -190,6 +210,11 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     public void CloseSettings()
     {
         if (settingsPanel == null || !isSettingsOpen) return;
+
+        if (audioSource != null && clickButtonSFX != null)
+        {
+            audioSource.PlayOneShot(clickButtonSFX);
+        }
 
         settingsPanel.ClosePanel();
         isSettingsOpen = false;
@@ -224,12 +249,22 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 
     public void ResetGame()
     {
+        if (audioSource != null && clickButtonSFX != null)
+        {
+            audioSource.PlayOneShot(clickButtonSFX);
+        }
+
         Time.timeScale = 1f;
         StartCoroutine(FadeAndReloadScene(SceneManager.GetActiveScene().name));
     }
 
     public void LoadMainMenu()
     {
+        if (audioSource != null && clickButtonSFX != null)
+        {
+            audioSource.PlayOneShot(clickButtonSFX);
+        }
+
         Time.timeScale = 1f;
         StartCoroutine(FadeAndReloadScene("MainMenu"));
     }

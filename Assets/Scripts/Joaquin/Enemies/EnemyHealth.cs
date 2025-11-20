@@ -41,6 +41,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [Header("Toughness System")]
     [SerializeField] private EnemyToughness toughnessSystem;
 
+    [Header("Death Feedback")]
+    [Tooltip("Prefab que se instanciará al morir.")]
+    [SerializeField] private GameObject deathVFXPrefab;
+    [SerializeField] private Vector3 deathVFXOffset = new Vector3(0, 1f, 0); // Ajuste para que salga del centro del cuerpo
+
     public int invulnerableLayerIndex;
     private int vulnerableLayerIndex;
     private float dynamicDamageReduction = 0.0f;
@@ -331,7 +336,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             enemyVisualEffects.StopArmorGlow();
         }
     }
-
+        
     public void Heal(float healAmount)
     {
         if (currentHealth <= 0) return;
@@ -347,6 +352,15 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     public void Die(bool triggerEffects = true, AttackDamageType deathByDamageType = AttackDamageType.Melee)
     {
         if (isDead) return;
+
+        if (deathVFXPrefab != null)
+        {
+            Instantiate(deathVFXPrefab, transform.position + deathVFXOffset, Quaternion.identity);
+        }
+        else
+        {
+            ReportDebug("No se ha asignado deathVFXPrefab en el inspector.", 2);
+        }
 
         if (triggerEffects)
         {

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.InputSystem;
 using static ShopManager;
 
@@ -11,6 +12,10 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
     private PlayerControlls playerControls;
     private InventoryUIManager inventoryUIManager;
 
+    [Header("SFX Configuration")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip purchaseSound;
+
     private bool isPlayerInProximity = false;
 
     private void Awake()
@@ -18,6 +23,13 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
         shopManager = FindAnyObjectByType<ShopManager>();
         merchantRoomManager = GetComponentInParent<MerchantRoomManager>();
         inventoryUIManager = FindAnyObjectByType<InventoryUIManager>();
+
+        audioSource = merchantRoomManager.GetComponentInChildren<AudioSource>(); // Intentar obtener AudioSource del MerchantRoomManager si no está asignado
+
+        if (audioSource == null)
+        {
+            Debug.LogWarning("AudioSource no asignado en ShopItemDisplay. Se intentará obtenerlo del MerchantRoomManager.");
+        }
 
         if (shopManager == null)
         {
@@ -157,6 +169,11 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
                 if (merchantRoomManager != null)
                 {
                     merchantRoomManager.OnItemPurchased();
+                    if (audioSource != null && purchaseSound != null)
+                    {
+                        audioSource.PlayOneShot(purchaseSound);
+                        Debug.Log($"<color=yellow>[ShopItemDisplay] Reproduciendo sonido de compra.</color>");
+                    }
                 }
 
                 Destroy(gameObject);
