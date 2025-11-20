@@ -209,6 +209,9 @@ public partial class MorlockEnemy : MonoBehaviour
         if (isDead || enemy != gameObject) return;
         isDead = true;
 
+        if (animator != null) animator.SetTrigger("Die");
+        if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
+
         ChangeState(MorlockState.Repositioning);
         StopAllCoroutines();
 
@@ -218,9 +221,6 @@ public partial class MorlockEnemy : MonoBehaviour
             agent.updatePosition = false;
             agent.updateRotation = false;
         }
-
-        if (animator != null) animator.SetTrigger("Die");
-        if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
 
         this.enabled = false;
     }

@@ -102,7 +102,7 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private float _pulseWaitDuration = 1f;
     [SerializeField] private float _pulseSlowPercentage = 0.5f;
     [SerializeField] private float _pulseSlowDuration = 2f;
-    [SerializeField] private int _pulseDamage = 1;
+    [SerializeField] private int _pulseDamage = 5;
     [SerializeField] private GameObject _nervesVisualizationPrefab;
     [SerializeField] private GameObject _crackEffectPrefab;
     [SerializeField] private AudioClip _pulseScreamSound;
@@ -114,12 +114,17 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private float _roomMaxRadius = 45f;
     [SerializeField] private bool _calculateRoomRadiusOnStart = true;
     [SerializeField] private float _movementSpeedForPulse = 10f;
+
     private bool _isUsingSpecialAbility;
     private float[] _healthThresholdsForPulse = { 0.67f, 0.34f };
     private bool _isPulseAttackBlocked = false;
     private bool _isSpecialAbilityPending = false;
     private List<GameObject> _instantiatedEffects = new List<GameObject>();
     private Vector3 _roomCenter = Vector3.zero;
+
+    [Header("Evolución Pulso Carnal")]
+    [SerializeField] private float _speedBuffPerPulse = 0.20f; // 20%
+    private float _currentEvolutionMultiplier = 1.0f;
     #endregion
 
     #region Telegraphs
@@ -629,9 +634,9 @@ public class AstarothController : MonoBehaviour
 
         LookAtPlayer();
 
-        Vector3 rayOrigin = _whipVisualTransform.position;
-        Vector3 predictedPlayerPos = PredictPlayerPosition(0.3f); 
-        Vector3 directionToPlayer = (predictedPlayerPos - rayOrigin).normalized;
+        Vector3 rayOrigin = _whipVisualTransform.position; // Vector3 desde donde se lanza el latigazo
+        Vector3 predictedPlayerPos = PredictPlayerPosition(0.3f); // Predecir la posición del jugador 0.3 segundos en el futuro
+        Vector3 directionToPlayer = (predictedPlayerPos - rayOrigin).normalized; // Dirección hacia la posición predicha
 
         int layerMask = LayerMask.GetMask("Obstacle", "Player", "Wall", "Ground");
         RaycastHit hit;
@@ -678,7 +683,7 @@ public class AstarothController : MonoBehaviour
                             PlayerHealth playerHealth = col.GetComponent<PlayerHealth>();
                             if (playerHealth != null)
                             {
-                                playerHealth.TakeDamage(_Attack1Damage * 0.8f); 
+                                ExecuteAttack(col.gameObject, rayOrigin, _Attack1Damage * 0.8f);
                                 damageDealt = true;
                                 _lastWhipHitPlayer = true;
                                 _totalAttemptsLanded++;
@@ -853,36 +858,36 @@ public class AstarothController : MonoBehaviour
 
                 if (endKeyframe.IsTargetable)
                 {
-            LookAtPlayerSmooth(0.6f, 100f);
-            yield return new WaitForSeconds(0.6f);
+                    LookAtPlayerSmooth(0.6f, 100f);
+                    yield return new WaitForSeconds(0.6f);
 
-            Vector3 rayOrigin = _whipVisualTransform.position;
-            Vector3 predictedPlayerPos = PredictPlayerPosition(0.4f);
-            Vector3 directionToPlayer = (predictedPlayerPos - rayOrigin).normalized; 
+                    Vector3 rayOrigin = _whipVisualTransform.position;
+                    Vector3 predictedPlayerPos = PredictPlayerPosition(0.4f);
+                    Vector3 directionToPlayer = (predictedPlayerPos - rayOrigin).normalized;
 
-            _lastWhipRaycastOrigin = rayOrigin;
-            _lastWhipRaycastDirection = directionToPlayer;
-            _showWhipRaycastGizmo = true;
+                    _lastWhipRaycastOrigin = rayOrigin;
+                    _lastWhipRaycastDirection = directionToPlayer;
+                    _showWhipRaycastGizmo = true;
 
-            int layerMask = LayerMask.GetMask("Obstacle", "Wall");
-            RaycastHit hit;
+                    int layerMask = LayerMask.GetMask("Obstacle", "Wall");
+                    RaycastHit hit;
 
-            float effectiveRange = Vector3.Distance(rayOrigin, predictedPlayerPos); 
-            _whipTargetPoint = predictedPlayerPos; 
+                    float effectiveRange = Vector3.Distance(rayOrigin, predictedPlayerPos);
+                    _whipTargetPoint = predictedPlayerPos;
 
-            if (effectiveRange > _whipRange)
-            {
-                effectiveRange = _whipRange;
-                _whipTargetPoint = rayOrigin + directionToPlayer * _whipRange;
-            }
+                    if (effectiveRange > _whipRange)
+                    {
+                        effectiveRange = _whipRange;
+                        _whipTargetPoint = rayOrigin + directionToPlayer * _whipRange;
+                    }
 
-            if (Physics.Raycast(rayOrigin, directionToPlayer, out hit, effectiveRange, layerMask))
-            {
-                _whipTargetPoint = hit.point;
-            }
+                    if (Physics.Raycast(rayOrigin, directionToPlayer, out hit, effectiveRange, layerMask))
+                    {
+                        _whipTargetPoint = hit.point;
+                    }
 
-            _whipImpactPoint = _whipTargetPoint;
-            _showWhipImpactGizmo = true;
+                    _whipImpactPoint = _whipTargetPoint;
+                    _showWhipImpactGizmo = true;
 
                     endKeyframe.Position = transform.InverseTransformPoint(_whipTargetPoint);
                 }
@@ -897,7 +902,7 @@ public class AstarothController : MonoBehaviour
 
                     if (!damageDealtThisWhip && endKeyframe.IsTargetable)
                     {
-                        Vector3 currentWhipWorldPos = _whipVisualTransform.position;
+                        Vector3 currentWhipWorldPos = _whipVisualTransform.position; // Posición actual del latigazo en el mundo
                         Collider[] nearbyColliders = Physics.OverlapSphere(currentWhipWorldPos, 1.5f, LayerMask.GetMask("Player"));
 
                         foreach (Collider col in nearbyColliders)
@@ -909,7 +914,7 @@ public class AstarothController : MonoBehaviour
                                 PlayerHealth playerHealth = col.GetComponent<PlayerHealth>();
                                 if (playerHealth != null)
                                 {
-                                    playerHealth.TakeDamage(_Attack1Damage);
+                                    ExecuteAttack(col.gameObject, currentWhipWorldPos, _Attack1Damage);
                                     damageDealtThisWhip = true;
                                     _lastWhipHitPlayer = true;
                                     _totalAttemptsLanded++;
@@ -1082,7 +1087,7 @@ public class AstarothController : MonoBehaviour
                 PlayerHealth playerHealth = entity.GetComponent<PlayerHealth>();
                 if (playerHealth != null)
                 {
-                    playerHealth.TakeDamage(_Attack2Damage);
+                    ExecuteAttack(entity, rockWorldPosition, _Attack2Damage);
                     _totalAttemptsExecuted++;
                     _totalAttemptsLanded++;
 
@@ -1178,7 +1183,7 @@ public class AstarothController : MonoBehaviour
                             PlayerHealth playerHealth = entity.GetComponent<PlayerHealth>();
                             if (playerHealth != null)
                             {
-                                playerHealth.TakeDamage(_Attack2Damage);
+                                ExecuteAttack(entity, groundPosition, _Attack2Damage);
                                 _lastSmashHitPlayer = true;
                                 _totalAttemptsLanded++;
 
@@ -1252,13 +1257,12 @@ public class AstarothController : MonoBehaviour
     {
         _isUsingSpecialAbility = true;
 
-        Debug.Log("Astaroth esta preparando Pulso Carnal!");
+        Debug.Log("Astaroth esta preparando Pulso Carnal (Sistema Delegado)!");
 
+        // Moverse al centro
         yield return StartCoroutine(MoveToCenter(_roomCenter));
 
         _navMeshAgent.isStopped = true;
-
-        // Obtener posición del suelo
         Vector3 groundPos = GetGroundPosition(transform.position);
 
         if (_headsTransform != null)
@@ -1266,44 +1270,37 @@ public class AstarothController : MonoBehaviour
             yield return StartCoroutine(AnimateHeadDown());
         }
 
-        GameObject nervesVisualization = null;
+        // Esperar breve momento antes del pulso
         if (_nervesVisualizationPrefab != null)
         {
-            nervesVisualization = Instantiate(_nervesVisualizationPrefab, groundPos, Quaternion.identity, null);
-            _instantiatedEffects.Add(nervesVisualization);
-        }
+            GameObject pulseObj = Instantiate(_nervesVisualizationPrefab, groundPos, Quaternion.identity);
 
-        float expansionTimer = 0f;
-        while (expansionTimer < _pulseExpansionDuration)
-        {
-            expansionTimer += Time.deltaTime;
+            FleshPulseController pulseController = pulseObj.GetComponent<FleshPulseController>();
 
-            if (nervesVisualization != null)
+            if (pulseController != null)
             {
-                float expansionProgress = expansionTimer / _pulseExpansionDuration;
-                float diameter = _roomMaxRadius * 2;
-                float currentSize = expansionProgress * diameter;
-
-                nervesVisualization.transform.localScale = new Vector3(currentSize, 1f, currentSize);
+                pulseController.Initialize(
+                    _roomMaxRadius,
+                    _pulseExpansionDuration,
+                    _pulseDamage,
+                    _pulseSlowPercentage,
+                    _pulseSlowDuration
+                );
+            }
+            else
+            {
+                Debug.LogWarning("El prefab asignado a _nervesVisualizationPrefab no tiene el script FleshPulseController.");
             }
 
-            yield return null;
+            _instantiatedEffects.Add(pulseObj);
         }
 
-        yield return new WaitForSeconds(_pulseWaitDuration);
+        yield return new WaitForSeconds(_pulseExpansionDuration + _pulseWaitDuration);
 
-        // Restaurar posición de cabeza
         if (_headsTransform != null)
         {
             StartCoroutine(AnimateHeadUp());
         }
-
-        if (nervesVisualization != null)
-        {
-            Destroy(nervesVisualization, 0.2f);
-        }
-
-        ApplyPulseEffect();
 
         ShakeCamera(_shakeDuration, _amplitude, _frequency);
 
@@ -1324,12 +1321,41 @@ public class AstarothController : MonoBehaviour
             Destroy(crackEffect, 2f);
         }
 
+        ApplyEvolutionBuff(); // Aplicar buff de evolución
+
+        _attack1Timer = 0f;
+        _attack2Timer = 5f;
+
         StartCoroutine(BlockAttacksAfterPulse());
 
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(0.5f);
 
         _isUsingSpecialAbility = false;
         _currentState = BossState.Moving;
+    }
+
+    private void ApplyEvolutionBuff()
+    {
+        // Aumentar multiplicador base (1.0 -> 1.2 -> 1.4)
+        _currentEvolutionMultiplier += _speedBuffPerPulse;
+
+        // Aumentar velocidad de movimiento
+        if (_navMeshAgent != null)
+        {
+            _navMeshAgent.speed *= (1f + _speedBuffPerPulse);
+        }
+
+        // Aumentar velocidad de animación
+        if (_animator != null)
+        {
+            _animator.speed = _currentEvolutionMultiplier;
+        }
+
+        // Reducir Cooldowns (Más agresivo)
+        _attack1Cooldown = _baseAttack1Cooldown / _currentEvolutionMultiplier;
+        _attack2Cooldown = _baseAttack2Cooldown / _currentEvolutionMultiplier;
+
+        Debug.Log($"<color=purple>[Astaroth] EVOLUCIÓN: Velocidad aumentada un 20%. Total: {_currentEvolutionMultiplier}x</color>");
     }
 
     private IEnumerator MoveToCenter(Vector3 targetCenter)
@@ -1416,7 +1442,7 @@ public class AstarothController : MonoBehaviour
         _attack2Timer = Mathf.Max(_attack2Timer, 2f);
 
         // Retrasar Latigazo por 0.8s
-        _attack1Timer = Mathf.Max(_attack1Timer, _postPulseAttackDelay);
+        //_attack1Timer = Mathf.Max(_attack1Timer, _postPulseAttackDelay);
 
         yield return new WaitForSeconds(_postPulseAttackDelay);
 
@@ -1437,58 +1463,6 @@ public class AstarothController : MonoBehaviour
         return new Vector3(transform.position.x, 0.01f, transform.position.z);
     }
 
-    private void ApplyPulseEffect()
-    {
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position, 1000f);
-
-        foreach (var hitCollider in hitColliders)
-        {
-            if (hitCollider.CompareTag("Player"))
-            {
-                PlayerMovement playerMovement = hitCollider.GetComponent<PlayerMovement>();
-                PlayerHealth playerHealth = hitCollider.GetComponent<PlayerHealth>();
-                PlayerStatsManager statsManager = hitCollider.GetComponent<PlayerStatsManager>();
-
-                if (playerMovement != null)
-                {
-                    playerMovement.IsDashDisabled = true;
-                    
-                    StartCoroutine(DesactivePulseEffect(hitCollider));
-                }
-
-                if (playerHealth != null)
-                {
-                    playerHealth.TakeDamage(_pulseDamage);
-                }
-
-                if (statsManager != null)
-                {
-                    float currentSpeed = statsManager.GetStat(StatType.MoveSpeed);
-                    float slowAmount = currentSpeed * -_pulseSlowPercentage;
-                    float duration = 3.0f;
-
-                    string uniqueKey = $"SlowEffect_{Time.time}";
-
-                    statsManager.ApplyTimedModifier(uniqueKey, StatType.MoveSpeed, slowAmount, duration);
-                }
-
-                Debug.Log($"Player hit by Pulso Carnal! Slowed by {_pulseSlowPercentage * 100}% for {_pulseSlowDuration} seconds and took {_pulseDamage} damage.");
-            }
-        }
-    }
-
-    private IEnumerator DesactivePulseEffect(Collider hitCollider)
-    {
-        yield return new WaitForSeconds(_pulseSlowDuration);
-
-        PlayerMovement playerMovement = hitCollider.GetComponent<PlayerMovement>();
-
-        if (playerMovement != null)
-        {
-            playerMovement.IsDashDisabled = false;
-        }
-    }
-
     public void ShakeCamera(float duration, float amplitude, float frequency)
     {
         if (_noise == null) return;
@@ -1506,6 +1480,33 @@ public class AstarothController : MonoBehaviour
         _noise.FrequencyGain = 0f;
     }
     #endregion
+
+    private void ExecuteAttack(GameObject target, Vector3 position,float damageAmount)
+    {
+        if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
+        {
+            // Verificar si el ataque es bloqueado
+            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(position))
+            {
+                float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
+
+                if (remainingDamage > 0f)
+                {
+                    health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
+                }
+
+                Debug.Log($"<color=blue>[Astaroth] Ataque bloqueado por el jugador. Daño restante: {remainingDamage}</color>");
+                return;
+            }
+
+            health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+        }
+        else if (target.TryGetComponent<PlayerHealth>(out var healthOnly))
+        {
+            healthOnly.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+            Debug.Log($"<color=blue>[Astaroth] Ataque exitoso al jugador. Daño: {damageAmount}</color>");
+        }
+    }
 
     private IEnumerator ShowWhipTelegraph(Vector3 start, Vector3 end)
     {

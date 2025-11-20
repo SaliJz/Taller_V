@@ -21,6 +21,17 @@ public class PlayerAudioController : MonoBehaviour
     [SerializeField] private bool useDeathPitchVariance = true;
     [Range(0f, 0.5f)][SerializeField] private float deathPitchVariance = 0.1f;
 
+    [Header("Step SFX Configuration")]
+    [SerializeField] private AudioClip footstepGenericClip;
+    [SerializeField] private AudioClip footstepNivel1Clip;
+    [SerializeField] private AudioClip footstepNivel2Clip;
+    [SerializeField] private AudioClip footstepNivel3Clip;
+    [Range(0f, 1f)][SerializeField] private float stepVolume = 1.0f;
+    [Range(0f, 2f)][SerializeField] private float stepPitch = 1.0f;
+    [Header("Variance")]
+    [SerializeField] private bool useStepPitchVariance = true;
+    [Range(0f, 0.5f)][SerializeField] private float stepPitchVariance = 0.1f;
+
     [Header("Dash SFX Configuration")]
     [SerializeField] private AudioClip dashClip;
     [Range(0f, 1f)][SerializeField] private float dashVolume = 1.0f;
@@ -76,9 +87,31 @@ public class PlayerAudioController : MonoBehaviour
         PlayOneShotInternal(deathClip, deathVolume, deathPitch, useDeathPitchVariance, deathPitchVariance);
     }
 
-    /// <summary>
-    /// Método público llamado por PlayerMovement
-    /// </summary>
+    public void PlayStepSound(int nivel)
+    {
+        AudioClip clipToPlay = null;
+        switch (nivel)
+        {
+            case 0:
+                clipToPlay = footstepGenericClip;
+                break;
+            case 1:
+                clipToPlay = footstepNivel1Clip;
+                break;
+            case 2:
+                clipToPlay = footstepNivel2Clip;
+                break;
+            case 3:
+                clipToPlay = footstepNivel3Clip;
+                break;
+            default:
+                Debug.LogWarning($"{name}: Nivel de paso '{nivel}' no válido para sonido de paso.");
+                return;
+        }
+
+        PlayOneShotInternal(clipToPlay, stepVolume, stepPitch, useStepPitchVariance, stepPitchVariance);
+    }
+
     public void PlayDashSound()
     {
         PlayOneShotInternal(dashClip, dashVolume, dashPitch, usePitchVariance, pitchVariance);

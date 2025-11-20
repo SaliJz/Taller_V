@@ -385,7 +385,7 @@ public class LaceratusController : MonoBehaviour
                 IDamageable damageable = hit.GetComponent<IDamageable>();
                 if (damageable != null)
                 {
-                    damageable.TakeDamage(normalAttackDamage);
+                    ExecuteAttack(hit.gameObject, normalAttackDamage);
 
                     PlayerMovement playerMovement = hit.GetComponent<PlayerMovement>();
                     if (playerMovement != null)
@@ -474,7 +474,7 @@ public class LaceratusController : MonoBehaviour
                 IDamageable damageable = hit.GetComponent<IDamageable>();
                 if (damageable != null)
                 {
-                    damageable.TakeDamage(furyAttackDamage);
+                    ExecuteAttack(hit.gameObject, furyAttackDamage);
                     Debug.Log($"Laceratus: Ataque furia - Daño: {furyAttackDamage}");
                 }
                 break;
@@ -819,6 +819,31 @@ public class LaceratusController : MonoBehaviour
             controller.Move(direction * pushSpeed * Time.deltaTime);
             elapsed += Time.deltaTime;
             yield return null;
+        }
+    }
+
+    #endregion
+
+    #region Attack Execution
+
+    private void ExecuteAttack(GameObject target, float damageAmount)
+    {
+        if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
+        {
+            // Verificar si el ataque es bloqueado
+            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(transform.position))
+            {
+                float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
+
+                if (remainingDamage > 0f)
+                {
+                    health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
+                }
+                Debug.Log($"<color=red>[Laceratus] Ataque bloqueado por el jugador.</color>");
+                return;
+            }
+
+            health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
         }
     }
 

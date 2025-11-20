@@ -746,7 +746,7 @@ public class KronusEnemy : MonoBehaviour
         if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
         {
             // Verificar si el ataque es bloqueado
-            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(hitPoint.transform.position))
+            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(transform.position))
             {
                 float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
 

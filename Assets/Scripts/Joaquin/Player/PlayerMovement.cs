@@ -20,6 +20,17 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [HideInInspector] private float fallbackGravity = -9.81f;
     [SerializeField] private float gravity = -9.81f;
 
+    [Header("Audio Step Settings")]
+    [SerializeField] private int level = 0;
+    [SerializeField] private float stepInterval = 0.35f; // Tiempo entre pasos
+    private float stepTimer = 0f;
+
+    public int Level // Para el gestor de niveles en un futuro
+    {
+        get { return level; }
+        set { level = value; }
+    }
+
     [Header("Dash")]
     [SerializeField] private float dashDistance = 10f;
     [SerializeField] private float dashDuration = 0.3f;
@@ -91,6 +102,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     private bool lastTargetHit = false;
 
     public bool IsRotationExternallyControlled { get; set; } = false;
+
+    private Coroutine _dashDisableCoroutine;
 
     #endregion
 
@@ -232,7 +245,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         currentInputVector = context.ReadValue<Vector2>();
     }
 
-
     // Maneja la entrada de movimiento del jugador y actualiza las animaciones.
     // Importante: si rotationLocked == true, NO actualizar lastMoveX/lastMoveY ni Xaxis/Yaxis del animator,
     // y NO permitir que la entrada WASD cambie la rotación (solo permite mover el personaje).
@@ -255,6 +267,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         // Siempre actualizar "Running" para que la animación de movimiento ocurra cuando se mueve.
         if (playerAnimator != null) playerAnimator.SetBool("Running", isMoving);
+        if (playerAudioController != null) HandleFootstepsTimer();
 
         // Si NO hay bloqueo de rotación, actualizamos los ejes del animator según la entrada WASD.
         if (!rotationLocked)
@@ -276,6 +289,33 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         {
             // Si está bloqueado: no tocar lastMoveX/Y ni Xaxis/Yaxis.
             // Esto asegura que la rotación del mouse (bloqueada a 8 direcciones) se mantenga hasta que termine el ataque.
+        }
+    }
+
+    private void HandleFootstepsTimer()
+    {
+        bool isMoving = currentInputVector.sqrMagnitude > 0.01f; // O usa tu variable isMoving
+
+        if (isMoving && controller.isGrounded) // Solo suena si se mueve y pisa suelo
+        {
+            stepTimer -= Time.deltaTime;
+
+            if (stepTimer <= 0f)
+            {
+                // Reproducir sonido
+                if (playerAudioController != null)
+                {
+                    playerAudioController.PlayStepSound(level);
+                }
+
+                // Reiniciar timer
+                stepTimer = stepInterval;
+            }
+        }
+        else
+        {
+            // Reiniciar timer para que suene inmediatamente al empezar a caminar de nuevo
+            stepTimer = 0f;
         }
     }
 
@@ -673,37 +713,24 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
-    /// <summary>
-    /// Aplica un valor de alpha al renderer usando MaterialPropertyBlock (no instancia materials).
-    /// Intenta propiedades comunes: "_BaseColor" (URP/HDRP) y "_Color" (legacy).
-    /// </summary>
-    private void ApplyTransparencyToRenderer(Renderer renderer, float alpha)
+    public void DisableDashForDuration(float duration)
     {
-        if (renderer == null) return;
-
-        // Si el renderer tiene material con _BaseColor o _Color, intentar obtenerlo.
-        Color baseColor = Color.white;
-        Material mat = renderer.sharedMaterial;
-        if (mat != null)
+        if (_dashDisableCoroutine != null)
         {
-            if (mat.HasProperty("_BaseColor"))
-            {
-                baseColor = mat.GetColor("_BaseColor");
-            }
-            else if (mat.HasProperty("_Color"))
-            {
-                baseColor = mat.GetColor("_Color");
-            }
+            StopCoroutine(_dashDisableCoroutine);
         }
 
-        // Ajustar alpha
-        baseColor.a = alpha;
+        _dashDisableCoroutine = StartCoroutine(DashDisableRoutine(duration));
+    }
 
-        // Aplicar con MaterialPropertyBlock
-        MaterialPropertyBlock mpb = new MaterialPropertyBlock();
-        mpb.SetColor("_BaseColor", baseColor);
-        mpb.SetColor("_Color", baseColor);
-        renderer.SetPropertyBlock(mpb);
+    private IEnumerator DashDisableRoutine(float duration)
+    {
+        IsDashDisabled = true;
+
+        yield return new WaitForSeconds(duration);
+
+        IsDashDisabled = false;
+        _dashDisableCoroutine = null;
     }
 
     private void ApplyGravity()

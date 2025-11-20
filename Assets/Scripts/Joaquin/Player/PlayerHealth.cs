@@ -132,6 +132,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     // Referencia al PlayerCombatActionManager para interacciones de combate
     private PlayerCombatActionManager combatActionManager;
 
+    // Variable por si el jugador ha sido marcado por el Pulso Carnal
+    public bool IsMarked { get; set; } = false;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -486,6 +489,14 @@ public class PlayerHealth : MonoBehaviour, IDamageable
                 StartCoroutine(ShieldBlockCooldownRoutine());
                 return;
             }
+        }
+
+        if (IsMarked && !isCostDamage)
+        {
+            damageAmount *= 2f; // Duplicar el daño entrante
+            IsMarked = false;   // Consumir la marca inmediatamente
+
+            ReportDebug($"<color=red>Marca consumida: El jugador recibe el doble de daño ({damageAmount}).</color>", 1);
         }
 
         float damageToApply = damageAmount;
