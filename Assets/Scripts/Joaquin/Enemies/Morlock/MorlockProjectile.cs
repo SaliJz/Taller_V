@@ -18,6 +18,8 @@ public class MorlockProjectile : MonoBehaviour
     [SerializeField] private float poisonInitialDamage = 2f;
     [SerializeField] private float poisonResetTime = 5f;
 
+    [SerializeField] private LayerMask collisionLayers;
+
     private Vector3 direction;
     private bool wasReflected = false;
 
@@ -73,6 +75,11 @@ public class MorlockProjectile : MonoBehaviour
 
             if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
 
+            Destroy(gameObject);
+        }
+
+        if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
+        {
             Destroy(gameObject);
         }
     }
