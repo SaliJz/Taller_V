@@ -2385,6 +2385,7 @@ GameObject:
   - component: {fileID: 4450774918110943915}
   - component: {fileID: 6729587559714737135}
   - component: {fileID: 1321203522985649849}
+  - component: {fileID: 9069407323632964178}
   m_Layer: 0
   m_Name: Plane (1)
   m_TagString: Untagged
@@ -2482,6 +2483,26 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &9069407323632964178
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5048991997629176142}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SerializedVersion: 0
+  m_OverrideArea: 1
+  m_Area: 1
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 0
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &5097257644974127798
 GameObject:
   m_ObjectHideFlags: 0
@@ -3231,7 +3252,7 @@ GameObject:
   - component: {fileID: 1670489299231146758}
   - component: {fileID: 2022646179703561562}
   m_Layer: 0
-  m_Name: Room01B
+  m_Name: Nivel_1_A
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4815,7 +4836,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: a5ef3bc6246379142a448490c7ee1612, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: 275be135cdd86e54db2fd13c7bda5205, type: 2}
   m_BuildHeightMesh: 0
 --- !u!1001 &2250343880334544712
 PrefabInstance:
@@ -5078,6 +5099,9 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 7818585395246714658}
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8935411715750332864, guid: 3aa4011f59fbd3c4388ee7100f5e41a2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4649046036078981623}
     - targetCorrespondingSourceObject: {fileID: 7472411310629183679, guid: 3aa4011f59fbd3c4388ee7100f5e41a2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8031281257654649548}
@@ -5087,6 +5111,23 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1189754578765066730, guid: 3aa4011f59fbd3c4388ee7100f5e41a2, type: 3}
   m_PrefabInstance: {fileID: 4230789212952851929}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &5095327934176197657 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8935411715750332864, guid: 3aa4011f59fbd3c4388ee7100f5e41a2, type: 3}
+  m_PrefabInstance: {fileID: 4230789212952851929}
+  m_PrefabAsset: {fileID: 0}
+--- !u!210 &4649046036078981623
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5095327934176197657}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -2
+  m_SortAtRoot: 0
 --- !u!95 &5547562569199489523 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 8523676493106668586, guid: 3aa4011f59fbd3c4388ee7100f5e41a2, type: 3}

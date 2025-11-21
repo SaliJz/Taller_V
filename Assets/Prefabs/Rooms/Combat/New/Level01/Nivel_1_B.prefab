@@ -5725,7 +5725,7 @@ GameObject:
   - component: {fileID: 1670489299231146758}
   - component: {fileID: 855780113772926863}
   m_Layer: 0
-  m_Name: Room01A
+  m_Name: Nivel_1_B
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8933,7 +8933,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: 003fc985815a4494caa12bb5d4bdfaa3, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: d46f1aa36d1df9e4982cd8f84a9ff2cb, type: 2}
   m_BuildHeightMesh: 0
 --- !u!1001 &1491332642061315267
 PrefabInstance:
@@ -9056,6 +9056,10 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1066129732717220285, guid: b3c38e709de14724c8c0acdcd539a550, type: 3}
       propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1113899432011927349, guid: b3c38e709de14724c8c0acdcd539a550, type: 3}
+      propertyPath: m_StaticEditorFlags
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1440612362894200213, guid: b3c38e709de14724c8c0acdcd539a550, type: 3}
@@ -9189,13 +9193,33 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6913486331170546613, guid: b3c38e709de14724c8c0acdcd539a550, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7560203738802389548}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1113899432011927349, guid: b3c38e709de14724c8c0acdcd539a550, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5066982610847022282}
   m_SourcePrefab: {fileID: 100100000, guid: b3c38e709de14724c8c0acdcd539a550, type: 3}
 --- !u!4 &800065635748623446 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1440612362894200213, guid: b3c38e709de14724c8c0acdcd539a550, type: 3}
   m_PrefabInstance: {fileID: 1793684150848551363}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1698190876759029494 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1113899432011927349, guid: b3c38e709de14724c8c0acdcd539a550, type: 3}
+  m_PrefabInstance: {fileID: 1793684150848551363}
+  m_PrefabAsset: {fileID: 0}
+--- !u!210 &5066982610847022282
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1698190876759029494}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -2
+  m_SortAtRoot: 0
 --- !u!4 &3012218581212537281 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3542642872770779138, guid: b3c38e709de14724c8c0acdcd539a550, type: 3}

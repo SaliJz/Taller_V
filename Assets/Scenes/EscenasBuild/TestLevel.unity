@@ -156,7 +156,7 @@ MonoBehaviour:
   m_LayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_UseGeometry: 1
+  m_UseGeometry: 0
   m_DefaultArea: 0
   m_GenerateLinks: 0
   m_IgnoreNavMeshAgent: 1
@@ -1381,7 +1381,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 5, y: 5, z: 5}
+  m_LocalScale: {x: 2, y: 5, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -3915,7 +3915,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 185729ac7d2c6694cbc60378c7c0efc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startRoomPrefab: {fileID: -2013639086596557405, guid: 77337c925ffa3224eb4ba9566a8152a7, type: 3}
+  startRoomPrefab: {fileID: -2013639086596557405, guid: d4450adc52267f24088a84906fbbab90, type: 3}
   endRoomPrefabs:
   - {fileID: -2013639086596557405, guid: 47d03068972ff6546b6f9b5ca2e2c909, type: 3}
   - {fileID: -2013639086596557405, guid: 2ca861c9680f57b4697e67fc8f307d4c, type: 3}
@@ -3924,16 +3924,18 @@ MonoBehaviour:
   - roomType: 1
     probability: 100
     roomPrefabs:
-    - {fileID: 1482729654027300797, guid: 2b7455c699c26e74ca0cd38a8b5336d2, type: 3}
     - {fileID: 1482729654027300797, guid: 7d2f6a12ba8508941b08a51399a9dd15, type: 3}
+    - {fileID: 1482729654027300797, guid: 2b7455c699c26e74ca0cd38a8b5336d2, type: 3}
+    - {fileID: 4837703137612241022, guid: 268183ceda606764398f8308f7ccc5fe, type: 3}
     - {fileID: 1406286082122936213, guid: b3578fe19d8d5d34d8d6ed4e21bc0ead, type: 3}
-    - {fileID: 4837703137612241022, guid: d214339744ef8a745bd78acef75141f6, type: 3}
     - {fileID: 4837703137612241022, guid: 3b99d80ccf7eea245aa4ad220ebc647c, type: 3}
+    - {fileID: 1482729654027300797, guid: b3588a7c5489e1e42b6be3a69c2c968e, type: 3}
+    roomDataList: []
+  - roomType: 4
+    probability: 100
+    roomPrefabs:
     - {fileID: -2013639086596557405, guid: 6a69a6dfe81a113429a73d7e2522291c, type: 3}
     - {fileID: -2013639086596557405, guid: fca8b3385a8f516499a041ca914555a2, type: 3}
-    - {fileID: 2687247453871147643, guid: 4da4fe76baee13a4ba084bd82f11620c, type: 3}
-    - {fileID: 7203752380485401633, guid: 8b8badf0f782f584e95dabb82407e8d6, type: 3}
-    - {fileID: 6730149805877275145, guid: 7e92fe95e9a36a141b0ecc5d6cf4b651, type: 3}
     roomDataList: []
   generationRules: []
   progressionRules:
@@ -3988,7 +3990,10 @@ MonoBehaviour:
     multipleRoomTypes: []
     useCustomPrefabs: 1
     customRoomPrefabs:
+    - {fileID: 4837703137612241022, guid: 268183ceda606764398f8308f7ccc5fe, type: 3}
+    - {fileID: 1406286082122936213, guid: b3578fe19d8d5d34d8d6ed4e21bc0ead, type: 3}
     - {fileID: 4837703137612241022, guid: 3b99d80ccf7eea245aa4ad220ebc647c, type: 3}
+    - {fileID: 1482729654027300797, guid: b3588a7c5489e1e42b6be3a69c2c968e, type: 3}
     minRoomNumber: 4
     maxRoomNumber: 4
     isMandatory: 1
