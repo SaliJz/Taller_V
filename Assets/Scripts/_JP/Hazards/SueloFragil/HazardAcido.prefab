@@ -125,7 +125,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   meshGrieta: {fileID: 2119463143757088841}
   prefabHueco: {fileID: 8434385395422126437}
-  escalaHueco: {x: 5, y: 1}
+  escalaHueco: {x: 0.01, y: 0.01}
   escalaGrieta: {x: 5, y: 1}
   delayParaRomper: 0.4
   romperAlSalir: 0
@@ -163,7 +163,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5781471591723934100, guid: 709e5237b7190b44888c17aeaf57df32, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6575912181695594567, guid: 709e5237b7190b44888c17aeaf57df32, type: 3}
       propertyPath: m_LocalScale.x
@@ -218,12 +218,20 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8107438470115573609, guid: 709e5237b7190b44888c17aeaf57df32, type: 3}
+      propertyPath: escalaFinal.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8107438470115573609, guid: 709e5237b7190b44888c17aeaf57df32, type: 3}
+      propertyPath: escalaFinal.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8107438470115573609, guid: 709e5237b7190b44888c17aeaf57df32, type: 3}
       propertyPath: localEulerOffset.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8107438470115573609, guid: 709e5237b7190b44888c17aeaf57df32, type: 3}
       propertyPath: localPositionOffset.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
