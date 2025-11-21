@@ -59,7 +59,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     [Header("Melee Impact VFX")]
     [SerializeField] private GameObject meleeImpactVFX;
-    [SerializeField] private int impactParticleCount = 20;
+    //[SerializeField] private int impactParticleCount = 20;
 
     [Header("Debug")]
     [SerializeField] private bool useBoxCollider = false;
@@ -833,10 +833,13 @@ public class PlayerMeleeAttack : MonoBehaviour
                 }
             }
 
-            CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, true);
+            MeatPillar meatPillar = enemy.GetComponent<MeatPillar>();
+            if (meatPillar != null)
+            {
+                meatPillar.TakeDamage();
+            }
 
-            //BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
-            //if (bloodKnight != null) bloodKnight.OnPlayerCounterAttack();
+            CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, true);
 
             PlayImpactVFX(enemy.transform.position);
             ReportDebug($"Golpe a {enemy.name} por {finalDamage} de daño.", 1);
@@ -844,7 +847,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         if (!hitAnyEnemy)
         {
-            ReportDebug("Ataque no golpeó a ningún enemigo.", 1);
+            //ReportDebug("Ataque no golpeó a ningún enemigo.", 1);
         }
 
         float displayDuration = gizmoDuration;

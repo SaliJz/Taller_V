@@ -1,8 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening.Plugins.Options;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.AI;
+using static UnityEngine.EventSystems.EventTrigger;
 
 [System.Serializable]
 public struct WhipKeyframe
@@ -75,6 +77,8 @@ public class AstarothController : MonoBehaviour
     private bool _showWhipRaycastGizmo;
     private bool _showWhipImpactGizmo;
     private Vector3 _whipImpactPoint;
+
+    private Collider[] _whipHitBuffer = new Collider[5];
     #endregion
 
     #region Attack 2: Smash Attack
@@ -837,6 +841,9 @@ public class AstarothController : MonoBehaviour
         _showWhipImpactGizmo = false;
         _navMeshAgent.isStopped = true;
 
+        float anticipationTime = 0.8f;
+        yield return StartCoroutine(LookAtPlayerSmoothCoroutine(anticipationTime, 120f));
+
         if (_trailRenderer != null)
         {
             _trailRenderer.Clear();
@@ -847,9 +854,20 @@ public class AstarothController : MonoBehaviour
         {
             _totalAttemptsExecuted++;
             _lastWhipHitPlayer = false;
-
+            
             bool damageDealtThisWhip = false;
-            HashSet<Collider> hitColliders = new HashSet<Collider>();
+
+            // Calculo de posicion del jugador
+            Vector3 rayOrigin = _whipVisualTransform.position;
+            Vector3 targetPosCandidate = PredictPlayerPosition(0.1f);
+            Vector3 directionToTarget = (targetPosCandidate - rayOrigin).normalized;
+
+            // Ajustar distancia al rango máximo
+            float distance = Vector3.Distance(rayOrigin, targetPosCandidate);
+            Vector3 finalTargetPoint = (distance > _whipRange) ? rayOrigin + (directionToTarget * _whipRange) : targetPosCandidate;
+
+            _whipTargetPoint = finalTargetPoint;
+            _showWhipImpactGizmo = true;
 
             for (int k = 0; k < _whipAnimationKeyframes.Length - 1; k++)
             {
@@ -858,30 +876,14 @@ public class AstarothController : MonoBehaviour
 
                 if (endKeyframe.IsTargetable)
                 {
-                    LookAtPlayerSmooth(0.6f, 100f);
-                    yield return new WaitForSeconds(0.6f);
-
-                    Vector3 rayOrigin = _whipVisualTransform.position;
-                    Vector3 predictedPlayerPos = PredictPlayerPosition(0.4f);
-                    Vector3 directionToPlayer = (predictedPlayerPos - rayOrigin).normalized;
-
                     _lastWhipRaycastOrigin = rayOrigin;
-                    _lastWhipRaycastDirection = directionToPlayer;
+                    _lastWhipRaycastDirection = targetPosCandidate;
                     _showWhipRaycastGizmo = true;
 
                     int layerMask = LayerMask.GetMask("Obstacle", "Wall");
                     RaycastHit hit;
 
-                    float effectiveRange = Vector3.Distance(rayOrigin, predictedPlayerPos);
-                    _whipTargetPoint = predictedPlayerPos;
-
-                    if (effectiveRange > _whipRange)
-                    {
-                        effectiveRange = _whipRange;
-                        _whipTargetPoint = rayOrigin + directionToPlayer * _whipRange;
-                    }
-
-                    if (Physics.Raycast(rayOrigin, directionToPlayer, out hit, effectiveRange, layerMask))
+                    if (Physics.Raycast(rayOrigin, directionToTarget, out hit, distance, layerMask))
                     {
                         _whipTargetPoint = hit.point;
                     }
@@ -892,40 +894,34 @@ public class AstarothController : MonoBehaviour
                     endKeyframe.Position = transform.InverseTransformPoint(_whipTargetPoint);
                 }
 
-                float segmentDuration = endKeyframe.Time - startKeyframe.Time;
+                // Tiempo de duración por ataque
+                float segmentDuration = Random.Range((endKeyframe.Time - startKeyframe.Time) * 0.65f, (endKeyframe.Time - startKeyframe.Time));
                 float startTime = Time.time;
 
                 while (Time.time < startTime + segmentDuration)
                 {
-                    float t = (Time.time - startTime) / segmentDuration;
-                    _whipVisualTransform.localPosition = Vector3.Lerp(startKeyframe.Position, endKeyframe.Position, t);
+                    float timer = (Time.time - startTime) / segmentDuration;
+                    _whipVisualTransform.localPosition = Vector3.Lerp(startKeyframe.Position, endKeyframe.Position, timer);
 
                     if (!damageDealtThisWhip && endKeyframe.IsTargetable)
                     {
-                        Vector3 currentWhipWorldPos = _whipVisualTransform.position; // Posición actual del latigazo en el mundo
-                        Collider[] nearbyColliders = Physics.OverlapSphere(currentWhipWorldPos, 1.5f, LayerMask.GetMask("Player"));
-
-                        foreach (Collider col in nearbyColliders)
+                        int hitCount = Physics.OverlapSphereNonAlloc(_whipVisualTransform.position, 1.5f, _whipHitBuffer, LayerMask.GetMask("Player"));
+                        
+                        for (int j = 0; j < hitCount; j++)
                         {
-                            if (col.CompareTag("Player") && !hitColliders.Contains(col))
+                            Collider collider = _whipHitBuffer[j];
+                            if (collider != null)
                             {
-                                hitColliders.Add(col);
+                                ExecuteAttack(collider.gameObject, _whipVisualTransform.position, _Attack1Damage);
+                                damageDealtThisWhip = true;
+                                _lastWhipHitPlayer = true;
+                                _totalAttemptsLanded++;
 
-                                PlayerHealth playerHealth = col.GetComponent<PlayerHealth>();
-                                if (playerHealth != null)
-                                {
-                                    ExecuteAttack(col.gameObject, currentWhipWorldPos, _Attack1Damage);
-                                    damageDealtThisWhip = true;
-                                    _lastWhipHitPlayer = true;
-                                    _totalAttemptsLanded++;
-
-                                    Debug.Log($"<color=red>[Astaroth] Whip HIT! Distance: {Vector3.Distance(currentWhipWorldPos, _player.position):F2}m</color>");
-                                    break;
-                                }
+                                Debug.Log($"<color=red>[Astaroth] Whip HIT! Distance: {Vector3.Distance(_whipVisualTransform.position, _player.position):F2}m</color>");
+                                break; 
                             }
                         }
                     }
-
                     yield return null;
                 }
 
@@ -938,7 +934,10 @@ public class AstarothController : MonoBehaviour
                 ShowDodgeIndicator();
             }
 
-            yield return new WaitForSeconds(0.5f);
+            float pauseTime = Random.Range(0.5f, 0.75f);
+
+            // Pequeña pausa entre latigazos
+            yield return new WaitForSeconds(pauseTime);
         }
 
         if (_trailRenderer != null)
@@ -957,10 +956,10 @@ public class AstarothController : MonoBehaviour
         _navMeshAgent.isStopped = false;
     }
 
-    private void LookAtPlayerSmooth(float duration, float maxDegreesPerSecond)
-    {
-        StartCoroutine(LookAtPlayerSmoothCoroutine(duration, maxDegreesPerSecond));
-    }
+    //private void LookAtPlayerSmooth(float duration, float maxDegreesPerSecond)
+    //{
+    //    StartCoroutine(LookAtPlayerSmoothCoroutine(duration, maxDegreesPerSecond));
+    //}
 
     private IEnumerator LookAtPlayerSmoothCoroutine(float duration, float maxDegreesPerSecond)
     {
@@ -1015,7 +1014,7 @@ public class AstarothController : MonoBehaviour
         _navMeshAgent.isStopped = true;
         _smashTargetPoint = _player.position;
 
-        HashSet<Collider> hitByDirectImpact = new HashSet<Collider>();
+        HashSet<GameObject> hitByDirectImpact = new HashSet<GameObject>();
 
         for (int k = 0; k < _smashAnimationKeyframes.Length - 1; k++)
         {
@@ -1028,12 +1027,7 @@ public class AstarothController : MonoBehaviour
             }
 
             float segmentDuration = endKeyframe.Time - startKeyframe.Time;
-            if (segmentDuration <= 0)
-            {
-                _smashVisualTransform.localPosition = endKeyframe.Position;
-                _smashVisualTransform.localScale = endKeyframe.Scale;
-            }
-            else
+            if (segmentDuration > 0)
             {
                 float startTime = Time.time;
                 while (Time.time < startTime + segmentDuration)
@@ -1046,9 +1040,10 @@ public class AstarothController : MonoBehaviour
 
                     yield return null;
                 }
-                _smashVisualTransform.localPosition = endKeyframe.Position;
-                _smashVisualTransform.localScale = endKeyframe.Scale;
             }
+
+            _smashVisualTransform.localPosition = endKeyframe.Position;
+            _smashVisualTransform.localScale = endKeyframe.Scale;
 
             if (endKeyframe.IsTargetable)
             {
@@ -1067,12 +1062,10 @@ public class AstarothController : MonoBehaviour
         _navMeshAgent.isStopped = false;
     }
 
-    private void CheckDirectRockImpact(HashSet<Collider> alreadyHit)
+    private void CheckDirectRockImpact(HashSet<GameObject> alreadyHit)
     {
         Vector3 rockWorldPosition = _smashVisualTransform.position;
         float rockRadius = _smashVisualTransform.localScale.x * 0.5f;
-
-        HashSet<GameObject> hitEntities = new HashSet<GameObject>();
 
         Collider[] nearbyColliders = Physics.OverlapSphere(rockWorldPosition, rockRadius);
 
@@ -1080,24 +1073,32 @@ public class AstarothController : MonoBehaviour
         {
             GameObject entity = col.gameObject;
 
-            if (entity.CompareTag("Player") && !hitEntities.Contains(entity))
+            if (entity.CompareTag("Player"))
             {
-                hitEntities.Add(entity);
+                GameObject playerRoot = entity.transform.root.gameObject;
 
-                PlayerHealth playerHealth = entity.GetComponent<PlayerHealth>();
+                if (alreadyHit.Contains(playerRoot))
+                {
+                    continue;
+                }
+
+                alreadyHit.Add(playerRoot);
+
+                PlayerHealth playerHealth = playerRoot.GetComponent<PlayerHealth>();
+                if (playerHealth == null) playerHealth = entity.GetComponent<PlayerHealth>();
+
                 if (playerHealth != null)
                 {
-                    ExecuteAttack(entity, rockWorldPosition, _Attack2Damage);
+                    ExecuteAttack(playerRoot, rockWorldPosition, _Attack2Damage);
                     _totalAttemptsExecuted++;
                     _totalAttemptsLanded++;
-
-                    Debug.Log($"<color=red>[Astaroth] Direct Rock HIT! Player struck by falling rock!</color>");
+                    Debug.Log($"<color=red>[Astaroth] Direct Rock HIT! Damage: {_Attack2Damage}</color>");
                 }
             }
         }
     }
 
-    private void PerformSmashDamage(Vector3 damageCenter, HashSet<Collider> alreadyHitByRock)
+    private void PerformSmashDamage(Vector3 damageCenter, HashSet<GameObject> alreadyHitByRock)
     {
         _totalAttemptsExecuted++;
         _lastSmashHitPlayer = false;
@@ -1132,7 +1133,7 @@ public class AstarothController : MonoBehaviour
         _showSmashOverlapGizmo = false;
     }
 
-    private IEnumerator ExpandSmashRadiusWithDamage(Transform effectTransform, float targetRadius, Vector3 groundPosition, HashSet<Collider> alreadyHitByRock)
+    private IEnumerator ExpandSmashRadiusWithDamage(Transform effectTransform, float targetRadius, Vector3 groundPosition, HashSet<GameObject> alreadyHitByRock)
     {
         float duration = 0.5f;
         float elapsedTime = 0f;
@@ -1158,17 +1159,12 @@ public class AstarothController : MonoBehaviour
             {
                 GameObject entity = hitCollider.transform.root.gameObject;
 
-                bool wasHitByRock = false;
-                foreach (var rockCol in alreadyHitByRock)
+                if (alreadyHitByRock.Contains(entity) || hitByShockwaveEntity.Contains(entity))
                 {
-                    if (rockCol.transform.root.gameObject == entity)
-                    {
-                        wasHitByRock = true;
-                        break;
-                    }
+                    continue;
                 }
 
-                if (entity.CompareTag("Player") && !hitByShockwaveEntity.Contains(entity) && !wasHitByRock)
+                if (entity.CompareTag("Player"))
                 {
                     float heightDifference = Mathf.Abs(entity.transform.position.y - groundPosition.y);
 
@@ -1180,15 +1176,11 @@ public class AstarothController : MonoBehaviour
                         {
                             hitByShockwaveEntity.Add(entity);
 
-                            PlayerHealth playerHealth = entity.GetComponent<PlayerHealth>();
-                            if (playerHealth != null)
-                            {
-                                ExecuteAttack(entity, groundPosition, _Attack2Damage);
-                                _lastSmashHitPlayer = true;
-                                _totalAttemptsLanded++;
+                            ExecuteAttack(entity, groundPosition, _Attack2Damage);
+                            _lastSmashHitPlayer = true;
+                            _totalAttemptsLanded++;
 
-                                Debug.Log($"<color=red>[Astaroth] Shockwave HIT! Distance: {distanceFromCenter:F2}m</color>");
-                            }
+                            Debug.Log($"<color=red>[Astaroth] Shockwave HIT! Distance: {distanceFromCenter:F2}m</color>");
                         }
                     }
                     else

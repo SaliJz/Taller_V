@@ -28,14 +28,14 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     [SerializeField] private float inputBufferWindow = 0.12f; // Ventana de tiempo para bufferizar inputs
 
-    [Header("Feedback Visual")]
-    [SerializeField] private bool enableVisualFeedback = true;
-    [SerializeField] private GameObject skillRequiredWarningPrefab;
-    [SerializeField] private float warningOffsetY = 2.0f;
-    [SerializeField] private float warningDuration = 1.5f;
-    [SerializeField] private Color warningColor = Color.yellow;
-    [SerializeField] private string meleeBlockedMessage = "¡Activa la habilidad especial!";
-    [SerializeField] private string rangedBlockedMessage = "¡Desactiva la habilidad especial!";
+    //[Header("Feedback Visual")]
+    //[SerializeField] private bool enableVisualFeedback = true;
+    //[SerializeField] private GameObject skillRequiredWarningPrefab;
+    //[SerializeField] private float warningOffsetY = 2.0f;
+    //[SerializeField] private float warningDuration = 1.5f;
+    //[SerializeField] private Color warningColor = Color.yellow;
+    //[SerializeField] private string meleeBlockedMessage = "¡Activa la habilidad especial!";
+    //[SerializeField] private string rangedBlockedMessage = "¡Desactiva la habilidad especial!";
 
     private bool isExecutingAction = false;
     private CombatActionType currentAction = CombatActionType.None;
@@ -400,6 +400,7 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     #endregion
 
+    /*
     #region Visual Feedback
 
     private void ShowSkillRequiredWarning(string message)
@@ -442,7 +443,7 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     }
 
     #endregion
-
+    */
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     private static void ReportDebug(string message, int reportPriorityLevel)
     {

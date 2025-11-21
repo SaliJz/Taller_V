@@ -624,40 +624,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         return remainder;
     }
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.green;
-        Gizmos.DrawRay(transform.position, Vector3.up * offsetAboveEnemy);
-#if UNITY_EDITOR
-        // dibujar radio del área si está activado en inspector
-        if (enableAutoArea)
-        {
-            Gizmos.color = new Color(0f, 1f, 0f, 0.25f);
-            Gizmos.DrawWireSphere(transform.position, areaRadius);
-        }
-#endif
-    }
-
-    [System.Diagnostics.Conditional("UNITY_EDITOR")]
-    private static void ReportDebug(string message, int reportPriorityLevel)
-    {
-        switch (reportPriorityLevel)
-        {
-            case 1:
-                Debug.Log($"[EnemyHealth] {message}");
-                break;
-            case 2:
-                Debug.LogWarning($"[EnemyHealth] {message}");
-                break;
-            case 3:
-                Debug.LogError($"[EnemyHealth] {message}");
-                break;
-            default:
-                Debug.Log($"[EnemyHealth] {message}");
-                break;
-        }
-    }
-
     #region --- Reducción local pública (compatible con VidaEnemigoEscudo) ---
     /// <summary>
     /// Aplica una reducción de daño local durante 'duration' segundos.
@@ -777,5 +743,43 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         Debug.Log($"[{name}] Armadura de área COOLDOWN finalizado.");
     }
     #endregion
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.green;
+        Gizmos.DrawRay(transform.position, Vector3.up * offsetAboveEnemy);
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawLine(transform.position, transform.position + deathVFXOffset);
+
+#if UNITY_EDITOR
+        // dibujar radio del área si está activado en inspector
+        if (enableAutoArea)
+        {
+            Gizmos.color = new Color(0f, 1f, 0f, 0.25f);
+            Gizmos.DrawWireSphere(transform.position, areaRadius);
+        }
+#endif
+    }
+
+    [System.Diagnostics.Conditional("UNITY_EDITOR")]
+    private static void ReportDebug(string message, int reportPriorityLevel)
+    {
+        switch (reportPriorityLevel)
+        {
+            case 1:
+                Debug.Log($"[EnemyHealth] {message}");
+                break;
+            case 2:
+                Debug.LogWarning($"[EnemyHealth] {message}");
+                break;
+            case 3:
+                Debug.LogError($"[EnemyHealth] {message}");
+                break;
+            default:
+                Debug.Log($"[EnemyHealth] {message}");
+                break;
+        }
+    }
 }
 

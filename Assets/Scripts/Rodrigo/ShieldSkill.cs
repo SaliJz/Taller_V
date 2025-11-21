@@ -28,20 +28,13 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
     [SerializeField] private BuffSettings adultBuffs = new BuffSettings(1.1f, 1.2f, 1.1f, 2f);
     [SerializeField] private BuffSettings elderBuffs = new BuffSettings(1.1f, 1.12f, 1.1f, 1f);
 
-    [Header("Visuals - material swap")]
-    [Tooltip("Si no se asigna, intentara obtener el MeshRenderer del GameObject o hijos.")]
-    [SerializeField] private MeshRenderer[] meshRenderers;
-    [Tooltip("Material dorado que se aplicara durante la habilidad.")]
-    [SerializeField] private Material goldenMaterial;
-
-    [Header("VFX System")]
-    [Tooltip("GameObject contenedor del VFX de la habilidad.")]
-    [SerializeField] private GameObject vfxContainer;
-    [Tooltip("Sistema de partículas principal de la habilidad.")]
-    [SerializeField] private ParticleSystem skillVFX;
-    [SerializeField] private Color youngVFXColor = new Color(0.2f, 0.5f, 1f, 1f); // Azul
-    [SerializeField] private Color adultVFXColor = new Color(1f, 0.2f, 0.2f, 1f); // Rojo
-    [SerializeField] private Color elderVFXColor = new Color(1f, 0.84f, 0f, 1f); // Dorado
+    [Header("VFX")]
+    [Tooltip("El objeto hijo que contiene el Renderer del personaje.")]
+    [SerializeField] private GameObject visualModelObject;
+    [Tooltip("Material cuando la habilidad está activa y tiene estamina.")]
+    [SerializeField] private Material skillActiveMaterial;
+    [Tooltip("Material cuando la habilidad sigue activa pero consume vida (sin estamina).")]
+    [SerializeField] private Material skillExhaustedMaterial;
 
     [Header("Low Health Feedback")]
     [SerializeField] private GameObject warningMessagePrefab;
@@ -67,21 +60,19 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
     private PlayerControlls playerControls;
     private PlayerHealth playerHealth;
-    private Material[][] originalMaterials;
     private PlayerHealth.LifeStage lastKnownLifeStage;
+
+    private Renderer modelRenderer;
+    private Material storedBaseMaterial;
 
     private bool inputBlocked = false; 
     private bool isForcedActive = false;
     private GameObject currentWarningMessage;
 
     private bool wasHealthTooLow = false;
-    private bool lastVFXState = false;
-    private bool isVFXExternallyPaused = false;
-
-    private Coroutine safeDeactivateCoroutine;
 
     private bool hasStaminaBeenFullyDepleted = false;
-    public static event System.Action<float, float> OnStaminaChanged; // (currentStamina, maxStamina)
+    public static event System.Action<float, float> OnStaminaChanged;
 
     #endregion
 
@@ -103,32 +94,21 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
             return;
         }
 
-        if (meshRenderers == null || meshRenderers.Length == 0)
+        if (visualModelObject != null)
         {
-            meshRenderers = GetComponentsInChildren<MeshRenderer>();
-            if (meshRenderers == null || meshRenderers.Length == 0)
+            modelRenderer = visualModelObject.GetComponent<Renderer>();
+            if (modelRenderer != null)
             {
-                Debug.LogWarning("No se encontraron MeshRenderers en ShieldSkill. La habilidad no tendrá efecto visual.", this);
+                storedBaseMaterial = modelRenderer.sharedMaterial;
+            }
+            else
+            {
+                Debug.LogWarning("El visualModelObject asignado no tiene un componente Renderer.", this);
             }
         }
-
-        if (vfxContainer == null)
+        else
         {
-            Debug.LogWarning("VFX Container no asignado en ShieldSkill. Los efectos visuales no funcionarán.", this);
-        }
-
-        if (skillVFX == null && vfxContainer != null)
-        {
-            skillVFX = vfxContainer.GetComponentInChildren<ParticleSystem>();
-            if (skillVFX == null)
-            {
-                Debug.LogWarning("No se encontró ParticleSystem en VFX Container.", this);
-            }
-        }
-
-        if (vfxContainer != null)
-        {
-            vfxContainer.SetActive(false);
+            Debug.LogWarning("visualModelObject no asignado en ShieldSkill. No habrá feedback visual de materiales.", this);
         }
 
         playerControls = new PlayerControlls();
@@ -151,7 +131,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
         playerControls?.Abilities.Disable();
         RestoreOriginalMaterial();
-        DeactivateVFX();
+
         if (isSkillActive) DeactivateSkill();
     }
 
@@ -160,7 +140,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
         playerControls?.Dispose();
         RestoreOriginalMaterial();
-        DeactivateVFX();
+
         if (isSkillActive) DeactivateSkill();
 
         if (currentWarningMessage != null)
@@ -183,8 +163,6 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         Debug.Log($"[ShieldSkill] Cambio de etapa detectado durante habilidad: {lastKnownLifeStage} -> {newStage}");
 
         lastKnownLifeStage = newStage;
-
-        UpdateVFXColor();
 
         StartCoroutine(ReapplySkillModifiersNextFrame());
     }
@@ -216,7 +194,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         if (isSkillActive)
         {
             UpdateActiveSkill();
-            UpdateVFXVisibility();
+            UpdateMaterialState();
         }
         else
         {
@@ -330,8 +308,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "HealthDrain", StatType.HealthDrainAmount, currentBuffs.HealthDrainAmount);
 
-        ApplyGoldenMaterial();
-        ActivateVFX();
+        UpdateMaterialState();
 
         Debug.Log($"[HABILIDAD ACTIVADA] Etapa: {lastKnownLifeStage} " +
                   $"- Buffs: Velocidad de movimiento x{currentBuffs.MoveMultiplier}, " +
@@ -357,8 +334,8 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldSpeed");
 
         RemoveHealthDrainModifier();
+
         RestoreOriginalMaterial();
-        DeactivateVFX();
 
         float afterMoveValue = statsManager.GetStat(StatType.MoveSpeed);
         float afterMeleeDmgValue = statsManager.GetStat(StatType.MeleeAttackDamage);
@@ -533,225 +510,45 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
     #region VFX Management
 
     /// <summary>
-    /// Activa el VFX de la habilidad con el color correspondiente a la etapa de vida.
+    /// Actualiza el material del modelo visual basado en el estado de la habilidad y la estamina.
     /// </summary>
-    private void ActivateVFX()
+    private void UpdateMaterialState()
     {
-        if (vfxContainer == null) return;
+        if (modelRenderer == null) return;
 
-        isVFXExternallyPaused = false;
+        Material targetMaterial;
 
-        vfxContainer.SetActive(true);
-
-        if (skillVFX != null)
+        if (isSkillActive)
         {
-            UpdateVFXColor();
-
-            if (!skillVFX.isPlaying)
+            if (currentStamina > 0)
             {
-                var emission = skillVFX.emission;
-                emission.enabled = true;
-                skillVFX.Play(true);
+                targetMaterial = skillActiveMaterial;
+            }
+            else
+            {
+                targetMaterial = skillExhaustedMaterial;
             }
         }
-
-        Debug.Log($"[ShieldSkill] VFX activado para etapa {lastKnownLifeStage}");
-    }
-
-    /// <summary>
-    /// Desactiva el VFX de la habilidad.
-    /// </summary>
-    private void DeactivateVFX()
-    {
-        isVFXExternallyPaused = false;
-
-        if (this.isActiveAndEnabled && gameObject.activeInHierarchy)
+        else
         {
-            if (safeDeactivateCoroutine != null)
-            {
-                StopCoroutine(safeDeactivateCoroutine);
-                safeDeactivateCoroutine = null;
-            }
-            safeDeactivateCoroutine = StartCoroutine(SafeDeactivateVFXCoroutine());
-            return;
+            targetMaterial = storedBaseMaterial;
         }
 
-        SafeDeactivateVFXImmediate();
-    }
-
-    private IEnumerator SafeDeactivateVFXCoroutine()
-    {
-        if (skillVFX != null)
+        if (modelRenderer.sharedMaterial != targetMaterial && targetMaterial != null)
         {
-            try
-            {
-                // Detener y limpiar de forma explícita
-                if (skillVFX.isPlaying)
-                {
-                    skillVFX.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
-                }
-
-                skillVFX.Clear();
-
-                // Desactivar la emisión para evitar que vuelva a generar
-                var emission = skillVFX.emission;
-                emission.enabled = false;
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogWarning("[ShieldSkill] Excepción al limpiar VFX: " + ex);
-            }
-        }
-
-        // Espera un frame para que Unity termine de procesar internals del ParticleSystem
-        yield return null;
-
-        if (vfxContainer != null)
-        {
-            vfxContainer.SetActive(false);
-        }
-
-        safeDeactivateCoroutine = null;
-    }
-
-    private void SafeDeactivateVFXImmediate()
-    {
-        if (safeDeactivateCoroutine != null)
-        {
-            // Si por alguna razón hay una coroutine en marcha, intenta pararla.
-            safeDeactivateCoroutine = null;
-        }
-
-        try
-        {
-            if (skillVFX != null)
-            {
-                if (skillVFX.isPlaying)
-                {
-                    skillVFX.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
-                }
-
-                skillVFX.Clear();
-
-                var emission = skillVFX.emission;
-                emission.enabled = false;
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogWarning("[ShieldSkill] Excepción al limpiar VFX (inmediato): " + ex);
-        }
-
-        if (vfxContainer != null)
-        {
-            vfxContainer.SetActive(false);
+            modelRenderer.material = targetMaterial;
         }
     }
 
     /// <summary>
-    /// Actualiza la visibilidad del VFX según el estado del jugador.
-    /// Se ejecuta automáticamente en Update cuando la habilidad está activa.
+    /// Restaura el material base guardado al inicio.
     /// </summary>
-    private void UpdateVFXVisibility()
+    private void RestoreOriginalMaterial()
     {
-        if (!isSkillActive) return;
-
-        bool shouldShowVFX = true;
-
-        // Ocultar VFX si están pausados externamente
-        if (isVFXExternallyPaused)
+        if (modelRenderer != null && storedBaseMaterial != null)
         {
-            shouldShowVFX = false;
+            modelRenderer.material = storedBaseMaterial;
         }
-
-        // Ocultar VFX durante ataque melee
-        else if(playerMeleeAttack != null && playerMeleeAttack.IsAttacking)
-        {
-            shouldShowVFX = false;
-        }
-
-        // Ocultar VFX durante lanzamiento de escudo
-        else if(playerShieldController != null && !playerShieldController.CanThrowShield())
-        {
-            shouldShowVFX = false;
-        }
-
-        // Solo actualizar si el estado cambió
-        if (shouldShowVFX != lastVFXState)
-        {
-            if (vfxContainer != null)
-            {
-                vfxContainer.SetActive(shouldShowVFX);
-            }
-
-            if (skillVFX != null)
-            {
-                if (shouldShowVFX && !skillVFX.isPlaying)
-                {
-                    skillVFX.Play(true);
-                }
-                else if (!shouldShowVFX && skillVFX.isPlaying)
-                {
-                    skillVFX.Stop(true, ParticleSystemStopBehavior.StopEmitting);
-                }
-            }
-
-            lastVFXState = shouldShowVFX;
-            Debug.Log($"[ShieldSkill] VFX {(shouldShowVFX ? "mostrado" : "ocultado")} automáticamente");
-        }
-    }
-
-    /// <summary>
-    /// Actualiza el color del VFX según la etapa de vida actual.
-    /// </summary>
-    private void UpdateVFXColor()
-    {
-        if (skillVFX == null) return;
-
-        Color targetColor = GetVFXColorForLifeStage(lastKnownLifeStage);
-
-        var main = skillVFX.main;
-        main.startColor = targetColor;
-
-        Debug.Log($"[ShieldSkill] Color de VFX actualizado a {targetColor} para etapa {lastKnownLifeStage}");
-    }
-
-    /// <summary>
-    /// Obtiene el color del VFX según la etapa de vida.
-    /// </summary>
-    private Color GetVFXColorForLifeStage(PlayerHealth.LifeStage stage)
-    {
-        switch (stage)
-        {
-            case PlayerHealth.LifeStage.Young:
-                return youngVFXColor;
-            case PlayerHealth.LifeStage.Adult:
-                return adultVFXColor;
-            case PlayerHealth.LifeStage.Elder:
-                return elderVFXColor;
-            default:
-                return Color.red;
-        }
-    }
-
-    /// <summary>
-    /// Método público para que otras clases desactiven temporalmente el VFX.
-    /// </summary>
-    public void SetVFXActive(bool active)
-    {
-        if (!isSkillActive) return;
-
-        isVFXExternallyPaused = !active;
-
-        Debug.Log($"[ShieldSkill] VFX {(active ? "reactivado" : "pausado")} externamente");
-    }
-
-    /// <summary>
-    /// Obtiene el GameObject del VFX container para referencias externas.
-    /// </summary>
-    public GameObject GetVFXContainer()
-    {
-        return vfxContainer;
     }
 
     #endregion
@@ -823,61 +620,6 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
             Destroy(currentWarningMessage);
             currentWarningMessage = null;
         }
-    }
-
-    #endregion
-
-    #region Material Management
-
-    /// <summary>
-    /// Aplica el material dorado a todos los sub-materiales de cada MeshRenderer.
-    /// Guarda los materiales originales si todavía no se guardaron.
-    /// </summary>
-    private void ApplyGoldenMaterial()
-    {
-        if (meshRenderers == null || meshRenderers.Length == 0 || goldenMaterial == null) return;
-
-        if (originalMaterials == null || originalMaterials.Length == 0)
-        {
-            originalMaterials = new Material[meshRenderers.Length][];
-            for (int i = 0; i < meshRenderers.Length; i++)
-            {
-                var mats = meshRenderers[i].materials;
-                originalMaterials[i] = new Material[mats.Length];
-                for (int j = 0; j < mats.Length; j++)
-                {
-                    originalMaterials[i][j] = mats[j];
-                }
-            }
-        }
-
-        for (int i = 0; i < meshRenderers.Length; i++)
-        {
-            var mats = meshRenderers[i].materials;
-            Material[] goldMats = new Material[mats.Length];
-            for (int j = 0; j < goldMats.Length; j++)
-            {
-                goldMats[j] = goldenMaterial;
-            }
-            meshRenderers[i].materials = goldMats;
-        }
-    }
-
-    /// <summary>
-    /// Restaura los materiales originales si existen.
-    /// </summary>
-    private void RestoreOriginalMaterial()
-    {
-        if (meshRenderers == null || originalMaterials == null || originalMaterials.Length == 0) return;
-
-        for (int i = 0; i < meshRenderers.Length; i++)
-        {
-            if (originalMaterials[i] != null)
-            {
-                meshRenderers[i].materials = originalMaterials[i];
-            }
-        }
-        originalMaterials = null;
     }
 
     #endregion

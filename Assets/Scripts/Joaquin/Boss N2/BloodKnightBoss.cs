@@ -31,7 +31,6 @@ public class BloodKnightBoss : MonoBehaviour
     [SerializeField] private float sodomaBackwardDistance = 3f;
 
     [Header("Ciclo 4: Fase Cooldown / Necio Pecador")]
-    [SerializeField] private float necioPhaseTotalDuration = 15f;
     [SerializeField] private float necioAttackWindow = 12f;
     [SerializeField] private float necioVulnerableWindow = 3f;
     [SerializeField] private float necioPecadorDamage = 15f;
@@ -42,7 +41,7 @@ public class BloodKnightBoss : MonoBehaviour
     [Tooltip("Probabilidad de intentar la embestida antes de iniciar un ciclo nuevo")]
     [SerializeField, Range(0f, 1f)] private float chargeProbability = 0.15f;
     [SerializeField] private float chargeAbilitySpeed = 15f;
-    [SerializeField] private float chargeAbilityKnockbackForce = 15f;
+    //[SerializeField] private float chargeAbilityKnockbackForce = 15f;
     [SerializeField] private float playerStunDuration = 2.5f;
     [SerializeField] private LayerMask chargeObstacleLayers;
 

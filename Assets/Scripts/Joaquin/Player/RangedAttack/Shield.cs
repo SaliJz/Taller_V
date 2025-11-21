@@ -283,11 +283,11 @@ public class Shield : MonoBehaviour
                 }
             }
 
-            //BloodKnightBoss bloodKnight = enemy.GetComponent<BloodKnightBoss>();
-            //if (bloodKnight != null)
-            //{
-            //    bloodKnight.OnPlayerCounterAttack();
-            //}
+            MeatPillar meatPillar = enemy.GetComponent<MeatPillar>();
+            if (meatPillar != null)
+            {
+                meatPillar.TakeDamage();
+            }
 
             ExplosiveHead explosiveHead = enemy.GetComponent<ExplosiveHead>();
             if (explosiveHead != null)
