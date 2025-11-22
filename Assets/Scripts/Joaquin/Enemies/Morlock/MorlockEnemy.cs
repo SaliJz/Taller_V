@@ -430,30 +430,58 @@ public partial class MorlockEnemy : MonoBehaviour
 
     private IEnumerator Pursuit2Routine()
     {
-        int lastIndex = -1;
+        // Guardar la última posición para intentar no repetirla inmediatamente si hay otras opciones
+        Vector3 lastTargetPos = Vector3.zero;
 
         while (currentState == MorlockState.Pursue2)
         {
-            Vector3[] teleportPositions = new Vector3[4];
+            // Lista temporal para candidatos válidos
+            System.Collections.Generic.List<Vector3> validCandidates = new System.Collections.Generic.List<Vector3>();
+
             float[] angles = { 0f, 90f, 180f, 270f };
 
-            for (int i = 0; i < 4; i++)
+            // Iterar por los 4 ángulos y validar
+            for (int i = 0; i < angles.Length; i++)
             {
+                // Calcular la posición ideal teórica
                 Vector3 offset = Quaternion.Euler(0, angles[i], 0) * Vector3.forward * p2_teleportRange;
-                teleportPositions[i] = playerTransform.position + offset;
+                Vector3 potentialPos = playerTransform.position + offset;
+
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(potentialPos, out hit, 2.0f, NavMesh.AllAreas))
+                {
+                    validCandidates.Add(hit.position);
+                }
             }
 
-            int newIndex;
-            do
+            // Seleccionar el punto
+            if (validCandidates.Count > 0)
             {
-                newIndex = Random.Range(0, teleportPositions.Length);
-            } while (newIndex == lastIndex);
+                Vector3 selectedPos;
 
-            lastIndex = newIndex;
-            Vector3 targetPosition = teleportPositions[newIndex];
+                // Si hay más de 1 opción y tiene una posición anterior, tratamos de no repetir la misma
+                if (validCandidates.Count > 1 && lastTargetPos != Vector3.zero)
+                {
+                    // Buscar candidatos que estén lejos de la última posición usada
+                    var freshCandidates = validCandidates.FindAll(p => Vector3.Distance(p, lastTargetPos) > 1.0f);
 
-            TeleportToPosition(targetPosition);
-            StartShootCoroutine();
+                    if (freshCandidates.Count > 0) selectedPos = freshCandidates[Random.Range(0, freshCandidates.Count)];
+                    else selectedPos = validCandidates[Random.Range(0, validCandidates.Count)];
+                }
+                else
+                {
+                    // Solo hay una opción o es la primera vez
+                    selectedPos = validCandidates[Random.Range(0, validCandidates.Count)];
+                }
+
+                lastTargetPos = selectedPos; // Actualizar referencia
+                TeleportToPosition(selectedPos);
+                StartShootCoroutine();
+            }
+            else
+            {
+                ReportDebug("Pursue2: Ningún punto cumple con la distancia/navmesh requerida. Esperandondo.", 2);
+            }
 
             yield return new WaitForSeconds(p2_teleportCooldown);
         }
