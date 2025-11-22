@@ -54,31 +54,35 @@ public class MorlockProjectile : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        Debug.Log($"Proyectil golpeó: {other.name} en Layer: {LayerMask.LayerToName(other.gameObject.layer)}");
+
+        GameObject hitObject = other.gameObject;
+
         if (wasReflected && other.CompareTag("Enemy"))
         {
             other.GetComponent<EnemyHealth>()?.TakeDamage(damage);
-            if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
+            PlayHitSound();
             Destroy(gameObject);
             return;
         }
 
         if (other.CompareTag("Player"))
         {
-            bool wasBlocked = ExecuteAttack(other.gameObject, damage);
+            bool wasBlocked = ExecuteAttack(hitObject, damage);
 
             if (wasReflected)
             {
                 Debug.Log("[Projectile] Bloqueado y Reflejado. No se destruye.");
-                if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
+                PlayHitSound();
                 return;
             }
 
-            if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
-
+            PlayHitSound();
             Destroy(gameObject);
+            return;
         }
 
-        if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
+        if ((collisionLayers.value & (1 << hitObject.layer)) != 0)
         {
             Destroy(gameObject);
         }
@@ -106,6 +110,11 @@ public class MorlockProjectile : MonoBehaviour
         }
 
         return false;
+    }
+
+    private void PlayHitSound()
+    {
+        if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
     }
 
     public void Redirect(Vector3 newDirection)
