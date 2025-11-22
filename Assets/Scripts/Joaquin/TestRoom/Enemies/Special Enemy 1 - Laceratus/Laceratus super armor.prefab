@@ -614,7 +614,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
-  deathCooldown: 2
+  deathCooldown: 0.25
   canDestroy: 1
   onDeathEvent:
     m_PersistentCalls:
@@ -630,8 +630,8 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeathByMelee: 10
-  lifestealAmountOnDeathByDistance: 10
+  lifestealAmountOnDeathByMelee: 20
+  lifestealAmountOnDeathByDistance: 20
   toughnessSystem: {fileID: 254221231430808994}
   deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   deathVFXOffset: {x: 0, y: 1, z: 0}

@@ -27,6 +27,10 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
     [SerializeField] private TextMeshProUGUI nameTMP;
     [SerializeField] private TextMeshProUGUI effectsTMP;
 
+    [Header("SFX")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip audioClip;
+
     [Header("Configuración")]
     private bool playerIsNear = false;
     private bool isActivated = false;
@@ -67,6 +71,8 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     private void Awake()
     {
+        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
+
         if (gachaponSystem == null)
             gachaponSystem = FindAnyObjectByType<GachaponSystem>();
 
@@ -348,6 +354,10 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
     private IEnumerator RiseGachapon()
     {
         isAnimating = true;
+        if (isAnimating)
+        {
+            if (audioSource != null && audioClip != null) audioSource.Play();
+        }
         GetComponent<Collider>().enabled = false;
 
         Vector3 startPos = transform.position;
@@ -367,6 +377,11 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         GetComponent<Collider>().enabled = true;
         isActivated = false;
         isAnimating = false;
+
+        if (!isAnimating)
+        {
+            if (audioSource != null && audioClip != null) audioSource.Stop();
+        }
 
         if (playerIsNear && HUDManager.Instance != null)
         {
