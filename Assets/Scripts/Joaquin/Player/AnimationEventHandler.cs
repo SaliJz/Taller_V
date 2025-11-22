@@ -4,16 +4,51 @@ public class AnimationEventHandler : MonoBehaviour
 {
     [SerializeField] private PlayerMeleeAttack playerMeleeAttack;
 
-    public void CallAttackEndEvent()
+    public void CallActiveAttack1Slash()
     {
         if (playerMeleeAttack != null)
         {
-            playerMeleeAttack.OnAttackAnimationEnd();
-            Debug.Log("Anim Event: Llamada al Padre exitosa.");
+            playerMeleeAttack.ActiveAttack1Slash();
         }
-        else
+    }
+
+    public void CallDesactiveAttack1Slash()
+    {
+        if (playerMeleeAttack != null)
         {
-            Debug.LogError("Anim Event: ¡Falta la referencia a PlayerMeleeAttack!");
+            playerMeleeAttack.DesactiveAttack1Slash();
+        }
+    }
+
+    public void CallActiveAttack2Slash()
+    {
+        if (playerMeleeAttack != null)
+        {
+            playerMeleeAttack.ActiveAttack2Slash();
+        }
+    }
+
+    public void CallDesactiveAttack2Slash()
+    {
+        if (playerMeleeAttack != null)
+        {
+            playerMeleeAttack.DesactiveAttack2Slash();
+        }
+    }
+
+    public void CallActiveAttack3Slash()
+    {
+        if (playerMeleeAttack != null)
+        {
+            playerMeleeAttack.ActiveAttack3Slash();
+        }
+    }
+
+    public void CallDesactiveAttack3Slash()
+    {
+        if (playerMeleeAttack != null)
+        {
+            playerMeleeAttack.DesactiveAttack3Slash();
         }
     }
 }
