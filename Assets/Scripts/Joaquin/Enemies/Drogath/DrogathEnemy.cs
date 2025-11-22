@@ -753,7 +753,7 @@ public class DrogathEnemy : MonoBehaviour
         Vector3 toAttacker = attackerPosition - transform.position;
         toAttacker.y = 0; // Ignorar diferencia de altura
 
-        if (toAttacker.magnitude < 0.01f)
+        if (toAttacker.sqrMagnitude < 0.1f)
         {
             ReportDebug("Atacante demasiado cerca o en misma posición", 2);
             return false;

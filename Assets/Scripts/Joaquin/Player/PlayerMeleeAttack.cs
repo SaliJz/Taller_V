@@ -40,10 +40,12 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     [Header("Attack 1 (Basic)")]
     [SerializeField] private GameObject attack1Slash;
+    [SerializeField] private ParticleSystem vfxAttack1Slash;
     [SerializeField] private float attack1Duration = 0.4f;
 
     [Header("Attack 2 (Area/Spin)")]
     [SerializeField] private GameObject attack2Slash;
+    [SerializeField] private ParticleSystem vfxAttack2Slash;
     [SerializeField] private float attack2MovementDuration = 0.6f;
     [SerializeField] private float attack2SpinDuration = 0.4f;
     [SerializeField] private float attack2SpinSpeed = 900f;
@@ -51,6 +53,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     [Header("Attack 3 (Heavy/Charge)")]
     [SerializeField] private GameObject attack3Slash;
+    [SerializeField] private ParticleSystem vfxAttack3Slash;
     [SerializeField] private float attack3PreChargeDuration = 0.3f;
     [SerializeField] private float attack3ChargeDuration = 0.3f;
     [SerializeField] private float attack3SpinSpeed = 90f;
@@ -107,9 +110,9 @@ public class PlayerMeleeAttack : MonoBehaviour
         if (visualSphereHit != null) visualSphereHit.SetActive(false);
         if (visualBoxHit != null) visualBoxHit.SetActive(false);
 
-        if (attack1Slash != null) attack1Slash.SetActive(false);
-        if (attack2Slash != null) attack2Slash.SetActive(false);
-        if (attack3Slash != null) attack3Slash.SetActive(false);
+        //if (attack1Slash != null) attack1Slash.SetActive(false);
+        //if (attack2Slash != null) attack2Slash.SetActive(false);
+        //if (attack3Slash != null) attack3Slash.SetActive(false);
 
         if (statsManager == null) statsManager = GetComponent<PlayerStatsManager>();
         if (playerHealth == null) playerHealth = GetComponent<PlayerHealth>();
@@ -478,12 +481,13 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     public void ActiveAttack1Slash()
     {
-        attack1Slash.gameObject.SetActive(true);
+        //attack1Slash.gameObject.SetActive(true);
+        if (vfxAttack1Slash != null) vfxAttack1Slash.Play();
     }
 
     public void DesactiveAttack1Slash()
     {
-        attack1Slash.gameObject.SetActive(false);
+        //attack1Slash.gameObject.SetActive(false);
     }
 
     private IEnumerator ExecuteAttack2()
@@ -634,12 +638,13 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     public void ActiveAttack2Slash()
     {
-        attack2Slash.gameObject.SetActive(true);
+        //attack2Slash.gameObject.SetActive(true);
+        if (vfxAttack2Slash != null) vfxAttack2Slash.Play();
     }
 
     public void DesactiveAttack2Slash()
     {
-        attack2Slash.gameObject.SetActive(false);
+        //attack2Slash.gameObject.SetActive(false);
     }
 
     private IEnumerator ExecuteAttack3()
@@ -734,12 +739,13 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     public void ActiveAttack3Slash()
     {
-        attack3Slash.gameObject.SetActive(true);
+        //attack3Slash.gameObject.SetActive(true);
+        if (vfxAttack3Slash != null) vfxAttack3Slash.Play();
     }
 
     public void DesactiveAttack3Slash()
     {
-        attack3Slash.gameObject.SetActive(false);
+        //attack3Slash.gameObject.SetActive(false);
     }
 
     // Rota instantaneamente al mouse proyectado en el plano horizontal (y = transform.position.y), con snap a 8 direcciones.

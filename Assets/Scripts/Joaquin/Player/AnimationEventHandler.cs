@@ -27,9 +27,9 @@ public class AnimationEventHandler : MonoBehaviour
             {
                 if (!playerMeleeAttack.IsAttacking)
                 {
-                    playerMeleeAttack.DesactiveAttack1Slash();
-                    playerMeleeAttack.DesactiveAttack2Slash();
-                    playerMeleeAttack.DesactiveAttack3Slash();
+                    //playerMeleeAttack.DesactiveAttack1Slash();
+                    //playerMeleeAttack.DesactiveAttack2Slash();
+                    //playerMeleeAttack.DesactiveAttack3Slash();
                 }
             }
         }
@@ -45,10 +45,10 @@ public class AnimationEventHandler : MonoBehaviour
 
     public void CallDesactiveAttack1Slash()
     {
-        if (playerMeleeAttack != null)
-        {
-            playerMeleeAttack.DesactiveAttack1Slash();
-        }
+        //if (playerMeleeAttack != null)
+        //{
+        //    playerMeleeAttack.DesactiveAttack1Slash();
+        //}
     }
 
     public void CallActiveAttack2Slash()
@@ -61,10 +61,10 @@ public class AnimationEventHandler : MonoBehaviour
 
     public void CallDesactiveAttack2Slash()
     {
-        if (playerMeleeAttack != null)
-        {
-            playerMeleeAttack.DesactiveAttack2Slash();
-        }
+        //if (playerMeleeAttack != null)
+        //{
+        //    playerMeleeAttack.DesactiveAttack2Slash();
+        //}
     }
 
     public void CallActiveAttack3Slash()
@@ -77,9 +77,9 @@ public class AnimationEventHandler : MonoBehaviour
 
     public void CallDesactiveAttack3Slash()
     {
-        if (playerMeleeAttack != null)
-        {
-            playerMeleeAttack.DesactiveAttack3Slash();
-        }
+        //if (playerMeleeAttack != null)
+        //{
+        //    playerMeleeAttack.DesactiveAttack3Slash();
+        //}
     }
 }
