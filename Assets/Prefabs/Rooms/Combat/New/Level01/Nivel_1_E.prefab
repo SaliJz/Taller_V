@@ -881,6 +881,7 @@ GameObject:
   - component: {fileID: 1791819873923948726}
   - component: {fileID: 1836516826741591590}
   - component: {fileID: 3407886899891656475}
+  - component: {fileID: 5929394058489831777}
   m_Layer: 9
   m_Name: Cube (22)
   m_TagString: Wall
@@ -994,6 +995,40 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &5929394058489831777
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 834109314136128138}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d809cf2ba118424485a4741e491b3fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHits: 5
+  meatPiecePrefabs:
+  - {fileID: 8836799285258731062, guid: f17ca17e745b48e43b3dff0f03758145, type: 3}
+  - {fileID: 8836799285258731062, guid: 4ea0ae37b08e091428aa32313d5270fe, type: 3}
+  - {fileID: 8836799285258731062, guid: c3aad8f345c560c4bb7256e030ee37ba, type: 3}
+  - {fileID: 8836799285258731062, guid: 6e97458f661daf64daca7bfb0403bb71, type: 3}
+  finalExplosionPrefab: {fileID: 5367131650398813456, guid: 37e1b6d330e63ae47ac422c9a837e9e7, type: 3}
+  minPiecesPerHit: 1
+  maxPiecesPerHit: 4
+  pieceLifetime: 5
+  finalExplosionHeight: 5
+  debrisSpawnHeight: 9.5
+  innerSpawnRadius: 3
+  impactRadius: 6
+  initialDownwardForce: 85
+  lateralForce: 0.1
+  canDamaged: 0
+  damageToEnemies: 10
+  enemyLayers:
+    serializedVersion: 2
+    m_Bits: 128
+  debugMode: 0
 --- !u!1 &1068757418403361447
 GameObject:
   m_ObjectHideFlags: 0
@@ -1542,6 +1577,7 @@ GameObject:
   - component: {fileID: 2638631141570168774}
   - component: {fileID: 1701387309082738502}
   - component: {fileID: 1268630532916202941}
+  - component: {fileID: 8377052717420591017}
   m_Layer: 9
   m_Name: Cube (26)
   m_TagString: Wall
@@ -1655,6 +1691,40 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &8377052717420591017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1967047813111947809}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d809cf2ba118424485a4741e491b3fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHits: 5
+  meatPiecePrefabs:
+  - {fileID: 8836799285258731062, guid: f17ca17e745b48e43b3dff0f03758145, type: 3}
+  - {fileID: 8836799285258731062, guid: 4ea0ae37b08e091428aa32313d5270fe, type: 3}
+  - {fileID: 8836799285258731062, guid: c3aad8f345c560c4bb7256e030ee37ba, type: 3}
+  - {fileID: 8836799285258731062, guid: 6e97458f661daf64daca7bfb0403bb71, type: 3}
+  finalExplosionPrefab: {fileID: 5367131650398813456, guid: 37e1b6d330e63ae47ac422c9a837e9e7, type: 3}
+  minPiecesPerHit: 1
+  maxPiecesPerHit: 4
+  pieceLifetime: 5
+  finalExplosionHeight: 5
+  debrisSpawnHeight: 9.5
+  innerSpawnRadius: 3
+  impactRadius: 6
+  initialDownwardForce: 85
+  lateralForce: 0.1
+  canDamaged: 0
+  damageToEnemies: 10
+  enemyLayers:
+    serializedVersion: 2
+    m_Bits: 128
+  debugMode: 0
 --- !u!1 &1976092281521330230
 GameObject:
   m_ObjectHideFlags: 0
