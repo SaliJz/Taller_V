@@ -161,7 +161,18 @@ public class LaceratusController : MonoBehaviour
     private void Update()
     {
         if (enemyHealth != null && enemyHealth.IsDead) return;
+        if (enemyHealth != null && enemyHealth.IsStunned)
+        {
+            if (agent != null && agent.enabled && agent.isOnNavMesh)
+            {
+                agent.isStopped = true;
+                agent.ResetPath();
+            }
+            Debug.Log("[Laceratus] Stunned");
+            return;
+        }
         if (isTransitioningToFury || isPerformingJump) return;
+
 
         if (!playerDetected)
         {
