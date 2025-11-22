@@ -4,6 +4,37 @@ public class AnimationEventHandler : MonoBehaviour
 {
     [SerializeField] private PlayerMeleeAttack playerMeleeAttack;
 
+    private void OnEnable()
+    {
+        if (playerMeleeAttack != null) playerMeleeAttack.OnAttacked += HandleAttackState;
+    }
+
+    private void OnDisable()
+    {
+        if (playerMeleeAttack != null) playerMeleeAttack.OnAttacked -= HandleAttackState;
+    }
+
+    private void OnDestroy()
+    {
+        if (playerMeleeAttack != null) playerMeleeAttack.OnAttacked -= HandleAttackState;
+    }
+
+    private void HandleAttackState(bool state)
+    {
+        if (!state)
+        {
+            if (playerMeleeAttack != null)
+            {
+                if (!playerMeleeAttack.IsAttacking)
+                {
+                    playerMeleeAttack.DesactiveAttack1Slash();
+                    playerMeleeAttack.DesactiveAttack2Slash();
+                    playerMeleeAttack.DesactiveAttack3Slash();
+                }
+            }
+        }
+    }
+
     public void CallActiveAttack1Slash()
     {
         if (playerMeleeAttack != null)

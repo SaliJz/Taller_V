@@ -1,4 +1,5 @@
 // PlayerMeleeAttack.cs
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -98,6 +99,8 @@ public class PlayerMeleeAttack : MonoBehaviour
     private PlayerMovement playerMovement;
     private Coroutine cleanupCoroutine;
     private Coroutine showGizmoRoutine = null;
+
+    public event Action<bool> OnAttacked;
 
     private void Awake()
     {
@@ -299,6 +302,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         isAttacking = true;
 
+        OnAttacked?.Invoke(true);
+
         if (playerAnimator != null) playerAnimator.SetBool("IsAttacking", true);
 
         // Limpiar enemigos golpeados para este nuevo ataque
@@ -341,6 +346,8 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
 
         isAttacking = false;
+
+        OnAttacked?.Invoke(false);
 
         if (playerAnimator != null) playerAnimator.SetBool("IsAttacking", false);
 
