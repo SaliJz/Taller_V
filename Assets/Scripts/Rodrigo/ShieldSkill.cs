@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 /// Gestiona una habilidad que potencia las estadísticas del jugador mientras está activa.
 /// La habilidad se activa y desactiva, pidiendo al PlayerStatsManager que aplique los modificadores.
 /// </summary>
-public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
+public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPlayerSpecialAbility
 {
     #region Settings
 
@@ -64,6 +64,11 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
     private Renderer modelRenderer;
     private Material storedBaseMaterial;
+
+    public event System.Action OnAbilityActivated;
+    public event System.Action OnAbilityDeactivated;
+
+    public bool IsActive => isSkillActive;
 
     private bool inputBlocked = false; 
     private bool isForcedActive = false;
@@ -310,6 +315,8 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
 
         UpdateMaterialState();
 
+        OnAbilityActivated?.Invoke();
+
         Debug.Log($"[HABILIDAD ACTIVADA] Etapa: {lastKnownLifeStage} " +
                   $"- Buffs: Velocidad de movimiento x{currentBuffs.MoveMultiplier}, " +
                   $"Daño de ataques x{currentBuffs.AttackDamageMultiplier}, " +
@@ -343,12 +350,22 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions
         float afterMeleeSpeedValue = statsManager.GetStat(StatType.MeleeAttackSpeed);
         float afterShieldSpeedValue = statsManager.GetStat(StatType.ShieldSpeed);
 
+        OnAbilityDeactivated?.Invoke();
+
         Debug.Log("[HABILIDAD DESACTIVADA] Modificadores removidos. " +
                   $"Velocidad de movimiento: {beforeMoveValue} -> {afterMoveValue}, " +
                   $"Daño de ataque melee: {beforeMeleeDmgValue} -> {afterMeleeDmgValue}, " +
                   $"Daño de ataque con escudo: {beforeShieldDmgValue} -> {afterShieldDmgValue}, " +
                   $"Velocidad de ataque melee: {beforeMeleeSpeedValue} -> {afterMeleeSpeedValue}, " +
                   $"Velocidad de ataque con escudo: {beforeShieldSpeedValue} -> {afterShieldSpeedValue}");
+    }
+
+    public void DeactivateAbility()
+    {
+        if (isSkillActive)
+        {
+            DeactivateSkill();
+        }
     }
 
     private IEnumerator ReapplySkillModifiersNextFrame()

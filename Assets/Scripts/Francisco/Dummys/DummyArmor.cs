@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
+using System;
 
 public class DummyArmor : MonoBehaviour, IDamageable
 {
@@ -32,6 +33,8 @@ public class DummyArmor : MonoBehaviour, IDamageable
 
     [Header("Events")]
     public UnityEvent OnDummyDefeated;
+
+    public event Action<DamageType, bool> OnHitByPlayer;
 
     public float CurrentHealth => currentHealth;
     public float MaxHealth => maxHealth;
@@ -77,6 +80,7 @@ public class DummyArmor : MonoBehaviour, IDamageable
         }
 
         float finalDamage = damageAmount;
+        DamageType hitType = DamageType.Melee;
 
         if (currentArmorHealth > 0f)
         {
@@ -87,6 +91,7 @@ public class DummyArmor : MonoBehaviour, IDamageable
                 float damageToArmor = damageAmount;
                 currentArmorHealth -= damageToArmor;
                 currentArmorHealth = Mathf.Max(0, currentArmorHealth);
+                hitType = DamageType.Shield;
                 Debug.Log($"[DUMMY H&A] Daño absorbido (Melee). Armor restante: {currentArmorHealth:F2}. Armor rota por: {damageToArmor:F2}");
             }
             else if (damageType == AttackDamageType.Ranged)
@@ -96,12 +101,14 @@ public class DummyArmor : MonoBehaviour, IDamageable
 
                 currentArmorHealth -= damageToArmor;
                 currentArmorHealth = Mathf.Max(0, currentArmorHealth);
+                hitType = DamageType.Shield;
                 Debug.Log($"[DUMMY H&A] Daño absorbido (Ranged, {reductionPercentage * 100:F0}% reducción). Daño aplicado a Armadura: {damageToArmor:F2}. Armor restante: {currentArmorHealth:F2}");
             }
         }
         else
         {
             finalDamage = damageAmount;
+            hitType = DamageType.Melee;
             Debug.Log("[DUMMY H&A] Super Armor roto. Daño completo.");
         }
 
@@ -114,6 +121,9 @@ public class DummyArmor : MonoBehaviour, IDamageable
         currentHealth = Mathf.Max(0, currentHealth);
 
         Debug.Log($"[DUMMY H&A] Vida actual: {currentHealth}/{maxHealth}");
+
+        bool isFatal = currentHealth <= 0;
+        OnHitByPlayer?.Invoke(hitType, isFatal);
 
         UpdateHealthUI();
         UpdateArmorUI();
@@ -160,7 +170,7 @@ public class DummyArmor : MonoBehaviour, IDamageable
 
         OnDummyDefeated.Invoke();
 
-        if (uiController != null) uiController.SetUIActive(DummyLogicType.HealthState, false); 
+        if (uiController != null) uiController.SetUIActive(DummyLogicType.HealthState, false);
         Destroy(gameObject, 0.1f);
     }
 
@@ -183,5 +193,14 @@ public class DummyArmor : MonoBehaviour, IDamageable
 
             uiController.UpdateArmorBar(uiValue);
         }
+    }
+
+    public void ResetArmorState()
+    {
+        currentHealth = maxHealth;
+        currentArmorHealth = maxArmorHealth;
+        UpdateHealthUI();
+        UpdateArmorUI();
+        Debug.Log("[DUMMY H&A] Dummy revivido!");
     }
 }

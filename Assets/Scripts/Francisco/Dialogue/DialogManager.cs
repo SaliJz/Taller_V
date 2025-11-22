@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.InputSystem;
+using UnityEngine.Events;
 
 public class DialogManager : MonoBehaviour
 {
@@ -57,6 +58,7 @@ public class DialogManager : MonoBehaviour
     private bool isDialogActive = false;
     private bool isTyping = false;
     private float lastInputTime = 0f;
+    private UnityEvent onDialogFinishedEvent;
 
     #endregion
 
@@ -131,13 +133,15 @@ public class DialogManager : MonoBehaviour
 
     #region Core Dialog Logic
 
-    public void StartDialog(DialogLine[] lines)
+    public void StartDialog(DialogLine[] lines, UnityEvent onFinished = null)
     {
         if (isDialogActive) return;
 
         StopAllCoroutines();
         LockPlayerControl(true);
         DisablePlayerScripts(true);
+
+        onDialogFinishedEvent = onFinished;
 
         if (dialogPanel != null)
         {
@@ -230,6 +234,9 @@ public class DialogManager : MonoBehaviour
         }
         LockPlayerControl(false);
         DisablePlayerScripts(false);
+
+        onDialogFinishedEvent?.Invoke();
+        onDialogFinishedEvent = null;
     }
 
     private void LockPlayerControl(bool isLocked)
