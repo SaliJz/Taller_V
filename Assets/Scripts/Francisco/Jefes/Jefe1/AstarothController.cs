@@ -119,6 +119,9 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private bool _calculateRoomRadiusOnStart = true;
     [SerializeField] private float _movementSpeedForPulse = 10f;
 
+    [Header("Debug")]
+    [SerializeField] private bool _showRoomGizmos = true;
+
     private bool _isUsingSpecialAbility;
     private float[] _healthThresholdsForPulse = { 0.67f, 0.34f };
     private bool _isPulseAttackBlocked = false;
@@ -1203,45 +1206,35 @@ public class AstarothController : MonoBehaviour
 
     private void CalculateRoomRadius()
     {
-        // Buscar el NavMeshSurface para obtener el tamaño de la habitación
-        UnityEngine.AI.NavMeshTriangulation triangulation = UnityEngine.AI.NavMesh.CalculateTriangulation();
+        // Lanza un rayo hacia abajo para detectar en que suelo esta parado
+        RaycastHit hit;
+        int groundLayer = LayerMask.GetMask("Ground");
 
-        if (triangulation.vertices.Length > 0)
+        if (Physics.Raycast(transform.position + Vector3.up, Vector3.down, out hit, 10f, groundLayer))
         {
-            // Calcular los límites de la habitación usando los vértices del NavMesh
-            Vector3 minBounds = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
-            Vector3 maxBounds = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+            Collider floorCollider = hit.collider;
 
-            // Posición del boss en el plano XZ
-            foreach (Vector3 vertex in triangulation.vertices)
+            _roomCenter = floorCollider.bounds.center;
+            _roomCenter.y = transform.position.y;
+
+            float calculatedRadius = Mathf.Max(floorCollider.bounds.extents.x, floorCollider.bounds.extents.z);
+
+            // Si _calculateRoomRadiusOnStart es true, sobrescribimos el valor del inspector
+            if (_calculateRoomRadiusOnStart)
             {
-                minBounds = Vector3.Min(minBounds, vertex);
-                maxBounds = Vector3.Max(maxBounds, vertex);
+                _roomMaxRadius = Mathf.Max(5f, calculatedRadius - 2f);
+                Debug.Log($"[Astaroth] Sala detectada: {floorCollider.name} | Centro: {_roomCenter} | Radio calculado: {_roomMaxRadius}m");
             }
-
-            // Sala centro
-            _roomCenter = new Vector3((minBounds.x + maxBounds.x) / 2f, 0f, (minBounds.z + maxBounds.z) / 2f);
-
-            float maxDistance = 0f;
-
-            // Encontrar el vértice más lejano del NavMesh desde el centro de la habitación
-            foreach (Vector3 vertex in triangulation.vertices)
+            else
             {
-                float distance = Vector3.Distance(new Vector3(_roomCenter.x, 0, _roomCenter.z), new Vector3(vertex.x, 0, vertex.z));
-                if (distance > maxDistance)
-                {
-                    maxDistance = distance;
-                }
+                Debug.Log($"[Astaroth] Sala detectada: {floorCollider.name} | Usando radio manual: {_roomMaxRadius}m");
             }
-
-            //_roomMaxRadius = maxDistance;
-            Debug.Log($"Room radius calculated: {_roomMaxRadius}m (diameter: {_roomMaxRadius * 2}m)");
         }
         else
         {
-            _roomMaxRadius = 25f; // Radio de 25m = 50m de diámetro
-            _roomCenter = new Vector3(transform.position.x, 0f, transform.position.z);
-            Debug.LogWarning($"No NavMesh found. Using default room radius: {_roomMaxRadius}m");
+            _roomCenter = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+            if (_calculateRoomRadiusOnStart) _roomMaxRadius = 25f;
+            Debug.LogWarning("[Astaroth] No se detectó suelo bajo el Boss (Layer 'Ground'). Usando posición actual como centro.");
         }
     }
 
@@ -1548,6 +1541,12 @@ public class AstarothController : MonoBehaviour
         {
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireSphere(_lastSmashOverlapCenter, _lastSmashOverlapRadius);
+        }
+        if (_showRoomGizmos)
+        {
+            Gizmos.color = new Color(1, 0, 1, 0.3f);
+            Gizmos.DrawSphere(_roomCenter, 0.5f);
+            Gizmos.DrawWireSphere(_roomCenter, _roomMaxRadius);
         }
 
         Gizmos.color = Color.green;

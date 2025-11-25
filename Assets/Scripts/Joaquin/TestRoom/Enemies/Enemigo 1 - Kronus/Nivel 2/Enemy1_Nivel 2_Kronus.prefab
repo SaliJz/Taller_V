@@ -499,6 +499,7 @@ GameObject:
   - component: {fileID: 6244899542843585029}
   - component: {fileID: 9030376273175115308}
   - component: {fileID: 1919044445741492554}
+  - component: {fileID: 1241044377094138436}
   m_Layer: 0
   m_Name: Enemy1_GroundIndicator
   m_TagString: Untagged
@@ -597,6 +598,18 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!210 &1241044377094138436
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6065361561720221346}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -3
+  m_SortAtRoot: 0
 --- !u!1 &6166188736767950154
 GameObject:
   m_ObjectHideFlags: 0
@@ -1394,7 +1407,7 @@ MonoBehaviour:
   deathSFX: {fileID: 8300000, guid: 44c52c9c30162ba4690b5aae5d729e31, type: 3}
   hitSFX: {fileID: 8300000, guid: 63d20b4ab0c899341b8255e5b30a76c6, type: 3}
   showDetailsOptions: 0
-  showGizmo: 1
+  showGizmo: 0
   gizmoDuration: 0.2
 --- !u!114 &1168568782247316961
 MonoBehaviour:
@@ -1492,7 +1505,7 @@ MonoBehaviour:
   stunVFXPrefab: {fileID: 0}
   stunVFXHeight: 2
   stunSFX: {fileID: 0}
-  defaultMaterial: {fileID: -2593835245026028659, guid: 944e5139615211c45a04dc5534a0bacf, type: 3}
+  defaultMaterial: {fileID: 2100000, guid: 58a44551b8dc75843988bc6caa052c10, type: 2}
   glowMaterial: {fileID: 2100000, guid: 76ef852df6134ca44b4c740b1d5ef9bd, type: 2}
   glowIntensity: 2
   damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}

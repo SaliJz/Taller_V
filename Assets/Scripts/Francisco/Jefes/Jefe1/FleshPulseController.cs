@@ -6,6 +6,7 @@ public class FleshPulseController : MonoBehaviour
     [Header("Configuración Global")]
     [SerializeField] private LayerMask _obstacleLayer;
     [SerializeField] private LayerMask _playerLayer;
+    [SerializeField] private float speedMultiplier = 1.0f;
 
     // Datos recibidos del Boss
     private float _maxRadius;
@@ -16,6 +17,9 @@ public class FleshPulseController : MonoBehaviour
 
     private bool _isExpanding = false;
     private float _expansionSpeed;
+    private float _timer = 0f;
+
+    private FleshPulseNerve[] _nerves;
 
     // Evita que múltiples brazos dañen al mismo jugador
     private HashSet<GameObject> _hitTargets = new HashSet<GameObject>();
@@ -28,17 +32,15 @@ public class FleshPulseController : MonoBehaviour
         _slowPercentage = slowPercent;
         _slowDuration = slowDur;
 
-        // Configurar velocidad de expansión
-        _expansionSpeed = (_maxRadius * 2) / _expansionDuration;
+        _expansionSpeed = (_maxRadius / _expansionDuration) * speedMultiplier;
 
-        // Inicializar nervios hijos
-        FleshPulseNerve[] arms = GetComponentsInChildren<FleshPulseNerve>();
-        foreach (var arm in arms)
+        _nerves = GetComponentsInChildren<FleshPulseNerve>();
+        foreach (var arm in _nerves)
         {
             arm.Initialize(this, _obstacleLayer, _playerLayer);
         }
 
-        transform.localScale = Vector3.zero; // Empezar pequeños
+        transform.localScale = Vector3.one;
         _isExpanding = true;
     }
 
@@ -46,18 +48,19 @@ public class FleshPulseController : MonoBehaviour
     {
         if (!_isExpanding) return;
 
-        // Expansión del objeto padre
-        float growth = _expansionSpeed * Time.deltaTime;
-        Vector3 newScale = transform.localScale;
+        _timer += Time.deltaTime;
 
-        newScale.x += growth;
-        newScale.z += growth;
-        newScale.y = 1f; // Mantener altura Y constante si se desea
+        float growthStep = _expansionSpeed * Time.deltaTime;
 
-        transform.localScale = newScale;
+        foreach (var nerve in _nerves)
+        {
+            if (nerve != null)
+            {
+                nerve.Expand(growthStep, _maxRadius);
+            }
+        }
 
-        // Condición de término basada en diámetro
-        if (newScale.x / 2 >= _maxRadius)
+        if (_timer >= _expansionDuration + 0.5f)
         {
             _isExpanding = false;
             Destroy(gameObject, 0.5f);
@@ -69,7 +72,6 @@ public class FleshPulseController : MonoBehaviour
         if (_hitTargets.Contains(player)) return;
 
         _hitTargets.Add(player);
-
         ApplyEffects(player);
     }
 

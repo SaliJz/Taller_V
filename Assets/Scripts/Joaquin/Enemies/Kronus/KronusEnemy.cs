@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -86,9 +87,9 @@ public class KronusEnemy : MonoBehaviour
 
     //private List<GameObject> activeInstantiatedEffects = new List<GameObject>();
 
-    private Vector3 currentEchoCenter = Vector3.zero;
-    private float currentEchoRadius = 0f;
-    private bool isEchoActive = false;
+    //private Vector3 currentEchoCenter = Vector3.zero;
+    //private float currentEchoRadius = 0f;
+    //private bool isEchoActive = false;
 
     private EnemyHealth enemyHealth;
     private NavMeshAgent agent;
@@ -110,9 +111,7 @@ public class KronusEnemy : MonoBehaviour
     private bool hasDetectedPlayer = false;
     private float detectionTimer = 0f;
 
-    private GUIStyle titleStyle;
-    private GUIStyle labelStyle;
-    private GUIStyle worldLabelStyle;
+    private List<GameObject> activeEchoes = new List<GameObject>();
 
     private void Awake()
     {
@@ -225,6 +224,15 @@ public class KronusEnemy : MonoBehaviour
 
         isAttacking = false;
         if (dashCoroutine != null) StopCoroutine(dashCoroutine);
+
+        for (int i = activeEchoes.Count - 1; i >= 0; i--)
+        {
+            if (activeEchoes[i] != null)
+            {
+                Destroy(activeEchoes[i]);
+            }
+        }
+        activeEchoes.Clear();
 
         if (agent != null)
         {
@@ -520,8 +528,6 @@ public class KronusEnemy : MonoBehaviour
 
         Vector3 startPosition = transform.position;
         Vector3 dashTarget = playerTransform != null ? playerTransform.position : transform.position;
-
-        // Mantener la Y actual del enemigo
         dashTarget.y = startPosition.y;
 
         Vector3 direction = (dashTarget - startPosition);
@@ -531,8 +537,18 @@ public class KronusEnemy : MonoBehaviour
 
         float distanceToPlayer = Vector3.Distance(new Vector3(startPosition.x, 0, startPosition.z), new Vector3(dashTarget.x, 0, dashTarget.z));
         float dashDistance = Mathf.Min(distanceToPlayer, dashMaxDistance);
+
         Vector3 finalDashTarget = startPosition + direction * dashDistance;
         finalDashTarget.y = startPosition.y;
+
+        // Validacion previa con NavMesh
+        NavMeshHit edgeHit;
+        if (NavMesh.Raycast(startPosition, finalDashTarget, out edgeHit, NavMesh.AllAreas))
+        {
+            finalDashTarget = edgeHit.position;
+            finalDashTarget -= direction * 0.5f; // 0.5 Previos al edgeHit
+            ReportDebug("Dash acortado: Se detectó fin del NavMesh en la trayectoria.", 1);
+        }
 
         float elapsed = 0f;
         float interruptDistance = attackRadius * 1.5f;
@@ -545,11 +561,7 @@ public class KronusEnemy : MonoBehaviour
                 isAttacking = false;
                 if (agent != null && agent.enabled)
                 {
-                    NavMeshHit navHitByStun;
-                    if (NavMesh.SamplePosition(transform.position, out navHitByStun, 2f, NavMesh.AllAreas))
-                    {
-                        agent.Warp(navHitByStun.position);
-                    }
+                    agent.Warp(transform.position);
                     agent.updatePosition = true;
                 }
                 yield break;
@@ -563,7 +575,7 @@ public class KronusEnemy : MonoBehaviour
             toTarget.y = 0f;
             float remaining = toTarget.magnitude;
 
-            if (remaining <= 0.05f) break;
+            if (remaining <= 0.1f) break;
 
             Vector3 dashDir = toTarget.normalized;
             float step = moveSpeed * dashSpeedMultiplier * delta;
@@ -571,6 +583,12 @@ public class KronusEnemy : MonoBehaviour
 
             // Calcular nueva posición manteniendo Y
             Vector3 newPosition = currentPos + dashDir * moveAmount;
+
+            if (!CheckGroundAtPosition(newPosition))
+            {
+                ReportDebug("Dash interrumpido: Suelo perdido durante el desplazamiento.", 2);
+                break; // Detener el dash inmediatamente y pasar al ataque
+            }
 
             // Muestrear NavMesh para obtener la Y correcta
             NavMeshHit navHit;
@@ -868,12 +886,12 @@ public class KronusEnemy : MonoBehaviour
 
         ReportDebug("Eco Persistente activado.", 1);
 
-        // Instanciar y configurar el visual
-        GameObject echoVisual = null;
+        GameObject currentEchoInstance = null;
         if (echoVisualPrefab != null)
         {
-            echoVisual = Instantiate(echoVisualPrefab, center, Quaternion.identity);
-            echoVisual.transform.localScale = Vector3.zero;
+            currentEchoInstance = Instantiate(echoVisualPrefab, center, Quaternion.identity);
+            currentEchoInstance.transform.localScale = Vector3.zero;
+            activeEchoes.Add(currentEchoInstance);
         }
 
         // Ajustar la posición Y para estar sobre el NavMesh/suelo
@@ -890,38 +908,34 @@ public class KronusEnemy : MonoBehaviour
         float tickTimer = 0f;
 
         // Activar tracking para Gizmo
-        isEchoActive = true;
-        currentEchoCenter = center;
+        //isEchoActive = true;
+        //currentEchoCenter = center;
 
         // Fase de Expansión (0.4s)
         while (elapsed < echoExpansionTime)
         {
+            if (currentEchoInstance == null) yield break;
+
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / echoExpansionTime);
             float currentRadius = Mathf.Lerp(echoStartRadius, echoEndRadius, t);
 
-            // Actualizar visual y Gizmo
-            if (echoVisual != null)
-            {
-                // Asume que la escala X y Z controlan el radio visual.
-                echoVisual.transform.localScale = new Vector3(currentRadius * 2f, 0.01f, currentRadius * 2f);
-                echoVisual.transform.position = center;
-            }
-            currentEchoRadius = currentRadius;
+            currentEchoInstance.transform.localScale = new Vector3(currentRadius * 2f, 0.01f, currentRadius * 2f);
+            currentEchoInstance.transform.position = center;
 
             yield return null;
         }
 
-        float finalRadius = echoEndRadius; // Radio final después de la expansión
-        currentEchoRadius = finalRadius;
+        float finalRadius = echoEndRadius;
 
         // Fase de Duración con Daño (1.2s)
         float damagePhaseElapsed = 0f;
         while (damagePhaseElapsed < echoDurationAfterExpansion)
         {
+            if (currentEchoInstance == null) yield break;
+
             float delta = Time.deltaTime;
             damagePhaseElapsed += delta;
-
             tickTimer += delta;
 
             // Aplicar daño por tics
@@ -949,15 +963,29 @@ public class KronusEnemy : MonoBehaviour
 
         // Limpieza
         ReportDebug("Eco Persistente finalizado.", 1);
-        isEchoActive = false;
-        currentEchoRadius = 0f;
-        if (echoVisual != null)
+        //isEchoActive = false;
+
+        if (currentEchoInstance != null)
         {
-            Destroy(echoVisual);
+            activeEchoes.Remove(currentEchoInstance);
+            Destroy(currentEchoInstance);
         }
     }
 
     #endregion
+
+    /// <summary>
+    /// Lanza un raycast hacia abajo desde una posición ligeramente elevada para confirmar suelo físico.
+    /// </summary>
+    private bool CheckGroundAtPosition(Vector3 targetPos)
+    {
+        Vector3 origin = targetPos + Vector3.up * 0.5f;
+
+        // Debug visual en el editor
+        if (showGizmo) Debug.DrawRay(origin, Vector3.down * 3.5f, Color.magenta);
+
+        return Physics.Raycast(origin, Vector3.down, 1.5f, groundLayer);
+    }
 
     private void OnDrawGizmos()
     {
@@ -999,161 +1027,6 @@ public class KronusEnemy : MonoBehaviour
 
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, dashMaxDistance);
-    }
-
-    private void EnsureGuiStyles()
-    {
-        if (titleStyle != null) return;
-
-        titleStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 14,
-            fontStyle = FontStyle.Bold,
-            normal = { textColor = Color.white }
-        };
-
-        labelStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 12,
-            normal = { textColor = Color.white }
-        };
-
-        worldLabelStyle = new GUIStyle(GUI.skin.box)
-        {
-            fontSize = 11,
-            alignment = TextAnchor.MiddleCenter,
-            normal = { textColor = Color.white, background = Texture2D.blackTexture },
-            padding = new RectOffset(6, 6, 3, 3)
-        };
-    }
-
-    private void DrawWorldLabel(Vector3 worldPos, string text, GUIStyle style)
-    {
-        Camera cam = Camera.main;
-        if (cam == null) return;
-
-        Vector3 screenPos = cam.WorldToScreenPoint(worldPos);
-        if (screenPos.z < 0) return;
-
-        Vector2 guiPoint = new Vector2(screenPos.x, Screen.height - screenPos.y);
-        Vector2 size = style.CalcSize(new GUIContent(text));
-        Rect rect = new Rect(guiPoint.x - size.x * 0.5f, guiPoint.y - size.y - 8f, size.x + 8f, size.y + 6f);
-
-        GUI.Box(rect, GUIContent.none, style);
-        GUI.Label(rect, text, style);
-    }
-
-    private void OnGUI()
-    {
-        if (!showDetailsOptions) return;
-#if !UNITY_EDITOR
-        if (!Debug.isDebugBuild) return;
-#endif
-        EnsureGuiStyles();
-
-        Rect area = new Rect(10, 10, 360, 470); 
-        GUILayout.BeginArea(area, GUI.skin.box);
-
-        GUILayout.Label("KRONUS - DEBUG", titleStyle);
-
-        if (enemyHealth != null)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("HP:", labelStyle, GUILayout.Width(140));
-            GUILayout.Label($"{enemyHealth.CurrentHealth:F1}/{enemyHealth.MaxHealth:F1}", labelStyle);
-            GUILayout.EndHorizontal();
-        }
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Alerted by Hit:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{isAlertedByHit}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Move Speed (Combat):", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{moveSpeed:F1}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Move Speed (Patrol):", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{patrolMoveSpeed:F1}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Dash Speed Mult:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{dashSpeedMultiplier:F1}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Dash Duration:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{dashDuration:F1}s", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Dash Max Distance:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{dashMaxDistance:F1}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Dash Activate Dist:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{dashActivationDistance:F1}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.Space(4);
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Detection Radius:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{detectionRadius:F1}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("FOV Angle:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{fieldOfViewAngle:F0}°", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.Space(4);
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Attack Damage:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label(isPercentageDmg ? $"{attackDamagePercentage * 100f:F0}% HP" : $"{attackDamage:F1}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Attack Radius:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{attackRadius:F1}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Knockback Force:", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{knockbackForce:F1}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Next Attack (s):", labelStyle, GUILayout.Width(140));
-        GUILayout.Label($"{Mathf.Max(0, attackCycleCooldown - attackTimer):F2}", labelStyle);
-        GUILayout.EndHorizontal();
-
-        GUILayout.Space(6);
-
-        if (GUILayout.Button("Force Attack", GUILayout.Height(24)))
-        {
-            PerformHammerSmash();
-        }
-
-        if (GUILayout.Button("Force Dash", GUILayout.Height(24)))
-        {
-            if (dashCoroutine == null) dashCoroutine = StartCoroutine(DashAttackRoutine());
-        }
-
-        if (GUILayout.Button("Kill (debug)", GUILayout.Height(24)))
-        {
-            if (enemyHealth != null) enemyHealth.TakeDamage(9999f);
-        }
-
-        GUILayout.EndArea();
-
-        string worldText = $"Kronus\nHP: {(enemyHealth != null ? enemyHealth.CurrentHealth.ToString("F0") : "N/A")}\nAttacking: {isAttacking}\nSpeed: {(agent != null ? agent.speed.ToString("F1") : "N/A")}";
-        DrawWorldLabel(transform.position + Vector3.up * 2f, worldText, worldLabelStyle);
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
