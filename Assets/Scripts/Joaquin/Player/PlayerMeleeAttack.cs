@@ -87,6 +87,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     private int currentAttackIndex = -1;
 
     private HashSet<Collider> hitEnemiesThisCombo = new HashSet<Collider>();
+    private GamepadPointer gamepadPointer;
     private Collider[] hitBuffer = new Collider[64]; // Buffer para detección de enemigos
 
     public int AttackDamage
@@ -120,13 +121,15 @@ public class PlayerMeleeAttack : MonoBehaviour
         if (playerMovement == null) playerMovement = GetComponent<PlayerMovement>();
         if (playerAnimator == null) playerAnimator = GetComponentInChildren<Animator>();
         if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
-
+        if (gamepadPointer == null) gamepadPointer = FindAnyObjectByType<GamepadPointer>();
+ 
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMeleeAttack. Usando valores de fallback.", 2);
         if (playerHealth == null) ReportDebug("PlayerHealth no se encuentra en el objeto.", 3);
         if (playerShieldController == null) ReportDebug("PlayerShieldController no se encuentra en el objeto.", 3);
         if (playerMovement == null) ReportDebug("PlayerMovement no se encuentra en el objeto. Lock de rotación no funcionará.", 2);
         if (playerAnimator == null) ReportDebug("Animator no se encuentra en los hijos del objeto.", 2);
         if (playerAudioController == null) ReportDebug("PlayerAudioController no se encuentra en el objeto.", 3);
+        if (gamepadPointer == null) ReportDebug("GamepadPointer no se encuentra en la escena. La detección de dispositivo activo para el ataque podría fallar.", 2);
     }
 
     private void OnEnable()
@@ -313,16 +316,28 @@ public class PlayerMeleeAttack : MonoBehaviour
         hitEnemiesThisCombo.Clear();
 
         // 1) Dirección objetivo
-        Vector3 mouseWorldDir;
-        if (!TryGetMouseWorldDirection(out mouseWorldDir))
+        Vector3 targetDir;
+        bool isGamepadActive = false;
+        if (gamepadPointer != null)
         {
-            mouseWorldDir = transform.forward;
+            isGamepadActive = (gamepadPointer.GetCurrentActiveDevice() == gamepadPointer.GetCurrentGamepad());
+        }
+
+        if (isGamepadActive)
+        {
+            // Con mando, usa la dirección actual del jugador
+            targetDir = transform.forward;
+            // O mejor: targetDir = playerMovement.GetCurrentMovementDirection(); si existiera.
+        }
+        else if (!TryGetMouseWorldDirection(out targetDir))
+        {
+            targetDir = transform.forward;
         }
 
         // 2) Lockear rotación snapped
         if (playerMovement != null)
         {
-            playerMovement.LockFacingTo8Directions(mouseWorldDir, true);
+            playerMovement.LockFacingTo8Directions(targetDir, true);
         }
         else
         {

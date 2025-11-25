@@ -312,4 +312,14 @@ public class GamepadPointer : MonoBehaviour
         }
         return false;
     }
+
+    public InputDevice GetCurrentActiveDevice()
+    {
+        return currentActiveDevice;
+    }
+
+    public Gamepad GetCurrentGamepad()
+    {
+        return currentGamepad;
+    }
 }
