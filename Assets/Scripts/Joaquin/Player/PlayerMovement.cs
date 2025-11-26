@@ -245,9 +245,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         currentInputVector = context.ReadValue<Vector2>();
     }
 
-    // Maneja la entrada de movimiento del jugador y actualiza las animaciones.
-    // Importante: si rotationLocked == true, NO actualizar lastMoveX/lastMoveY ni Xaxis/Yaxis del animator,
-    // y NO permitir que la entrada WASD cambie la rotación (solo permite mover el personaje).
     private void HandleMovementInput()
     {
         float moveX = currentInputVector.x;
@@ -258,37 +255,34 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         cameraForward.y = 0;
         cameraRight.y = 0;
-        cameraForward.Normalize();
+        cameraForward.Normalize();  
         cameraRight.Normalize();
 
         moveDirection = (cameraForward * moveY + cameraRight * moveX).normalized;
 
-        bool isMoving = moveDirection.magnitude > 0.1f;
+        bool hasInput = moveDirection.magnitude > 0.1f;
+        bool timeIsRunning = Time.timeScale > 0.01f;
+        bool isMoving = hasInput && timeIsRunning;
 
-        // Siempre actualizar "Running" para que la animación de movimiento ocurra cuando se mueve.
         if (playerAnimator != null) playerAnimator.SetBool("Running", isMoving);
-        if (playerAudioController != null) HandleFootstepsTimer();
+        if (playerAudioController != null && isMoving) HandleFootstepsTimer();
 
-        // Si NO hay bloqueo de rotación, actualizamos los ejes del animator según la entrada WASD.
-        if (!rotationLocked)
+        if (timeIsRunning)
         {
-            if (isMoving)
+            if (!rotationLocked)
             {
-                // Guardamos la última entrada directa del jugador (valores -1,0,1).
-                lastMoveX = Mathf.Round(moveX);
-                lastMoveY = Mathf.Round(moveY);
-            }
+                if (hasInput)
+                {
+                    lastMoveX = Mathf.Round(moveX);
+                    lastMoveY = Mathf.Round(moveY);
+                }
 
-            if (playerAnimator != null)
-            {
-                playerAnimator.SetFloat("Xaxis", lastMoveX);
-                playerAnimator.SetFloat("Yaxis", lastMoveY);
+                if (playerAnimator != null)
+                {
+                    playerAnimator.SetFloat("Xaxis", lastMoveX);
+                    playerAnimator.SetFloat("Yaxis", lastMoveY);
+                }
             }
-        }
-        else
-        {
-            // Si está bloqueado: no tocar lastMoveX/Y ni Xaxis/Yaxis.
-            // Esto asegura que la rotación del mouse (bloqueada a 8 direcciones) se mantenga hasta que termine el ataque.
         }
     }
 
@@ -786,9 +780,15 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     public void SetCanMove(bool state)
     {
         canMove = state;
+
         if (!state)
         {
             moveDirection = Vector3.zero;
+
+            if (playerAnimator != null)
+            {
+                playerAnimator.SetBool("Running", false);
+            }
         }
     }
 
