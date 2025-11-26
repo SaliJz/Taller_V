@@ -7063,9 +7063,9 @@ GameObject:
   - component: {fileID: 3906577018013161435}
   - component: {fileID: 9178307502293098773}
   - component: {fileID: 7517696455211299846}
+  - component: {fileID: 8467342248943344500}
   - component: {fileID: 8537394917465235362}
   - component: {fileID: 822155508931773051}
-  - component: {fileID: 8467342248943344500}
   m_Layer: 7
   m_Name: Boss2_BloodKnight
   m_TagString: Enemy
@@ -7137,6 +7137,64 @@ NavMeshAgent:
   m_BaseOffset: 3
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &8467342248943344500
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9147642797784961567}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7751e8d5b0ac981448b751d4be955285, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 500
+  currentHealth: 0
+  moveSpeed: 5
+  lowHPSpeedMultiplier: 1.3
+  apocalipsisDuration: 10
+  apocalipsisDamage: 7
+  apocalipsisTargetDashes: 10
+  apocalipsisRange: 4
+  positioningDuration: 2
+  sodomaDamage: 35
+  sodomaCutRange: 8
+  fireTrailDamagePerSecond: 5
+  sodomaChargeTime: 1.5
+  sodomaBackwardDistance: 3
+  necioAttackWindow: 12
+  necioVulnerableWindow: 3
+  necioPecadorDamage: 15
+  necioPecadorRadius: 1.5
+  necioPecadorWarningTime: 2.5
+  chargeProbability: 0.15
+  chargeAbilitySpeed: 15
+  playerStunDuration: 2.5
+  chargeObstacleLayers:
+    serializedVersion: 2
+    m_Bits: 512
+  player: {fileID: 0}
+  animator: {fileID: 7282784552455421668}
+  swordTransform: {fileID: 8250834327438604192}
+  greenFireTrailPrefab: {fileID: 1018580927016024537, guid: feee1a3ef3e900245bd662be4dcbd6ba, type: 3}
+  soulHandPrefab: {fileID: 3043229836960575198, guid: 32bf7cc09667f4f4f886fdce3104ca5b, type: 3}
+  necioPecadorWarningPrefab: {fileID: 2010781431489356441, guid: e149f03e6510455409ab8644b28c7ec0, type: 3}
+  armorGlowVFX: {fileID: 8081810031924133735}
+  greenFireVFX: {fileID: 1959994607445859112, guid: 08af2cd21f3e1b4439fac7c951e6456c, type: 3}
+  darkWindTrailPrefab: {fileID: 795299524216115620, guid: 32e91a948baeea24faf4460eb5ee675b, type: 3}
+  stunEffectPrefab: {fileID: 0}
+  audioSource: {fileID: 2898185117464482595}
+  sodomaChargeSound: {fileID: 8300000, guid: 672e245966e99a14094d75be214a968c, type: 3}
+  sodomaAttackSound: {fileID: 8300000, guid: 392404bfc967aea4da3e8bcda449e403, type: 3}
+  apocalipsisSlashSound: {fileID: 0}
+  necioPecadorSummonSound: {fileID: 0}
+  necioPecadorExplosionSound: {fileID: 0}
+  chargeAbilitySound: {fileID: 0}
+  stunSound: {fileID: 0}
+  deathSound: {fileID: 8300000, guid: 990f6f8bb9e83e342bfe42013a9d6119, type: 3}
+  showDebugGUI: 0
+  vcam: {fileID: 0}
 --- !u!114 &8537394917465235362
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7196,7 +7254,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 120953a634ec616478c5722a12285e45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  renderers:
+  meshRenderers:
   - {fileID: 8137452189547057693}
   - {fileID: 8018402274751242788}
   - {fileID: 1432674591700524008}
@@ -7210,16 +7268,18 @@ MonoBehaviour:
   - {fileID: 4131715598974099610}
   - {fileID: 4370002748846665188}
   - {fileID: 2370159211794425699}
-  blinkFlashMaterial: {fileID: 2100000, guid: 9ab7ca4029830af4fbe7852af51d8753, type: 2}
+  spriteRenderers: []
+  useOriginalMaterials: 0
+  defaultMaterial: {fileID: 2100000, guid: d3e8a18f019b7854ab00711e41fce600, type: 2}
+  blinkFlashMaterial: {fileID: 2100000, guid: f252e05afbca4b14da60e54eabddf22d, type: 2}
   blinkInterval: 0.06
   blinkCount: 6
-  stunMaterial: {fileID: 0}
+  stunMaterial: {fileID: 2100000, guid: 9e980960b4627f14bb1ebfed5d685fec, type: 2}
   stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
-  stunVFXPrefab: {fileID: 0}
-  stunVFXHeight: 2
+  stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
+  stunVFXHeight: 3.5
   stunSFX: {fileID: 0}
-  defaultMaterial: {fileID: 2100000, guid: d3e8a18f019b7854ab00711e41fce600, type: 2}
   glowMaterial: {fileID: 2100000, guid: ad0060fc2496c824ea04f56155e38fcd, type: 2}
   glowIntensity: 2
   damageNumberPrefab: {fileID: 3347622852007741979, guid: 465011437a9e8d24497414b4490e9a11, type: 3}
@@ -7227,61 +7287,3 @@ MonoBehaviour:
   audioSource: {fileID: 2898185117464482595}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
---- !u!114 &8467342248943344500
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9147642797784961567}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7751e8d5b0ac981448b751d4be955285, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxHealth: 500
-  currentHealth: 0
-  moveSpeed: 5
-  lowHPSpeedMultiplier: 1.3
-  apocalipsisDuration: 10
-  apocalipsisDamage: 7
-  apocalipsisTargetDashes: 10
-  apocalipsisRange: 4
-  positioningDuration: 2
-  sodomaDamage: 35
-  sodomaCutRange: 8
-  fireTrailDamagePerSecond: 5
-  sodomaChargeTime: 1.5
-  sodomaBackwardDistance: 3
-  necioAttackWindow: 12
-  necioVulnerableWindow: 3
-  necioPecadorDamage: 15
-  necioPecadorRadius: 1.5
-  necioPecadorWarningTime: 2.5
-  chargeProbability: 0.15
-  chargeAbilitySpeed: 15
-  playerStunDuration: 2.5
-  chargeObstacleLayers:
-    serializedVersion: 2
-    m_Bits: 512
-  player: {fileID: 0}
-  animator: {fileID: 7282784552455421668}
-  swordTransform: {fileID: 8250834327438604192}
-  greenFireTrailPrefab: {fileID: 1018580927016024537, guid: feee1a3ef3e900245bd662be4dcbd6ba, type: 3}
-  soulHandPrefab: {fileID: 3043229836960575198, guid: 32bf7cc09667f4f4f886fdce3104ca5b, type: 3}
-  necioPecadorWarningPrefab: {fileID: 2010781431489356441, guid: e149f03e6510455409ab8644b28c7ec0, type: 3}
-  armorGlowVFX: {fileID: 8081810031924133735}
-  greenFireVFX: {fileID: 1959994607445859112, guid: 08af2cd21f3e1b4439fac7c951e6456c, type: 3}
-  darkWindTrailPrefab: {fileID: 795299524216115620, guid: 32e91a948baeea24faf4460eb5ee675b, type: 3}
-  stunEffectPrefab: {fileID: 0}
-  audioSource: {fileID: 2898185117464482595}
-  sodomaChargeSound: {fileID: 8300000, guid: 672e245966e99a14094d75be214a968c, type: 3}
-  sodomaAttackSound: {fileID: 8300000, guid: 392404bfc967aea4da3e8bcda449e403, type: 3}
-  apocalipsisSlashSound: {fileID: 0}
-  necioPecadorSummonSound: {fileID: 0}
-  necioPecadorExplosionSound: {fileID: 0}
-  chargeAbilitySound: {fileID: 0}
-  stunSound: {fileID: 0}
-  deathSound: {fileID: 8300000, guid: 990f6f8bb9e83e342bfe42013a9d6119, type: 3}
-  showDebugGUI: 0
-  vcam: {fileID: 0}

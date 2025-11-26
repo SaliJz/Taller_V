@@ -7,6 +7,7 @@ using UnityEngine.AI;
 public class KronusEnemy : MonoBehaviour
 {
     [Header("References")]
+    [SerializeField] private Animator animator;
     [SerializeField] private KronusStats stats;
     [SerializeField] private Transform hitPoint;
     [SerializeField] private GameObject visualHit;
@@ -85,17 +86,10 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private bool showGizmo = false;
     [SerializeField] private float gizmoDuration = 0.25f;
 
-    //private List<GameObject> activeInstantiatedEffects = new List<GameObject>();
-
-    //private Vector3 currentEchoCenter = Vector3.zero;
-    //private float currentEchoRadius = 0f;
-    //private bool isEchoActive = false;
-
     private EnemyHealth enemyHealth;
     private NavMeshAgent agent;
     private Transform playerTransform;
     private PlayerHealth playerHealth;
-    private Animator animator;
 
     private bool isAttacking = false;
     private float attackTimer;
@@ -113,14 +107,26 @@ public class KronusEnemy : MonoBehaviour
 
     private List<GameObject> activeEchoes = new List<GameObject>();
 
+    private Vector3 lastMoveDirection = Vector3.forward;
+    private int animHashX;
+    private int animHashY;
+    private int animHashWalking;
+    private int animHashDashing;
+
     private void Awake()
     {
-        enemyHealth = GetComponent<EnemyHealth>();
-        agent = GetComponent<NavMeshAgent>();
-        animator = GetComponent<Animator>();
+        if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
+        if (agent == null) agent = GetComponent<NavMeshAgent>();
+        if (animator == null) animator = GetComponent<Animator>();
+
+        animHashX = Animator.StringToHash("Xaxis");
+        animHashY = Animator.StringToHash("Yaxis");
+        animHashWalking = Animator.StringToHash("Walking");
+        animHashDashing = Animator.StringToHash("Dashing");
 
         if (enemyHealth == null) ReportDebug("Falta EnemyHealth componente.", 3);
         if (agent == null) ReportDebug("Falta NavMeshAgent componente.", 3);
+        if (animator != null) ReportDebug("Falta Animator componente.", 2);
     }
 
     private void Start()
@@ -139,7 +145,7 @@ public class KronusEnemy : MonoBehaviour
         {
             agent.stoppingDistance = attackRadius;
             agent.updatePosition = true;
-            agent.updateRotation = true;
+            agent.updateRotation = false;
             agent.isStopped = false;
         }
 
@@ -249,7 +255,6 @@ public class KronusEnemy : MonoBehaviour
             }
         }
 
-        if (animator != null) animator.SetTrigger("Die");
         if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
 
         this.enabled = false;
@@ -258,6 +263,8 @@ public class KronusEnemy : MonoBehaviour
     private void Update()
     {
         if (!enabled) return;
+
+        UpdateAnimationAndRotation();
 
         if (enemyHealth != null && enemyHealth.IsStunned)
         {
@@ -370,6 +377,54 @@ public class KronusEnemy : MonoBehaviour
             }
         }
     }
+
+    #region Animation & Rotation
+
+    /// <summary>
+    /// Maneja la rotación discreta (8 direcciones) y actualiza el Animator.
+    /// </summary>
+    private void UpdateAnimationAndRotation()
+    {
+        if (agent == null || animator == null) return;
+
+        Vector3 velocity = Vector3.zero;
+
+        // Si estamos usando NavMeshAgent, obtenemos su velocidad
+        if (agent.enabled && !agent.isStopped)
+        {
+            velocity = agent.velocity;
+        }
+
+        bool isWalking = velocity.sqrMagnitude > 0.1f;
+        animator.SetBool(animHashWalking, isWalking);
+
+        if (isWalking)
+        {
+            Vector3 direction = velocity.normalized;
+            direction.y = 0;
+
+            if (direction != Vector3.zero)
+            {
+                // Snapping a 8 direcciones
+                float angle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+
+                // Redondear al múltiplo más cercano de 45 grados
+                float snappedAngle = Mathf.Round(angle / 45f) * 45f;
+
+                // Aplicar rotación suave pero hacia el ángulo 'snappeado'
+                Quaternion targetRotation = Quaternion.Euler(0, snappedAngle, 0);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, 720f * Time.deltaTime);
+
+                // Guardam la última dirección para cuando se detenga
+                lastMoveDirection = direction;
+            }
+        }
+
+        animator.SetFloat(animHashX, lastMoveDirection.x);
+        animator.SetFloat(animHashY, lastMoveDirection.z);
+    }
+
+    #endregion
 
     #region Patrulla / Roaming
 
@@ -499,12 +554,14 @@ public class KronusEnemy : MonoBehaviour
 
         ReportDebug("Kronus inicia ataque dash.", 1);
 
+        if (animator != null) animator.SetBool(animHashDashing, true);
+
         if (agent != null && agent.enabled && agent.isOnNavMesh)
         {
             agent.isStopped = true;
             agent.ResetPath();
             agent.updatePosition = false;
-            agent.updateRotation = true;
+            agent.updateRotation = false;
         }
 
         float prepTimer = 0f;
@@ -513,17 +570,23 @@ public class KronusEnemy : MonoBehaviour
             if (enemyHealth != null && enemyHealth.IsStunned)
             {
                 isAttacking = false;
-                if (agent != null && agent.enabled)
-                {
-                    agent.updatePosition = true;
-                }
-                yield break; // cancelar ataque si está aturdido
+                if (animator != null) animator.SetBool(animHashDashing, false);
+                if (agent != null && agent.enabled) agent.updatePosition = true;
+                yield break; 
             }
             prepTimer += Time.deltaTime;
+
+            if (playerTransform != null)
+            {
+                Vector3 dirToPlayer = (playerTransform.position - transform.position).normalized;
+                dirToPlayer.y = 0;
+                float angle = Mathf.Atan2(dirToPlayer.x, dirToPlayer.z) * Mathf.Rad2Deg;
+                float snappedAngle = Mathf.Round(angle / 45f) * 45f;
+                transform.rotation = Quaternion.Euler(0, snappedAngle, 0);
+            }
             yield return null; // esperar al siguiente frame
         }
 
-        if (animator != null) animator.SetTrigger("StartDash");
         if (audioSource != null && dashSFX != null) audioSource.PlayOneShot(dashSFX);
 
         Vector3 startPosition = transform.position;
@@ -559,6 +622,7 @@ public class KronusEnemy : MonoBehaviour
             if (enemyHealth != null && enemyHealth.IsStunned)
             {
                 isAttacking = false;
+                if (animator != null) animator.SetBool(animHashDashing, false);
                 if (agent != null && agent.enabled)
                 {
                     agent.Warp(transform.position);
@@ -597,14 +661,16 @@ public class KronusEnemy : MonoBehaviour
                 newPosition.y = navHit.position.y;
             }
 
-            // Actualizar posición directamente
             transform.position = newPosition;
 
-            // Rotación suave
-            if (dashDir.sqrMagnitude > 0.01f)
+            float angle = Mathf.Atan2(dashDir.x, dashDir.z) * Mathf.Rad2Deg;
+            float snappedAngle = Mathf.Round(angle / 45f) * 45f;
+            transform.rotation = Quaternion.Euler(0, snappedAngle, 0);
+
+            if (animator != null)
             {
-                Quaternion targetRot = Quaternion.LookRotation(dashDir, Vector3.up);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 10f * delta);
+                animator.SetFloat(animHashX, dashDir.x);
+                animator.SetFloat(animHashY, dashDir.z);
             }
 
             // Interrupción por proximidad al jugador
@@ -621,6 +687,8 @@ public class KronusEnemy : MonoBehaviour
             yield return null;
         }
 
+        if (animator != null) animator.SetBool(animHashDashing, false);
+
         if (agent != null && agent.enabled)
         {
             NavMeshHit navHit;
@@ -635,15 +703,6 @@ public class KronusEnemy : MonoBehaviour
         if (enemyHealth != null && enemyHealth.IsStunned)
         {
             isAttacking = false;
-            if (agent != null && agent.enabled)
-            {
-                NavMeshHit navHit;
-                if (NavMesh.SamplePosition(transform.position, out navHit, 2f, NavMesh.AllAreas))
-                {
-                    agent.Warp(navHit.position);
-                }
-                agent.updatePosition = true;
-            }
             yield break;
         }
 
@@ -679,13 +738,10 @@ public class KronusEnemy : MonoBehaviour
             groundIndicator.SetActive(true);
         }
 
-        if (animator != null) animator.SetTrigger("PrepareAttack");
-
         yield return new WaitForSeconds(timeAfterAttack);
 
         if (groundIndicator != null) groundIndicator.SetActive(false);
 
-        if (animator != null) animator.SetTrigger("Attack");
         if (audioSource != null && hammerSmashSFX != null) audioSource.PlayOneShot(hammerSmashSFX);
 
         PerformHammerSmash();

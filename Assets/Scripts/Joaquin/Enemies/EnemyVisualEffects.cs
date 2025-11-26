@@ -7,15 +7,21 @@ using System.Collections.Generic;
 /// </summary>
 public class EnemyVisualEffects : MonoBehaviour
 {
-    [Header("Renderers (opcional)")]
-    [SerializeField] private Renderer[] renderers;
+    [Header("Renderers Configuration")]
+    [Tooltip("Si se deja vacío, buscará MeshRenderers en los hijos.")]
+    [SerializeField] private Renderer[] meshRenderers;
+    [Tooltip("Si se deja vacío, buscará SpriteRenderers en los hijos.")]
+    [SerializeField] private SpriteRenderer[] spriteRenderers;
 
-    [Header("Materials / Material Blink (material swap)")]
-    [Tooltip("Material temporal que se usará para el parpadeo por swap (por ejemplo: blanco).")]
+    [Header("Configuración de Materiales")]
+    [Tooltip("Si es true, se ignora 'defaultMaterial' y se usa el material que tenga el renderer al inicio.")]
+    [SerializeField] private bool useOriginalMaterials = true;
+    [Tooltip("Solo se usa si useOriginalMaterials es false.")]
+    [SerializeField] private Material defaultMaterial;
+
+    [Header("Flash / Blink Effect")]
     [SerializeField] private Material blinkFlashMaterial;
-    [Tooltip("Intervalo entre toggles (segundos). Ej: 0.06 -> parpadeo rápido.")]
     [SerializeField] private float blinkInterval = 0.06f;
-    [Tooltip("Número total de toggles (on/off). Ej: 6 = 3 parpadeos completos).")]
     [SerializeField] private int blinkCount = 6;
 
     [Header("Stun Effect")]
@@ -26,11 +32,8 @@ public class EnemyVisualEffects : MonoBehaviour
     [SerializeField] private float stunVFXHeight = 2f;
     [SerializeField] private AudioClip stunSFX;
 
-    [Header("Materials (default / glow)")]
-    [SerializeField] private Material defaultMaterial;
-    [SerializeField] private Material glowMaterial;
-
     [Header("Armor Glow Effect")]
+    [SerializeField] private Material glowMaterial;
     [SerializeField] private float glowIntensity = 2f;
 
     [Header("Damage Numbers")]
@@ -47,271 +50,260 @@ public class EnemyVisualEffects : MonoBehaviour
     private GameObject activeStunVFX;
     private Coroutine glowCoroutine;
 
-    private Dictionary<Renderer, Coroutine> materialBlinkRoutines = new Dictionary<Renderer, Coroutine>();
-    private Dictionary<Renderer, Material[]> originalMaterialsByRenderer = new Dictionary<Renderer, Material[]>();
+    private Dictionary<Component, Coroutine> activeBlinkRoutines = new Dictionary<Component, Coroutine>();
 
-    private List<GameObject> activeInstantiatedEffects = new List<GameObject>();
+    private Dictionary<Renderer, Material> originalMeshMats = new Dictionary<Renderer, Material>();
+    private Dictionary<SpriteRenderer, Material> originalSpriteMats = new Dictionary<SpriteRenderer, Material>();
+
+    private List<GameObject> activePersistentEffects = new List<GameObject>();
 
     #region Unity Lifecycle
 
     private void Awake()
     {
         ValidateRenderers();
-        InitializeMaterials();
+        CacheOriginalMaterials();
     }
 
     private void OnEnable()
     {
-        ResetVisuals();
+        RestoreAllOriginalMaterials();
     }
 
     private void OnDisable()
     {
-        CleanupAllEffects();
+        CleanupAllEffects(true);
     }
 
     private void OnDestroy()
     {
-        CleanupAllEffects();
+        CleanupAllEffects(true);
     }
 
     #endregion
 
-    #region Initialization & Validation
+    #region Initialization
 
-    /// <summary>
-    /// Valida que existan renderers asignados.
-    /// </summary>
     private void ValidateRenderers()
     {
-        if (renderers == null || renderers.Length == 0)
+        if (meshRenderers == null || meshRenderers.Length == 0)
+            meshRenderers = GetComponentsInChildren<Renderer>();
+
+        if (spriteRenderers == null || spriteRenderers.Length == 0)
+            spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+
+        if ((meshRenderers == null || meshRenderers.Length == 0) && (spriteRenderers == null || spriteRenderers.Length == 0))
         {
-            renderers = GetComponentsInChildren<Renderer>();
-            if (renderers.Length == 0)
-            {
-                Debug.LogWarning($"[EnemyVisualEffects] No se encontraron Renderers en {gameObject.name}. Los efectos visuales no funcionarán correctamente.");
-            }
+            Debug.LogWarning($"[EnemyVisualEffects] No se encontraron Renderers ni Sprites en {gameObject.name}.");
         }
     }
 
-    /// <summary>
-    /// Inicializa los materiales por defecto.
-    /// </summary>
-    private void InitializeMaterials()
+    private void CacheOriginalMaterials()
     {
-        if (renderers == null || defaultMaterial == null) return;
+        originalMeshMats.Clear();
+        originalSpriteMats.Clear();
 
-        foreach (var r in renderers)
+        if (meshRenderers != null)
         {
-            if (r != null)
+            foreach (var r in meshRenderers)
             {
-                r.material = defaultMaterial;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Limpia todos los efectos activos.
-    /// </summary>
-    private void CleanupAllEffects()
-    {
-        // Detener stun
-        if (stunEffectCoroutine != null)
-        {
-            StopCoroutine(stunEffectCoroutine);
-            stunEffectCoroutine = null;
-        }
-
-        // Detener glow
-        if (glowCoroutine != null)
-        {
-            StopCoroutine(glowCoroutine);
-            glowCoroutine = null;
-        }
-
-        // Detener y restaurar todos los parpadeos por material activos
-        foreach (var kv in new List<KeyValuePair<Renderer, Coroutine>>(materialBlinkRoutines))
-        {
-            if (kv.Value != null) StopCoroutine(kv.Value);
-            RestoreOriginalMaterialsForRenderer(kv.Key);
-        }
-        materialBlinkRoutines.Clear();
-        originalMaterialsByRenderer.Clear();
-
-        // Destruir efectos instanciados
-        DestroyAllInstantiatedEffects();
-
-        // Detener todas las corrutinas
-        StopAllCoroutines();
-    }
-
-    /// <summary>
-    /// Destruye todos los efectos instanciados.
-    /// </summary>
-    private void DestroyAllInstantiatedEffects()
-    {
-        foreach (GameObject effect in activeInstantiatedEffects)
-        {
-            if (effect != null)
-            {
-                Destroy(effect);
-            }
-        }
-        activeInstantiatedEffects.Clear();
-    }
-
-    #endregion
-
-    public void PlayToughnessHitFeedback(Vector3 vector3)
-    {
-
-    }
-
-    #region Damage Feedback (material blink, numbers, sonido)
-
-    /// <summary>
-    /// Llama este método cuando el enemigo recibe daño. 
-    /// Incluye:
-    /// - Números de daño
-    /// - Material swap blink (BlinkMaterial) usando los parámetros serializados (si blinkFlashMaterial asignado)
-    /// - Sonido
-    /// </summary>
-    public void PlayDamageFeedback(Vector3 damagePosition, float damage, bool isCritical)
-    {
-        if (stunEffectCoroutine != null && isStunned)
-        {
-            // Solo mostrar números y sonido
-            ShowDamageNumber(damagePosition, damage, isCritical);
-            if (audioSource != null)
-            {
-                PlayHitSound(isCritical);
-            }
-            return;
-        }
-
-        // Números de daño
-        ShowDamageNumber(damagePosition, damage, isCritical);
-
-        // Material swap (parpadeo por swap)
-        if (blinkFlashMaterial != null && renderers != null)
-        {
-            foreach (var renderer in renderers)
-            {
-                if (renderer != null)
+                if (r != null)
                 {
-                    BlinkMaterial(renderer, blinkFlashMaterial, blinkInterval, blinkCount);
+                    originalMeshMats[r] = useOriginalMaterials ? r.sharedMaterial : defaultMaterial;
+
+                    r.material = originalMeshMats[r];
                 }
             }
         }
 
-        PlayHitSound(isCritical);
+        if (spriteRenderers != null)
+        {
+            foreach (var s in spriteRenderers)
+            {
+                if (s != null)
+                {
+                    originalSpriteMats[s] = useOriginalMaterials ? s.sharedMaterial : defaultMaterial;
+                    s.material = originalSpriteMats[s];
+                }
+            }
+        }
     }
 
-    /// <summary>
-    /// Reproduce el sonido de impacto correspondiente.
-    /// </summary>
+    #endregion
+
+    #region Core Cleanup
+
+    private void CleanupAllEffects(bool forceImmediate = false)
+    {
+        StopAllCoroutines();
+
+        stunEffectCoroutine = null;
+        glowCoroutine = null;
+        activeBlinkRoutines.Clear();
+
+        if (activeStunVFX != null)
+        {
+            if (forceImmediate)
+            {
+                Destroy(activeStunVFX);
+            }
+            else
+            {
+                DetachAndStopStunVFX(activeStunVFX);
+            }
+            activeStunVFX = null;
+        }
+
+        for (int i = activePersistentEffects.Count - 1; i >= 0; i--)
+        {
+            GameObject fx = activePersistentEffects[i];
+            if (fx != null) Destroy(fx);
+        }
+        activePersistentEffects.Clear();
+
+        RestoreAllOriginalMaterials();
+    }
+
+    private void RestoreAllOriginalMaterials()
+    {
+        if (meshRenderers != null)
+        {
+            foreach (var r in meshRenderers)
+            {
+                if (r != null && originalMeshMats.ContainsKey(r))
+                    r.material = originalMeshMats[r];
+            }
+        }
+
+        if (spriteRenderers != null)
+        {
+            foreach (var s in spriteRenderers)
+            {
+                if (s != null && originalSpriteMats.ContainsKey(s))
+                    s.material = originalSpriteMats[s];
+            }
+        }
+
+        SetRenderersActive(true);
+    }
+
+    #endregion
+
+    public void PlayToughnessHitFeedback(Vector3 position)
+    {
+        ShowDamageNumber(position, 0, false);
+    }
+
+    #region Damage Feedback
+
+    public void PlayDamageFeedback(Vector3 damagePosition, float damage, bool isCritical)
+    {
+        ShowDamageNumber(damagePosition, damage, isCritical);
+        PlayHitSound(isCritical);
+
+        if (isStunned) return;
+
+        if (blinkFlashMaterial != null)
+        {
+            if (meshRenderers != null)
+            {
+                foreach (var r in meshRenderers)
+                    if (r != null) StartBlinkRoutine(r, blinkFlashMaterial, blinkInterval, blinkCount);
+            }
+
+            if (spriteRenderers != null)
+            {
+                foreach (var s in spriteRenderers)
+                    if (s != null) StartBlinkRoutine(s, blinkFlashMaterial, blinkInterval, blinkCount);
+            }
+        }
+    }
+
     private void PlayHitSound(bool isCritical)
     {
         if (audioSource == null) return;
-
         AudioClip clip = isCritical ? criticalHitSFX : normalHitSFX;
-        if (clip != null)
-        {
-            audioSource.PlayOneShot(clip);
-        }
+        if (clip != null) audioSource.PlayOneShot(clip);
     }
 
     #endregion
 
-    #region Material Blink (swap materials)
+    #region Generic Blink System
 
-    /// <summary>
-    /// Parpadea (swap de materiales) en el renderer objetivo usando 'flashMaterial'.
-    /// Si ya existe un parpadeo en ese renderer, lo reinicia y restaura los materiales originales antes de empezar de nuevo.
-    /// </summary>
-    /// <param name="targetRenderer">Renderer a parpadear (no null)</param>
-    /// <param name="flashMaterial">Material temporal de parpadeo</param>
-    /// <param name="blinkInterval">intervalo entre toggles</param>
-    /// <param name="blinkCount">número total de toggles</param>
-    public void BlinkMaterial(Renderer targetRenderer, Material flashMaterial, float blinkInterval, int blinkCount)
+    private void StartBlinkRoutine(Component target, Material flashMat, float interval, int count)
     {
-        if (targetRenderer == null || flashMaterial == null) return;
+        if (target == null) return;
 
-        if (materialBlinkRoutines.TryGetValue(targetRenderer, out Coroutine existing))
+        if (activeBlinkRoutines.TryGetValue(target, out Coroutine existing))
         {
             if (existing != null) StopCoroutine(existing);
-            RestoreOriginalMaterialsForRenderer(targetRenderer);
-            materialBlinkRoutines.Remove(targetRenderer);
+            activeBlinkRoutines.Remove(target);
+            RestoreMaterialSingle(target);
         }
 
-        Coroutine routine = StartCoroutine(MaterialBlinkCoroutine(targetRenderer, flashMaterial, blinkInterval, Mathf.Max(1, blinkCount)));
-        materialBlinkRoutines[targetRenderer] = routine;
+        Coroutine routine = StartCoroutine(BlinkCoroutine(target, flashMat, interval, count));
+        activeBlinkRoutines[target] = routine;
     }
 
-    private IEnumerator MaterialBlinkCoroutine(Renderer targetRenderer, Material flashMaterial, float blinkInterval, int toggles)
+    private IEnumerator BlinkCoroutine(Component target, Material flashMat, float interval, int toggles)
     {
-        if (targetRenderer == null || flashMaterial == null)
+        Material originalMat = GetOriginalMaterial(target);
+        if (originalMat == null)
         {
-            if (materialBlinkRoutines.ContainsKey(targetRenderer)) materialBlinkRoutines.Remove(targetRenderer);
+            activeBlinkRoutines.Remove(target);
             yield break;
         }
 
-        Material[] originalMaterials = targetRenderer.materials;
-        originalMaterialsByRenderer[targetRenderer] = originalMaterials;
+        bool isFlash = false;
+        Renderer meshR = target as Renderer;
+        SpriteRenderer spriteR = target as SpriteRenderer;
 
-        bool showingFlash = false;
-
-        try
+        for (int i = 0; i < toggles; i++)
         {
-            for (int i = 0; i < toggles; i++)
+            if (target == null)
             {
-                if (!showingFlash)
-                {
-                    Material[] flashArray = new Material[originalMaterials.Length];
-                    for (int j = 0; j < flashArray.Length; j++) flashArray[j] = flashMaterial;
-                    try { targetRenderer.materials = flashArray; }
-                    catch { /* Ignorar errores de material assignment */ }
-                    
-                    showingFlash = true;
-                }
-                else
-                {
-                    // restaurar originales
-                    try { targetRenderer.materials = originalMaterials; }
-                    catch { /* Ignorar errores de material assignment */ }
-
-                    showingFlash = false;
-                }
-
-                yield return new WaitForSeconds(blinkInterval);
+                activeBlinkRoutines.Remove(target);
+                yield break;
             }
-        }
-        finally
-        {
-            // restaurar por seguridad
-            RestoreOriginalMaterialsForRenderer(targetRenderer);
 
-            // limpiar registros
-            if (materialBlinkRoutines.ContainsKey(targetRenderer)) materialBlinkRoutines.Remove(targetRenderer);
-            if (originalMaterialsByRenderer.ContainsKey(targetRenderer)) originalMaterialsByRenderer.Remove(targetRenderer);
+            isFlash = !isFlash;
+            Material matToUse = isFlash ? flashMat : originalMat;
+
+            if (meshR != null)
+            {
+                meshR.material = matToUse;
+            }
+            else if (spriteR != null)
+            {
+                spriteR.material = matToUse;
+            }
+
+            yield return new WaitForSeconds(interval);
         }
+
+        if (target != null)
+        {
+            RestoreMaterialSingle(target);
+        }
+
+        activeBlinkRoutines.Remove(target);
     }
 
-    private void RestoreOriginalMaterialsForRenderer(Renderer r)
+    private Material GetOriginalMaterial(Component target)
     {
-        if (r == null) return;
+        if (target is Renderer r && originalMeshMats.ContainsKey(r)) return originalMeshMats[r];
+        if (target is SpriteRenderer s && originalSpriteMats.ContainsKey(s)) return originalSpriteMats[s];
+        return null;
+    }
 
-        if (originalMaterialsByRenderer.TryGetValue(r, out Material[] originals))
-        {
-            if (originals != null && originals.Length > 0)
-            {
-                try
-                {
-                    r.materials = originals;
-                }
-                catch { /* ignorar */ }
-            }
-        }
+    private void RestoreMaterialSingle(Component target)
+    {
+        if (target == null) return;
+        Material original = GetOriginalMaterial(target);
+        if (original == null) return;
+
+        if (target is Renderer r) r.material = original;
+        else if (target is SpriteRenderer s) s.material = original;
     }
 
     #endregion
@@ -320,20 +312,10 @@ public class EnemyVisualEffects : MonoBehaviour
 
     public void StartArmorGlow()
     {
-        if (renderers == null || glowMaterial == null) return;
+        if (glowMaterial == null) return;
+        if (glowCoroutine != null) StopCoroutine(glowCoroutine);
 
-        if (glowCoroutine != null)
-        {
-            StopCoroutine(glowCoroutine);
-        }
-
-        foreach (Renderer renderer in renderers)
-        {
-            if (renderer != null)
-            {
-                renderer.material = glowMaterial;
-            }
-        }
+        ApplyMaterialToAll(glowMaterial);
 
         glowCoroutine = StartCoroutine(AnimateGlowCoroutine());
     }
@@ -345,44 +327,32 @@ public class EnemyVisualEffects : MonoBehaviour
             StopCoroutine(glowCoroutine);
             glowCoroutine = null;
         }
-
-        if (renderers == null || defaultMaterial == null) return;
-
-        foreach (Renderer renderer in renderers)
-        {
-            if (renderer != null)
-            {
-                renderer.material = defaultMaterial;
-            }
-        }
+        RestoreAllOriginalMaterials();
     }
 
-    /// <summary>
-    /// Corrutina que anima el brillo de la armadura.
-    /// </summary>
     private IEnumerator AnimateGlowCoroutine()
     {
-        if (renderers == null) yield break;
-
         float baseIntensity = 1f;
-
         while (true)
         {
             float intensity = baseIntensity + Mathf.Sin(Time.time * 3f) * glowIntensity;
 
-            foreach (Renderer renderer in renderers)
-            {
-                if (renderer != null && renderer.material == glowMaterial)
-                {
-                    try
-                    {
-                        renderer.material.SetFloat("_EmissionIntensity", intensity);
-                    }
-                    catch { /* Ignorar si el shader no tiene esta propiedad */ }
-                }
-            }
+            UpdateGlowIntensity(meshRenderers, intensity);
+            UpdateGlowIntensity(spriteRenderers, intensity);
 
             yield return null;
+        }
+    }
+
+    private void UpdateGlowIntensity<T>(T[] renderers, float intensity) where T : Renderer
+    {
+        if (renderers == null) return;
+        foreach (var r in renderers)
+        {
+            if (r != null && r.material.HasProperty("_EmissionIntensity"))
+            {
+                r.material.SetFloat("_EmissionIntensity", intensity);
+            }
         }
     }
 
@@ -390,50 +360,13 @@ public class EnemyVisualEffects : MonoBehaviour
 
     #region Damage Numbers
 
-    /// <summary>
-    /// Metodo para mostrar números de daño en la posición especificada.
-    /// </summary>
-    /// <param name="position"></param>
-    /// <param name="damage"></param>
-    /// <param name="isCritical"></param>
     public void ShowDamageNumber(Vector3 position, float damage, bool isCritical = false)
     {
         if (damageNumberPrefab != null)
         {
             GameObject damageNumber = Instantiate(damageNumberPrefab, position, Quaternion.identity, damageNumberParent);
-            activeInstantiatedEffects.Add(damageNumber);
-
-            DamageNumber damageNumberScript = damageNumber.GetComponent<DamageNumber>();
-
-            if (damageNumberScript != null)
-            {
-                damageNumberScript.Initialize(damage, isCritical);
-            }
-        }
-    }
-
-    private void ResetVisuals()
-    {
-        // Restaurar materiales por defecto
-        if (renderers != null && defaultMaterial != null)
-        {
-            foreach (var r in renderers)
-            {
-                if (r != null)
-                {
-                    r.material = defaultMaterial;
-                    r.enabled = true;
-                }
-            }
-        }
-
-        // Limpiar números de daño existentes
-        if (damageNumberParent != null)
-        {
-            for (int i = 0; i < damageNumberParent.childCount; i++)
-            {
-                Destroy(damageNumberParent.GetChild(i).gameObject);
-            }
+            DamageNumber script = damageNumber.GetComponent<DamageNumber>();
+            if (script != null) script.Initialize(damage, isCritical);
         }
     }
 
@@ -441,190 +374,163 @@ public class EnemyVisualEffects : MonoBehaviour
 
     #region Stun Effect Management
 
-    /// <summary>
-    /// Inicia el efecto visual de aturdimiento. Se llama desde EnemyHealth.ApplyStun()
-    /// </summary>
     public void StartStunEffect(float duration)
     {
-        // Detener todos los efectos de parpadeo activos primero
-        foreach (var kv in new List<KeyValuePair<Renderer, Coroutine>>(materialBlinkRoutines))
-        {
-            if (kv.Value != null) StopCoroutine(kv.Value);
-            RestoreOriginalMaterialsForRenderer(kv.Key);
-        }
+        activeBlinkRoutines.Clear();
 
-        materialBlinkRoutines.Clear();
-        originalMaterialsByRenderer.Clear();
-
-        // Detener stun anterior si existía
         if (stunEffectCoroutine != null)
         {
             StopCoroutine(stunEffectCoroutine);
         }
 
-        Debug.Log($"[EnemyVisualEffects] StartStunEffect llamado en {gameObject.name} por {duration}s");
         stunEffectCoroutine = StartCoroutine(StunEffectCoroutine(duration));
     }
 
-    /// <summary>
-    /// Detiene el efecto visual de aturdimiento. Se llama desde EnemyHealth cuando termina el stun.
-    /// </summary>
     public void StopStunEffect()
     {
-        Debug.Log($"[EnemyVisualEffects] StopStunEffect llamado en {gameObject.name}");
-
         if (stunEffectCoroutine != null)
         {
             StopCoroutine(stunEffectCoroutine);
             stunEffectCoroutine = null;
         }
-
         CleanupStunEffect();
-    }
-
-    /// <summary>
-    /// Limpia los efectos del stun (materiales, VFX, visibilidad).
-    /// </summary>
-    private void CleanupStunEffect()
-    {
-        // Asegurar que los renderers estén visibles
-        SetRenderersActive(true);
-
-        // Restaurar materiales originales
-        if (renderers != null && defaultMaterial != null)
-        {
-            foreach (var r in renderers)
-            {
-                if (r != null)
-                {
-                    r.material = defaultMaterial;
-                }
-            }
-        }
-
-        // Destruir VFX de aturdimiento
-        if (activeStunVFX != null)
-        {
-            Destroy(activeStunVFX);
-            activeStunVFX = null;
-        }
     }
 
     private IEnumerator StunEffectCoroutine(float duration)
     {
         isStunned = true;
 
-        // 1) Cambiar materiales a stunMaterial (o color de fallback)
-        ApplyStunMaterial();
+        if (stunMaterial != null) ApplyMaterialToAll(stunMaterial);
+        else ApplyColorToAll(stunGlowColor);
 
-        // 2) Reproducir sonido de stun
-        PlayStunSound();
+        if (audioSource != null && stunSFX != null) audioSource.PlayOneShot(stunSFX);
 
-        // 3) Instanciar VFX de aturdimiento
-        SpawnStunVFX();
-
-        // 4) Parpadeo rápido durante el stun
-        yield return StartCoroutine(StunBlinkEffect(duration));
-
-        // 5) Limpieza final
-        CleanupStunEffect();
-
-        stunEffectCoroutine = null;
-        isStunned = false;
-    }
-
-    /// <summary>
-    /// Aplica el material o color de stun a todos los renderers.
-    /// </summary>
-    private void ApplyStunMaterial()
-    {
-        if (renderers == null) return;
-
-        foreach (var r in renderers)
+        if (stunVFXPrefab != null)
         {
-            if (r == null) continue;
-
-            if (stunMaterial != null)
+            if (activeStunVFX == null)
             {
-                r.material = stunMaterial;
-                Debug.Log($"[EnemyVisualEffects] Material de stun aplicado a {r.name}");
-            }
-            else if (r.material.HasProperty("_Color"))
-            {
-                r.material.color = stunGlowColor;
-                Debug.Log($"[EnemyVisualEffects] Color de stun aplicado a {r.name}");
+                activeStunVFX = Instantiate(stunVFXPrefab, transform.position + Vector3.up * stunVFXHeight, Quaternion.identity, transform);
             }
         }
-    }
 
-    /// <summary>
-    /// Reproduce el sonido de aturdimiento.
-    /// </summary>
-    private void PlayStunSound()
-    {
-        if (audioSource != null && stunSFX != null)
+        float elapsed = 0f;
+        float nextBlink = 0f;
+        bool visible = true;
+
+        while (elapsed < duration)
         {
-            audioSource.PlayOneShot(stunSFX);
-        }
-    }
-
-    /// <summary>
-    /// Instancia el VFX de aturdimiento.
-    /// </summary>
-    private void SpawnStunVFX()
-    {
-        if (stunVFXPrefab == null) return;
-
-        activeStunVFX = Instantiate(
-            stunVFXPrefab,
-            transform.position + Vector3.up * stunVFXHeight,
-            Quaternion.identity,
-            transform
-        );
-
-        activeInstantiatedEffects.Add(activeStunVFX);
-    }
-
-    /// <summary>
-    /// Ejecuta el efecto de parpadeo durante el stun.
-    /// </summary>
-    private IEnumerator StunBlinkEffect(float duration)
-    {
-        float elapsedTime = 0f;
-        float nextBlinkTime = 0f;
-        bool isVisible = true;
-
-        while (elapsedTime < duration)
-        {
-            elapsedTime += Time.deltaTime;
-
-            // Toggle visibilidad basado en tiempo
-            if (elapsedTime >= nextBlinkTime)
+            elapsed += Time.deltaTime;
+            if (elapsed >= nextBlink)
             {
-                isVisible = !isVisible;
-                SetRenderersActive(isVisible);
-                nextBlinkTime = elapsedTime + stunBlinkSpeed;
+                visible = !visible;
+                SetRenderersActive(visible);
+                nextBlink = elapsed + stunBlinkSpeed;
             }
-
             yield return null;
         }
 
+        CleanupStunEffect();
+    }
+
+    private void CleanupStunEffect()
+    {
+        isStunned = false;
+
         SetRenderersActive(true);
+        RestoreAllOriginalMaterials();
+
+        if (activeStunVFX != null)
+        {
+            DetachAndStopStunVFX(activeStunVFX);
+            activeStunVFX = null;
+        }
+    }
+
+    private void DetachAndStopStunVFX(GameObject vfxToStop)
+    {
+        if (vfxToStop == null) return;
+
+        if (vfxToStop.transform.parent == transform)
+        {
+            vfxToStop.transform.SetParent(null);
+        }
+
+        var ps = vfxToStop.GetComponent<ParticleSystem>();
+        if (ps != null)
+        {
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        }
+        else
+        {
+            Destroy(vfxToStop);
+        }
+    }
+
+    #endregion
+
+    #region Helpers
+
+    private void ApplyMaterialToAll(Material mat)
+    {
+        if (meshRenderers != null)
+        {
+            foreach (var r in meshRenderers)
+            {
+                if (r != null) r.material = mat;
+            }
+        }
+
+        if (spriteRenderers != null)
+        {
+            foreach (var s in spriteRenderers)
+            {
+                if (s != null) s.material = mat;
+            }
+        }
+    }
+
+    private void ApplyColorToAll(Color col)
+    {
+        if (meshRenderers != null)
+        {
+            foreach (var r in meshRenderers)
+            {
+                if (r != null && r.material.HasProperty("_Color")) r.material.color = col;
+            }
+        }
+
+        if (spriteRenderers != null)
+        {
+            foreach (var s in spriteRenderers)
+            {
+                if (s != null) s.color = col;
+            }
+        }
     }
 
     private void SetRenderersActive(bool active)
     {
-        if (renderers != null)
+        if (meshRenderers != null)
         {
-            foreach (var r in renderers)
+            foreach (var r in meshRenderers)
             {
-                if (r != null)
-                {
-                    r.enabled = active;
-                }
+                if (r != null) r.enabled = active;
+            }
+        }
+        if (spriteRenderers != null)
+        {
+            foreach (var s in spriteRenderers)
+            {
+                if (s != null) s.enabled = active;
             }
         }
     }
 
     #endregion
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawLine(transform.position, transform.position + (Vector3.up * stunVFXHeight));
+    }
 }

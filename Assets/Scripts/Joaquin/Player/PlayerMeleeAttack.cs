@@ -865,36 +865,31 @@ public class PlayerMeleeAttack : MonoBehaviour
                 }
                 else
                 {
-                    EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
+                    bool attackSuccessful = ExecuteAttack(enemy.gameObject, finalAttackDamage);
 
-                    ExecuteAttack(enemy.gameObject, finalAttackDamage);
-
-                    switch (currentAttackIndex)
+                    if (attackSuccessful)
                     {
-                        case 0:
-                            if (enemyHealth != null)
+                        EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
+                        if (enemyHealth != null)
+                        {
+                            switch (currentAttackIndex)
                             {
-                                enemyHealth.ApplyStun(comboStunDurations[0]);
-                                ReportDebug($"Enemigo {enemy.name} aturdido por {comboStunDurations[0]} segundos.", 1);
+                                case 0:
+                                    enemyHealth.ApplyStun(comboStunDurations[0]);
+                                    break;
+                                case 1:
+                                    enemyHealth.ApplyStun(comboStunDurations[1]);
+                                    break;
+                                case 2:
+                                    enemyHealth.ApplyStun(comboStunDurations[2]);
+                                    break;
                             }
-                            break;
-                        case 1:
-                            if (enemyHealth != null)
-                            {
-                                enemyHealth.ApplyStun(comboStunDurations[1]);
-                                ReportDebug($"Enemigo {enemy.name} aturdido por {comboStunDurations[1]} segundos.", 1);
-                            }
-                            break;
-                        case 2:
-                            if (enemyHealth != null)
-                            {
-                                enemyHealth.ApplyStun(comboStunDurations[2]);
-                                ReportDebug($"Enemigo {enemy.name} aturdido por {comboStunDurations[2]} segundos.", 1);
-                            }
-                            break;
+                        }
                     }
-
-                    ReportDebug($"Golpe a {enemy.name}: Enviando {finalDamage:F2} de daño de {meleeDamageType}", 1);
+                    else
+                    {
+                        ReportDebug($"Efectos secundarios (Stun) cancelados en {enemy.name} porque el ataque fue bloqueado.", 1);
+                    }
                 }
             }
 
@@ -951,7 +946,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         showGizmoRoutine = StartCoroutine(ShowGizmoCoroutine(displayDuration));
     }
 
-    private void ExecuteAttack(GameObject target, float damageAmount)
+    private bool ExecuteAttack(GameObject target, float damageAmount)
     {
         if (target.TryGetComponent<DrogathEnemy>(out var blockSystem) && target.TryGetComponent<EnemyHealth>(out var health))
         {
@@ -959,15 +954,19 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (blockSystem.ShouldBlockDamage(hitPoint.transform.position))
             {
                 ReportDebug("Ataque bloqueado por DrogathEnemy.", 1);
-                return;
+                return false;
             }
 
             health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+            return true;
         }
         else if (target.TryGetComponent<EnemyHealth>(out var enemyHealth))
         {
             enemyHealth.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+            return true;
         }
+
+        return true;
     }
 
     private void ApplyKnockbackSafe(Collider enemy)

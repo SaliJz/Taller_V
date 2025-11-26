@@ -38,7 +38,7 @@ public class DamageNumber : MonoBehaviour
     public void Deactivate()
     {
         StopAllCoroutines();
-        gameObject.SetActive(false);
+        Destroy(gameObject);
     }
 
     private IEnumerator AnimateAndDeactivate()

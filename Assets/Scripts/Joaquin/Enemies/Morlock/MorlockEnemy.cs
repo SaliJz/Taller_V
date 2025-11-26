@@ -3,12 +3,13 @@ using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshAgent), typeof(EnemyHealth))]
-public partial class MorlockEnemy : MonoBehaviour
+public class MorlockEnemy : MonoBehaviour
 {
     private enum MorlockState { Patrol, Pursue1, Pursue2, Pursue3, Repositioning }
     private MorlockState currentState;
 
     [Header("Referencias")]
+    [SerializeField] private Animator animator;
     [SerializeField] private MorlockStats stats;
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private Transform firePoint;
@@ -41,6 +42,7 @@ public partial class MorlockEnemy : MonoBehaviour
     [SerializeField] private float maxRangeForDamageIncrease = 6f; // distancia a la cual el daño es el máximo
     [SerializeField] private float maxDistanceForDamageStart = 20f; // distancia a partir de la cual el daño es el base
     [SerializeField] private float attackRange = 50f;
+    //[SerializeField] private bool useAnimationEvent = false;
 
     [Header("Patrol")]
     [Tooltip("Si está desactivado, Morlock no volverá a patrullar después de detectar al jugador por primera vez")]
@@ -85,7 +87,6 @@ public partial class MorlockEnemy : MonoBehaviour
     private EnemyHealth enemyHealth;
     private NavMeshAgent agent;
     private Transform playerTransform;
-    private Animator animator;
     private CharacterController playerCharacterController;
 
     private bool isDead = false;
@@ -96,14 +97,24 @@ public partial class MorlockEnemy : MonoBehaviour
 
     private Vector3 originPosition;
 
+    private int animHashX;
+    private int animHashY;
+    private int animHashAttack;
+    private Vector3 lastLookDirection = Vector3.forward;
+
     private void Awake()
     {
-        enemyHealth = GetComponent<EnemyHealth>();
-        agent = GetComponent<NavMeshAgent>();
-        animator = GetComponent<Animator>();
+        if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
+        if (agent == null) agent = GetComponent<NavMeshAgent>();
+        if (animator == null) animator = GetComponentInChildren<Animator>();
+
+        animHashX = Animator.StringToHash("Xaxis");
+        animHashY = Animator.StringToHash("Yaxis");
+        animHashAttack = Animator.StringToHash("Attack");
 
         if (enemyHealth == null) ReportDebug("Componente EnemyHealth no encontrado en el enemigo.", 3);
         if (agent == null) ReportDebug("Componente NavMeshAgent no encontrado en el enemigo.", 3);
+        if (animator != null) ReportDebug("Componente Animator no encontrado en el enemigo.", 2);
     }
 
     private void Start()
@@ -147,7 +158,7 @@ public partial class MorlockEnemy : MonoBehaviour
             agent.speed = moveSpeed;
             agent.stoppingDistance = attackRange;
             agent.updatePosition = true;
-            agent.updateRotation = true;
+            agent.updateRotation = false;
             agent.isStopped = false;
         }
     }
@@ -209,7 +220,7 @@ public partial class MorlockEnemy : MonoBehaviour
         if (isDead || enemy != gameObject) return;
         isDead = true;
 
-        if (animator != null) animator.SetTrigger("Die");
+        if (animator != null) animator.SetBool(animHashAttack, false);
         if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
 
         ChangeState(MorlockState.Repositioning);
@@ -228,6 +239,8 @@ public partial class MorlockEnemy : MonoBehaviour
     private void Update()
     {
         if (isDead || playerTransform == null) return;
+        
+        UpdateAnimationAndRotation();
 
         if (enemyHealth != null && enemyHealth.IsStunned)
         {
@@ -273,16 +286,84 @@ public partial class MorlockEnemy : MonoBehaviour
                 break;
 
             case MorlockState.Pursue2:
-                //if (distanceToPlayer > p2_activationRadius)
-                //{
-                //    ChangeState(MorlockState.Perseguir1);
-                //}
                 break;
-
-            //case MorlockState.Pursue3:
-            //    break;
         }
     }
+
+    #region Animation & Rotation
+
+    /// <summary>
+    /// Maneja la rotación discreta (8 direcciones) y actualiza el Animator.
+    /// </summary>
+    private void UpdateAnimationAndRotation()
+    {
+        Vector3 targetDirection = Vector3.zero;
+
+        if (currentState == MorlockState.Pursue1 || currentState == MorlockState.Pursue2)
+        {
+            if (playerTransform != null) targetDirection = (playerTransform.position - transform.position).normalized;
+        }
+        else if (agent != null && agent.velocity.sqrMagnitude > 0.1f)
+        {
+            targetDirection = agent.velocity.normalized;
+        }
+
+        if (targetDirection == Vector3.zero) targetDirection = lastLookDirection;
+        else targetDirection.y = 0;
+
+        if (targetDirection.sqrMagnitude > 0.01f)
+        {
+            float angle = Mathf.Atan2(targetDirection.x, targetDirection.z) * Mathf.Rad2Deg;
+            float snappedAngle = Mathf.Round(angle / 45f) * 45f;
+
+            Quaternion targetRotation = Quaternion.Euler(0, snappedAngle, 0);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, 720f * Time.deltaTime);
+
+            Vector3 dirVector = Quaternion.Euler(0, snappedAngle, 0) * Vector3.forward;
+
+            float xInt = Mathf.Round(dirVector.x);
+            float yInt = Mathf.Round(dirVector.z);
+
+            if (animator != null)
+            {
+                animator.SetFloat(animHashX, xInt);
+                animator.SetFloat(animHashY, yInt);
+            }
+
+            lastLookDirection = new Vector3(xInt, 0, yInt);
+        }
+    }
+
+    private void ForceFacePlayer()
+    {
+        if (playerTransform == null) return;
+
+        Vector3 directionToPlayer = (playerTransform.position - transform.position).normalized;
+        directionToPlayer.y = 0;
+
+        if (directionToPlayer.sqrMagnitude > 0.001f)
+        {
+            float angle = Mathf.Atan2(directionToPlayer.x, directionToPlayer.z) * Mathf.Rad2Deg;
+            float snappedAngle = Mathf.Round(angle / 45f) * 45f;
+
+            transform.rotation = Quaternion.Euler(0, snappedAngle, 0);
+
+            Vector3 dirVector = Quaternion.Euler(0, snappedAngle, 0) * Vector3.forward;
+
+            float xInt = Mathf.Round(dirVector.x);
+            float yInt = Mathf.Round(dirVector.z);
+
+            lastLookDirection = new Vector3(xInt, 0, yInt);
+
+            if (animator != null)
+            {
+                animator.SetFloat(animHashX, xInt);
+                animator.SetFloat(animHashY, yInt);
+            }
+        }
+    }
+
+    #endregion
 
     /// <summary>
     /// Cambia a un nuevo estado, deteniendo la lógica del estado anterior.
@@ -304,6 +385,8 @@ public partial class MorlockEnemy : MonoBehaviour
             shootCoroutine = null;
         }
 
+        if (animator != null) animator.SetBool(animHashAttack, false);
+
         currentState = newState;
 
         switch (currentState)
@@ -317,9 +400,6 @@ public partial class MorlockEnemy : MonoBehaviour
             case MorlockState.Pursue2:
                 currentBehaviorCoroutine = StartCoroutine(Pursuit2Routine());
                 break;
-            //case MorlockState.Pursue3:
-            //    currentBehaviorCoroutine = StartCoroutine(Pursuit3Routine());
-            //    break;
             case MorlockState.Repositioning:
                 currentBehaviorCoroutine = StartCoroutine(RepositioningRoutine());
                 break;
@@ -403,8 +483,6 @@ public partial class MorlockEnemy : MonoBehaviour
             if (animator != null) animator.SetTrigger("Teleport");
             if (audioSource != null && teleportSFX != null) audioSource.PlayOneShot(teleportSFX);
 
-            RegisterTeleportForDebug();
-
             yield return new WaitForSeconds(repositionTeleportCooldown);
         }
     }
@@ -487,49 +565,14 @@ public partial class MorlockEnemy : MonoBehaviour
         }
     }
 
-    //private IEnumerator Pursuit3Routine()
-    //{
-    //    int lastIndex = -1;
-
-    //    while (currentState == MorlockState.Pursue3)
-    //    {
-    //        Vector3[] teleportPositions = new Vector3[4];
-    //        float[] angles = { 45f, 135f, 225f, 315f };
-
-    //        for (int i = 0; i < 4; i++)
-    //        {
-    //            Vector3 offset = Quaternion.Euler(0, angles[i], 0) * Vector3.forward * p3_teleportRange;
-    //            teleportPositions[i] = playerTransform.position + offset;
-    //        }
-
-    //        int newIndex;
-    //        do
-    //        {
-    //            newIndex = Random.Range(0, teleportPositions.Length);
-    //        } while (newIndex == lastIndex);
-
-    //        lastIndex = newIndex;
-    //        Vector3 targetPosition = teleportPositions[newIndex];
-
-    //        TeleportToPosition(targetPosition);
-    //        StartShootCoroutine();
-
-    //        yield return new WaitForSeconds(p3_teleportCooldown);
-    //    }
-    //}
-
     #endregion
 
     #region Teletransporte y Disparo
 
     private void TeleportToPosition(Vector3 targetPosition)
     {
-        if (enemyHealth != null && enemyHealth.IsStunned)
-        {
-            return;
-        }
+        if (enemyHealth != null && enemyHealth.IsStunned) return;
 
-        if (animator != null) animator.SetTrigger("Teleport");
         if (audioSource != null && teleportSFX != null) audioSource.PlayOneShot(teleportSFX);
 
         NavMeshHit hit;
@@ -543,16 +586,9 @@ public partial class MorlockEnemy : MonoBehaviour
 
             if (playerTransform != null && currentState != MorlockState.Patrol)
             {
-                Vector3 directionToPlayer = (playerTransform.position - transform.position).normalized;
-                directionToPlayer.y = 0;
-                if (directionToPlayer != Vector3.zero)
-                {
-                    transform.rotation = Quaternion.LookRotation(directionToPlayer);
-                }
+                ForceFacePlayer();
             }
         }
-
-        RegisterTeleportForDebug();
     }
 
     private void StartShootCoroutine()
@@ -579,6 +615,7 @@ public partial class MorlockEnemy : MonoBehaviour
             float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
             if (distanceToPlayer <= attackRange)
             {
+                ForceFacePlayer();
                 Shoot();
             }
         }
@@ -586,17 +623,13 @@ public partial class MorlockEnemy : MonoBehaviour
         shootCoroutine = null;
     }
 
-    private void Shoot()
+    public void Shoot()
     {
-        if (enemyHealth != null && enemyHealth.IsStunned)
-        {
-            return;
-        }
+        if (enemyHealth != null && enemyHealth.IsStunned) return;
 
-        if (animator != null) animator.SetTrigger("Shoot");
+        animator.SetTrigger("HasAttack");
+
         if (audioSource != null && shootSFX != null) audioSource.PlayOneShot(shootSFX);
-
-        RegisterShootForDebug();
 
         Vector3 aimPoint = playerTransform.position;
         float interceptProb = GetInterceptProbability(currentLevel);
@@ -631,7 +664,6 @@ public partial class MorlockEnemy : MonoBehaviour
 
     /// <summary>
     /// Calcula el daño del proyectil basado en la distancia al jugador.
-    /// Escalado lineal: 6 unidades = 2 daño, 20+ unidades = 1 daño
     /// </summary>
     private float CalculateDamageByDistance(float distance)
     {

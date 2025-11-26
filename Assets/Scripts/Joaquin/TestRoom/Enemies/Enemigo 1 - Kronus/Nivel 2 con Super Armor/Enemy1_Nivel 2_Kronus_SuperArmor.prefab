@@ -1205,6 +1205,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6058405d1141ba24ca9f0c54d4423bf1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  animator: {fileID: 0}
   stats: {fileID: 0}
   hitPoint: {fileID: 5160053042055890633}
   visualHit: {fileID: 7866821104695215484}
@@ -1342,18 +1343,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 120953a634ec616478c5722a12285e45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  renderers:
+  meshRenderers:
   - {fileID: 4027286061993446714}
-  blinkFlashMaterial: {fileID: 2100000, guid: d1f9e2c5e82298b4b8f024596ca37e41, type: 2}
+  spriteRenderers: []
+  useOriginalMaterials: 1
+  defaultMaterial: {fileID: -2593835245026028659, guid: 944e5139615211c45a04dc5534a0bacf, type: 3}
+  blinkFlashMaterial: {fileID: 2100000, guid: f252e05afbca4b14da60e54eabddf22d, type: 2}
   blinkInterval: 0.03
   blinkCount: 6
   stunMaterial: {fileID: 2100000, guid: 9e980960b4627f14bb1ebfed5d685fec, type: 2}
   stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
   stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
-  stunVFXHeight: 2
+  stunVFXHeight: 2.5
   stunSFX: {fileID: 0}
-  defaultMaterial: {fileID: -2593835245026028659, guid: 944e5139615211c45a04dc5534a0bacf, type: 3}
   glowMaterial: {fileID: 2100000, guid: 76ef852df6134ca44b4c740b1d5ef9bd, type: 2}
   glowIntensity: 2
   damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
