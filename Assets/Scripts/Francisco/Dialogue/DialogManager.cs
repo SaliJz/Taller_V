@@ -59,6 +59,7 @@ public class DialogManager : MonoBehaviour
     private bool isTyping = false;
     private float lastInputTime = 0f;
     private UnityEvent onDialogFinishedEvent;
+    private bool isMerchantFlow = false;
 
     #endregion
 
@@ -114,8 +115,17 @@ public class DialogManager : MonoBehaviour
             StopAllCoroutines();
             isTyping = false;
             lineText.maxVisibleCharacters = int.MaxValue;
+
+            if (isMerchantFlow)
+            {
+                onDialogFinishedEvent?.Invoke();
+            }
+            return;
         }
-        else if (dialogQueue.Count > 0)
+
+        if (isMerchantFlow) return;
+
+        if (dialogQueue.Count > 0)
         {
             DialogLine currentLine = dialogQueue.Peek();
             if (currentLine.WaitForInput)
@@ -123,7 +133,7 @@ public class DialogManager : MonoBehaviour
                 DisplayNextLine();
             }
         }
-        else if (dialogQueue.Count == 0 && !isTyping)
+        else if (dialogQueue.Count == 0)
         {
             EndDialog();
         }
@@ -133,10 +143,11 @@ public class DialogManager : MonoBehaviour
 
     #region Core Dialog Logic
 
-    public void StartDialog(DialogLine[] lines, UnityEvent onFinished = null)
+    public void StartDialog(DialogLine[] lines, UnityEvent onFinished = null, bool isMerchant = false)
     {
         if (isDialogActive) return;
 
+        isMerchantFlow = isMerchant;
         StopAllCoroutines();
         LockPlayerControl(true);
         DisablePlayerScripts(true);
@@ -162,6 +173,12 @@ public class DialogManager : MonoBehaviour
     {
         if (dialogQueue.Count == 0)
         {
+            if (isMerchantFlow)
+            {
+                onDialogFinishedEvent?.Invoke();
+                return;
+            }
+
             EndDialog();
             return;
         }
@@ -185,9 +202,11 @@ public class DialogManager : MonoBehaviour
             }
         }
 
+        bool shouldWaitForInput = isMerchantFlow ? false : line.WaitForInput;
+
         if (typingSpeed > 0)
         {
-            StartCoroutine(TypeLine(line.Text, line.WaitForInput));
+            StartCoroutine(TypeLine(line.Text, shouldWaitForInput));
         }
         else
         {
@@ -195,7 +214,11 @@ public class DialogManager : MonoBehaviour
             lineText.maxVisibleCharacters = int.MaxValue;
             isTyping = false;
 
-            if (!line.WaitForInput)
+            if (isMerchantFlow && dialogQueue.Count == 0)
+            {
+                onDialogFinishedEvent?.Invoke();
+            }
+            else if (!isMerchantFlow && !line.WaitForInput)
             {
                 StartCoroutine(AutoAdvance(dialogQueue.Count > 0 ? inputBufferTime : 0f));
             }
@@ -216,18 +239,73 @@ public class DialogManager : MonoBehaviour
         }
 
         lineText.maxVisibleCharacters = int.MaxValue;
-
         isTyping = false;
 
-        if (!waitForInput)
+        if (isMerchantFlow && dialogQueue.Count == 0)
+        {
+            yield return new WaitForSecondsRealtime(0.1f); 
+            onDialogFinishedEvent?.Invoke();
+        }
+        else if (!isMerchantFlow && !waitForInput)
         {
             StartCoroutine(AutoAdvance(dialogQueue.Count > 0 ? inputBufferTime : 0f));
         }
     }
 
+    private IEnumerator TypeLineForUpdate(string fullText)
+    {
+        lineText.text = fullText;
+        lineText.maxVisibleCharacters = 0;
+
+        for (int i = 0; i < fullText.Length; i++)
+        {
+            if (lineText.maxVisibleCharacters >= fullText.Length) break;
+
+            lineText.maxVisibleCharacters++;
+            yield return new WaitForSecondsRealtime(typingSpeed);
+        }
+
+        lineText.maxVisibleCharacters = int.MaxValue;
+        isTyping = false;
+
+        if (isMerchantFlow && onDialogFinishedEvent != null)
+        {
+            yield return new WaitForSecondsRealtime(0.1f);
+            onDialogFinishedEvent.Invoke();
+        }
+    }
+
+    public void UpdateCurrentDialogText(string newText, string characterName = null, Sprite profileSprite = null)
+    {
+        if (!isDialogActive) return;
+
+        if (!string.IsNullOrEmpty(characterName) && nameText != null)
+        {
+            nameText.text = characterName;
+        }
+
+        if (profileSprite != null && profileImage != null)
+        {
+            profileImage.sprite = profileSprite;
+            profileImage.enabled = true;
+        }
+
+        StopAllCoroutines();
+
+        isTyping = true;
+        StartCoroutine(TypeLineForUpdate(newText));
+    }
+
     private void EndDialog()
     {
+        if (isMerchantFlow) return;
+
         isDialogActive = false;
+        isMerchantFlow = false;
+
+        UnityEvent tempEvent = onDialogFinishedEvent;
+        onDialogFinishedEvent = null;
+
         if (dialogPanel != null)
         {
             dialogPanel.SetActive(false);
@@ -235,8 +313,25 @@ public class DialogManager : MonoBehaviour
         LockPlayerControl(false);
         DisablePlayerScripts(false);
 
-        onDialogFinishedEvent?.Invoke();
+        tempEvent?.Invoke();
+    }
+
+    public void ForceEndDialog()
+    {
+        isDialogActive = false;
+        isMerchantFlow = false;
+
+        UnityEvent tempEvent = onDialogFinishedEvent;
         onDialogFinishedEvent = null;
+
+        if (dialogPanel != null)
+        {
+            dialogPanel.SetActive(false);
+        }
+        LockPlayerControl(false);
+        DisablePlayerScripts(false);
+
+        tempEvent?.Invoke();
     }
 
     private void LockPlayerControl(bool isLocked)

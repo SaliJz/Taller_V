@@ -804,17 +804,6 @@ public partial class @PlayerControlls: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
-                    ""id"": ""e66bc2f6-cf62-49e3-acaf-085dabfa6b92"",
-                    ""path"": ""<Mouse>/leftButton"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": "";Keyboard&Mouse;Keyboard"",
-                    ""action"": ""Click"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
                     ""id"": ""9b7380ea-b46b-4aba-9a70-016ae4b2349f"",
                     ""path"": ""<Pen>/tip"",
                     ""interactions"": """",

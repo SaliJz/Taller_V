@@ -79,6 +79,7 @@ public class ShopManager : MonoBehaviour
 
     private bool forceGagans = false;
     private bool _amuletPurchasedInRun = false;
+    private float merchantPriceModifier = 1.0f;
 
     private void Awake()
     {
@@ -190,6 +191,12 @@ public class ShopManager : MonoBehaviour
                 Destroy(item);
             }
         }
+    }
+
+    public void SetMerchantPriceModifier(float modifier)
+    {
+        merchantPriceModifier = modifier;
+        Debug.Log($"Modificador de precios del mercader actualizado: {modifier:F2}");
     }
 
     public IEnumerator SpawnItemWithEffect(ShopItem itemData, Transform spawnLocation, float effectDuration, Transform parent)
@@ -546,6 +553,8 @@ public class ShopManager : MonoBehaviour
         float discountFactor = Mathf.Clamp01(priceReductionPercentage / 100f);
 
         float finalCost = baseCost * (1f - discountFactor);
+
+        finalCost *= merchantPriceModifier;
 
         finalCost = Mathf.Max(0f, finalCost);
 

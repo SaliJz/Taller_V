@@ -12,16 +12,24 @@ public class MerchantRoomInitializer : MonoBehaviour
 
     private ShopManager shopManager;
     private MerchantRoomManager merchantRoomManager;
+    private MerchantDialogHandler dialogHandler;
     private bool isInitialized = false;
 
     private void Awake()
     {
         shopManager = FindAnyObjectByType<ShopManager>();
         merchantRoomManager = FindAnyObjectByType<MerchantRoomManager>();
+        dialogHandler = FindAnyObjectByType<MerchantDialogHandler>();
 
         if (shopManager == null)
         {
             Debug.LogError("ShopManager no encontrado. La sala del mercader no funcionará.");
+        }
+
+        if (dialogHandler != null)
+        {
+            dialogHandler.ChangeRoomMerchant(merchantRoomManager);
+            dialogHandler.ResetMerchantState();
         }
     }
 

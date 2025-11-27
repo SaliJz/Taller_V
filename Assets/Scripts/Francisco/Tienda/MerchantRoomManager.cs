@@ -1,46 +1,44 @@
 using UnityEngine;
 using System.Collections.Generic;
-using TMPro;
 using System.Collections;
 using UnityEngine.InputSystem;
 
 public class MerchantRoomManager : MonoBehaviour
 {
-    public GameObject dialoguePanel;
-    public TextMeshProUGUI dialogueText;
+    #region Editor Fields
 
-    [TextArea] public string[] firstVisitLines;
-    [TextArea] public string[] routineLines;
-    [TextArea] public string[] purchaseLines;
+    [Header("Item Settings")]
+    [SerializeField] private float itemEffectDuration = 0.5f;
+    [SerializeField] private bool sequentialItemSpawn = false;
 
-    [Header("Pact Settings")]
-    [TextArea] public string[] pactOfferLines = { "Te interesa ganar algo?" };
-    [TextArea] public string[] pactAcceptLines = { "Un alma valiente. Que la maldición te sea leve." };
-    [TextArea] public string[] pactDeclineLines = { "Qué sabio. Vive y sé feliz... por ahora." };
+    #endregion
 
-    public float itemEffectDuration = 0.5f;
-    public bool sequentialItemSpawn = false;
-    private bool hasAcceptedPactInCurrentInteraction = false;
-
-    public float dialogueDisplayTime = 5.0f;
-    private Coroutine dialogueToggleCoroutine;
+    #region Private Dependencies
 
     private ShopManager shopManager;
     private PlayerStatsManager playerStatsManager;
-    private Sala6MerchantFlow sala6Flow;
     private PlayerHealth playerHealth;
-    private int currentDialogueIndex = 0;
-    private bool isFirstVisit = true;
-    private const string FirstVisitKey = "MerchantFirstVisit";
+    private Sala6MerchantFlow sala6Flow;
+    private PlayerControlls playerControls;
+    private MerchantDialogHandler dialogHandler;
+    private MerchantInteractionTrigger currentTrigger;
 
-    private Transform merchantTransform;
-    private bool playerIsNearMerchant = false;
-    private bool pactOffered = false;
-    private bool waitingForAccept = false;
+    #endregion
+
+    #region State & Constants
+
+    public bool isFirstVisit { get; private set; }
+    public bool playerIsNearMerchant { get; private set; } = false;
     public bool hasTakenPact = false;
-    private Pact currentPactOffer;
 
-    private PlayerControlls playerControls; 
+    private bool hasAcceptedPactInCurrentInteraction = false;
+    private const string FirstVisitKey = "MerchantFirstVisit";
+    private Pact currentPactOffer;
+    private float currentPriceModifier = 1.0f;
+
+    #endregion
+
+    #region Unity & Input Methods
 
     private void Awake()
     {
@@ -50,61 +48,58 @@ public class MerchantRoomManager : MonoBehaviour
         playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
         sala6Flow = FindAnyObjectByType<Sala6MerchantFlow>();
+        dialogHandler = FindAnyObjectByType<MerchantDialogHandler>();
         isFirstVisit = PlayerPrefs.GetInt(FirstVisitKey, 1) == 1;
 
-        if (shopManager == null || playerStatsManager == null || playerHealth == null)
+        if (dialogHandler != null)
         {
-            Debug.LogError("ShopManager, PlayerStatsManager, o PlayerHealth no encontrado. El mercader no funcionará.");
+            dialogHandler.ChangeRoomMerchant(this);
+            dialogHandler.ResetMerchantState();
         }
-
-        if (dialoguePanel != null) dialoguePanel.SetActive(false);
     }
 
     private void OnEnable()
     {
-        playerControls.Interactions.Enable();
-        playerControls.Interactions.Interact.performed += OnInteractPerformed;
-        playerControls.Interactions.AdvanceDialogue.performed += OnAdvanceDialoguePerformed;
+        if (playerControls?.Interactions != null)
+        {
+            playerControls.Interactions.Enable();
+            playerControls.Interactions.Interact.performed += OnInteractPerformed;
+        }
     }
 
     private void OnDisable()
     {
-        playerControls.Interactions.Interact.performed -= OnInteractPerformed;
-        playerControls.Interactions.AdvanceDialogue.performed -= OnAdvanceDialoguePerformed;
-        playerControls.Interactions.Disable();
-    }
-
-    private void Start()
-    {
-        GameObject merchantObject = GameObject.FindWithTag("Merchant");
-        if (merchantObject != null)
+        if (playerControls?.Interactions != null)
         {
-            merchantTransform = merchantObject.transform;
+            playerControls.Interactions.Interact.performed -= OnInteractPerformed;
+            playerControls.Interactions.Disable();
         }
     }
 
     private void OnInteractPerformed(InputAction.CallbackContext context)
     {
-        if (playerIsNearMerchant)
+        if (playerIsNearMerchant && DialogManager.Instance != null && !DialogManager.Instance.IsActive)
         {
-            if (waitingForAccept)
+            if (dialogHandler != null)
             {
-                OnAcceptPact();
-            }
-            else if (!pactOffered && !hasTakenPact)
-            {
-                OfferPact();
+                dialogHandler.StartMerchantInteraction();
+
+                if (currentTrigger != null)
+                {
+                    currentTrigger.HidePactPrompt();
+                }
+
+                if (sala6Flow != null)
+                {
+                    sala6Flow.HandleTriggerEnter();
+                }
             }
         }
     }
 
-    private void OnAdvanceDialoguePerformed(InputAction.CallbackContext context)
-    {
-        if (dialoguePanel != null && dialoguePanel.activeSelf && !pactOffered)
-        {
-            AdvanceDialogue();
-        }
-    }
+    #endregion
+
+    #region Initialization & Trigger Logic
 
     public void InitializeMerchantRoom(List<Transform> spawnLocations, Transform parent)
     {
@@ -119,18 +114,6 @@ public class MerchantRoomManager : MonoBehaviour
         }
     }
 
-    public void OnItemPurchased()
-    {
-        SetDialogue(purchaseLines);
-        currentDialogueIndex = 0;
-        ShowCurrentDialogueLine();
-
-        if (sala6Flow != null)
-        {
-            sala6Flow.HandleItemPurchased();
-        }
-    }
-
     public void CompleteFirstVisit()
     {
         if (isFirstVisit)
@@ -141,225 +124,33 @@ public class MerchantRoomManager : MonoBehaviour
         }
     }
 
-    public void AdvanceDialogue()
-    {
-        string[] currentLines = GetCurrentDialogueLines();
-
-        if (dialoguePanel.activeSelf)
-        {
-            currentDialogueIndex = (currentDialogueIndex + 1);
-
-            if (currentDialogueIndex >= currentLines.Length)
-            {
-                HideDialogue();
-                currentDialogueIndex = 0;
-                return;
-            }
-        }
-        else
-        {
-            currentDialogueIndex = 0;
-        }
-
-        if (currentLines.Length > 0 && currentLines != purchaseLines)
-        {
-            SetDialogue(currentLines);
-            ShowCurrentDialogueLine();
-        }
-    }
-
-    private string[] GetCurrentDialogueLines()
-    {
-        if (pactOffered) return new string[] { };
-        if (isFirstVisit) return firstVisitLines;
-        return routineLines;
-    }
-
-    private void SetDialogue(string[] dialogueLines)
-    {
-        if (dialoguePanel == null || dialogueText == null || dialogueLines == null || dialogueLines.Length == 0) return;
-
-        dialoguePanel.SetActive(true);
-        currentDialogueIndex %= dialogueLines.Length;
-
-        string dialogueToShow = dialogueLines[currentDialogueIndex];
-
-        dialogueText.text = dialogueToShow;
-    }
-
-    private void ShowCurrentDialogueLine()
-    {
-        if (dialoguePanel == null) return;
-
-        dialoguePanel.SetActive(true);
-
-        if (dialogueToggleCoroutine != null)
-        {
-            StopCoroutine(dialogueToggleCoroutine);
-        }
-
-        if (!pactOffered)
-        {
-            dialogueToggleCoroutine = StartCoroutine(TogglePanelAfterDelay());
-        }
-    }
-
-    private IEnumerator TogglePanelAfterDelay()
-    {
-        yield return new WaitForSeconds(dialogueDisplayTime);
-
-        if (!pactOffered)
-        {
-            HideDialogue();
-        }
-        else if (pactOffered && hasTakenPact)
-        {
-            HideDialogue();
-            pactOffered = false;
-            waitingForAccept = false;
-            SendMessage("HidePactPrompt", SendMessageOptions.DontRequireReceiver);
-        }
-    }
-
-    public void HideDialogue()
-    {
-        if (dialoguePanel != null) dialoguePanel.SetActive(false);
-        if (dialogueToggleCoroutine != null)
-        {
-            StopCoroutine(dialogueToggleCoroutine);
-            dialogueToggleCoroutine = null;
-        }
-    }
-
-    public void OnPlayerEnterMerchantTrigger(Transform merchantT)
+    public void OnPlayerEnterMerchantTrigger(MerchantInteractionTrigger trigger)
     {
         playerIsNearMerchant = true;
-        merchantTransform = merchantT;
-        pactOffered = false;
-        waitingForAccept = false;
-
-        HidePactUI();
-
-        if (!hasTakenPact)
-        {
-            SetDialogue(isFirstVisit ? firstVisitLines : routineLines);
-            currentDialogueIndex = 0;
-            ShowCurrentDialogueLine();
-        }
+        if (dialogHandler != null) dialogHandler.ChangeRoomMerchant(this);
+        currentTrigger = trigger;
     }
 
     public void OnPlayerExitMerchantTrigger()
     {
         playerIsNearMerchant = false;
-
-        SendMessage("HidePactPrompt", SendMessageOptions.DontRequireReceiver);
-
-        HidePactUI();
-        HideDialogue();
+        if (dialogHandler != null) dialogHandler.ChangeRoomMerchant(null);
+        currentTrigger = null;
     }
 
-    private void OfferPact()
+    #endregion
+
+    #region Pact & Shop Logic
+
+    public void OnItemPurchased()
     {
-        if (hasTakenPact) return;
-
-        if (shopManager != null && shopManager.allPacts != null && shopManager.allPacts.Count == 0)
+        if (sala6Flow != null)
         {
-            return;
+            sala6Flow.HandleItemPurchased();
         }
-
-        if (playerHealth.CurrentHealth >= playerHealth.MaxHealth)
-        {
-            SetDialogue(new string[] { "Pareces estar en óptimas condiciones. No necesito tu alma por ahora." });
-            currentDialogueIndex = 0;
-            ShowCurrentDialogueLine();
-            return;
-        }
-
-        if (dialogueToggleCoroutine != null)
-        {
-            StopCoroutine(dialogueToggleCoroutine);
-            dialogueToggleCoroutine = null;
-        }
-        HideDialogue();
-
-        currentPactOffer = GenerateRandomPact();
-
-        DisplayPactOffer();
-        pactOffered = true;
-        waitingForAccept = true;
-
-        SendMessage("ShowPactPrompt", SendMessageOptions.DontRequireReceiver);
     }
 
-    private void DisplayPactOffer()
-    {
-        if (dialoguePanel == null || dialogueText == null) return;
-
-        dialoguePanel.SetActive(true);
-
-        string offerMessage = pactOfferLines.Length > 0 ? pactOfferLines[0] : "Te interesa ganar algo?";
-
-        string benefit = currentPactOffer.lifeRecoveryAmount > 0
-                             ? $"Curación +{currentPactOffer.lifeRecoveryAmount}"
-                             : "Ninguno";
-
-        string interactKeyDisplay = playerControls.Interactions.Interact.GetBindingDisplayString();
-
-
-        string fullPactMessage = $"{offerMessage}\n\n" +
-                                     $"PACTO: {currentPactOffer.pactName}\n" +
-                                     $"VIDA QUE RECIBIRÁS: {benefit}\n" +
-                                     $"MALDICIÓN (COSTO): ?\n\n" +
-                                     $"Presiona '{interactKeyDisplay}' para ACEPTAR este pacto";
-
-        dialogueText.text = fullPactMessage;
-    }
-
-    private void DisplayPactConfirmation()
-    {
-        if (dialoguePanel == null || dialogueText == null || currentPactOffer == null) return;
-
-        dialoguePanel.SetActive(true);
-
-        string drawback = "Ninguno";
-        if (currentPactOffer.drawbacks.Count > 0)
-        {
-            StatModifier firstDrawback = currentPactOffer.drawbacks[0];
-
-            float displayAmount = Mathf.Abs(firstDrawback.amount);
-
-            string amountText = firstDrawback.isPercentage
-                                ? $"{displayAmount:F0}%"
-                                : $"{displayAmount}";
-
-            drawback = $"{firstDrawback.type} -{amountText}";
-        }
-
-        string acceptLine = pactAcceptLines.Length > 0 ? pactAcceptLines[0] : "Pacto aceptado.";
-
-        string fullPactMessage = $"{acceptLine}\n\n" +
-                                 $"PACTO: {currentPactOffer.pactName}\n" +
-                                 $"MALDICIÓN REVELADA: {drawback}";
-
-        dialogueText.text = fullPactMessage;
-
-        DevilManipulationManager.Instance?.PactMade();
-
-        if (dialogueToggleCoroutine != null)
-        {
-            StopCoroutine(dialogueToggleCoroutine);
-        }
-        dialogueToggleCoroutine = StartCoroutine(TogglePanelAfterDelay());
-    }
-
-    public void HidePactUI()
-    {
-        pactOffered = false;
-        waitingForAccept = false;
-        HideDialogue();
-    }
-
-    private Pact GenerateRandomPact()
+    public Pact GenerateRandomPact()
     {
         if (shopManager != null && shopManager.allPacts != null && shopManager.allPacts.Count > 0)
         {
@@ -368,42 +159,36 @@ public class MerchantRoomManager : MonoBehaviour
         }
 
         Pact defaultPact = ScriptableObject.CreateInstance<Pact>();
-        defaultPact.pactName = "Pacto Fallback";
         defaultPact.lifeRecoveryAmount = 20;
-        defaultPact.drawbacks = new List<StatModifier> {
-            new StatModifier { type = StatType.MoveSpeed, amount = 0.15f, isPercentage = true } 
-        };
+        defaultPact.drawbacks = new List<StatModifier>();
         return defaultPact;
+    }
+
+    public void SetCurrentPactOffer(Pact pact)
+    {
+        currentPactOffer = pact;
+    }
+
+    public Pact GetCurrentPactOffer()
+    {
+        return currentPactOffer;
     }
 
     public void OnAcceptPact()
     {
-        if (hasAcceptedPactInCurrentInteraction)
-        {
-            return;
-        }
+        if (hasAcceptedPactInCurrentInteraction) return;
+        if (playerHealth.CurrentHealth >= playerHealth.MaxHealth) return;
 
-        if (currentPactOffer == null || !waitingForAccept) return;
-
-        if (playerHealth.CurrentHealth >= playerHealth.MaxHealth)
-        {
-            SetDialogue(new string[] { "¡Espera! No te necesito. Tu alma no está lista para ser curada. Vuelve cuando te falte algo." });
-            currentDialogueIndex = 0;
-            ShowCurrentDialogueLine();
-
-            pactOffered = false;
-            waitingForAccept = false;
-            SendMessage("HidePactPrompt", SendMessageOptions.DontRequireReceiver);
-            return;
-        }
+        if (currentPactOffer == null) currentPactOffer = GenerateRandomPact();
 
         ApplyPactEffects(currentPactOffer);
         hasTakenPact = true;
         hasAcceptedPactInCurrentInteraction = true;
+    }
 
-        DisplayPactConfirmation();
-
-        SendMessage("HidePactPrompt", SendMessageOptions.DontRequireReceiver);
+    public void ClearCurrentPact()
+    {
+        currentPactOffer = null;
     }
 
     private void ApplyPactEffects(Pact pactData)
@@ -432,4 +217,21 @@ public class MerchantRoomManager : MonoBehaviour
             }
         }
     }
+
+    public void SetPriceModifier(float modifier)
+    {
+        currentPriceModifier = modifier;
+
+        if (shopManager != null)
+        {
+            shopManager.SetMerchantPriceModifier(modifier);
+        }
+    }
+
+    public float GetPriceModifier()
+    {
+        return currentPriceModifier;
+    }
+
+    #endregion
 }

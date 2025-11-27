@@ -2,34 +2,42 @@ using UnityEngine;
 
 public class MerchantInteractionTrigger : MonoBehaviour
 {
-    public GameObject pactInteractionPromptPrefab;
-    private GameObject currentInteractionPrompt;
+    #region Editor Fields
 
+    [Header("UI Prompt")]
+    public GameObject pactInteractionPromptPrefab;
+
+    #endregion
+
+    #region Private Fields
+
+    private GameObject currentInteractionPrompt;
     private MerchantRoomManager manager;
     private Sala6MerchantFlow flowManager;
+
+    #endregion
+
+    #region Unity Methods
 
     private void Start()
     {
         manager = FindAnyObjectByType<MerchantRoomManager>();
-        if (manager == null)
-        {
-            Debug.LogError("MerchantRoomManager no encontrado. El trigger del mercader no funcionará.");
-        }
         flowManager = FindAnyObjectByType<Sala6MerchantFlow>();
-        if (flowManager == null)
-        {
-            Debug.LogWarning("Sala6MerchantFlow no encontrado. Usando lógica de mercader de rutina.");
-        }
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (manager != null && other.CompareTag("Player"))
         {
-            manager.OnPlayerEnterMerchantTrigger(transform);
-            if (flowManager != null)
+            manager.OnPlayerEnterMerchantTrigger(this);
+
+            if (flowManager != null && flowManager.sequenceActive)
             {
                 flowManager.HandleTriggerEnter();
+            }
+            else if (DialogManager.Instance == null || !DialogManager.Instance.IsActive)
+            {
+                ShowPactPrompt();
             }
         }
     }
@@ -39,12 +47,19 @@ public class MerchantInteractionTrigger : MonoBehaviour
         if (manager != null && other.CompareTag("Player"))
         {
             manager.OnPlayerExitMerchantTrigger();
+            HidePactPrompt();
         }
     }
 
+    #endregion
+
+    #region Prompt Control
+
     public void ShowPactPrompt()
     {
-        if (manager != null && manager.dialoguePanel.activeSelf && pactInteractionPromptPrefab != null && currentInteractionPrompt == null)
+        bool dialogIsNotActive = DialogManager.Instance == null || !DialogManager.Instance.IsActive;
+
+        if (manager != null && dialogIsNotActive && pactInteractionPromptPrefab != null && currentInteractionPrompt == null)
         {
             Vector3 promptPosition = transform.position + Vector3.up * 2f;
             currentInteractionPrompt = Instantiate(pactInteractionPromptPrefab, promptPosition, Quaternion.identity, transform);
@@ -59,4 +74,6 @@ public class MerchantInteractionTrigger : MonoBehaviour
             currentInteractionPrompt = null;
         }
     }
+
+    #endregion
 }

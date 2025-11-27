@@ -6022,7 +6022,7 @@ Transform:
   m_GameObject: {fileID: 788196768}
   serializedVersion: 2
   m_LocalRotation: {x: 0.23911765, y: 0.3696438, z: -0.09904577, w: 0.89239913}
-  m_LocalPosition: {x: -266.48724, y: 50.750008, z: 9.51275}
+  m_LocalPosition: {x: -265.13724, y: 50.750004, z: 8.362763}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10250,6 +10250,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1427041541}
   m_CullTransparentMesh: 1
+--- !u!1 &1428321318 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4559248171723188780, guid: f970020ca5b441e4b8929fabcd9a39cc, type: 3}
+  m_PrefabInstance: {fileID: 1492114264}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1473117566
 GameObject:
   m_ObjectHideFlags: 0
@@ -10435,7 +10440,10 @@ PrefabInstance:
     m_RemovedGameObjects:
     - {fileID: 5540308817143293439, guid: f970020ca5b441e4b8929fabcd9a39cc, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4559248171723188780, guid: f970020ca5b441e4b8929fabcd9a39cc, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1988280281}
   m_SourcePrefab: {fileID: 100100000, guid: f970020ca5b441e4b8929fabcd9a39cc, type: 3}
 --- !u!1 &1497310241
 GameObject:
@@ -11785,7 +11793,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -205.25
+      value: -203.9
       objectReference: {fileID: 0}
     - target: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_LocalPosition.y
@@ -11793,7 +11801,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 70.75
+      value: 69.6
       objectReference: {fileID: 0}
     - target: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_LocalRotation.w
@@ -12840,7 +12848,7 @@ Transform:
   m_GameObject: {fileID: 1982505748}
   serializedVersion: 2
   m_LocalRotation: {x: 0.23911765, y: 0.3696438, z: -0.09904577, w: 0.89239913}
-  m_LocalPosition: {x: -266.48724, y: 50.750008, z: 9.51275}
+  m_LocalPosition: {x: -265.13724, y: 50.750004, z: 8.362763}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -13086,6 +13094,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8599620942976567489, guid: f970020ca5b441e4b8929fabcd9a39cc, type: 3}
   m_PrefabInstance: {fileID: 1492114264}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1988280281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1428321318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93b924680b2e24a4d984c9589488380c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  OnObjectEntered:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 3709661639737709982}
+        m_TargetAssemblyTypeName: Sala6MerchantFlow, Assembly-CSharp
+        m_MethodName: HandleTriggerEnter
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  OnObjectExited:
+    m_PersistentCalls:
+      m_Calls: []
+  tagName: 
 --- !u!1001 &1998683779
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -15710,30 +15749,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d41652a0a37e8b4d99f876af04cadc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dialoguePanel: {fileID: 0}
-  dialogueText: {fileID: 0}
-  firstVisitLines:
-  - "\u201CLa primera vez es gratis. Consid\xE9ralo una inversi\xF3n. Pero recuerda:
-    la pr\xF3xima vez que nos veamos, pagar\xE1s con tu vida\u2026 literalmente.\u201D"
-  - "Este escudo drena tu esencia, \xBFverdad? Pues yo puedo ense\xF1arte a aprovecharlo\u2026
-    a cambio de un peque\xF1o precio.\u201D"
-  - "Ya manejas lo b\xE1sico\u2026 ahora viene lo que de verdad importa: las gangas.\u201D"
-  routineLines:
-  - "\u201CCada reliquia, cada ganga\u2026 un pedacito menos de tu esencia. T\xFA
-    eliges si vale la pena.\u201D"
-  - "\u201CAh\u2026 no eres el mismo. Pero poco importa, tu esencia servir\xE1 igual.\u201D"
-  - "\u201COtro cliente nuevo con la misma cara. Me da igual, mientras pagues.\u201D"
-  purchaseLines:
-  - Siempre vuelven. Siempre
-  pactOfferLines:
-  - Te interesa ganar algo?
-  pactAcceptLines:
-  - "Un alma valiente. Que la maldici\xF3n te sea leve."
-  pactDeclineLines:
-  - "Qu\xE9 sabio. Vive y s\xE9 feliz... por ahora."
   itemEffectDuration: 0.5
   sequentialItemSpawn: 0
-  dialogueDisplayTime: 5
   hasTakenPact: 0
 --- !u!33 &3801696539991987194
 MeshFilter:
