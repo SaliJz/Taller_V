@@ -77,7 +77,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 0}
   m_FillRect: {fileID: 4168974298858270166}
   m_HandleRect: {fileID: 0}
@@ -231,7 +231,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 0}
   m_FillRect: {fileID: 4433248075171801961}
   m_HandleRect: {fileID: 0}
@@ -1346,6 +1346,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd58f9ec10e51924e94100cff9156ee8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  animator: {fileID: 0}
   stats: {fileID: 0}
   projectilePrefab: {fileID: 5442904530204617264, guid: 9f7e821dc3eb3bc46b6ab54cf186063b, type: 3}
   firePoint: {fileID: 1189400038424345780}
@@ -1383,16 +1384,11 @@ MonoBehaviour:
   p2_activationRadius: 7.5
   p2_teleportCooldown: 2.5
   p2_teleportRange: 7.5
+  spawnDelay: 1
   audioSource: {fileID: 3685089534550081478}
   teleportSFX: {fileID: 8300000, guid: ee4ed84d344acfc48a25e5f87c2e97d3, type: 3}
   deathSFX: {fileID: 8300000, guid: 3769e8ffb98295749b1eb7f549f88d76, type: 3}
   shootSFX: {fileID: 8300000, guid: 534aec73e0fe4224e83474dd31e9e6df, type: 3}
-  showDetailsOptions: 0
-  worldLabelMaxDistance: 40
-  worldLabelReferenceDistance: 10
-  uiAreaWidth: 380
-  uiAreaHeight: 400
-  uiPadding: 10
 --- !u!114 &5679916778093720722
 MonoBehaviour:
   m_ObjectHideFlags: 0

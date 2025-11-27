@@ -136,6 +136,17 @@ public class VeynarEnemy : MonoBehaviour
 
         while (!IsDead)
         {
+            while (enemyHealth != null && enemyHealth.IsStunned)
+            {
+                if (navAgent != null && navAgent.enabled && navAgent.isOnNavMesh)
+                {
+                    navAgent.isStopped = true;
+                    navAgent.ResetPath();
+                }
+
+                yield return null;
+            }
+
             if (activeHives.Count < maxActiveHives)
             {
                 SpawnHive();

@@ -59,6 +59,17 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private float _stoppingDistance = 15f;
     private NavMeshAgent _navMeshAgent;
     private Animator _animator;
+
+    [Header("Defense Mechanism: Backstep Stomp")]
+    [SerializeField] private float _backstepTriggerDistance = 5f;
+    [SerializeField] private float _backstepDistance = 5f;
+    [SerializeField] private float _backstepCooldown = 8f;
+    [SerializeField] private bool _enableStompDamage = false;
+    [SerializeField] private float _stompDamage = 15f;
+    [SerializeField] private float _stompRadius = 4f;
+    [SerializeField] private float _backstepDuration = 0.5f;
+    [SerializeField] private GameObject _stompVFXPrefab;
+    private float _backstepTimer = 0f;
     #endregion
 
     #region Attack 1: Whip Attack
@@ -275,6 +286,16 @@ public class AstarothController : MonoBehaviour
     private void Update()
     {
         if (_player == null) return;
+
+        if (_enemyHealth != null && _enemyHealth.IsStunned)
+        {
+            if (_navMeshAgent != null && _navMeshAgent.enabled && _navMeshAgent.isOnNavMesh)
+            {
+                _navMeshAgent.isStopped = true;
+                _navMeshAgent.ResetPath();
+            }
+            return;
+        }
 
         CheckHealthThresholds();
 
@@ -539,6 +560,15 @@ public class AstarothController : MonoBehaviour
         _attack1Timer -= Time.deltaTime;
         _attack2Timer -= Time.deltaTime;
         _comboTimer -= Time.deltaTime;
+        _backstepTimer -= Time.deltaTime;
+
+        if (distanceToPlayer < _backstepTriggerDistance && _backstepTimer <= 0f)
+        {
+            if (TryExecuteBackstep())
+            {
+                return;
+            }
+        }
 
         if (_currentState != BossState.Moving)
         {
@@ -835,6 +865,104 @@ public class AstarothController : MonoBehaviour
         Quaternion lookRotation = Quaternion.LookRotation(direction);
         transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * _navMeshAgent.angularSpeed);
     }
+    #endregion
+
+    #region Backstep Stomp
+
+    private bool TryExecuteBackstep()
+    {
+        Vector3 directionBack = -transform.forward;
+        Vector3 targetPosition = transform.position + (directionBack * _backstepDistance);
+
+        NavMeshHit hit;
+
+        Debug.Log($"[Astaroth] Calculando retroceso hacia: {targetPosition}. Posición actual: {transform.position}");
+
+        bool blocked = NavMesh.Raycast(transform.position, targetPosition, out hit, NavMesh.AllAreas);
+
+        if (blocked)
+        {
+            Debug.LogError($"<color=red>[Astaroth] Pisoton de retroceso cancelado. Obstáculo detectado en el camino (NavMesh Edge/Pared) en: {hit.position}. Distancia al choque: {hit.distance:F2}m</color>");
+            return false;
+        }
+
+        if (NavMesh.SamplePosition(targetPosition, out hit, 1.0f, NavMesh.AllAreas))
+        {
+            Debug.Log($"<color=green>[Astaroth] Pisoton de retroceso aprobado. Camino libre y destino válido. Ejecutando secuencia.</color>");
+            _currentState = BossState.Attacking;
+            StartCoroutine(BackstepSequence(hit.position));
+            _backstepTimer = _backstepCooldown;
+            return true;
+        }
+        else
+        {
+            Debug.LogWarning($"<color=yellow>[Astaroth] Pisoton de retroceso rechazado. El punto de destino está fuera del NavMesh (posiblemente vacío o abismo).</color>");
+        }
+
+        return false;
+    }
+
+    private IEnumerator BackstepSequence(Vector3 targetPos)
+    {
+        Debug.Log($"[Astaroth] Inicio de Corrutina Backstep. Pausando NavMeshAgent.");
+
+        _navMeshAgent.isStopped = true;
+
+        LookAtPlayer();
+
+        PerformStompImpact();
+
+        yield return new WaitForSeconds(0.15f);
+
+        Debug.Log($"[Astaroth] Iniciando interpolación de movimiento...");
+
+        float elapsed = 0f;
+        Vector3 startPos = transform.position;
+
+        _navMeshAgent.updatePosition = false;
+
+        while (elapsed < _backstepDuration)
+        {
+            transform.position = Vector3.Lerp(startPos, targetPos, elapsed / _backstepDuration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.position = targetPos;
+
+        _navMeshAgent.Warp(targetPos);
+        _navMeshAgent.updatePosition = true;
+        _navMeshAgent.isStopped = false;
+
+        Debug.Log($"<color=green>[Astaroth] Movimiento finalizado. Posición final: {transform.position}. Reactivando IA.</color>");
+
+        yield return new WaitForSeconds(0.25f);
+
+        _currentState = BossState.Moving;
+    }
+
+    private void PerformStompImpact()
+    {
+        if (_stompVFXPrefab != null)
+        {
+            Instantiate(_stompVFXPrefab, transform.position, Quaternion.identity);
+        }
+
+        if (_enableStompDamage)
+        {
+            Collider[] colliders = Physics.OverlapSphere(transform.position, _stompRadius, LayerMask.GetMask("Player"));
+            foreach (var col in colliders)
+            {
+                ExecuteAttack(col.gameObject, transform.position, _stompDamage);
+                Debug.Log($"[Astaroth] Aplicando {_stompDamage} de daño.");
+            }
+            if (colliders.Length > 0)
+            {
+                Debug.Log($"<color=orange>[Astaroth] Backstep Stomp hit {colliders.Length} targets.</color>");
+            }
+        }
+    }
+
     #endregion
 
     #region Attack 1 Logic

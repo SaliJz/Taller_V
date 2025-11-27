@@ -1782,7 +1782,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 0}
   m_FillRect: {fileID: 8444325843597625885}
   m_HandleRect: {fileID: 0}
@@ -2649,6 +2649,14 @@ MonoBehaviour:
   _maxHealth: 500
   _currentHealth: 0
   _stoppingDistance: 7
+  _backstepTriggerDistance: 5
+  _backstepDistance: 5
+  _backstepCooldown: 8
+  _enableStompDamage: 0
+  _stompDamage: 15
+  _stompRadius: 4
+  _backstepDuration: 0.5
+  _stompVFXPrefab: {fileID: 0}
   _whipVisualTransform: {fileID: 1926294932068586014}
   _whipAnimationKeyframes:
   - Position: {x: -3.6566527, y: 4.35, z: -0.47}

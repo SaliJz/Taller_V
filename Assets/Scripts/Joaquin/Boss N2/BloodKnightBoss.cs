@@ -213,6 +213,16 @@ public class BloodKnightBoss : MonoBehaviour
 
         while (currentHealth > 0)
         {
+            while (enemyHealth != null && enemyHealth.IsStunned)
+            {
+                if (agent != null && agent.enabled && agent.isOnNavMesh)
+                {
+                    agent.isStopped = true;
+                    agent.ResetPath();
+                }
+                yield return null;
+            }
+
             CheckLowHPPhase();
 
             if (!forceApocalipsisNext && Random.value < chargeProbability)

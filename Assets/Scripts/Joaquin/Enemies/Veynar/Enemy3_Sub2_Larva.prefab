@@ -77,7 +77,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 0}
   m_FillRect: {fileID: 3079472848449597607}
   m_HandleRect: {fileID: 0}
@@ -241,7 +241,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 0}
   m_FillRect: {fileID: 8781153833565824205}
   m_HandleRect: {fileID: 0}
@@ -502,6 +502,8 @@ MonoBehaviour:
   lifestealAmountOnDeathByMelee: 0
   lifestealAmountOnDeathByDistance: 0
   toughnessSystem: {fileID: 0}
+  deathVFXPrefab: {fileID: 0}
+  deathVFXOffset: {x: 0, y: 1, z: 0}
   invulnerableLayerIndex: 0
   enableAutoArea: 0
   areaTriggerPercent: 0.25
@@ -526,8 +528,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 120953a634ec616478c5722a12285e45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  renderers:
-  - {fileID: 5607408015179773810}
+  meshRenderers: []
+  spriteRenderers: []
+  useOriginalMaterials: 1
+  defaultMaterial: {fileID: 2100000, guid: f3dc760264bb9704f8c9a2fc15b82a43, type: 2}
   blinkFlashMaterial: {fileID: 2100000, guid: d1f9e2c5e82298b4b8f024596ca37e41, type: 2}
   blinkInterval: 0.06
   blinkCount: 6
@@ -537,7 +541,6 @@ MonoBehaviour:
   stunVFXPrefab: {fileID: 0}
   stunVFXHeight: 2
   stunSFX: {fileID: 0}
-  defaultMaterial: {fileID: 2100000, guid: f3dc760264bb9704f8c9a2fc15b82a43, type: 2}
   glowMaterial: {fileID: 2100000, guid: a895dece90d884a4daa6cbf31c41dd4d, type: 2}
   glowIntensity: 2
   damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}

@@ -72,9 +72,9 @@ public class MorlockEnemy : MonoBehaviour
     [SerializeField] private float p2_teleportCooldown = 2.5f;
     [SerializeField] private float p2_teleportRange = 5f;
 
-    //[Header("Perseguir 3")]
-    //[SerializeField] private float p3_teleportCooldown = 1.5f;
-    //[SerializeField] private float p3_teleportRange = 10f;
+    [Header("Spawn Settings")]
+    [SerializeField] private float spawnDelay = 1.0f; // Tiempo que tarda en reaccionar tras aparecer
+    private bool isReady = false;
 
     [Header("Sound")]
     [SerializeField] private AudioSource audioSource;
@@ -130,7 +130,7 @@ public class MorlockEnemy : MonoBehaviour
 
         InitializedEnemy();
 
-        ChangeState(MorlockState.Patrol);
+        StartCoroutine(SpawnRoutine());
     }
 
     private void InitializedEnemy()
@@ -161,6 +161,16 @@ public class MorlockEnemy : MonoBehaviour
             agent.updateRotation = false;
             agent.isStopped = false;
         }
+    }
+
+    private IEnumerator SpawnRoutine()
+    {
+        isReady = false;
+
+        yield return new WaitForSeconds(spawnDelay);
+
+        isReady = true;
+        ChangeState(MorlockState.Patrol);
     }
 
     private void OnEnable()
@@ -238,7 +248,7 @@ public class MorlockEnemy : MonoBehaviour
 
     private void Update()
     {
-        if (isDead || playerTransform == null) return;
+        if (isDead || playerTransform == null || !isReady) return;
         
         UpdateAnimationAndRotation();
 
