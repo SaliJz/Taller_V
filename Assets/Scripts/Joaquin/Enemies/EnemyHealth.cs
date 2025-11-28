@@ -390,18 +390,17 @@ public class EnemyHealth : MonoBehaviour, IDamageable
                 if (deathByDamageType == AttackDamageType.Melee)
                 {
                     float totalLifesteal = lifestealAmountOnDeathByMelee + lifestealAmount;
-                    if (lifestealAmountOnDeathByMelee > 0)
+                    if (totalLifesteal > 0)
                     {
                         playerHealth.Heal(totalLifesteal);
                         ReportDebug($"El jugador ha robado {totalLifesteal} de vida al matar a {gameObject.name} (LifestealOnKill) por ataque cuerpo a cuerpo.", 1);
                     }
                 }
-                else
+                else if (deathByDamageType == AttackDamageType.Ranged)
                 {
-                    lifestealAmountOnDeathByDistance += lifestealAmount;
-                    if (lifestealAmountOnDeathByDistance > 0)
+                    float totalLifesteal = lifestealAmountOnDeathByDistance += lifestealAmount;
+                    if (totalLifesteal > 0)
                     {
-                        float totalLifesteal = lifestealAmountOnDeathByDistance + lifestealAmount;
                         playerHealth.Heal(totalLifesteal);
                         ReportDebug($"El jugador ha robado {totalLifesteal} de vida al matar a {gameObject.name} (LifestealOnKill) por ataque a distancia.", 1);
                     }
