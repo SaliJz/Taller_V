@@ -11,27 +11,55 @@ public class InteractionEvents : MonoBehaviour
 
     [SerializeField] private string tagName;
 
+    [Header("Configuración de Trigger")]
+    [SerializeField] private bool oneShotTrigger = false;
+
+    private bool hasTriggered = false;
+
     private void OnTriggerEnter(Collider other)
     {
+        if (oneShotTrigger && hasTriggered) return;
+
+        bool shouldInvoke = false;
+
         if (tagName == "")
         {
-            OnObjectEntered?.Invoke();
+            shouldInvoke = true;
         }
         else
         {
-            if (other.CompareTag(tagName)) OnObjectEntered?.Invoke();
+            if (other.CompareTag(tagName)) shouldInvoke = true;
+        }
+
+        if (shouldInvoke)
+        {
+            OnObjectEntered?.Invoke();
+
+            if (oneShotTrigger)
+            {
+                hasTriggered = true;
+            }
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
+        if (oneShotTrigger && hasTriggered) return;
+
+        bool shouldInvoke = false;
+
         if (tagName == "")
         {
-            OnObjectExited?.Invoke();
+            shouldInvoke = true;
         }
         else
         {
-            if (other.CompareTag(tagName)) OnObjectExited?.Invoke();
+            if (other.CompareTag(tagName)) shouldInvoke = true;
+        }
+
+        if (shouldInvoke)
+        {
+            OnObjectExited?.Invoke();
         }
     }
 

@@ -7,6 +7,8 @@ public enum DummyLogicType { RequiredHitCount, HealthState }
 
 public enum DamageType { Melee, Shield, Other }
 
+public enum EnemyAuraState { Default, Fury, Static }
+
 [System.Serializable]
 public struct HealthStateColor
 {
@@ -31,6 +33,22 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
 
     [Header("Vulnerability")]
     [SerializeField] private DamageType requiredDamageType = DamageType.Melee;
+
+    #endregion
+
+    #region TUTORIAL_STATE_LOGIC 
+
+    [Header("Aura State Logic")]
+    [SerializeField] private Renderer slimeRenderer;
+    [SerializeField] private Color defaultColor = Color.white;
+    [SerializeField] private Color furyColor = Color.red;
+    [SerializeField] private Color staticColor = Color.blue;
+
+    private EnemyAuraState currentStateAura = EnemyAuraState.Default;
+
+    public UnityEvent OnDummyKilled;
+
+    public EnemyAuraState CurrentStateAura => currentStateAura;
 
     #endregion
 
@@ -191,6 +209,27 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
     {
         if (isDefeated || !canBeHit) return;
 
+        DummyInvulnerabilityController invulnerabilityController = GetComponent<DummyInvulnerabilityController>();
+        if (invulnerabilityController != null && invulnerabilityController.IsInvulnerable)
+        {
+            if (dummyAnimator != null)
+            {
+                dummyAnimator.SetTrigger(hitTriggerName);
+            }
+
+            if (colorChangeCoroutine != null) StopCoroutine(colorChangeCoroutine);
+            colorChangeCoroutine = StartCoroutine(FlashColor());
+
+            if (playerTransform != null)
+            {
+                if (rotationCoroutine != null) StopCoroutine(rotationCoroutine);
+                rotationCoroutine = StartCoroutine(RotateTowardsPlayer());
+            }
+
+            Debug.Log($"[TutorialCombatDummy] {gameObject.name} es invulnerable. Hit visual sin daño real.", this);
+            return;
+        }
+
         if (dummyLogic == DummyLogicType.RequiredHitCount && requiredDamageType != type)
         {
             Debug.Log($"Dummy de Contador ignoró daño de {type}. Requiere: {requiredDamageType}");
@@ -315,6 +354,76 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
 
     #endregion
 
+    #region STATE_METHODS_AURA
+
+    public void SetAuraState(EnemyAuraState newState)
+    {
+        currentStateAura = newState;
+        UpdateAuraColor();
+    }
+
+    private void UpdateAuraColor()
+    {
+        if (slimeRenderer == null)
+        {
+            Renderer[] allRenderers = GetComponentsInChildren<Renderer>();
+            if (allRenderers.Length == 0) return;
+
+            Color targetColor;
+            switch (currentStateAura)
+            {
+                case EnemyAuraState.Fury:
+                    targetColor = furyColor;
+                    break;
+                case EnemyAuraState.Static:
+                    targetColor = staticColor;
+                    break;
+                case EnemyAuraState.Default:
+                default:
+                    targetColor = defaultColor;
+                    break;
+            }
+
+            foreach (var rend in allRenderers)
+            {
+                if (rend.material.HasProperty("_Color"))
+                {
+                    rend.material.color = targetColor;
+                }
+            }
+
+            originalColor = targetColor;
+
+            Debug.Log($"[TutorialCombatDummy] {gameObject.name} cambió a estado {currentStateAura} con color {targetColor}");
+            return;
+        }
+
+        Color targetColorSpecific;
+        switch (currentStateAura)
+        {
+            case EnemyAuraState.Fury:
+                targetColorSpecific = furyColor;
+                break;
+            case EnemyAuraState.Static:
+                targetColorSpecific = staticColor;
+                break;
+            case EnemyAuraState.Default:
+            default:
+                targetColorSpecific = defaultColor;
+                break;
+        }
+
+        if (slimeRenderer.material.HasProperty("_Color"))
+        {
+            slimeRenderer.material.color = targetColorSpecific;
+            originalColor = targetColorSpecific;
+        }
+
+        Debug.Log($"[TutorialCombatDummy] {gameObject.name} cambió a estado {currentStateAura} con color {targetColorSpecific}");
+    }
+
+    #endregion
+
     #region EFFECTS / COROUTINES
 
     private IEnumerator RotateTowardsPlayer()
@@ -389,6 +498,8 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
 
         StopAllCoroutines();
         DisableDummyVisualsAndPhysics();
+
+        OnDummyKilled?.Invoke(); 
 
         if (dummyUI != null)
         {

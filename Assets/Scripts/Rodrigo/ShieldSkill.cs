@@ -55,6 +55,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     public bool isSkillActive { get; private set; }
     private float currentStamina;
     private float healthDrainTimer;
+    private bool isStaminaConsumptionPrevented = false;
     private const string SHIELD_SKILL_MODIFIER_KEY = "ShieldSkillBuff";
     private const float LOW_HEALTH_THRESHOLD = 10f;
 
@@ -452,6 +453,8 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     /// </summary>
     private void ConsumeStamina()
     {
+        if (isStaminaConsumptionPrevented) return;
+
         float previousStamina = currentStamina;
         currentStamina -= staminaDrainRate * Time.deltaTime;
         currentStamina = Mathf.Max(0f, currentStamina);
@@ -520,6 +523,20 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         currentStamina = Mathf.Min(maxStamina, currentStamina + amount);
         OnStaminaChanged?.Invoke(currentStamina, maxStamina);
         Debug.Log($"[ShieldSkill] Estamina recargada instantáneamente: +{amount}");
+    }
+
+    #endregion
+
+    #region PUBLIC_METHODS
+
+    public void PreventStaminaConsumption()
+    {
+        isStaminaConsumptionPrevented = true;
+    }
+
+    public void AllowStaminaConsumption()
+    {
+        isStaminaConsumptionPrevented = false;
     }
 
     #endregion

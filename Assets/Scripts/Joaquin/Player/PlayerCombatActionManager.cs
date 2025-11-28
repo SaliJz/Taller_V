@@ -37,6 +37,9 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     //[SerializeField] private string meleeBlockedMessage = "¡Activa la habilidad especial!";
     //[SerializeField] private string rangedBlockedMessage = "¡Desactiva la habilidad especial!";
 
+    private bool isMeleeAttackBlocked = false;
+    private bool isShieldThrowBlocked = false;
+    private bool isDashBlocked = false; 
     private bool isExecutingAction = false;
     private CombatActionType currentAction = CombatActionType.None;
     private CombatActionType queuedAction = CombatActionType.None;
@@ -81,6 +84,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     public void OnMelee(InputAction.CallbackContext context)
     {
+        if (isMeleeAttackBlocked) return;
+
         if (PauseController.IsGamePaused) return;
 
         if (!context.started) return;
@@ -90,6 +95,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     public void OnShieldThrow(InputAction.CallbackContext context)
     {
+        if (isShieldThrowBlocked) return;
+
         if (PauseController.IsGamePaused) return;
 
         if (!context.started) return;
@@ -99,6 +106,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     public void OnDash(InputAction.CallbackContext context)
     {
+        if (isDashBlocked) return;
+
         if (PauseController.IsGamePaused) return;
 
         if (!context.started) return;
@@ -396,6 +405,40 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
                 TryExecuteDash();
                 break;
         }
+    }
+
+    #endregion
+
+    #region Public Methods
+
+    public void BlockMeleeAttack()
+    {
+        isMeleeAttackBlocked = true;
+    }
+
+    public void UnblockMeleeAttack()
+    {
+        isMeleeAttackBlocked = false;
+    }
+
+    public void BlockShieldThrow()
+    {
+        isShieldThrowBlocked = true;
+    }
+
+    public void UnblockShieldThrow()
+    {
+        isShieldThrowBlocked = false;
+    }
+
+    public void BlockDash()
+    {
+        isDashBlocked = true;
+    }
+
+    public void UnblockDash()
+    {
+        isDashBlocked = false;
     }
 
     #endregion

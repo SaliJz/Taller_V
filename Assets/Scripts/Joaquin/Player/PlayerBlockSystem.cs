@@ -127,6 +127,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     private PlayerCombatActionManager combatActionManager;
     private Camera mainCamera;
 
+    public bool IsInputBlocked { get; set; } = false;
     public bool IsBlocking { get; private set; }
     private bool isStunned = false;
     private bool isDurabilityRecharging = false;
@@ -243,6 +244,8 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
     public void OnShieldBlock(InputAction.CallbackContext context)
     {
+        if (IsInputBlocked) return;
+
         if (PauseController.IsGamePaused) return;
 
         if (!blockingEnabled || isStunned) return;
@@ -906,6 +909,11 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     public bool IsBlockingState()
     {
         return IsBlocking;
+    }
+
+    public void SetInputBlocked(bool isBlocked)
+    {
+        IsInputBlocked = isBlocked;
     }
 
     #endregion

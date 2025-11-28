@@ -8,7 +8,6 @@ public interface IPlayerSpecialAbility
     event Action OnAbilityActivated;
     event Action OnAbilityDeactivated;
     bool IsActive { get; }
-    void DeactivateAbility();
 }
 
 public class LearningEncounterController : MonoBehaviour
@@ -35,12 +34,15 @@ public class LearningEncounterController : MonoBehaviour
     [Header("Phase 2 & 3: Special Ability")]
     public DialogLine[] dialogue2_Contract;
     public DialogLine[] dialogue3_DiabloLaugh;
-    [SerializeField] private float specialAbilityDuration = 5.0f;
     private Coroutine specialAbilityTimerCoroutine;
+
+    [Header("Phase 4: Completion")]
+    public DialogLine[] dialogue4_Success;
 
     [Header("Events")]
     public UnityEvent OnDisplaySkillReminder;
-    public UnityEvent OnDisplayMeleeReminder;
+    public UnityEvent OnDisplayMeleeReminderBefore;
+    public UnityEvent OnDisplayMeleeReminderAfter;
     public UnityEvent OnEncounterComplete;
 
     private void Start()
@@ -95,12 +97,10 @@ public class LearningEncounterController : MonoBehaviour
                 break;
             case EncounterState.Phase3_LearningCombat:
                 if (specialAbilityTimerCoroutine != null) StopCoroutine(specialAbilityTimerCoroutine);
-                specialAbilityTimerCoroutine = StartCoroutine(SpecialAbilityTimer());
-                OnDisplayMeleeReminder?.Invoke();
+                OnDisplayMeleeReminderBefore?.Invoke();
                 break;
             case EncounterState.Phase4_Completed:
                 if (specialAbilityTimerCoroutine != null) StopCoroutine(specialAbilityTimerCoroutine);
-                OnEncounterComplete?.Invoke();
                 break;
         }
     }
@@ -126,17 +126,30 @@ public class LearningEncounterController : MonoBehaviour
 
     private void HandleSlimeDefeated()
     {
-        if (currentState == EncounterState.Phase3_LearningCombat && playerAbility.IsActive)
+        bool isMeleeKill = slimeArmor.LastAttackDamageType == AttackDamageType.Melee;
+
+        if (currentState == EncounterState.Phase3_LearningCombat && playerAbility.IsActive && isMeleeKill)
         {
-            SetState(EncounterState.Phase4_Completed);
+            if (DialogManager.Instance != null && dialogue4_Success.Length > 0)
+            {
+                UnityEvent onFinishSuccess = new UnityEvent();
+                onFinishSuccess.AddListener(() => SetState(EncounterState.Phase4_Completed));
+                onFinishSuccess.AddListener(() => OnEncounterComplete?.Invoke());
+                DialogManager.Instance.StartDialog(dialogue4_Success, onFinishSuccess);
+            }
+            else
+            {
+                SetState(EncounterState.Phase4_Completed);
+                OnEncounterComplete?.Invoke();
+            }
         }
         else
         {
             if (DialogManager.Instance != null && dialogue3_DiabloLaugh.Length > 0)
             {
-                UnityEvent onFinish = new UnityEvent();
-                onFinish.AddListener(ReviveSlime);
-                DialogManager.Instance.StartDialog(dialogue3_DiabloLaugh, onFinish);
+                UnityEvent onFinishRevive = new UnityEvent();
+                onFinishRevive.AddListener(ReviveSlime);
+                DialogManager.Instance.StartDialog(dialogue3_DiabloLaugh, onFinishRevive);
             }
             else
             {
@@ -151,7 +164,7 @@ public class LearningEncounterController : MonoBehaviour
         {
             if (DialogManager.Instance != null && dialogue2_Contract.Length > 0)
             {
-                DialogManager.Instance.StartDialog(dialogue2_Contract);
+                DialogManager.Instance.StartDialog(dialogue2_Contract, OnDisplayMeleeReminderAfter);
             }
             SetState(EncounterState.Phase3_LearningCombat);
         }
@@ -159,13 +172,6 @@ public class LearningEncounterController : MonoBehaviour
 
     public void DeactivateSpecialMode()
     {
-        // Se llama cuando el temporizador termina o el jugador desactiva
-    }
-
-    private IEnumerator SpecialAbilityTimer()
-    {
-        yield return new WaitForSeconds(specialAbilityDuration);
-        playerAbility.DeactivateAbility();
     }
 
     private void ReviveSlime()

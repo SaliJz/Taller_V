@@ -8,7 +8,6 @@ public class BlockDialogTrigger : MonoBehaviour
 
     [Header("Dialog Configuration")]
     public DialogLine[] blockStartDialog;
-
     public UnityEvent OnBlockDialogFinish;
 
     [Header("Event on Dialog End")]
@@ -42,7 +41,7 @@ public class BlockDialogTrigger : MonoBehaviour
 
     public void TriggerDialogOnBlock()
     {
-        if (hasTriggeredBlockDialog) return; 
+        if (hasTriggeredBlockDialog) return;
 
         if (DialogManager.Instance != null && blockStartDialog != null && blockStartDialog.Length > 0)
         {

@@ -870,6 +870,17 @@ public partial class @PlayerControlls: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""c919b7c2-7e58-4410-b10b-071af25010a9"",
+                    ""path"": ""<Mouse>/leftButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Click"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""2756d1dd-59b9-452e-829b-9bf0e61e7100"",
                     ""path"": ""<Mouse>/scroll"",
                     ""interactions"": """",

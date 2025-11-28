@@ -1,9 +1,11 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.Events;
 
 public class RoomTriggerDialogue : MonoBehaviour
 {
     public DialogLine[] Sala1_IntroDialog;
+    public UnityEvent onFinishDialog;
 
     private bool hasTriggered = false;
 
@@ -32,7 +34,7 @@ public class RoomTriggerDialogue : MonoBehaviour
             yield return new WaitUntil(() => !FadeController.Instance.IsFading);
         }
 
-        DialogManager.Instance.StartDialog(Sala1_IntroDialog);
+        DialogManager.Instance.StartDialog(Sala1_IntroDialog, onFinishDialog);
 
         while (DialogManager.Instance.IsActive)
         {

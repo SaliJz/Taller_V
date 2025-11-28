@@ -11,6 +11,14 @@ public class ProjectileDummy : MonoBehaviour
 
     #endregion
 
+    private void Awake()
+    {
+        if (!gameObject.CompareTag("EnemyProjectile"))
+        {
+            gameObject.tag = "EnemyProjectile";
+        }
+    }
+
     private void Start()
     {
         Destroy(gameObject, lifetime);
@@ -32,7 +40,7 @@ public class ProjectileDummy : MonoBehaviour
         {
             if (collidedObject.CompareTag(tag))
             {
-                return; 
+                return;
             }
         }
 

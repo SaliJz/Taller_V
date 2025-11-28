@@ -36,10 +36,13 @@ public class DummyArmor : MonoBehaviour, IDamageable
 
     public event Action<DamageType, bool> OnHitByPlayer;
 
+    private AttackDamageType lastAttackDamageType;
+
     public float CurrentHealth => currentHealth;
     public float MaxHealth => maxHealth;
     public float CurrentArmorHealth => currentArmorHealth;
     public float CurrentReduction => currentArmorHealth > 0 ? reductionPercentage : 0f;
+    public AttackDamageType LastAttackDamageType => lastAttackDamageType;
 
     void Awake()
     {
@@ -73,6 +76,8 @@ public class DummyArmor : MonoBehaviour, IDamageable
 
         nextDamageTime = Time.time + damageCooldownTime;
 
+        lastAttackDamageType = damageType;
+
         if (playerTransform != null)
         {
             if (rotationCoroutine != null) StopCoroutine(rotationCoroutine);
@@ -85,25 +90,24 @@ public class DummyArmor : MonoBehaviour, IDamageable
         if (currentArmorHealth > 0f)
         {
             finalDamage = 0f;
+            float damageToArmor = 0f;
 
-            if (damageType == AttackDamageType.Melee)
-            {
-                float damageToArmor = damageAmount;
-                currentArmorHealth -= damageToArmor;
-                currentArmorHealth = Mathf.Max(0, currentArmorHealth);
-                hitType = DamageType.Shield;
-                Debug.Log($"[DUMMY H&A] Daño absorbido (Melee). Armor restante: {currentArmorHealth:F2}. Armor rota por: {damageToArmor:F2}");
-            }
-            else if (damageType == AttackDamageType.Ranged)
+            if (damageType == AttackDamageType.Ranged)
             {
                 float reductionFactor = (1f - reductionPercentage);
-                float damageToArmor = damageAmount * reductionFactor;
-
-                currentArmorHealth -= damageToArmor;
-                currentArmorHealth = Mathf.Max(0, currentArmorHealth);
+                damageToArmor = damageAmount * reductionFactor;
                 hitType = DamageType.Shield;
-                Debug.Log($"[DUMMY H&A] Daño absorbido (Ranged, {reductionPercentage * 100:F0}% reducción). Daño aplicado a Armadura: {damageToArmor:F2}. Armor restante: {currentArmorHealth:F2}");
             }
+            else
+            {
+                damageToArmor = damageAmount;
+                hitType = DamageType.Shield;
+            }
+
+            currentArmorHealth -= damageToArmor;
+            currentArmorHealth = Mathf.Max(0, currentArmorHealth);
+
+            Debug.Log($"[DUMMY H&A] Daño absorbido ({damageType}). Armor restante: {currentArmorHealth:F2}. Armor rota por: {damageToArmor:F2}");
         }
         else
         {
@@ -171,7 +175,7 @@ public class DummyArmor : MonoBehaviour, IDamageable
         OnDummyDefeated.Invoke();
 
         if (uiController != null) uiController.SetUIActive(DummyLogicType.HealthState, false);
-        Destroy(gameObject, 0.1f);
+        gameObject.SetActive(false);
     }
 
     private void UpdateHealthUI()
@@ -199,6 +203,11 @@ public class DummyArmor : MonoBehaviour, IDamageable
     {
         currentHealth = maxHealth;
         currentArmorHealth = maxArmorHealth;
+        lastAttackDamageType = AttackDamageType.Ranged;
+
+        gameObject.SetActive(true);
+        if (uiController != null) uiController.SetUIActive(DummyLogicType.HealthState, true);
+
         UpdateHealthUI();
         UpdateArmorUI();
         Debug.Log("[DUMMY H&A] Dummy revivido!");
