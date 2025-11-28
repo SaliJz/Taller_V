@@ -30,11 +30,18 @@ public class VeynarEnemy : MonoBehaviour
     [SerializeField] private Material normalMaterial;
     [SerializeField] private Material transparentMaterial;
 
-    [Header("Audio")]
+    [Header("Sound")]
     [SerializeField] private AudioSource audioSource;
+
+    [Header("SFX Estados")]
+    [SerializeField] private AudioClip idleSFX;
+    [SerializeField] private AudioClip hiddenStateSFX;
+    [SerializeField] private AudioClip visibleStateSFX;
+
+    [Header("SFX Acciones")]
     [SerializeField] private AudioClip spawnHiveSFX;
     [SerializeField] private AudioClip teleportSFX;
-    [SerializeField] private AudioClip deathCriesSFX; // Audio de muerte
+    [SerializeField] private AudioClip deathSFX;
 
     private EnemyHealth enemyHealth;
     private Transform playerTransform;
@@ -47,6 +54,9 @@ public class VeynarEnemy : MonoBehaviour
     private Material normalMaterialInstance;
     private Material transparentMaterialInstance;
     private bool hasLostFirstHive = false;
+
+    private float idleTimer;
+    private float idleInterval;
 
     public bool IsDead => enemyHealth != null && enemyHealth.IsDead;
     public Transform PlayerTransform => playerTransform;
@@ -94,6 +104,8 @@ public class VeynarEnemy : MonoBehaviour
 
         StartCoroutine(ApplyInitialInvulnerabilityState());
         StartCoroutine(HiveSpawnRoutine());
+
+        ResetIdleTimer();
     }
 
     private void OnEnable()
@@ -113,12 +125,30 @@ public class VeynarEnemy : MonoBehaviour
         if (transparentMaterialInstance != null) Destroy(transparentMaterialInstance);
     }
 
+    private void Update()
+    {
+        if (IsDead) return;
+
+        idleTimer += Time.deltaTime;
+        if (idleTimer >= idleInterval)
+        {
+            PlaySFX(idleSFX);
+            ResetIdleTimer();
+        }
+    }
+
+    private void ResetIdleTimer()
+    {
+        idleTimer = 0f;
+        idleInterval = Random.Range(5f, 10f);
+    }
+
     private void HandleEnemyDeath(GameObject enemy)
     {
         if (enemy != gameObject) return;
 
         StopAllCoroutines();
-        PlaySFX(deathCriesSFX);
+        PlaySFX(deathSFX);
 
         foreach (var hive in new List<Hive>(activeHives))
         {
@@ -195,6 +225,7 @@ public class VeynarEnemy : MonoBehaviour
             hasLostFirstHive = true;
         }
 
+        PlaySFX(visibleStateSFX);
         UpdateVulnerabilityState();
     }
 
@@ -251,6 +282,7 @@ public class VeynarEnemy : MonoBehaviour
         // Lógica de Teletransporte: Si acaba de alcanzar el maximo de colmenas
         if (currentHives == maxActiveHives && previousHiveCount < maxActiveHives)
         {
+            PlaySFX(hiddenStateSFX);
             TeleportToRandomValidPos(initialPosition, teleportRange);
             PlaySFX(teleportSFX);
         }

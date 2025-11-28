@@ -18,8 +18,14 @@ public class Hive : MonoBehaviour
     [SerializeField] private float minLarvaSpawnRadius = 3f;
     [SerializeField] private float maxLarvaSpawnRadius = 5f;
 
-    [Header("References")]
+    [Header("Sound")]
+    [SerializeField] private AudioSource audioSource;
+
+    [Header("SFX")]
     [SerializeField] private AudioClip spawnLarvaSFX;
+    [SerializeField] private AudioClip deathSFX;
+
+    [Header("VFX")]
     [SerializeField] private ParticleSystem spawnVFX;
 
     private int spawnedCount = 0;
@@ -38,6 +44,7 @@ public class Hive : MonoBehaviour
         enemyHealth = GetComponent<EnemyHealth>();
         obstacle = GetComponent<NavMeshObstacle>();
         navMeshAgent = GetComponent<NavMeshAgent>();
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
 
         if (obstacle != null) obstacle.enabled = false;
         if (navMeshAgent != null) navMeshAgent.enabled = true;
@@ -74,6 +81,11 @@ public class Hive : MonoBehaviour
     private void HandleEnemyDeath(GameObject enemy)
     {
         if (enemy != gameObject) return;
+
+        if (audioSource != null && deathSFX != null)
+        {
+            audioSource.PlayOneShot(deathSFX);
+        }
 
         obstacle.enabled = false;
         StopAllCoroutines();
@@ -176,7 +188,11 @@ public class Hive : MonoBehaviour
         }
 
         if (spawnVFX != null) spawnVFX.Play();
-        owner?.PlaySFX(spawnLarvaSFX);
+
+        if (audioSource != null && spawnLarvaSFX != null)
+        {
+            audioSource.PlayOneShot(spawnLarvaSFX);
+        }
     }
 
     public void StopProducing()

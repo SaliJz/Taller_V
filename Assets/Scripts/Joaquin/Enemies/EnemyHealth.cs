@@ -252,7 +252,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         if (currentHealth <= 0) return;
 
         float finalDamage = damageAmount;
-        OnDamaged?.Invoke();
 
         // Procesar dureza
         if (toughnessSystem != null && toughnessSystem.HasToughness)
@@ -294,6 +293,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         CurrentHealth = currentHealth;
 
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        OnDamaged?.Invoke();
         UpdateHealthUI();
 
         if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El enemigo ha recibido {finalDamage} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);

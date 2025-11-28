@@ -6,28 +6,28 @@ using UnityEngine.AI;
 [RequireComponent(typeof(NavMeshAgent), typeof(EnemyHealth))]
 public class KronusEnemy : MonoBehaviour
 {
-    [Header("References")]
+    [Header("Referencias")]
     [SerializeField] private Animator animator;
     [SerializeField] private KronusStats stats;
     [SerializeField] private Transform hitPoint;
     [SerializeField] private GameObject visualHit;
     [SerializeField] private GameObject groundIndicator;
 
-    [Header("Statistics (fallback si no hay KronusStats)")]
-    [Header("Health")]
+    [Header("Estadisticas (fallback si no hay KronusStats)")]
+    [Header("Vida")]
     [SerializeField] private float health = 20f;
 
-    [Header("Movement")]
+    [Header("Movimiento")]
     [Tooltip("Velocidad de movimiento por defecto si no se encuentra KronusStats.")]
     [SerializeField] private float moveSpeed = 3.5f; 
     [SerializeField] private float dashSpeedMultiplier = 2f;
     [SerializeField] private float dashDuration = 1f;
     [SerializeField] private float dashMaxDistance = 6f;
 
-    [Header("Grounding Configuration")]
+    [Header("Configuracion de suelo")]
     [SerializeField] private LayerMask groundLayer = ~0;
 
-    [Header("Attack")]
+    [Header("Combate")]
 
     [Header("Cooldown Variable")]
     [Tooltip("El cooldown actual se elegirá aleatoriamente entre estos tres valores al finalizar un ataque.")]
@@ -45,7 +45,7 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private float knockbackForce = 1f;
     [SerializeField] private LayerMask playerLayer;
 
-    [Header("Perception")]
+    [Header("Percepcion")]
     [Tooltip("Radio dentro del cual Kronus detecta al jugador y empezará a perseguir/atacar.")]
     [SerializeField] private float detectionRadius = 12f;
     [SerializeField] private float fieldOfViewAngle = 60f; 
@@ -66,7 +66,7 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private float EchoTickRate = 4f;
     private float EchoDamagePerTick = 3f / 4f;
 
-    [Header("Patrol")]
+    [Header("Patrullaje")]
     [Tooltip("Si se asignan waypoints, Kronus los recorrerá en bucle. Si no, hará roaming aleatorio en patrolRadius.")]
     [SerializeField] private Transform[] patrolWaypoints;
     [SerializeField] private bool loopWaypoints = true;
@@ -74,14 +74,20 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private float patrolMoveSpeed = 2.5f;
     [SerializeField] private float patrolIdleTime = 1.2f;
 
-    [Header("Sound")]
+    [Header("Sonido")]
     [SerializeField] private AudioSource audioSource;
+
+    [Header("SFX Generales")]
+    [SerializeField] private AudioClip idleSFX;
+    [SerializeField] private AudioClip movementSFX;
+
+    [Header("SFX Combate")]
     [SerializeField] private AudioClip dashSFX;
     [SerializeField] private AudioClip hammerSmashSFX;
     [SerializeField] private AudioClip deathSFX;
-    [SerializeField] private AudioClip hitSFX;
+    [SerializeField] private AudioClip hammerHitSFX;
 
-    [Header("Debug Options")]
+    [Header("Debug")]
     [SerializeField] private bool showDetailsOptions = false;
     [SerializeField] private bool showGizmo = false;
     [SerializeField] private float gizmoDuration = 0.25f;
@@ -106,6 +112,11 @@ public class KronusEnemy : MonoBehaviour
     private float detectionTimer = 0f;
 
     private List<GameObject> activeEchoes = new List<GameObject>();
+
+    private float idleTimer;
+    private float idleInterval;
+    private float movementStepTimer;
+    [SerializeField] private float stepRate = 0.5f;
 
     private Vector3 lastMoveDirection = Vector3.forward;
     private int animHashX;
@@ -150,6 +161,7 @@ public class KronusEnemy : MonoBehaviour
         }
 
         SetNextPatrolDestination();
+        ResetIdleTimer();
     }
 
     private void InitializedEnemy()
@@ -206,6 +218,9 @@ public class KronusEnemy : MonoBehaviour
 
     public void AlertEnemy()
     {
+        if (enemyHealth != null) return;
+        if (isAlertedByHit || hasDetectedPlayer) return;
+
         isAlertedByHit = true;
         hasDetectedPlayer = true;
         detectionTimer = 0f;
@@ -336,6 +351,11 @@ public class KronusEnemy : MonoBehaviour
             }
             PatrolUpdate();
         }
+
+        if (agent.velocity.sqrMagnitude < 0.1f && !isAttacking && !hasDetectedPlayer)
+        {
+            HandleIdleSound();
+        }
     }
 
     /// <summary>
@@ -378,6 +398,30 @@ public class KronusEnemy : MonoBehaviour
         }
     }
 
+    #region idle
+
+    private void HandleIdleSound()
+    {
+        idleTimer += Time.deltaTime;
+        if (idleTimer >= idleInterval)
+        {
+            if (audioSource != null && idleSFX != null)
+            {
+                audioSource.PlayOneShot(idleSFX);
+            }
+            ResetIdleTimer();
+        }
+    }
+
+    private void ResetIdleTimer()
+    {
+        idleTimer = 0f;
+        // El sonido sonará aleatoriamente entre 4 y 8 segundos para cuando esté quieto
+        idleInterval = Random.Range(4f, 8f);
+    }
+
+    #endregion
+
     #region Animation & Rotation
 
     /// <summary>
@@ -389,7 +433,6 @@ public class KronusEnemy : MonoBehaviour
 
         Vector3 velocity = Vector3.zero;
 
-        // Si estamos usando NavMeshAgent, obtenemos su velocidad
         if (agent.enabled && !agent.isStopped)
         {
             velocity = agent.velocity;
@@ -397,6 +440,26 @@ public class KronusEnemy : MonoBehaviour
 
         bool isWalking = velocity.sqrMagnitude > 0.1f;
         animator.SetBool(animHashWalking, isWalking);
+
+        if (isWalking)
+        {
+            movementStepTimer += Time.deltaTime;
+            if (movementStepTimer >= stepRate)
+            {
+                if (audioSource != null && movementSFX != null)
+                {
+                    // Randomizar ligeramente el pitch para que no suene robótico
+                    audioSource.pitch = Random.Range(0.9f, 1.1f);
+                    audioSource.PlayOneShot(movementSFX);
+                    audioSource.pitch = 1f; // Resetear pitch
+                }
+                movementStepTimer = 0f;
+            }
+        }
+        else
+        {
+            movementStepTimer = stepRate; // Reseteo para que suene apenas empiece a caminar
+        }
 
         if (isWalking)
         {
@@ -415,7 +478,6 @@ public class KronusEnemy : MonoBehaviour
                 Quaternion targetRotation = Quaternion.Euler(0, snappedAngle, 0);
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, 720f * Time.deltaTime);
 
-                // Guardam la última dirección para cuando se detenga
                 lastMoveDirection = direction;
             }
         }
@@ -792,7 +854,7 @@ public class KronusEnemy : MonoBehaviour
                 // Calcular daño con sistema de críticos
                 //float damageToApply = CriticalHitSystem.CalculateDamage(damage, transform, hitTransform, out isCritical);
 
-                if (audioSource != null && hitSFX != null) audioSource.PlayOneShot(hitSFX);
+                if (audioSource != null && hammerHitSFX != null) audioSource.PlayOneShot(hammerHitSFX);
 
                 ExecuteAttack(hit.gameObject, damage);
 

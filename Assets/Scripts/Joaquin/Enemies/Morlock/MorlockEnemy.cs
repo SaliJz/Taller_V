@@ -24,14 +24,14 @@ public class MorlockEnemy : MonoBehaviour
     [SerializeField] private float interceptProbabilityNivel2 = 0.5f;
     [SerializeField] private float interceptProbabilityNivel3 = 0.75f;
 
-    [Header("Statistics (fallback si no hay MorlockStats)")]
-    [Header("Health")]
+    [Header("Estadisticas (fallback si no hay MorlockStats)")]
+    [Header("Vida")]
     [SerializeField] private float health = 15f;
     
-    [Header("Movement")]
+    [Header("Movimiento")]
     [SerializeField] private float moveSpeed = 4f;
 
-    [Header("Combat")]
+    [Header("Combate")]
     [SerializeField] private float fireRate = 1.5f;
     [SerializeField] private bool useRandomFireRate = true;
     [SerializeField] private float minFireRate = 1.5f;
@@ -44,7 +44,7 @@ public class MorlockEnemy : MonoBehaviour
     [SerializeField] private float attackRange = 50f;
     //[SerializeField] private bool useAnimationEvent = false;
 
-    [Header("Patrol")]
+    [Header("Patrullaje")]
     [Tooltip("Si está desactivado, Morlock no volverá a patrullar después de detectar al jugador por primera vez")]
     [SerializeField] private bool canReturnToPatrol = true;
     [SerializeField] private float detectionRadius = 50f;
@@ -72,14 +72,19 @@ public class MorlockEnemy : MonoBehaviour
     [SerializeField] private float p2_teleportCooldown = 2.5f;
     [SerializeField] private float p2_teleportRange = 5f;
 
-    [Header("Spawn Settings")]
+    [Header("Configuracion de spawn")]
     [SerializeField] private float spawnDelay = 1.0f; // Tiempo que tarda en reaccionar tras aparecer
     private bool isReady = false;
 
     [Header("Sound")]
     [SerializeField] private AudioSource audioSource;
+
+    [Header("SFX Generales")]
+    [SerializeField] private AudioClip idleSFX;
     [SerializeField] private AudioClip teleportSFX;
     [SerializeField] private AudioClip deathSFX;
+
+    [Header("SFX Combate")]
     [SerializeField] private AudioClip shootSFX;
 
     #endregion
@@ -96,6 +101,9 @@ public class MorlockEnemy : MonoBehaviour
     private int currentWaypointIndex = 0;
 
     private Vector3 originPosition;
+
+    private float idleTimer;
+    private float idleInterval;
 
     private int animHashX;
     private int animHashY;
@@ -131,6 +139,7 @@ public class MorlockEnemy : MonoBehaviour
         InitializedEnemy();
 
         StartCoroutine(SpawnRoutine());
+        ResetIdleTimer();
     }
 
     private void InitializedEnemy()
@@ -262,6 +271,8 @@ public class MorlockEnemy : MonoBehaviour
             return;
         }
 
+        HandleIdleSound();
+
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
         float distanceFromOrigin = Vector3.Distance(transform.position, originPosition);
 
@@ -299,6 +310,33 @@ public class MorlockEnemy : MonoBehaviour
                 break;
         }
     }
+
+    #region Idle
+
+    private void HandleIdleSound()
+    {
+        idleTimer += Time.deltaTime;
+
+        if (idleTimer >= idleInterval)
+        {
+            if (audioSource != null && idleSFX != null)
+            {
+                audioSource.pitch = Random.Range(0.9f, 1.1f);
+                audioSource.PlayOneShot(idleSFX);
+                audioSource.pitch = 1f;
+            }
+            ResetIdleTimer();
+        }
+    }
+
+    private void ResetIdleTimer()
+    {
+        idleTimer = 0f;
+        // Intervalo aleatorio entre 5 y 9 segundos para cuando esté quieto
+        idleInterval = Random.Range(5f, 9f);
+    }
+
+    #endregion
 
     #region Animation & Rotation
 

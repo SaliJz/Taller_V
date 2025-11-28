@@ -23,6 +23,14 @@ public class Larva : MonoBehaviour
     [SerializeField] private float minAcceleration = 8f;
     [SerializeField] private float angularSpeed = 120f;
 
+    [Header("Sound")]
+    [SerializeField] private AudioSource audioSource;
+
+    [Header("SFX")]
+    [SerializeField] private AudioClip moveSFX;
+    [SerializeField] private AudioClip attackExplosionSFX;
+    [SerializeField] private AudioClip deathSFX;
+
     [Header("Debug")]
     [SerializeField] private bool drawGizmos = true;
 
@@ -30,6 +38,10 @@ public class Larva : MonoBehaviour
     private Transform player;
     private PlayerHealth playerHealth;
     private EnemyHealth enemyHealth;
+
+    private float moveSoundTimer;
+    private float moveSoundRate = 0.4f;
+    private bool hasExploded = false;
 
     private float lifeTimer = 0f;
     private float lastAttackTime = -999f;
@@ -39,6 +51,8 @@ public class Larva : MonoBehaviour
     private void Awake()
     {
         enemyHealth = GetComponent<EnemyHealth>();
+
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
 
         var rb = GetComponent<Rigidbody>();
         if (rb == null) rb = gameObject.AddComponent<Rigidbody>();
@@ -53,6 +67,8 @@ public class Larva : MonoBehaviour
     {
         if (!initialized) return;
         if (player == null || enemyHealth == null || enemyHealth.IsDead) return;
+
+        HandleMovementAudio();
     }
 
     private void OnEnable()
@@ -73,7 +89,14 @@ public class Larva : MonoBehaviour
     private void HandleEnemyDeath(GameObject enemy)
     {
         if (enemy != gameObject) return;
+
+        if (audioSource != null && deathSFX != null && !hasExploded)
+        {
+            audioSource.PlayOneShot(deathSFX);
+        }
+
         StopAllCoroutines();
+        
         if (agent != null && agent.isOnNavMesh)
         {
             agent.isStopped = true;
@@ -81,9 +104,28 @@ public class Larva : MonoBehaviour
         }
     }
 
+    private void HandleMovementAudio()
+    {
+        if (agent != null && agent.enabled && !agent.isStopped && agent.velocity.sqrMagnitude > 0.5f)
+        {
+            moveSoundTimer += Time.deltaTime;
+            if (moveSoundTimer >= moveSoundRate)
+            {
+                if (audioSource != null && moveSFX != null)
+                {
+                    audioSource.pitch = Random.Range(1.1f, 1.3f);
+                    audioSource.PlayOneShot(moveSFX, 0.6f);
+                    audioSource.pitch = 1f;
+                }
+                moveSoundTimer = 0f;
+            }
+        }
+    }
+
     private void ConfigureAgentFromParams()
     {
         if (agent == null) return;
+
         agent.speed = speed;
         agent.acceleration = Mathf.Max(minAcceleration, speed * accelMultiplier);
         agent.angularSpeed = angularSpeed;
@@ -125,6 +167,7 @@ public class Larva : MonoBehaviour
         lifeTimer = 0f;
         lastAttackTime = -999f;
         lastDestinationTime = -999f;
+        hasExploded = false;
 
         StartCoroutine(LifeCycle());
         initialized = true;
@@ -178,6 +221,13 @@ public class Larva : MonoBehaviour
     {
         if (player == null || enemyHealth == null || enemyHealth.IsDead) return;
         if (Time.time < lastAttackTime + attackCooldown) return;
+
+        hasExploded = true;
+
+        if (audioSource != null && attackExplosionSFX != null)
+        {
+            audioSource.PlayOneShot(attackExplosionSFX);
+        }
 
         bool damageApplied = false;
 

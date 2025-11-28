@@ -75,6 +75,26 @@ public class DrogathEnemy : MonoBehaviour
     [SerializeField] private Color bondLineColor = Color.cyan;
     [SerializeField] private float bondLineWidth = 0.1f;
 
+    [Header("Sound")]
+    [SerializeField] private AudioSource audioSource;
+
+    [Header("SFX Ambiente/Movimiento")]
+    [Tooltip("Sonido aleatorio cuando está quieto.")]
+    [SerializeField] private AudioClip idleSFX;
+    [Tooltip("Sonido de pasos al moverse.")]
+    [SerializeField] private AudioClip runSFX;
+
+    [Header("SFX Combate")]
+    [SerializeField] private AudioClip attackSFX;
+    [SerializeField] private AudioClip blockSFX;
+    [SerializeField] private AudioClip deathSFX;
+
+    [Header("SFX Habilidades (Vínculo)")]
+    [Tooltip("Suena una vez al establecer un vínculo nuevo.")]
+    [SerializeField] private AudioClip bondActivateSFX;
+    [Tooltip("Suena rítmicamente mientras regenera armadura a aliados.")]
+    [SerializeField] private AudioClip bondRegenSFX;
+
     [Header("Debugging")]
     [SerializeField] private bool canDebug = false;
 
@@ -98,6 +118,12 @@ public class DrogathEnemy : MonoBehaviour
     private bool isAttacking = false;
     private bool isDead = false;
     private float attackTimer = 0f;
+
+    private float idleTimer;
+    private float idleInterval;
+    private float stepTimer;
+    private float stepRate = 0.5f;
+    private float regenSoundCooldown;
 
     #endregion
 
@@ -151,6 +177,8 @@ public class DrogathEnemy : MonoBehaviour
             ReportDebug("NavMeshAgent no está en NavMesh válido. Esperando posicionamiento...", 2);
             StartCoroutine(WaitForNavMeshPlacement());
         }
+
+        ResetIdleTimer();
     }
 
     private IEnumerator WaitForNavMeshPlacement()
@@ -205,6 +233,59 @@ public class DrogathEnemy : MonoBehaviour
 
         // Limpiar vínculos
         ClearAllBonds();
+    }
+
+    private void Update()
+    {
+        if (isDead || !enabled) return;
+
+        HandleAudioLogic();
+    }
+
+    #endregion
+
+    #region Idle && Movement
+
+    private void HandleAudioLogic()
+    {
+        if (navAgent != null && navAgent.enabled && !navAgent.isStopped && navAgent.velocity.sqrMagnitude > 0.2f)
+        {
+            stepTimer += Time.deltaTime;
+            if (stepTimer >= stepRate)
+            {
+                if (audioSource != null && runSFX != null)
+                {
+                    audioSource.pitch = Random.Range(0.9f, 1.05f);
+                    audioSource.PlayOneShot(runSFX);
+                    audioSource.pitch = 1f;
+                }
+                stepTimer = 0f;
+            }
+
+            ResetIdleTimer();
+        }
+        else
+        {
+            stepTimer = stepRate;
+
+            idleTimer += Time.deltaTime;
+            if (idleTimer >= idleInterval)
+            {
+                if (audioSource != null && idleSFX != null)
+                {
+                    audioSource.PlayOneShot(idleSFX);
+                }
+                ResetIdleTimer();
+            }
+        }
+
+        if (regenSoundCooldown > 0) regenSoundCooldown -= Time.deltaTime;
+    }
+
+    private void ResetIdleTimer()
+    {
+        idleTimer = 0f;
+        idleInterval = Random.Range(4f, 8f);
     }
 
     #endregion
@@ -452,6 +533,12 @@ public class DrogathEnemy : MonoBehaviour
         }
 
         activeBonds.Add(bond);
+
+        if (audioSource != null && bondActivateSFX != null)
+        {
+            audioSource.PlayOneShot(bondActivateSFX);
+        }
+
         ReportDebug($"Vínculo creado con {ally.name}. Vínculos activos: {activeBonds.Count}/{maxBonds}", 1);
     }
 
@@ -494,6 +581,7 @@ public class DrogathEnemy : MonoBehaviour
     {
         // Calcular regeneración
         float regenThisFrame = toughnessRegenPerSecond * bondUpdateInterval;
+        bool anyRegenerationHappened = false;
 
         foreach (var bond in activeBonds)
         {
@@ -518,6 +606,7 @@ public class DrogathEnemy : MonoBehaviour
                     if (addedToughness > 0)
                     {
                         bond.currentRegen += addedToughness;
+                        anyRegenerationHappened = true;
                     }
 
                     if (Mathf.FloorToInt(bond.currentRegen) % 6 == 0 && bond.currentRegen > 0) // Reportar cada 6 puntos regenerados
@@ -525,6 +614,15 @@ public class DrogathEnemy : MonoBehaviour
                         ReportDebug($"{bond.ally.name} regeneró {bond.currentRegen:F1}/{maxToughnessRegen} de superarmor", 1);
                     }
                 }
+            }
+        }
+
+        if (anyRegenerationHappened && regenSoundCooldown <= 0)
+        {
+            if (audioSource != null && bondRegenSFX != null)
+            {
+                audioSource.PlayOneShot(bondRegenSFX);
+                regenSoundCooldown = 1.0f; // Suena máximo 1 vez por segundo
             }
         }
     }
@@ -640,6 +738,11 @@ public class DrogathEnemy : MonoBehaviour
         if (distance > attackRange) return;
 
         if (hasHitPlayer) return;
+
+        if (audioSource != null && attackSFX != null)
+        {
+            audioSource.PlayOneShot(attackSFX);
+        }
 
         Collider[] hitPlayer = Physics.OverlapSphere(hitPoint.transform.position, attackRange, playerLayer);
 
@@ -782,6 +885,14 @@ public class DrogathEnemy : MonoBehaviour
         // El escudo bloquea si el atacante está en el arco frontal
         bool isBlocked = angle <= (frontalBlockAngle * 0.5f);
 
+        if (isBlocked)
+        {
+            if (audioSource != null && blockSFX != null)
+            {
+                audioSource.PlayOneShot(blockSFX);
+            }
+        }
+
         ReportDebug($"Atacante a {angle:F1}° del frente, Cobertura: ±{frontalBlockAngle * 0.5f}°, {(isBlocked ? "BLOQUEADO" : "NO BLOQUEADO")}", 1);
 
         return isBlocked;
@@ -816,13 +927,17 @@ public class DrogathEnemy : MonoBehaviour
 
     private void OnDamageTaken()
     {
-        // Aquí podrías agregar lógica adicional si es necesario cuando Drogath recibe daño.
     }
 
     private void HandleDeath(GameObject deadEnemy)
     {
         if (isDead) return;
         isDead = true;
+
+        if (audioSource != null && deathSFX != null)
+        {
+            audioSource.PlayOneShot(deathSFX);
+        }
 
         ReportDebug("Drogath murió. Activando Armadura Demoníaca...", 1);
 

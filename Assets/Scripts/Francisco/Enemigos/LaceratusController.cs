@@ -65,10 +65,22 @@ public class LaceratusController : MonoBehaviour
     [SerializeField] private string furyStateAnimationBool = "IsFury";
     [SerializeField] private string screamAnimationTrigger = "Scream";
 
-    [Header("Audio")]
-    [SerializeField] private AudioClip screamClip;
+    [Header("Sound")]
+    [SerializeField] private AudioSource audioSource;
+
+    [Header("SFX: Estados y Movimiento")]
+    [SerializeField] private AudioClip presenceSFX;
+    [SerializeField] private AudioClip normalMoveSFX;
+    [SerializeField] private AudioClip furyMoveSFX;
+    [SerializeField] private AudioClip furyTransitionSFX;
+    [SerializeField] private AudioClip calmTransitionSFX;
+
+    [Header("SFX: Combate")]
     [SerializeField] private AudioClip normalAttackClip;
     [SerializeField] private AudioClip furyAttackClip;
+    [SerializeField] private AudioClip furyJumpSFX;
+    [SerializeField] private AudioClip pushbackSFX;
+    [SerializeField] private AudioClip deathSFX;
 
     #endregion
 
@@ -76,7 +88,6 @@ public class LaceratusController : MonoBehaviour
 
     private NavMeshAgent agent;
     private Animator animator;
-    private AudioSource audioSource;
     private EnemyHealth enemyHealth;
     private EnemyKnockbackHandler knockbackHandler;
     private Transform playerTransform;
@@ -104,6 +115,10 @@ public class LaceratusController : MonoBehaviour
 
     private Vector3 currentPatrolDirection;
 
+    private float audioStepTimer;
+    private float idleAudioTimer;
+    private float idleAudioInterval;
+
     #endregion
 
     #region Unity Lifecycle
@@ -112,9 +127,9 @@ public class LaceratusController : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
-        audioSource = GetComponent<AudioSource>();
         enemyHealth = GetComponent<EnemyHealth>();
         knockbackHandler = GetComponent<EnemyKnockbackHandler>();
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
 
         if (agent != null)
         {
@@ -144,11 +159,6 @@ public class LaceratusController : MonoBehaviour
             playerTransform = player.transform;
         }
 
-        if (enemyHealth != null)
-        {
-            enemyHealth.OnDamaged += HandleDamageReceived;
-        }
-
         patrolTimer = Random.Range(0f, patrolDirectionChangeInterval);
 
         float randomInitialAngle = Random.Range(0f, 360f);
@@ -156,6 +166,33 @@ public class LaceratusController : MonoBehaviour
         currentPatrolDirection.Normalize();
 
         lastPatrolPosition = transform.position;
+    }
+
+    private void OnEnable()
+    {
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnDamaged += HandleDamageReceived;
+            enemyHealth.OnDeath += HandleDeath;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnDamaged -= HandleDamageReceived;
+            enemyHealth.OnDeath -= HandleDeath;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnDamaged -= HandleDamageReceived;
+            enemyHealth.OnDeath -= HandleDeath;
+        }
     }
 
     private void Update()
@@ -173,6 +210,7 @@ public class LaceratusController : MonoBehaviour
         }
         if (isTransitioningToFury || isPerformingJump) return;
 
+        HandleAudioLoop();
 
         if (!playerDetected)
         {
@@ -201,11 +239,65 @@ public class LaceratusController : MonoBehaviour
         }
     }
 
-    private void OnDestroy()
+    #endregion
+
+    #region Audio System
+
+    private void HandleAudioLoop()
     {
-        if (enemyHealth != null)
+        if (agent == null || !agent.enabled) return;
+
+        bool isMoving = !agent.isStopped && agent.velocity.sqrMagnitude > 0.2f;
+
+        if (isMoving)
         {
-            enemyHealth.OnDamaged -= HandleDamageReceived;
+            audioStepTimer += Time.deltaTime;
+
+            float stepRate = isInFury ? 0.35f : 0.6f;
+
+            if (audioStepTimer >= stepRate)
+            {
+                AudioClip clipToPlay = isInFury ? furyMoveSFX : normalMoveSFX;
+
+                if (audioSource != null && clipToPlay != null)
+                {
+                    if (isInFury) audioSource.pitch = Random.Range(1.1f, 1.3f);
+                    else audioSource.pitch = Random.Range(0.9f, 1.1f);
+
+                    audioSource.PlayOneShot(clipToPlay);
+                    audioSource.pitch = 1f;
+                }
+                audioStepTimer = 0f;
+            }
+            ResetIdleAudioTimer();
+        }
+        else
+        {
+            idleAudioTimer += Time.deltaTime;
+            if (idleAudioTimer >= idleAudioInterval)
+            {
+                if (audioSource != null && presenceSFX != null)
+                {
+                    audioSource.PlayOneShot(presenceSFX);
+                }
+                ResetIdleAudioTimer();
+            }
+        }
+    }
+
+    private void ResetIdleAudioTimer()
+    {
+        idleAudioTimer = 0f;
+        idleAudioInterval = Random.Range(4f, 8f);
+    }
+
+    private void HandleDeath(GameObject enemy)
+    {
+        if (enemy != gameObject) return;
+
+        if (audioSource != null && deathSFX != null)
+        {
+            audioSource.PlayOneShot(deathSFX);
         }
     }
 
@@ -520,10 +612,9 @@ public class LaceratusController : MonoBehaviour
     {
         isPerformingJump = true;
 
-        if (agent != null && agent.enabled)
-        {
-            agent.enabled = false;
-        }
+        if (audioSource != null && furyJumpSFX != null) audioSource.PlayOneShot(furyJumpSFX);
+
+        if (agent != null && agent.enabled) agent.enabled = false;
 
         Vector3 startPosition = transform.position;
         Vector3 targetPosition = startPosition + direction * distance;
@@ -630,13 +721,9 @@ public class LaceratusController : MonoBehaviour
     private IEnumerator EnterFuryState()
     {
         isTransitioningToFury = true;
-        furyLevel = 1; 
+        furyLevel = 1;
 
-        if (audioSource != null && screamClip != null)
-        {
-            audioSource.PlayOneShot(screamClip);
-            Debug.Log("Laceratus: ¡GRITO DE FURIA!");
-        }
+        if (audioSource != null && furyTransitionSFX != null) audioSource.PlayOneShot(furyTransitionSFX);
 
         if (animator != null)
         {
@@ -698,15 +785,11 @@ public class LaceratusController : MonoBehaviour
         furyLevel = 0;
         consecutiveHitsReceived = 0;
 
-        if (animator != null)
-        {
-            animator.SetBool(furyStateAnimationBool, false);
-        }
+        if (audioSource != null && calmTransitionSFX != null) audioSource.PlayOneShot(calmTransitionSFX);
 
-        if (agent != null && agent.enabled)
-        {
-            agent.speed = normalSpeed;
-        }
+        if (animator != null) animator.SetBool(furyStateAnimationBool, false);
+
+        if (agent != null && agent.enabled) agent.speed = normalSpeed;
 
         ChangeMaterialToNormal();
 
@@ -768,9 +851,13 @@ public class LaceratusController : MonoBehaviour
 
     private void PerformPushbackScream()
     {
-        if (audioSource != null && screamClip != null)
+        if (audioSource != null && pushbackSFX != null)
         {
-            audioSource.PlayOneShot(screamClip);
+            audioSource.PlayOneShot(pushbackSFX);
+        }
+        else if (audioSource != null && furyTransitionSFX != null)
+        {
+            audioSource.PlayOneShot(furyTransitionSFX);
         }
 
         if (animator != null)
