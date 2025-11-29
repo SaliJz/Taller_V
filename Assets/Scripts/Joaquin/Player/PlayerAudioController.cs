@@ -67,6 +67,17 @@ public class PlayerAudioController : MonoBehaviour
     [SerializeField] private bool useRangePitchVariance = true;
     [Range(0f, 0.5f)][SerializeField] private float rangePitchVariance = 0.1f;
 
+    [Header("Berserker SFX Configuration")]
+    [SerializeField] private AudioClip activeAbilityClip;
+    [SerializeField] private AudioClip desactiveAbilityClip;
+    [SerializeField] private AudioClip lowHealthWarningSound;
+    [Range(0f, 1f)][SerializeField] private float abilityVolume = 1.0f;
+    [Range(0f, 2f)][SerializeField] private float abilityPitch = 1.0f;
+    [Header("Variance")]
+    [SerializeField] private bool useabilityPitchVariance = true;
+    [Range(0f, 0.5f)][SerializeField] private float abilityPitchVariance = 0.1f;
+
+
     private void Awake()
     {
         if (mainAudioSource == null)
@@ -152,6 +163,23 @@ public class PlayerAudioController : MonoBehaviour
     public void PlayCatchShieldSound()
     {
         PlayOneShotInternal(catchShieldClip, rangeVolume, rangePitch, useRangePitchVariance, rangePitchVariance);
+    }
+
+    public void PlayBerserkerAbility(bool isActive)
+    {
+        if (isActive)
+        {
+            PlayOneShotInternal(activeAbilityClip, abilityVolume, abilityPitch, useabilityPitchVariance, abilityPitchVariance);
+        }
+        else
+        {
+            PlayOneShotInternal(desactiveAbilityClip, abilityVolume, abilityPitch, useabilityPitchVariance, abilityPitchVariance);
+        }
+    }
+
+    public void PlayBerserkerLowWarningAbility()
+    {
+        PlayOneShotInternal(lowHealthWarningSound, abilityVolume, abilityPitch, useabilityPitchVariance, abilityPitchVariance);
     }
 
     // Un método genérico privado para reutilizar la lógica de varianza

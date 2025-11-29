@@ -15,6 +15,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     [SerializeField] private PlayerStatsManager statsManager;
     [SerializeField] private PlayerMeleeAttack playerMeleeAttack;
     [SerializeField] private PlayerShieldController playerShieldController;
+    [SerializeField] private PlayerAudioController playerAudioController;
 
     [Header("Stamina System")]
     [SerializeField] private float maxStamina = 100f;
@@ -42,11 +43,6 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     [SerializeField] private Color warningMessageColor = Color.red;
     [SerializeField] private float warningMessageOffset = 2.5f;
     [SerializeField] private float warningMessageDuration = 2f;
-    [SerializeField] private AudioClip lowHealthWarningSound;
-    [SerializeField] private float warningVolume = 0.7f;
-
-    [Header("Audio")]
-    [SerializeField] private AudioSource audioSource;
 
     #endregion
 
@@ -90,6 +86,9 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         statsManager = GetComponent<PlayerStatsManager>();
         playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
         playerShieldController = GetComponent<PlayerShieldController>();
+        if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
+
+        if (playerAudioController == null) Debug.Log("PlayerAudioController no se encuentra en el objeto.");
 
         currentStamina = maxStamina;
 
@@ -299,6 +298,12 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     private void ActivateSkill()
     {
         isSkillActive = true;
+
+        if (playerAudioController != null)
+        {
+            playerAudioController.PlayBerserkerAbility(true);
+        }
+
         healthDrainTimer = 0f;
         lastKnownLifeStage = playerHealth.CurrentLifeStage;
 
@@ -328,6 +333,11 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     private void DeactivateSkill()
     {
         isSkillActive = false;
+
+        if (playerAudioController != null)
+        {
+            playerAudioController.PlayBerserkerAbility(false);
+        }
 
         float beforeMoveValue = statsManager.GetStat(StatType.MoveSpeed);
         float beforeMeleeDmgValue = statsManager.GetStat(StatType.MeleeAttackDamage);
@@ -615,9 +625,9 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     private void ShowLowHealthWarning()
     {
         // Reproducir sonido de advertencia
-        if (audioSource != null && lowHealthWarningSound != null)
+        if (playerAudioController != null)
         {
-            audioSource.PlayOneShot(lowHealthWarningSound, warningVolume);
+            playerAudioController.PlayBerserkerLowWarningAbility();
         }
 
         // Crear mensaje visual si no existe uno activo
@@ -653,6 +663,10 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         {
             Destroy(currentWarningMessage);
             currentWarningMessage = null;
+        }
+        else
+        {
+            yield return null;
         }
     }
 

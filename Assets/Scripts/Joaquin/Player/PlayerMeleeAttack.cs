@@ -266,6 +266,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         {
             playerMovement.StopForcedMovement();
             playerMovement.UnlockFacing();
+            playerMovement.SetCanMove(true);
         }
 
         if (playerAnimator != null)
@@ -311,6 +312,11 @@ public class PlayerMeleeAttack : MonoBehaviour
         OnAttacked?.Invoke(true);
 
         if (playerAnimator != null) playerAnimator.SetBool("IsAttacking", true);
+
+        if (playerMovement != null)
+        {
+            playerMovement.SetCanMove(false);
+        }
 
         // Limpiar enemigos golpeados para este nuevo ataque
         hitEnemiesThisCombo.Clear();
@@ -361,6 +367,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         {
             playerMovement.StopForcedMovement();
             playerMovement.UnlockFacing();
+            playerMovement.SetCanMove(true);
         }
 
         isAttacking = false;
@@ -428,9 +435,15 @@ public class PlayerMeleeAttack : MonoBehaviour
             }
         }
 
-        if (safeDistance <= 0.001f)
+        if (safeDistance > 0.001f && playerMovement != null)
         {
-            ReportDebug("Ataque1: espacio insuficiente para empuje. Se omite movimiento horizontal.", 1);
+            // Verificar que el punto final sea seguro para la cápsula
+            Vector3 finalPos = transform.position + forward * safeDistance;
+            if (!playerMovement.IsPositionSafeForCapsule(finalPos))
+            {
+                safeDistance = 0f;
+                ReportDebug("ExecuteAttack1: Posición final insegura. Movimiento cancelado.", 2);
+            }
         }
 
         Vector3 attackMoveVelocity = (forward * safeDistance) / Mathf.Max(0.0001f, movementDuration);
@@ -523,9 +536,15 @@ public class PlayerMeleeAttack : MonoBehaviour
             }
         }
 
-        if (safeDistance <= 0.001f)
+        if (safeDistance > 0.001f && playerMovement != null)
         {
-            ReportDebug("Ataque2: espacio insuficiente para empuje. Se omite movimiento horizontal.", 1);
+            // Verificar que el punto final sea seguro para la cápsula
+            Vector3 finalPos = transform.position + forward * safeDistance;
+            if (!playerMovement.IsPositionSafeForCapsule(finalPos))
+            {
+                safeDistance = 0f;
+                ReportDebug("ExecuteAttack2: Posición final insegura. Movimiento cancelado.", 2);
+            }
         }
 
         float elapsedTime = 0f;
@@ -688,9 +707,15 @@ public class PlayerMeleeAttack : MonoBehaviour
             }
         }
 
-        if (safeDistance <= 0.001f)
+        if (safeDistance > 0.001f && playerMovement != null)
         {
-            ReportDebug("Ataque3: espacio insuficiente para empuje. Se omite movimiento de carga.", 1);
+            // Verificar que el punto final sea seguro para la cápsula
+            Vector3 finalPos = transform.position + forward * safeDistance;
+            if (!playerMovement.IsPositionSafeForCapsule(finalPos))
+            {
+                safeDistance = 0f;
+                ReportDebug("ExecuteAttack3: Posición final insegura. Movimiento cancelado.", 2);
+            }
         }
 
         Vector3 attackMoveVelocity = (forward * safeDistance) / Mathf.Max(0.0001f, attack3ChargeDuration);

@@ -88,7 +88,6 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private AudioClip hammerHitSFX;
 
     [Header("Debug")]
-    [SerializeField] private bool showDetailsOptions = false;
     [SerializeField] private bool showGizmo = false;
     [SerializeField] private float gizmoDuration = 0.25f;
 

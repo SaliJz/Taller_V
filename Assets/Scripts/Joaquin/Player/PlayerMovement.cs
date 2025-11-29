@@ -60,6 +60,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [Header("Dash VFX")]
     [SerializeField] private ParticleSystem dashDustVFX;
 
+    [Header("Debug")]
+    [SerializeField] private bool canDebug = true;
+
     private PlayerControlls playerControls;
     private Vector2 currentInputVector = Vector2.zero;
 
@@ -393,18 +396,32 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         yield return StartCoroutine(PerformDash(targetDashPosition, dashDuration));
 
-        float safetyPushSpeed = (dashDistance / dashDuration) * 0.75f;
-        float maxStuckTime = 1.0f;
+        float safetyPushSpeed = (dashDistance / dashDuration) * 0.4f;
+        float maxStuckTime = 0.3f;
         float stuckTimer = 0f;
+        int maxPushAttempts = 5;
+        int pushAttempts = 0;
 
         Vector3 capsuleCenter = transform.position + controller.center;
         Vector3 p1 = capsuleCenter + Vector3.up * (controller.height / 2f - controller.radius);
         Vector3 p2 = capsuleCenter - Vector3.up * (controller.height / 2f - controller.radius);
 
-        while (Physics.CheckCapsule(p1, p2, controller.radius, traversableLayers, QueryTriggerInteraction.Ignore) && stuckTimer < maxStuckTime)
+        while (Physics.CheckCapsule(p1, p2, controller.radius, traversableLayers, QueryTriggerInteraction.Ignore)
+               && stuckTimer < maxStuckTime
+               && pushAttempts < maxPushAttempts)
         {
-            controller.Move(dashDirection * safetyPushSpeed * Time.deltaTime);
+            Vector3 pushDelta = dashDirection * safetyPushSpeed * Time.deltaTime;
+            Vector3 nextPos = transform.position + pushDelta;
+
+            if (!IsPositionSafeForCapsule(nextPos))
+            {
+                ReportDebug("Safety push detenido: posición insegura detectada.", 1);
+                break;
+            }
+
+            controller.Move(pushDelta);
             stuckTimer += Time.deltaTime;
+            pushAttempts++;
 
             capsuleCenter = transform.position + controller.center;
             p1 = capsuleCenter + Vector3.up * (controller.height / 2f - controller.radius);
@@ -581,32 +598,44 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         float playerRadius = controller.radius;
         float playerHeight = controller.height;
 
-        // Puntos de la cápsula para el CapsuleCast
         Vector3 p1 = origin + controller.center + Vector3.up * (playerHeight / 2f - playerRadius);
         Vector3 p2 = origin + controller.center - Vector3.up * (playerHeight / 2f - playerRadius);
 
-        // Paso 1: comprobar colisiones con capas explícitas de colisión del dash
+        // Paso 1: Comprobar colisiones con obstáculos
         if (Physics.CapsuleCast(p1, p2, playerRadius, direction, out RaycastHit obstacleHit, dashDistance, dashCollisionLayers, QueryTriggerInteraction.Ignore))
         {
-            // Punto antes del choque, dejando un margen igual al radio para evitar clipping
-            finalPosition = origin + direction * Mathf.Max(0f, obstacleHit.distance - playerRadius);
+            float adjustedDistance = Mathf.Max(0f, obstacleHit.distance - playerRadius);
+
+            if (!HasGroundAlongPath(direction, adjustedDistance))
+            {
+                finalPosition = origin;
+                lastTargetCheck = origin;
+                lastTargetHit = false;
+                ReportDebug("Dash cancelado: vacío detectado entre jugador y obstáculo.", 2);
+                return false;
+            }
+
+            finalPosition = origin + direction * adjustedDistance;
+            lastTargetCheck = finalPosition;
+            lastTargetHit = true;
             ReportDebug("El camino está bloqueado por un obstáculo. Ajustando la distancia.", 1);
             return true;
         }
 
-        // Paso 2: intentar proyectar el punto objetivo base a dashDistance y buscar suelo bajo ese punto
-        float scanHeight = 2.0f; // altura desde la que proyectar el raycast hacia abajo
+        // Paso 2: Dash normal en terreno plano
+        float scanHeight = 2.0f;
         Vector3 baseTarget = origin + direction * dashDistance + Vector3.up * scanHeight;
 
         if (Physics.Raycast(baseTarget, Vector3.down, out RaycastHit baseGroundHit, playerHeight + scanHeight + 1f, groundLayerMask, QueryTriggerInteraction.Ignore))
         {
-            // Hay suelo bajo el punto objetivo base, permitir dash hasta ese punto
             finalPosition = baseGroundHit.point;
-            ReportDebug("Se ha encontrado terreno o seguro debajo del objetivo del Dash base. Utilizando distancia del Dash base.", 1);
+            lastTargetCheck = finalPosition;
+            lastTargetHit = true;
+            ReportDebug("Dash estándar seguro.", 1);
             return true;
         }
 
-        // Paso 3: no hay suelo bajo el target base. intentar buscar suelo entre dashDistance y dashDistance + gapDashBonusDistance
+        // Paso 3: Cruzar vacíos
         float scanStart = dashDistance + 0.1f;
         float scanMax = dashDistance + gapDashBonusDistance;
         float scanStep = Mathf.Max(0.5f, playerRadius * 0.5f);
@@ -627,47 +656,70 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         if (found)
         {
-            // Si el suelo está dentro del bonus permitimos completar el dash
-            finalPosition = foundHit.point;
-            ReportDebug("Se detectó una brecha/vacio. Se encontró un aterrizaje seguro utilizando la bonificación por brecha/vacio.", 1);
+            float safetyPenetration = playerRadius + 0.3f;
+            Vector3 idealLandingPos = foundHit.point + (direction.normalized * safetyPenetration);
+
+            if (IsPositionSafeForCapsule(idealLandingPos))
+            {
+                finalPosition = idealLandingPos;
+                lastTargetCheck = finalPosition;
+                lastTargetHit = true;
+                ReportDebug("Aterrizaje profundo seguro.", 1);
+                return true;
+            }
+
+            Vector3 midPoint = Vector3.Lerp(foundHit.point, idealLandingPos, 0.5f);
+            if (IsPositionSafeForCapsule(midPoint))
+            {
+                finalPosition = midPoint;
+                lastTargetCheck = finalPosition;
+                lastTargetHit = true;
+                ReportDebug("Aterrizaje ajustado (Punto medio).", 1);
+                return true;
+            }
+
+            finalPosition = foundHit.point + (direction.normalized * 0.05f);
+            lastTargetCheck = finalPosition;
+            lastTargetHit = true;
+            ReportDebug("Aterrizaje en borde crítico (Plataforma pequeña).", 2);
             return true;
         }
 
-        // Paso 4: no hay suelo en rango permitido, intenta dash hasta el borde seguro
+        // Paso 4: Borde detectado
         float safeLedgeDistance = GetMaxSafeDistance(direction, dashDistance);
 
         float minEffectiveDashDistance = 0.5f;
 
-        // Usa un pequeño umbral para evitar dashes de 0 distancia
         if (safeLedgeDistance > edgeSafetyMargin)
         {
             if (safeLedgeDistance < minEffectiveDashDistance)
             {
                 finalPosition = origin;
-                ReportDebug("En el borde. Dash ejecutado estacionario para prevenir caída.", 1);
+                ReportDebug("Dash bloqueado por borde (Distancia segura insuficiente).", 1);
                 return true;
             }
 
-            // Proyecta el punto seguro en el suelo para obtener la 'Y' correcta
             Vector3 safeTarget = origin + direction * safeLedgeDistance + Vector3.up * scanHeight;
             if (Physics.Raycast(safeTarget, Vector3.down, out RaycastHit ledgeGroundHit, playerHeight + scanHeight + 1f, groundLayerMask, QueryTriggerInteraction.Ignore))
             {
                 finalPosition = ledgeGroundHit.point;
-                ReportDebug("Se detectó un precipicio. Dasheando hasta el borde seguro.", 1);
+                lastTargetCheck = finalPosition;
+                lastTargetHit = true;
+                ReportDebug("Dash limitado por borde (Safe Ledge).", 1);
                 return true;
             }
-            else
-            {
-                // Fallback
-                finalPosition = origin + direction * safeLedgeDistance;
-                ReportDebug("Se detectó un precipicio. Dasheando hasta el borde (fallback).", 1);
-                return true;
-            }
+
+            finalPosition = origin + direction * safeLedgeDistance;
+            lastTargetCheck = finalPosition;
+            lastTargetHit = true;
+            return true;
         }
 
-        // Paso 5: no hay suelo en rango permitido, cancelar dash
+        // Paso 5: Totalmente inseguro
         finalPosition = origin;
-        ReportDebug("La trayectoria del Dash no es segura, no hay terreno dentro del rango permitido. Dash cancelado.", 2);
+        lastTargetCheck = origin;
+        lastTargetHit = false;
+        ReportDebug("Dash cancelado por inseguridad total.", 2);
         return true;
     }
 
@@ -823,6 +875,69 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         return false;
     }
 
+    /// <summary>
+    /// Comprueba si una posición es segura para que el personaje esté de pie,
+    /// verificando el centro Y cuatro puntos cardinales alrededor del radio.
+    /// </summary>
+    public bool IsPositionSafeForCapsule(Vector3 pos)
+    {
+        float checkRadius = controller.radius * 0.95f;
+        float rayLength = controller.height + 1.0f;
+
+        // Puntos de control: Centro + 8 direcciones (4 cardinales + 4 diagonales)
+        Vector3[] checkPoints = new Vector3[]
+        {
+        pos,                                                              // Centro
+        pos + Vector3.forward * checkRadius,                              // Norte
+        pos + Vector3.back * checkRadius,                                 // Sur
+        pos + Vector3.right * checkRadius,                                // Este
+        pos + Vector3.left * checkRadius,                                 // Oeste
+        pos + (Vector3.forward + Vector3.right).normalized * checkRadius, // Noreste
+        pos + (Vector3.forward + Vector3.left).normalized * checkRadius,  // Noroeste
+        pos + (Vector3.back + Vector3.right).normalized * checkRadius,    // Sureste
+        pos + (Vector3.back + Vector3.left).normalized * checkRadius      // Suroeste
+        };
+
+        foreach (var p in checkPoints)
+        {
+            Vector3 origin = p + Vector3.up * edgeRaycastHeight;
+
+            if (!Physics.Raycast(origin, Vector3.down, rayLength, groundLayerMask, QueryTriggerInteraction.Ignore))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Verifica que el camino hasta la distancia dada tenga suelo continuo.
+    /// Previene dashear sobre vacíos hacia obstáculos lejanos.
+    /// </summary>
+    private bool HasGroundAlongPath(Vector3 direction, float distance)
+    {
+        if (distance < 0.1f) return true;
+
+        int samples = Mathf.CeilToInt(distance / 0.5f);
+        samples = Mathf.Clamp(samples, 3, 15);
+
+        float step = distance / samples;
+
+        for (int i = 1; i <= samples; i++)
+        {
+            Vector3 checkPos = transform.position + direction * (step * i) + Vector3.up * 2f;
+
+            if (!Physics.Raycast(checkPos, Vector3.down, controller.height + 3f, groundLayerMask, QueryTriggerInteraction.Ignore))
+            {
+                ReportDebug($"Vacío detectado en el camino a {(step * i):F2}m de {distance:F2}m totales.", 2);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public float GetMaxSafeDistance(Vector3 dir, float maxDesiredDistance)
     {
         if (!enableEdgeDetection || controller == null || !IsEffectivelyGrounded()) return maxDesiredDistance;
@@ -831,33 +946,19 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         if (dir.sqrMagnitude < 0.0001f) return 0f;
         dir.Normalize();
 
-        Vector3 right = Vector3.Cross(Vector3.up, dir).normalized;
-        float checkRadius = controller.radius * 0.9f;
-
-        int samples = Mathf.Clamp(Mathf.CeilToInt((maxDesiredDistance) / (controller.radius + edgeDetectionDistance)), 1, edgeSampleMax);
+        int samples = Mathf.Clamp(Mathf.CeilToInt((maxDesiredDistance) / (controller.radius * 0.5f)), 2, edgeSampleMax);
         float step = maxDesiredDistance / samples;
-        Vector3 rayOriginBase = transform.position + Vector3.up * edgeRaycastHeight;
-        float rayDistance = controller.height + 0.6f;
+
+        Vector3 basePos = transform.position;
 
         for (int i = 1; i <= samples; i++)
         {
             float traveled = step * i;
-            Vector3 samplePos = rayOriginBase + dir * Mathf.Max(0f, traveled + controller.radius + edgeDetectionDistance);
+            Vector3 testPos = basePos + dir * traveled;
 
-            bool centerHit = Physics.Raycast(samplePos, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore);
-            bool leftHit = Physics.Raycast(samplePos - right * checkRadius, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore);
-            bool rightHit = Physics.Raycast(samplePos + right * checkRadius, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore);
-
-            if (!centerHit || !leftHit || !rightHit)
+            if (!IsPositionSafeForCapsule(testPos))
             {
                 float safeDistance = Mathf.Max(0f, (step * (i - 1)) - edgeSafetyMargin);
-
-#if UNITY_EDITOR
-                Debug.DrawLine(samplePos, samplePos + Vector3.down * rayDistance, Color.red, 1f);
-                if (!leftHit) Debug.DrawRay(samplePos - right * checkRadius, Vector3.down * rayDistance, Color.magenta, 1f);
-                if (!rightHit) Debug.DrawRay(samplePos + right * checkRadius, Vector3.down * rayDistance, Color.magenta, 1f);
-#endif
-
                 return safeDistance;
             }
         }
@@ -1108,6 +1209,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     private void OnDrawGizmos()
     {
         if (!Application.isPlaying || controller == null) return;
+        if (!canDebug) return;
 
         Vector3 origin = transform.position;
         Gizmos.color = Color.cyan;
@@ -1180,7 +1282,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             }
         }
 
-#if UNITY_EDITOR
         if (lastTargetCheck != Vector3.zero)
         {
             Gizmos.color = lastTargetHit ? Color.green : Color.red;
@@ -1189,9 +1290,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
             UnityEditor.Handles.Label(lastTargetCheck + Vector3.up * 0.2f, lastTargetHit ? "lastTargetCheck hit" : "lastTargetCheck miss");
         }
-#endif
 
-#if UNITY_EDITOR
         UnityEditor.Handles.Label(origin + Vector3.up * 1.5f, "Origen de Dash");
         UnityEditor.Handles.Label(baseEnd + Vector3.up * 1.5f, "Alcance base");
         UnityEditor.Handles.Label(bonusEnd + Vector3.up * 1.5f, "Máximo con bonificación");
@@ -1204,7 +1303,65 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         {
             UnityEditor.Handles.Label(origin + Vector3.up * 2.0f, "Detección de bordes desactivada");
         }
-#endif
+
+        Vector3 testDir = moveDirection.magnitude > 0.1f ? moveDirection.normalized : transform.forward;
+        Vector3 testP1 = origin + controller.center + Vector3.up * (controller.height / 2f - controller.radius);
+        Vector3 testP2 = origin + controller.center - Vector3.up * (controller.height / 2f - controller.radius);
+
+        if (Physics.CapsuleCast(testP1, testP2, controller.radius, testDir, out RaycastHit obsHit,
+            dashDistance, dashCollisionLayers, QueryTriggerInteraction.Ignore))
+        {
+            float checkDist = Mathf.Max(0f, obsHit.distance - controller.radius);
+            int samples = Mathf.CeilToInt(checkDist / 1f);
+            samples = Mathf.Clamp(samples, 2, 10);
+            float step = checkDist / samples;
+
+            for (int i = 1; i <= samples; i++)
+            {
+                Vector3 checkPos = origin + testDir * (step * i);
+                Vector3 rayStart = checkPos + Vector3.up * 2f;
+                bool hasGround = Physics.Raycast(rayStart, Vector3.down, controller.height + 3f,
+                    groundLayerMask, QueryTriggerInteraction.Ignore);
+
+                Gizmos.color = hasGround ? new Color(0, 1, 0, 0.7f) : new Color(1, 0, 0, 0.9f);
+                Gizmos.DrawWireSphere(checkPos, 0.15f);
+                Gizmos.DrawLine(rayStart, rayStart + Vector3.down * (controller.height + 3f));
+
+                if (!hasGround)
+                {
+                    UnityEditor.Handles.color = Color.red;
+                    UnityEditor.Handles.Label(checkPos + Vector3.up * 0.5f, "¡VACÍO!");
+                }
+            }
+
+            UnityEditor.Handles.color = Color.yellow;
+            UnityEditor.Handles.Label(origin + Vector3.up * 2.5f, $"Obstáculo a {obsHit.distance:F1}m - Verificando camino");
+        }
+
+        if (lastTargetCheck != Vector3.zero)
+        {
+            int numDirections = 8;
+            float angleStep = 360f / numDirections;
+            float checkRadius = controller.radius * 0.95f;
+
+            for (int i = 0; i < numDirections; i++)
+            {
+                float angle = i * angleStep * Mathf.Deg2Rad;
+                Vector3 offset = new Vector3(
+                    Mathf.Cos(angle) * checkRadius,
+                    0f,
+                    Mathf.Sin(angle) * checkRadius
+                );
+
+                Vector3 checkPoint = lastTargetCheck + offset + Vector3.up * edgeRaycastHeight;
+                bool hasGround = Physics.Raycast(checkPoint, Vector3.down, controller.height + 1f,
+                    groundLayerMask, QueryTriggerInteraction.Ignore);
+
+                Gizmos.color = hasGround ? new Color(0, 1, 0, 0.5f) : new Color(1, 0, 0, 0.8f);
+                Gizmos.DrawLine(checkPoint, checkPoint + Vector3.down * (controller.height + 1f));
+                Gizmos.DrawWireSphere(checkPoint, 0.05f);
+            }
+        }
     }
 
     #endregion

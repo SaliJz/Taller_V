@@ -2856,7 +2856,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0.5
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -8719,7 +8719,7 @@ MonoBehaviour:
     m_Bits: 128
   dashCollisionLayers:
     serializedVersion: 2
-    m_Bits: 66048
+    m_Bits: 197120
   gapDashBonusDistance: 4.5
   groundLayerMask:
     serializedVersion: 2
@@ -8735,6 +8735,7 @@ MonoBehaviour:
   afterimageAlpha: 0.5
   afterimageLifetime: 0.5
   dashDustVFX: {fileID: 9021649713925411072}
+  canDebug: 1
 --- !u!114 &3158206734398763717
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8848,6 +8849,7 @@ MonoBehaviour:
   statsManager: {fileID: 7736777102245202428}
   playerMeleeAttack: {fileID: 9211243997880812482}
   playerShieldController: {fileID: 3158206734398763717}
+  playerAudioController: {fileID: 0}
   maxStamina: 100
   staminaDrainRate: 20
   staminaRechargeRate: 20
@@ -8879,9 +8881,6 @@ MonoBehaviour:
   warningMessageColor: {r: 0, g: 0, b: 0, a: 1}
   warningMessageOffset: 2.5
   warningMessageDuration: 2
-  lowHealthWarningSound: {fileID: 0}
-  warningVolume: 0.7
-  audioSource: {fileID: 5769126923226320478}
 --- !u!114 &7736777102245202428
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9029,12 +9028,12 @@ MonoBehaviour:
   mainAudioSource: {fileID: 5769126923226320478}
   damageClip: {fileID: 8300000, guid: 17f34e2eb7b36dd45a3de501f3bb643a, type: 3}
   damageVolume: 1
-  damagePitch: 0.95
+  damagePitch: 1
   useDamagePitchVariance: 1
   damagePitchVariance: 0.1
   deathClip: {fileID: 8300000, guid: db03f176ca5e74f4f8fc48ff91ff9713, type: 3}
   deathVolume: 1
-  deathPitch: 0.85
+  deathPitch: 1
   useDeathPitchVariance: 0
   deathPitchVariance: 0.05
   footstepGenericClip: {fileID: 0}
@@ -9046,19 +9045,19 @@ MonoBehaviour:
   useStepPitchVariance: 1
   stepPitchVariance: 0.1
   dashClip: {fileID: 8300000, guid: bd93c9883ffbb7b4790ea4f76e1cb5b0, type: 3}
-  dashVolume: 0.6
-  dashPitch: 1.15
+  dashVolume: 0.75
+  dashPitch: 1
   usePitchVariance: 1
   pitchVariance: 0.1
-  basicSlashClip: {fileID: 0}
-  spinSlashClip: {fileID: 0}
-  heavySlashClip: {fileID: 0}
-  meleeVolume: 0.75
-  meleePitch: 1.1
-  useMeleePitchVariance: 1
+  basicSlashClip: {fileID: 8300000, guid: 4ec675e07a3c5404495034fe15499d99, type: 3}
+  spinSlashClip: {fileID: 8300000, guid: 0ee7b9aa13b90944788bfd8a167f9742, type: 3}
+  heavySlashClip: {fileID: 8300000, guid: 6a31d9b895d5f194c8cd4a752868db37, type: 3}
+  meleeVolume: 0.65
+  meleePitch: 1
+  useMeleePitchVariance: 0
   meleePitchVariance: 0.15
   hitClip: {fileID: 8300000, guid: b7a4800f68e0e5142a31aee70aecbd57, type: 3}
-  hitVolume: 0.85
+  hitVolume: 0.9
   hitPitch: 1
   useHitPitchVariance: 1
   hitPitchVariance: 0.1
@@ -9068,6 +9067,13 @@ MonoBehaviour:
   rangePitch: 1
   useRangePitchVariance: 1
   rangePitchVariance: 0.1
+  activeAbilityClip: {fileID: 8300000, guid: f06f6d052b96a93489793bfb0a4b641c, type: 3}
+  desactiveAbilityClip: {fileID: 8300000, guid: 5803f3e0b283efd4eb1fd6bc80e26779, type: 3}
+  lowHealthWarningSound: {fileID: 0}
+  abilityVolume: 0.85
+  abilityPitch: 1
+  useabilityPitchVariance: 1
+  abilityPitchVariance: 0.1
 --- !u!114 &4602725535163461728
 MonoBehaviour:
   m_ObjectHideFlags: 0

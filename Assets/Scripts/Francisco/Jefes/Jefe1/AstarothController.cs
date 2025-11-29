@@ -120,8 +120,6 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private int _pulseDamage = 5;
     [SerializeField] private GameObject _nervesVisualizationPrefab;
     [SerializeField] private GameObject _crackEffectPrefab;
-    [SerializeField] private AudioClip _pulseScreamSound;
-    [SerializeField] private AudioClip _rocksFallingSound;
     [SerializeField] private float _postPulseAttackDelay = 0.8f;
     [SerializeField] private Transform _headsTransform;
     [SerializeField] private float _headDownRotationAngle = -45f;
@@ -189,7 +187,6 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private float _enragedHealthThreshold = 0.25f;
     [SerializeField] private Renderer[] _eyeRenderers;
     [SerializeField] private Material _enragedEyeMaterial;
-    [SerializeField] private AudioClip _enragedRoarSound;
     private bool _isEnraged = false;
     private float _attackSpeedMultiplier = 1f;
     private float _baseAttack1Cooldown;
@@ -204,10 +201,42 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private TrailRenderer _trailRenderer;
     #endregion
 
-    #region SFX
-    [Header("Sound")]
+    #region SFX - ASTAROTH
+    [Header("SFX - Astaroth")]
     [SerializeField] private AudioSource audioSource;
+
+    [Tooltip("Idle: Sonido de Presencia.")]
+    [SerializeField] private AudioClip presenceSFX;
+
+    [Tooltip("Movimiento: Caminar/Perseguir.")]
+    [SerializeField] private AudioClip walkSFX;
+
+    [Tooltip("Ataque: Latigazo Desgarrador.")]
+    [SerializeField] private AudioClip whipAttackSFX;
+
+    [Tooltip("Ataque: Caos (Lanzamiento de roca).")]
+    [SerializeField] private AudioClip smashAttackSFX;
+
+    [Tooltip("Ataque: Pulso Carnal (Habilidad Especial).")]
+    [SerializeField] private AudioClip pulseAttackSFX;
+    [SerializeField] private AudioClip pulseRocksSFX;
+
+    [Tooltip("Ataque: Pisotón.")]
+    [SerializeField] private AudioClip stompSFX;
+
+    [Tooltip("Fase 2: Ira Demoníaca.")]
+    [SerializeField] private AudioClip phase2RageSFX;
+
+    [Tooltip("Daño Recibido.")]
+    [SerializeField] private AudioClip damageReceivedSFX;
+
+    [Tooltip("Muerte.")]
     [SerializeField] private AudioClip deathSFX;
+
+    // Variables internas para Audio Loop
+    private float _audioIdleTimer;
+    private float _audioIdleInterval;
+    private float _audioStepTimer;
     #endregion
 
     #region Camera Shake
@@ -226,6 +255,7 @@ public class AstarothController : MonoBehaviour
         _enemyHealth = GetComponent<EnemyHealth>();
         _navMeshAgent = GetComponent<NavMeshAgent>();
         _animator = GetComponent<Animator>();
+        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
 
         if (_vcam == null)
         {
@@ -297,6 +327,8 @@ public class AstarothController : MonoBehaviour
             return;
         }
 
+        HandleAudioLoop();
+
         CheckHealthThresholds();
 
         if (_enableAdaptiveDifficulty)
@@ -322,6 +354,49 @@ public class AstarothController : MonoBehaviour
         }
     }
 
+    #endregion
+
+    #region Audio System
+    private void HandleAudioLoop()
+    {
+        if (_navMeshAgent == null || !_navMeshAgent.enabled) return;
+
+        bool isMoving = !_navMeshAgent.isStopped && _navMeshAgent.velocity.sqrMagnitude > 0.5f;
+
+        if (isMoving)
+        {
+            _audioStepTimer += Time.deltaTime;
+            float stepRate = 1f;
+
+            if (_audioStepTimer >= stepRate)
+            {
+                if (audioSource != null && walkSFX != null)
+                {
+                    audioSource.PlayOneShot(walkSFX, 0.5f);
+                }
+                _audioStepTimer = 0f;
+            }
+            ResetIdleAudioTimer();
+        }
+        else
+        {
+            _audioIdleTimer += Time.deltaTime;
+            if (_audioIdleTimer >= _audioIdleInterval)
+            {
+                if (audioSource != null && presenceSFX != null)
+                {
+                    audioSource.PlayOneShot(presenceSFX);
+                }
+                ResetIdleAudioTimer();
+            }
+        }
+    }
+
+    private void ResetIdleAudioTimer()
+    {
+        _audioIdleTimer = 0f;
+        _audioIdleInterval = Random.Range(5f, 9f);
+    }
     #endregion
 
     #region Health and Phase Management
@@ -357,6 +432,11 @@ public class AstarothController : MonoBehaviour
 
     private void HandleDamageReceived()
     {
+        if (audioSource != null && damageReceivedSFX != null && _currentHealth > 0)
+        {
+            audioSource.PlayOneShot(damageReceivedSFX);
+        }
+
         if (_isUsingSpecialAbility) return;
 
         _hitsReceivedFromPlayer++;
@@ -535,9 +615,9 @@ public class AstarothController : MonoBehaviour
         _pulseExpansionDuration = 1.5f; // Reducido de 3s
         _pulseWaitDuration = 0.5f; // Reducido de 1s
 
-        if (_enragedRoarSound != null)
+        if (phase2RageSFX != null)
         {
-            AudioSource.PlayClipAtPoint(_enragedRoarSound, transform.position);
+            AudioSource.PlayClipAtPoint(phase2RageSFX, transform.position);
         }
 
         Debug.Log("Astaroth entered ENRAGED phase!");
@@ -662,6 +742,8 @@ public class AstarothController : MonoBehaviour
         _isAttackingWithWhip = true;
         _totalAttemptsExecuted++;
         _lastWhipHitPlayer = false;
+
+        if (audioSource != null && whipAttackSFX != null) audioSource.PlayOneShot(whipAttackSFX);
 
         if (_trailRenderer != null)
         {
@@ -943,6 +1025,8 @@ public class AstarothController : MonoBehaviour
 
     private void PerformStompImpact()
     {
+        if (audioSource != null && stompSFX != null) audioSource.PlayOneShot(stompSFX);
+
         if (_stompVFXPrefab != null)
         {
             Instantiate(_stompVFXPrefab, transform.position, Quaternion.identity);
@@ -985,7 +1069,9 @@ public class AstarothController : MonoBehaviour
         {
             _totalAttemptsExecuted++;
             _lastWhipHitPlayer = false;
-            
+
+            if (audioSource != null && whipAttackSFX != null) audioSource.PlayOneShot(whipAttackSFX);
+
             bool damageDealtThisWhip = false;
 
             // Calculo de posicion del jugador
@@ -1144,6 +1230,8 @@ public class AstarothController : MonoBehaviour
 
         _navMeshAgent.isStopped = true;
         _smashTargetPoint = _player.position;
+
+        if (audioSource != null && smashAttackSFX != null) audioSource.PlayOneShot(smashAttackSFX);
 
         HashSet<GameObject> hitByDirectImpact = new HashSet<GameObject>();
 
@@ -1417,15 +1505,8 @@ public class AstarothController : MonoBehaviour
 
         ShakeCamera(_shakeDuration, _amplitude, _frequency);
 
-        if (_pulseScreamSound != null)
-        {
-            AudioSource.PlayClipAtPoint(_pulseScreamSound, transform.position);
-        }
-
-        if (_rocksFallingSound != null)
-        {
-            AudioSource.PlayClipAtPoint(_rocksFallingSound, transform.position);
-        }
+        if (pulseAttackSFX != null) AudioSource.PlayClipAtPoint(pulseAttackSFX, transform.position);
+        if (pulseRocksSFX != null) AudioSource.PlayClipAtPoint(pulseRocksSFX, transform.position);
 
         if (_crackEffectPrefab != null)
         {

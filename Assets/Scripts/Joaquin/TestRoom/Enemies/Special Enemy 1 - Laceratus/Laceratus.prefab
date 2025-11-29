@@ -441,6 +441,7 @@ GameObject:
   - component: {fileID: 599553113384920727}
   - component: {fileID: 8505107474849817774}
   - component: {fileID: 254221231430808994}
+  - component: {fileID: 4499002389334469887}
   m_Layer: 7
   m_Name: Laceratus
   m_TagString: Enemy
@@ -597,9 +598,17 @@ MonoBehaviour:
   furyAttackAnimationTrigger: FuryAttack
   furyStateAnimationBool: IsFury
   screamAnimationTrigger: Scream
-  screamClip: {fileID: 0}
-  normalAttackClip: {fileID: 0}
+  audioSource: {fileID: 0}
+  presenceSFX: {fileID: 8300000, guid: 272f6f049913fa84383303f5ab52fc64, type: 3}
+  normalMoveSFX: {fileID: 8300000, guid: 0571e6753fa06fd41b7c78c33818c63b, type: 3}
+  furyMoveSFX: {fileID: 8300000, guid: 5d92ed6a33875a9418b0d79529112639, type: 3}
+  furyTransitionSFX: {fileID: 0}
+  calmTransitionSFX: {fileID: 0}
+  normalAttackClip: {fileID: 8300000, guid: 5106a12162b86d6478565ccdaf40420c, type: 3}
   furyAttackClip: {fileID: 0}
+  furyJumpSFX: {fileID: 0}
+  pushbackSFX: {fileID: 0}
+  deathSFX: {fileID: 0}
 --- !u!114 &599553113384920727
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -695,6 +704,23 @@ MonoBehaviour:
   toughnessPercentageText: {fileID: 0}
   toughnessMultiplierText: {fileID: 0}
   toughnessUIGroup: {fileID: 1530389385868224238}
+--- !u!114 &4499002389334469887
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3776010021068202972}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73d4e83809fd58b4293186b0b01eaaf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  navMeshSampleDistance: 2
+  raycastStepDistance: 0.25
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 131712
 --- !u!1 &4677526121780079402
 GameObject:
   m_ObjectHideFlags: 0

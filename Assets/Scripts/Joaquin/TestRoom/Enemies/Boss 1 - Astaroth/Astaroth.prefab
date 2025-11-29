@@ -2712,8 +2712,6 @@ MonoBehaviour:
   _pulseDamage: 5
   _nervesVisualizationPrefab: {fileID: 2528258679447591905, guid: d5198e4075e1272418df127375714aaa, type: 3}
   _crackEffectPrefab: {fileID: 4070008438777901748, guid: d3e33401a1a0bb546bef8faf3b2a0421, type: 3}
-  _pulseScreamSound: {fileID: 0}
-  _rocksFallingSound: {fileID: 0}
   _postPulseAttackDelay: 0.8
   _headsTransform: {fileID: 97538593538085836}
   _headDownRotationAngle: 45
@@ -2735,10 +2733,18 @@ MonoBehaviour:
   _enragedHealthThreshold: 0.25
   _eyeRenderers: []
   _enragedEyeMaterial: {fileID: 0}
-  _enragedRoarSound: {fileID: 0}
   _trailRenderer: {fileID: 307335321892017951}
   audioSource: {fileID: 3118501603687521992}
-  deathSFX: {fileID: 0}
+  presenceSFX: {fileID: 0}
+  walkSFX: {fileID: 8300000, guid: 81b9d34885110f841813cab4e9266319, type: 3}
+  whipAttackSFX: {fileID: 8300000, guid: 3181383ebc5e3324eb4cc6db480478e8, type: 3}
+  smashAttackSFX: {fileID: 8300000, guid: 45e1026c1e0b96340b9709a1d16a4c8b, type: 3}
+  pulseAttackSFX: {fileID: 0}
+  pulseRocksSFX: {fileID: 0}
+  stompSFX: {fileID: 0}
+  phase2RageSFX: {fileID: 8300000, guid: 1c0fcb447be34924bb9ccaf793538534, type: 3}
+  damageReceivedSFX: {fileID: 0}
+  deathSFX: {fileID: 8300000, guid: b0eae421c32d7f14c950570951756fed, type: 3}
   _vcam: {fileID: 0}
   _shakeDuration: 0.2
   _amplitude: 2
