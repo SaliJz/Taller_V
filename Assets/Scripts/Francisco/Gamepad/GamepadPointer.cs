@@ -182,7 +182,7 @@ public class GamepadPointer : MonoBehaviour
             {
                 if (!virtualCursor.gameObject.activeSelf)
                 {
-                    virtualCursor.gameObject.SetActive(true);
+                    //virtualCursor.gameObject.SetActive(true);
                     virtualCursor.anchoredPosition = lastValidCursorPosition;
                 }
 
@@ -237,7 +237,7 @@ public class GamepadPointer : MonoBehaviour
 
                 if (selectedObject != null)
                 {
-                    if (!virtualCursor.gameObject.activeSelf) virtualCursor.gameObject.SetActive(true);
+                    //if (!virtualCursor.gameObject.activeSelf) virtualCursor.gameObject.SetActive(true);
 
                     RectTransform targetRect = selectedObject.GetComponent<RectTransform>();
                     Slider slider = selectedObject.GetComponent<Slider>();
