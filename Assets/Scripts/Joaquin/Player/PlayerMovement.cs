@@ -1206,8 +1206,11 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     #region Debugging
 
+    #region Debugging
+
     private void OnDrawGizmos()
     {
+#if UNITY_EDITOR 
         if (!Application.isPlaying || controller == null) return;
         if (!canDebug) return;
 
@@ -1362,7 +1365,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
                 Gizmos.DrawWireSphere(checkPoint, 0.05f);
             }
         }
+#endif
     }
+
+    #endregion
 
     #endregion
 
