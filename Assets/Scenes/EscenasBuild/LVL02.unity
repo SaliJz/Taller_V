@@ -1413,6 +1413,28 @@ RectTransform:
   m_AnchoredPosition: {x: 312.625, y: -293.75}
   m_SizeDelta: {x: 625.25, y: 117.5}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &694871466 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 63737860863256847, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+  m_PrefabInstance: {fileID: 1130311632}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &694871468 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1522249548704971655, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+  m_PrefabInstance: {fileID: 1130311632}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1130311633}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3746e2d99a67cb498401c0bdacbbe93, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &768410882
 GameObject:
   m_ObjectHideFlags: 0
@@ -2293,6 +2315,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 6679960082821164706, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
   m_PrefabInstance: {fileID: 1090497192}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1090497194 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6110564483166717353, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+  m_PrefabInstance: {fileID: 1090497192}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1090497193}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8496e4d407ba7de4287e8b7e7390c1de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1130311632
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2301,6 +2334,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1016394690528190547, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1556533189993445545, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2049424538277915923, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_Name
       value: HUD
@@ -2323,6 +2364,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2420525907263958631, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2754317058243562804, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2958035071462961861, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3955724570040860964, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
@@ -2445,6 +2494,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6230442105961168642, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6456210848709519730, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: inventoryFullText
       value: 
@@ -2453,6 +2506,10 @@ PrefabInstance:
       propertyPath: inventoryFullPanel
       value: 
       objectReference: {fileID: 1477044208}
+    - target: {fileID: 6728113491059857827, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7470225785151341199, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: mainCamera
       value: 
@@ -2534,8 +2591,27 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4771108026129879708, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1928735784}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2049424538277915923, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1241387787}
   m_SourcePrefab: {fileID: 100100000, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+--- !u!1 &1130311633 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2049424538277915923, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+  m_PrefabInstance: {fileID: 1130311632}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1130311634 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7940734855780671619, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+  m_PrefabInstance: {fileID: 1130311632}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!224 &1130311635 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6893052232125983173, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
@@ -2879,6 +2955,125 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 4771108026129879708, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
   m_PrefabInstance: {fileID: 1130311632}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1241387787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1130311633}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c65fd54c0297ab45a3a4dc0519e33e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dialogManager: {fileID: 694871468}
+  merchantManager: {fileID: 0}
+  playerHealth: {fileID: 1090497194}
+  optionsPanel: {fileID: 1406040830}
+  acceptButton: {fileID: 694871466}
+  backButton: {fileID: 1130311634}
+  converseButton: {fileID: 0}
+  firstVisitLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"Ah, otra alma perdida que cae en mis dominios. \xBFBuscas alivio o una
+      deuda?\""
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+  routineLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"Mis mercanc\xEDas son \xFAnicas y mi tiempo es oro, o lo que quede de
+      ti. \xBFNecesitas algo o solo vas a mirar?\""
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"En este lugar, la \xFAnica moneda real es la necesidad. No la desperdicies
+      con preguntas triviales.\""
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: '"Todo tiene un precio. La vida, la muerte, el silencio... y por supuesto,
+      mis servicios."'
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+  pactOfferLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"Veo la marca de la agon\xEDa sobre ti. Un peque\xF1o sacrificio a cambio
+      de una gran ventaja. \xBFAceptas el precio que el Inframundo exige?\""
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+  tooHealthyLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"Vienes a m\xED con las venas llenas de vida. No tengo nada que ofrecerte,
+      y t\xFA nada que perder. Vuelve cuando te acerques al borde.\""
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+  friendlyLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"La oscuridad te sienta bien, viajero. Sigue aumentando tu deuda conmigo
+      y te mostrar\xE9 secretos que la luz nunca conoci\xF3.\""
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"Tus enemigos tienen grietas en sus defensas. Yo lo s\xE9. \xBFTe ayudo
+      a explotarlas? Por un precio, claro.\""
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"Me agradas. La avaricia es un buen motor. T\xF3malo de un experto: los
+      mejores tratos se hacen en silencio.\""
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+  hostileLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"\xBFPor qu\xE9 pierdes el tiempo? Cada segundo que me haces esperar
+      cuesta algo m\xE1s que oro.\""
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"Me aburres. Tu conversaci\xF3n es tan ins\xEDpida como tu alma. Vuelve
+      cuando tengas algo interesante que ofrecer, o vete.\""
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"No olvides qui\xE9n te permite seguir respirando en mi sala. No abuses
+      de mi... indulgencia.\""
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+  blockedLine:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: '"Has agotado mi paciencia. Mis favores son para almas desesperadas, no
+      para parlanchines. Vete, antes de que te cobre por el tiempo perdido."'
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+  pactAcceptLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: 8
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+  pactShowDetailsLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: 9
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+  OnDialogCompleteEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1277662255
 GameObject:
   m_ObjectHideFlags: 0
@@ -2954,6 +3149,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1277662255}
   m_CullTransparentMesh: 1
+--- !u!1 &1406040830 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 316306556274045694, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+  m_PrefabInstance: {fileID: 1130311632}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1443391321
 GameObject:
   m_ObjectHideFlags: 0
@@ -3906,9 +4106,9 @@ MonoBehaviour:
   - roomType: 1
     probability: 100
     roomPrefabs:
-    - {fileID: 2687247453871147643, guid: 4da4fe76baee13a4ba084bd82f11620c, type: 3}
-    - {fileID: 7203752380485401633, guid: 8b8badf0f782f584e95dabb82407e8d6, type: 3}
     - {fileID: 6730149805877275145, guid: 7e92fe95e9a36a141b0ecc5d6cf4b651, type: 3}
+    - {fileID: 6730149805877275145, guid: 1a942f78d856a554f9cb2fc3331c9e28, type: 3}
+    - {fileID: 6730149805877275145, guid: 4b8eec5feb0ab1349b8297870d03883f, type: 3}
     roomDataList: []
   - roomType: 4
     probability: 100
@@ -3921,9 +4121,8 @@ MonoBehaviour:
   - useMultipleRoomTypes: 1
     roomType: 1
     multipleRoomTypes: []
-    useCustomPrefabs: 1
-    customRoomPrefabs:
-    - {fileID: 2687247453871147643, guid: 4da4fe76baee13a4ba084bd82f11620c, type: 3}
+    useCustomPrefabs: 0
+    customRoomPrefabs: []
     minRoomNumber: 1
     maxRoomNumber: 1
     isMandatory: 1
@@ -3952,9 +4151,8 @@ MonoBehaviour:
   - useMultipleRoomTypes: 1
     roomType: 1
     multipleRoomTypes: []
-    useCustomPrefabs: 1
-    customRoomPrefabs:
-    - {fileID: 7203752380485401633, guid: 8b8badf0f782f584e95dabb82407e8d6, type: 3}
+    useCustomPrefabs: 0
+    customRoomPrefabs: []
     minRoomNumber: 3
     maxRoomNumber: 3
     isMandatory: 1
@@ -3967,9 +4165,8 @@ MonoBehaviour:
   - useMultipleRoomTypes: 1
     roomType: 1
     multipleRoomTypes: []
-    useCustomPrefabs: 1
-    customRoomPrefabs:
-    - {fileID: 6730149805877275145, guid: 7e92fe95e9a36a141b0ecc5d6cf4b651, type: 3}
+    useCustomPrefabs: 0
+    customRoomPrefabs: []
     minRoomNumber: 4
     maxRoomNumber: 4
     isMandatory: 1
@@ -3998,11 +4195,8 @@ MonoBehaviour:
   - useMultipleRoomTypes: 1
     roomType: 1
     multipleRoomTypes: []
-    useCustomPrefabs: 1
-    customRoomPrefabs:
-    - {fileID: 2687247453871147643, guid: 4da4fe76baee13a4ba084bd82f11620c, type: 3}
-    - {fileID: 7203752380485401633, guid: 8b8badf0f782f584e95dabb82407e8d6, type: 3}
-    - {fileID: 6730149805877275145, guid: 7e92fe95e9a36a141b0ecc5d6cf4b651, type: 3}
+    useCustomPrefabs: 0
+    customRoomPrefabs: []
     minRoomNumber: 6
     maxRoomNumber: 6
     isMandatory: 1

@@ -29,8 +29,8 @@ public class MerchantDialogHandler : MonoBehaviour
     [SerializeField] private DialogLine[] friendlyLines;
     [SerializeField] private DialogLine[] hostileLines;
     [SerializeField] private DialogLine[] blockedLine;
-    [SerializeField] private DialogLine[] pactAcceptLines; 
-    [SerializeField] private DialogLine[] pactShowDetailsLines; 
+    [SerializeField] private DialogLine[] pactAcceptLines;
+    [SerializeField] private DialogLine[] pactShowDetailsLines;
 
     #endregion
 
@@ -45,7 +45,7 @@ public class MerchantDialogHandler : MonoBehaviour
     private int conversationCount = 0;
     private int reputation = 0;
     private bool isPactBlocked = false;
-    private bool waitingForPactButtons = false; 
+    private bool waitingForPactButtons = false;
     private MerchantMood currentMood = MerchantMood.Neutral;
 
     private enum MerchantMood { Neutral, Friendly, Hostile }
@@ -88,7 +88,7 @@ public class MerchantDialogHandler : MonoBehaviour
         DialogLine[] entryLines;
         bool isMerchantFlow = true;
 
-        if (isPactBlocked) 
+        if (isPactBlocked)
         {
             entryLines = blockedLine;
         }
@@ -96,7 +96,7 @@ public class MerchantDialogHandler : MonoBehaviour
         {
             entryLines = firstVisitLines;
         }
-        else if (!isPactAvailable) 
+        else if (!isPactAvailable)
         {
             entryLines = tooHealthyLines;
         }
@@ -121,9 +121,13 @@ public class MerchantDialogHandler : MonoBehaviour
 
         bool canOfferPact = isPactAvailable && !merchantManager.hasTakenPact && !isPactBlocked;
 
-        acceptButton.gameObject.SetActive(canOfferPact);
-        backButton.gameObject.SetActive(true);
-        converseButton.gameObject.SetActive(conversationCount < 5); 
+        acceptButton?.gameObject.SetActive(canOfferPact);
+        backButton?.gameObject.SetActive(true);
+
+        if (converseButton != null)
+        {
+            converseButton.gameObject.SetActive(conversationCount < 5);
+        }
     }
 
     #endregion
@@ -133,7 +137,7 @@ public class MerchantDialogHandler : MonoBehaviour
     public void OnAcceptPactOption()
     {
         Debug.Log("OnAcceptPactOption INICIO");
-        optionsPanel.SetActive(false);
+        optionsPanel?.SetActive(false);
 
         Pact currentPact = merchantManager.GetCurrentPactOffer();
         if (currentPact == null)
@@ -164,7 +168,9 @@ public class MerchantDialogHandler : MonoBehaviour
 
     public void OnConverseOption()
     {
-        optionsPanel.SetActive(false);
+        if (converseButton == null) return; 
+
+        optionsPanel?.SetActive(false);
 
         conversationCount++;
 
@@ -238,16 +244,21 @@ public class MerchantDialogHandler : MonoBehaviour
         if (optionsPanel != null)
         {
             optionsPanel.SetActive(true);
-            acceptButton.gameObject.SetActive(false); 
-            converseButton.gameObject.SetActive(conversationCount < 5); 
-            backButton.gameObject.SetActive(true);
+            acceptButton?.gameObject.SetActive(false);
+
+            if (converseButton != null)
+            {
+                converseButton.gameObject.SetActive(conversationCount < 5);
+            }
+
+            backButton?.gameObject.SetActive(true);
         }
     }
 
     public void OnBackButton()
     {
-        optionsPanel.SetActive(false);
-        waitingForPactButtons = false; 
+        optionsPanel?.SetActive(false);
+        waitingForPactButtons = false;
         merchantManager?.ClearCurrentPact();
         dialogManager.ForceEndDialog();
     }
@@ -272,9 +283,14 @@ public class MerchantDialogHandler : MonoBehaviour
         if (optionsPanel != null)
         {
             optionsPanel.SetActive(true);
-            acceptButton.gameObject.SetActive(false);
-            converseButton.gameObject.SetActive(false);
-            backButton.gameObject.SetActive(true);
+            acceptButton?.gameObject.SetActive(false);
+
+            if (converseButton != null)
+            {
+                converseButton.gameObject.SetActive(false);
+            }
+
+            backButton?.gameObject.SetActive(true);
         }
     }
 
@@ -312,23 +328,23 @@ public class MerchantDialogHandler : MonoBehaviour
     {
         if (reputation >= 6)
         {
-            return 0.7f; 
+            return 0.7f;
         }
         else if (reputation >= 4)
         {
-            return 0.85f; 
+            return 0.85f;
         }
         else if (reputation >= 2)
         {
-            return 0.95f; 
+            return 0.95f;
         }
         else if (reputation <= -6)
         {
-            return 1.5f; 
+            return 1.5f;
         }
         else if (reputation <= -4)
         {
-            return 1.3f; 
+            return 1.3f;
         }
         else if (reputation <= -2)
         {
@@ -336,7 +352,7 @@ public class MerchantDialogHandler : MonoBehaviour
         }
         else
         {
-            return 1.0f; 
+            return 1.0f;
         }
     }
 
