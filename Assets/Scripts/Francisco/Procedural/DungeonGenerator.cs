@@ -1172,6 +1172,8 @@ public class DungeonGenerator : MonoBehaviour
 
     public IEnumerator TransitionToNextRoom(ConnectionPoint entrancePoint, Transform playerTransform)
     {
+        const float PlayerOffsetDistance = 0.75f;
+
         if (playerMovement == null)
         {
             playerMovement = FindAnyObjectByType<PlayerMovement>();
@@ -1249,8 +1251,6 @@ public class DungeonGenerator : MonoBehaviour
             }
         }
 
-        Vector3 entranceDirection = GetDirectionFromConnectionType(entrancePoint.connectionType);
-
         if (UIManager.Instance != null)
         {
             UIManager.Instance.ClearManipulationText();
@@ -1259,7 +1259,10 @@ public class DungeonGenerator : MonoBehaviour
         yield return FadeController.Instance.FadeOut(
             onStart: () =>
             {
-                Vector3 targetPosition = playerTransform.position + new Vector3(entranceDirection.x * playerMoveDistance, 0f, entranceDirection.z * playerMoveDistance);
+                Vector3 directionOutOfOldRoom = entrancePoint.transform.forward.normalized;
+                directionOutOfOldRoom.y = 0f;
+
+                Vector3 targetPosition = playerTransform.position + directionOutOfOldRoom * playerMoveDistance;
                 targetPosition.y = originalPlayerY;
                 StartCoroutine(MovePlayerWithController(playerTransform, targetPosition, playerMoveDuration));
             },
@@ -1267,7 +1270,13 @@ public class DungeonGenerator : MonoBehaviour
             {
                 if (exitPoint != null)
                 {
-                    Vector3 spawnPosition = new Vector3(exitPoint.transform.position.x, originalPlayerY, exitPoint.transform.position.z);
+                    Vector3 directionIntoNewRoom = exitPoint.transform.forward.normalized;
+                    directionIntoNewRoom.y = 0f;
+
+                    Vector3 spawnPositionBase = exitPoint.transform.position;
+                    Vector3 spawnPosition = spawnPositionBase + directionIntoNewRoom * PlayerOffsetDistance;
+                    spawnPosition.y = originalPlayerY;
+
                     if (playerMovement != null)
                     {
                         playerMovement.TeleportTo(spawnPosition);
@@ -1285,9 +1294,11 @@ public class DungeonGenerator : MonoBehaviour
             {
                 if (exitPoint != null)
                 {
-                    Vector3 exitDirection = GetDirectionFromConnectionType(exitPoint.connectionType);
-                    Vector3 oppositeDirection = -exitDirection;
-                    Vector3 targetPosition = playerTransform.position + new Vector3(oppositeDirection.x * playerMoveDistance, 0f, oppositeDirection.z * playerMoveDistance);
+                    Vector3 directionIntoNewRoom = exitPoint.transform.forward.normalized;
+                    directionIntoNewRoom.y = 0f;
+
+                    Vector3 targetPosition = playerTransform.position + directionIntoNewRoom * playerMoveDistance;
+
                     targetPosition.y = originalPlayerY;
                     StartCoroutine(MovePlayerWithController(playerTransform, targetPosition, playerMoveDuration));
                 }
