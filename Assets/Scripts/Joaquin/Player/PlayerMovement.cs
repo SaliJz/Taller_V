@@ -459,15 +459,14 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     {
         float savedGravity = gravity;
         float savedYVelocity = yVelocity;
+
         gravity = 0f;
         yVelocity = 0f;
 
-        if (controller != null)
-        {
-            prevStepOffset = controller.stepOffset;
-            controller.stepOffset = 0f;
-        }
+        float originalStepOffset = controller.stepOffset;
+        controller.stepOffset = Mathf.Max(originalStepOffset, 0.5f);
 
+        Vector3 startPosition = transform.position;
         float startY = transform.position.y;
 
         Vector3 startPosXZ = new Vector3(transform.position.x, 0f, transform.position.z);
@@ -637,9 +636,18 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         // Paso 4: no hay suelo en rango permitido, intenta dash hasta el borde seguro
         float safeLedgeDistance = GetMaxSafeDistance(direction, dashDistance);
 
+        float minEffectiveDashDistance = 0.5f;
+
         // Usa un pequeño umbral para evitar dashes de 0 distancia
         if (safeLedgeDistance > edgeSafetyMargin)
         {
+            if (safeLedgeDistance < minEffectiveDashDistance)
+            {
+                finalPosition = origin;
+                ReportDebug("En el borde. Dash ejecutado estacionario para prevenir caída.", 1);
+                return true;
+            }
+
             // Proyecta el punto seguro en el suelo para obtener la 'Y' correcta
             Vector3 safeTarget = origin + direction * safeLedgeDistance + Vector3.up * scanHeight;
             if (Physics.Raycast(safeTarget, Vector3.down, out RaycastHit ledgeGroundHit, playerHeight + scanHeight + 1f, groundLayerMask, QueryTriggerInteraction.Ignore))
@@ -823,6 +831,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         if (dir.sqrMagnitude < 0.0001f) return 0f;
         dir.Normalize();
 
+        Vector3 right = Vector3.Cross(Vector3.up, dir).normalized;
+        float checkRadius = controller.radius * 0.9f;
+
         int samples = Mathf.Clamp(Mathf.CeilToInt((maxDesiredDistance) / (controller.radius + edgeDetectionDistance)), 1, edgeSampleMax);
         float step = maxDesiredDistance / samples;
         Vector3 rayOriginBase = transform.position + Vector3.up * edgeRaycastHeight;
@@ -831,12 +842,22 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         for (int i = 1; i <= samples; i++)
         {
             float traveled = step * i;
-            // samplePos se mueve a lo largo de la trayectoria que el jugador recorrería
             Vector3 samplePos = rayOriginBase + dir * Mathf.Max(0f, traveled + controller.radius + edgeDetectionDistance);
 
-            if (!Physics.Raycast(samplePos, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore))
+            bool centerHit = Physics.Raycast(samplePos, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore);
+            bool leftHit = Physics.Raycast(samplePos - right * checkRadius, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore);
+            bool rightHit = Physics.Raycast(samplePos + right * checkRadius, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore);
+
+            if (!centerHit || !leftHit || !rightHit)
             {
                 float safeDistance = Mathf.Max(0f, (step * (i - 1)) - edgeSafetyMargin);
+
+#if UNITY_EDITOR
+                Debug.DrawLine(samplePos, samplePos + Vector3.down * rayDistance, Color.red, 1f);
+                if (!leftHit) Debug.DrawRay(samplePos - right * checkRadius, Vector3.down * rayDistance, Color.magenta, 1f);
+                if (!rightHit) Debug.DrawRay(samplePos + right * checkRadius, Vector3.down * rayDistance, Color.magenta, 1f);
+#endif
+
                 return safeDistance;
             }
         }

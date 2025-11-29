@@ -477,6 +477,9 @@ public class DrogathEnemy : MonoBehaviour
             // No vincularse a sí mismo
             if (rootObj == gameObject) continue;
 
+            // No vincularse con otros Drogath
+            if (rootObj.GetComponent<DrogathEnemy>() != null) continue;
+
             // No vincular si está en cooldown
             if (rebondCooldowns.ContainsKey(rootObj)) continue;
 
@@ -977,7 +980,10 @@ public class DrogathEnemy : MonoBehaviour
             GameObject rootObj = hit.transform.root.gameObject;
 
             // No aplicar a sí mismo
-            if (rootObj == gameObject) continue; // Verificar que el aliado no sea Drogath
+            if (rootObj == gameObject) continue; // Verificar que el aliado no sea el mismo
+
+            // Ignorar a otros Drogath para el efecto de muerte
+            if (rootObj.GetComponent<DrogathEnemy>() != null) continue;
 
             // Verificar que el aliado no esté muerto
             var allyHealth = rootObj.GetComponent<EnemyHealth>();
