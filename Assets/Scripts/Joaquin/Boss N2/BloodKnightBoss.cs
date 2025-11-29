@@ -302,7 +302,7 @@ public class BloodKnightBoss : MonoBehaviour
             if (distToPlayer <= apocalipsisRange)
             {
                 if (animator != null) animator.SetTrigger("Slash");
-                if (audioSource != null) audioSource.PlayOneShot(apocalipsisSlashSound);
+                if (audioSource != null) audioSource.PlayOneShot(apocalipsisSlashSound, 0.5f);
 
                 SpawnSlashVFX();
                 DealApocalipsisDamage();
