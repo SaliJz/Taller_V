@@ -61,8 +61,7 @@ public class MerchantInteractionTrigger : MonoBehaviour
 
         if (manager != null && dialogIsNotActive && pactInteractionPromptPrefab != null && currentInteractionPrompt == null)
         {
-            Vector3 promptPosition = transform.position + Vector3.up * 2f;
-            currentInteractionPrompt = Instantiate(pactInteractionPromptPrefab, promptPosition, Quaternion.identity, transform);
+            HUDManager.Instance.SetInteractionPrompt(true, "[E] HABLAR");
         }
     }
 

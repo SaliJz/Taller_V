@@ -1546,10 +1546,28 @@ public class DungeonGenerator : MonoBehaviour
 
     private IEnumerator MovePlayerWithController(Transform playerTransform, Vector3 targetPosition, float duration)
     {
-        PlayerEffectDistortion.Instance?.ClearAbyssalConfusion(); 
-        PlayerHealth.Instance?.BlockKillHeal(false);             
+        if (playerHealth != null && statsManager != null)
+        {
+            float healAmount = statsManager.GetStat(StatType.HealthPerRoomRegen);
+
+            if (healAmount > 0)
+            {
+                playerHealth.Heal(healAmount);
+                Debug.Log($"[DungeonGenerator] Jugador curado por {healAmount} HP al cambiar de cuarto.");
+            }
+        }
+
+        ShieldSkill shieldSkill = playerTransform.GetComponent<ShieldSkill>();
+        if (shieldSkill != null && shieldSkill.isSkillActive)
+        {
+            shieldSkill.DeactivateSkillPublic();
+            Debug.Log("[DungeonGenerator] Habilidad ShieldSkill desactivada automáticamente al cambiar de cuarto.");
+        }
+
+        PlayerEffectDistortion.Instance?.ClearAbyssalConfusion();
+        PlayerHealth.Instance?.BlockKillHeal(false);
         //VisibilityController.Instance?.SetVisibility(0f);     
-        ShopManager.Instance?.SetDistortionActive(DevilDistortionType.SealedLuck, false); 
+        ShopManager.Instance?.SetDistortionActive(DevilDistortionType.SealedLuck, false);
 
         Vector3 startPosition = playerTransform.position;
 
@@ -1585,16 +1603,6 @@ public class DungeonGenerator : MonoBehaviour
         if (playerMovement != null)
         {
             playerMovement.TeleportTo(finalPos);
-        }
-
-        if (playerHealth != null && statsManager != null)
-        {
-            float healAmount = statsManager.GetStat(StatType.HealthPerRoomRegen);
-
-            if (healAmount > 0)
-            {
-                playerHealth.Heal(healAmount);
-            }
         }
     }
 }
