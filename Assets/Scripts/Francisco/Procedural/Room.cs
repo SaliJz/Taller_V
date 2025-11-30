@@ -35,6 +35,7 @@ public class Room : MonoBehaviour
     public UnityEvent onFinsih;
     public RoomType currentRoomType { get; set; }
 
+    private ConnectionPoint cachedEntrancePoint;
     private EnemyManager enemyManager;
 
     private void Start()
@@ -75,6 +76,23 @@ public class Room : MonoBehaviour
                     }
                 }
             }
+        }
+    }
+
+    public void SetEntrancePoint(ConnectionPoint entrancePoint)
+    {
+        cachedEntrancePoint = entrancePoint;
+    }
+
+    public void UnlockExitDoorsManually()
+    {
+        if (cachedEntrancePoint != null)
+        {
+            UnlockExitDoors(cachedEntrancePoint);
+        }
+        else
+        {
+            Debug.LogWarning("No hay punto de entrada cacheado. Asegúrate de llamar SetEntrancePoint() primero.");
         }
     }
 

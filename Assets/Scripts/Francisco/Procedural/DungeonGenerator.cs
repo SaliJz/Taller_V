@@ -1400,7 +1400,8 @@ public class DungeonGenerator : MonoBehaviour
         OnRoomCompleted?.Invoke(clearedRoom.roomType, roomCompletionTime);
 
         clearedRoom.EventsOnFinsih();
-        clearedRoom.UnlockExitDoors(entrancePoint);
+
+        clearedRoom.SetEntrancePoint(entrancePoint);
 
         UpdateDoorPreviews(clearedRoom);
     }

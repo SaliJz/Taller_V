@@ -4,6 +4,7 @@ using System.Linq;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 [System.Serializable]
@@ -26,6 +27,9 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
     [SerializeField] private GameObject resultUIPanel;
     [SerializeField] private TextMeshProUGUI nameTMP;
     [SerializeField] private TextMeshProUGUI effectsTMP;
+
+    [Header("Purchase Cooldown")]
+    [SerializeField] private UnityEvent onFinish;
 
     [Header("SFX")]
     [SerializeField] private AudioSource audioSource;
@@ -185,6 +189,9 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         yield return animationCoroutine;
 
         GachaponResult result = gachaponSystem.PullGachapon();
+
+        onFinish?.Invoke(); 
+        Debug.Log("Evento activando");
 
         if (rarityColorsMap.ContainsKey(result.rarity))
         {

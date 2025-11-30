@@ -1816,7 +1816,7 @@ Transform:
   m_GameObject: {fileID: 3610922483589231518}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1, y: -1, z: 17.39}
+  m_LocalPosition: {x: -1, y: 0.9600005, z: 17.39}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2540,6 +2540,21 @@ MonoBehaviour:
   resultUIPanel: {fileID: 8869193423343477154}
   nameTMP: {fileID: 4530947697490459803}
   effectsTMP: {fileID: 3632982817849328350}
+  onFinish:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1406286082122936213}
+        m_TargetAssemblyTypeName: Room, Assembly-CSharp
+        m_MethodName: UnlockExitDoorsManually
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   audioSource: {fileID: 0}
   audioClip: {fileID: 8300000, guid: d99bb598d052c384f8ec378ee2ec9453, type: 3}
   allowMultiplePulls: 0
