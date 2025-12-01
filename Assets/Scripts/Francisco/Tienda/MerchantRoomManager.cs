@@ -36,6 +36,9 @@ public class MerchantRoomManager : MonoBehaviour
     private Pact currentPactOffer;
     private float currentPriceModifier = 1.0f;
 
+    // NUEVO: Lista de pactos ya ofrecidos en el nivel actual
+    private static List<Pact> pactsOfferedThisLevel = new List<Pact>();
+
     #endregion
 
     #region Unity & Input Methods
@@ -152,16 +155,38 @@ public class MerchantRoomManager : MonoBehaviour
 
     public Pact GenerateRandomPact()
     {
-        if (shopManager != null && shopManager.allPacts != null && shopManager.allPacts.Count > 0)
+        if (shopManager == null || shopManager.allPacts == null || shopManager.allPacts.Count == 0)
         {
-            int randomIndex = Random.Range(0, shopManager.allPacts.Count);
-            return shopManager.allPacts[randomIndex];
+            Debug.LogWarning("No hay pactos disponibles en el ShopManager.");
+            Pact defaultPact = ScriptableObject.CreateInstance<Pact>();
+            defaultPact.lifeRecoveryAmount = 20;
+            defaultPact.drawbacks = new List<StatModifier>();
+            return defaultPact;
         }
 
-        Pact defaultPact = ScriptableObject.CreateInstance<Pact>();
-        defaultPact.lifeRecoveryAmount = 20;
-        defaultPact.drawbacks = new List<StatModifier>();
-        return defaultPact;
+        List<Pact> availablePacts = new List<Pact>();
+        foreach (Pact pact in shopManager.allPacts)
+        {
+            if (!pactsOfferedThisLevel.Contains(pact))
+            {
+                availablePacts.Add(pact);
+            }
+        }
+
+        if (availablePacts.Count == 0)
+        {
+            Debug.LogWarning("Todos los pactos ya fueron ofrecidos. Reseteando lista de pactos ofrecidos.");
+            pactsOfferedThisLevel.Clear();
+            availablePacts.AddRange(shopManager.allPacts);
+        }
+
+        int randomIndex = Random.Range(0, availablePacts.Count);
+        Pact selectedPact = availablePacts[randomIndex];
+
+        pactsOfferedThisLevel.Add(selectedPact);
+        Debug.Log($"Pacto ofrecido: {selectedPact.pactName}. Pactos ofrecidos en este nivel: {pactsOfferedThisLevel.Count}");
+
+        return selectedPact;
     }
 
     public void SetCurrentPactOffer(Pact pact)
@@ -231,6 +256,16 @@ public class MerchantRoomManager : MonoBehaviour
     public float GetPriceModifier()
     {
         return currentPriceModifier;
+    }
+
+    #endregion
+
+    #region Level Reset 
+
+    public static void ResetPactsForNewLevel()
+    {
+        pactsOfferedThisLevel.Clear();
+        Debug.Log("Lista de pactos ofrecidos reseteada para nuevo nivel.");
     }
 
     #endregion
