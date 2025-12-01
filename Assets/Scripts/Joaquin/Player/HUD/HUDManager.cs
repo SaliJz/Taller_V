@@ -211,16 +211,19 @@ public class HUDManager : MonoBehaviour
         ReportDebug("Efectos de vida baja activados.", 1);
     }
 
-    public void SetInteractionPrompt(bool active, string actionText = "")
+    public void SetInteractionPrompt(bool active, string actionName, string actionText)
     {
-        if (interactionPromptPanel != null)
-        {
-            interactionPromptPanel.SetActive(active);
-        }
+        if (interactionPromptPanel == null) return;
 
-        if (interactionPromptText != null && active)
+        interactionPromptPanel.SetActive(active);
+
+        if (active)
         {
-            interactionPromptText.text = actionText;
+            string buttonPrompt = InputIconManager.Instance != null
+                ? InputIconManager.Instance.GetPromptForAction(actionName)
+                : "[E]"; 
+
+            interactionPromptText.text = $"{buttonPrompt} {actionText}";
         }
     }
 

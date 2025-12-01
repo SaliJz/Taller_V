@@ -789,6 +789,6 @@ public class ShopManager : MonoBehaviour
 
     public void SetInteractionPromptActive(bool active)
     {
-        HUDManager.Instance?.SetInteractionPrompt(active, "[E] COMPRAR");
+        HUDManager.Instance.SetInteractionPrompt(active, "Interact", "COMPRAR");
     }
 }

@@ -27,8 +27,19 @@ public class GamepadPointer : MonoBehaviour
     private GameObject lastSelectedObject = null;
     private SettingsPanel settingsPanel;
 
+    public static GamepadPointer Instance { get; private set; }
+
     private void Awake()
     {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+
         if (virtualCursor != null)
         {
             Canvas canvas = virtualCursor.GetComponentInParent<Canvas>();

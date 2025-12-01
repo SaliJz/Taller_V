@@ -41,6 +41,18 @@ public class TutorialHUDAnimator : MonoBehaviour
         if (instructionText != null) currentInstructionText = instructionText.text;
     }
 
+    private void Update()
+    {
+        if (gameObject.activeSelf && !string.IsNullOrEmpty(currentInstructionText) && InputIconManager.Instance != null)
+        {
+            string updatedText = ProcessTextWithInputIcons(currentInstructionText);
+            if (instructionText != null && instructionText.text != updatedText)
+            {
+                instructionText.text = updatedText;
+            }
+        }
+    }
+
     #endregion
 
     #region PUBLIC_METHODS
@@ -84,10 +96,46 @@ public class TutorialHUDAnimator : MonoBehaviour
         currentInstructionText = newText;
         if (instructionText != null)
         {
-            instructionText.text = newText;
+            instructionText.text = ProcessTextWithInputIcons(newText);
         }
 
         return true;
+    }
+
+    #endregion
+
+    #region TEXT_PROCESSING
+
+    private string ProcessTextWithInputIcons(string text)
+    {
+        if (InputIconManager.Instance == null) return text;
+
+        string processedText = text;
+        int startIndex = 0;
+
+        while (startIndex < processedText.Length)
+        {
+            int exclamationIndex = processedText.IndexOf('!', startIndex);
+            if (exclamationIndex == -1) break;
+
+            int spaceIndex = processedText.IndexOf(' ', exclamationIndex);
+            int endIndex = spaceIndex == -1 ? processedText.Length : spaceIndex;
+
+            string actionName = processedText.Substring(exclamationIndex + 1, endIndex - exclamationIndex - 1);
+
+            if (!string.IsNullOrEmpty(actionName))
+            {
+                string iconSprite = InputIconManager.Instance.GetPromptForAction(actionName);
+                processedText = processedText.Substring(0, exclamationIndex) + iconSprite + processedText.Substring(endIndex);
+                startIndex = exclamationIndex + iconSprite.Length;
+            }
+            else
+            {
+                startIndex = exclamationIndex + 1;
+            }
+        }
+
+        return processedText;
     }
 
     #endregion

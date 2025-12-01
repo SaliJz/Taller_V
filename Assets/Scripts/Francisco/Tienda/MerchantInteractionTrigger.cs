@@ -61,12 +61,14 @@ public class MerchantInteractionTrigger : MonoBehaviour
 
         if (manager != null && dialogIsNotActive && pactInteractionPromptPrefab != null && currentInteractionPrompt == null)
         {
-            HUDManager.Instance.SetInteractionPrompt(true, "[E] HABLAR");
+            HUDManager.Instance.SetInteractionPrompt(true, "Interact", "HABLAR");
         }
     }
 
     public void HidePactPrompt()
     {
+        HUDManager.Instance.SetInteractionPrompt(false, "Interact", "HABLAR");
+
         if (currentInteractionPrompt != null)
         {
             Destroy(currentInteractionPrompt);

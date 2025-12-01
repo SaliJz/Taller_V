@@ -152,11 +152,11 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             playerIsNear = true;
             if (!isActivated && HUDManager.Instance != null)
             {
-                HUDManager.Instance.SetInteractionPrompt(true, "[E] TIRAR");
+                HUDManager.Instance.SetInteractionPrompt(true, "Interact", "TIRAR");
             }
             else
             {
-                HUDManager.Instance.SetInteractionPrompt(false, "[E] TIRAR");
+                HUDManager.Instance.SetInteractionPrompt(false, "Interact", "TIRAR");
             }
         }
     }
@@ -169,7 +169,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
             if (HUDManager.Instance != null)
             {
-                HUDManager.Instance.SetInteractionPrompt(false, "[E] TIRAR");
+                HUDManager.Instance.SetInteractionPrompt(false, "Interact", "TIRAR");
             }
         }
     }
@@ -182,7 +182,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
         if (HUDManager.Instance != null)
         {
-            HUDManager.Instance.SetInteractionPrompt(false, "[E] TIRAR");
+            HUDManager.Instance.SetInteractionPrompt(false, "Interact", "TIRAR");
         }
 
         Coroutine animationCoroutine = StartCoroutine(AnimateGachaponLight(animationDuration));
@@ -227,7 +227,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             isAnimating = false;
             if (playerIsNear && HUDManager.Instance != null)
             {
-                HUDManager.Instance.SetInteractionPrompt(false, "[E] TIRAR");
+                HUDManager.Instance.SetInteractionPrompt(false, "Interact", "TIRAR");
             }
         }
         else
@@ -392,7 +392,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
         if (playerIsNear && HUDManager.Instance != null)
         {
-            HUDManager.Instance.SetInteractionPrompt(true, "[E] TIRAR");
+            HUDManager.Instance.SetInteractionPrompt(true, "Interact", "TIRAR");
         }
     }
 
