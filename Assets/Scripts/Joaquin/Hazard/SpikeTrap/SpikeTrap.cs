@@ -1,6 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Collections;
+using UnityEngine.AI;
 
 /// <summary> 
 /// Trampa de pinchos que avisa, ataca y entra en enfriamiento antes de rearmarse.
@@ -10,6 +11,10 @@ public class SpikeTrap : MonoBehaviour
     private enum TrapState { Armed, Priming, Active, Cooldown }
     [SerializeField, Tooltip("Estado actual de la trampa (solo lectura en inspector).")]
     private TrapState currentState = TrapState.Armed;
+
+    [Header("Configuración de Detección")]
+    [SerializeField, Tooltip("Define qué capas activan la trampa (Ej: Player, Enemy).")]
+    private LayerMask targetLayers;
 
     [Header("Parámetros")]
     [SerializeField] private float damage = 20f;
@@ -45,9 +50,10 @@ public class SpikeTrap : MonoBehaviour
     [SerializeField] private AudioClip armedSound;
 
     [Header("Debug HUD")]
-    [SerializeField] private bool showDebugHUD = true;
+    [SerializeField] private bool canDebug = false;
 
-    private readonly List<PlayerHealth> playerInRange = new List<PlayerHealth>();
+    private readonly List<GameObject> targetsInRange = new List<GameObject>();
+    private Dictionary<int, float> originalOffsets = new Dictionary<int, float>();
 
     private Coroutine trapRoutine;
     private Coroutine plateMoveRoutine;
@@ -57,33 +63,45 @@ public class SpikeTrap : MonoBehaviour
         StopPlateRoutineIfAny();
         StopPrimingVFX();
         StopActivateVFX();
+        RestoreAllAgentsOffsets();
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!other.CompareTag("Player")) return;
-
-        PlayerHealth player = other.GetComponent<PlayerHealth>();
-        if (player != null && !playerInRange.Contains(player))
+        if (IsInLayerMask(other.gameObject, targetLayers))
         {
-            playerInRange.Add(player);
-        }
+            if (!targetsInRange.Contains(other.gameObject))
+            {
+                targetsInRange.Add(other.gameObject);
+                NavMeshAgent agent = other.GetComponent<NavMeshAgent>();
+                if (agent != null && !originalOffsets.ContainsKey(other.gameObject.GetInstanceID()))
+                {
+                    originalOffsets.Add(other.gameObject.GetInstanceID(), agent.baseOffset);
+                }
+            }
 
-        if (currentState == TrapState.Armed)
-        {
-            if (trapRoutine == null) trapRoutine = StartCoroutine(ActivateTrapSequence());
+            if (currentState == TrapState.Armed)
+            {
+                if (trapRoutine == null) trapRoutine = StartCoroutine(ActivateTrapSequence());
+            }
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (!other.CompareTag("Player")) return;
-
-        PlayerHealth player = other.GetComponent<PlayerHealth>();
-        if (player != null)
+        if (IsInLayerMask(other.gameObject, targetLayers))
         {
-            playerInRange.Remove(player);
+            if (targetsInRange.Contains(other.gameObject))
+            {
+                RestoreAgentOffset(other.gameObject);
+                targetsInRange.Remove(other.gameObject);
+            }
         }
+    }
+
+    private bool IsInLayerMask(GameObject obj, LayerMask mask)
+    {
+        return (mask.value & (1 << obj.layer)) != 0;
     }
 
     private IEnumerator ActivateTrapSequence()
@@ -105,16 +123,17 @@ public class SpikeTrap : MonoBehaviour
         PlaySound(activateSound);
         PlayActivateVFX();
 
-        for (int i = playerInRange.Count - 1; i >= 0; i--)
+        for (int i = targetsInRange.Count - 1; i >= 0; i--)
         {
-            PlayerHealth player = playerInRange[i];
-            if (player != null && player.isActiveAndEnabled)
+            GameObject target = targetsInRange[i];
+
+            if (target != null && target.activeInHierarchy)
             {
-                player.TakeDamage(damage);
+                ApplyDamage(target);
             }
             else
             {
-                playerInRange.RemoveAt(i); // Limpieza segura
+                targetsInRange.RemoveAt(i);
             }
         }
 
@@ -135,16 +154,40 @@ public class SpikeTrap : MonoBehaviour
         StopPrimingVFX();
         StopActivateVFX();
 
-        if (playerInRange.Count > 0)
+        targetsInRange.RemoveAll(x => x == null || !x.activeInHierarchy);
+
+        if (targetsInRange.Count > 0)
         {
             trapRoutine = StartCoroutine(ActivateTrapSequence());
+        }
+    }
+
+    private void ApplyDamage(GameObject target)
+    {
+        PlayerHealth pHealth = target.GetComponent<PlayerHealth>();
+        if (pHealth != null)
+        {
+            pHealth.TakeDamage(damage);
+            return;
+        }
+
+        EnemyHealth eHealth = target.GetComponent<EnemyHealth>();
+        if (eHealth != null)
+        {
+            eHealth.TakeDamage(damage);
+            return;
+        }
+
+        IDamageable damageable = target.GetComponent<IDamageable>();
+        if (damageable != null)
+        {
+            damageable.TakeDamage(damage);
         }
     }
 
     private void SetState(TrapState newState)
     {
         currentState = newState;
-        Debug.Log($"[SpikeTrap] Estado -> {currentState}", this);
     }
 
     private void PlaySound(AudioClip clip)
@@ -168,7 +211,7 @@ public class SpikeTrap : MonoBehaviour
         StopPlateRoutineIfAny();
         if (plateTransform != null)
         {
-            plateMoveRoutine = StartCoroutine(MovePlateLocalY(plateTransform, plateRaisedLocalY, platePressedLocalY, plateMoveDuration));
+            plateMoveRoutine = StartCoroutine(MovePlateLocalY(plateRaisedLocalY, platePressedLocalY, plateMoveDuration));
         }
     }
 
@@ -178,7 +221,7 @@ public class SpikeTrap : MonoBehaviour
         if (plateTransform != null)
         {
             float raiseDuration = Mathf.Max(0.08f, plateMoveDuration * 0.45f);
-            plateMoveRoutine = StartCoroutine(MovePlateLocalY(plateTransform, platePressedLocalY, plateRaisedLocalY, raiseDuration));
+            plateMoveRoutine = StartCoroutine(MovePlateLocalY(platePressedLocalY, plateRaisedLocalY, raiseDuration));
         }
     }
 
@@ -191,28 +234,74 @@ public class SpikeTrap : MonoBehaviour
         }
     }
 
-    private IEnumerator MovePlateLocalY(Transform t, float fromY, float toY, float duration)
+    private IEnumerator MovePlateLocalY(float fromY, float toY, float duration)
     {
-        if (t == null)
-            yield break;
-
-        Vector3 start = t.localPosition;
+        Vector3 startPos = plateTransform.localPosition;
         float startTime = Time.realtimeSinceStartup;
-        float endTime = startTime + Mathf.Max(0.0001f, duration);
 
-        while (Time.realtimeSinceStartup < endTime)
+        float totalDropDistance = plateRaisedLocalY - platePressedLocalY;
+
+        while (Time.realtimeSinceStartup < startTime + duration)
         {
             float elapsed = Time.realtimeSinceStartup - startTime;
-            float tNorm = Mathf.Clamp01(elapsed / duration);
-            // optional easing
-            float eased = Mathf.SmoothStep(0f, 1f, tNorm);
-            float y = Mathf.Lerp(fromY, toY, eased);
-            t.localPosition = new Vector3(start.x, y, start.z);
+            float t = Mathf.Clamp01(elapsed / duration);
+            float eased = Mathf.SmoothStep(0f, 1f, t);
+
+            float currentY = Mathf.Lerp(fromY, toY, eased);
+            plateTransform.localPosition = new Vector3(startPos.x, currentY, startPos.z);
+
+            UpdateAgentsVerticalOffset(currentY);
+
             yield return null;
         }
 
-        t.localPosition = new Vector3(start.x, toY, start.z);
+        plateTransform.localPosition = new Vector3(startPos.x, toY, startPos.z);
+        UpdateAgentsVerticalOffset(toY);
+
         plateMoveRoutine = null;
+    }
+
+    private void UpdateAgentsVerticalOffset(float currentPlateY)
+    {
+        float offsetModifier = currentPlateY - plateRaisedLocalY;
+
+        for (int i = 0; i < targetsInRange.Count; i++)
+        {
+            GameObject target = targetsInRange[i];
+            if (target == null) continue;
+
+            NavMeshAgent agent = target.GetComponent<NavMeshAgent>();
+            if (agent != null)
+            {
+                int id = target.GetInstanceID();
+                float baseOffset = originalOffsets.ContainsKey(id) ? originalOffsets[id] : 0f;
+
+                agent.baseOffset = baseOffset + offsetModifier;
+            }
+        }
+    }
+
+    private void RestoreAgentOffset(GameObject target)
+    {
+        if (target == null) return;
+        NavMeshAgent agent = target.GetComponent<NavMeshAgent>();
+        if (agent != null)
+        {
+            int id = target.GetInstanceID();
+            if (originalOffsets.ContainsKey(id))
+            {
+                agent.baseOffset = originalOffsets[id];
+            }
+        }
+    }
+
+    private void RestoreAllAgentsOffsets()
+    {
+        foreach (var target in targetsInRange)
+        {
+            RestoreAgentOffset(target);
+        }
+        originalOffsets.Clear();
     }
 
     private void StartPrimingVFX()
@@ -265,7 +354,7 @@ public class SpikeTrap : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!showDebugHUD) return;
+        if (!canDebug) return;
 
         GUIStyle boxStyle = new GUIStyle(GUI.skin.box)
         {
@@ -283,7 +372,7 @@ public class SpikeTrap : MonoBehaviour
         });
         GUILayout.Space(5);
         GUILayout.Label($"Estado: {currentState}");
-        GUILayout.Label($"Jugador en rango: {playerInRange.Count}");
+        GUILayout.Label($"Jugador en rango: {targetsInRange.Count}");
         GUILayout.Label($"Rutina activa: {(trapRoutine != null ? "Sí" : "No")}");
         GUILayout.EndArea();
     }

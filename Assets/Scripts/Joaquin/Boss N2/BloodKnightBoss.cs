@@ -187,12 +187,25 @@ public class BloodKnightBoss : MonoBehaviour
         maxHealth = newMax;
     }
 
-    private void HandleEnemyDeath(GameObject g)
+    private void HandleEnemyDeath(GameObject enemy)
     {
+        if (enemy != gameObject) return;
+
+        if (AsyncMusicController.Instance != null)
+        {
+            AsyncMusicController.Instance.PlayMusic(MusicState.Calm);
+        }
+
+        isInLowHealthPhase = false;
+        speedBuffApplied = false;
+        forceApocalipsisNext = false;
+        
         StopAllCoroutines();
         DestroyAllInstantiatedEffects();
+
         if (agent != null) agent.enabled = false;
         if (animator != null) animator.SetTrigger("Die");
+
         this.enabled = false;
     }
 

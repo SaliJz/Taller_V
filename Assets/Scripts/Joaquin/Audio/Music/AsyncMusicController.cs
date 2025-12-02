@@ -1,68 +1,136 @@
-using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using static Unity.VisualScripting.Member;
+
+public enum MusicState
+{
+    Calm,
+    Battle,
+    Shop,
+    Boss
+}
 
 public class AsyncMusicController : MonoBehaviour
 {
+    public static AsyncMusicController Instance { get; private set; }
+
     [Header("Fuentes de Audio")]
     public AudioSource calmSource;
     public AudioSource battleSource;
+    public AudioSource shopSource;
+    public AudioSource bossSource;
 
     [Header("Configuración")]
-    [Range(0.1f, 3f)]
-    public float fadeDuration = 1.5f;
+    [Range(0.1f, 5f)]
+    public float fadeDuration = 2.0f;
 
+    private MusicState currentState = MusicState.Calm;
     private Coroutine currentTransition;
-    private bool isInBattle = false;
+    private Dictionary<MusicState, AudioSource> audioSources;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            Instance = this;
+        }
+
+        audioSources = new Dictionary<MusicState, AudioSource>
+        {
+            { MusicState.Calm, calmSource },
+            { MusicState.Battle, battleSource },
+            { MusicState.Shop, shopSource },
+            { MusicState.Boss, bossSource }
+        };
+    }
 
     private void Start()
     {
-        calmSource.loop = true;
-        battleSource.loop = true;
+        foreach (var source in audioSources.Values)
+        {
+            if (source != null)
+            {
+                source.loop = true;
+                source.playOnAwake = false;
+                source.volume = 0f;
+                source.Stop();
+            }
+        }
 
-        calmSource.volume = 1f;
-        battleSource.volume = 0f;
-
-        calmSource.Play();
+        if (calmSource != null)
+        {
+            calmSource.volume = 1f;
+            calmSource.Play();
+        }
     }
 
-    public void SetBattleState(bool battleState)
+    public void PlayMusic(MusicState newState)
     {
-        if (calmSource == null || battleSource == null) return;
+        if (currentState == newState) return;
 
-        if (isInBattle == battleState) return;
-
-        isInBattle = battleState;
+        currentState = newState;
 
         if (currentTransition != null) StopCoroutine(currentTransition);
-        currentTransition = StartCoroutine(CrossfadeMusic(battleState));
+        currentTransition = StartCoroutine(CrossfadeMusic(newState));
     }
 
-    private IEnumerator CrossfadeMusic(bool toBattle)
+    private IEnumerator CrossfadeMusic(MusicState targetState)
     {
         float timer = 0f;
 
-        AudioSource sourceIn = toBattle ? battleSource : calmSource;
-        AudioSource sourceOut = toBattle ? calmSource : battleSource;
+        AudioSource targetSource = audioSources.ContainsKey(targetState) ? audioSources[targetState] : null;
 
-        if (!sourceIn.isPlaying) sourceIn.Play();
+        if (targetSource != null)
+        {
+            targetSource.volume = 0f;
+            targetSource.time = 0f;
+            targetSource.Play();
+        }
 
-        float startVolIn = sourceIn.volume;
-        float startVolOut = sourceOut.volume;
+        Dictionary<AudioSource, float> startVolumes = new Dictionary<AudioSource, float>();
+
+        foreach (var kvp in audioSources)
+        {
+            if (kvp.Value != null && kvp.Key != targetState && kvp.Value.isPlaying)
+            {
+                startVolumes[kvp.Value] = kvp.Value.volume;
+            }
+        }
 
         while (timer < fadeDuration)
         {
             timer += Time.deltaTime;
             float t = timer / fadeDuration;
 
-            sourceIn.volume = Mathf.Lerp(startVolIn, 1f, t);
-            sourceOut.volume = Mathf.Lerp(startVolOut, 0f, t);
+            if (targetSource != null)
+            {
+                targetSource.volume = Mathf.Lerp(0f, 1f, t);
+            }
+
+            foreach (var kvp in startVolumes)
+            {
+                AudioSource sourceOut = kvp.Key;
+                float startVol = kvp.Value;
+                sourceOut.volume = Mathf.Lerp(startVol, 0f, t);
+            }
 
             yield return null;
         }
 
-        sourceIn.volume = 1f;
-        sourceOut.volume = 0f;
+        if (targetSource != null) targetSource.volume = 1f;
 
-        sourceOut.Stop();
+        foreach (var kvp in audioSources)
+        {
+            if (kvp.Key != targetState && kvp.Value != null)
+            {
+                kvp.Value.volume = 0f;
+                kvp.Value.Stop();
+            }
+        }
     }
 }

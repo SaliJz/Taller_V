@@ -279,6 +279,11 @@ public class DungeonGenerator : MonoBehaviour
         playerMovement = FindAnyObjectByType<PlayerMovement>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
         statsManager = FindAnyObjectByType<PlayerStatsManager>();
+
+        if (AsyncMusicController.Instance != null)
+        {
+            AsyncMusicController.Instance.PlayMusic(MusicState.Calm);
+        }
     }
 
     void Update()
@@ -1325,12 +1330,39 @@ public class DungeonGenerator : MonoBehaviour
                     }
                 }
 
+                if (AsyncMusicController.Instance != null)
+                {
+                    if (newRoom.isEndRoom)
+                    {
+                        AsyncMusicController.Instance.PlayMusic(MusicState.Boss);
+                    }
+                    else
+                    {
+                        switch (newRoom.roomType)
+                        {
+                            case RoomType.Combat:
+                                AsyncMusicController.Instance.PlayMusic(MusicState.Calm);
+                                break;
+                            case RoomType.Shop:
+                                AsyncMusicController.Instance.PlayMusic(MusicState.Shop);
+                                break;
+                            default:
+                                AsyncMusicController.Instance.PlayMusic(MusicState.Calm);
+                                break;
+                        }
+                    }
+                }
+
                 if (newRoom != null && (newRoom.roomType == RoomType.Combat))
                 {
                     var enemyManager = newRoom.GetComponent<EnemyManager>();
                     if (enemyManager != null)
                     {
                         StartCoroutine(enemyManager.StartCombatEncounter(exitPoint));
+                        if (AsyncMusicController.Instance != null)
+                        {
+                            AsyncMusicController.Instance.PlayMusic(MusicState.Battle);
+                        }
                     }
                 }
                 else if (newRoom != null && (newRoom.roomType == RoomType.Shop))
@@ -1398,6 +1430,11 @@ public class DungeonGenerator : MonoBehaviour
         }
 
         OnRoomCompleted?.Invoke(clearedRoom.roomType, roomCompletionTime);
+
+        if (AsyncMusicController.Instance != null)
+        {
+            AsyncMusicController.Instance.PlayMusic(MusicState.Calm);
+        }
 
         clearedRoom.EventsOnFinsih();
 

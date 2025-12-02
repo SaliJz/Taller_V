@@ -21,18 +21,18 @@ public class AnimationEventHandler : MonoBehaviour
 
     private void HandleAttackState(bool state)
     {
-        if (!state)
-        {
-            if (playerMeleeAttack != null)
-            {
-                if (!playerMeleeAttack.IsAttacking)
-                {
-                    //playerMeleeAttack.DesactiveAttack1Slash();
-                    //playerMeleeAttack.DesactiveAttack2Slash();
-                    //playerMeleeAttack.DesactiveAttack3Slash();
-                }
-            }
-        }
+        //if (!state)
+        //{
+        //    if (playerMeleeAttack != null)
+        //    {
+        //        if (!playerMeleeAttack.IsAttacking)
+        //        {
+        //            //playerMeleeAttack.DesactiveAttack1Slash();
+        //            //playerMeleeAttack.DesactiveAttack2Slash();
+        //            //playerMeleeAttack.DesactiveAttack3Slash();
+        //        }
+        //    }
+        //}
     }
 
     public void CallActiveAttack1Slash()

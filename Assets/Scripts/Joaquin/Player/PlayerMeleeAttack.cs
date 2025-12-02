@@ -39,12 +39,10 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private float[] comboStunDurations = new float[3] { 0.5f, 0.5f, 1f }; // Duración de aturdimiento por ataque
 
     [Header("Attack 1 (Basic)")]
-    [SerializeField] private GameObject attack1Slash;
     [SerializeField] private ParticleSystem vfxAttack1Slash;
     [SerializeField] private float attack1Duration = 0.4f;
 
     [Header("Attack 2 (Area/Spin)")]
-    [SerializeField] private GameObject attack2Slash;
     [SerializeField] private ParticleSystem vfxAttack2Slash;
     [SerializeField] private float attack2MovementDuration = 0.6f;
     [SerializeField] private float attack2SpinDuration = 0.4f;
@@ -52,7 +50,6 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private float attack2TargetSpinAngle = 360f;
 
     [Header("Attack 3 (Heavy/Charge)")]
-    [SerializeField] private GameObject attack3Slash;
     [SerializeField] private ParticleSystem vfxAttack3Slash;
     [SerializeField] private float attack3PreChargeDuration = 0.3f;
     [SerializeField] private float attack3ChargeDuration = 0.3f;
@@ -486,11 +483,6 @@ public class PlayerMeleeAttack : MonoBehaviour
                 accumulated += new Vector3(frameDesired.x, 0f, frameDesired.z).magnitude;
             }
 
-            if (playerAudioController != null)
-            {
-                playerAudioController.PlayMeleeSound("BasicSlash");
-            }
-
             PerformHitDetectionWithTracking();
 
             yield return null;
@@ -509,8 +501,11 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     public void ActiveAttack1Slash()
     {
-        //attack1Slash.gameObject.SetActive(true);
         if (vfxAttack1Slash != null) vfxAttack1Slash.Play();
+        if (playerAudioController != null)
+        {
+            playerAudioController.PlayMeleeSound("BasicSlash");
+        }
     }
 
     public void DesactiveAttack1Slash()
@@ -628,11 +623,6 @@ public class PlayerMeleeAttack : MonoBehaviour
                     transform.Rotate(0f, sign * angleThisFrame, 0f, Space.Self);
                     rotated += angleThisFrame;
 
-                    if (playerAudioController != null)
-                    {
-                        playerAudioController.PlayMeleeSound("SpinSlash");
-                    }
-
                     PerformHitDetectionWithTracking();
 
                     yield return null;
@@ -672,13 +662,15 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     public void ActiveAttack2Slash()
     {
-        //attack2Slash.gameObject.SetActive(true);
         if (vfxAttack2Slash != null) vfxAttack2Slash.Play();
+        if (playerAudioController != null)
+        {
+            playerAudioController.PlayMeleeSound("SpinSlash");
+        }
     }
 
     public void DesactiveAttack2Slash()
     {
-        //attack2Slash.gameObject.SetActive(false);
     }
 
     private IEnumerator ExecuteAttack3()
@@ -758,11 +750,6 @@ public class PlayerMeleeAttack : MonoBehaviour
                 accumulated += new Vector3(frameDesired.x, 0f, frameDesired.z).magnitude;
             }
 
-            if (playerAudioController != null)
-            {
-                playerAudioController.PlayMeleeSound("HeavySlash");
-            }
-
             PerformHitDetectionWithTracking();
             yield return null;
         }
@@ -779,8 +766,11 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     public void ActiveAttack3Slash()
     {
-        //attack3Slash.gameObject.SetActive(true);
         if (vfxAttack3Slash != null) vfxAttack3Slash.Play();
+        if (playerAudioController != null)
+        {
+            playerAudioController.PlayMeleeSound("HeavySlash");
+        }
     }
 
     public void DesactiveAttack3Slash()

@@ -122,6 +122,7 @@ GameObject:
   - component: {fileID: 7596156833582638647}
   - component: {fileID: 8932858874147569545}
   - component: {fileID: 7518061379298635550}
+  - component: {fileID: 6094507158039485030}
   m_Layer: 0
   m_Name: Hazard1_SpikeTrap
   m_TagString: Untagged
@@ -139,7 +140,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -0.875, z: -6.52}
-  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_LocalScale: {x: 3, y: 3, z: 3}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8984958324345466077}
@@ -203,6 +204,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentState: 0
+  targetLayers:
+    serializedVersion: 2
+    m_Bits: 384
   damage: 20
   primingDuration: 0.7
   activeDuration: 1.5
@@ -219,7 +223,24 @@ MonoBehaviour:
   activateSound: {fileID: 8300000, guid: aa7606ba02e89234fbc54e2eea21622e, type: 3}
   desactivateSound: {fileID: 8300000, guid: 406f8e6fd9fb3f24fbbffd37f2731d9b, type: 3}
   armedSound: {fileID: 8300000, guid: 0823c55d8490e1147a95329f692ca657, type: 3}
-  showDebugHUD: 0
+  canDebug: 0
+--- !u!114 &6094507158039485030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2584239038316864124}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35e95dc5ff2b64380880dd7ac5922847, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SerializedVersion: 0
+  m_Size: {x: 2, y: 1, z: 2}
+  m_Center: {x: 0, y: 0.5, z: 0}
+  m_Area: 0
+  m_AffectedAgents: ffffffff
 --- !u!1 &3396936427248362109
 GameObject:
   m_ObjectHideFlags: 0
@@ -5377,8 +5398,8 @@ Transform:
   m_GameObject: {fileID: 4323511382327634959}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.75, y: 0.1, z: 0.75}
+  m_LocalPosition: {x: 0, y: 0.075, z: 0}
+  m_LocalScale: {x: 0.75, y: 0.05, z: 0.75}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8984958324345466077}
@@ -5453,7 +5474,7 @@ MeshCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
@@ -6146,7 +6167,7 @@ MeshCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30

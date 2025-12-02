@@ -3,6 +3,7 @@ using System.Collections;
 
 public class CombatZoneDetector : MonoBehaviour
 {
+    /*
     [Header("Configuración de Detección")]
     [Tooltip("Radio alrededor del jugador para considerar que esta en combate")]
     public float detectionRadius = 15f;
@@ -59,4 +60,5 @@ public class CombatZoneDetector : MonoBehaviour
         Vector3 center = detectionCenter != null ? detectionCenter.position : transform.position;
         Gizmos.DrawWireSphere(center, detectionRadius);
     }
+    */
 }
