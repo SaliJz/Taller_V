@@ -44,7 +44,7 @@ public class RoomProgressionRule
     [Range(0f, 100f)]
     public float probability = 0;
 
-    [Header("--- Content Rule ---")]
+    [Header("Content Rule")]
     public CombatContents combatContent;
 
     public RoomType GetRoomType()
@@ -213,6 +213,7 @@ public class DungeonGenerator : MonoBehaviour
     private Dictionary<RoomType, RoomType[]> generationRuleDictionary = new Dictionary<RoomType, RoomType[]>();
     private Dictionary<RoomType, RoomProgressionRule> progressionRuleDictionary = new Dictionary<RoomType, RoomProgressionRule>();
     private List<RoomProgressionRule> usedOnceRules = new List<RoomProgressionRule>();
+    private Queue<Room> recentlyGeneratedPrefabs = new Queue<Room>();
 
     public static event Action<RoomType> OnRoomEntered;
     public static event Action<RoomType, float> OnRoomCompleted;
@@ -222,6 +223,7 @@ public class DungeonGenerator : MonoBehaviour
     private RoomProgressionRule probableMandatoryToPlace;
     private bool hasProbableMandatoryBeenGenerated = false;
     private float currentProbableMandatoryProbability;
+    private const int RECENT_HISTORY_SIZE = 3;
 
     private float roomStartTime = 0f; 
     public int CurrentRoomCount { get; private set; } = 0;
@@ -446,6 +448,8 @@ public class DungeonGenerator : MonoBehaviour
         bool roomPlaced = false;
         RoomType previousRoomType = entrancePoint.GetComponentInParent<Room>().roomType;
 
+        HashSet<Room> failedPrefabs = new HashSet<Room>();
+
         while (attempts < maxRoomAttempts && !roomPlaced)
         {
             if (entrancePoint.isConnected)
@@ -453,7 +457,7 @@ public class DungeonGenerator : MonoBehaviour
                 return;
             }
 
-            RoomSelectionResult selectionResult = GetRandomRoomData(previousRoomType, roomsGenerated + 1);
+            RoomSelectionResult selectionResult = GetRandomRoomData(previousRoomType, roomsGenerated + 1, failedPrefabs);
 
             if (selectionResult == null || selectionResult.RoomData == null)
             {
@@ -467,12 +471,17 @@ public class DungeonGenerator : MonoBehaviour
             {
                 UpdateRoomWeights(selectionResult.RoomData);
             }
+            else
+            {
+                failedPrefabs.Add(selectionResult.RoomData.prefab);
+            }
+
             attempts++;
         }
 
         if (!roomPlaced)
         {
-            Debug.LogWarning($"No se pudo colocar ninguna sala después de {maxRoomAttempts} intentos en la sala {roomsGenerated + 1}");
+            Debug.LogWarning($"No se pudo colocar ninguna sala después de {maxRoomAttempts} intentos en la sala {roomsGenerated + 1}. Prefabs fallidos: {failedPrefabs.Count}");
         }
     }
 
@@ -522,6 +531,12 @@ public class DungeonGenerator : MonoBehaviour
 
                 generatedRooms.Add(newRoom);
                 roomsGenerated++;
+
+                recentlyGeneratedPrefabs.Enqueue(newRoomPrefab);
+                if (recentlyGeneratedPrefabs.Count > RECENT_HISTORY_SIZE)
+                {
+                    recentlyGeneratedPrefabs.Dequeue();
+                }
 
                 if (newRoom.roomType == RoomType.Combat)
                 {
@@ -629,7 +644,7 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
-    RoomSelectionResult GetRandomRoomData(RoomType previousRoomType, int currentRoomNumber)
+    RoomSelectionResult GetRandomRoomData(RoomType previousRoomType, int currentRoomNumber, HashSet<Room> excludedPrefabs = null)
     {
         RoomProgressionRule[] currentRules = progressionRules ?? System.Array.Empty<RoomProgressionRule>();
 
@@ -655,7 +670,7 @@ public class DungeonGenerator : MonoBehaviour
                 if (mandatoryRule.HasCustomPrefabs())
                 {
                     Room customPrefab = mandatoryRule.GetRandomCustomPrefab();
-                    if (customPrefab != null)
+                    if (customPrefab != null && (excludedPrefabs == null || !excludedPrefabs.Contains(customPrefab)))
                     {
                         return new RoomSelectionResult
                         {
@@ -667,14 +682,32 @@ public class DungeonGenerator : MonoBehaviour
 
                 if (roomDataDictionary.ContainsKey(mandatoryType))
                 {
-                    var mandatoryRoomPrefabs = roomDataDictionary[mandatoryType];
+                    var mandatoryRoomPrefabs = roomDataDictionary[mandatoryType]
+                        .Where(rd => excludedPrefabs == null || !excludedPrefabs.Contains(rd.prefab))
+                        .ToList();
+
                     if (mandatoryRoomPrefabs != null && mandatoryRoomPrefabs.Count > 0)
                     {
-                        return new RoomSelectionResult
+                        var preferredPrefabs = mandatoryRoomPrefabs
+                            .Where(rd => !recentlyGeneratedPrefabs.Contains(rd.prefab))
+                            .ToList();
+
+                        if (preferredPrefabs.Count > 0)
                         {
-                            RoomData = mandatoryRoomPrefabs[UnityEngine.Random.Range(0, mandatoryRoomPrefabs.Count)],
-                            ProgressionRule = mandatoryRule
-                        };
+                            return new RoomSelectionResult
+                            {
+                                RoomData = preferredPrefabs[UnityEngine.Random.Range(0, preferredPrefabs.Count)],
+                                ProgressionRule = mandatoryRule
+                            };
+                        }
+                        else
+                        {
+                            return new RoomSelectionResult
+                            {
+                                RoomData = mandatoryRoomPrefabs[UnityEngine.Random.Range(0, mandatoryRoomPrefabs.Count)],
+                                ProgressionRule = mandatoryRule
+                            };
+                        }
                     }
                 }
             }
@@ -701,7 +734,7 @@ public class DungeonGenerator : MonoBehaviour
                 if (rule.HasCustomPrefabs())
                 {
                     Room customPrefab = rule.GetRandomCustomPrefab();
-                    if (customPrefab != null)
+                    if (customPrefab != null && (excludedPrefabs == null || !excludedPrefabs.Contains(customPrefab)))
                     {
                         return new RoomSelectionResult
                         {
@@ -711,14 +744,32 @@ public class DungeonGenerator : MonoBehaviour
                     }
                 }
 
-                var probableRoomPrefabs = roomDataDictionary[probableType];
+                var probableRoomPrefabs = roomDataDictionary[probableType]
+                    .Where(rd => excludedPrefabs == null || !excludedPrefabs.Contains(rd.prefab))
+                    .ToList();
+
                 if (probableRoomPrefabs != null && probableRoomPrefabs.Count > 0)
                 {
-                    return new RoomSelectionResult
+                    var preferredPrefabs = probableRoomPrefabs
+                        .Where(rd => !recentlyGeneratedPrefabs.Contains(rd.prefab))
+                        .ToList();
+
+                    if (preferredPrefabs.Count > 0)
                     {
-                        RoomData = probableRoomPrefabs[UnityEngine.Random.Range(0, probableRoomPrefabs.Count)],
-                        ProgressionRule = rule
-                    };
+                        return new RoomSelectionResult
+                        {
+                            RoomData = preferredPrefabs[UnityEngine.Random.Range(0, preferredPrefabs.Count)],
+                            ProgressionRule = rule
+                        };
+                    }
+                    else
+                    {
+                        return new RoomSelectionResult
+                        {
+                            RoomData = probableRoomPrefabs[UnityEngine.Random.Range(0, probableRoomPrefabs.Count)],
+                            ProgressionRule = rule
+                        };
+                    }
                 }
             }
         }
@@ -769,8 +820,29 @@ public class DungeonGenerator : MonoBehaviour
                 return null;
             }
 
-            var fallbackRoomDataList = roomDataDictionary[fallbackType];
-            RoomData fallbackRoomData = fallbackRoomDataList[UnityEngine.Random.Range(0, fallbackRoomDataList.Count)];
+            var fallbackRoomDataList = roomDataDictionary[fallbackType]
+                .Where(rd => excludedPrefabs == null || !excludedPrefabs.Contains(rd.prefab))
+                .ToList();
+
+            if (fallbackRoomDataList.Count == 0)
+            {
+                Debug.LogWarning($"Todos los prefabs del tipo '{fallbackType}' han sido excluidos.");
+                return null;
+            }
+
+            var preferredFallback = fallbackRoomDataList
+                .Where(rd => !recentlyGeneratedPrefabs.Contains(rd.prefab))
+                .ToList();
+
+            RoomData fallbackRoomData;
+            if (preferredFallback.Count > 0)
+            {
+                fallbackRoomData = preferredFallback[UnityEngine.Random.Range(0, preferredFallback.Count)];
+            }
+            else
+            {
+                fallbackRoomData = fallbackRoomDataList[UnityEngine.Random.Range(0, fallbackRoomDataList.Count)];
+            }
 
             var matchingRule = applicableRules.FirstOrDefault(r => r.GetRoomType() == fallbackType);
 
@@ -801,13 +873,35 @@ public class DungeonGenerator : MonoBehaviour
             return null;
         }
 
-        var roomDataList = roomDataDictionary[selectedType];
-        float totalWeight = roomDataList.Sum(data => data.weight);
+        var roomDataList = roomDataDictionary[selectedType]
+            .Where(rd => excludedPrefabs == null || !excludedPrefabs.Contains(rd.prefab))
+            .ToList();
+
+        if (roomDataList.Count == 0)
+        {
+            Debug.LogWarning($"Todos los prefabs del tipo '{selectedType}' han sido excluidos por intentos fallidos.");
+            return null;
+        }
+
+        var preferredRoomData = roomDataList
+            .Where(rd => !recentlyGeneratedPrefabs.Contains(rd.prefab))
+            .ToList();
+
+        var finalSelectionPool = preferredRoomData.Count > 0 ? preferredRoomData : roomDataList;
+
+        float totalWeight = finalSelectionPool.Sum(data => data.weight);
 
         if (totalWeight <= 0)
         {
             ResetRoomWeights(selectedType);
-            totalWeight = roomDataList.Sum(data => data.weight);
+            finalSelectionPool = preferredRoomData.Count > 0 ?
+                roomDataDictionary[selectedType]
+                    .Where(rd => excludedPrefabs == null || !excludedPrefabs.Contains(rd.prefab))
+                    .Where(rd => !recentlyGeneratedPrefabs.Contains(rd.prefab))
+                    .ToList()
+                : roomDataList;
+
+            totalWeight = finalSelectionPool.Sum(data => data.weight);
             if (totalWeight <= 0) return null;
         }
 
@@ -815,7 +909,7 @@ public class DungeonGenerator : MonoBehaviour
         float currentWeightSum = 0f;
         RoomData finalRoomData = null;
 
-        foreach (var data in roomDataList)
+        foreach (var data in finalSelectionPool)
         {
             currentWeightSum += data.weight;
             if (randomWeightValue <= currentWeightSum)
