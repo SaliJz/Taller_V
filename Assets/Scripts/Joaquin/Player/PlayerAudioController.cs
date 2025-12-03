@@ -70,6 +70,7 @@ public class PlayerAudioController : MonoBehaviour
     [Range(0f, 0.5f)][SerializeField] private float rangePitchVariance = 0.1f;
 
     [Header("Block SFX Configuration")]
+    [SerializeField] private AudioClip activeBlockClip;
     [SerializeField] private AudioClip blockHitClip;
     [SerializeField] private AudioClip blockBreakClip;
     [Range(0f, 1f)][SerializeField] private float blockVolume = 0.8f;
@@ -194,6 +195,11 @@ public class PlayerAudioController : MonoBehaviour
     public void PlayBerserkerLowWarningAbility()
     {
         PlayOneShotInternal(lowHealthWarningSound, abilityVolume, abilityPitch, useabilityPitchVariance, abilityPitchVariance);
+    }
+
+    public void PlayActiveBlockSound()
+    {
+        PlayOneShotInternal(activeBlockClip, blockVolume, blockPitch, useblockPitchVariance, blockPitchVariance);
     }
 
     public void PlayBlockHitSound()

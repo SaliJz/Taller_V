@@ -83,9 +83,10 @@ public class KronusEnemy : MonoBehaviour
 
     [Header("SFX Combate")]
     [SerializeField] private AudioClip dashSFX;
-    [SerializeField] private AudioClip hammerSmashSFX;
+    [SerializeField] private AudioClip[] hammerSmashSFX;
+    [SerializeField] private AudioClip hammerImpactSFX;
+    [SerializeField] private AudioClip damageReceivedSFX;
     [SerializeField] private AudioClip deathSFX;
-    [SerializeField] private AudioClip hammerHitSFX;
 
     [Header("Debug")]
     [SerializeField] private bool showGizmo = false;
@@ -218,7 +219,11 @@ public class KronusEnemy : MonoBehaviour
     public void AlertEnemy()
     {
         if (enemyHealth != null) return;
-        if (isAlertedByHit || hasDetectedPlayer) return;
+
+        if (audioSource != null && damageReceivedSFX != null)
+        {
+            audioSource.PlayOneShot(damageReceivedSFX);
+        }
 
         isAlertedByHit = true;
         hasDetectedPlayer = true;
@@ -290,6 +295,11 @@ public class KronusEnemy : MonoBehaviour
             return;
         }
 
+        if (agent.velocity.sqrMagnitude < 0.1f && !isAttacking && !hasDetectedPlayer)
+        {
+            HandleIdleSound();
+        }
+
         if (playerTransform == null)
         {
             if (agent != null) agent.isStopped = true;
@@ -349,11 +359,6 @@ public class KronusEnemy : MonoBehaviour
                 ReportDebug("Alerta por golpe finalizada, volviendo a patrullar.", 1);
             }
             PatrolUpdate();
-        }
-
-        if (agent.velocity.sqrMagnitude < 0.1f && !isAttacking && !hasDetectedPlayer)
-        {
-            HandleIdleSound();
         }
     }
 
@@ -803,7 +808,19 @@ public class KronusEnemy : MonoBehaviour
 
         if (groundIndicator != null) groundIndicator.SetActive(false);
 
-        if (audioSource != null && hammerSmashSFX != null) audioSource.PlayOneShot(hammerSmashSFX);
+        if (audioSource != null && hammerSmashSFX != null && hammerSmashSFX.Length > 0)
+        {
+            int soundIndex = isLevelTwo ? 1 : 0;
+
+            if (soundIndex < hammerSmashSFX.Length && hammerSmashSFX[soundIndex] != null)
+            {
+                audioSource.PlayOneShot(hammerSmashSFX[soundIndex]);
+            }
+            else if (hammerSmashSFX[0] != null)
+            {
+                audioSource.PlayOneShot(hammerSmashSFX[0]);
+            }
+        }
 
         PerformHammerSmash();
 
@@ -853,7 +870,7 @@ public class KronusEnemy : MonoBehaviour
                 // Calcular daño con sistema de críticos
                 //float damageToApply = CriticalHitSystem.CalculateDamage(damage, transform, hitTransform, out isCritical);
 
-                if (audioSource != null && hammerHitSFX != null) audioSource.PlayOneShot(hammerHitSFX);
+                if (audioSource != null && hammerImpactSFX != null) audioSource.PlayOneShot(hammerImpactSFX);
 
                 ExecuteAttack(hit.gameObject, damage);
 

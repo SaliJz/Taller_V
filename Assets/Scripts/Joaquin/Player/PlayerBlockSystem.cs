@@ -17,6 +17,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
     [Header("References")]
     [SerializeField] private Animator playerAnimator;
+    [SerializeField] private PlayerAudioController playerAudioController;
 
     [Header("Core Configuration")]
     [SerializeField] private Transform shieldForwardOverride = null;
@@ -105,12 +106,6 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     [SerializeField] private GameObject blockBreakVFX;
     [SerializeField] private ParticleSystem blockParticles;
 
-    [Header("Audio")]
-    [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip blockSound;
-    [SerializeField] private AudioClip blockBreakSound;
-    [SerializeField] private AudioClip blockHitSound;
-
     [Header("Debug")]
     [SerializeField] private bool debugMode = false;
 
@@ -167,12 +162,13 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         playerControls.Defense.SetCallbacks(this);
         playerControls.Movement.SetCallbacks(null);
 
-        playerMovement = GetComponent<PlayerMovement>();
-        playerHealth = GetComponent<PlayerHealth>();
-        playerShieldController = GetComponent<PlayerShieldController>();
-        combatActionManager = GetComponent<PlayerCombatActionManager>();
-        audioSource = GetComponent<AudioSource>();
-        mainCamera = Camera.main;
+        if (playerMovement == null) playerMovement = GetComponent<PlayerMovement>();
+        if (playerHealth == null) playerHealth = GetComponent<PlayerHealth>();
+        if (playerShieldController == null) playerShieldController = GetComponent<PlayerShieldController>();
+        if (combatActionManager == null) combatActionManager = GetComponent<PlayerCombatActionManager>();
+        if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
+
+        if (mainCamera == null) mainCamera = Camera.main;
 
         currentDurability = maxDurability;
 
@@ -335,7 +331,11 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
         if (blockVFX != null) blockVFX.SetActive(true);
         if (blockParticles != null) blockParticles.Play();
-        if (audioSource != null && blockSound != null) audioSource.PlayOneShot(blockSound);
+
+        if (playerAudioController != null)
+        {
+            playerAudioController.PlayActiveBlockSound();
+        }
 
         //if (playerHealth != null && playerHealth.CurrentLifeStage == PlayerHealth.LifeStage.Elder)
         //{
@@ -419,14 +419,14 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
         StopBlocking();
 
-        // Visual/Audio feedback
         if (blockBreakVFX != null)
         {
             Instantiate(blockBreakVFX, transform.position + Vector3.up, Quaternion.identity);
         }
-        if (audioSource != null && blockBreakSound != null)
+
+        if (playerAudioController != null)
         {
-            audioSource.PlayOneShot(blockBreakSound);
+            playerAudioController.PlayBlockBreakSound();
         }
 
         OnBlockBreak?.Invoke();
@@ -604,9 +604,9 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         currentDurability -= incomingDamage;
         OnDurabilityChanged?.Invoke(GetDurabilityPercentage());
 
-        if (audioSource != null && blockHitSound != null)
+        if (playerAudioController != null)
         {
-            audioSource.PlayOneShot(blockHitSound);
+            playerAudioController.PlayBlockHitSound();
         }
 
         ReportDebug($"Ataque bloqueado: {incomingDamage} daño absorbido. Durabilidad: {currentDurability}/{maxDurability}", 1);

@@ -2069,7 +2069,7 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -2557,6 +2557,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5759912060094487347}
   - component: {fileID: 9154410484112978022}
+  - component: {fileID: 1174011676078653410}
   - component: {fileID: 2482053427736851215}
   - component: {fileID: 7432687871030736452}
   - component: {fileID: 1164265302146321946}
@@ -2610,6 +2611,33 @@ CapsuleCollider:
   m_Height: 6.5
   m_Direction: 1
   m_Center: {x: 0, y: 3.25, z: 0}
+--- !u!54 &1174011676078653410
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5831055655091660515}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!195 &2482053427736851215
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -2649,13 +2677,14 @@ MonoBehaviour:
   _maxHealth: 500
   _currentHealth: 0
   _stoppingDistance: 7
-  _backstepTriggerDistance: 5
-  _backstepDistance: 5
-  _backstepCooldown: 8
-  _enableStompDamage: 0
+  _safeDistance: 2.5
+  _stompTriggerDistance: 5
+  _knockbackDistance: 5
+  _stompCooldown: 8
+  _enableStompDamage: 1
   _stompDamage: 15
   _stompRadius: 4
-  _backstepDuration: 0.5
+  _stompTelegraphTime: 0.6
   _stompVFXPrefab: {fileID: 0}
   _whipVisualTransform: {fileID: 1926294932068586014}
   _whipAnimationKeyframes:
@@ -2719,36 +2748,38 @@ MonoBehaviour:
   _roomMaxRadius: 40
   _calculateRoomRadiusOnStart: 1
   _movementSpeedForPulse: 10
-  _showRoomGizmos: 1
   _speedBuffPerPulse: 0.2
+  _stompWarningPrefab: {fileID: 6660308544926178198, guid: 4819f89c015191d42947f71035b9aaf3, type: 3}
   _whipTelegraphPrefab: {fileID: 4634992738900687444}
   _smashTelegraphPrefab: {fileID: 858073966183631630, guid: 50f8bfdafefbba447b7bfe665ac766b0, type: 3}
-  _telegraphDuration: 0.8
+  _smashWarningPrefab: {fileID: 6660308544926178198, guid: 4819f89c015191d42947f71035b9aaf3, type: 3}
+  _telegraphDuration: 1
+  _trailRenderer: {fileID: 307335321892017951}
+  _dodgeIndicatorPrefab: {fileID: 0}
+  _dodgeIndicatorDuration: 1.5
   _enableAdaptiveDifficulty: 1
   _difficultyAdjustmentInterval: 15
   _comboCheckInterval: 8
   _comboChance: 0.3
-  _dodgeIndicatorPrefab: {fileID: 0}
-  _dodgeIndicatorDuration: 1.5
   _enragedHealthThreshold: 0.25
   _eyeRenderers: []
   _enragedEyeMaterial: {fileID: 0}
-  _trailRenderer: {fileID: 307335321892017951}
   audioSource: {fileID: 3118501603687521992}
   presenceSFX: {fileID: 0}
   walkSFX: {fileID: 8300000, guid: 81b9d34885110f841813cab4e9266319, type: 3}
   whipAttackSFX: {fileID: 8300000, guid: 3181383ebc5e3324eb4cc6db480478e8, type: 3}
   smashAttackSFX: {fileID: 8300000, guid: 45e1026c1e0b96340b9709a1d16a4c8b, type: 3}
-  pulseAttackSFX: {fileID: 0}
+  pulseAttackSFX: {fileID: 8300000, guid: 2d6a0d7573d9b9441b9db22872bf3c33, type: 3}
   pulseRocksSFX: {fileID: 0}
-  stompSFX: {fileID: 0}
+  stompSFX: {fileID: 8300000, guid: 7e5a0c98145fd754aabe9b1ac080913f, type: 3}
   phase2RageSFX: {fileID: 8300000, guid: 1c0fcb447be34924bb9ccaf793538534, type: 3}
-  damageReceivedSFX: {fileID: 0}
+  damageReceivedSFX: {fileID: 8300000, guid: 80bf0d6b3174f0a48bc50493c46b3a1e, type: 3}
   deathSFX: {fileID: 8300000, guid: b0eae421c32d7f14c950570951756fed, type: 3}
   _vcam: {fileID: 0}
   _shakeDuration: 0.2
   _amplitude: 2
   _frequency: 2
+  _showRoomGizmos: 1
 --- !u!114 &1164265302146321946
 MonoBehaviour:
   m_ObjectHideFlags: 0

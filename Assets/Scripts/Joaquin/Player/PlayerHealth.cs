@@ -652,6 +652,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             ReportDebug($"El jugador ha sido curado {healAmount} de vida normal.", 1);
         }
 
+        if (healAmount > 0 && playerAudioController != null)
+        {
+            playerAudioController.PlayLifeAbsorbSound();
+        }
+
         SyncCurrentHealthToSO();
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
 

@@ -1099,6 +1099,7 @@ GameObject:
   - component: {fileID: 1609772722142963277}
   - component: {fileID: 6064837889649723898}
   - component: {fileID: 3378235398129270573}
+  - component: {fileID: -5623358964304904341}
   m_Layer: 7
   m_Name: Enemy1_Nivel 2_Kronus_SuperArmor
   m_TagString: Enemy
@@ -1254,9 +1255,13 @@ MonoBehaviour:
   idleSFX: {fileID: 8300000, guid: 50d175d98332f5a45b5de08c45cc1c52, type: 3}
   movementSFX: {fileID: 0}
   dashSFX: {fileID: 8300000, guid: e0bb04f2504e09a41814942127e10c64, type: 3}
-  hammerSmashSFX: {fileID: 8300000, guid: 63d20b4ab0c899341b8255e5b30a76c6, type: 3}
+  hammerSmashSFX:
+  - {fileID: 8300000, guid: 63d20b4ab0c899341b8255e5b30a76c6, type: 3}
+  - {fileID: 8300000, guid: 44a358a9d1e737f4dbcdebb2028a035b, type: 3}
+  - {fileID: 0}
+  hammerImpactSFX: {fileID: 0}
+  damageReceivedSFX: {fileID: 0}
   deathSFX: {fileID: 8300000, guid: 44c52c9c30162ba4690b5aae5d729e31, type: 3}
-  hammerHitSFX: {fileID: 0}
   showGizmo: 1
   gizmoDuration: 0.2
   stepRate: 0.5
@@ -1383,6 +1388,33 @@ MonoBehaviour:
   collisionLayers:
     serializedVersion: 2
     m_Bits: 131712
+--- !u!54 &-5623358964304904341
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7589106622236376681}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &7866821104695215484
 GameObject:
   m_ObjectHideFlags: 0

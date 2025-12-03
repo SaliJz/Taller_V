@@ -61,14 +61,15 @@ public class BloodKnightBoss : MonoBehaviour
 
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip sodomaChargeSound;
-    [SerializeField] private AudioClip sodomaAttackSound;
-    [SerializeField] private AudioClip apocalipsisSlashSound;
-    [SerializeField] private AudioClip necioPecadorSummonSound;
-    [SerializeField] private AudioClip necioPecadorExplosionSound;
-    [SerializeField] private AudioClip chargeAbilitySound;
-    [SerializeField] private AudioClip stunSound;
-    [SerializeField] private AudioClip deathSound;
+    [SerializeField] private AudioClip damageReceivedSFX;
+    [SerializeField] private AudioClip sodomaChargeSFX;
+    [SerializeField] private AudioClip sodomaAttackSFX;
+    [SerializeField] private AudioClip apocalipsisSlashSFX;
+    [SerializeField] private AudioClip necioPecadorSummonSFX;
+    [SerializeField] private AudioClip necioPecadorExplosionSFX;
+    [SerializeField] private AudioClip chargeAbilitySFX;
+    [SerializeField] private AudioClip stunSFX;
+    [SerializeField] private AudioClip deathSFX;
 
     [Header("Debug Options")]
     [SerializeField] private bool showDebugGUI = false;
@@ -185,6 +186,11 @@ public class BloodKnightBoss : MonoBehaviour
     {
         currentHealth = newCurrent;
         maxHealth = newMax;
+
+        if (audioSource != null && damageReceivedSFX != null)
+        {
+            audioSource.PlayOneShot(damageReceivedSFX, 0.75f);
+        }
     }
 
     private void HandleEnemyDeath(GameObject enemy)
@@ -315,7 +321,7 @@ public class BloodKnightBoss : MonoBehaviour
             if (distToPlayer <= apocalipsisRange)
             {
                 if (animator != null) animator.SetTrigger("Slash");
-                if (audioSource != null) audioSource.PlayOneShot(apocalipsisSlashSound, 0.5f);
+                if (audioSource != null) audioSource.PlayOneShot(apocalipsisSlashSFX, 0.5f);
 
                 SpawnSlashVFX();
                 DealApocalipsisDamage();
@@ -406,13 +412,13 @@ public class BloodKnightBoss : MonoBehaviour
         yield return MoveToPositionFast(backwardPos, 0.4f);
 
         StartArmorGlow();
-        if (audioSource != null) audioSource.PlayOneShot(sodomaChargeSound);
+        if (audioSource != null) audioSource.PlayOneShot(sodomaChargeSFX);
 
         yield return new WaitForSeconds(sodomaChargeTime);
         StopArmorGlow();
 
         if (animator != null) animator.SetTrigger("DashSlash");
-        if (audioSource != null) audioSource.PlayOneShot(sodomaAttackSound);
+        if (audioSource != null) audioSource.PlayOneShot(sodomaAttackSFX);
 
         Vector3 dirToPlayer = (player.position - transform.position).normalized;
         float stopDistance = 1.2f;
@@ -476,7 +482,7 @@ public class BloodKnightBoss : MonoBehaviour
             }
 
             if (animator != null) animator.SetTrigger("SummonHand");
-            if (audioSource != null) audioSource.PlayOneShot(necioPecadorSummonSound);
+            if (audioSource != null) audioSource.PlayOneShot(necioPecadorSummonSFX);
 
             Vector3 rawTargetPos = player.position;
             if (playerController != null)
@@ -539,7 +545,7 @@ public class BloodKnightBoss : MonoBehaviour
         }
 
         if (animator != null) animator.SetTrigger("ChargeRun");
-        if (audioSource != null) audioSource.PlayOneShot(chargeAbilitySound);
+        if (audioSource != null) audioSource.PlayOneShot(chargeAbilitySFX);
 
         GameObject chargeTrail = null;
         if (darkWindTrailPrefab != null)
@@ -727,7 +733,7 @@ public class BloodKnightBoss : MonoBehaviour
         SoulHand sh = hand.GetComponent<SoulHand>();
         if (sh != null) sh.Initialize(necioPecadorDamage, necioPecadorRadius);
 
-        if (audioSource != null) audioSource.PlayOneShot(necioPecadorExplosionSound);
+        if (audioSource != null) audioSource.PlayOneShot(necioPecadorExplosionSFX);
     }
 
     private void SpawnSlashVFX()

@@ -8755,6 +8755,7 @@ MonoBehaviour:
   playerMovement: {fileID: 595312439969399503}
   playerHealth: {fileID: 6110564483166717353}
   playerAudioController: {fileID: 0}
+  shieldSkill: {fileID: 0}
   playerAnimator: {fileID: 2511880707407823879}
   shieldDamage: 10
   shieldSpeed: 25
@@ -8812,16 +8813,13 @@ MonoBehaviour:
   - 0.5
   - 0.5
   - 1
-  attack1Slash: {fileID: 0}
   vfxAttack1Slash: {fileID: 6349167004580530148}
   attack1Duration: 0.2
-  attack2Slash: {fileID: 0}
   vfxAttack2Slash: {fileID: 2209199659472879356}
   attack2MovementDuration: 0.15
   attack2SpinDuration: 0.2
   attack2SpinSpeed: 1350
   attack2TargetSpinAngle: 360
-  attack3Slash: {fileID: 0}
   vfxAttack3Slash: {fileID: 1113758422943871922}
   attack3PreChargeDuration: 0.2
   attack3ChargeDuration: 0.1
@@ -8949,6 +8947,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerAnimator: {fileID: 2511880707407823879}
+  playerAudioController: {fileID: 0}
   shieldForwardOverride: {fileID: 0}
   blockingEnabled: 1
   frontBlockAngle: 170
@@ -9008,11 +9007,7 @@ MonoBehaviour:
   blockVFX: {fileID: 0}
   blockBreakVFX: {fileID: 0}
   blockParticles: {fileID: 0}
-  audioSource: {fileID: 0}
-  blockSound: {fileID: 0}
-  blockBreakSound: {fileID: 0}
-  blockHitSound: {fileID: 0}
-  debugMode: 1
+  debugMode: 0
 --- !u!114 &2888951513960009550
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9036,10 +9031,10 @@ MonoBehaviour:
   deathPitch: 1
   useDeathPitchVariance: 0
   deathPitchVariance: 0.05
-  footstepGenericClip: {fileID: 0}
-  footstepNivel1Clip: {fileID: 0}
-  footstepNivel2Clip: {fileID: 0}
-  footstepNivel3Clip: {fileID: 0}
+  footstepGenericClip: {fileID: 8300000, guid: 13cb6a00edceeea4ba0d007c828c0493, type: 3}
+  footstepNivel1Clip: {fileID: 8300000, guid: 1ad2e245ed323644d9c0b2b4e5601f6f, type: 3}
+  footstepNivel2Clip: {fileID: 8300000, guid: 3e4c7355c3eeda746b91389374c5a1de, type: 3}
+  footstepNivel3Clip: {fileID: 8300000, guid: 13cb6a00edceeea4ba0d007c828c0493, type: 3}
   stepVolume: 0.8
   stepPitch: 1
   useStepPitchVariance: 1
@@ -9061,15 +9056,25 @@ MonoBehaviour:
   hitPitch: 1
   useHitPitchVariance: 1
   hitPitchVariance: 0.1
-  throwShieldClip: {fileID: 0}
+  throwShieldClip: {fileID: 8300000, guid: 2e34b37b093776048a3c56b059f81b9c, type: 3}
   catchShieldClip: {fileID: 8300000, guid: 484b79f16957ecc468573e310b2b4d6f, type: 3}
+  throwShieldBerserkerClip: {fileID: 8300000, guid: bf7d4c25a6edc7046a52b47c96a72a87, type: 3}
+  catchShieldBerserkerClip: {fileID: 8300000, guid: 20d91630e985ad14cb2584dc36b9f5ea, type: 3}
   rangeVolume: 0.75
   rangePitch: 1
   useRangePitchVariance: 1
   rangePitchVariance: 0.1
+  activeBlockClip: {fileID: 0}
+  blockHitClip: {fileID: 8300000, guid: 0bc2af1940611bf44a48eaa5d40fccca, type: 3}
+  blockBreakClip: {fileID: 8300000, guid: 39ba32a43ae429240b41c1b6248a782b, type: 3}
+  blockVolume: 0.8
+  blockPitch: 1
+  useblockPitchVariance: 1
+  blockPitchVariance: 0.1
   activeAbilityClip: {fileID: 8300000, guid: f06f6d052b96a93489793bfb0a4b641c, type: 3}
   desactiveAbilityClip: {fileID: 8300000, guid: 5803f3e0b283efd4eb1fd6bc80e26779, type: 3}
   lowHealthWarningSound: {fileID: 0}
+  lifeAbsorbClip: {fileID: 8300000, guid: 0f30ab94e014ecd409be6823a9fab0ad, type: 3}
   abilityVolume: 0.85
   abilityPitch: 1
   useabilityPitchVariance: 1

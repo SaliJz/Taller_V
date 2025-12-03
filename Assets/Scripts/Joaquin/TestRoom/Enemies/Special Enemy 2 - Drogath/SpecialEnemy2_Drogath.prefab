@@ -490,7 +490,7 @@ GameObject:
   - component: {fileID: 1306600556410572327}
   - component: {fileID: 2929068945267919541}
   - component: {fileID: 5205274884294294011}
-  - component: {fileID: 2097651963835011736}
+  - component: {fileID: 394815230552174114}
   m_Layer: 7
   m_Name: SpecialEnemy2_Drogath
   m_TagString: Enemy
@@ -628,17 +628,18 @@ MonoBehaviour:
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
-  bondLineRendererPrefab: {fileID: 0}
+  bondLineRendererPrefab: {fileID: 721327109630699402, guid: b8b90b7a5d0fbe840a08bdfae27807d3, type: 3}
   bondLineColor: {r: 0, g: 1, b: 1, a: 1}
   bondLineWidth: 0.1
-  audioSource: {fileID: 0}
+  audioSource: {fileID: 6437146230919340726}
   idleSFX: {fileID: 0}
-  runSFX: {fileID: 0}
-  attackSFX: {fileID: 0}
+  runSFX: {fileID: 8300000, guid: 7e27503bd7db8524eb0e3a24698e241b, type: 3}
+  attackSFX: {fileID: 8300000, guid: 8a53138149e6e884aa70513502c0bac5, type: 3}
   blockSFX: {fileID: 0}
-  deathSFX: {fileID: 0}
-  bondActivateSFX: {fileID: 0}
-  bondRegenSFX: {fileID: 0}
+  deathSFX: {fileID: 8300000, guid: 6c142bb02cfeab74dbfdca3bfc3ae64c, type: 3}
+  bondActivateSFX: {fileID: 8300000, guid: 196c75cca7d4d9645af62fef7e28c7aa, type: 3}
+  bondRegenSFX: {fileID: 8300000, guid: 814347c750e0bfd4094a2f5956077ff8, type: 3}
+  bondBreakSFX: {fileID: 8300000, guid: 7dc55ad6b762b8a4abfcb0e06e797706, type: 3}
   canDebug: 0
 --- !u!114 &1306600556410572327
 MonoBehaviour:
@@ -746,23 +747,33 @@ MonoBehaviour:
   audioSource: {fileID: 0}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
---- !u!114 &2097651963835011736
-MonoBehaviour:
+--- !u!54 &394815230552174114
+Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3248756346906325430}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 73d4e83809fd58b4293186b0b01eaaf9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  navMeshSampleDistance: 2
-  raycastStepDistance: 0.25
-  collisionLayers:
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 131712
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &3280151716456255676
 GameObject:
   m_ObjectHideFlags: 0

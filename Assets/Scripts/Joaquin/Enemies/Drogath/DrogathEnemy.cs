@@ -94,6 +94,7 @@ public class DrogathEnemy : MonoBehaviour
     [SerializeField] private AudioClip bondActivateSFX;
     [Tooltip("Suena rítmicamente mientras regenera armadura a aliados.")]
     [SerializeField] private AudioClip bondRegenSFX;
+    [SerializeField] private AudioClip bondBreakSFX;
 
     [Header("Debugging")]
     [SerializeField] private bool canDebug = false;
@@ -134,6 +135,7 @@ public class DrogathEnemy : MonoBehaviour
         if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
         if (enemyToughness == null) enemyToughness = GetComponent<EnemyToughness>();
         if (navAgent == null) navAgent = GetComponent<NavMeshAgent>();
+        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
 
         if (enemyHealth == null)
         {
@@ -256,7 +258,7 @@ public class DrogathEnemy : MonoBehaviour
                 if (audioSource != null && runSFX != null)
                 {
                     audioSource.pitch = Random.Range(0.9f, 1.05f);
-                    audioSource.PlayOneShot(runSFX);
+                    audioSource.PlayOneShot(runSFX, 0.25f);
                     audioSource.pitch = 1f;
                 }
                 stepTimer = 0f;
@@ -539,7 +541,7 @@ public class DrogathEnemy : MonoBehaviour
 
         if (audioSource != null && bondActivateSFX != null)
         {
-            audioSource.PlayOneShot(bondActivateSFX);
+            audioSource.PlayOneShot(bondActivateSFX, 0.75f);
         }
 
         ReportDebug($"Vínculo creado con {ally.name}. Vínculos activos: {activeBonds.Count}/{maxBonds}", 1);
@@ -565,6 +567,11 @@ public class DrogathEnemy : MonoBehaviour
         }
 
         activeBonds.RemoveAt(index);
+
+        if (audioSource != null && bondBreakSFX != null)
+        {
+            audioSource.PlayOneShot(bondBreakSFX, 0.75f);
+        }
     }
 
     private void ClearAllBonds()
@@ -624,7 +631,7 @@ public class DrogathEnemy : MonoBehaviour
         {
             if (audioSource != null && bondRegenSFX != null)
             {
-                audioSource.PlayOneShot(bondRegenSFX);
+                audioSource.PlayOneShot(bondRegenSFX, 0.75f);
                 regenSoundCooldown = 1.0f; // Suena máximo 1 vez por segundo
             }
         }
@@ -744,7 +751,7 @@ public class DrogathEnemy : MonoBehaviour
 
         if (audioSource != null && attackSFX != null)
         {
-            audioSource.PlayOneShot(attackSFX);
+            audioSource.PlayOneShot(attackSFX, 0.75f);
         }
 
         Collider[] hitPlayer = Physics.OverlapSphere(hitPoint.transform.position, attackRange, playerLayer);
