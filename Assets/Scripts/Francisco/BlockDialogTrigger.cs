@@ -11,7 +11,9 @@ public class BlockDialogTrigger : MonoBehaviour
     public UnityEvent OnBlockDialogFinish;
 
     [Header("Event on Dialog End")]
-    private bool hasTriggeredBlockDialog = false; 
+    private bool hasTriggeredBlockDialog = false;
+
+    [SerializeField] private UnityEvent onComplete;
 
     private void Awake()
     {
@@ -42,6 +44,8 @@ public class BlockDialogTrigger : MonoBehaviour
     public void TriggerDialogOnBlock()
     {
         if (hasTriggeredBlockDialog) return;
+
+        onComplete?.Invoke();
 
         if (DialogManager.Instance != null && blockStartDialog != null && blockStartDialog.Length > 0)
         {

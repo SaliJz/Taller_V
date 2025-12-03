@@ -2150,8 +2150,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: "Mant\xE9n E para bloquear. El bloqueo sigue la direcci\xF3n
-            del mouse."
+          m_StringArgument: "Mant\xE9n !DEFENSE para bloquear. Dirige con !LOOK"
           m_BoolArgument: 1
         m_CallState: 2
       - m_Target: {fileID: 953363980}
@@ -2260,6 +2259,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 1
         m_CallState: 2
+  onComplete:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &248991963
 GameObject:
   m_ObjectHideFlags: 0
@@ -5605,7 +5607,7 @@ Transform:
   m_GameObject: {fileID: 788196768}
   serializedVersion: 2
   m_LocalRotation: {x: 0.23911765, y: 0.3696438, z: -0.09904577, w: 0.89239913}
-  m_LocalPosition: {x: -266.93723, y: 50.75001, z: 9.762756}
+  m_LocalPosition: {x: -264.23724, y: 50.750008, z: 9.76276}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6338,8 +6340,8 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Clic derecho para atacar lanzando el escudo. Derrota
-            a los slimes
+          m_StringArgument: '!RANGEDATTACK para atacar lanzando el escudo. Derrota
+            a los slimes'
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 953363980}
@@ -8647,7 +8649,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Para moverte, usa las teclas AWSD
+          m_StringArgument: Para moverte, usa !MOVE
           m_BoolArgument: 1
         m_CallState: 2
       - m_Target: {fileID: 1821268779}
@@ -11560,7 +11562,7 @@ MonoBehaviour:
     bottomLeft: {r: 1, g: 1, b: 1, a: 1}
     bottomRight: {r: 1, g: 1, b: 1, a: 1}
   m_fontColorGradientPreset: {fileID: 0}
-  m_spriteAsset: {fileID: 0}
+  m_spriteAsset: {fileID: 11400000, guid: b6761c83739fd7e459c35c90d5326ae7, type: 2}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
   m_TextStyleHashCode: -1183493901
@@ -11669,10 +11671,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   defaultGamepadType: 1
-  gamepadLogicMode: 0
+  gamepadLogicMode: 1
   keyboardIcons: {fileID: 11400000, guid: 97cd90473db126649835330d06fab560, type: 2}
-  unifiedOrDefaultGamepadIcons: {fileID: 11400000, guid: 97cd90473db126649835330d06fab560, type: 2}
-  specificGamepadIcons: []
+  unifiedOrDefaultGamepadIcons: {fileID: 11400000, guid: 1e78dc7901f9e854e8f31485f0ed4481, type: 2}
+  specificGamepadIcons:
+  - {fileID: 11400000, guid: 1e78dc7901f9e854e8f31485f0ed4481, type: 2}
 --- !u!4 &1700195479
 Transform:
   m_ObjectHideFlags: 0
@@ -12299,7 +12302,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -205.7
+      value: -203
       objectReference: {fileID: 0}
     - target: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_LocalPosition.y
@@ -13611,7 +13614,7 @@ Transform:
   m_GameObject: {fileID: 1982505748}
   serializedVersion: 2
   m_LocalRotation: {x: 0.23911765, y: 0.3696438, z: -0.09904577, w: 0.89239913}
-  m_LocalPosition: {x: -266.93723, y: 50.75001, z: 9.762756}
+  m_LocalPosition: {x: -264.23724, y: 50.750008, z: 9.76276}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

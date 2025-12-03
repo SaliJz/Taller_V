@@ -1121,19 +1121,24 @@ public class DungeonGenerator : MonoBehaviour
         {
             foreach (var detail in predefinedWave.enemiesInWave)
             {
-                if (detail.EnemyPrefab != null)
+                if (detail.EnemyPrefab != null && detail.Count > 0)
                 {
                     for (int i = 0; i < detail.Count; i++)
                     {
                         waveEnemies.Add(detail.EnemyPrefab);
                     }
                     totalCount += detail.Count;
+
+                    Debug.Log($"[ConvertPredefinedWave] Agregado: {detail.Count}x {detail.EnemyPrefab.name}");
                 }
             }
         }
 
         newWave.enemyPrefabs = waveEnemies.ToArray();
-        newWave.enemyCount = totalCount;
+        newWave.enemyCount = totalCount; 
+
+        Debug.Log($"[ConvertPredefinedWave] Wave generada con {totalCount} enemigos totales.");
+
         return newWave;
     }
 
@@ -1174,14 +1179,6 @@ public class DungeonGenerator : MonoBehaviour
             return new CombatContents();
         }
 
-        if (usedProgressionRule != null &&
-            usedProgressionRule.combatContent != null &&
-            usedProgressionRule.combatContent.waves.Any())
-        {
-            Debug.Log($"Usando contenido de combate DEFINIDO por la regla de progresión específica (Sala {roomsGenerated}).");
-            return usedProgressionRule.combatContent;
-        }
-
         int roomNum = roomsGenerated;
 
         if (defaultEnemyConfig != null)
@@ -1190,12 +1187,20 @@ public class DungeonGenerator : MonoBehaviour
 
             if (progressiveLevel != null)
             {
-                Debug.Log($"Generando contenido de combate PROCEDURAL (Nivel {progressiveLevel.startRoomNumber}).");
+                Debug.Log($"[DungeonGenerator] Sala {roomNum}: Usando sistema progresivo (Nivel {progressiveLevel.startRoomNumber}, Modo: {progressiveLevel.GenerationMode})");
                 return GenerateCombatContentFromProgression(progressiveLevel);
             }
         }
 
-        Debug.LogWarning($"No se encontró contenido de combate para la Sala {roomNum}. Devolviendo contenido vacío.");
+        if (usedProgressionRule != null &&
+            usedProgressionRule.combatContent != null &&
+            usedProgressionRule.combatContent.waves.Any())
+        {
+            Debug.Log($"[DungeonGenerator] Sala {roomNum}: Usando contenido de combate de RoomProgressionRule (fallback).");
+            return usedProgressionRule.combatContent;
+        }
+
+        Debug.LogWarning($"[DungeonGenerator] Sala {roomNum}: No se encontró contenido de combate. Devolviendo vacío.");
         return new CombatContents();
     }
 

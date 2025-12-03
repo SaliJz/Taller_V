@@ -81,16 +81,20 @@ public class EnemyManager : MonoBehaviour
         spawnEffectPrefab = effectPrefab;
         defaultEnemyPrefabs = defaultEnemies;
     }
+
     public IEnumerator StartCombatEncounter(ConnectionPoint entrancePoint)
     {
         if (combatConfig == null || combatConfig.waves == null || combatConfig.waves.Count == 0)
         {
+            ReportDebug("No hay configuración de combate o no hay oleadas definidas. Saltando el combate.", 2);
             if (dungeonGenerator != null)
             {
                 dungeonGenerator.OnCombatRoomCleared(parentRoom, entrancePoint);
             }
             yield break;
         }
+
+        ReportDebug($"Iniciando encuentro de combate con {combatConfig.waves.Count} oleadas. El tiempo entre olas es {combatConfig.timeBetweenWaves}s", 1);
 
         if (parentRoom != null)
         {
@@ -112,6 +116,8 @@ public class EnemyManager : MonoBehaviour
         {
             EnemyWave wave = combatConfig.waves[i];
 
+            ReportDebug($"--- Spawn de la Oleada {i + 1} de {combatConfig.waves.Count} ---", 1);
+
             yield return StartCoroutine(SpawnEnemiesInWave(wave));
 
             yield return StartCoroutine(WaitForAllEnemiesToDie());
@@ -126,11 +132,6 @@ public class EnemyManager : MonoBehaviour
         if (dungeonGenerator != null)
         {
             dungeonGenerator.EndRoomTimer();
-        }
-
-        if (parentRoom != null)
-        {
-            parentRoom.UnlockExitDoors(entrancePoint);
         }
 
         if (dungeonGenerator != null)
@@ -185,8 +186,15 @@ public class EnemyManager : MonoBehaviour
         GameObject[] prefabsToUse = wave.enemyPrefabs.Length > 0 ? wave.enemyPrefabs : defaultEnemyPrefabs;
         int enemyCount = wave.enemyCount;
 
+        if (wave.enemyPrefabs.Length > 0)
+        {
+            enemyCount = wave.enemyPrefabs.Length;
+            ReportDebug($"Wave predefinida detectada: spawneando exactamente {enemyCount} enemigos.", 1);
+        }
+
         if (prefabsToUse == null || prefabsToUse.Length == 0 || enemyCount == 0)
         {
+            ReportDebug("No hay prefabs válidos o enemyCount es 0. Saltando wave.", 2);
             yield break;
         }
 
@@ -216,11 +224,8 @@ public class EnemyManager : MonoBehaviour
         if (isAuraActiveInThisRoom && activeAura != DevilAuraType.None)
         {
             int numAuraEnemies = Mathf.CeilToInt(enemyCount * auraCoveragePercent);
-
             ReportDebug($"Intentando aplicar {activeAura} a {numAuraEnemies} de {enemyCount} enemigos (Cobertura: {auraCoveragePercent}).", 1);
-
             List<int> allIndices = Enumerable.Range(0, enemyCount).ToList();
-
             auraIndices = allIndices.OrderBy(x => Random.value).Take(numAuraEnemies).ToList();
         }
 
@@ -231,12 +236,17 @@ public class EnemyManager : MonoBehaviour
                 Destroy(instantiatedEffects[i]);
             }
 
-            GameObject enemyPrefab = prefabsToUse[Random.Range(0, prefabsToUse.Length)];
+            GameObject enemyPrefab = prefabsToUse[i]; 
             GameObject newEnemy = Instantiate(enemyPrefab, spawnPositions[i], Quaternion.identity);
+
+            ReportDebug($"Spawneado enemigo {i + 1}/{enemyCount}: {enemyPrefab.name}", 1);
 
             if (newEnemy != null)
             {
-                activeEnemies.Add(newEnemy);
+                if (!newEnemy.activeSelf)
+                {
+                    newEnemy.SetActive(true);
+                }
 
                 EnemyHealth healthComponent = null;
                 bool hasHealthComponent = newEnemy.TryGetComponent<EnemyHealth>(out healthComponent);
@@ -254,7 +264,18 @@ public class EnemyManager : MonoBehaviour
 
                 if (hasHealthComponent)
                 {
+                    if (!healthComponent.enabled)
+                    {
+                        ReportDebug($"El enemigo '{newEnemy.name}' tiene EnemyHealth, ¡pero está deshabilitado! Habilitándolo.", 2);
+                        healthComponent.enabled = true;
+                    }
+
+                    activeEnemies.Add(newEnemy);
                     healthComponent.OnDeath += (enemyGO) => OnEnemyDeath(enemyGO);
+                }
+                else
+                {
+                    ReportDebug($"El enemigo '{newEnemy.name}' del prefab '{enemyPrefab.name}' no tiene componente 'EnemyHealth'. NO será contado para la limpieza de sala.", 3);
                 }
             }
         }
