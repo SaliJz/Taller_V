@@ -31,6 +31,10 @@ public class Shield : MonoBehaviour
     [SerializeField] private AudioClip shieldImpactClip;
     [SerializeField] private AudioClip shieldTrailClip;
 
+    [Header("Berserker SFX")]
+    [SerializeField] private AudioClip shieldImpactBerserkerClip;
+    [SerializeField] private AudioClip shieldTrailBerserkerClip;
+
     [Header("Pierce Settings (Elder)")]
     [SerializeField] private bool canPierce = false;
     [SerializeField] private int maxPierceTargets = 5;
@@ -59,6 +63,8 @@ public class Shield : MonoBehaviour
     private Material shieldTrailVFXMatInstance;
     private Material shieldTrailMatInstance;
 
+    private bool isBerserkerMode = false;
+
     private void Awake()
     {
         InitializeShieldVFX();
@@ -72,7 +78,7 @@ public class Shield : MonoBehaviour
     /// <param name="canRebound"> Indica si el escudo puede rebotar entre enemigos </param>
     public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds,
       float reboundDetectionRadius, float damage, float speed, float distance,
-      bool canPierce, int maxPierceTargets, float knockbackForce, PlayerHealth.LifeStage lifeStage)
+      bool canPierce, int maxPierceTargets, float knockbackForce, PlayerHealth.LifeStage lifeStage, bool isBerserker)
     {
         if (deactivationCoroutine != null)
         {
@@ -109,6 +115,16 @@ public class Shield : MonoBehaviour
         currentState = ShieldState.Thrown;
         gameObject.SetActive(true);
 
+        this.isBerserkerMode = isBerserker;
+
+        if (audioSource != null)
+        {
+            audioSource.Stop();
+            audioSource.clip = isBerserkerMode ? shieldTrailBerserkerClip : shieldTrailClip;
+            audioSource.loop = true;
+            audioSource.Play();
+        }
+
         PlayTrailVFX(true);
 
         ReportDebug($"Escudo lanzado en modo {lifeStage}: Daño={damage}, Pierce={canPierce}, Rebote={canRebound}", 1);
@@ -122,16 +138,6 @@ public class Shield : MonoBehaviour
         if (currentState == ShieldState.Inactive) return;
 
         currentSpeed = Mathf.Min(currentSpeed + acceleration * Time.deltaTime, maxSpeed);
-
-        if (audioSource != null && shieldTrailClip != null)
-        {
-            if (!audioSource.isPlaying)
-            {
-                audioSource.clip = shieldTrailClip;
-                audioSource.loop = true;
-                audioSource.Play();
-            }
-        }
 
         if (currentState == ShieldState.Thrown)
         {
@@ -233,9 +239,10 @@ public class Shield : MonoBehaviour
 
             hasHitAnyEnemy = true;
 
-            if (audioSource != null && shieldImpactClip != null)
+            if (audioSource != null)
             {
-                audioSource.PlayOneShot(shieldImpactClip);
+                AudioClip clipToPlay = isBerserkerMode ? shieldImpactBerserkerClip : shieldImpactClip;
+                if (clipToPlay != null) audioSource.PlayOneShot(clipToPlay);
             }
 
             CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, false);

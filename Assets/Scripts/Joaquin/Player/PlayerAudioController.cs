@@ -61,16 +61,28 @@ public class PlayerAudioController : MonoBehaviour
     [Header("Range SFX Configuration")]
     [SerializeField] private AudioClip throwShieldClip;
     [SerializeField] private AudioClip catchShieldClip;
+    [SerializeField] private AudioClip throwShieldBerserkerClip;
+    [SerializeField] private AudioClip catchShieldBerserkerClip;
     [Range(0f, 1f)][SerializeField] private float rangeVolume = 1.0f;
     [Range(0f, 2f)][SerializeField] private float rangePitch = 1.0f;
     [Header("Variance")]
     [SerializeField] private bool useRangePitchVariance = true;
     [Range(0f, 0.5f)][SerializeField] private float rangePitchVariance = 0.1f;
 
+    [Header("Block SFX Configuration")]
+    [SerializeField] private AudioClip blockHitClip;
+    [SerializeField] private AudioClip blockBreakClip;
+    [Range(0f, 1f)][SerializeField] private float blockVolume = 0.8f;
+    [Range(0f, 1f)][SerializeField] private float blockPitch = 1.0f;
+    [Header("Variance")]
+    [SerializeField] private bool useblockPitchVariance = true;
+    [Range(0f, 0.5f)][SerializeField] private float blockPitchVariance = 0.1f;
+
     [Header("Berserker SFX Configuration")]
     [SerializeField] private AudioClip activeAbilityClip;
     [SerializeField] private AudioClip desactiveAbilityClip;
     [SerializeField] private AudioClip lowHealthWarningSound;
+    [SerializeField] private AudioClip lifeAbsorbClip;
     [Range(0f, 1f)][SerializeField] private float abilityVolume = 1.0f;
     [Range(0f, 2f)][SerializeField] private float abilityPitch = 1.0f;
     [Header("Variance")]
@@ -155,14 +167,16 @@ public class PlayerAudioController : MonoBehaviour
         PlayOneShotInternal(hitClip, hitVolume, hitPitch, useHitPitchVariance, hitPitchVariance);
     }
 
-    public void PlayThrowShieldSound()
+    public void PlayThrowShieldSound(bool isBerserker)
     {
-        PlayOneShotInternal(throwShieldClip, rangeVolume, rangePitch, useRangePitchVariance, rangePitchVariance);
+        AudioClip clip = isBerserker ? throwShieldBerserkerClip : throwShieldClip;
+        PlayOneShotInternal(clip, rangeVolume, rangePitch, useRangePitchVariance, rangePitchVariance);
     }
 
-    public void PlayCatchShieldSound()
+    public void PlayCatchShieldSound(bool isBerserker)
     {
-        PlayOneShotInternal(catchShieldClip, rangeVolume, rangePitch, useRangePitchVariance, rangePitchVariance);
+        AudioClip clip = isBerserker ? catchShieldBerserkerClip : catchShieldClip;
+        PlayOneShotInternal(clip, rangeVolume, rangePitch, useRangePitchVariance, rangePitchVariance);
     }
 
     public void PlayBerserkerAbility(bool isActive)
@@ -180,6 +194,21 @@ public class PlayerAudioController : MonoBehaviour
     public void PlayBerserkerLowWarningAbility()
     {
         PlayOneShotInternal(lowHealthWarningSound, abilityVolume, abilityPitch, useabilityPitchVariance, abilityPitchVariance);
+    }
+
+    public void PlayBlockHitSound()
+    {
+        PlayOneShotInternal(blockHitClip, blockVolume, blockPitch, useblockPitchVariance, blockPitchVariance);
+    }
+
+    public void PlayBlockBreakSound()
+    {
+        PlayOneShotInternal(blockBreakClip, blockVolume, blockPitch, useblockPitchVariance, blockPitchVariance);
+    }
+
+    public void PlayLifeAbsorbSound()
+    {
+        PlayOneShotInternal(lifeAbsorbClip, abilityVolume, abilityPitch, useabilityPitchVariance, abilityPitchVariance);
     }
 
     // Un método genérico privado para reutilizar la lógica de varianza

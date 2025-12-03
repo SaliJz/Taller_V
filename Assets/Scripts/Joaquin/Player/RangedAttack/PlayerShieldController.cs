@@ -14,6 +14,7 @@ public class PlayerShieldController : MonoBehaviour
     [SerializeField] private PlayerMovement playerMovement;
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private PlayerAudioController playerAudioController;
+    [SerializeField] private ShieldSkill shieldSkill;
     [SerializeField] private Animator playerAnimator;
 
     [Header("Stats")]
@@ -86,6 +87,7 @@ public class PlayerShieldController : MonoBehaviour
         if (playerHealth == null) playerHealth = GetComponent<PlayerHealth>();
         if (playerAnimator == null) playerAnimator = GetComponentInChildren<Animator>();
         if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
+        if (shieldSkill == null) shieldSkill = GetComponent<ShieldSkill>();
 
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerShieldController. Usando valores de fallback.", 2);
         if (playerMeleeAttack == null) ReportDebug("PlayerMeleeAttack no encontrado. No se podrá verificar estado de ataque melee.", 2);
@@ -93,6 +95,7 @@ public class PlayerShieldController : MonoBehaviour
         if (playerHealth == null) ReportDebug("PlayerHealth no encontrado. Configuración por etapa no funcionará.", 2);
         if (playerAnimator == null) ReportDebug("Animator no encontrado en hijos. Las animaciones de escudo no funcionarán.", 2);
         if (playerAudioController == null) ReportDebug("PlayerAudioController no encontrado. Los sonidos de escudo no funcionarán.", 2);
+        if (shieldSkill == null) ReportDebug("ShieldSkill no encontrado. Los sonidos de escudo no funcionarán.", 2);
     }
 
     private void OnEnable()
@@ -331,9 +334,12 @@ public class PlayerShieldController : MonoBehaviour
     {
         hasShield = false;
         if (playerAnimator != null) playerAnimator.SetBool("HaveShield", false);
+
+        bool isBerserker = shieldSkill != null && shieldSkill.IsActive;
+
         if (playerAudioController != null)
         {
-            playerAudioController.PlayThrowShieldSound();
+            playerAudioController.PlayThrowShieldSound(isBerserker);
         }
 
         Vector3 direction;
@@ -364,7 +370,8 @@ public class PlayerShieldController : MonoBehaviour
                 config.canPierce,
                 config.maxPierceTargets,
                 config.knockbackForce,
-                playerHealth.CurrentLifeStage
+                playerHealth.CurrentLifeStage,
+                isBerserker
             );
 
             ReportDebug($"Escudo lanzado ({playerHealth.CurrentLifeStage}): Daño={config.damage}, Velocidad={config.speed}", 1);
@@ -508,9 +515,12 @@ public class PlayerShieldController : MonoBehaviour
         hasShield = true;
         
         if (playerAnimator != null) playerAnimator.SetBool("HaveShield", true);
+
+        bool isBerserker = shieldSkill != null && shieldSkill.IsActive;
+
         if (playerAudioController != null)
         {
-            playerAudioController.PlayCatchShieldSound();
+            playerAudioController.PlayCatchShieldSound(isBerserker);
         }
 
         ReportDebug("Escudo recuperado.", 1);
