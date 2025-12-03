@@ -4,6 +4,7 @@ using UnityEngine.Audio;
 using DG.Tweening;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using System.Collections;
 
 public class SettingsPanel : MonoBehaviour
 {
@@ -22,6 +23,11 @@ public class SettingsPanel : MonoBehaviour
     [SerializeField] private Slider musicSlider;
     [SerializeField] private Slider sfxSlider;
 
+    [Header("Volume Scaling")]
+    [Range(0.1f, 0.8f)]
+    [SerializeField] private float musicDuckingMultiplier = 0.35f;
+    [SerializeField] private float duckingTransitionTime = 0.5f;
+
     [Header("DOTween Settings")]
     [SerializeField] private float openCloseDuration = 0.2f;
     [SerializeField] private Ease openEase = Ease.OutBack;
@@ -37,6 +43,10 @@ public class SettingsPanel : MonoBehaviour
     private const string MasterVolumeParam = "MasterVolume";
     private const string MusicVolumeParam = "MusicVolume";
     private const string SfxVolumeParam = "SfxVolume";
+
+    private float currentMusicVolume = 0.75f;
+    private bool isMusicDucked = false;
+    private Coroutine musicDuckCoroutine;
 
     #endregion
 
@@ -147,6 +157,7 @@ public class SettingsPanel : MonoBehaviour
         sfxSlider?.onValueChanged.RemoveListener(SetSfxVolume);
     }
     #endregion
+
     #region [ Volume Control ]
     private float LinearToDecibel(float linearValue)
     {
@@ -157,9 +168,19 @@ public class SettingsPanel : MonoBehaviour
         }
         return 20f * Mathf.Log10(linearValue);
     }
+
     public void SetMasterVolume(float sliderValue) => SetVolume(MasterVolumeParam, sliderValue);
-    public void SetMusicVolume(float sliderValue) => SetVolume(MusicVolumeParam, sliderValue);
+
+    public void SetMusicVolume(float sliderValue)
+    {
+        currentMusicVolume = sliderValue;
+
+        float finalValue = isMusicDucked ? sliderValue * musicDuckingMultiplier : sliderValue;
+        SetVolume(MusicVolumeParam, finalValue);
+    }
+
     public void SetSfxVolume(float sliderValue) => SetVolume(SfxVolumeParam, sliderValue);
+
     private void SetVolume(string exposedParamName, float sliderValue)
     {
         if (masterMixer == null) return;
@@ -169,6 +190,7 @@ public class SettingsPanel : MonoBehaviour
         PlayerPrefs.Save();
     }
     #endregion
+
     #region [ Initialization and Load ]
     private void LoadSettings()
     {
@@ -176,14 +198,22 @@ public class SettingsPanel : MonoBehaviour
         LoadVolume(musicSlider, MusicVolumeParam);
         LoadVolume(sfxSlider, SfxVolumeParam);
     }
-    private void LoadVolume(Slider slider, string paramName)
+
+    private void LoadVolume(Slider slider, string paramName, float defaultValue = 0.75f)
     {
         if (slider == null) return;
-        float savedVolume = PlayerPrefs.GetFloat(paramName, 0.75f);
+        float savedVolume = PlayerPrefs.GetFloat(paramName, defaultValue);
         slider.value = savedVolume;
+
+        if (paramName == MusicVolumeParam)
+        {
+            currentMusicVolume = savedVolume;
+        }
+
         SetVolume(paramName, savedVolume);
     }
     #endregion
+
     #region [ Gamepad Focus Control ]
     private void SetInitialFocus()
     {
@@ -224,5 +254,66 @@ public class SettingsPanel : MonoBehaviour
         if (sfxSlider != null) list.Add(sfxSlider);
         return list.ToArray();
     }
+    #endregion
+
+    #region [ Music Ducking Control ]
+
+    public void DuckMusic()
+    {
+        if (isMusicDucked || masterMixer == null) return;
+
+        if (musicDuckCoroutine != null)
+        {
+            StopCoroutine(musicDuckCoroutine);
+        }
+
+        isMusicDucked = true;
+        musicDuckCoroutine = StartCoroutine(TransitionMusicVolume(currentMusicVolume * musicDuckingMultiplier));
+    }
+
+    public void RestoreMusic()
+    {
+        if (!isMusicDucked || masterMixer == null) return;
+
+        if (musicDuckCoroutine != null)
+        {
+            StopCoroutine(musicDuckCoroutine);
+        }
+
+        isMusicDucked = false;
+        musicDuckCoroutine = StartCoroutine(TransitionMusicVolume(currentMusicVolume));
+    }
+
+    private IEnumerator TransitionMusicVolume(float targetLinearVolume)
+    {
+        if (masterMixer == null) yield break;
+
+        masterMixer.GetFloat(MusicVolumeParam, out float currentDB);
+        float startLinearVolume = DecibelToLinear(currentDB);
+
+        float elapsed = 0f;
+
+        while (elapsed < duckingTransitionTime)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = elapsed / duckingTransitionTime;
+
+            float newLinearVolume = Mathf.Lerp(startLinearVolume, targetLinearVolume, t);
+            float newDB = LinearToDecibel(newLinearVolume);
+
+            masterMixer.SetFloat(MusicVolumeParam, newDB);
+
+            yield return null;
+        }
+
+        masterMixer.SetFloat(MusicVolumeParam, LinearToDecibel(targetLinearVolume));
+    }
+
+    private float DecibelToLinear(float dB)
+    {
+        if (dB <= -80f) return 0f;
+        return Mathf.Pow(10f, dB / 20f);
+    }
+
     #endregion
 }

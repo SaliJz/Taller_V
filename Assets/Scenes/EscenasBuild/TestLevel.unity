@@ -994,6 +994,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &674400884 stripped
+AudioSource:
+  m_CorrespondingSourceObject: {fileID: 3154760444949557352, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+  m_PrefabInstance: {fileID: 1130311632}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &688669204
 GameObject:
   m_ObjectHideFlags: 0
@@ -1819,6 +1824,14 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1522249548704971655, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: settingsPanel
+      value: 
+      objectReference: {fileID: 1130311634}
+    - target: {fileID: 1522249548704971655, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: voiceAudioSource
+      value: 
+      objectReference: {fileID: 674400884}
+    - target: {fileID: 1522249548704971655, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: 'playerActionScripts.Array.data[0]'
       value: 
       objectReference: {fileID: 1202095489}
@@ -2147,6 +2160,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1130311634 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7614830359713240198, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+  m_PrefabInstance: {fileID: 1130311632}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b0a48dcaf7e551469a3143c770766ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!224 &1130311635 stripped
@@ -3068,6 +3092,9 @@ MonoBehaviour:
       deuda?\""
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   routineLines:
   - CharacterName: Mercader
     ProfileImage: {fileID: 0}
@@ -3075,18 +3102,27 @@ MonoBehaviour:
       ti. \xBFNecesitas algo o solo vas a mirar?\""
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: Mercader
     ProfileImage: {fileID: 0}
     Text: "\"En este lugar, la \xFAnica moneda real es la necesidad. No la desperdicies
       con preguntas triviales.\""
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: Mercader
     ProfileImage: {fileID: 0}
     Text: '"Todo tiene un precio. La vida, la muerte, el silencio... y por supuesto,
       mis servicios."'
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   pactOfferLines:
   - CharacterName: Mercader
     ProfileImage: {fileID: 0}
@@ -3094,6 +3130,9 @@ MonoBehaviour:
       de una gran ventaja. \xBFAceptas el precio que el Inframundo exige?\""
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   tooHealthyLines:
   - CharacterName: Mercader
     ProfileImage: {fileID: 0}
@@ -3101,6 +3140,9 @@ MonoBehaviour:
       y t\xFA nada que perder. Vuelve cuando te acerques al borde.\""
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   friendlyLines:
   - CharacterName: Mercader
     ProfileImage: {fileID: 0}
@@ -3108,18 +3150,27 @@ MonoBehaviour:
       y te mostrar\xE9 secretos que la luz nunca conoci\xF3.\""
     WaitForInput: 0
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: Mercader
     ProfileImage: {fileID: 0}
     Text: "\"Tus enemigos tienen grietas en sus defensas. Yo lo s\xE9. \xBFTe ayudo
       a explotarlas? Por un precio, claro.\""
     WaitForInput: 0
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: Mercader
     ProfileImage: {fileID: 0}
     Text: "\"Me agradas. La avaricia es un buen motor. T\xF3malo de un experto: los
       mejores tratos se hacen en silencio.\""
     WaitForInput: 0
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   hostileLines:
   - CharacterName: Mercader
     ProfileImage: {fileID: 0}
@@ -3127,18 +3178,27 @@ MonoBehaviour:
       cuesta algo m\xE1s que oro.\""
     WaitForInput: 0
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: Mercader
     ProfileImage: {fileID: 0}
     Text: "\"Me aburres. Tu conversaci\xF3n es tan ins\xEDpida como tu alma. Vuelve
       cuando tengas algo interesante que ofrecer, o vete.\""
     WaitForInput: 0
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: Mercader
     ProfileImage: {fileID: 0}
     Text: "\"No olvides qui\xE9n te permite seguir respirando en mi sala. No abuses
       de mi... indulgencia.\""
     WaitForInput: 0
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   blockedLine:
   - CharacterName: Mercader
     ProfileImage: {fileID: 0}
@@ -3146,18 +3206,30 @@ MonoBehaviour:
       para parlanchines. Vete, antes de que te cobre por el tiempo perdido."'
     WaitForInput: 0
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   pactAcceptLines:
   - CharacterName: Mercader
     ProfileImage: {fileID: 0}
     Text: 8
     WaitForInput: 0
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   pactShowDetailsLines:
   - CharacterName: Mercader
     ProfileImage: {fileID: 0}
     Text: 9
     WaitForInput: 0
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  pactVoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+  pactVoicePitch: 1
+  pactVoiceFrequency: 2
   OnDialogCompleteEvent:
     m_PersistentCalls:
       m_Calls: []

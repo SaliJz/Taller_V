@@ -42,6 +42,13 @@ public class DialogManager : MonoBehaviour
     [SerializeField] private float typingSpeed = 0.03f;
     [SerializeField] private float inputBufferTime = 0.2f;
 
+    [Header("Voice Audio Settings")]
+    [SerializeField] private AudioSource voiceAudioSource;
+    [SerializeField][Range(0f, 1f)] private float voiceVolume = 0.6f;
+
+    [Header("Music Ducking")]
+    [SerializeField] private SettingsPanel settingsPanel;
+
     [Header("System Dependencies")]
     private PlayerMovement playerMovement;
 
@@ -97,6 +104,13 @@ public class DialogManager : MonoBehaviour
         {
             dialogPanel.SetActive(false);
         }
+
+        if (voiceAudioSource == null)
+        {
+            voiceAudioSource = gameObject.AddComponent<AudioSource>();
+            voiceAudioSource.playOnAwake = false;
+            voiceAudioSource.volume = voiceVolume;
+        }
     }
 
     private void OnAdvanceDialogue(InputAction.CallbackContext context)
@@ -115,6 +129,11 @@ public class DialogManager : MonoBehaviour
             StopAllCoroutines();
             isTyping = false;
             lineText.maxVisibleCharacters = int.MaxValue;
+
+            if (voiceAudioSource != null && voiceAudioSource.isPlaying)
+            {
+                voiceAudioSource.Stop();
+            }
 
             if (isMerchantFlow)
             {
@@ -206,7 +225,7 @@ public class DialogManager : MonoBehaviour
 
         if (typingSpeed > 0)
         {
-            StartCoroutine(TypeLine(line.Text, shouldWaitForInput));
+            StartCoroutine(TypeLine(line, shouldWaitForInput));
         }
         else
         {
@@ -225,8 +244,9 @@ public class DialogManager : MonoBehaviour
         }
     }
 
-    private IEnumerator TypeLine(string fullText, bool waitForInput)
+    private IEnumerator TypeLine(DialogLine line, bool waitForInput)
     {
+        string fullText = line.Text;
         lineText.text = fullText;
         lineText.maxVisibleCharacters = 0;
 
@@ -235,6 +255,12 @@ public class DialogManager : MonoBehaviour
             if (lineText.maxVisibleCharacters >= fullText.Length) break;
 
             lineText.maxVisibleCharacters++;
+
+            if (line.VoiceClip != null && i % line.VoiceFrequency == 0)
+            {
+                PlayVoiceBlip(line.VoiceClip, line.VoicePitch);
+            }
+
             yield return new WaitForSecondsRealtime(typingSpeed);
         }
 
@@ -243,7 +269,7 @@ public class DialogManager : MonoBehaviour
 
         if (isMerchantFlow && dialogQueue.Count == 0)
         {
-            yield return new WaitForSecondsRealtime(0.1f); 
+            yield return new WaitForSecondsRealtime(0.1f);
             onDialogFinishedEvent?.Invoke();
         }
         else if (!isMerchantFlow && !waitForInput)
@@ -252,7 +278,7 @@ public class DialogManager : MonoBehaviour
         }
     }
 
-    private IEnumerator TypeLineForUpdate(string fullText)
+    private IEnumerator TypeLineForUpdate(string fullText, AudioClip voiceClip = null, float voicePitch = 1f, int voiceFrequency = 2)
     {
         lineText.text = fullText;
         lineText.maxVisibleCharacters = 0;
@@ -262,6 +288,12 @@ public class DialogManager : MonoBehaviour
             if (lineText.maxVisibleCharacters >= fullText.Length) break;
 
             lineText.maxVisibleCharacters++;
+
+            if (voiceClip != null && i % voiceFrequency == 0)
+            {
+                PlayVoiceBlip(voiceClip, voicePitch);
+            }
+
             yield return new WaitForSecondsRealtime(typingSpeed);
         }
 
@@ -275,7 +307,7 @@ public class DialogManager : MonoBehaviour
         }
     }
 
-    public void UpdateCurrentDialogText(string newText, string characterName = null, Sprite profileSprite = null)
+    public void UpdateCurrentDialogText(string newText, string characterName = null, Sprite profileSprite = null, AudioClip voiceClip = null, float voicePitch = 1f, int voiceFrequency = 2)
     {
         if (!isDialogActive) return;
 
@@ -293,7 +325,15 @@ public class DialogManager : MonoBehaviour
         StopAllCoroutines();
 
         isTyping = true;
-        StartCoroutine(TypeLineForUpdate(newText));
+        StartCoroutine(TypeLineForUpdate(newText, voiceClip, voicePitch, voiceFrequency));
+    }
+
+    private void PlayVoiceBlip(AudioClip clip, float pitch)
+    {
+        if (voiceAudioSource == null || clip == null) return;
+
+        voiceAudioSource.pitch = pitch;
+        voiceAudioSource.PlayOneShot(clip, voiceVolume);
     }
 
     private void EndDialog()
@@ -305,6 +345,11 @@ public class DialogManager : MonoBehaviour
 
         UnityEvent tempEvent = onDialogFinishedEvent;
         onDialogFinishedEvent = null;
+
+        if (voiceAudioSource != null && voiceAudioSource.isPlaying)
+        {
+            voiceAudioSource.Stop();
+        }
 
         if (dialogPanel != null)
         {
@@ -323,6 +368,11 @@ public class DialogManager : MonoBehaviour
 
         UnityEvent tempEvent = onDialogFinishedEvent;
         onDialogFinishedEvent = null;
+
+        if (voiceAudioSource != null && voiceAudioSource.isPlaying)
+        {
+            voiceAudioSource.Stop();
+        }
 
         if (dialogPanel != null)
         {
@@ -362,6 +412,19 @@ public class DialogManager : MonoBehaviour
     {
         yield return new WaitForSecondsRealtime(delay);
         DisplayNextLine();
+    }
+
+    #endregion
+
+    #region Public Volume Control
+
+    public void SetVoiceVolume(float volume)
+    {
+        voiceVolume = Mathf.Clamp01(volume);
+        if (voiceAudioSource != null)
+        {
+            voiceAudioSource.volume = voiceVolume;
+        }
     }
 
     #endregion

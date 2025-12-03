@@ -1,5 +1,4 @@
 using NUnit.Framework;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -31,6 +30,18 @@ public class MerchantDialogHandler : MonoBehaviour
     [SerializeField] private DialogLine[] blockedLine;
     [SerializeField] private DialogLine[] pactAcceptLines;
     [SerializeField] private DialogLine[] pactShowDetailsLines;
+
+    #endregion
+
+    #region Pact Voice Settings
+
+    [Header("Pact Voice Settings")]
+    [SerializeField] private AudioClip pactVoiceClip;
+    [Tooltip("Pitch del audio del pacto")]
+    [UnityEngine.Range(0.8f, 1.2f)]
+    [SerializeField] private float pactVoicePitch = 1f;
+    [UnityEngine.Range(1, 5)]
+    [SerializeField] private int pactVoiceFrequency = 2;
 
     #endregion
 
@@ -161,14 +172,21 @@ public class MerchantDialogHandler : MonoBehaviour
 
         waitingForPactButtons = true;
 
-        dialogManager.UpdateCurrentDialogText(pactDetails, characterName, profileSprite);
+        dialogManager.UpdateCurrentDialogText(
+            pactDetails,
+            characterName,
+            profileSprite,
+            pactVoiceClip,
+            pactVoicePitch,
+            pactVoiceFrequency
+        );
 
         Debug.Log("Esperando que termine de tipear para mostrar botón");
     }
 
     public void OnConverseOption()
     {
-        if (converseButton == null) return; 
+        if (converseButton == null) return;
 
         optionsPanel?.SetActive(false);
 
@@ -216,7 +234,10 @@ public class MerchantDialogHandler : MonoBehaviour
             dialogManager.UpdateCurrentDialogText(
                 lineToShow.Text,
                 lineToShow.CharacterName,
-                lineToShow.ProfileImage
+                lineToShow.ProfileImage,
+                lineToShow.VoiceClip,
+                lineToShow.VoicePitch,
+                lineToShow.VoiceFrequency
             );
         }
 

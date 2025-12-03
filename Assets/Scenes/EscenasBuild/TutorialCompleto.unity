@@ -2242,6 +2242,9 @@ MonoBehaviour:
     Text: "\u201DAhora defi\xE9ndete , muajaja\u201D \r\n"
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   OnBlockDialogFinish:
     m_PersistentCalls:
       m_Calls:
@@ -3738,6 +3741,9 @@ MonoBehaviour:
 '
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
     Text: "S\xED, has despertado tu etapa adulta. Disfruta el beneficio y el costo
@@ -3745,16 +3751,25 @@ MonoBehaviour:
       esencia vital\r\r\n"
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
     Text: "Deja que equilibre las cosas para ti\r"
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
     Text: "Derrota a estos esbirros\r"
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   OnFirstSlimeKilled:
     m_PersistentCalls:
       m_Calls: []
@@ -4909,6 +4924,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &599681409 stripped
+AudioSource:
+  m_CorrespondingSourceObject: {fileID: 3154760444949557352, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+  m_PrefabInstance: {fileID: 1998683779}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &649635321
 GameObject:
   m_ObjectHideFlags: 0
@@ -5667,6 +5687,17 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+--- !u!114 &792733743 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7614830359713240198, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+  m_PrefabInstance: {fileID: 1998683779}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b0a48dcaf7e551469a3143c770766ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &815655406
 GameObject:
   m_ObjectHideFlags: 0
@@ -6292,6 +6323,9 @@ MonoBehaviour:
     Text: "\u201CVaya, as\xED que ya recuerdas\u2026 hagamos esto m\xE1s divertido\u201D "
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   onFinishDialog:
     m_PersistentCalls:
       m_Calls:
@@ -6802,17 +6836,26 @@ MonoBehaviour:
     Text: "\u201C\xA1Mujajajajaja!\u201D\r\n"
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
     Text: "\u201CEse slime ha adquirido el factor de Superresistencia. Con tu fuerza
       actual no podr\xE1s quebrar su defensa\u2026\u201D\r\n\r\n"
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
     Text: "\u201CD\xE9jame ayudarte a recordar\u2026\u201D"
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   dialogue2_Contract:
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
@@ -6820,35 +6863,53 @@ MonoBehaviour:
       conced\xED en el escudo.La superresistencia es vulnerable a ella\u201D"
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
     Text: "\u201DVamos. Recuerda todo de una vez y convi\xE9rtete en uno de mis guerreros
       Aldous\u201D"
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
     Text: "\u201CMuajaja,pero no te relajes. Solo tienes cinco segundos por contrato
       ,  antes de que empiece a devorar tu propia esencia vital.\u201D"
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   dialogue3_DiabloLaugh:
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
     Text: "\u201C\xA1Mujajajajaja!\u201D\r"
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   dialogue4_Success:
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
     Text: "\u201DVamos. Convi\xE9rtete en uno de mis mejores guerreros Aldous\u201D"
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
     Text: "\u201DSigue al otro cuarto\u201D"
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   OnDisplaySkillReminder:
     m_PersistentCalls:
       m_Calls:
@@ -8665,7 +8726,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
   tagName: Player
-  oneShotTrigger: 1
+  oneShotTrigger: 0
 --- !u!65 &1217172070
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -13609,6 +13670,9 @@ MonoBehaviour:
     Text: Acercarte al mercader
     WaitForInput: 1
     AutoAdvanceDelay: 0.03
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   onFinishDialog:
     m_PersistentCalls:
       m_Calls: []
@@ -14354,6 +14418,9 @@ MonoBehaviour:
   inputActions: {fileID: -944628639613478452, guid: ccc6e38482735884387854943591007c, type: 3}
   typingSpeed: 0.03
   inputBufferTime: 0.2
+  voiceAudioSource: {fileID: 599681409}
+  voiceVolume: 0.6
+  settingsPanel: {fileID: 792733743}
   playerActionScripts:
   - {fileID: 1821268774}
   - {fileID: 1821268779}
@@ -15044,6 +15111,9 @@ MonoBehaviour:
       tu uso.\u201D\r\n"
     WaitForInput: 1
     AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   onFinishDialog:
     m_PersistentCalls:
       m_Calls: []
@@ -16208,11 +16278,17 @@ MonoBehaviour:
     Text: "Aqu\xED la esencia vital es la moneda"
     WaitForInput: 1
     AutoAdvanceDelay: 0.03
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   - CharacterName: SISTEMA
     ProfileImage: {fileID: 1377115843, guid: 94c59e48af6c6c34b8816f0e130ddbbc, type: 3}
     Text: "Se te entregar\xE1 un Pacto"
     WaitForInput: 1
     AutoAdvanceDelay: 0.03
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   malgorPactAcceptLines:
   - CharacterName: SISTEMA
     ProfileImage: {fileID: 1377115843, guid: 94c59e48af6c6c34b8816f0e130ddbbc, type: 3}
@@ -16220,6 +16296,9 @@ MonoBehaviour:
       las consecuencias, pero ten cuidado m\xE1s adelante"
     WaitForInput: 1
     AutoAdvanceDelay: 0.03
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   malgorShopUnlockLines:
   - CharacterName: SISTEMA
     ProfileImage: {fileID: 1377115843, guid: 94c59e48af6c6c34b8816f0e130ddbbc, type: 3}
@@ -16227,6 +16306,9 @@ MonoBehaviour:
       uno por tienda"
     WaitForInput: 1
     AutoAdvanceDelay: 0.03
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   malgorNoPurchaseLines: []
   malgorPurchaseLines:
   - CharacterName: SISTEMA
@@ -16234,12 +16316,18 @@ MonoBehaviour:
     Text: "Buena elecci\xF3n"
     WaitForInput: 1
     AutoAdvanceDelay: 0.03
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   devilPurchaseLines:
   - CharacterName: SISTEMA
     ProfileImage: {fileID: 1377115843, guid: 94c59e48af6c6c34b8816f0e130ddbbc, type: 3}
     Text: Pasa al siguiente cuarto
     WaitForInput: 1
     AutoAdvanceDelay: 0.03
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
   devilPortalLines: []
 --- !u!114 &3709661639737709983
 MonoBehaviour:
