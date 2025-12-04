@@ -39,6 +39,8 @@ public class EnemyVisualEffects : MonoBehaviour
     [Header("Damage Numbers")]
     [SerializeField] private GameObject damageNumberPrefab;
     [SerializeField] private Transform damageNumberParent;
+    [SerializeField] private Color normalColor = Color.red;
+    [SerializeField] private Color criticalColor = new Color(0.5f, 0f, 0f);
 
     [Header("Audio Feedback")]
     [SerializeField] private AudioSource audioSource;
@@ -366,7 +368,11 @@ public class EnemyVisualEffects : MonoBehaviour
         {
             GameObject damageNumber = Instantiate(damageNumberPrefab, position, Quaternion.identity, damageNumberParent);
             DamageNumber script = damageNumber.GetComponent<DamageNumber>();
-            if (script != null) script.Initialize(damage, isCritical);
+            if (script != null)
+            {
+                script.SetColor(normalColor, criticalColor);
+                script.Initialize(damage, isCritical);
+            }
         }
     }
 

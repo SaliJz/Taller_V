@@ -16,6 +16,12 @@ public class FireTrail : MonoBehaviour
         set { damagePerSecond = value; }
     }
 
+    public float Lifetime
+    {
+        get { return lifetime; }
+        set { lifetime = value; }
+    }
+
     private ParticleSystem fireParticles;
 
     private void Start()

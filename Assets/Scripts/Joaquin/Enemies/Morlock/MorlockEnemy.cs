@@ -48,6 +48,10 @@ public class MorlockEnemy : MonoBehaviour
     [Tooltip("Si está desactivado, Morlock no volverá a patrullar después de detectar al jugador por primera vez")]
     [SerializeField] private bool canReturnToPatrol = true;
     [SerializeField] private float detectionRadius = 50f;
+    [Tooltip("Tiempo en segundos para aumentar el rango de detección si no encuentra al jugador")]
+    [SerializeField] private float detectionGrowthInterval = 2.5f;
+    [Tooltip("Cantidad en la que aumenta el radio de detección cada intervalo")]
+    [SerializeField] private float detectionGrowthAmount = 10f;
     [Tooltip("Distancia máxima de teletransporte durante el patrullaje.")]
     [SerializeField] private float teleportRange = 5f;
     [Tooltip("Si se asignan waypoints, Morlock los recorrerá. Si no, hará patrullaje libre.")]
@@ -105,6 +109,9 @@ public class MorlockEnemy : MonoBehaviour
     private float idleTimer;
     private float idleInterval;
 
+    private float currentDetectionTimer;
+    private float baseDetectionRadius;
+
     private int animHashX;
     private int animHashY;
     private int animHashAttack;
@@ -128,6 +135,8 @@ public class MorlockEnemy : MonoBehaviour
     private void Start()
     {
         originPosition = transform.position;
+
+        baseDetectionRadius = detectionRadius;
 
         var playerGameObject = GameObject.FindGameObjectWithTag("Player");
         if (playerGameObject != null)
@@ -293,6 +302,7 @@ public class MorlockEnemy : MonoBehaviour
         switch (currentState)
         {
             case MorlockState.Patrol:
+                HandleDetectionGrowth();
                 if (distanceToPlayer <= detectionRadius)
                 {
                     ChangeState(MorlockState.Pursue1);
@@ -308,6 +318,19 @@ public class MorlockEnemy : MonoBehaviour
 
             case MorlockState.Pursue2:
                 break;
+        }
+    }
+
+    private void HandleDetectionGrowth()
+    {
+        currentDetectionTimer += Time.deltaTime;
+
+        if (currentDetectionTimer >= detectionGrowthInterval)
+        {
+            detectionRadius += detectionGrowthAmount;
+            currentDetectionTimer = 0f;
+
+            ReportDebug($"Rango de detección aumentado. Nuevo radio: {detectionRadius}", 1);
         }
     }
 
@@ -440,6 +463,8 @@ public class MorlockEnemy : MonoBehaviour
         switch (currentState)
         {
             case MorlockState.Patrol:
+                detectionRadius = baseDetectionRadius;
+                currentDetectionTimer = 0f;
                 currentBehaviorCoroutine = StartCoroutine(PatrolRoutine());
                 break;
             case MorlockState.Pursue1:

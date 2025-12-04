@@ -35,6 +35,12 @@ public class DamageNumber : MonoBehaviour
         StartCoroutine(AnimateAndDeactivate());
     }
 
+    public void SetColor(Color normalColor, Color criticalColor)
+    {
+        this.normalColor = normalColor;
+        this.criticalColor = criticalColor;
+    }
+
     public void Deactivate()
     {
         StopAllCoroutines();

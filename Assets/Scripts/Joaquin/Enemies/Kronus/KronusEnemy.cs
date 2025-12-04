@@ -218,8 +218,6 @@ public class KronusEnemy : MonoBehaviour
 
     public void AlertEnemy()
     {
-        if (enemyHealth != null) return;
-
         if (audioSource != null && damageReceivedSFX != null)
         {
             audioSource.PlayOneShot(damageReceivedSFX);

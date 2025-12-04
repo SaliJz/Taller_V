@@ -19,6 +19,7 @@ public class BloodKnightBoss : MonoBehaviour
     [SerializeField] private float apocalipsisDamage = 7f;
     [SerializeField] private int apocalipsisTargetDashes = 10;
     [SerializeField] private float apocalipsisRange = 4f;
+    [SerializeField] private float apocalipsisImpactDelay = 0.5f;
 
     [Header("Ciclo 2: Pausa Posicionamiento")]
     [SerializeField] private float positioningDuration = 2f;
@@ -27,8 +28,10 @@ public class BloodKnightBoss : MonoBehaviour
     [SerializeField] private float sodomaDamage = 35f;
     [SerializeField] private float sodomaCutRange = 8f;
     [SerializeField] private float fireTrailDamagePerSecond = 5f;
+    [SerializeField] private float fireTrailLifeTime = 2.5f;
     [SerializeField] private float sodomaChargeTime = 1.5f;
     [SerializeField] private float sodomaBackwardDistance = 3f;
+    [SerializeField] private float sodomaImpactDelay = 0.5f;
 
     [Header("Ciclo 4: Fase Cooldown / Necio Pecador")]
     [SerializeField] private float necioAttackWindow = 12f;
@@ -106,17 +109,33 @@ public class BloodKnightBoss : MonoBehaviour
     private MaterialPropertyBlock armorPropertyBlock;
     private Color originalEmissionColor;
 
+    private int groundLayerMask;
+
     #endregion
 
     #region Camera Shake
+
     [SerializeField] private CinemachineCamera vcam;
     private CinemachineBasicMultiChannelPerlin noise;
+
+    #endregion
+
+    #region Animation Hashes
+
+    private static readonly int AnimID_Walking = Animator.StringToHash("Walking");
+    private static readonly int AnimID_Death = Animator.StringToHash("Death");
+    private static readonly int AnimID_AttackHand = Animator.StringToHash("AttackHand");
+    private static readonly int AnimID_SoloDash = Animator.StringToHash("SoloDash");
+    private static readonly int AnimID_AttackDash = Animator.StringToHash("AttackDash");
+
     #endregion
 
     private void Awake()
     {
         InitializeComponents();
         InitializeVFXCache();
+
+        groundLayerMask = LayerMask.GetMask("Ground");
     }
 
     private void Start()
@@ -207,17 +226,20 @@ public class BloodKnightBoss : MonoBehaviour
         forceApocalipsisNext = false;
         
         StopAllCoroutines();
-        DestroyAllInstantiatedEffects();
+        CleanUpEffects();
 
         if (agent != null) agent.enabled = false;
-        if (animator != null) animator.SetTrigger("Die");
+        if (animator != null) animator.SetTrigger(AnimID_Death);
 
         this.enabled = false;
     }
 
-    private void DestroyAllInstantiatedEffects()
+    private void CleanUpEffects()
     {
-        foreach (var effect in instantiatedEffects) if (effect != null) Destroy(effect);
+        for (int i = instantiatedEffects.Count - 1; i >= 0; i--)
+        {
+            if (instantiatedEffects[i] != null) Destroy(instantiatedEffects[i]);
+        }
         instantiatedEffects.Clear();
     }
 
@@ -234,11 +256,7 @@ public class BloodKnightBoss : MonoBehaviour
         {
             while (enemyHealth != null && enemyHealth.IsStunned)
             {
-                if (agent != null && agent.enabled && agent.isOnNavMesh)
-                {
-                    agent.isStopped = true;
-                    agent.ResetPath();
-                }
+                if (agent != null && agent.enabled) agent.isStopped = true;
                 yield return null;
             }
 
@@ -280,7 +298,32 @@ public class BloodKnightBoss : MonoBehaviour
 
     #endregion
 
-    #region Apocalipsis Logic
+    /*
+    #region ANIMATION EVENTS (Nuevo Sistema)
+
+    public void AnimEvent_SlashImpact()
+    {
+        if (currentState != BossState.Attacking) return;
+
+        SpawnSlashVFX();
+        if (audioSource) audioSource.PlayOneShot(apocalipsisSlashSFX, 0.5f);
+        DealAreaDamage(swordTransform.position, apocalipsisRange, apocalipsisDamage);
+
+    }
+
+    public void AnimEvent_SodomaImpact()
+    {
+        if (currentState != BossState.Attacking) return;
+        
+        SpawnSlashVFX();
+        if (audioSource) audioSource.PlayOneShot(sodomaAttackSFX);
+        DealAreaDamage(swordTransform.position, sodomaCutRange, sodomaDamage);
+    }
+
+    #endregion
+    */
+
+    #region Cycle 1: Apocalipsis Logic
 
     private IEnumerator ExecuteApocalipsisSequence()
     {
@@ -288,27 +331,56 @@ public class BloodKnightBoss : MonoBehaviour
         currentState = BossState.Attacking;
 
         float startTime = Time.time;
-        float endTime = startTime + apocalipsisDuration;
         int dashesPerformed = 0;
+        float timePerDash = apocalipsisDuration / (float)apocalipsisTargetDashes;
 
-        // Dividir el tiempo total entre el numero de dashes para mantener ritmo
-        float timePerDash = apocalipsisDuration / apocalipsisTargetDashes;
+        if (animator != null) animator.ResetTrigger(AnimID_AttackDash);
+        if (animator != null) animator.ResetTrigger(AnimID_SoloDash);
 
-        if (animator != null) animator.SetTrigger("StartApocalipsis");
+        if (animator != null) animator.SetTrigger(AnimID_SoloDash);
 
-        while (Time.time < endTime && dashesPerformed < apocalipsisTargetDashes)
+        while (dashesPerformed < apocalipsisTargetDashes)
         {
-            agent.isStopped = false;
-            agent.SetDestination(player.position);
-            yield return new WaitForSeconds(0.4f);
+            float dashCycleStart = Time.time;
 
+            // 1. Persecución breve
+            agent.isStopped = false;
+            if (animator != null) animator.SetBool(AnimID_Walking, true);
+            agent.SetDestination(player.position);
+
+            yield return new WaitForSeconds(0.25f);
+
+            // 2. Preparar Dash
             agent.isStopped = true;
+            if (animator != null) animator.SetBool(AnimID_Walking, false);
+
             Vector3 targetPos = GetZigZagDashPosition();
             targetPos.y = transform.position.y;
 
-            // Realizar dash rápido hacia la posición objetivo
-            yield return MoveToPositionFast(targetPos, 0.3f);
+            // 3. Ejecutar Animación y Movimiento
+            if (animator != null) animator.SetTrigger(AnimID_SoloDash);
 
+            yield return new WaitForSeconds(0.1f);
+
+            yield return MoveToPositionFast(targetPos, 0.25f);
+
+            //if (animator != null) animator.SetTrigger(AnimID_AttackDash);
+
+            // 4. Esperar momento de impacto
+            yield return new WaitForSeconds(apocalipsisImpactDelay);
+
+            // 5. Aplicar daño y vfx
+            //SpawnSlashVFX();
+
+            if (audioSource) audioSource.PlayOneShot(apocalipsisSlashSFX, 0.5f);
+
+            DealAreaDamage(swordTransform.position + transform.forward, apocalipsisRange, apocalipsisDamage);
+
+            // 6. Retroceso
+            Vector3 retreatPos = transform.position - transform.forward * 2.5f;
+            yield return MoveToPositionFast(retreatPos, 0.25f);
+
+            // Encarar al jugador
             if (player != null)
             {
                 Vector3 lookPos = player.position;
@@ -316,29 +388,14 @@ public class BloodKnightBoss : MonoBehaviour
                 transform.LookAt(lookPos);
             }
 
-            float distToPlayer = Vector3.Distance(transform.position, player.position);
-
-            if (distToPlayer <= apocalipsisRange)
-            {
-                if (animator != null) animator.SetTrigger("Slash");
-                if (audioSource != null) audioSource.PlayOneShot(apocalipsisSlashSFX, 0.5f);
-
-                SpawnSlashVFX();
-                DealApocalipsisDamage();
-
-                Vector3 retreatPos = transform.position - transform.forward * 2.5f;
-                yield return MoveToPositionFast(retreatPos, 0.25f);
-            }
-            else
-            {
-                yield return new WaitForSeconds(0.2f);
-            }
-
             dashesPerformed++;
 
-            float expectedTime = startTime + (dashesPerformed * timePerDash);
-            float waitTime = expectedTime - Time.time;
-            if (waitTime > 0) yield return new WaitForSeconds(waitTime);
+            float elapsed = Time.time - dashCycleStart;
+            float wait = timePerDash - elapsed;
+
+            if (wait > 0) yield return new WaitForSeconds(wait);
+
+            else yield return null;
         }
 
         currentState = BossState.Idle;
@@ -355,22 +412,9 @@ public class BloodKnightBoss : MonoBehaviour
         return player.position + (dirToPlayer * -2f) + (sideStep * 3f);
     }
 
-    private void DealApocalipsisDamage()
-    {
-        Collider[] hits = Physics.OverlapSphere(transform.position + transform.forward, apocalipsisRange);
-        foreach (var hit in hits)
-        {
-            if (hit.CompareTag("Player") && playerHealth != null)
-            {
-                ExecuteAttack(hit.gameObject, apocalipsisDamage);
-                break;
-            }
-        }
-    }
-
     #endregion
 
-    #region Positioning Phase
+    #region Cycle 2: Positioning Phase
 
     private IEnumerator ExecutePositioningPhase()
     {
@@ -379,9 +423,8 @@ public class BloodKnightBoss : MonoBehaviour
         float timer = 0f;
         agent.isStopped = false;
 
-        if (animator != null) animator.SetBool("IsMoving", true);
+        if (animator != null) animator.SetBool(AnimID_Walking, true);
 
-        // Mantener distancia media durante 2 segundos
         while (timer < positioningDuration)
         {
             if (player != null)
@@ -390,135 +433,149 @@ public class BloodKnightBoss : MonoBehaviour
                 Vector3 targetPos = player.position + direction * 7f; // Buscar estar a 7m
                 agent.SetDestination(targetPos);
             }
+
             timer += Time.deltaTime;
+
             yield return null;
         }
 
         agent.isStopped = true;
-        if (animator != null) animator.SetBool("IsMoving", false);
+
+        if (animator != null) animator.SetBool(AnimID_Walking, false);
     }
 
     #endregion
 
-    #region Sodoma y Gomorra Logic
+    #region Cycle 3: Sodoma y Gomorra Logic
 
     private IEnumerator ExecuteSodomaYGomorra()
     {
         ReportDebug("ETAPA 3: SODOMA Y GOMORRA", 1);
         currentState = BossState.Attacking;
 
-        Vector3 backwardPos = transform.position - transform.forward * sodomaBackwardDistance;
-        if (animator != null) animator.SetTrigger("Crouch"); // Animación de preparación
-        yield return MoveToPositionFast(backwardPos, 0.4f);
+        if (player != null)
+        {
+            Vector3 lookPos = player.position;
+            lookPos.y = transform.position.y;
+            transform.LookAt(lookPos);
+        }
 
+        yield return new WaitForSeconds(0.25f);
+
+        Vector3 backwardPos = transform.position - transform.forward * sodomaBackwardDistance;
+
+        // 1. Moverse hacia atrás
+        if (animator != null) animator.SetBool(AnimID_Walking, true);
+        yield return MoveToPositionFast(backwardPos, 0.5f);
+        if (animator != null) animator.SetBool(AnimID_Walking, false);
+
+        // 2. Cargar
         StartArmorGlow();
         if (audioSource != null) audioSource.PlayOneShot(sodomaChargeSFX);
 
-        yield return new WaitForSeconds(sodomaChargeTime);
-        StopArmorGlow();
-
-        if (animator != null) animator.SetTrigger("DashSlash");
-        if (audioSource != null) audioSource.PlayOneShot(sodomaAttackSFX);
-
+        // Cálculo de posición de impacto
         Vector3 dirToPlayer = (player.position - transform.position).normalized;
         float stopDistance = 1.2f;
-        Vector3 strikePos = player.position - (dirToPlayer * stopDistance); // Detenerse un poco antes del jugador
+        Vector3 strikePos = player.position - (dirToPlayer * stopDistance);
         strikePos.y = transform.position.y;
 
-        yield return MoveToPositionFast(strikePos, 0.3f);
+        GameObject warning = SpawnSodomaWarning(strikePos, sodomaCutRange);
 
-        PerformSodomaSlash();
+        yield return new WaitForSeconds(sodomaChargeTime);
 
+        StopArmorGlow();
+        if (warning != null) Destroy(warning); // Eliminar warning antes del golpe
+
+        // 3. Movimiento y Ataque
+        if (animator != null) animator.SetTrigger(AnimID_AttackDash);
+
+        yield return MoveToPositionFast(strikePos, 0.25f);
+
+        // 4. Esperar impacto
+        yield return new WaitForSeconds(sodomaImpactDelay);
+
+        // 5. Aplicar daño y vfx
+        SpawnSlashVFX();
+        if (audioSource) audioSource.PlayOneShot(sodomaAttackSFX);
+        DealAreaDamage(swordTransform.position + transform.forward, sodomaCutRange, sodomaDamage);
+
+        // Rastro de fuego
         SpawnGreenFireTrail(backwardPos, strikePos);
 
         yield return new WaitForSeconds(1f);
         currentState = BossState.Idle;
     }
 
-    private void PerformSodomaSlash()
-    {
-        // Daño en cono frontal o área cercana
-        Collider[] hits = Physics.OverlapSphere(transform.position, sodomaCutRange);
-        foreach (Collider hit in hits)
-        {
-            if (hit.CompareTag("Player") && playerHealth != null)
-            {
-                ExecuteAttack(hit.gameObject, sodomaDamage);
-                break; // Solo dañar una vez al jugador
-            }
-        }
-    }
-
     #endregion
 
-    #region Cooldown Phase (Necio Pecador + Vulnerable)
+    #region Cycle 4: Cooldown Phase (Necio Pecador + Vulnerable)
 
     private IEnumerator ExecuteCooldownPhase()
     {
-        ReportDebug("ETAPA 4: FASE COOLDOWN / RELLENO", 1);
+        ReportDebug("ETAPA 4: NECIO PECADOR", 1);
 
         float phaseTimer = 0f;
-
-        ReportDebug("Iniciando Necio Pecador", 1);
-
         agent.isStopped = false;
         agent.speed = isInLowHealthPhase ? (moveSpeed * lowHPSpeedMultiplier * 0.8f) : (moveSpeed * 0.7f);
 
         float currentWarningTime = isInLowHealthPhase ? (necioPecadorWarningTime * 0.6f) : necioPecadorWarningTime;
+        int attackCount = 0;
 
         while (phaseTimer < necioAttackWindow)
         {
-            // Movimiento: Si está lejos, se acerca. Si está cerca, orbita.
             if (player != null)
             {
                 float dist = Vector3.Distance(transform.position, player.position);
                 if (dist > 12f) agent.SetDestination(player.position);
                 else
                 {
-                    // Orbitar lateralmente
                     Vector3 orbit = transform.position + transform.right * 3f;
                     agent.SetDestination(orbit);
                 }
             }
 
-            if (animator != null) animator.SetTrigger("SummonHand");
-            if (audioSource != null) audioSource.PlayOneShot(necioPecadorSummonSFX);
-
-            Vector3 rawTargetPos = player.position;
-            if (playerController != null)
+            if (animator != null)
             {
-                rawTargetPos += playerController.velocity * 1.2f;
+                bool isMoving = agent.velocity.magnitude > 0.1f && !agent.isStopped;
+                animator.SetBool(AnimID_Walking, isMoving);
             }
 
-            Vector3 finalTargetPos = GetGroundPosition(rawTargetPos);
+            if (animator != null) animator.SetTrigger(AnimID_AttackHand);
+            if (audioSource != null) audioSource.PlayOneShot(necioPecadorSummonSFX);
+
+            Vector3 targetPos = player.position;
+            if (playerController != null)
+            {
+                float predictionFactor = Mathf.Clamp(attackCount * 0.3f, 0f, 2.0f);
+                targetPos += playerController.velocity * predictionFactor;
+            }
+
+            Vector3 finalTargetPos = GetGroundPosition(targetPos);
 
             GameObject warning = SpawnNecioPecadorWarning(finalTargetPos, necioPecadorRadius);
+
             yield return new WaitForSeconds(currentWarningTime);
             if (warning != null) Destroy(warning);
 
             SpawnSoulHand(finalTargetPos);
 
             float interval = isInLowHealthPhase ? 1.5f : 2.5f;
-
             float remainingWait = interval - currentWarningTime;
+
             if (remainingWait > 0) yield return new WaitForSeconds(remainingWait);
 
             phaseTimer += interval;
+            attackCount++;
         }
 
         agent.speed = isInLowHealthPhase ? (moveSpeed * lowHPSpeedMultiplier) : moveSpeed;
         agent.isStopped = true;
 
-        ReportDebug("NECIO PECADOR FINALIZADO. BOSS VULNERABLE", 1);
+        if (animator != null) animator.SetBool(AnimID_Walking, false);
+
         currentState = BossState.Vulnerable;
-
-        if (animator != null) animator.SetBool("IsTired", true);
-
-        // Aquí podría ir un feedback para indicar vulnerabilidad
-
         yield return new WaitForSeconds(necioVulnerableWindow);
 
-        if (animator != null) animator.SetBool("IsTired", false);
         currentState = BossState.Idle;
     }
 
@@ -532,8 +589,7 @@ public class BloodKnightBoss : MonoBehaviour
         currentState = BossState.Charging;
         agent.isStopped = true;
 
-        if (animator != null) animator.SetTrigger("KneelCharge");
-        yield return new WaitForSeconds(1.5f);
+        yield return new WaitForSeconds(1f);
 
         StartEyeGlow();
 
@@ -544,7 +600,6 @@ public class BloodKnightBoss : MonoBehaviour
             transform.rotation = Quaternion.LookRotation(chargeDir);
         }
 
-        if (animator != null) animator.SetTrigger("ChargeRun");
         if (audioSource != null) audioSource.PlayOneShot(chargeAbilitySFX);
 
         GameObject chargeTrail = null;
@@ -601,8 +656,6 @@ public class BloodKnightBoss : MonoBehaviour
         }
         else
         {
-            // Aturdirse brevemente por fallar
-            if (animator != null) animator.SetTrigger("Stunned");
             yield return new WaitForSeconds(1.5f);
         }
 
@@ -627,6 +680,19 @@ public class BloodKnightBoss : MonoBehaviour
     #endregion
 
     #region Utility & VFX Methods
+
+    private void DealAreaDamage(Vector3 center, float radius, float damage)
+    {
+        Collider[] hits = Physics.OverlapSphere(center, radius);
+        foreach (var hit in hits)
+        {
+            if (hit.CompareTag("Player") && playerHealth != null)
+            {
+                ExecuteAttack(hit.gameObject, damage);
+                break;
+            }
+        }
+    }
 
     private void ExecuteAttack(GameObject target, float damageAmount)
     {
@@ -682,20 +748,16 @@ public class BloodKnightBoss : MonoBehaviour
 
     private Vector3 GetGroundPosition(Vector3 targetPos)
     {
-        // Opción A: Raycast (Más preciso visualmente para terrenos irregulares)
-        // Lanza un rayo desde 2 metros arriba hacia abajo buscando la capa "Ground" o "Default"
-        if (Physics.Raycast(targetPos + Vector3.up * 2f, Vector3.down, out RaycastHit hit, 5f, LayerMask.GetMask("Default", "Ground", "Terrain")))
+        if (Physics.Raycast(targetPos + Vector3.up * 2f, Vector3.down, out RaycastHit hit, 5f, groundLayerMask))
         {
-            return hit.point + Vector3.up * 0.025f; // Pequeño offset para evitar que la textura parpadee
+            return hit.point + Vector3.up * 0.05f;
         }
 
-        // Opción B: NavMesh (Si el raycast falla, busca el punto navegable más cercano)
         if (NavMesh.SamplePosition(targetPos, out NavMeshHit navHit, 2.0f, NavMesh.AllAreas))
         {
-            return navHit.position + Vector3.up * 0.02f;
+            return navHit.position + Vector3.up * 0.05f;
         }
 
-        // Fallback: Si todo falla, mantener la altura del Boss pero asegurar que no flote tanto
         return new Vector3(targetPos.x, transform.position.y + 0.02f, targetPos.z);
     }
 
@@ -712,7 +774,11 @@ public class BloodKnightBoss : MonoBehaviour
         instantiatedEffects.Add(trail);
 
         FireTrail ft = trail.GetComponent<FireTrail>();
-        if (ft != null) ft.DamagePerSecond = fireTrailDamagePerSecond;
+        if (ft != null)
+        {
+            ft.DamagePerSecond = fireTrailDamagePerSecond;
+            ft.Lifetime = fireTrailLifeTime;
+        }
     }
 
     private GameObject SpawnNecioPecadorWarning(Vector3 pos, float radius)
@@ -722,6 +788,20 @@ public class BloodKnightBoss : MonoBehaviour
         warningObj.transform.localScale = new Vector3(radius * 2, 0.1f, radius * 2); // Ajustar tamaño visual
         instantiatedEffects.Add(warningObj);
         return warningObj;
+    }
+
+    private GameObject SpawnSodomaWarning(Vector3 pos, float radius)
+    {
+        GameObject obj = SpawnNecioPecadorWarning(pos, radius);
+        if (obj != null)
+        {
+            Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
+            foreach (var r in renderers)
+            {
+                r.material.color = Color.green;
+            }
+        }
+        return obj;
     }
 
     private void SpawnSoulHand(Vector3 pos)
@@ -741,9 +821,8 @@ public class BloodKnightBoss : MonoBehaviour
         if (greenFireVFX != null && swordTransform != null)
         {
             ParticleSystem vfx = Instantiate(greenFireVFX, swordTransform.position, swordTransform.rotation);
-            instantiatedEffects.Add(vfx.gameObject);
             vfx.Play();
-            Destroy(vfx.gameObject, 1f);
+            if (vfx.gameObject != null) Destroy(vfx.gameObject, 1f);
         }
     }
 
@@ -782,83 +861,69 @@ public class BloodKnightBoss : MonoBehaviour
 
     #endregion
 
-    #region Debug
-
-    private void OnGUI()
-    {
-        if (!showDebugGUI) return;
-
-        GUILayout.BeginArea(new Rect(10, 10, 300, 220));
-        GUILayout.Box("Dark Knight AI State");
-        GUILayout.Label($"Health: {currentHealth}/{maxHealth} ({(currentHealth / maxHealth) * 100:F1}%)");
-        GUILayout.Label($"State: {currentState}");
-        GUILayout.Label($"Low HP Phase: {isInLowHealthPhase}");
-        GUILayout.Label($"Speed Multiplier: {(speedBuffApplied ? lowHPSpeedMultiplier : 1.0f)}x");
-
-        if (forceApocalipsisNext)
-            GUILayout.Label("WARNING: Next Cycle Forced -> Apocalipsis");
-
-        GUILayout.EndArea();
-    }
+    #region Debug 
 
     private void OnDrawGizmos()
     {
+        Vector3 damageOrigin = (swordTransform != null) ? swordTransform.position : transform.position;
+
         Color stateColor = currentState switch
         {
-            BossState.Attacking => Color.red,
-            BossState.Vulnerable => Color.green,
-            BossState.Charging => new Color(1f, 0.5f, 0f),
-            BossState.Stunned => Color.yellow,
+            BossState.Idle => Color.white,
             BossState.Chasing => Color.blue,
-            _ => Color.white
+            BossState.Attacking => Color.red,
+            BossState.Charging => new Color(1f, 0.64f, 0f), // Naranja
+            BossState.Vulnerable => Color.green,
+            BossState.Stunned => Color.yellow,
+            _ => Color.grey
         };
 
-        Gizmos.color = stateColor;
-
-        Gizmos.color = new Color(1f, 0.92f, 0.016f, 0.3f);
-        Gizmos.DrawWireSphere(transform.position, apocalipsisRange);
-
-        Gizmos.color = new Color(1f, 0f, 0f, 0.1f);
-        Gizmos.DrawSphere(transform.position, sodomaCutRange);
+        // Cycle 1
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, sodomaCutRange);
+        Gizmos.DrawSphere(transform.position, 1.0f);
 
-        Vector3 backwardPos = transform.position - transform.forward * sodomaBackwardDistance;
-        Gizmos.color = Color.magenta;
-        Gizmos.DrawLine(transform.position, backwardPos);
-        Gizmos.DrawWireSphere(backwardPos, 0.3f);
+        Vector3 attackCenter = damageOrigin + transform.forward;
 
-        if (player != null)
-        {
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawLine(transform.position, player.position);
+        Gizmos.color = new Color(1f, 0f, 0f, 0.3f);
+        Gizmos.DrawSphere(attackCenter, apocalipsisRange);
 
-            Vector3 dirToPlayer = (player.position - transform.position).normalized;
-            Vector3 stopPos = player.position - (dirToPlayer * 1.2f);
+        Gizmos.color = Color.red;
+        Gizmos.DrawLine(damageOrigin, attackCenter);
 
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(stopPos, 0.5f);
-            Gizmos.DrawLine(player.position, stopPos);
-        }
+        // Cycle 3
+        Vector3 sodomaCenter = damageOrigin + transform.forward;
 
-        if (currentState == BossState.Charging || currentState == BossState.Idle)
-        {
-            Gizmos.color = new Color(0.5f, 0f, 1f, 0.5f);
-            Matrix4x4 rotationMatrix = Matrix4x4.TRS(transform.position + Vector3.up * 1.5f, transform.rotation, transform.lossyScale);
-            Gizmos.matrix = rotationMatrix;
-            Gizmos.DrawWireCube(Vector3.forward * 1.5f, new Vector3(3f, 3f, 3f));
-            Gizmos.matrix = Matrix4x4.identity;
-        }
+        Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
+        Gizmos.DrawSphere(sodomaCenter, sodomaCutRange);
+
+        Gizmos.color = Color.green;
+        Gizmos.DrawSphere(sodomaCenter, sodomaCutRange);
+
+        // Special Ability
+        Gizmos.color = new Color(0.5f, 0f, 0.5f, 0.5f);
+        Gizmos.DrawSphere(transform.position + Vector3.forward * 4.5f, necioPecadorRadius);
 
 #if UNITY_EDITOR
         GUIStyle style = new GUIStyle();
         style.normal.textColor = stateColor;
-        style.fontSize = 15;
+        style.fontSize = 14;
         style.fontStyle = FontStyle.Bold;
         style.alignment = TextAnchor.MiddleCenter;
 
-        UnityEditor.Handles.Label(transform.position + Vector3.up * 3.5f, $"{currentState}\nHP: {currentHealth}", style);
+        string debugText = $"{currentState}\nHP: {(int)currentHealth}";
+        if (isInLowHealthPhase) debugText += "\n[BERSERK]";
+
+        UnityEditor.Handles.Label(transform.position + Vector3.up * 2.5f, debugText, style);
 #endif
+    }
+
+    private void OnGUI()
+    {
+        if (!showDebugGUI) return;
+        GUILayout.BeginArea(new Rect(10, 10, 200, 100));
+        GUILayout.Label($"State: {currentState}");
+        GUILayout.Label($"HP: {currentHealth}");
+        GUILayout.EndArea();
     }
 
     #endregion
