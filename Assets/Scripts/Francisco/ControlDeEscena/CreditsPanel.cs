@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro; 
+using TMPro;
 
 public class CreditsPanel : MonoBehaviour
 {
@@ -39,10 +39,16 @@ public class CreditsPanel : MonoBehaviour
     [SerializeField] private GameObject firstSelectedButton;
 
     [Header("Credits Container")]
+    [SerializeField] private RectTransform creditsViewport;
     [SerializeField] private RectTransform creditsContainer;
-    [SerializeField] private ScrollRect scrollRect;
-    [SerializeField] private float scrollSpeed = 30f;
+    [SerializeField] private float scrollSpeed = 50f;
     [SerializeField] private float autoScrollDelay = 1f;
+    [SerializeField] private bool loopCredits = true;
+
+    [Header("Alignment Offsets")]
+    [SerializeField] private float leftAlignmentOffset = 0f;
+    [SerializeField] private float centerAlignmentOffset = 0f;
+    [SerializeField] private float rightAlignmentOffset = 0f;
 
     [Header("Credits Content")]
     [SerializeField] private CreditsEntry[] creditsEntries;
@@ -63,9 +69,11 @@ public class CreditsPanel : MonoBehaviour
     [SerializeField] private Color roleColor = new Color(0.8f, 0.8f, 0.8f);
     [SerializeField] private Color nameColor = Color.white;
 
-    private bool isScrolling = false;
-    private Coroutine autoScrollCoroutine;
+    private Tweener scrollTween;
     private List<GameObject> instantiatedObjects = new List<GameObject>();
+    private float contentHeight;
+    private float currentYPosition = 0f;
+    private float currentLineMaxHeight = 0f; 
 
     #endregion
 
@@ -83,6 +91,7 @@ public class CreditsPanel : MonoBehaviour
         public bool useCustomColor = false;
         public Color customColor = Color.white;
         public int fontSize = 0;
+        public bool continueOnSameLine = false;
     }
 
     #endregion
@@ -106,10 +115,7 @@ public class CreditsPanel : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (autoScrollCoroutine != null)
-        {
-            StopCoroutine(autoScrollCoroutine);
-        }
+        StopAutoScroll();
     }
 
     #endregion
@@ -119,6 +125,16 @@ public class CreditsPanel : MonoBehaviour
     public void OpenPanel()
     {
         gameObject.SetActive(true);
+
+        StopAutoScroll();
+
+        if (creditsContainer != null)
+        {
+            creditsContainer.anchoredPosition = new Vector2(creditsContainer.anchoredPosition.x, 0f);
+        }
+
+        ClearCredits();
+
         BuildCredits();
 
         if (displayType == PanelDisplayType.AnimatedScale)
@@ -218,13 +234,33 @@ public class CreditsPanel : MonoBehaviour
 
     private void BuildCredits()
     {
-        ClearCredits();
+        currentYPosition = 0f;
+        currentLineMaxHeight = 0f;
 
-        if (creditsContainer == null) return;
-
-        foreach (var entry in creditsEntries)
+        if (creditsContainer == null)
         {
+            Debug.LogError("CreditsPanel: creditsContainer es nulo!");
+            return;
+        }
+
+        bool isFirstInLine = true;
+        float lineStartY = 0f;
+        float finalSpacingForLine = defaultSpacing; 
+
+        for (int i = 0; i < creditsEntries.Length; i++)
+        {
+            var entry = creditsEntries[i];
             GameObject instance = null;
+            float entryHeight = 0f;
+            float entrySpacing = entry.customSpacing > 0 ? entry.customSpacing : defaultSpacing;
+
+            if (isFirstInLine)
+            {
+                lineStartY = currentYPosition;
+                currentLineMaxHeight = 0f;
+            }
+
+            finalSpacingForLine = entrySpacing;
 
             switch (entry.entryType)
             {
@@ -260,22 +296,48 @@ public class CreditsPanel : MonoBehaviour
 
                 case EntryType.Spacer:
                     instance = InstantiatePrefab(spacerPrefab);
-                    SetupSpacer(instance, entry);
+                    entryHeight = entrySpacing * 2;
                     break;
             }
 
             if (instance != null)
             {
-                SetAlignment(instance, entry.alignment);
+                SetAlignment(instance, entry);
+
+                if (entry.entryType != EntryType.Spacer)
+                {
+                    Canvas.ForceUpdateCanvases();
+                    entryHeight = instance.GetComponent<RectTransform>().rect.height;
+                }
+
+                RectTransform rt = instance.GetComponent<RectTransform>();
+
+                float pivotY = rt.pivot.y;
+                float posY = -lineStartY - entryHeight * pivotY;
+
+                rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, posY);
+
+                if (entryHeight > currentLineMaxHeight)
+                {
+                    currentLineMaxHeight = entryHeight;
+                }
+
                 instantiatedObjects.Add(instance);
+
+                if (!entry.continueOnSameLine)
+                {
+                    currentYPosition = lineStartY + currentLineMaxHeight + finalSpacingForLine;
+                    isFirstInLine = true;
+                }
+                else
+                {
+                    isFirstInLine = false;
+                }
             }
         }
 
         Canvas.ForceUpdateCanvases();
-        if (scrollRect != null)
-        {
-            scrollRect.verticalNormalizedPosition = 0f;
-        }
+        contentHeight = currentYPosition;
     }
 
     private void ClearCredits()
@@ -321,10 +383,8 @@ public class CreditsPanel : MonoBehaviour
         }
         else
         {
-            Debug.LogError($"CreditsPanel: El prefab '{instance.name}' para {entry.entryType} NO tiene componente 'TextMeshProUGUI'. ¡Revisar Prefab!");
+            Debug.LogError($"CreditsPanel: El prefab '{instance.name}' para {entry.entryType} NO tiene componente 'TextMeshProUGUI'.");
         }
-
-        SetSpacing(instance, entry.customSpacing > 0 ? entry.customSpacing : defaultSpacing);
     }
 
     private void SetupRoleWithName(GameObject instance, CreditsEntry entry)
@@ -357,10 +417,8 @@ public class CreditsPanel : MonoBehaviour
         }
         else
         {
-            Debug.LogError($"CreditsPanel: El prefab '{instance.name}' para RoleWithName NO tiene al menos 2 componentes 'TextMeshProUGUI'. ¡Revisar Prefab!");
+            Debug.LogError($"CreditsPanel: El prefab '{instance.name}' para RoleWithName NO tiene al menos 2 componentes 'TextMeshProUGUI'.");
         }
-
-        SetSpacing(instance, entry.customSpacing > 0 ? entry.customSpacing : defaultSpacing);
     }
 
     private void SetupImageWithText(GameObject instance, CreditsEntry entry)
@@ -390,71 +448,36 @@ public class CreditsPanel : MonoBehaviour
         }
         else
         {
-            Debug.LogError($"CreditsPanel: El prefab '{instance.name}' para ImageWithText NO tiene componente 'TextMeshProUGUI'. ¡Revisar Prefab!");
+            Debug.LogError($"CreditsPanel: El prefab '{instance.name}' para ImageWithText NO tiene componente 'TextMeshProUGUI'.");
         }
-
-        SetSpacing(instance, entry.customSpacing > 0 ? entry.customSpacing : defaultSpacing);
     }
 
-    private void SetupSpacer(GameObject instance, CreditsEntry entry)
+    private void SetAlignment(GameObject instance, CreditsEntry entry)
     {
         if (instance == null) return;
 
-        LayoutElement layoutElement = instance.GetComponent<LayoutElement>();
-        if (layoutElement == null)
+        RectTransform rectTransform = instance.GetComponent<RectTransform>();
+        if (rectTransform != null)
         {
-            layoutElement = instance.AddComponent<LayoutElement>();
-        }
-
-        float spacerHeight = entry.customSpacing > 0 ? entry.customSpacing : defaultSpacing * 2;
-        layoutElement.minHeight = spacerHeight;
-        layoutElement.preferredHeight = spacerHeight;
-    }
-
-    private void SetSpacing(GameObject instance, float spacing)
-    {
-        LayoutElement layoutElement = instance.GetComponent<LayoutElement>();
-        if (layoutElement == null)
-        {
-            layoutElement = instance.AddComponent<LayoutElement>();
-        }
-        layoutElement.minHeight = spacing;
-    }
-
-    private void SetAlignment(GameObject instance, EntryAlignment alignment)
-    {
-        if (instance == null) return;
-
-        HorizontalLayoutGroup horizontalLayout = instance.GetComponent<HorizontalLayoutGroup>();
-        if (horizontalLayout != null)
-        {
-            switch (alignment)
+            switch (entry.alignment)
             {
                 case EntryAlignment.Left:
-                    horizontalLayout.childAlignment = TextAnchor.MiddleLeft;
+                    rectTransform.anchorMin = new Vector2(0f, 0.5f);
+                    rectTransform.anchorMax = new Vector2(0f, 0.5f);
+                    rectTransform.pivot = new Vector2(0f, 0.5f);
+                    rectTransform.anchoredPosition = new Vector2(leftAlignmentOffset, rectTransform.anchoredPosition.y);
                     break;
                 case EntryAlignment.Center:
-                    horizontalLayout.childAlignment = TextAnchor.MiddleCenter;
+                    rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+                    rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                    rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                    rectTransform.anchoredPosition = new Vector2(centerAlignmentOffset, rectTransform.anchoredPosition.y);
                     break;
                 case EntryAlignment.Right:
-                    horizontalLayout.childAlignment = TextAnchor.MiddleRight;
-                    break;
-            }
-        }
-
-        TextMeshProUGUI textComponent = instance.GetComponent<TextMeshProUGUI>();
-        if (textComponent != null)
-        {
-            switch (alignment)
-            {
-                case EntryAlignment.Left:
-                    textComponent.alignment = TextAlignmentOptions.MidlineLeft;
-                    break;
-                case EntryAlignment.Center:
-                    textComponent.alignment = TextAlignmentOptions.Midline;
-                    break;
-                case EntryAlignment.Right:
-                    textComponent.alignment = TextAlignmentOptions.MidlineRight;
+                    rectTransform.anchorMin = new Vector2(1f, 0.5f);
+                    rectTransform.anchorMax = new Vector2(1f, 0.5f);
+                    rectTransform.pivot = new Vector2(1f, 0.5f);
+                    rectTransform.anchoredPosition = new Vector2(-rightAlignmentOffset, rectTransform.anchoredPosition.y);
                     break;
             }
         }
@@ -517,83 +540,125 @@ public class CreditsPanel : MonoBehaviour
 
     private void StartAutoScroll()
     {
-        if (autoScrollCoroutine != null)
+        StopAutoScroll();
+
+        if (creditsContainer == null || creditsViewport == null)
         {
-            StopCoroutine(autoScrollCoroutine);
+            Debug.LogError("CreditsPanel: creditsContainer o creditsViewport es nulo. No se puede iniciar scroll.");
+            return;
         }
-        autoScrollCoroutine = StartCoroutine(AutoScrollRoutine());
+
+        DOVirtual.DelayedCall(autoScrollDelay, () =>
+        {
+            if (this != null && gameObject.activeInHierarchy)
+            {
+                PerformScroll();
+            }
+        }, true);
+    }
+
+    private void PerformScroll()
+    {
+        if (contentHeight <= 0f)
+        {
+            Debug.LogWarning("CreditsPanel: La altura del contenido es 0. Asegúrate de que el Content Size Fitter esté configurado.");
+            return;
+        }
+
+        float viewportHeight = creditsViewport.rect.height;
+        float totalDistance = contentHeight + viewportHeight;
+
+        float duration = totalDistance / scrollSpeed;
+
+        creditsContainer.anchoredPosition = new Vector2(creditsContainer.anchoredPosition.x, 0f);
+
+        float targetY = contentHeight + viewportHeight;
+
+        scrollTween = creditsContainer.DOAnchorPosY(targetY, duration)
+            .SetEase(Ease.Linear)
+            .SetUpdate(true)
+            .OnComplete(() =>
+            {
+                if (loopCredits && this != null && gameObject.activeInHierarchy)
+                {
+                    PerformScroll();
+                }
+            });
     }
 
     private void StopAutoScroll()
     {
-        isScrolling = false;
-        if (autoScrollCoroutine != null)
+        if (scrollTween != null)
         {
-            StopCoroutine(autoScrollCoroutine);
-            autoScrollCoroutine = null;
-        }
-    }
-
-    private IEnumerator AutoScrollRoutine()
-    {
-        yield return new WaitForSecondsRealtime(autoScrollDelay);
-
-        isScrolling = true;
-
-        if (scrollRect == null || creditsContainer == null)
-        {
-            Debug.LogError("CreditsPanel Routine: scrollRect o creditsContainer es nulo. Deteniendo scroll.");
-            yield break;
-        }
-
-        while (isScrolling && scrollRect != null)
-        {
-            float contentHeight = creditsContainer.rect.height;
-
-            if (contentHeight <= 0f)
-            {
-                //Debug.LogWarning("CreditsPanel Routine: Altura del Contenido es 0. Asegúrate de configurar Content Size Fitter.");
-                yield return null;
-                continue;
-            }
-
-            float normalizedSpeed = scrollSpeed / contentHeight;
-
-            scrollRect.verticalNormalizedPosition += normalizedSpeed * Time.unscaledDeltaTime;
-
-            if (scrollRect.verticalNormalizedPosition >= 1f)
-            {
-                scrollRect.verticalNormalizedPosition = 0f;
-            }
-
-            yield return null;
+            scrollTween.Kill();
+            scrollTween = null;
         }
     }
 
     public void PauseScroll()
     {
-        isScrolling = false;
+        if (scrollTween != null && scrollTween.IsActive())
+        {
+            scrollTween.Pause();
+        }
     }
 
     public void ResumeScroll()
     {
-        if (!isScrolling && autoScrollCoroutine == null)
+        if (scrollTween != null && scrollTween.IsActive())
         {
-            StartAutoScroll();
+            scrollTween.Play();
         }
         else
         {
-            isScrolling = true;
+            StartAutoScroll();
         }
     }
 
     public void ResetScroll()
     {
-        if (scrollRect != null)
+        StopAutoScroll();
+        if (creditsContainer != null)
         {
-            scrollRect.verticalNormalizedPosition = 0f;
+            creditsContainer.anchoredPosition = new Vector2(creditsContainer.anchoredPosition.x, 0f);
         }
         StartAutoScroll();
+    }
+
+    #endregion
+
+    #region [ Gizmos ]
+
+    private void OnDrawGizmos()
+    {
+        if (creditsViewport == null) return;
+
+        Vector3[] viewportCorners = new Vector3[4];
+        creditsViewport.GetWorldCorners(viewportCorners);
+
+        float viewportZ = viewportCorners[0].z;
+
+        float leftX = viewportCorners[0].x + leftAlignmentOffset;
+        float centerX = (viewportCorners[0].x + viewportCorners[2].x) / 2f + centerAlignmentOffset;
+        float rightX = viewportCorners[2].x - rightAlignmentOffset;
+
+        float topY = viewportCorners[1].y;
+        float bottomY = viewportCorners[0].y;
+
+        Gizmos.color = new Color(1f, 0f, 0f, 0.5f);
+        Gizmos.DrawLine(new Vector3(leftX, bottomY, viewportZ), new Vector3(leftX, topY, viewportZ));
+
+        Gizmos.color = new Color(0f, 1f, 0f, 0.5f);
+        Gizmos.DrawLine(new Vector3(centerX, bottomY, viewportZ), new Vector3(centerX, topY, viewportZ));
+
+        Gizmos.color = new Color(0f, 0.5f, 1f, 0.5f);
+        Gizmos.DrawLine(new Vector3(rightX, bottomY, viewportZ), new Vector3(rightX, topY, viewportZ));
+
+        Gizmos.color = new Color(1f, 1f, 1f, 0.3f);
+        Gizmos.DrawLine(viewportCorners[0], viewportCorners[1]);
+        Gizmos.DrawLine(viewportCorners[1], viewportCorners[2]);
+        Gizmos.DrawLine(viewportCorners[2], viewportCorners[3]);
+        Gizmos.DrawLine(viewportCorners[3], viewportCorners[0]);
     }
 
     #endregion

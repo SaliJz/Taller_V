@@ -69,6 +69,9 @@ public class CreditsEntryDrawer : PropertyDrawer
             singleLine.y += LineHeight + Spacing;
         }
 
+        EditorGUI.PropertyField(singleLine, property.FindPropertyRelative("continueOnSameLine"), new GUIContent("Continue on Same Line"));
+        singleLine.y += LineHeight + Spacing;
+
         EditorGUI.EndProperty();
     }
 
@@ -80,7 +83,7 @@ public class CreditsEntryDrawer : PropertyDrawer
         SerializedProperty useCustomColorProp = property.FindPropertyRelative("useCustomColor");
         bool useCustomColor = useCustomColorProp.boolValue;
 
-        int lines = 3;
+        int lines = 4; 
 
         switch (entryType)
         {
@@ -97,19 +100,20 @@ public class CreditsEntryDrawer : PropertyDrawer
                 lines += 2;
                 break;
             case CreditsPanel.EntryType.Spacer:
-                lines -= 1;
                 break;
         }
 
         if (entryType != CreditsPanel.EntryType.Spacer)
         {
-            lines += 1;
+            lines += 1; 
             if (useCustomColor)
             {
                 lines += 1;
             }
-            lines += 1;
+            lines += 1; 
         }
+
+        lines += 1;
 
         return lines * (LineHeight + Spacing);
     }

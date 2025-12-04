@@ -18,10 +18,15 @@ public class CreditsPanelEditor : Editor
 
     SerializedProperty firstSelectedButtonProp;
 
+    SerializedProperty creditsViewportProp;
     SerializedProperty creditsContainerProp;
-    SerializedProperty scrollRectProp;
     SerializedProperty scrollSpeedProp;
     SerializedProperty autoScrollDelayProp;
+    SerializedProperty loopCreditsProp;
+
+    SerializedProperty leftAlignmentOffsetProp;
+    SerializedProperty centerAlignmentOffsetProp;
+    SerializedProperty rightAlignmentOffsetProp;
 
     SerializedProperty creditsEntriesProp;
 
@@ -56,10 +61,15 @@ public class CreditsPanelEditor : Editor
 
         firstSelectedButtonProp = serializedObject.FindProperty("firstSelectedButton");
 
+        creditsViewportProp = serializedObject.FindProperty("creditsViewport");
         creditsContainerProp = serializedObject.FindProperty("creditsContainer");
-        scrollRectProp = serializedObject.FindProperty("scrollRect");
         scrollSpeedProp = serializedObject.FindProperty("scrollSpeed");
         autoScrollDelayProp = serializedObject.FindProperty("autoScrollDelay");
+        loopCreditsProp = serializedObject.FindProperty("loopCredits");
+
+        leftAlignmentOffsetProp = serializedObject.FindProperty("leftAlignmentOffset");
+        centerAlignmentOffsetProp = serializedObject.FindProperty("centerAlignmentOffset");
+        rightAlignmentOffsetProp = serializedObject.FindProperty("rightAlignmentOffset");
 
         creditsEntriesProp = serializedObject.FindProperty("creditsEntries");
 
@@ -131,11 +141,23 @@ public class CreditsPanelEditor : Editor
         EditorGUILayout.PropertyField(firstSelectedButtonProp);
 
         EditorGUILayout.Space(10);
-        EditorGUILayout.LabelField("Credits Container", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("Credits Container (Sin ScrollRect)", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            "Viewport: RectTransform padre con componente Mask (NO se mueve)\n" +
+            "Container: RectTransform hijo que contiene los créditos (SE MUEVE hacia arriba)",
+            MessageType.Info);
+
+        EditorGUILayout.PropertyField(creditsViewportProp);
         EditorGUILayout.PropertyField(creditsContainerProp);
-        EditorGUILayout.PropertyField(scrollRectProp);
         EditorGUILayout.PropertyField(scrollSpeedProp);
         EditorGUILayout.PropertyField(autoScrollDelayProp);
+        EditorGUILayout.PropertyField(loopCreditsProp);
+
+        EditorGUILayout.Space(10);
+        EditorGUILayout.LabelField("Alignment Offsets", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(leftAlignmentOffsetProp);
+        EditorGUILayout.PropertyField(centerAlignmentOffsetProp);
+        EditorGUILayout.PropertyField(rightAlignmentOffsetProp);
 
         EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("Prefab References", EditorStyles.boldLabel);
