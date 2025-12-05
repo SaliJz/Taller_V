@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -29,10 +30,12 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private float hitRadius = 0.8f;
     [SerializeField] private int attackDamage = 10;
     [SerializeField] private float attackSpeed = 1f;
+    [SerializeField] private float baseSpeedReference = 1f;
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private bool canShowHitGizmo = false;
 
     [Header("Combo Configuration")]
+    [SerializeField] private float autoAimRange = 5f;
     [SerializeField] private float comboResetTime = 2f; // Tiempo sin atacar para resetear combo
     [SerializeField] private float[] comboMovementForces = new float[3] { 1.5f, 2f, 1.8f }; // Fuerza de empuje por ataque
     [SerializeField] private float[] comboLockDurations = new float[3] { 0.4f, 0.6f, 0.8f }; // Duración del lock por ataque
@@ -76,6 +79,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private float damageMultiplier = 1f;
     private float speedMultiplier = 1f;
+
+    private float currentSpeedFactor = 1f;
 
     private bool isAttacking = false;
 
@@ -199,8 +204,13 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private void CalculateStats()
     {
-        finalAttackDamage = Mathf.RoundToInt(attackDamage + damageMultiplier);
-        finalAttackSpeed = attackSpeed + speedMultiplier;
+        finalAttackDamage = Mathf.RoundToInt(Mathf.Max(0.1f, attackDamage + damageMultiplier - 1f));
+        if (finalAttackDamage <= 0.01f) finalAttackDamage = 1;
+
+        finalAttackSpeed = Mathf.RoundToInt(Mathf.Max(0.1f, attackSpeed + speedMultiplier - 1f));
+        if (finalAttackSpeed <= 0.01f) finalAttackSpeed = 1f;
+
+        currentSpeedFactor = finalAttackSpeed / baseSpeedReference;
 
         ReportDebug($"Estadisticas recalculadas: Daño Final = {finalAttackDamage}, Velocidad de Ataque Final = {finalAttackSpeed}", 1);
     }
@@ -251,6 +261,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         isAttacking = false;
 
+        if (playerAnimator != null) playerAnimator.speed = 1f;
+
         // Resetear combo para que no guarde el estado intermedio
         comboCount = 0;
         lastAttackTime = 0; // Forzar reset de tiempo
@@ -290,6 +302,48 @@ public class PlayerMeleeAttack : MonoBehaviour
         comboCount = (comboCount + 1) % 3; // Ciclo: 0 -> 1 -> 2 -> 0
     }
 
+    // Método nuevo para buscar el enemigo más cercano
+    private bool TryGetNearestEnemyDirection(out Vector3 enemyDir)
+    {
+        enemyDir = Vector3.forward;
+
+        int hitCount = Physics.OverlapSphereNonAlloc(transform.position, autoAimRange, hitBuffer, enemyLayer);
+
+        if (hitCount == 0) return false;
+
+        Collider nearestEnemy = null;
+        float closestDistanceSqr = Mathf.Infinity;
+        Vector3 currentPos = transform.position;
+
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider col = hitBuffer[i];
+            if (col == null) continue;
+
+            Vector3 dirToEnemy = col.transform.position - currentPos;
+            float dSqrToTarget = dirToEnemy.sqrMagnitude;
+
+            if (dSqrToTarget < closestDistanceSqr)
+            {
+                closestDistanceSqr = dSqrToTarget;
+                nearestEnemy = col;
+            }
+        }
+
+        if (nearestEnemy != null)
+        {
+            Vector3 direction = nearestEnemy.transform.position - currentPos;
+            direction.y = 0;
+            if (direction.sqrMagnitude > 0.001f)
+            {
+                enemyDir = direction.normalized;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>
     /// Secuencia de ataque:
     /// 1) Obtener dirección del mouse (o forward)
@@ -320,21 +374,30 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         // 1) Dirección objetivo
         Vector3 targetDir;
-        bool isGamepadActive = false;
-        if (gamepadPointer != null)
-        {
-            isGamepadActive = (gamepadPointer.GetCurrentActiveDevice() == gamepadPointer.GetCurrentGamepad());
-        }
+        bool enemyFound = TryGetNearestEnemyDirection(out Vector3 autoAimDir);
 
-        if (isGamepadActive)
+        if (enemyFound)
         {
-            // Con mando, usa la dirección actual del jugador
-            targetDir = transform.forward;
-            // O mejor: targetDir = playerMovement.GetCurrentMovementDirection(); si existiera.
+            // Si hay enemigo cerca, prioriza esa dirección
+            targetDir = autoAimDir;
         }
-        else if (!TryGetMouseWorldDirection(out targetDir))
+        else
         {
-            targetDir = transform.forward;
+            // Lógica original de Gamepad / Mouse
+            bool isGamepadActive = false;
+            if (gamepadPointer != null)
+            {
+                isGamepadActive = (gamepadPointer.GetCurrentActiveDevice() == gamepadPointer.GetCurrentGamepad());
+            }
+
+            if (isGamepadActive)
+            {
+                targetDir = transform.forward;
+            }
+            else if (!TryGetMouseWorldDirection(out targetDir))
+            {
+                targetDir = transform.forward;
+            }
         }
 
         // 2) Lockear rotación snapped
@@ -353,11 +416,21 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         if (playerMovement != null) playerMovement.StartForcedMovement(true);
 
+        if (playerAnimator != null)
+        {
+            playerAnimator.speed = currentSpeedFactor;
+        }
+
         switch (attackIndex)
         {
             case 0: yield return StartCoroutine(ExecuteAttack1()); break;
             case 1: yield return StartCoroutine(ExecuteAttack2()); break;
             case 2: yield return StartCoroutine(ExecuteAttack3()); break;
+        }
+
+        if (playerAnimator != null)
+        {
+            playerAnimator.speed = 1f;
         }
 
         if (playerMovement != null)
@@ -416,7 +489,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private IEnumerator ExecuteAttack1()
     {
-        float movementDuration = attack1Duration;
+        float duration = attack1Duration / currentSpeedFactor;
         float elapsedTime = 0f;
 
         float desiredTotalDistance = comboMovementForces[0];
@@ -443,11 +516,11 @@ public class PlayerMeleeAttack : MonoBehaviour
             }
         }
 
-        Vector3 attackMoveVelocity = (forward * safeDistance) / Mathf.Max(0.0001f, movementDuration);
+        Vector3 attackMoveVelocity = (forward * safeDistance) / Mathf.Max(0.0001f, duration);
 
         float accumulated = 0f;
 
-        while (elapsedTime < movementDuration)
+        while (elapsedTime < duration)
         {
             elapsedTime += Time.deltaTime;
             Vector3 frameDesired = attackMoveVelocity * Time.deltaTime;
@@ -489,7 +562,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
 
         // Mantener lock
-        float lockDuration = comboLockDurations[0];
+        float lockDuration = comboLockDurations[0] / currentSpeedFactor;
         attackCooldown = lockDuration;
 
         float remainingTime = Mathf.Max(0, lockDuration - attack1Duration);
@@ -508,15 +581,10 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
-    public void DesactiveAttack1Slash()
-    {
-        //attack1Slash.gameObject.SetActive(false);
-    }
-
     private IEnumerator ExecuteAttack2()
     {
-        float movementDuration = Mathf.Max(0f, attack2MovementDuration);
-        float spinDuration = Mathf.Max(0f, attack2SpinDuration);
+        float movementDuration = Mathf.Max(0f, attack2MovementDuration / currentSpeedFactor);
+        float spinDuration = Mathf.Max(0f, attack2SpinDuration / currentSpeedFactor);
 
         float desiredTotalDistance = comboMovementForces[1];
         Vector3 forward = transform.forward;
@@ -544,7 +612,6 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         float elapsedTime = 0f;
         Vector3 attackMoveVelocity = (forward * safeDistance) / Mathf.Max(0.0001f, movementDuration);
-
         float accumulated = 0f;
 
         while (elapsedTime < movementDuration)
@@ -595,10 +662,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         {
             try
             {
-                if (playerMovement != null)
-                {
-                    playerMovement.IsRotationExternallyControlled = true;
-                }
+                if (playerMovement != null) playerMovement.IsRotationExternallyControlled = true;
 
                 float targetAngle = Mathf.Abs(attack2TargetSpinAngle);
                 float sign = Mathf.Sign(attack2TargetSpinAngle);
@@ -606,7 +670,8 @@ public class PlayerMeleeAttack : MonoBehaviour
                 // velocidad angular necesaria para cubrir targetAngle en spinDuration
                 float requiredAngularSpeed = targetAngle / spinDuration; // grados por segundo
 
-                float angularSpeed = Mathf.Min(requiredAngularSpeed, Mathf.Abs(attack2SpinSpeed));
+                float maxSpeed = Mathf.Abs(attack2SpinSpeed) * currentSpeedFactor;
+                float angularSpeed = Mathf.Min(requiredAngularSpeed, maxSpeed);
 
                 float rotated = 0f;
                 float elapsedSpin = 0f;
@@ -649,7 +714,7 @@ public class PlayerMeleeAttack : MonoBehaviour
             ReportDebug("ExecuteAttack2: spinDuration o targetSpinAngle inválidos, se omite giro.", 1);
         }
 
-        float lockDuration = comboLockDurations[1];
+        float lockDuration = comboLockDurations[1] / currentSpeedFactor;
         attackCooldown = lockDuration;
 
         float totalAttackDuration = movementDuration + spinDuration;
@@ -669,23 +734,20 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
-    public void DesactiveAttack2Slash()
-    {
-    }
-
     private IEnumerator ExecuteAttack3()
     {
+        float preChargeDuration = attack3PreChargeDuration / currentSpeedFactor;
+        float chargeDuration = attack3ChargeDuration / currentSpeedFactor;
         float preChargeElapsed = 0f;
 
-        while (preChargeElapsed < attack3PreChargeDuration)
+        while (preChargeElapsed < preChargeDuration)
         {
             preChargeElapsed += Time.deltaTime;
-            float spinAmount = attack3SpinSpeed * Time.deltaTime;
+            float spinAmount = (attack3SpinSpeed * currentSpeedFactor) * Time.deltaTime;
             transform.Rotate(0f, spinAmount, 0f, Space.Self);
             yield return null;
         }
 
-        float chargeElapsed = 0f;
         float desiredTotalDistance = comboMovementForces[2];
         Vector3 forward = transform.forward;
 
@@ -710,11 +772,11 @@ public class PlayerMeleeAttack : MonoBehaviour
             }
         }
 
-        Vector3 attackMoveVelocity = (forward * safeDistance) / Mathf.Max(0.0001f, attack3ChargeDuration);
-
+        float chargeElapsed = 0f;
+        Vector3 attackMoveVelocity = (forward * safeDistance) / Mathf.Max(0.0001f, chargeDuration);
         float accumulated = 0f;
 
-        while (chargeElapsed < attack3ChargeDuration)
+        while (chargeElapsed < chargeDuration)
         {
             chargeElapsed += Time.deltaTime;
             Vector3 frameDesired = attackMoveVelocity * Time.deltaTime;
@@ -754,14 +816,11 @@ public class PlayerMeleeAttack : MonoBehaviour
             yield return null;
         }
 
-        float lockDuration = comboLockDurations[2];
+        float lockDuration = comboLockDurations[2] / currentSpeedFactor;
         attackCooldown = lockDuration;
 
-        float remainingTime = Mathf.Max(0f, lockDuration - (attack3PreChargeDuration + attack3ChargeDuration));
-        if (remainingTime > 0f)
-        {
-            yield return new WaitForSeconds(remainingTime);
-        }
+        float remainingTime = Mathf.Max(0f, lockDuration - (preChargeDuration + chargeDuration));
+        if (remainingTime > 0f) yield return new WaitForSeconds(remainingTime);
     }
 
     public void ActiveAttack3Slash()
@@ -771,11 +830,6 @@ public class PlayerMeleeAttack : MonoBehaviour
         {
             playerAudioController.PlayMeleeSound("HeavySlash");
         }
-    }
-
-    public void DesactiveAttack3Slash()
-    {
-        //attack3Slash.gameObject.SetActive(false);
     }
 
     // Rota instantaneamente al mouse proyectado en el plano horizontal (y = transform.position.y), con snap a 8 direcciones.

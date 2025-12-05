@@ -21,7 +21,7 @@ public class DeathExplosiveFragments : MonoBehaviour
 
     private void Explode()
     {
-        // Buscar todos los Rigidbody hijos en este prefab (los fragmentos)
+        // Buscar todos los Rigidbody hijos en el prefab
         Rigidbody[] fragments = GetComponentsInChildren<Rigidbody>();
 
         foreach (Rigidbody rb in fragments)

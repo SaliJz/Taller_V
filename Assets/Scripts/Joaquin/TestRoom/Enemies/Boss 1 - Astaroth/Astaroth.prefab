@@ -928,7 +928,7 @@ MonoBehaviour:
   _pulseSlowDuration: 2
   _pulseDamage: 5
   _nervesVisualizationPrefab: {fileID: 2528258679447591905, guid: d5198e4075e1272418df127375714aaa, type: 3}
-  _crackEffectPrefab: {fileID: 4070008438777901748, guid: d3e33401a1a0bb546bef8faf3b2a0421, type: 3}
+  _crackEffectPrefab: {fileID: 0}
   _postPulseAttackDelay: 0.8
   _headsTransform: {fileID: 0}
   _headDownRotationAngle: 45
@@ -983,14 +983,14 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 0
   canDieAfterCooldown: 1
-  deathCooldown: 0.25
+  deathCooldown: 0.5
   canDestroy: 1
   onDeathEvent:
     m_PersistentCalls:
       m_Calls: []
   healthSlider: {fileID: 6242981443675235560}
   healthFillImage: {fileID: 2122642152856177435}
-  offsetAboveEnemy: 2
+  offsetAboveEnemy: 5
   glowDelayAfterCritical: 2
   healthPercentageText: {fileID: 0}
   healthMultiplierText: {fileID: 0}

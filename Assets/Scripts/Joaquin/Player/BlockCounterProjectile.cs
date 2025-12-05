@@ -34,6 +34,7 @@ public class BlockCounterProjectile : MonoBehaviour
         if (!isInitialized) return;
 
         if (other.CompareTag("Player") || other.isTrigger) return;
+        if (other.gameObject.layer == LayerMask.NameToLayer("Wall")) Destroy(gameObject);
 
         var damageable = other.GetComponent<IDamageable>();
 

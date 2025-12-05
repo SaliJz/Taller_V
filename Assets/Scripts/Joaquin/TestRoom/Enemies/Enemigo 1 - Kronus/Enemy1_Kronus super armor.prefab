@@ -1008,7 +1008,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 10
+  m_SortingOrder: -1
   m_Sprite: {fileID: 21300000, guid: 9b31a5fbfa1f4cd43bf6f78756973cfa, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -1228,6 +1228,7 @@ GameObject:
   - component: {fileID: 4058264468381163116}
   - component: {fileID: 3924363354101770555}
   - component: {fileID: 2088799348403067837}
+  - component: {fileID: 9059732773805982389}
   m_Layer: 0
   m_Name: Enemy1_GroundIndicator
   m_TagString: Untagged
@@ -1326,6 +1327,18 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!210 &9059732773805982389
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5630910583302828604}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -2
+  m_SortAtRoot: 0
 --- !u!1 &6013311885437491136
 GameObject:
   m_ObjectHideFlags: 0
@@ -1531,7 +1544,7 @@ MonoBehaviour:
   sphereCastStartHeight: 0.9
   castDistance: 5
   navSampleDistance: 0.5
-  disableOnFail: 1
+  disableOnFail: 0
   useAwake: 1
   drawDetailedGizmos: 0
   gizmoScale: 1
@@ -1603,7 +1616,7 @@ MonoBehaviour:
   hammerImpactSFX: {fileID: 0}
   damageReceivedSFX: {fileID: 0}
   deathSFX: {fileID: 8300000, guid: 44c52c9c30162ba4690b5aae5d729e31, type: 3}
-  showGizmo: 1
+  showGizmo: 0
   gizmoDuration: 0.2
   stepRate: 0.5
 --- !u!114 &5823493146228490408

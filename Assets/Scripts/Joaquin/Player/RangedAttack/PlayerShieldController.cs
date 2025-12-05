@@ -52,6 +52,9 @@ public class PlayerShieldController : MonoBehaviour
     [SerializeField] private bool elderCanPierce = true;
     [SerializeField] private int elderMaxPierceTargets = 5;
 
+    [Header("Animación")]
+    [SerializeField] private float throwAnimationDuration = 0.15f;
+
     private int finalAttackDamage;
     private float finalAttackSpeed;
     private float damageMultiplier = 1f;
@@ -219,6 +222,13 @@ public class PlayerShieldController : MonoBehaviour
 
         isThrowingShield = true;
 
+        // Lógica para detener movimiento del jugador
+        if (playerMovement != null)
+        {
+            playerMovement.SetCanMove(false);
+            playerMovement.StopForcedMovement();
+        }
+
         // Lógica de rotación
         Vector3 mouseWorldDir;
         if (!TryGetMouseWorldDirection(out mouseWorldDir))
@@ -242,11 +252,16 @@ public class PlayerShieldController : MonoBehaviour
 
         ThrowShield();
 
-        // Duración a la acción.
-        // Esto le dice al ActionManager que espere este tiempo antes de procesar la siguiente acción.
-        yield return new WaitForSeconds(0.25f);
+        yield return new WaitForSeconds(throwAnimationDuration);
 
-        if (playerMovement != null) playerMovement.UnlockFacing();
+        if (playerMovement != null)
+        {
+            playerMovement.UnlockFacing();
+            playerMovement.SetCanMove(true);
+        }
+
+        float remainingActionTime = 0.25f - throwAnimationDuration;
+        if (remainingActionTime > 0) yield return new WaitForSeconds(remainingActionTime);
 
         isThrowingShield = false;
     }
