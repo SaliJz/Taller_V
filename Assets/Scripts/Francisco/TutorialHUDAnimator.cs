@@ -59,6 +59,8 @@ public class TutorialHUDAnimator : MonoBehaviour
 
     public void SetAndShowInstruction(string newText)
     {
+        if (newText.Equals(currentInstructionText)) return;
+
         bool instructionChanged = SetInstructionText(newText);
 
         if (instructionChanged)
