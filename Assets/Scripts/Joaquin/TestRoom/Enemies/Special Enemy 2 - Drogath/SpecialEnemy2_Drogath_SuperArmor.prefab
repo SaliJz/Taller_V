@@ -181,7 +181,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
-  deathCooldown: 2
+  canDieAfterCooldown: 1
+  deathCooldown: 0.5
   canDestroy: 1
   onDeathEvent:
     m_PersistentCalls:
@@ -270,6 +271,8 @@ MonoBehaviour:
   glowIntensity: 2
   damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
   damageNumberParent: {fileID: 4192082997681342804}
+  normalColor: {r: 1, g: 0, b: 0, a: 1}
+  criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
   audioSource: {fileID: 0}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}

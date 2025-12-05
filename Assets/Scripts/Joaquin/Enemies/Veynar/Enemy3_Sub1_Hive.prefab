@@ -832,7 +832,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 20
   currentHealth: 0
-  deathCooldown: 0
+  canDieAfterCooldown: 1
+  deathCooldown: 0.25
   canDestroy: 1
   onDeathEvent:
     m_PersistentCalls:
@@ -894,6 +895,8 @@ MonoBehaviour:
   glowIntensity: 2
   damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
   damageNumberParent: {fileID: 8290123143242688286}
+  normalColor: {r: 1, g: 0, b: 0, a: 1}
+  criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
   audioSource: {fileID: 6849845082400021377}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
@@ -917,7 +920,9 @@ MonoBehaviour:
   navMeshAgent: {fileID: 241961261687332342}
   minLarvaSpawnRadius: 3
   maxLarvaSpawnRadius: 5
+  audioSource: {fileID: 0}
   spawnLarvaSFX: {fileID: 0}
+  deathSFX: {fileID: 0}
   spawnVFX: {fileID: 0}
 --- !u!54 &4384501985470753249
 Rigidbody:

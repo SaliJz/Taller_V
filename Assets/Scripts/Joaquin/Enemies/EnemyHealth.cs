@@ -13,6 +13,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [Header("Health statistics")]
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float currentHealth;
+    [SerializeField] private bool canDieAfterCooldown = true;
     [SerializeField] private float deathCooldown = 2f;
     [SerializeField] private bool canDestroy = true;
     [SerializeField] private UnityEvent onDeathEvent;
@@ -353,15 +354,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     {
         if (isDead) return;
 
-        if (deathVFXPrefab != null)
-        {
-            Instantiate(deathVFXPrefab, transform.position + deathVFXOffset, Quaternion.identity);
-        }
-        else
-        {
-            ReportDebug("No se ha asignado deathVFXPrefab en el inspector.", 2);
-        }
-
         if (triggerEffects)
         {
             CombatEventsManager.TriggerEnemyKilled(gameObject, maxHealth);
@@ -419,8 +411,21 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             {
                 StartCoroutine(DeathRoutine());
             }
+            else if (canDieAfterCooldown)
+            {
+                StartCoroutine(DeathRoutine());
+            }
             else
             {
+                if (deathVFXPrefab != null)
+                {
+                    Instantiate(deathVFXPrefab, transform.position + deathVFXOffset, Quaternion.identity);
+                }
+                else
+                {
+                    ReportDebug("No se ha asignado deathVFXPrefab en el inspector.", 2);
+                }
+
                 Destroy(gameObject);
             }
         }
@@ -432,7 +437,16 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private IEnumerator DeathRoutine()
     {
-        yield return new WaitForSeconds(deathCooldown + 1.5f);
+        yield return new WaitForSeconds(deathCooldown);
+
+        if (deathVFXPrefab != null)
+        {
+            Instantiate(deathVFXPrefab, transform.position + deathVFXOffset, Quaternion.identity);
+        }
+        else
+        {
+            ReportDebug("No se ha asignado deathVFXPrefab en el inspector.", 2);
+        }
 
         Destroy(gameObject);
     }

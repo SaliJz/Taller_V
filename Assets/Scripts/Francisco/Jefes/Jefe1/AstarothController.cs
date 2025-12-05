@@ -67,7 +67,7 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private float _stoppingDistance = 15f;
     [SerializeField] private float _safeDistance = 2.5f;
     private NavMeshAgent _navMeshAgent;
-    private Animator _animator;
+    [SerializeField] private Animator _animator;
 
     #endregion
 
@@ -248,14 +248,29 @@ public class AstarothController : MonoBehaviour
 
     #endregion
 
+    #region Animation Hashes
+
+    private static readonly int AnimID_IsRunning = Animator.StringToHash("IsRunning");
+    private static readonly int AnimID_IsDeath = Animator.StringToHash("IsDeath");
+
+    private static readonly int AnimID_Attack = Animator.StringToHash("Attack");
+    private static readonly int AnimID_ExitSA = Animator.StringToHash("ExitSA");
+
+    private const int ATTACK_NONE = 0;
+    private const int ATTACK_WHIP = 1;
+    private const int ATTACK_SMASH = 2;
+    private const int ATTACK_SPECIAL = 3;
+
+    #endregion
+
     // UNITY LIFECYCLE
     #region Unity Lifecycle
 
     private void Awake()
     {
-        _enemyHealth = GetComponent<EnemyHealth>();
-        _navMeshAgent = GetComponent<NavMeshAgent>();
-        _animator = GetComponent<Animator>();
+        if (_enemyHealth == null) _enemyHealth = GetComponent<EnemyHealth>();
+        if (_navMeshAgent == null) _navMeshAgent = GetComponent<NavMeshAgent>();
+        if (_animator == null) _animator = GetComponentInChildren<Animator>();
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
 
         if (_vcam == null)
@@ -412,6 +427,12 @@ public class AstarothController : MonoBehaviour
         _attack2Timer -= Time.deltaTime;
         _comboTimer -= Time.deltaTime;
         _stompTimer -= Time.deltaTime;
+
+        if (_animator != null)
+        {
+            bool isMoving = _navMeshAgent.velocity.magnitude > 0.1f && !_navMeshAgent.isStopped;
+            _animator.SetBool(AnimID_IsRunning, isMoving);
+        }
 
         // Comprobar el pisoton defensivo
         if (distanceToPlayer < _stompTriggerDistance && _stompTimer <= 0f)
@@ -608,7 +629,13 @@ public class AstarothController : MonoBehaviour
             }
         }
 
-        if (_animator != null) _animator.SetTrigger("Die");
+        if (_animator != null)
+        {
+            _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
+            _animator.SetBool(AnimID_IsRunning, false);
+            _animator.SetBool(AnimID_IsDeath, true);
+        }
+
         if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
 
         this.enabled = false;
@@ -721,6 +748,8 @@ public class AstarothController : MonoBehaviour
         _showWhipImpactGizmo = false;
         _navMeshAgent.isStopped = true;
 
+        if (_animator != null) _animator.SetInteger(AnimID_Attack, ATTACK_WHIP);
+
         float anticipationTime = 0.8f;
         yield return StartCoroutine(LookAtPlayerSmoothCoroutine(anticipationTime, 120f));
 
@@ -826,6 +855,8 @@ public class AstarothController : MonoBehaviour
         {
             _trailRenderer.enabled = false;
         }
+
+        if (_animator != null) _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
 
         _isAttackingWithWhip = false;
         _showWhipRaycastGizmo = false;
@@ -966,6 +997,8 @@ public class AstarothController : MonoBehaviour
         _showSmashOverlapGizmo = false;
         _navMeshAgent.isStopped = false;
 
+        if (_animator != null) _animator.SetInteger(AnimID_Attack, ATTACK_SMASH);
+
         float rotationTime = 0f;
         Vector3 initialTargetPos = _player.position;
 
@@ -1031,6 +1064,8 @@ public class AstarothController : MonoBehaviour
                 PerformSmashDamage(_smashTargetPoint, hitByDirectImpact);
             }
         }
+
+        if (_animator != null) _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
 
         _isSmashing = false;
         _showSmashOverlapGizmo = false;
@@ -1210,7 +1245,7 @@ public class AstarothController : MonoBehaviour
     {
         _isUsingSpecialAbility = true;
 
-        Debug.Log("Astaroth esta preparando Pulso Carnal (Sistema Delegado)!");
+        if (_animator != null) _animator.SetInteger(AnimID_Attack, ATTACK_SPECIAL);
 
         // Moverse al centro
         yield return StartCoroutine(MoveToCenter(_roomCenter));
@@ -1274,7 +1309,15 @@ public class AstarothController : MonoBehaviour
 
         StartCoroutine(BlockAttacksAfterPulse());
 
-        yield return new WaitForSeconds(0.5f);
+        if (_animator != null)
+        {
+            _animator.SetBool(AnimID_ExitSA, true);
+            _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
+        }
+
+        yield return new WaitForSeconds(1f);
+
+        if (_animator != null) _animator.SetBool(AnimID_ExitSA, false);
 
         _isUsingSpecialAbility = false;
         _currentState = BossState.Moving;

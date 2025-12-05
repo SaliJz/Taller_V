@@ -364,13 +364,13 @@ public class BloodKnightBoss : MonoBehaviour
 
             yield return MoveToPositionFast(targetPos, 0.25f);
 
-            //if (animator != null) animator.SetTrigger(AnimID_AttackDash);
+            if (animator != null) animator.SetTrigger(AnimID_AttackDash);
 
             // 4. Esperar momento de impacto
             yield return new WaitForSeconds(apocalipsisImpactDelay);
 
             // 5. Aplicar daño y vfx
-            //SpawnSlashVFX();
+            SpawnSlashVFX();
 
             if (audioSource) audioSource.PlayOneShot(apocalipsisSlashSFX, 0.5f);
 

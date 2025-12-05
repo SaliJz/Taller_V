@@ -689,9 +689,12 @@ MonoBehaviour:
   normalMaterial: {fileID: 2100000, guid: b7d887137b3a1e44bb8ef4865b374a56, type: 2}
   transparentMaterial: {fileID: 2100000, guid: e7d10bd2a0cd13f448af8c25e7d29078, type: 2}
   audioSource: {fileID: 83863595809769251}
+  idleSFX: {fileID: 0}
+  hiddenStateSFX: {fileID: 0}
+  visibleStateSFX: {fileID: 0}
   spawnHiveSFX: {fileID: 0}
   teleportSFX: {fileID: 0}
-  deathCriesSFX: {fileID: 0}
+  deathSFX: {fileID: 0}
 --- !u!114 &636164965388216742
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -706,7 +709,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 30
   currentHealth: 0
-  deathCooldown: 0
+  canDieAfterCooldown: 1
+  deathCooldown: 0.5
   canDestroy: 1
   onDeathEvent:
     m_PersistentCalls:
@@ -769,6 +773,8 @@ MonoBehaviour:
   glowIntensity: 2
   damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
   damageNumberParent: {fileID: 3332660784952962725}
+  normalColor: {r: 1, g: 0, b: 0, a: 1}
+  criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
   audioSource: {fileID: 83863595809769251}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
