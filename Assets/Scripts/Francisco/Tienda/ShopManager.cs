@@ -295,6 +295,7 @@ public class ShopManager : MonoBehaviour
             {
                 int randomIndex = Random.Range(0, drawbackItems.Count);
                 itemsToSpawn.Add(drawbackItems[randomIndex]);
+                drawbackItems.RemoveAt(randomIndex);
             }
             else
             {
@@ -666,7 +667,7 @@ public class ShopManager : MonoBehaviour
         _pendingPurchaseWarning.TryAdd(item, false);
         bool warningActive = _pendingPurchaseWarning[item];
 
-        if (healthAfterPurchase <= lowHealthThreshold) 
+        if (healthAfterPurchase <= lowHealthThreshold)
         {
             if (!warningActive)
             {
@@ -696,16 +697,47 @@ public class ShopManager : MonoBehaviour
 
         foreach (var benefit in item.benefits)
         {
-            playerStatsManager.ApplyModifier(benefit.type, benefit.amount, isPercentage: benefit.isPercentage, 
-                                             isTemporary: item.isTemporary, item.temporaryDuration, 
+            playerStatsManager.ApplyModifier(benefit.type, benefit.amount, isPercentage: benefit.isPercentage,
+                                             isTemporary: item.isTemporary, item.temporaryDuration,
                                              isByRooms: item.isByRooms, item.temporaryRooms);
         }
 
         foreach (var drawback in item.drawbacks)
         {
-            playerStatsManager.ApplyModifier(drawback.type, drawback.amount, isPercentage: drawback.isPercentage,
-                                             isTemporary: item.isTemporary, item.temporaryDuration, 
+            float amount = drawback.amount;
+
+            if (drawback.type != StatType.DamageTaken &&
+                drawback.type != StatType.KnockbackReceived &&
+                drawback.type != StatType.StaminaConsumption)
+            {
+                amount *= -1f;
+            }
+
+            playerStatsManager.ApplyModifier(drawback.type, amount, isPercentage: drawback.isPercentage,
+                                             isTemporary: item.isTemporary, item.temporaryDuration,
                                              isByRooms: item.isByRooms, item.temporaryRooms);
+        }
+
+        if (!item.isAmulet)
+        {
+            if (item.drawbacks != null && item.drawbacks.Count > 0) 
+            {
+                if (allGagans.Contains(item))
+                {
+                    allGagans.Remove(item);
+                    availableItems.Remove(item); 
+                    Debug.Log($"[ShopManager] Ganga comprada ({item.itemName}) removida del pool global.");
+                }
+            }
+            else 
+            {
+                if (allRelics.Contains(item))
+                {
+                    allRelics.Remove(item);
+                    availableItems.Remove(item);
+                    Debug.Log($"[ShopManager] Reliquia comprada ({item.itemName}) removida del pool global.");
+                }
+            }
         }
 
         foreach (var effect in item.behavioralEffects)

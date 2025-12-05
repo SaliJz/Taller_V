@@ -36,7 +36,14 @@ public enum StatType
     LifestealOnKill,
 
     CriticalDamageMultiplier,
-    DashRangeMultiplier
+    DashRangeMultiplier,
+
+    KnockbackReceived,          
+    DashCooldownPost,        
+    MeleeComboDisplacement,        
+    ShieldPushForce,             
+    ShieldReturnSpeed,        
+    StaminaConsumption
 }
 
 /// <summary>
@@ -235,6 +242,13 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.DashRangeMultiplier: return statsSO.dashRangeMultiplierBase;
 
             case StatType.DamageTaken: return 0f;
+
+            case StatType.KnockbackReceived: return 0f;
+            case StatType.DashCooldownPost: return 0f;
+            case StatType.MeleeComboDisplacement: return 0f;
+            case StatType.ShieldPushForce: return 0f;
+            case StatType.ShieldReturnSpeed: return 0f;
+            case StatType.StaminaConsumption: return 0f;
 
             default:
                 Debug.LogWarning($"El StatType {type} no está mapeado en GetStatFromSO. Retornando 0.");
@@ -500,8 +514,14 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.CriticalDamageMultiplier: so.criticalDamageMultiplierBase = value; break;
             case StatType.DashRangeMultiplier: so.dashRangeMultiplierBase = value; break;
 
-            case StatType.DamageTaken:
-                break;
+            case StatType.DamageTaken: break;
+
+            case StatType.KnockbackReceived: break;
+            case StatType.DashCooldownPost: break;
+            case StatType.MeleeComboDisplacement: break;
+            case StatType.ShieldPushForce: break;
+            case StatType.ShieldReturnSpeed: break;
+            case StatType.StaminaConsumption: break;
 
             default:
                 Debug.LogWarning($"El StatType {type} no está mapeado para la modificación directa del SO.");
