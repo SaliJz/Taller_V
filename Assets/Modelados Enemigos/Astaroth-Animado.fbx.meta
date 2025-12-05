@@ -31,11 +31,11 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: Idle
+      name: idle
       takeName: Take 001
       internalID: 1827226128182048838
-      firstFrame: 0
-      lastFrame: 160
+      firstFrame: 1
+      lastFrame: 24
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -60,11 +60,11 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
-      name: Walking
+      name: Walk
       takeName: Take 001
       internalID: -998496362607748373
-      firstFrame: 267
-      lastFrame: 406
+      firstFrame: 38
+      lastFrame: 59
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -89,11 +89,11 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
-      name: Attack 1
+      name: Attack1
       takeName: Take 001
       internalID: 3060872287085348379
-      firstFrame: 443
-      lastFrame: 722
+      firstFrame: 62
+      lastFrame: 109
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -121,8 +121,8 @@ ModelImporter:
       name: Attack 2
       takeName: Take 001
       internalID: 6641085478485924818
-      firstFrame: 722
-      lastFrame: 1285
+      firstFrame: 110
+      lastFrame: 190
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -147,11 +147,11 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
-      name: S.Ability Entry
+      name: Special Start
       takeName: Take 001
       internalID: -5059006814000262888
-      firstFrame: 1495
-      lastFrame: 1734
+      firstFrame: 220
+      lastFrame: 250
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -176,11 +176,11 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
-      name: S.Ability Exit
+      name: Special End
       takeName: Take 001
       internalID: 6234510843852800090
-      firstFrame: 1734
-      lastFrame: 2013
+      firstFrame: 250
+      lastFrame: 294
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -208,8 +208,8 @@ ModelImporter:
       name: Death
       takeName: Take 001
       internalID: -6788666626592393668
-      firstFrame: 2013
-      lastFrame: 2498
+      firstFrame: 294
+      lastFrame: 335
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -242,7 +242,7 @@ ModelImporter:
     useSRGBMaterialColor: 1
     sortHierarchyByName: 1
     importPhysicalCameras: 1
-    importVisibility: 1
+    importVisibility: 0
     importBlendShapes: 1
     importCameras: 1
     importLights: 1
@@ -251,7 +251,7 @@ ModelImporter:
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    keepQuads: 0
+    keepQuads: 1
     weldVertices: 1
     bakeAxisConversion: 0
     preserveHierarchy: 0
