@@ -8947,54 +8947,37 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerAnimator: {fileID: 2511880707407823879}
-  playerAudioController: {fileID: 0}
-  shieldForwardOverride: {fileID: 0}
+  playerAudioController: {fileID: 2888951513960009550}
+  playerHealth: {fileID: 6110564483166717353}
+  shieldForwardOverride: {fileID: 301956730850477674}
   blockingEnabled: 1
   frontBlockAngle: 170
   useMouseRotation: 1
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 8
   rotationSpeed: 10
   maxDurability: 30
   currentDurability: 0
   durabilityRechargeTime: 5
-  minimumDurabilityToUse: 0.25
+  minimumDurabilityToUse: 1
   rechargeDelay: 0.5
-  stunDurationYoung: 1.5
-  stunDurationAdult: 1
-  stunDurationElder: 0.5
-  projectileLayer:
-    serializedVersion: 2
-    m_Bits: 8192
-  reflectionConeAngle: 90
-  reflectionDetectionRadius: 5
-  counterChargeTime: 0.5
-  counterReleaseRange: 3
-  counterKnockbackForce: 2
-  counterVFXPrefab: {fileID: 7643528599079252448, guid: 01184b4ddc1b0104db0acd1e5aecb1a9, type: 3}
+  counterProjectilePrefab: {fileID: 5442904530204617264, guid: 47646c774dde1244584b9d77549ca90c, type: 3}
   enemyLayer:
     serializedVersion: 2
     m_Bits: 128
-  explosionChargeTime: 3
-  explosionRadius: 2.5
-  explosionDamage: 8
-  explosionKnockback: 3
-  explosionVFXPrefab: {fileID: 5545404414370365311, guid: c8a26f15ed66d144c9f460d236549f40, type: 3}
-  chargingVFXPrefab: {fileID: 7979501923553913849, guid: be365537e22348444ad300ef01114f0c, type: 3}
-  chargeSlider: {fileID: 7981399876178636380}
-  chargeFillImage: {fileID: 5399927943822987686}
-  chargeUIGroup: {fileID: 1748118629941586440}
-  adultChargeColor: {r: 1, g: 0.5, b: 0, a: 1}
-  elderChargeColor: {r: 0.8, g: 0.2, b: 1, a: 1}
+  autoAimRange: 20
+  multiplierYoung: 1.5
+  multiplierAdult: 2
+  multiplierElder: 2.5
+  stunDurationYoung: 1.5
+  stunDurationAdult: 1
+  stunDurationElder: 0.5
   durabilitySlider: {fileID: 8835140165235724630}
   durabilityFillImage: {fileID: 2798298684343753190}
   durabilityPercentageText: {fileID: 0}
   durabilityUIGroup: {fileID: 794747590875115879}
   hideDelay: 2
-  useSmoothing: 0
+  useSmoothing: 1
   smoothSpeed: 5
-  pulseWhenLow: 0
+  pulseWhenLow: 1
   pulseSpeed: 2
   pulseMinScale: 0.95
   pulseMaxScale: 1.05
@@ -9002,12 +8985,10 @@ MonoBehaviour:
   midDurabilityColor: {r: 0, g: 0.7058824, b: 0.7058824, a: 1}
   lowDurabilityColor: {r: 0, g: 0.627451, b: 0.627451, a: 1}
   emptyDurabilityColor: {r: 0, g: 0.19607843, b: 0.19607843, a: 1}
-  lowDurabilityThreshold: 0.25
-  midDurabilityThreshold: 0.5
+  blockParticles: {fileID: 0}
   blockVFX: {fileID: 0}
   blockBreakVFX: {fileID: 0}
-  blockParticles: {fileID: 0}
-  debugMode: 0
+  debugMode: 1
 --- !u!114 &2888951513960009550
 MonoBehaviour:
   m_ObjectHideFlags: 0
