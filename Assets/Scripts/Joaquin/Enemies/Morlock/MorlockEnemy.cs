@@ -38,7 +38,7 @@ public class MorlockEnemy : MonoBehaviour
     [SerializeField] private float maxFireRate = 3f;
     [SerializeField] private float projectileDamage = 1f;
     [SerializeField] private float projectileSpeed = 12f;
-    [SerializeField] private int maxDamageIncrease = 2;
+    [SerializeField] private float maxDamageIncrease = 2;
     [SerializeField] private float maxRangeForDamageIncrease = 6f; // distancia a la cual el daño es el máximo
     [SerializeField] private float maxDistanceForDamageStart = 20f; // distancia a partir de la cual el daño es el base
     [SerializeField] private float attackRange = 50f;
