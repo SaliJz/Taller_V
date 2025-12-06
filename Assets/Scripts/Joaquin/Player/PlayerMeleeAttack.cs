@@ -307,7 +307,9 @@ public class PlayerMeleeAttack : MonoBehaviour
     {
         enemyDir = Vector3.forward;
 
-        int hitCount = Physics.OverlapSphereNonAlloc(transform.position, autoAimRange, hitBuffer, enemyLayer);
+        int layerMask = LayerMask.GetMask("Enemy");
+
+        int hitCount = Physics.OverlapSphereNonAlloc(transform.position, autoAimRange, hitBuffer, layerMask);
 
         if (hitCount == 0) return false;
 
@@ -962,10 +964,13 @@ public class PlayerMeleeAttack : MonoBehaviour
                 }
             }
 
-            MeatPillar meatPillar = enemy.GetComponent<MeatPillar>();
-            if (meatPillar != null)
+            if (enemy.gameObject.layer == LayerMask.NameToLayer("MeatPillar"))
             {
-                meatPillar.TakeDamage();
+                MeatPillar meatPillar = enemy.GetComponent<MeatPillar>();
+                if (meatPillar != null)
+                {
+                    meatPillar.TakeDamage();
+                }
             }
 
             CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, true);

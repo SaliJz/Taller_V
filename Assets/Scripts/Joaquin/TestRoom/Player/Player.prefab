@@ -8857,6 +8857,9 @@ MonoBehaviour:
   yOffsetYoung: -0.325
   yOffsetAdult: -0.075
   yOffsetElder: 0.175
+  afterimagePrefab: {fileID: 1529516632308541924, guid: 5813d161b87a73e46926413d2ef586b9, type: 3}
+  whiteFlashMaterial: {fileID: 2100000, guid: bf7332bf234a22345a352c18aa93bc09, type: 2}
+  transitionDuration: 0.8
   damageEmissionColor: {r: 1, g: 0, b: 0, a: 1}
   damageEmissionIntensity: 2
   damageFlashDuration: 0.1
@@ -9151,9 +9154,10 @@ MonoBehaviour:
   frontBlockAngle: 180
   useMouseRotation: 1
   rotationSpeed: 10
-  maxDurability: 25
+  maxDurability: 32
   currentDurability: 0
   durabilityRechargeTime: 1.5
+  durabilityDrainRate: 15.24
   minimumDurabilityToUse: 1
   rechargeDelay: 0.5
   counterProjectilePrefab: {fileID: 5442904530204617264, guid: 47646c774dde1244584b9d77549ca90c, type: 3}
@@ -9161,12 +9165,12 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   autoAimRange: 20
-  multiplierYoung: 2.5
-  multiplierAdult: 3
-  multiplierElder: 3.5
-  stunDurationYoung: 1.5
-  stunDurationAdult: 1
-  stunDurationElder: 0.5
+  multiplierYoung: 0.53
+  multiplierAdult: 1.125
+  multiplierElder: 2.304
+  stunDurationYoung: 0
+  stunDurationAdult: 0
+  stunDurationElder: 0
   durabilitySlider: {fileID: 8835140165235724630}
   durabilityFillImage: {fileID: 2798298684343753190}
   durabilityPercentageText: {fileID: 0}
