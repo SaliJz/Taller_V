@@ -1116,6 +1116,8 @@ MonoBehaviour:
   attackRange: 100
   canReturnToPatrol: 0
   detectionRadius: 20
+  detectionGrowthInterval: 2.5
+  detectionGrowthAmount: 10
   teleportRange: 9.5
   patrolWaypoints: []
   loopWaypoints: 0
@@ -1125,7 +1127,7 @@ MonoBehaviour:
   patrolIdleTime: 2
   canReposition: 0
   repositionTeleportCooldown: 2
-  p1_teleportCooldown: 3
+  p1_teleportCooldown: 2.5
   p1_pursuitAdvanceDistance: 4
   p1_pursuitLateralVariationMin: 3
   p1_pursuitLateralVariationMax: 5
@@ -1152,6 +1154,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  canDieAfterCooldown: 1
   deathCooldown: 0.5
   canDestroy: 1
   onDeathEvent:
@@ -1241,6 +1244,8 @@ MonoBehaviour:
   glowIntensity: 2
   damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
   damageNumberParent: {fileID: 1167626998121477738}
+  normalColor: {r: 1, g: 0, b: 0, a: 1}
+  criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
   audioSource: {fileID: 8666158162135385286}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
