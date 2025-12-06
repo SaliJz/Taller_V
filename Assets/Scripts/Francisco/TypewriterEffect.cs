@@ -33,10 +33,15 @@ public class TypewriterEffect : MonoBehaviour
     [SerializeField] private TextMeshProUGUI textComponent;
     [SerializeField] private GameObject dialoguePanel;
 
+    [Header("Audio Settings")]
+    [SerializeField] private AudioSource typingAudioSource;
+    [SerializeField] private AudioClip typingSoundClip;
+    [SerializeField][Range(0f, 1f)] private float typingVolume = 0.6f;
+
     [Header("Control de Velocidad y Flujo")]
-    [SerializeField] [Range(1f, 100f)] private float charactersPerSecond = 25f;
+    [SerializeField][Range(1f, 100f)] private float charactersPerSecond = 25f;
     [SerializeField] private bool advanceAutomatically = false;
-    [SerializeField] [Range(0.1f, 5f)] private float autoAdvanceDelay = 1.5f;
+    [SerializeField][Range(0.1f, 5f)] private float autoAdvanceDelay = 1.5f;
     [SerializeField] private bool canSkipEffect = true;
     [SerializeField] private KeyCode advanceKey = KeyCode.Space;
     [SerializeField] private bool canAdvanceManually = true;
@@ -67,6 +72,17 @@ public class TypewriterEffect : MonoBehaviour
         {
             textComponent = GetComponent<TextMeshProUGUI>();
         }
+
+        if (typingAudioSource == null)
+        {
+            typingAudioSource = GetComponent<AudioSource>();
+            if (typingAudioSource == null)
+            {
+                typingAudioSource = gameObject.AddComponent<AudioSource>();
+            }
+        }
+        typingAudioSource.playOnAwake = false;
+
 
         if (dialoguePanel != null)
         {
@@ -161,6 +177,8 @@ public class TypewriterEffect : MonoBehaviour
         {
             Debug.Log("Diálogo Completo.");
 
+            StopTypingAudio();
+
             if (dialoguePanel != null) dialoguePanel.SetActive(false);
 
             textComponent.text = "";
@@ -191,6 +209,8 @@ public class TypewriterEffect : MonoBehaviour
         {
             StopCoroutine(typingCoroutine);
             isTyping = false;
+
+            StopTypingAudio();
 
             DialogueEntry currentEntry = dialogue[currentLineIndex];
 
@@ -226,21 +246,45 @@ public class TypewriterEffect : MonoBehaviour
         {
             textComponent.maxVisibleCharacters = i + 1;
 
+            PlayTypingBlip();
+
             yield return new WaitForSeconds(timePerCharacter);
         }
 
         textComponent.maxVisibleCharacters = int.MaxValue;
 
         isTyping = false;
+
+        StopTypingAudio();
+
         Debug.Log("Línea terminada.");
 
         OnTextFinishedTyping?.Invoke();
-        entry.OnLineEnd?.Invoke(); 
+        entry.OnLineEnd?.Invoke();
 
         if (advanceAutomatically)
         {
             yield return new WaitForSeconds(autoAdvanceDelay);
             AdvanceDialogue();
+        }
+    }
+
+    #endregion
+
+    #region [ AUDIO_METHODS ]
+
+    private void PlayTypingBlip()
+    {
+        if (typingAudioSource == null || typingSoundClip == null) return;
+
+        typingAudioSource.PlayOneShot(typingSoundClip, typingVolume);
+    }
+
+    private void StopTypingAudio()
+    {
+        if (typingAudioSource != null && typingAudioSource.isPlaying)
+        {
+            typingAudioSource.Stop();
         }
     }
 
