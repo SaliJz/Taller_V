@@ -28,7 +28,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     [HideInInspector] private float fallbackAttackSpeed = 1f;
     [Header("Calculated stats")]
     [SerializeField] private float hitRadius = 0.8f;
-    [SerializeField] private int attackDamage = 10;
+    [SerializeField] private float attackDamage = 10;
     [SerializeField] private float attackSpeed = 1f;
     [SerializeField] private float baseSpeedReference = 1f;
     [SerializeField] private LayerMask enemyLayer;
@@ -92,7 +92,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     private GamepadPointer gamepadPointer;
     private Collider[] hitBuffer = new Collider[64]; // Buffer para detección de enemigos
 
-    public int AttackDamage
+    public float AttackDamage
     {
         get { return attackDamage; }
         set { attackDamage = value; }

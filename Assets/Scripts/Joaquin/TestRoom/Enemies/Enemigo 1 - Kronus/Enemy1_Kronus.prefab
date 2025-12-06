@@ -1296,7 +1296,7 @@ MonoBehaviour:
   hitPoint: {fileID: 5399706999602248979}
   visualHit: {fileID: 963048917619979615}
   groundIndicator: {fileID: 5630910583302828604}
-  health: 60
+  health: 30
   moveSpeed: 4
   dashSpeedMultiplier: 5
   dashDuration: 0.6
@@ -1361,7 +1361,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 40
+  maxHealth: 35
   currentHealth: 0
   canDieAfterCooldown: 1
   deathCooldown: 0.5
@@ -1380,8 +1380,8 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeathByMelee: 12
-  lifestealAmountOnDeathByDistance: 6
+  lifestealAmountOnDeathByMelee: 3
+  lifestealAmountOnDeathByDistance: 1.5
   toughnessSystem: {fileID: 1367704949242477135}
   deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   deathVFXOffset: {x: 0, y: 1, z: 0}
