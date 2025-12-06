@@ -107,12 +107,100 @@ public class ShopItem : ScriptableObject
     {
         string colorTag = isBenefit ? "<color=#00FF00>" : "<color=#FF0000>";
 
-        string amountString = (isBenefit ? "+" : "-") +
-                              Mathf.Abs(effect.amount).ToString("F0") +
+        string sign = (effect.amount > 0 && isBenefit) ? "+" : "";
+
+        float displayAmount = effect.amount;
+
+        if (!isBenefit && effect.amount > 0)
+        {
+            sign = "+";
+        }
+        else if (!isBenefit && effect.amount < 0)
+        {
+            sign = "";
+        }
+
+
+        string amountString = sign +
+                              displayAmount.ToString("F1").Replace(",", ".") + 
                               (effect.isPercentage ? "%" : "");
 
-        string statName = effect.type.ToString().Replace("StatType.", "");
+        string statName = GetStatTranslation(effect.type);
 
         return $"{colorTag}{amountString} a {statName}</color>";
+    }
+
+    public string GetStatTranslation(StatType statType)
+    {
+        switch (statType)
+        {
+            case StatType.MaxHealth:
+                return "Salud Máxima";
+            case StatType.DamageTaken:
+                return "Daño Recibido";
+            case StatType.HealthDrainAmount:
+                return "Drenaje de Vida (PS)";
+
+            case StatType.MoveSpeed:
+                return "Velocidad de Movimiento";
+            case StatType.Gravity:
+                return "Gravedad";
+            case StatType.DashRangeMultiplier:
+                return "Alcance de Dash";
+            case StatType.DashCooldownPost:
+                return "Enfriamiento de Dash";
+            case StatType.KnockbackReceived:
+                return "Empuje Recibido";
+            case StatType.StaminaConsumption:
+                return "Consumo de Aguante/Estamina";
+
+            case StatType.AttackDamage:
+                return "Daño General de Ataque";
+            case StatType.AttackSpeed:
+                return "Velocidad de Ataque General";
+            case StatType.MeleeAttackDamage:
+                return "Daño C/Cuerpo";
+            case StatType.MeleeAttackSpeed:
+                return "Velocidad de Ataque C/Cuerpo";
+            case StatType.MeleeRadius:
+                return "Radio de Ataque C/Cuerpo";
+            case StatType.MeleeComboDisplacement:
+                return "Desplazamiento de Combo C/Cuerpo";
+            case StatType.CriticalChance:
+                return "Probabilidad Crítica";
+            case StatType.CriticalDamageMultiplier:
+                return "Multiplicador de Daño Crítico";
+            case StatType.LifestealOnKill:
+                return "Robo de Vida por Eliminación";
+
+            case StatType.ShieldAttackDamage:
+                return "Daño de Ataque de Escudo";
+            case StatType.ShieldSpeed:
+                return "Velocidad de Lanzamiento de Escudo";
+            case StatType.ShieldMaxDistance:
+                return "Distancia Máxima de Escudo";
+            case StatType.ShieldMaxRebounds:
+                return "Rebotes Máximos de Escudo";
+            case StatType.ShieldReboundRadius:
+                return "Radio de Rebote de Escudo";
+            case StatType.ShieldBlockUpgrade:
+                return "Mejora de Bloqueo de Escudo";
+            case StatType.ShieldPushForce:
+                return "Fuerza de Empuje de Escudo";
+            case StatType.ShieldReturnSpeed:
+                return "Velocidad de Retorno de Escudo";
+
+            case StatType.LuckStack:
+                return "Suerte Acumulada";
+            case StatType.EssenceCostReduction:
+                return "Reducción de Costo de Esencia";
+            case StatType.ShopPriceReduction:
+                return "Reducción de Precio de Tienda";
+            case StatType.HealthPerRoomRegen:
+                return "Regen. de Vida por Sala";
+
+            default:
+                return statType.ToString();
+        }
     }
 }

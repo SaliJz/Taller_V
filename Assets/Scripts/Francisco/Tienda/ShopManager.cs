@@ -358,6 +358,12 @@ public class ShopManager : MonoBehaviour
 
     public float CalculateFinalCost(float baseCost)
     {
+        bool isHubScene = SceneManager.GetActiveScene().name == "HUB";
+        if (isHubScene)
+        {
+            return 0f;
+        }
+
         float finalCost = baseCost * merchantPriceModifier;
 
         if (playerStatsManager != null)
@@ -366,14 +372,12 @@ public class ShopManager : MonoBehaviour
 
             if (priceReduction > 0f)
             {
-                float discount = priceReduction / 100f; 
+                float discount = priceReduction / 100f;
                 finalCost *= (1f - discount);
-
-                Debug.Log($"[ShopManager] Precio con descuento: Base={baseCost}, Merchant={merchantPriceModifier}x, Descuento={priceReduction}%, Final={finalCost}");
             }
         }
 
-        return Mathf.Max(0f, finalCost); 
+        return Mathf.Max(0f, finalCost);
     }
 
     public void DisplayItemUI(ShopItem itemData, float finalCost)
