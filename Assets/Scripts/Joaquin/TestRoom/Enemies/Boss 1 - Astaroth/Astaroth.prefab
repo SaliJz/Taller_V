@@ -835,7 +835,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 2.5
-  m_Speed: 3.5
+  m_Speed: 8
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 360
@@ -863,7 +863,7 @@ MonoBehaviour:
   _player: {fileID: 0}
   _maxHealth: 500
   _currentHealth: 0
-  _stoppingDistance: 7
+  _stoppingDistance: 4
   _safeDistance: 2.5
   _animator: {fileID: 9124850377905314242}
   _stompTriggerDistance: 5
@@ -894,10 +894,11 @@ MonoBehaviour:
   - Position: {x: -3.6566527, y: 4.35, z: -0.47}
     Time: 1
     IsTargetable: 0
-  _Attack1Damage: 9
+  _Attack1Damage: 15
   _attack1Cooldown: 5
-  _whipRange: 25
-  _whipAttackCount: 4
+  _whipRange: 50
+  _whipAttackCount: 1
+  _objectToHideDuringSmash: {fileID: 0}
   _smashVisualTransform: {fileID: 1926294932068586014}
   _smashAnimationKeyframes:
   - Position: {x: -3.6566527, y: 4.35, z: -0.47}
@@ -916,17 +917,17 @@ MonoBehaviour:
     Scale: {x: 1, y: 1, z: 1}
     Time: 1
     IsTargetable: 0
-  _Attack2Damage: 15
-  _attack2Cooldown: 9
+  _Attack2Damage: 25
+  _attack2Cooldown: 12
   _smashRadius: 6
   _smashDetectionRadius: 12
   _smashRadiusPrefab: {fileID: 858073966183631630, guid: 50f8bfdafefbba447b7bfe665ac766b0, type: 3}
   _smashDelay: 1.5
-  _pulseExpansionDuration: 3
+  _pulseExpansionDuration: 2
   _pulseWaitDuration: 1
-  _pulseSlowPercentage: 0.5
-  _pulseSlowDuration: 2
-  _pulseDamage: 5
+  _pulseSlowPercentage: 0.8
+  _pulseSlowDuration: 3
+  _pulseDamage: 20
   _nervesVisualizationPrefab: {fileID: 2528258679447591905, guid: d5198e4075e1272418df127375714aaa, type: 3}
   _crackEffectPrefab: {fileID: 0}
   _postPulseAttackDelay: 0.8
