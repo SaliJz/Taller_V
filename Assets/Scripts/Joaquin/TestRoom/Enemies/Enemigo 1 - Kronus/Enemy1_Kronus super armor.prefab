@@ -1560,35 +1560,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6058405d1141ba24ca9f0c54d4423bf1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animator: {fileID: 8865793037792400141}
+  animator: {fileID: 4114053101876846204, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
   stats: {fileID: 0}
-  hitPoint: {fileID: 5399706999602248979}
-  visualHit: {fileID: 963048917619979615}
-  groundIndicator: {fileID: 5630910583302828604}
+  hitPoint: {fileID: 5399706999602248979, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
+  visualHit: {fileID: 963048917619979615, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
+  groundIndicator: {fileID: 5630910583302828604, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
   health: 30
-  moveSpeed: 4
+  moveSpeed: 6
   dashSpeedMultiplier: 5
-  dashDuration: 0.6
+  dashDuration: 1
   dashMaxDistance: 10
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
-  cooldownShort: 1.5
-  cooldownMedium: 2
-  cooldownLong: 2.5
+  cooldownShort: 1
+  cooldownMedium: 1.6
+  cooldownLong: 2.2
   isPercentageDmg: 0
   attackCycleCooldown: 2
   attackDamage: 15
   attackDamagePercentage: 0.2
   attackRadius: 2
-  preparationTime: 0.35
+  preparationTime: 0.3
   timeAfterAttack: 0.5
   knockbackForce: 5
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
-  detectionRadius: 18
-  fieldOfViewAngle: 120
+  detectionRadius: 25
+  fieldOfViewAngle: 150
   dashActivationDistance: 100
   isUsingDetectionTimer: 0
   detectionGracePeriod: 5
@@ -1605,14 +1605,13 @@ MonoBehaviour:
   patrolRadius: 8
   patrolMoveSpeed: 2.5
   patrolIdleTime: 1.2
-  audioSource: {fileID: 2196188235658860128}
+  audioSource: {fileID: 2196188235658860128, guid: 21898f260c6b99447a0fabac43b260f1, type: 3}
   idleSFX: {fileID: 8300000, guid: 50d175d98332f5a45b5de08c45cc1c52, type: 3}
   movementSFX: {fileID: 0}
   dashSFX: {fileID: 8300000, guid: e0bb04f2504e09a41814942127e10c64, type: 3}
   hammerSmashSFX:
   - {fileID: 8300000, guid: 63d20b4ab0c899341b8255e5b30a76c6, type: 3}
   - {fileID: 8300000, guid: 44a358a9d1e737f4dbcdebb2028a035b, type: 3}
-  - {fileID: 0}
   hammerImpactSFX: {fileID: 0}
   damageReceivedSFX: {fileID: 0}
   deathSFX: {fileID: 8300000, guid: 44c52c9c30162ba4690b5aae5d729e31, type: 3}
@@ -1683,7 +1682,7 @@ MonoBehaviour:
   maxToughness: 50
   currentToughness: 0
   meleeToughnessDamageMultiplier: 1.25
-  rangedToughnessDamageMultiplier: 0.25
+  rangedToughnessDamageMultiplier: 1.5
   useDynamicBars: 0
   toughnessPerBar: 50
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
