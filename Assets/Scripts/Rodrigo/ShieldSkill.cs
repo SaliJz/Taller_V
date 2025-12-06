@@ -19,7 +19,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
 
     [Header("Stamina System")]
     [SerializeField] private float maxStamina = 100f;
-    [SerializeField] private float staminaDrainRate = 10f;
+    [SerializeField] private float baseStaminaDrainRate = 10f; 
     [SerializeField] private float staminaRechargeRate = 20f;
     [SerializeField] private bool requireFullStaminaToActivate = false;
     [SerializeField] private float minStaminaToActivate = 10f;
@@ -54,6 +54,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     private bool isStaminaConsumptionPrevented = false;
     private const string SHIELD_SKILL_MODIFIER_KEY = "ShieldSkillBuff";
     private const float LOW_HEALTH_THRESHOLD = 10f;
+    private float currentStaminaDrainRate;
 
     private PlayerControlls playerControls;
     private PlayerHealth playerHealth;
@@ -123,12 +124,36 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     private void Start()
     {
         OnStaminaChanged?.Invoke(currentStamina, maxStamina);
+
+        UpdateStaminaConsumptionFromStats();
+    }
+
+    private void UpdateStaminaConsumptionFromStats()
+    {
+        if (statsManager == null)
+        {
+            currentStaminaDrainRate = baseStaminaDrainRate;
+            return;
+        }
+
+        float staminaConsumptionMod = statsManager.GetStat(StatType.StaminaConsumption);
+
+        if (staminaConsumptionMod <= 0f) staminaConsumptionMod = 1f;
+
+        currentStaminaDrainRate = baseStaminaDrainRate * staminaConsumptionMod;
+
+        Debug.Log($"[ShieldSkill] Consumo de stamina actualizado: Base={baseStaminaDrainRate}/s x Mod={staminaConsumptionMod} = {currentStaminaDrainRate}/s");
     }
 
     private void OnEnable()
     {
         PlayerHealth.OnLifeStageChanged += HandleLifeStageChanged;
         playerControls?.Abilities.Enable();
+
+        if (statsManager != null)
+        {
+            PlayerStatsManager.OnStatChanged += HandleStaminaStatChanged;
+        }
     }
 
     private void OnDisable()
@@ -138,6 +163,19 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         RestoreOriginalMaterial();
 
         if (isSkillActive) DeactivateSkill();
+
+        if (statsManager != null)
+        {
+            PlayerStatsManager.OnStatChanged -= HandleStaminaStatChanged;
+        }
+    }
+
+    private void HandleStaminaStatChanged(StatType statType, float newValue)
+    {
+        if (statType == StatType.StaminaConsumption)
+        {
+            UpdateStaminaConsumptionFromStats();
+        }
     }
 
     private void OnDestroy()
@@ -465,8 +503,11 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     {
         if (isStaminaConsumptionPrevented) return;
 
+        UpdateStaminaConsumptionFromStats();
+
         float previousStamina = currentStamina;
-        currentStamina -= staminaDrainRate * Time.deltaTime;
+
+        currentStamina -= currentStaminaDrainRate * Time.deltaTime;
         currentStamina = Mathf.Max(0f, currentStamina);
 
         if (previousStamina > 0f && currentStamina <= 0f)
@@ -475,7 +516,6 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
             Debug.Log("[ShieldSkill] ¡Estamina completamente agotada! Requerirá recarga total para reactivar.");
         }
 
-        // Notificar cambio de estamina
         OnStaminaChanged?.Invoke(currentStamina, maxStamina);
     }
 

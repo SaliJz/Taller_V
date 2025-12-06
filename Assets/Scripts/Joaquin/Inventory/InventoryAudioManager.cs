@@ -105,17 +105,14 @@ public class InventoryAudioManager : MonoBehaviour
 
         switch (rarity)
         {
-            case ItemRarity.Comun:
+            case ItemRarity.Normal:
                 clip = commonItemSound;
                 break;
             case ItemRarity.Raro:
                 clip = rareItemSound;
                 break;
-            case ItemRarity.Epico:
+            case ItemRarity.SuperRaro:
                 clip = epicItemSound;
-                break;
-            case ItemRarity.Legendario:
-                clip = legendaryItemSound;
                 break;
         }
 

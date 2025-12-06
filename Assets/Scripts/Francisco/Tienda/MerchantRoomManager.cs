@@ -36,7 +36,6 @@ public class MerchantRoomManager : MonoBehaviour
     private Pact currentPactOffer;
     private float currentPriceModifier = 1.0f;
 
-    // NUEVO: Lista de pactos ya ofrecidos en el nivel actual
     private static List<Pact> pactsOfferedThisLevel = new List<Pact>();
 
     #endregion
@@ -113,7 +112,8 @@ public class MerchantRoomManager : MonoBehaviour
     {
         if (shopManager != null)
         {
-            yield return StartCoroutine(shopManager.GenerateMerchantItems(spawnLocations, isFirstVisit, itemEffectDuration, sequentialItemSpawn, parent));
+            shopManager.GenerateShopItems(spawnLocations, parent);
+            yield return new WaitForSeconds(0.1f);
         }
     }
 

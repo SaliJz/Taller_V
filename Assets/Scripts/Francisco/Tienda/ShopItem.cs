@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System.Text;
 
 [System.Serializable]
 public struct ItemEffect
@@ -9,25 +10,18 @@ public struct ItemEffect
     public bool isPercentage;
 }
 
-/// <summary>
-/// Categorías de ítems para el inventario
-/// </summary>
 public enum ItemCategory
 {
-    AttributeModifiers,    // Variadores de atributos (Reliquia, Ganga, Maldicion)
-    SkillEnhancers,        // Mejoradores de habilidades (Potenciador)
-    CounterDistortions     // Contra distorsiones (Amuleto)
+    AttributeModifiers,
+    SkillEnhancers,
+    CounterDistortions
 }
 
-/// <summary>
-/// Rareza de los ítems
-/// </summary>
 public enum ItemRarity
 {
-    Comun,
+    Normal,
     Raro,
-    Epico,
-    Legendario
+    SuperRaro
 }
 
 [CreateAssetMenu(fileName = "NewShopItem", menuName = "Shop/Shop Item")]
@@ -44,7 +38,10 @@ public class ShopItem : ScriptableObject
 
     [Header("Categorización")]
     public ItemCategory category = ItemCategory.AttributeModifiers;
-    public ItemRarity rarity = ItemRarity.Comun;
+    public ItemRarity rarity = ItemRarity.Normal;
+
+    [Tooltip("Probabilidad individual de ser seleccionado DENTRO de su rareza. Mayor número = más probable.")]
+    public float individualRarityWeight = 1.0f; 
 
     [Header("Tipo de Item")]
     public bool isAmulet = false;
@@ -62,22 +59,60 @@ public class ShopItem : ScriptableObject
     [Header("Comportamientos/Efectos Eventuales")]
     public List<ItemEffectBase> behavioralEffects;
 
-    /// <summary>
-    /// Obtiene el color asociado a la rareza del ítem
-    /// </summary>
     public Color GetRarityColor()
     {
         switch (rarity)
         {
-            case ItemRarity.Legendario:
+            case ItemRarity.SuperRaro:
                 return new Color(1f, 0.84f, 0f); // Dorado
-            case ItemRarity.Epico:
-                return new Color(0.64f, 0.21f, 0.93f); // Morado
             case ItemRarity.Raro:
                 return new Color(0.25f, 0.5f, 1f); // Azul
-            case ItemRarity.Comun:
+            case ItemRarity.Normal:
             default:
                 return new Color(0.6f, 0.6f, 0.6f); // Gris
         }
+    }
+
+    public string GetFormattedDescriptionAndStats()
+    {
+        StringBuilder sb = new StringBuilder();
+
+        if (!string.IsNullOrEmpty(description))
+        {
+            sb.AppendLine(description);
+        }
+
+        sb.AppendLine();
+
+        if (benefits != null && benefits.Count > 0)
+        {
+            foreach (var effect in benefits)
+            {
+                sb.AppendLine(FormatStatEffect(effect, true));
+            }
+        }
+
+        if (drawbacks != null && drawbacks.Count > 0)
+        {
+            foreach (var effect in drawbacks)
+            {
+                sb.AppendLine(FormatStatEffect(effect, false));
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private string FormatStatEffect(ItemEffect effect, bool isBenefit)
+    {
+        string colorTag = isBenefit ? "<color=#00FF00>" : "<color=#FF0000>";
+
+        string amountString = (isBenefit ? "+" : "-") +
+                              Mathf.Abs(effect.amount).ToString("F0") +
+                              (effect.isPercentage ? "%" : "");
+
+        string statName = effect.type.ToString().Replace("StatType.", "");
+
+        return $"{colorTag}{amountString} a {statName}</color>";
     }
 }

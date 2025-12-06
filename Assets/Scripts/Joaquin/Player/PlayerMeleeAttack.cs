@@ -36,10 +36,10 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     [Header("Combo Configuration")]
     [SerializeField] private float autoAimRange = 5f;
-    [SerializeField] private float comboResetTime = 2f; // Tiempo sin atacar para resetear combo
-    [SerializeField] private float[] comboMovementForces = new float[3] { 1.5f, 2f, 1.8f }; // Fuerza de empuje por ataque
-    [SerializeField] private float[] comboLockDurations = new float[3] { 0.4f, 0.6f, 0.8f }; // Duración del lock por ataque
-    [SerializeField] private float[] comboStunDurations = new float[3] { 0.5f, 0.5f, 1f }; // Duración de aturdimiento por ataque
+    [SerializeField] private float comboResetTime = 2f;
+    [SerializeField] private float[] baseComboMovementForces = new float[3] { 1.5f, 2f, 1.8f }; 
+    [SerializeField] private float[] comboLockDurations = new float[3] { 0.4f, 0.6f, 0.8f };
+    [SerializeField] private float[] comboStunDurations = new float[3] { 0.5f, 0.5f, 1f };
 
     [Header("Attack 1 (Basic)")]
     [SerializeField] private ParticleSystem vfxAttack1Slash;
@@ -83,6 +83,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     private float currentSpeedFactor = 1f;
 
     private bool isAttacking = false;
+    private float[] currentComboMovementForces = new float[3];
 
     private int comboCount = 0;
     private float lastAttackTime = 0f;
@@ -173,6 +174,22 @@ public class PlayerMeleeAttack : MonoBehaviour
         speedMultiplier = speedMultiplierStat;
 
         CalculateStats();
+
+        UpdateComboDisplacementFromStats();
+    }
+
+    private void UpdateComboDisplacementFromStats()
+    {
+        float displacementMod = statsManager != null ? statsManager.GetStat(StatType.MeleeComboDisplacement) : 0f;
+
+        if (displacementMod == 0f) displacementMod = 1f;
+
+        for (int i = 0; i < baseComboMovementForces.Length; i++)
+        {
+            currentComboMovementForces[i] = baseComboMovementForces[i] * displacementMod;
+        }
+
+        ReportDebug($"Desplazamiento de combo actualizado: Multiplicador x{displacementMod} -> [{currentComboMovementForces[0]:F2}, {currentComboMovementForces[1]:F2}, {currentComboMovementForces[2]:F2}]", 1);
     }
 
     private void HandleStatChanged(StatType statType, float newValue)
@@ -193,6 +210,9 @@ public class PlayerMeleeAttack : MonoBehaviour
                 break;
             case StatType.MeleeRadius:
                 hitRadius = newValue;
+                break;
+            case StatType.MeleeComboDisplacement:
+                UpdateComboDisplacementFromStats();
                 break;
             default:
                 return;
@@ -494,7 +514,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         float duration = attack1Duration / currentSpeedFactor;
         float elapsedTime = 0f;
 
-        float desiredTotalDistance = comboMovementForces[0];
+        float desiredTotalDistance = currentComboMovementForces[0];
         Vector3 forward = transform.forward;
 
         float safeDistance = desiredTotalDistance;
@@ -588,7 +608,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         float movementDuration = Mathf.Max(0f, attack2MovementDuration / currentSpeedFactor);
         float spinDuration = Mathf.Max(0f, attack2SpinDuration / currentSpeedFactor);
 
-        float desiredTotalDistance = comboMovementForces[1];
+        float desiredTotalDistance = currentComboMovementForces[1];
         Vector3 forward = transform.forward;
 
         float safeDistance = desiredTotalDistance;
@@ -750,7 +770,7 @@ public class PlayerMeleeAttack : MonoBehaviour
             yield return null;
         }
 
-        float desiredTotalDistance = comboMovementForces[2];
+        float desiredTotalDistance = currentComboMovementForces[2];
         Vector3 forward = transform.forward;
 
         float safeDistance = desiredTotalDistance;

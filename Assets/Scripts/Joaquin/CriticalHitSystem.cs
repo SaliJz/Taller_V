@@ -4,13 +4,7 @@ using UnityEngine;
 
 public static class CriticalHitSystem
 {
-    [Tooltip("Probabilidad de crítico al atacar por la espalda.")]
-    public static float BackCriticalChance = 0f; // Probabilidad alta de 25 %
-
-    [Tooltip("Probabilidad de crítico al atacar de frente. Puede ser 0.")]
-    public static float FrontalCriticalChance = 0f; // Probabilidad baja de 0.5 %
-
-    public static float CriticalMultiplier = 2f; // Daño crítico x2
+    private static PlayerStatsManager cachedStatsManager;
 
     /// <summary>
     /// Calcula el daño basado en la posición relativa del atacante y el objetivo.
@@ -22,28 +16,52 @@ public static class CriticalHitSystem
     /// <returns>El daño final calculado.</returns>
     public static float CalculateDamage(float baseDamage, Transform attacker, Transform target, out bool isCritical)
     {
-        Vector3 attackDirection = (attacker.position - target.position).normalized;
+        isCritical = false;
 
-        attackDirection.y = 0;
-        Vector3 targetForward = target.forward;
-        targetForward.y = 0;
-
-        float dotProduct = Vector3.Dot(targetForward, attackDirection);
-
-        float currentCritChance;
-        if (dotProduct < 0) // Si el resultado es negativo, el ataque es por la espalda
+        // Obtener el StatsManager si no está cacheado
+        if (cachedStatsManager == null && attacker != null)
         {
-            currentCritChance = BackCriticalChance;
-            ReportDebug("Ataque por la espalda detectado.", 1);
-        }
-        else // Si es positivo o cero, es frontal o lateral
-        {
-            currentCritChance = FrontalCriticalChance;
-            ReportDebug("Ataque frontal detectado.", 1);
+            cachedStatsManager = attacker.GetComponent<PlayerStatsManager>();
         }
 
-        isCritical = UnityEngine.Random.value <= currentCritChance;
-        return isCritical ? baseDamage * CriticalMultiplier : baseDamage;
+        if (cachedStatsManager == null)
+        {
+            ReportDebug("No se encontró PlayerStatsManager. Usando valores por defecto.", 2);
+            return baseDamage;
+        }
+
+        // Obtener probabilidad de crítico desde stats
+        float critChance = cachedStatsManager.GetStat(StatType.CriticalChance);
+
+        // Roll de crítico
+        float roll = Random.Range(0f, 100f);
+
+        if (roll <= critChance)
+        {
+            isCritical = true;
+
+            // Obtener multiplicador de daño crítico desde stats (por defecto 2.0)
+            float critMultiplier = cachedStatsManager.GetStat(StatType.CriticalDamageMultiplier);
+
+            // Si el stat no está inicializado, usar 2.0 por defecto
+            if (critMultiplier <= 0f)
+            {
+                critMultiplier = 2.0f;
+            }
+
+            float criticalDamage = baseDamage * critMultiplier;
+
+            ReportDebug($"¡CRÍTICO! Daño: {baseDamage} x {critMultiplier} = {criticalDamage}", 1);
+
+            return criticalDamage;
+        }
+
+        return baseDamage;
+    }
+
+    public static void ClearCache()
+    {
+        cachedStatsManager = null;
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]

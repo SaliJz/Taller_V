@@ -122,6 +122,22 @@ public partial class PlayerStatsManager : MonoBehaviour
         UpdateStatsDisplay(); // asegurar display inicial
     }
 
+    public float GetCurrentStatValue(StatType stat)
+    {
+        if (currentStats.ContainsKey(stat))
+        {
+            return currentStats[stat];
+        }
+
+        Debug.LogWarning($"[PlayerStatsManager] Intento de obtener stat '{stat}' que no está inicializada. Devolviendo 0.");
+        return 0f;
+    }
+
+    private void NotifyStatChanged(StatType stat, float newValue)
+    {
+        OnStatChanged?.Invoke(stat, newValue);
+    }
+
     private void OnEnable()
     {
         OnStatChanged += HandleStatChanged;
@@ -232,23 +248,31 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.ShieldReboundRadius: return statsSO.shieldReboundRadius;
             case StatType.ShieldBlockUpgrade: return statsSO.isShieldBlockUpgradeActive ? 1f : 0f;
 
-            //case StatType.EssenceCostReduction: return so.essenceCostReductionBase; 
             case StatType.LuckStack: return statsSO.luckStackBase;
             case StatType.ShopPriceReduction: return statsSO.shopPriceReductionBase;
             case StatType.HealthPerRoomRegen: return statsSO.healthPerRoomRegenBase;
 
             case StatType.CriticalChance: return statsSO.criticalChanceBase;
-            case StatType.CriticalDamageMultiplier: return statsSO.criticalDamageMultiplierBase;
-            case StatType.DashRangeMultiplier: return statsSO.dashRangeMultiplierBase;
+
+            case StatType.CriticalDamageMultiplier:
+                return statsSO.criticalDamageMultiplierBase > 0f ? statsSO.criticalDamageMultiplierBase : 2.0f;
+
+            case StatType.DashRangeMultiplier:
+                return statsSO.dashRangeMultiplierBase > 0f ? statsSO.dashRangeMultiplierBase : 1.0f;
+
+            case StatType.KnockbackReceived: return 1.0f;
+
+            case StatType.DashCooldownPost: return 0f; 
+
+            case StatType.MeleeComboDisplacement: return 1.0f;
+
+            case StatType.ShieldPushForce: return 0f;
+
+            case StatType.ShieldReturnSpeed: return 1.0f;
+
+            case StatType.StaminaConsumption: return 1.0f; 
 
             case StatType.DamageTaken: return 0f;
-
-            case StatType.KnockbackReceived: return 0f;
-            case StatType.DashCooldownPost: return 0f;
-            case StatType.MeleeComboDisplacement: return 0f;
-            case StatType.ShieldPushForce: return 0f;
-            case StatType.ShieldReturnSpeed: return 0f;
-            case StatType.StaminaConsumption: return 0f;
 
             default:
                 Debug.LogWarning($"El StatType {type} no está mapeado en GetStatFromSO. Retornando 0.");
@@ -591,6 +615,18 @@ public partial class PlayerStatsManager : MonoBehaviour
             effect.RemoveEffect(this);
             Debug.Log($"Efecto de amuleto revertido y limpiado: {effect.name}");
         }
+    }
+
+    public void ApplyMultiplierModifier(string key, StatType type, float multiplier)
+    {
+        ApplyNamedModifier(key, type, multiplier - 1.0f, true);
+        Debug.Log($"[PlayerStatsManager] Multiplicador aplicado: {key} a {type} = x{multiplier}");
+    }
+
+    public void ApplyAdditiveModifier(string key, StatType type, float amount)
+    {
+        ApplyNamedModifier(key, type, amount, false);
+        Debug.Log($"[PlayerStatsManager] Modificador aditivo aplicado: {key} a {type} = +{amount}");
     }
 
     public void ClearAllNamedModifiers()

@@ -24,7 +24,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
         merchantRoomManager = GetComponentInParent<MerchantRoomManager>();
         inventoryUIManager = FindAnyObjectByType<InventoryUIManager>();
 
-        audioSource = merchantRoomManager.GetComponentInChildren<AudioSource>(); // Intentar obtener AudioSource del MerchantRoomManager si no está asignado
+        audioSource = merchantRoomManager.GetComponentInChildren<AudioSource>();
 
         if (audioSource == null)
         {
@@ -124,7 +124,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
             }
             else
             {
-                float finalCost = shopManager.CalculateFinalCost(shopItemData.cost);
+                float finalCost = shopManager.CalculateFinalCost(shopItemData.cost); 
                 shopManager.UpdateCostBar(finalCost);
                 shopManager.LockAndDisplayItemDetails(shopItemData);
             }
