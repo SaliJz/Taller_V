@@ -32,8 +32,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     }
 
     [Header("Dash")]
-    [SerializeField] private float dashDistance = 10f;
+    [SerializeField] private float baseDashDistance = 10f;
+    [SerializeField] private float baseDashCooldown = 0.3f; 
     [SerializeField] private float dashDuration = 0.3f;
+    [SerializeField] private float dashDistance = 10f;
     [SerializeField] private float dashCooldown = 0.3f;
     [SerializeField] private LayerMask traversableLayers;
     [SerializeField] private LayerMask dashCollisionLayers;
@@ -83,6 +85,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     private bool canMove = true;
     private float lastMoveX;
     private float lastMoveY;
+
+    private float currentDashDistance;
+    private float currentDashCooldown;
 
     private bool allowExternalForces = true;
 
@@ -174,6 +179,27 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         lastMoveX = 0;
 
         InitializeDashVFX();
+        UpdateDashStatsFromManager();
+    }
+
+    private void UpdateDashStatsFromManager()
+    {
+        if (statsManager == null)
+        {
+            currentDashDistance = baseDashDistance;
+            currentDashCooldown = baseDashCooldown;
+            return;
+        }
+
+        float dashRangeMultiplier = statsManager.GetStat(StatType.DashRangeMultiplier);
+        if (dashRangeMultiplier <= 0f) dashRangeMultiplier = 1f; 
+
+        currentDashDistance = baseDashDistance * dashRangeMultiplier;
+
+        float dashCooldownMod = statsManager.GetStat(StatType.DashCooldownPost);
+        currentDashCooldown = Mathf.Max(0.1f, baseDashCooldown + dashCooldownMod);
+
+        ReportDebug($"Dash Stats actualizados: Distancia={currentDashDistance} (base:{baseDashDistance} x {dashRangeMultiplier}), Cooldown={currentDashCooldown} (base:{baseDashCooldown} + {dashCooldownMod}s)", 1);
     }
 
     private void HandleStatChanged(StatType statType, float newValue)
@@ -185,6 +211,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         else if (statType == StatType.Gravity)
         {
             gravity = newValue;
+        }
+        else if (statType == StatType.DashRangeMultiplier || statType == StatType.DashCooldownPost)
+        {
+            UpdateDashStatsFromManager();
         }
 
         ReportDebug($"Stat {statType} cambiado a {newValue}.", 1);
@@ -346,10 +376,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     {
         Vector3 dashDirection;
 
-        // El dash usa la entrada del input.
         if (currentInputVector.sqrMagnitude > 0.01f)
         {
-            // Recalcula la dirección mundial desde la cámara
             Vector3 cameraForward = mainCameraTransform != null ? mainCameraTransform.forward : Vector3.forward;
             Vector3 cameraRight = mainCameraTransform != null ? mainCameraTransform.right : Vector3.right;
 
@@ -358,15 +386,11 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             cameraForward.Normalize();
             cameraRight.Normalize();
 
-            // Usa currentInputVector
             dashDirection = (cameraForward * currentInputVector.y + cameraRight * currentInputVector.x).normalized;
-
-            // Rotación instantánea
             transform.rotation = Quaternion.LookRotation(dashDirection);
         }
         else
         {
-            // Si no hay input, dashea hacia adelante
             dashDirection = moveDirection.magnitude > 0.1f ? moveDirection : transform.forward;
         }
 
@@ -396,7 +420,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         yield return StartCoroutine(PerformDash(targetDashPosition, dashDuration));
 
-        float safetyPushSpeed = (dashDistance / dashDuration) * 0.4f;
+        float safetyPushSpeed = (currentDashDistance / dashDuration) * 0.4f;
         float maxStuckTime = 0.3f;
         float stuckTimer = 0f;
         int maxPushAttempts = 5;
@@ -441,7 +465,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             playerAnimator.SetBool("Dashing", false);
         }
 
-        dashCooldownTimer = dashCooldown;
+        dashCooldownTimer = currentDashCooldown;
     }
 
     private void InitializeDashVFX()
@@ -602,7 +626,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         Vector3 p2 = origin + controller.center - Vector3.up * (playerHeight / 2f - playerRadius);
 
         // Paso 1: Comprobar colisiones con obstáculos
-        if (Physics.CapsuleCast(p1, p2, playerRadius, direction, out RaycastHit obstacleHit, dashDistance, dashCollisionLayers, QueryTriggerInteraction.Ignore))
+        if (Physics.CapsuleCast(p1, p2, playerRadius, direction, out RaycastHit obstacleHit, currentDashDistance, dashCollisionLayers, QueryTriggerInteraction.Ignore))
         {
             float adjustedDistance = Mathf.Max(0f, obstacleHit.distance - playerRadius);
 
@@ -624,7 +648,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         // Paso 2: Dash normal en terreno plano
         float scanHeight = 2.0f;
-        Vector3 baseTarget = origin + direction * dashDistance + Vector3.up * scanHeight;
+        Vector3 baseTarget = origin + direction * currentDashDistance + Vector3.up * scanHeight;
 
         if (Physics.Raycast(baseTarget, Vector3.down, out RaycastHit baseGroundHit, playerHeight + scanHeight + 1f, groundLayerMask, QueryTriggerInteraction.Ignore))
         {
@@ -636,8 +660,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
 
         // Paso 3: Cruzar vacíos
-        float scanStart = dashDistance + 0.1f;
-        float scanMax = dashDistance + gapDashBonusDistance;
+        float scanStart = currentDashDistance + 0.1f;
+        float scanMax = currentDashDistance + gapDashBonusDistance;
         float scanStep = Mathf.Max(0.5f, playerRadius * 0.5f);
 
         RaycastHit foundHit = new RaycastHit();
@@ -686,7 +710,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
 
         // Paso 4: Borde detectado
-        float safeLedgeDistance = GetMaxSafeDistance(direction, dashDistance);
+        float safeLedgeDistance = GetMaxSafeDistance(direction, currentDashDistance);
 
         float minEffectiveDashDistance = 0.5f;
 
@@ -1226,7 +1250,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         Gizmos.DrawWireSphere(baseEnd, 0.15f);
 
         Gizmos.color = Color.magenta;
-        Vector3 bonusEnd = origin + dashDirection * (dashDistance + gapDashBonusDistance);
+        Vector3 bonusEnd = origin + dashDirection * (currentDashDistance + gapDashBonusDistance);
         Gizmos.DrawLine(baseEnd, bonusEnd);
         Gizmos.DrawWireSphere(bonusEnd, 0.1f);
 
@@ -1253,7 +1277,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             Vector3 rayOrigin = transform.position + Vector3.up * edgeRaycastHeight;
             float rayDistance = controller.height + 0.6f;
 
-            float totalDistance = dashDistance + gapDashBonusDistance;
+            float totalDistance = currentDashDistance + gapDashBonusDistance;
             int samples = Mathf.Clamp(Mathf.CeilToInt(totalDistance / (controller.radius + edgeDetectionDistance)), 1, edgeSampleMax);
             float step = totalDistance / samples;
 
@@ -1312,7 +1336,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         Vector3 testP2 = origin + controller.center - Vector3.up * (controller.height / 2f - controller.radius);
 
         if (Physics.CapsuleCast(testP1, testP2, controller.radius, testDir, out RaycastHit obsHit,
-            dashDistance, dashCollisionLayers, QueryTriggerInteraction.Ignore))
+            currentDashDistance, dashCollisionLayers, QueryTriggerInteraction.Ignore))
         {
             float checkDist = Mathf.Max(0f, obsHit.distance - controller.radius);
             int samples = Mathf.CeilToInt(checkDist / 1f);

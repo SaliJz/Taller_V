@@ -15,6 +15,11 @@ public class Shield : MonoBehaviour
     [SerializeField] private float maxDistance = 30f;
     [SerializeField] private LayerMask collisionLayers;
 
+    [Header("Dynamic Stats")]
+    [SerializeField] private float baseReturnSpeedMultiplier = 1.2f; 
+    [SerializeField] private float currentReturnSpeedMultiplier = 1.2f; 
+    private PlayerStatsManager cachedStatsManager;
+
     [Header("Rebound Settings")]
     [SerializeField] private bool canRebound = true;
     [SerializeField] private int reboundCount = 0;
@@ -77,8 +82,8 @@ public class Shield : MonoBehaviour
     /// <param name="direction"> Orientación del escudo en la dirección del lanzamiento </param>
     /// <param name="canRebound"> Indica si el escudo puede rebotar entre enemigos </param>
     public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds,
-      float reboundDetectionRadius, float damage, float speed, float distance,
-      bool canPierce, int maxPierceTargets, float knockbackForce, PlayerHealth.LifeStage lifeStage, bool isBerserker)
+   float reboundDetectionRadius, float damage, float speed, float distance,
+   bool canPierce, int maxPierceTargets, float knockbackForce, PlayerHealth.LifeStage lifeStage, bool isBerserker)
     {
         if (deactivationCoroutine != null)
         {
@@ -107,10 +112,16 @@ public class Shield : MonoBehaviour
         currentPierceCount = 0;
 
         this.knockbackForce = knockbackForce;
-
         this.currentLifeStage = lifeStage;
 
         hitTargets.Clear();
+
+        if (cachedStatsManager == null && owner != null)
+        {
+            cachedStatsManager = owner.GetComponent<PlayerStatsManager>();
+        }
+
+        UpdateDynamicStatsFromManager();
 
         currentState = ShieldState.Thrown;
         gameObject.SetActive(true);
@@ -127,7 +138,31 @@ public class Shield : MonoBehaviour
 
         PlayTrailVFX(true);
 
-        ReportDebug($"Escudo lanzado en modo {lifeStage}: Daño={damage}, Pierce={canPierce}, Rebote={canRebound}", 1);
+        ReportDebug($"Escudo lanzado en modo {lifeStage}: Daño={damage}, Pierce={canPierce}, Rebote={canRebound}, ReturnSpeed={currentReturnSpeedMultiplier}x", 1);
+    }
+
+    private void UpdateDynamicStatsFromManager()
+    {
+        if (cachedStatsManager == null)
+        {
+            currentReturnSpeedMultiplier = baseReturnSpeedMultiplier;
+            return;
+        }
+
+        float returnSpeedMod = cachedStatsManager.GetStat(StatType.ShieldReturnSpeed);
+        if (returnSpeedMod <= 0f) returnSpeedMod = 1f; 
+
+        currentReturnSpeedMultiplier = baseReturnSpeedMultiplier * returnSpeedMod;
+
+        float pushForceMod = cachedStatsManager.GetStat(StatType.ShieldPushForce);
+
+        if (knockbackForce > 0f)
+        {
+            knockbackForce += pushForceMod;
+            knockbackForce = Mathf.Max(0f, knockbackForce); 
+        }
+
+        ReportDebug($"Stats dinámicos actualizados: ReturnSpeed={currentReturnSpeedMultiplier}x, KnockbackForce={knockbackForce} (+{pushForceMod})", 1);
     }
 
     /// <summary>
@@ -159,16 +194,13 @@ public class Shield : MonoBehaviour
             Vector3 directionToTarget = (currentTarget.position - transform.position).normalized;
             transform.position += directionToTarget * currentSpeed * Time.deltaTime;
             transform.forward = directionToTarget;
-
-            //if (Vector3.Distance(transform.position, currentTarget.position) < 1.0f)
-            //{
-            //    PerformHitDetection(currentTarget);
-            //}
         }
         else if (currentState == ShieldState.Returning)
         {
             Vector3 directionToTarget = (returnTarget.position - transform.position).normalized;
-            transform.position += directionToTarget * currentSpeed * Time.deltaTime;
+
+            float returnSpeed = currentSpeed * currentReturnSpeedMultiplier;
+            transform.position += directionToTarget * returnSpeed * Time.deltaTime;
 
             if (Vector3.Distance(transform.position, returnTarget.position) < 1.0f)
             {
@@ -176,11 +208,6 @@ public class Shield : MonoBehaviour
                 {
                     deactivationCoroutine = StartCoroutine(SafeDeactivateShieldCoroutine());
                 }
-
-                //owner.CatchShield();
-                //currentState = ShieldState.Inactive;
-                //PlayTrailVFX(false);
-                //gameObject.SetActive(false);
             }
         }
     }
@@ -286,7 +313,7 @@ public class Shield : MonoBehaviour
                     Vector3 knockbackDir = (enemy.transform.position - transform.position).normalized;
                     knockbackDir.y = 0;
                     knockbackHandler.TriggerKnockback(knockbackDir, knockbackForce, 0.3f);
-                    ReportDebug($"Knockback aplicado a {enemy.name}: Fuerza={knockbackForce}", 1);
+                    ReportDebug($"Knockback aplicado a {enemy.name}: Fuerza={knockbackForce} (modificado por stats)", 1);
                 }
             }
 

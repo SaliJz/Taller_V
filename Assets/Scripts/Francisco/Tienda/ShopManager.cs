@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class ShopManager : MonoBehaviour
 {
@@ -19,11 +20,15 @@ public class ShopManager : MonoBehaviour
     public ShopInteractionMode InteractionMode => interactionMode;
 
     [Header("Item Pools")]
-    public List<ShopItem> allRelics;
-    public List<ShopItem> allGagans;
+    public List<ShopItem> allShopItems;
     public List<ShopItem> safeRelics;
     public List<Pact> allPacts = new List<Pact>();
     public List<ShopItem> allAmulets;
+
+    [Header("Shop Generation Settings")]
+    [Range(0f, 1f)] public float normalRarityWeight = 0.65f;
+    [Range(0f, 1f)] public float rareRarityWeight = 0.25f;
+    [Range(0f, 1f)] public float superRareRarityWeight = 0.1f;
 
     [Header("Shop Prefabs")]
     public List<GameObject> shopItemPrefabs;
@@ -41,24 +46,23 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private Color affordableColor = Color.green;
     [SerializeField] private Color unaffordableColor = Color.red;
 
-    [Header("Purchase Risk Settings")] 
-    [SerializeField] private float lowHealthThresholdPercentage = 20f;
+    [Header("Purchase Risk Settings")]
+    [SerializeField] private float lowHealthThreshold = 10f;
+    [SerializeField] private Color lowHealthWarningColor = Color.yellow;
+    private bool lowHealthWarningActive = false;
 
     [Header("Raycast Settings")]
-    [SerializeField] private Camera mainCamera;
+    [SerializeField] private float raycastDistance = 5f;
     [SerializeField] private LayerMask shopItemLayer;
-    [SerializeField] private float raycastDistance = 100f;
 
     [Header("Reroll Settings")]
-    [SerializeField] private KeyCode reRollKey = KeyCode.R;
-    [SerializeField] private bool canReroll = true;
+    public int baseRerollCost = 10;
 
     [Header("Gamepad Virtual Cursor")]
-    [SerializeField] private RectTransform virtualCursorRect;
+    [SerializeField] private bool useVirtualCursor = true;
 
     [Header("Purchase Cooldown")]
-    [SerializeField] private float purchaseCooldownTime = 0.5f; 
-    private float _lastPurchaseAttemptTime = -999f;
+    [SerializeField] private float purchaseCooldown = 0.5f;
 
     private readonly List<ShopItem> availableItems = new List<ShopItem>();
     private readonly List<ShopItem> spawnedItems = new List<ShopItem>();
@@ -70,82 +74,57 @@ public class ShopManager : MonoBehaviour
 
     public static ShopManager Instance { get; private set; }
 
-    private PlayerControlls playerControls;
-    private PlayerStatsManager playerStatsManager;
     private PlayerHealth playerHealth;
+    private PlayerStatsManager playerStatsManager;
     private InventoryManager inventoryManager;
-    private ShopItem lastDetectedItem;
-    private InventoryUIManager inventoryUIManager;
+    private PlayerControlls playerControls;
 
+    private float lastPurchaseTime;
     private bool forceGagans = false;
     private bool _amuletPurchasedInRun = false;
     private float merchantPriceModifier = 1.0f;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-        }
-        else
+        if (Instance == null)
         {
             Instance = this;
         }
+        else
+        {
+            Destroy(gameObject);
+        }
 
         playerControls = new PlayerControlls();
-
-        playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
-        playerHealth = FindAnyObjectByType<PlayerHealth>();
-        inventoryManager = FindAnyObjectByType<InventoryManager>();
-        inventoryUIManager = FindAnyObjectByType<InventoryUIManager>();
-
-        if (playerStatsManager == null || playerHealth == null)
-        {
-            Debug.LogError("PlayerStatsManager o PlayerHealth no encontrados. La tienda no funcionará.");
-        }
-
-        if (inventoryManager == null)
-        {
-            Debug.LogError("InventoryManager no encontrado. El inventario no funcionará correctamente.");
-        }
-
-        if (inventoryUIManager == null)
-        {
-            Debug.LogError("InventoryUIManager no encontrado. La UI del inventario no funcionará correctamente.");
-        }
-
-        if (mainCamera == null)
-        {
-            mainCamera = Camera.main;
-        }
-
-        if (shopUIPanel != null) shopUIPanel.SetActive(false);
-        InitializeShopItemPools();
     }
 
     private void OnEnable()
     {
-        playerControls?.UI.Enable();
+        playerControls.Enable();
     }
 
     private void OnDisable()
     {
-        playerControls?.UI.Disable();
+        playerControls.Disable();
+    }
+
+    private void Start()
+    {
+        playerHealth = FindAnyObjectByType<PlayerHealth>();
+        playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
+        inventoryManager = FindAnyObjectByType<InventoryManager>();
+
+        if (shopUIPanel != null)
+        {
+            shopUIPanel.SetActive(false);
+        }
+
+        InitializeShopItemPools();
     }
 
     private void Update()
     {
-        if (interactionMode == ShopInteractionMode.MouseHover)
-        {
-            HandleMouseInteraction();
-        }
-
-        if (canReroll && Input.GetKeyDown(reRollKey))
-        {
-            RerollShop();
-        }
-
-        if (interactionMode == ShopInteractionMode.MouseHover)
+        if (interactionMode == ShopInteractionMode.MouseHover && shopUIPanel != null && shopUIPanel.activeInHierarchy)
         {
             PositionUIPanel();
         }
@@ -155,40 +134,32 @@ public class ShopManager : MonoBehaviour
     {
         availableItems.Clear();
         spawnedItems.Clear();
-        availableItems.AddRange(allRelics);
-        availableItems.AddRange(allGagans);
+        if (allShopItems != null)
+        {
+            availableItems.AddRange(allShopItems);
+        }
     }
 
     public void ResetMerchantRunState()
     {
         _amuletPurchasedInRun = false;
+        merchantPriceModifier = 1.0f;
     }
 
-    public void DisableRemainingAmulets(ShopItem purchasedAmulet)
+    public void DisableRemainingAmulets()
     {
-        if (purchasedAmulet == null || !purchasedAmulet.isAmulet) return;
-
-        List<GameObject> itemsToDestroy = new List<GameObject>();
-
-        foreach (GameObject itemObject in _spawnedItemObjects)
+        if (_spawnedItemObjects != null)
         {
-            if (itemObject != null)
+            foreach (var obj in _spawnedItemObjects)
             {
-                ShopItemDisplay display = itemObject.GetComponent<ShopItemDisplay>();
-
-                if (display != null && display.shopItemData.isAmulet && display.shopItemData != purchasedAmulet)
+                if (obj != null)
                 {
-                    itemsToDestroy.Add(itemObject);
+                    ShopItemDisplay display = obj.GetComponent<ShopItemDisplay>();
+                    if (display != null && display.shopItemData != null && display.shopItemData.isAmulet)
+                    {
+                        obj.SetActive(false);
+                    }
                 }
-            }
-        }
-
-        foreach (GameObject item in itemsToDestroy)
-        {
-            if (item != null)
-            {
-                _spawnedItemObjects.Remove(item);
-                Destroy(item);
             }
         }
     }
@@ -196,43 +167,39 @@ public class ShopManager : MonoBehaviour
     public void SetMerchantPriceModifier(float modifier)
     {
         merchantPriceModifier = modifier;
-        Debug.Log($"Modificador de precios del mercader actualizado: {modifier:F2}");
     }
 
-    public IEnumerator SpawnItemWithEffect(ShopItem itemData, Transform spawnLocation, float effectDuration, Transform parent)
+    public void SpawnItemWithEffect(ShopItem item, Transform location, Transform parent)
     {
-        GameObject itemPrefab = FindPrefabForItemData(itemData);
-
+        GameObject itemPrefab = FindPrefabForItemData(item);
         if (itemPrefab != null)
         {
-            if (itemAppearanceEffectPrefab != null)
-            {
-                GameObject effect = Instantiate(itemAppearanceEffectPrefab, spawnLocation.position, Quaternion.identity);
-                yield return new WaitForSeconds(effectDuration);
-                Destroy(effect);
-            }
-            else
-            {
-                yield return null;
-            }
+            StartCoroutine(SpawnItemSequence(itemPrefab, item, location, parent));
+        }
+    }
 
-            GameObject spawnedItem = Instantiate(itemPrefab, spawnLocation.position, Quaternion.identity, parent);
-
-            _spawnedItemObjects.Add(spawnedItem);
-
-            ShopItemDisplay display = spawnedItem.GetComponent<ShopItemDisplay>();
-            if (display != null)
-            {
-                display.shopItemData = itemData;
-            }
-
-            spawnedItems.Add(itemData);
-            currentShopItems.Add(itemData);
+    private IEnumerator SpawnItemSequence(GameObject itemPrefab, ShopItem itemData, Transform location, Transform parent)
+    {
+        if (itemAppearanceEffectPrefab != null)
+        {
+            Instantiate(itemAppearanceEffectPrefab, location.position, Quaternion.identity, parent);
+            yield return new WaitForSeconds(0.5f);
         }
         else
         {
-            yield return null;
+            yield return new WaitForSeconds(0.1f);
         }
+
+        GameObject spawnedItem = Instantiate(itemPrefab, location.position, Quaternion.identity, parent);
+        _spawnedItemObjects.Add(spawnedItem);
+
+        ShopItemDisplay display = spawnedItem.GetComponent<ShopItemDisplay>();
+        if (display != null)
+        {
+            display.shopItemData = itemData;
+        }
+
+        spawnedItems.Add(itemData);
     }
 
     public void GenerateShopItems(List<Transform> spawnLocations, Transform parent)
@@ -240,87 +207,89 @@ public class ShopManager : MonoBehaviour
         _shopSpawnLocations = spawnLocations;
         currentShopItems = new List<ShopItem>();
 
-        if (spawnLocations == null || spawnLocations.Count == 0 || availableItems.Count < 3)
+        if (spawnLocations == null || spawnLocations.Count == 0 || availableItems.Count == 0)
         {
-            Debug.LogError("No hay suficientes ubicaciones de spawn o items para generar (se requieren 3).");
             return;
-        }
-
-        List<ShopItem> normalItems = new List<ShopItem>();
-        List<ShopItem> drawbackItems = new List<ShopItem>();
-
-        foreach (var item in availableItems)
-        {
-            if (item.drawbacks == null || item.drawbacks.Count == 0)
-            {
-                normalItems.Add(item);
-            }
-            else
-            {
-                drawbackItems.Add(item);
-            }
         }
 
         List<ShopItem> itemsToSpawn = new List<ShopItem>();
 
-        if (forceGagans)
+        Dictionary<ItemRarity, List<ShopItem>> itemsByRarity = new Dictionary<ItemRarity, List<ShopItem>>();
+        foreach (ItemRarity rarity in System.Enum.GetValues(typeof(ItemRarity)))
         {
-            if (drawbackItems.Count < 3)
-            {
-                itemsToSpawn.AddRange(drawbackItems);
-                itemsToSpawn.AddRange(normalItems);
-            }
-            else
-            {
-                itemsToSpawn.AddRange(drawbackItems);
-            }
-        }
-        else
-        {
-            if (normalItems.Count >= 2)
-            {
-                for (int i = 0; i < 2; i++)
-                {
-                    int randomIndex = Random.Range(0, normalItems.Count);
-                    itemsToSpawn.Add(normalItems[randomIndex]);
-                    normalItems.RemoveAt(randomIndex);
-                }
-            }
-            else
-            {
-                itemsToSpawn.AddRange(normalItems);
-            }
-
-            if (drawbackItems.Count >= 1)
-            {
-                int randomIndex = Random.Range(0, drawbackItems.Count);
-                itemsToSpawn.Add(drawbackItems[randomIndex]);
-                drawbackItems.RemoveAt(randomIndex);
-            }
-            else
-            {
-                if (normalItems.Count > 0)
-                {
-                    int randomIndex = Random.Range(0, normalItems.Count);
-                    itemsToSpawn.Add(normalItems[randomIndex]);
-                }
-            }
+            itemsByRarity[rarity] = availableItems.Where(item => item.rarity == rarity).ToList();
         }
 
-        List<ShopItem> finalSelection = itemsToSpawn
-            .OrderBy(_ => Random.value)
-            .Take(Mathf.Min(itemsToSpawn.Count, spawnLocations.Count))
-            .ToList();
+        float totalWeight = normalRarityWeight + rareRarityWeight + superRareRarityWeight;
+        int itemsToSelectCount = Mathf.Min(spawnLocations.Count, availableItems.Count);
 
-        for (int i = 0; i < finalSelection.Count; i++)
+        for (int i = 0; i < itemsToSelectCount; i++)
         {
-            ShopItem itemData = finalSelection[i];
+            float roll = Random.Range(0f, totalWeight);
+            ItemRarity selectedRarity = ItemRarity.Normal;
+
+            if (roll <= normalRarityWeight)
+            {
+                selectedRarity = ItemRarity.Normal;
+            }
+            else if (roll <= normalRarityWeight + rareRarityWeight)
+            {
+                selectedRarity = ItemRarity.Raro;
+            }
+            else
+            {
+                selectedRarity = ItemRarity.SuperRaro;
+            }
+
+            if (itemsByRarity[selectedRarity].Count == 0)
+            {
+                if (itemsByRarity[ItemRarity.Normal].Count > 0)
+                    selectedRarity = ItemRarity.Normal;
+                else if (itemsByRarity[ItemRarity.Raro].Count > 0)
+                    selectedRarity = ItemRarity.Raro;
+                else if (itemsByRarity[ItemRarity.SuperRaro].Count > 0)
+                    selectedRarity = ItemRarity.SuperRaro;
+                else
+                    break;
+            }
+
+            List<ShopItem> rarityPool = itemsByRarity[selectedRarity];
+            if (rarityPool.Count > 0)
+            {
+                float itemTotalWeight = rarityPool.Sum(item => item.individualRarityWeight);
+                float itemRoll = Random.Range(0f, itemTotalWeight);
+
+                ShopItem itemData = null;
+                float currentWeight = 0f;
+
+                foreach (var item in rarityPool)
+                {
+                    currentWeight += item.individualRarityWeight;
+                    if (itemRoll <= currentWeight)
+                    {
+                        itemData = item;
+                        break;
+                    }
+                }
+
+                if (itemData != null)
+                {
+                    itemsToSpawn.Add(itemData);
+
+                    rarityPool.Remove(itemData);
+                    availableItems.Remove(itemData);
+                }
+            }
+        }
+
+        for (int i = 0; i < itemsToSpawn.Count; i++)
+        {
+            ShopItem itemData = itemsToSpawn[i];
             GameObject itemPrefab = FindPrefabForItemData(itemData);
 
             if (itemPrefab != null)
             {
                 GameObject spawnedItem = Instantiate(itemPrefab, spawnLocations[i].position, Quaternion.identity, parent);
-
                 _spawnedItemObjects.Add(spawnedItem);
 
                 ShopItemDisplay display = spawnedItem.GetComponent<ShopItemDisplay>();
@@ -335,231 +304,76 @@ public class ShopManager : MonoBehaviour
         }
     }
 
-    private void DestroyCurrentItems()
+    public void DestroyCurrentItems()
     {
-        foreach (GameObject itemObject in _spawnedItemObjects)
+        foreach (GameObject obj in _spawnedItemObjects)
         {
-            if (itemObject != null)
+            if (obj != null)
             {
-                Destroy(itemObject);
+                Destroy(obj);
             }
         }
         _spawnedItemObjects.Clear();
+        spawnedItems.Clear();
     }
 
-    public void RerollShop()
+    public void RerollShop(List<Transform> spawnLocations, Transform parent)
     {
-        if (_shopSpawnLocations == null || _shopSpawnLocations.Count == 0)
+        if (playerHealth == null) return;
+
+        float currentHealth = playerHealth.GetCurrentHealth();
+        if (currentHealth < baseRerollCost)
         {
-            Debug.LogWarning("No hay ubicaciones de spawn registradas para regenerar la tienda.");
+            inventoryManager?.ShowWarningMessage("Vida insuficiente para hacer un 'Reroll'.");
             return;
         }
 
+        playerHealth.TakeDamage(baseRerollCost, true);
+
+        availableItems.AddRange(spawnedItems);
+
         DestroyCurrentItems();
         InitializeShopItemPools();
-        GenerateShopItems(_shopSpawnLocations, null);
-
-        Debug.Log("Tienda regenerada con éxito.");
-    }
-
-    public IEnumerator GenerateMerchantItems(List<Transform> spawnLocations, bool isFirstVisit, float effectDuration, bool sequentialSpawn, Transform parent)
-    {
-        ResetMerchantRunState();
-
-        currentShopItems = new List<ShopItem>();
-        List<ShopItem> itemsToSpawn = new List<ShopItem>();
-        int maxItems = spawnLocations.Count;
-
-        if (maxItems > 3) maxItems = 3;
-
-        if (maxItems == 0)
-        {
-            Debug.LogWarning("No hay ubicaciones de spawn configuradas para el mercader o es cero.");
-            yield break;
-        }
-
-        List<ShopItem> primaryPool = new List<ShopItem>();
-        bool usedFallback = false;
-
-        if (isFirstVisit)
-        {
-            if (safeRelics != null && safeRelics.Count > 0)
-            {
-                primaryPool.AddRange(safeRelics);
-            }
-            else
-            {
-                Debug.LogWarning("No hay SafeRelics disponibles en la primera visita. Usando Amuletos como alternativa.");
-                if (allAmulets != null && allAmulets.Count > 0)
-                {
-                    primaryPool.AddRange(allAmulets);
-                    usedFallback = true;
-                }
-            }
-        }
-        else
-        {
-            if (allAmulets != null)
-            {
-                primaryPool.AddRange(allAmulets);
-            }
-        }
-
-        if (primaryPool.Count == 0 && !isFirstVisit)
-        {
-            Debug.LogWarning("No hay Amuletos disponibles para spawnear. Usando ítems por defecto (Reliquias).");
-            if (allRelics != null)
-            {
-                primaryPool.AddRange(allRelics);
-            }
-        }
-        else if (primaryPool.Count == 0 && isFirstVisit && safeRelics.Count == 0 && !usedFallback)
-        {
-            Debug.LogWarning("No hay SafeRelics ni Amuletos disponibles en la primera visita. No se generará ningún ítem.");
-            yield break;
-        }
-
-        if (isFirstVisit && !usedFallback)
-        {
-            for (int i = 0; i < maxItems && i < primaryPool.Count; i++)
-            {
-                itemsToSpawn.Add(primaryPool[i]);
-            }
-        }
-        else
-        {
-            List<ShopItem> dynamicPoolCopy = new List<ShopItem>(primaryPool);
-
-            for (int i = 0; i < maxItems && dynamicPoolCopy.Count > 0; i++)
-            {
-                int randomIndex = Random.Range(0, dynamicPoolCopy.Count);
-                itemsToSpawn.Add(dynamicPoolCopy[randomIndex]);
-                dynamicPoolCopy.RemoveAt(randomIndex);
-            }
-        }
-
-
-        List<Coroutine> itemSpawnCoroutines = new List<Coroutine>();
-
-        for (int i = 0; i < itemsToSpawn.Count && i < spawnLocations.Count; i++)
-        {
-            if (sequentialSpawn)
-            {
-                yield return StartCoroutine(SpawnItemWithEffect(itemsToSpawn[i], spawnLocations[i], effectDuration, parent));
-            }
-            else
-            {
-                itemSpawnCoroutines.Add(StartCoroutine(SpawnItemWithEffect(itemsToSpawn[i], spawnLocations[i], effectDuration, parent)));
-            }
-        }
-
-        if (!sequentialSpawn)
-        {
-            foreach (Coroutine coroutine in itemSpawnCoroutines)
-            {
-                yield return coroutine;
-            }
-        }
+        GenerateShopItems(spawnLocations, parent);
     }
 
     private GameObject FindPrefabForItemData(ShopItem itemData)
     {
-        foreach (GameObject prefab in shopItemPrefabs)
+        if (shopItemPrefabs.Count > 0)
         {
-            ShopItemDisplay display = prefab.GetComponent<ShopItemDisplay>();
-            if (display != null && display.shopItemData != null && display.shopItemData == itemData)
-            {
-                return prefab;
-            }
+            return shopItemPrefabs[Random.Range(0, shopItemPrefabs.Count)];
         }
-        Debug.LogWarning($"Prefab no encontrado para el ítem: {itemData.itemName}");
         return null;
     }
 
-    private void HandleMouseInteraction()
+    public void HandleMouseInteraction(ShopItem itemData)
     {
-        if (mainCamera == null || playerControls == null) return;
-        if (inventoryUIManager != null && inventoryUIManager.IsInventoryOpen)
-        {
-            if (shopUIPanel != null && shopUIPanel.activeSelf)
-            {
-                HideItemUI();
-            }
-            return;
-        }
-        Vector2 screenPosition;
-        Canvas parentCanvas = uiPanelTransform.GetComponentInParent<Canvas>();
-        bool isGamepadActive = Gamepad.current != null && virtualCursorRect != null && virtualCursorRect.gameObject.activeInHierarchy;
-        if (isGamepadActive)
-        {
-            Camera usedCamera = (parentCanvas != null && (parentCanvas.renderMode == RenderMode.ScreenSpaceCamera || parentCanvas.renderMode == RenderMode.WorldSpace))
-                                ? mainCamera
-                                : null;
-            screenPosition = RectTransformUtility.WorldToScreenPoint(usedCamera, virtualCursorRect.position);
-        }
-        else
-        {
-            screenPosition = playerControls.UI.Point.ReadValue<Vector2>();
-        }
-        Ray ray = mainCamera.ScreenPointToRay(screenPosition);
-        RaycastHit hit;
-        bool hitShopItem = false;
-
-        if (Physics.Raycast(ray, out hit, raycastDistance, shopItemLayer))
-        {
-            ShopItemDisplay itemDisplay = hit.collider.GetComponent<ShopItemDisplay>();
-            if (itemDisplay != null)
-            {
-                hitShopItem = true;
-                float finalCost = CalculateFinalCost(itemDisplay.shopItemData.cost);
-                if (lastDetectedItem != itemDisplay.shopItemData)
-                {
-                    if (lastDetectedItem != null && _pendingPurchaseWarning.ContainsKey(lastDetectedItem))
-                    {
-                        _pendingPurchaseWarning[lastDetectedItem] = false;
-                    }
-                    DisplayItemUI(itemDisplay.shopItemData, finalCost);
-                    UpdateCostBar(finalCost);
-                    lastDetectedItem = itemDisplay.shopItemData;
-                }
-            }
-        }
-        if (!hitShopItem && shopUIPanel != null && shopUIPanel.activeSelf)
-        {
-            HideItemUI();
-            UpdateCostBar(0);
-            if (lastDetectedItem != null && _pendingPurchaseWarning.ContainsKey(lastDetectedItem))
-            {
-                _pendingPurchaseWarning[lastDetectedItem] = false;
-            }
-            lastDetectedItem = null;
-        }
+        LockAndDisplayItemDetails(itemData);
     }
 
     public bool CanAttemptPurchase()
     {
-        if (Time.time > _lastPurchaseAttemptTime + purchaseCooldownTime)
-        {
-            _lastPurchaseAttemptTime = Time.time; 
-            return true;
-        }
-        return false;
+        return Time.time > lastPurchaseTime + purchaseCooldown;
     }
 
     public float CalculateFinalCost(float baseCost)
     {
-        if (playerStatsManager == null) return baseCost;
+        float finalCost = baseCost * merchantPriceModifier;
 
-        float priceReductionPercentage = playerStatsManager.GetCurrentStat(StatType.ShopPriceReduction);
-        float discountFactor = Mathf.Clamp01(priceReductionPercentage / 100f);
+        if (playerStatsManager != null)
+        {
+            float priceReduction = playerStatsManager.GetStat(StatType.ShopPriceReduction);
 
-        float finalCost = baseCost * (1f - discountFactor);
+            if (priceReduction > 0f)
+            {
+                float discount = priceReduction / 100f; 
+                finalCost *= (1f - discount);
 
-        finalCost *= merchantPriceModifier;
+                Debug.Log($"[ShopManager] Precio con descuento: Base={baseCost}, Merchant={merchantPriceModifier}x, Descuento={priceReduction}%, Final={finalCost}");
+            }
+        }
 
-        finalCost = Mathf.Max(0f, finalCost);
-
-        return finalCost;
+        return Mathf.Max(0f, finalCost); 
     }
 
     public void DisplayItemUI(ShopItem itemData, float finalCost)
@@ -567,46 +381,75 @@ public class ShopManager : MonoBehaviour
         if (shopUIPanel != null)
         {
             shopUIPanel.SetActive(true);
-            itemNameText.text = $"Nombre: {itemData.itemName}";
-            itemCostText.text = $"Costo: {Mathf.RoundToInt(finalCost)} HP";
-            itemDescriptionText.text = $"Descripción: {itemData.description}";
+
+            string nameWithColor = $"<color=#{ColorUtility.ToHtmlStringRGB(itemData.GetRarityColor())}>{itemData.itemName.ToUpper()}</color>";
+
+            float baseCost = itemData.cost * merchantPriceModifier;
+            string costText;
+
+            if (playerStatsManager != null)
+            {
+                float priceReduction = playerStatsManager.GetStat(StatType.ShopPriceReduction);
+
+                if (priceReduction > 0f && finalCost < baseCost)
+                {
+                    costText = $"<s>{Mathf.RoundToInt(baseCost)} HP</s> -> <color=#00FF00>{Mathf.RoundToInt(finalCost)} HP</color> (-{priceReduction:F0}%)";
+                }
+                else
+                {
+                    costText = (finalCost > 0) ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: GRATIS";
+                }
+            }
+            else
+            {
+                costText = (finalCost > 0) ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: GRATIS";
+            }
+
+            itemNameText.text = nameWithColor;
+            itemCostText.text = costText;
+            itemDescriptionText.text = itemData.GetFormattedDescriptionAndStats();
         }
     }
 
     public void UpdateCostBar(float cost)
     {
-        if (costBar == null || playerHealth == null) return;
+        if (playerHealth == null || costBar == null || itemNameText == null || itemCostText == null) return;
 
-        float finalCost = cost;
+        float currentHealth = playerHealth.GetCurrentHealth();
+        float finalCost = CalculateFinalCost(cost);
+        float fillAmount = 1f;
 
-        float currentHealth = GetPlayerCurrentHealth();
-        float maxHealth = GetPlayerMaxHealth();
+        if (finalCost > 0)
+        {
+            fillAmount = Mathf.Clamp01(currentHealth / finalCost);
+        }
 
-        bool shouldDisplay = finalCost > 0 && maxHealth > 0;
-        costBar.gameObject.SetActive(shouldDisplay);
-        if (!shouldDisplay) return;
-
-        RectTransform costBarRect = costBar.GetComponent<RectTransform>();
-        float parentWidth = costBarRect.parent.GetComponent<RectTransform>().rect.width;
-
-        float currentHealthRatio = Mathf.Clamp(currentHealth / maxHealth, 0f, 1f);
-        float costRatio = Mathf.Clamp(finalCost / maxHealth, 0f, 1f);
+        costBar.fillAmount = fillAmount;
+        costBar.color = (currentHealth > finalCost) ? affordableColor : unaffordableColor;
 
         if (currentHealth > finalCost)
         {
-            costBarRect.localScale = new Vector3(costRatio, costBarRect.localScale.y, costBarRect.localScale.z);
-
-            costBarRect.anchoredPosition = new Vector2(currentHealthRatio * parentWidth, costBarRect.anchoredPosition.y);
-
-            costBar.color = affordableColor;
+            if (currentHealth <= lowHealthThreshold && finalCost > 0)
+            {
+                if (!lowHealthWarningActive)
+                {
+                    itemNameText.color = lowHealthWarningColor;
+                    itemCostText.color = lowHealthWarningColor;
+                    lowHealthWarningActive = true;
+                }
+            }
+            else if (lowHealthWarningActive)
+            {
+                itemNameText.color = Color.white;
+                itemCostText.color = Color.white;
+                lowHealthWarningActive = false;
+            }
         }
         else
         {
-            costBarRect.localScale = new Vector3(costRatio, costBarRect.localScale.y, costBarRect.localScale.z);
-
-            costBarRect.anchoredPosition = new Vector2(costRatio * parentWidth, costBarRect.anchoredPosition.y);
-
-            costBar.color = unaffordableColor;
+            itemNameText.color = Color.white;
+            itemCostText.color = unaffordableColor;
+            lowHealthWarningActive = false;
         }
     }
 
@@ -618,19 +461,20 @@ public class ShopManager : MonoBehaviour
         }
     }
 
-    public float GetPlayerCurrentHealth()
-    {
-        return playerHealth.GetCurrentHealth();
-    }
-
-    public float GetPlayerMaxHealth()
-    {
-        return playerHealth.GetMaxHealth();
-    }
-
     public bool PurchaseItem(ShopItem item)
     {
         if (playerStatsManager == null || playerHealth == null || inventoryManager == null) return false;
+
+        bool isHubScene = SceneManager.GetActiveScene().name == "HUB";
+
+        float finalCost = CalculateFinalCost(item.cost);
+        bool ignoreDrawbacks = false;
+
+        if (isHubScene)
+        {
+            finalCost = 0f;
+            ignoreDrawbacks = true;
+        }
 
         if (item.isAmulet)
         {
@@ -641,52 +485,37 @@ public class ShopManager : MonoBehaviour
             }
         }
 
-        float finalCost = CalculateFinalCost(item.cost);
         float currentHealth = playerHealth.GetCurrentHealth();
 
-        if (currentHealth <= finalCost)
+        if (finalCost > 0 && currentHealth <= finalCost)
         {
             if (inventoryManager != null)
             {
                 inventoryManager.ShowWarningMessage("Vida insuficiente para la compra. ¡Debes sobrevivir!");
             }
-            Debug.LogWarning($"No se puede comprar {item.itemName}. Vida actual ({currentHealth}) es menor o igual que el costo final ({finalCost}).");
-            return false;
-        }
-
-        if (inventoryManager.GetCurrentItemCount() >= InventoryManager.MaxInventorySize)
-        {
-            inventoryManager.ShowWarningMessage("Inventario lleno.");
             return false;
         }
 
         float healthAfterPurchase = currentHealth - finalCost;
-        float maxHealth = playerHealth.GetMaxHealth();
-        float lowHealthThreshold = maxHealth * (lowHealthThresholdPercentage / 100f);
 
-        _pendingPurchaseWarning.TryAdd(item, false);
-        bool warningActive = _pendingPurchaseWarning[item];
-
-        if (healthAfterPurchase <= lowHealthThreshold)
+        if (healthAfterPurchase <= lowHealthThreshold && !isHubScene)
         {
-            if (!warningActive)
+            if (!_pendingPurchaseWarning.ContainsKey(item))
             {
-                inventoryManager.ShowWarningMessage("¡ES DEMASIADO ARRIESGADO! La compra te dejaría con muy poca vida. Presiona [E] de nuevo para confirmar.");
-                _pendingPurchaseWarning[item] = true;
-                Debug.Log($"Advertencia de bajo riesgo para {item.itemName}. Primer intento bloqueado.");
+                inventoryManager.ShowWarningMessage("¡Advertencia! Esta compra te dejará con muy poca vida. Pulsa de nuevo para confirmar.");
+                _pendingPurchaseWarning.Add(item, true);
                 return false;
             }
             else
             {
-                Debug.Log($"Advertencia de bajo riesgo anulada para {item.itemName}. Compra procesada.");
-                _pendingPurchaseWarning[item] = false;
+                _pendingPurchaseWarning.Remove(item);
             }
         }
         else
         {
-            if (warningActive)
+            if (_pendingPurchaseWarning.ContainsKey(item))
             {
-                _pendingPurchaseWarning[item] = false;
+                _pendingPurchaseWarning.Remove(item);
             }
         }
 
@@ -702,76 +531,51 @@ public class ShopManager : MonoBehaviour
                                              isByRooms: item.isByRooms, item.temporaryRooms);
         }
 
-        foreach (var drawback in item.drawbacks)
+        if (!ignoreDrawbacks)
         {
-            float amount = drawback.amount;
-
-            if (drawback.type != StatType.DamageTaken &&
-                drawback.type != StatType.KnockbackReceived &&
-                drawback.type != StatType.StaminaConsumption)
+            foreach (var drawback in item.drawbacks)
             {
-                amount *= -1f;
-            }
+                float amount = drawback.amount;
 
-            playerStatsManager.ApplyModifier(drawback.type, amount, isPercentage: drawback.isPercentage,
-                                             isTemporary: item.isTemporary, item.temporaryDuration,
-                                             isByRooms: item.isByRooms, item.temporaryRooms);
-        }
-
-        if (!item.isAmulet)
-        {
-            if (item.drawbacks != null && item.drawbacks.Count > 0) 
-            {
-                if (allGagans.Contains(item))
+                if (drawback.type != StatType.DamageTaken &&
+                    drawback.type != StatType.KnockbackReceived &&
+                    drawback.type != StatType.StaminaConsumption)
                 {
-                    allGagans.Remove(item);
-                    availableItems.Remove(item); 
-                    Debug.Log($"[ShopManager] Ganga comprada ({item.itemName}) removida del pool global.");
+                    amount *= -1f;
                 }
-            }
-            else 
-            {
-                if (allRelics.Contains(item))
-                {
-                    allRelics.Remove(item);
-                    availableItems.Remove(item);
-                    Debug.Log($"[ShopManager] Reliquia comprada ({item.itemName}) removida del pool global.");
-                }
+
+                playerStatsManager.ApplyModifier(drawback.type, amount, isPercentage: drawback.isPercentage,
+                                                 isTemporary: item.isTemporary, item.temporaryDuration,
+                                                 isByRooms: item.isByRooms, item.temporaryRooms);
             }
         }
 
         foreach (var effect in item.behavioralEffects)
         {
             effect.ApplyEffect(playerStatsManager);
+        }
 
-            if (item.isAmulet)
+        if (!item.isAmulet)
+        {
+            if (allShopItems.Contains(item))
             {
-                inventoryManager.AddActiveAmuletEffect(effect);
+                allShopItems.Remove(item);
+                availableItems.Remove(item);
             }
-        }
-
-        Pact purchasedPactReference = allPacts.Find(pact => pact.pactName == item.itemName);
-
-        if (purchasedPactReference != null)
-        {
-            allPacts.Remove(purchasedPactReference);
-            Debug.Log($"Pacto comprado ({item.itemName}) removido de la lista de Pactos disponibles. Quedan {allPacts.Count}.");
-        }
-
-        if (item.isAmulet)
-        {
-            _amuletPurchasedInRun = true;
-            DisableRemainingAmulets(item);
         }
         else
         {
-            DevilManipulationManager.Instance?.RelicAcquired();
+            _amuletPurchasedInRun = true;
         }
 
-        playerHealth.TakeDamage(Mathf.RoundToInt(finalCost), true);
-        Debug.Log($"Compra exitosa de {item.itemName}. Se ha restado {finalCost:F2} de vida (Costo base: {item.cost}).");
+        if (finalCost > 0)
+        {
+            playerHealth.TakeDamage(Mathf.RoundToInt(finalCost), true);
+        }
 
-        if (item.benefits.Exists(b => b.type == StatType.ShieldBlockUpgrade))
+        lastPurchaseTime = Time.time;
+
+        if (item.benefits.Any(b => b.type == StatType.ShieldBlockUpgrade))
         {
             playerHealth.EnableShieldBlockUpgrade();
         }
@@ -784,7 +588,6 @@ public class ShopManager : MonoBehaviour
         if (distortion == DevilDistortionType.SealedLuck)
         {
             forceGagans = isCase;
-            Debug.Log($"[Distorsión] SealedLuck: {isCase}.");
         }
     }
 
@@ -817,6 +620,7 @@ public class ShopManager : MonoBehaviour
 
         float finalCost = CalculateFinalCost(itemData.cost);
         DisplayItemUI(itemData, finalCost);
+        UpdateCostBar(itemData.cost);
     }
 
     public void SetInteractionPromptActive(bool active)

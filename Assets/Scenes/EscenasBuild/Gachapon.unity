@@ -1387,12 +1387,60 @@ PrefabInstance:
       propertyPath: m_Name
       value: HUD
       objectReference: {fileID: 0}
+    - target: {fileID: 2420525907263958631, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2420525907263958631, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2420525907263958631, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2420525907263958631, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2754317058243562804, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2958035071462961861, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3955724570040860964, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3955724570040860964, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3955724570040860964, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3955724570040860964, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3956629520820977032, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3956629520820977032, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3956629520820977032, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3956629520820977032, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4771108026129879708, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
@@ -1514,8 +1562,9 @@ MonoBehaviour:
   statsManager: {fileID: 1202095474}
   playerMeleeAttack: {fileID: 0}
   playerShieldController: {fileID: 0}
+  playerAudioController: {fileID: 0}
   maxStamina: 100
-  staminaDrainRate: 10
+  baseStaminaDrainRate: 10
   staminaRechargeRate: 20
   requireFullStaminaToActivate: 0
   minStaminaToActivate: 10
@@ -1537,21 +1586,14 @@ MonoBehaviour:
     AttackSpeedMultiplier: 1.1
     HealthDrainAmount: 1
     DisableShieldThrow: 1
-  meshRenderers: []
-  goldenMaterial: {fileID: 0}
-  vfxContainer: {fileID: 0}
-  skillVFX: {fileID: 0}
-  youngVFXColor: {r: 0.2, g: 0.5, b: 1, a: 1}
-  adultVFXColor: {r: 1, g: 0.2, b: 0.2, a: 1}
-  elderVFXColor: {r: 1, g: 0.84, b: 0, a: 1}
+  visualModelObject: {fileID: 0}
+  skillActiveMaterial: {fileID: 0}
+  skillExhaustedMaterial: {fileID: 0}
   warningMessagePrefab: {fileID: 0}
   warningMessageText: "*Tos* *Tos*\n\xA1No puedo m\xE1s!"
   warningMessageColor: {r: 1, g: 0, b: 0, a: 1}
   warningMessageOffset: 2.5
   warningMessageDuration: 2
-  lowHealthWarningSound: {fileID: 0}
-  warningVolume: 0.7
-  audioSource: {fileID: 0}
 --- !u!1 &1392266537
 GameObject:
   m_ObjectHideFlags: 0
@@ -1921,6 +1963,14 @@ PrefabInstance:
     - target: {fileID: 3367526297603230104, guid: 11ab0772a0d091b4290a1ea23ef7af9d, type: 3}
       propertyPath: m_LocalPosition.z
       value: -0.0003528595
+      objectReference: {fileID: 0}
+    - target: {fileID: 3803206917878433464, guid: 11ab0772a0d091b4290a1ea23ef7af9d, type: 3}
+      propertyPath: allEffects.Array.size
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 3803206917878433464, guid: 11ab0772a0d091b4290a1ea23ef7af9d, type: 3}
+      propertyPath: 'allEffects.Array.data[19]'
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 4269500003855852017, guid: 11ab0772a0d091b4290a1ea23ef7af9d, type: 3}
       propertyPath: m_LocalPosition.x

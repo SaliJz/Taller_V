@@ -459,6 +459,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
             OnHealthChanged?.Invoke(currentHealth, newValue);
 
+            GetKnockbackResistance();
+
             UpdateLifeStage();
 
             ReportDebug($"Nueva vida maxima: {newValue}, vida actual ajustada a {currentHealth}", 1);
@@ -566,6 +568,69 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         UpdateLifeStage();
 
         UpdateTemporaryHealthUI();
+    }
+
+    public float GetKnockbackResistance()
+    {
+        if (statsManager == null) return 1f;
+
+        float resistance = statsManager.GetStat(StatType.KnockbackReceived);
+        return resistance > 0f ? resistance : 1f;
+    }
+
+
+    public void ApplyKnockback(Vector3 direction, float force, float duration)
+    {
+        if (isDying) return;
+
+        float knockbackResistance = statsManager != null ? statsManager.GetStat(StatType.KnockbackReceived) : 1f;
+
+        if (knockbackResistance <= 0f) knockbackResistance = 1f;
+
+        float finalForce = force * knockbackResistance;
+
+        ReportDebug($"Knockback aplicado: Fuerza base={force}, Resistencia={knockbackResistance}x, Final={finalForce}", 1);
+
+        if (playerMovement != null)
+        {
+            StartCoroutine(ApplyKnockbackRoutine(direction, finalForce, duration));
+        }
+    }
+
+    private IEnumerator ApplyKnockbackRoutine(Vector3 direction, float force, float duration)
+    {
+        if (playerMovement == null) yield break;
+
+        if (combatActionManager != null)
+        {
+            combatActionManager.InterruptCombatActions();
+        }
+
+        bool wasAbleToMove = true;
+        playerMovement.SetCanMove(false);
+
+        float elapsedTime = 0f;
+        Vector3 knockbackVelocity = direction.normalized * force;
+
+        while (elapsedTime < duration)
+        {
+            float t = elapsedTime / duration;
+            float currentForce = Mathf.Lerp(force, 0f, t); 
+
+            Vector3 movement = direction.normalized * currentForce * Time.deltaTime;
+
+            playerMovement.MoveCharacter(movement);
+
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        if (!isStunned && !isDying)
+        {
+            playerMovement.SetCanMove(true);
+        }
+
+        ReportDebug("Knockback finalizado.", 1);
     }
 
     /// <summary>
