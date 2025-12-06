@@ -449,7 +449,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3425788958060345074
 Transform:
   m_ObjectHideFlags: 0
@@ -557,37 +557,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ad0af14b9b4e1e409d64132cc02bacb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  visionRange: 11
-  visionConeAngle: 120
+  visionRange: 25
+  visionConeAngle: 150
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
-  normalSpeed: 4
+  normalSpeed: 6
   patrolDirectionChangeInterval: 4
   patrolDirectionChangeAngle: 30
   stuckCheckInterval: 2
   stuckDistanceThreshold: 0.1
-  furySpeedMultiplier: 1.5
-  furyLevel2SpeedBonus: 0.3
+  furySpeedMultiplier: 4
+  furyLevel2SpeedBonus: 0
   furyJumpDistance: 2
   furyJumpReducedDistance: 1
   furyJumpDelay: 2
   furyJumpCancelDistance: 0.5
   furyJumpDuration: 0.5
   normalAttackDamage: 5
-  normalAttackInterval: 1.5
-  normalAttackRange: 1.5
+  normalAttackInterval: 2
+  normalAttackRange: 1
   normalAttackSlowDuration: 1
   normalAttackSlowPercent: 0.3
   furyAttackDamage: 10
-  furyAttackInterval: 0.75
-  furyAttackRange: 2.5
+  furyAttackInterval: 1
+  furyAttackRange: 2
   furyDecayTime: 5
-  furyDecayNoDamageTime: 5
+  furyDecayNoDamageTime: 8
   furyRegenerationPerSecond: 1
   consecutiveHitPushDistance: 1
   screamTransitionDuration: 1.2
-  maxFuryLevel: 2
+  maxFuryLevel: 1
   normalStateMaterial: {fileID: 2100000, guid: 061b2b1e941f8c343a4fd3ba253cfee1, type: 2}
   furyStateMaterial: {fileID: 2100000, guid: 72e7627b0b463eb45937485228651f9b, type: 2}
   enemyRenderer: {fileID: 6688316861714612785}
@@ -671,7 +671,7 @@ NavMeshAgent:
   m_Speed: 3.5
   m_Acceleration: 8
   avoidancePriority: 50
-  m_AngularSpeed: 120
+  m_AngularSpeed: 200
   m_StoppingDistance: 1.5
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
@@ -858,7 +858,7 @@ RectTransform:
   m_Father: {fileID: 3305173661459893212}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -933,7 +933,7 @@ RectTransform:
   m_Father: {fileID: 6138376345146923226}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -1156,7 +1156,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 4, y: 4, z: 4}
+  m_LocalScale: {x: 10, y: 10, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3425788958060345074}
