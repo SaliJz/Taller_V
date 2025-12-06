@@ -8990,13 +8990,13 @@ MonoBehaviour:
   hitPoint: {fileID: 7029900753368981312}
   hitRadius: 1.8
   attackDamage: 10
-  attackSpeed: 3
+  attackSpeed: 2
   baseSpeedReference: 1
   enemyLayer:
     serializedVersion: 2
     m_Bits: 65664
   canShowHitGizmo: 0
-  autoAimRange: 5
+  autoAimRange: 1
   comboResetTime: 1
   comboMovementForces:
   - 4
@@ -9052,20 +9052,20 @@ MonoBehaviour:
   minStaminaToActivate: 0
   youngBuffs:
     MoveMultiplier: 1.3
-    AttackDamageMultiplier: 2
-    AttackSpeedMultiplier: 2.5
+    AttackDamageMultiplier: 1
+    AttackSpeedMultiplier: 1.25
     HealthDrainAmount: 2
     DisableShieldThrow: 0
   adultBuffs:
     MoveMultiplier: 1.3
-    AttackDamageMultiplier: 2.5
-    AttackSpeedMultiplier: 2.5
+    AttackDamageMultiplier: 1.25
+    AttackSpeedMultiplier: 1.25
     HealthDrainAmount: 2
     DisableShieldThrow: 0
   elderBuffs:
     MoveMultiplier: 1.3
-    AttackDamageMultiplier: 3
-    AttackSpeedMultiplier: 2.5
+    AttackDamageMultiplier: 1.5
+    AttackSpeedMultiplier: 1.25
     HealthDrainAmount: 1
     DisableShieldThrow: 0
   visualModelObject: {fileID: 6991594973495407509}
@@ -9151,7 +9151,7 @@ MonoBehaviour:
   frontBlockAngle: 180
   useMouseRotation: 1
   rotationSpeed: 10
-  maxDurability: 32
+  maxDurability: 25
   currentDurability: 0
   durabilityRechargeTime: 1.5
   minimumDurabilityToUse: 1
@@ -9161,9 +9161,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   autoAimRange: 20
-  multiplierYoung: 0.53
-  multiplierAdult: 1.125
-  multiplierElder: 2.304
+  multiplierYoung: 2.5
+  multiplierAdult: 3
+  multiplierElder: 3.5
   stunDurationYoung: 1.5
   stunDurationAdult: 1
   stunDurationElder: 0.5
