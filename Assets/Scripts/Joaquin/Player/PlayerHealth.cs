@@ -48,6 +48,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private float yOffsetAdult = 0.5f;
     [SerializeField] private float yOffsetElder = 0.625f;
 
+    [Header("VFX - Age Transition")]
+    [SerializeField] private GameObject afterimagePrefab;
+    [SerializeField] private Material whiteFlashMaterial;
+    [SerializeField] private float transitionDuration = 0.8f;
+
     [Header("Damage VFX")]
     [SerializeField] private Color damageEmissionColor = Color.red;
     [SerializeField] private float damageEmissionIntensity = 2f;
@@ -708,7 +713,73 @@ public class PlayerHealth : MonoBehaviour, IDamageable
                 // Mostrar solo el nombre de la etapa (sin texto adicional)
                 lifeStageText.text = GetLifeStageString(CurrentLifeStage);
             }
+
+            if (!forceNotify && isInitialized)
+            {
+                TriggerAgeTransitionEffect();
+            }
         }
+    }
+
+    /// <summary>
+    /// Genera una copia estática ("Fantasma") del frame actual del jugador, 
+    /// la pinta de blanco y hace un fade out.
+    /// </summary>
+    private void TriggerAgeTransitionEffect()
+    {
+        if (afterimagePrefab == null || playerSpriteRenderer == null) return;
+
+        GameObject ghost = Instantiate(afterimagePrefab, playerSpriteRenderer.transform.position, playerSpriteRenderer.transform.rotation);
+
+        ghost.transform.localScale = playerSpriteRenderer.transform.lossyScale;
+
+        SpriteRenderer ghostSR = ghost.GetComponent<SpriteRenderer>();
+        if (ghostSR != null)
+        {
+            ghostSR.sprite = playerSpriteRenderer.sprite;
+            ghostSR.flipX = playerSpriteRenderer.flipX;
+            ghostSR.flipY = playerSpriteRenderer.flipY;
+
+            if (whiteFlashMaterial != null)
+            {
+                ghostSR.material = whiteFlashMaterial;
+            }
+            else
+            {
+                ghostSR.color = new Color(10f, 10f, 10f, 1f);
+            }
+
+            ghostSR.sortingLayerID = playerSpriteRenderer.sortingLayerID;
+            ghostSR.sortingOrder = playerSpriteRenderer.sortingOrder + 1;
+
+            StartCoroutine(AnimateAgeGhost(ghostSR, ghost));
+        }
+        else
+        {
+            Destroy(ghost);
+        }
+    }
+
+    private IEnumerator AnimateAgeGhost(SpriteRenderer ghostSR, GameObject ghostObj)
+    {
+        float timer = 0f;
+        Color startColor = ghostSR.color;
+
+        while (timer < transitionDuration)
+        {
+            timer += Time.deltaTime;
+            float progress = timer / transitionDuration;
+
+            float currentAlpha = Mathf.Lerp(1f, 0f, progress);
+
+            Color newColor = startColor;
+            newColor.a = currentAlpha;
+            ghostSR.color = newColor;
+
+            yield return null;
+        }
+
+        Destroy(ghostObj);
     }
 
     /// <summary>

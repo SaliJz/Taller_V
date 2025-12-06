@@ -110,6 +110,7 @@ public class AstarothController : MonoBehaviour
     #region Ability: Attack 2 (Smash)
 
     [Header("Attack 2: Latigazo Demoledor")]
+    [SerializeField] private GameObject _objectToHideDuringSmash;
     [SerializeField] private Transform _smashVisualTransform;
     [SerializeField] private SmashKeyframe[] _smashAnimationKeyframes;
     [SerializeField] private float _Attack2Damage = 25f;
@@ -252,7 +253,7 @@ public class AstarothController : MonoBehaviour
 
     private static readonly int AnimID_IsRunning = Animator.StringToHash("IsRunning");
     private static readonly int AnimID_IsDeath = Animator.StringToHash("IsDeath");
-
+    private static readonly int AnimID_InsAttacking = Animator.StringToHash("InsAttacking");
     private static readonly int AnimID_Attack = Animator.StringToHash("Attack");
     private static readonly int AnimID_ExitSA = Animator.StringToHash("ExitSA");
 
@@ -748,7 +749,12 @@ public class AstarothController : MonoBehaviour
         _showWhipImpactGizmo = false;
         _navMeshAgent.isStopped = true;
 
-        if (_animator != null) _animator.SetInteger(AnimID_Attack, ATTACK_WHIP);
+        if (_animator != null)
+        {
+            _animator.SetBool(AnimID_IsRunning, false);
+            _animator.SetBool(AnimID_InsAttacking, true);
+            _animator.SetInteger(AnimID_Attack, ATTACK_WHIP);
+        }
 
         float anticipationTime = 0.8f;
         yield return StartCoroutine(LookAtPlayerSmoothCoroutine(anticipationTime, 120f));
@@ -851,12 +857,13 @@ public class AstarothController : MonoBehaviour
             yield return new WaitForSeconds(pauseTime);
         }
 
-        if (_trailRenderer != null)
-        {
-            _trailRenderer.enabled = false;
-        }
+        if (_trailRenderer != null) _trailRenderer.enabled = false;
 
-        if (_animator != null) _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
+        if (_animator != null)
+        {
+            _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
+            _animator.SetBool(AnimID_InsAttacking, false);
+        }
 
         _isAttackingWithWhip = false;
         _showWhipRaycastGizmo = false;
@@ -997,7 +1004,12 @@ public class AstarothController : MonoBehaviour
         _showSmashOverlapGizmo = false;
         _navMeshAgent.isStopped = false;
 
-        if (_animator != null) _animator.SetInteger(AnimID_Attack, ATTACK_SMASH);
+        if (_animator != null)
+        {
+            _animator.SetBool(AnimID_IsRunning, false);
+            _animator.SetBool(AnimID_InsAttacking, true);
+            _animator.SetInteger(AnimID_Attack, ATTACK_SMASH);
+        }
 
         float rotationTime = 0f;
         Vector3 initialTargetPos = _player.position;
@@ -1065,12 +1077,18 @@ public class AstarothController : MonoBehaviour
             }
         }
 
-        if (_animator != null) _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
+        if (_animator != null)
+        {
+            _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
+            _animator.SetBool(AnimID_InsAttacking, false);
+        }
 
         _isSmashing = false;
         _showSmashOverlapGizmo = false;
         _smashVisualTransform.localPosition = _smashAnimationKeyframes[0].Position;
         _smashVisualTransform.localScale = _smashAnimationKeyframes[0].Scale;
+
+        if (_objectToHideDuringSmash != null) _objectToHideDuringSmash.SetActive(true);
 
         if (CheckForPendingSpecialAbility()) yield break;
 
@@ -1245,7 +1263,13 @@ public class AstarothController : MonoBehaviour
     {
         _isUsingSpecialAbility = true;
 
-        if (_animator != null) _animator.SetInteger(AnimID_Attack, ATTACK_SPECIAL);
+        if (_animator != null)
+        {
+            _animator.SetBool(AnimID_IsRunning, false);
+            _animator.SetBool(AnimID_ExitSA, false);
+            _animator.SetBool(AnimID_InsAttacking, true);
+            _animator.SetInteger(AnimID_Attack, ATTACK_SPECIAL);
+        }
 
         // Moverse al centro
         yield return StartCoroutine(MoveToCenter(_roomCenter));
@@ -1312,6 +1336,7 @@ public class AstarothController : MonoBehaviour
         if (_animator != null)
         {
             _animator.SetBool(AnimID_ExitSA, true);
+            _animator.SetBool(AnimID_InsAttacking, false);
             _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
         }
 

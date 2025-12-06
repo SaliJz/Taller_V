@@ -23,7 +23,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     [Header("Core Configuration")]
     [SerializeField] private Transform shieldForwardOverride = null;
     [SerializeField] private bool blockingEnabled = true;
-    [SerializeField, Range(0f, 180f)] private float frontBlockAngle = 170f;
+    [SerializeField, Range(0f, 360f)] private float frontBlockAngle = 170f;
 
     [Header("Rotation Mode")]
     [SerializeField] private bool useMouseRotation = true;
@@ -34,6 +34,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     [SerializeField] private float maxDurability = 30f;
     [SerializeField] private float currentDurability;
     [SerializeField] private float durabilityRechargeTime = 5f;
+    [SerializeField] private float durabilityDrainRate = 15.24f;
     [SerializeField, Range(0f, 1f)] private float minimumDurabilityToUse = 0.99f;
     [SerializeField] private float rechargeDelay = 2f;
 
@@ -157,6 +158,9 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     {
         if (blockingEnabled) UpdateUI();
         if (!blockingEnabled || !IsBlocking) return;
+
+        HandleActiveDrain();
+        if (!IsBlocking) return;
 
         movementInput = playerControls.Movement.Move.ReadValue<Vector2>();
         HandleRotationWhileBlocking();
@@ -421,7 +425,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
         if (isBroken)
         {
-            finalDamage *= 0.5f;
+            finalDamage *= 1f;
             if (debugMode) Debug.Log("Escudo roto: Daño del proyectil reducido al 50%.");
         }
 
@@ -566,6 +570,25 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     #endregion
 
     #region Durability Logic & UI
+
+    private void HandleActiveDrain()
+    {
+        if (durabilityDrainRate <= 0f) return;
+
+        float drainAmount = durabilityDrainRate * Time.deltaTime;
+
+        currentDurability -= drainAmount;
+
+        accumulatedDamage += drainAmount;
+
+        OnDurabilityChanged?.Invoke(GetDurabilityPercentage());
+
+        if (currentDurability <= 0f)
+        {
+            currentDurability = 0f;
+            BreakBlock();
+        }
+    }
 
     private IEnumerator RechargeDurability()
     {
