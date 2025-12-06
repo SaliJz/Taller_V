@@ -45,9 +45,7 @@ public class DoorTp : MonoBehaviour
 
     private void Start()
     {
-        playerMovement = FindAnyObjectByType<PlayerMovement>();
-        playerHealth = FindAnyObjectByType<PlayerHealth>();
-        playerTransform = FindAnyObjectByType<PlayerMovement>()?.transform;
+        Inicilizate();
 
         if (destinationDoor == null)
         {
@@ -61,10 +59,19 @@ public class DoorTp : MonoBehaviour
         }
     }
 
+    private void Inicilizate()
+    {
+        playerMovement = FindAnyObjectByType<PlayerMovement>();
+        playerHealth = FindAnyObjectByType<PlayerHealth>();
+        playerTransform = FindAnyObjectByType<PlayerMovement>()?.transform;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player") && !isTransitioning)
         {
+            if (playerMovement == null || playerHealth == null || playerTransform == null) Inicilizate();
+
             StartTransition();
         }
     }

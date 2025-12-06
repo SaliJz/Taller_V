@@ -1214,6 +1214,56 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &770729387
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 770729389}
+  - component: {fileID: 770729388}
+  m_Layer: 0
+  m_Name: InputSystemManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &770729388
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 770729387}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a543d70f570c004a9c5588da9fc5472, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultGamepadType: 1
+  gamepadLogicMode: 1
+  keyboardIcons: {fileID: 11400000, guid: 97cd90473db126649835330d06fab560, type: 2}
+  unifiedOrDefaultGamepadIcons: {fileID: 11400000, guid: 1e78dc7901f9e854e8f31485f0ed4481, type: 2}
+  specificGamepadIcons:
+  - {fileID: 11400000, guid: 1e78dc7901f9e854e8f31485f0ed4481, type: 2}
+--- !u!4 &770729389
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 770729387}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -49.409367, y: 0.00000047683716, z: 47.17801}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &900821167
 GameObject:
   m_ObjectHideFlags: 0
@@ -3611,3 +3661,4 @@ SceneRoots:
   - {fileID: 548066270}
   - {fileID: 961770970}
   - {fileID: 1358156444}
+  - {fileID: 770729389}

@@ -27,6 +27,9 @@ public class TutorialHUDAnimator : MonoBehaviour
     private float initialMaskX;
     private Coroutine currentAnimationCoroutine;
     private string currentInstructionText = "";
+    private string pendingInstructionText = null;
+    private bool isAnimatingOut = false;
+    private bool instructionActive = false;
 
     #endregion
 
@@ -39,6 +42,7 @@ public class TutorialHUDAnimator : MonoBehaviour
         if (checkmarkIcon != null) checkmarkIcon.SetActive(false);
         gameObject.SetActive(false);
         if (instructionText != null) currentInstructionText = instructionText.text;
+        instructionActive = false;
     }
 
     private void Update()
@@ -65,26 +69,50 @@ public class TutorialHUDAnimator : MonoBehaviour
 
         if (instructionChanged)
         {
-            ShowInstruction();
+            if (instructionActive && !isAnimatingOut)
+            {
+                pendingInstructionText = newText;
+
+                if (currentAnimationCoroutine != null) StopCoroutine(currentAnimationCoroutine);
+                currentAnimationCoroutine = StartCoroutine(AnimateOutForNewInstructionCoroutine());
+            }
+            else if (isAnimatingOut)
+            {
+                pendingInstructionText = newText;
+            }
+            else
+            {
+                ShowInstruction();
+            }
         }
     }
 
     public void ShowInstruction()
     {
-        if (gameObject.activeSelf) return;
+        if (gameObject.activeSelf && !isAnimatingOut) return;
+
+        if (isAnimatingOut)
+        {
+            pendingInstructionText = currentInstructionText;
+            return;
+        }
 
         gameObject.SetActive(true);
         if (currentAnimationCoroutine != null) StopCoroutine(currentAnimationCoroutine);
         currentAnimationCoroutine = StartCoroutine(AnimateInCoroutine());
+        instructionActive = true;
     }
 
     public void CompleteInstruction()
     {
         if (!gameObject.activeSelf) return;
+        if (isAnimatingOut) return;
+
+        instructionActive = false;
+        currentInstructionText = "";
 
         if (currentAnimationCoroutine != null) StopCoroutine(currentAnimationCoroutine);
         currentAnimationCoroutine = StartCoroutine(AnimateCheckAndOutCoroutine());
-        currentInstructionText = "";
     }
 
     public bool SetInstructionText(string newText)
@@ -154,6 +182,7 @@ public class TutorialHUDAnimator : MonoBehaviour
         SetMaskWidth(0);
         maskRect.anchoredPosition = new Vector2(initialMaskX, maskRect.anchoredPosition.y);
         if (checkmarkIcon != null) checkmarkIcon.SetActive(false);
+        isAnimatingOut = false;
 
         float startTime = Time.time;
         float endWidth = fullWidth;
@@ -170,8 +199,29 @@ public class TutorialHUDAnimator : MonoBehaviour
         currentAnimationCoroutine = null;
     }
 
+    private IEnumerator AnimateOutForNewInstructionCoroutine()
+    {
+        isAnimatingOut = true;
+        if (checkmarkIcon != null) checkmarkIcon.SetActive(false);
+
+        float startTime = Time.time;
+        float startX = maskRect.anchoredPosition.x;
+        float endX = startX - fullWidth;
+
+        while (Time.time < startTime + animationDuration)
+        {
+            float t = (Time.time - startTime) / animationDuration;
+            float currentX = Mathf.Lerp(startX, endX, t);
+            maskRect.anchoredPosition = new Vector2(currentX, maskRect.anchoredPosition.y);
+            yield return null;
+        }
+
+        HandlePendingInstruction();
+    }
+
     private IEnumerator AnimateCheckAndOutCoroutine()
     {
+        isAnimatingOut = true;
         if (checkmarkIcon != null)
         {
             checkmarkIcon.SetActive(true);
@@ -191,11 +241,32 @@ public class TutorialHUDAnimator : MonoBehaviour
             yield return null;
         }
 
-        gameObject.SetActive(false);
-        maskRect.anchoredPosition = new Vector2(initialMaskX, maskRect.anchoredPosition.y);
-        SetMaskWidth(0);
-        if (checkmarkIcon != null) checkmarkIcon.SetActive(false);
+        HandlePendingInstruction();
+    }
+
+    private void HandlePendingInstruction()
+    {
+        isAnimatingOut = false;
         currentAnimationCoroutine = null;
+
+        if (!string.IsNullOrEmpty(pendingInstructionText))
+        {
+            string newInstruction = pendingInstructionText;
+            pendingInstructionText = null;
+
+            gameObject.SetActive(true);
+            SetInstructionText(newInstruction);
+            currentAnimationCoroutine = StartCoroutine(AnimateInCoroutine());
+            instructionActive = true;
+        }
+        else
+        {
+            gameObject.SetActive(false);
+            maskRect.anchoredPosition = new Vector2(initialMaskX, maskRect.anchoredPosition.y);
+            SetMaskWidth(0);
+            if (checkmarkIcon != null) checkmarkIcon.SetActive(false);
+            instructionActive = false;
+        }
     }
 
     #endregion
