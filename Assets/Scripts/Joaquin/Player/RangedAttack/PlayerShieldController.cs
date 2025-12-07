@@ -213,7 +213,6 @@ public class PlayerShieldController : MonoBehaviour
     {
         if (!hasShield || isThrowingShield) yield break;
 
-        // Verificar que no esté en medio de un ataque melee
         if (playerMeleeAttack != null && playerMeleeAttack.IsAttacking)
         {
             ReportDebug("No se puede lanzar el escudo mientras se ataca en melee.", 1);
@@ -222,28 +221,27 @@ public class PlayerShieldController : MonoBehaviour
 
         isThrowingShield = true;
 
-        // Lógica para detener movimiento del jugador
         if (playerMovement != null)
         {
             playerMovement.SetCanMove(false);
             playerMovement.StopForcedMovement();
         }
 
-        // Lógica de rotación
-        Vector3 mouseWorldDir;
-        if (!TryGetMouseWorldDirection(out mouseWorldDir))
+        Vector3 aimDir;
+        bool aimFound = TryGetAimDirection(out aimDir);
+
+        if (!aimFound)
         {
-            mouseWorldDir = transform.forward;
+            aimDir = transform.forward;
         }
         else
         {
-            // fallback: aplicar rotación instantánea snappeada
-            RotateTowardsMouseInstant();
+            RotateTowardsAimInstant();
         }
 
         if (playerMovement != null)
         {
-            playerMovement.LockFacingTo8Directions(mouseWorldDir, true);
+            playerMovement.LockFacingTo8Directions(aimDir, true);
             yield return StartCoroutine(WaitForRotationLock());
             playerMovement.ForceApplyLockedRotation();
         }
@@ -289,14 +287,14 @@ public class PlayerShieldController : MonoBehaviour
 
         // Dirección objetivo
         Vector3 mouseWorldDir;
-        if (!TryGetMouseWorldDirection(out mouseWorldDir))
+        if (!TryGetAimDirection(out mouseWorldDir))
         {
             mouseWorldDir = transform.forward;
         }
         else
         {
             // fallback: aplicar rotación instantánea snappeada
-            RotateTowardsMouseInstant();
+            RotateTowardsAimInstant();
         }
 
         if (playerMovement != null)
@@ -335,9 +333,9 @@ public class PlayerShieldController : MonoBehaviour
     }
 
     // Rota instantaneamente al mouse proyectado en el plano horizontal (y = transform.position.y), con snap a 8 direcciones.
-    private void RotateTowardsMouseInstant()
+    private void RotateTowardsAimInstant()
     {
-        if (!TryGetMouseWorldDirection(out Vector3 dir)) return;
+        if (!TryGetAimDirection(out Vector3 dir)) return;
 
         transform.rotation = Quaternion.LookRotation(dir);
     }
@@ -358,7 +356,7 @@ public class PlayerShieldController : MonoBehaviour
         }
 
         Vector3 direction;
-        if (!TryGetMouseWorldDirection(out direction))
+        if (!TryGetAimDirection(out direction))
         {
             direction = transform.forward;
         }
@@ -399,9 +397,40 @@ public class PlayerShieldController : MonoBehaviour
         }
     }
 
-    private bool TryGetMouseWorldDirection(out Vector3 outDir)
+    private bool TryGetAimDirection(out Vector3 outDir)
     {
-        outDir = Vector3.zero;
+        outDir = transform.forward;
+
+        if (GamepadPointer.Instance != null && GamepadPointer.Instance.GetCurrentActiveDevice() == GamepadPointer.Instance.GetCurrentGamepad())
+        {
+            Vector2 stickAim = GamepadPointer.Instance.GetAimDirectionValue();
+
+            if (stickAim.magnitude > 0.0001f)
+            {
+                Camera camera = Camera.main;
+                if (camera == null) return false;
+
+                Vector3 camForward = camera.transform.forward;
+                camForward.y = 0f;
+                camForward.Normalize();
+
+                Vector3 camRight = camera.transform.right;
+                camRight.y = 0f;
+                camRight.Normalize();
+
+                Vector3 targetDirection = camForward * stickAim.y + camRight * stickAim.x;
+
+                if (targetDirection.sqrMagnitude > 0.0001f)
+                {
+                    outDir = targetDirection.normalized;
+                    return true;
+                }
+            }
+
+            outDir = transform.forward;
+            return true;
+        }
+
         Camera cam = Camera.main;
         if (cam == null) return false;
 
@@ -418,6 +447,8 @@ public class PlayerShieldController : MonoBehaviour
                 return true;
             }
         }
+
+        outDir = transform.forward;
         return false;
     }
 

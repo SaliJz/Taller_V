@@ -40,6 +40,9 @@ public class GamepadPointer : MonoBehaviour
             Destroy(gameObject);
         }
 
+        Cursor.lockState = CursorLockMode.Confined;
+        Cursor.visible = false;
+
         if (virtualCursor != null)
         {
             Canvas canvas = virtualCursor.GetComponentInParent<Canvas>();
@@ -70,13 +73,21 @@ public class GamepadPointer : MonoBehaviour
         }
 
         currentGamepad = Gamepad.current;
-        if (Mouse.current != null)
+
+        if (currentGamepad != null)
+        {
+            currentActiveDevice = currentGamepad;
+            Cursor.visible = false;
+        }
+        else if (Mouse.current != null)
         {
             currentActiveDevice = Mouse.current;
+            Cursor.visible = true;
         }
         else if (Keyboard.current != null)
         {
             currentActiveDevice = Keyboard.current;
+            Cursor.visible = true;
         }
 
         lastReportedDevice = currentActiveDevice;
@@ -167,14 +178,17 @@ public class GamepadPointer : MonoBehaviour
             if (currentActiveDevice == currentGamepad)
             {
                 deviceName = "GAMEPAD (Control de Mando)";
+                Cursor.visible = false;
             }
             else if (currentActiveDevice == Mouse.current)
             {
                 deviceName = "MOUSE (Ratón)";
+                Cursor.visible = true;
             }
             else if (currentActiveDevice == Keyboard.current)
             {
                 deviceName = "KEYBOARD (Teclado)";
+                Cursor.visible = true;
             }
             else
             {
@@ -194,6 +208,7 @@ public class GamepadPointer : MonoBehaviour
                 if (!virtualCursor.gameObject.activeSelf)
                 {
                     //virtualCursor.gameObject.SetActive(true);
+                    Cursor.visible = false;
                     virtualCursor.anchoredPosition = lastValidCursorPosition;
                 }
 
@@ -332,5 +347,24 @@ public class GamepadPointer : MonoBehaviour
     public Gamepad GetCurrentGamepad()
     {
         return currentGamepad;
+    }
+
+    public Vector2 GetAimDirectionValue()
+    {
+        if (currentGamepad != null)
+        {
+            Vector2 rightStick = currentGamepad.rightStick.ReadValue();
+            if (rightStick.magnitude > RightStickDeadZone)
+            {
+                return rightStick.normalized;
+            }
+
+            Vector2 leftStick = currentGamepad.leftStick.ReadValue();
+            if (leftStick.magnitude > RightStickDeadZone)
+            {
+                return leftStick.normalized;
+            }
+        }
+        return Vector2.zero;
     }
 }
