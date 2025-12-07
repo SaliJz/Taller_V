@@ -359,7 +359,8 @@ public class ShopManager : MonoBehaviour
     public float CalculateFinalCost(float baseCost)
     {
         bool isHubScene = SceneManager.GetActiveScene().name == "HUB";
-        if (isHubScene)
+        bool isTutorial = SceneManager.GetActiveScene().name == "TutorialCompleto";
+        if (isHubScene || isTutorial)
         {
             return 0f;
         }
