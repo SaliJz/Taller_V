@@ -59,6 +59,9 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private float raycastDistance = 5f;
     [SerializeField] private LayerMask shopItemLayer;
 
+    [Header("Scene Restrictions")]
+    public string[] restrictedPurchaseScenes = { "HUB", "TutorialCompleto", "TransitionLevel01" };
+
     [Header("Reroll Settings")]
     public int baseRerollCost = 10;
 
@@ -475,9 +478,9 @@ public class ShopManager : MonoBehaviour
 
     public float CalculateFinalCost(float baseCost)
     {
-        bool isHubScene = SceneManager.GetActiveScene().name == "HUB";
-        bool isTutorial = SceneManager.GetActiveScene().name == "TutorialCompleto";
-        if (isHubScene || isTutorial)
+        string currentSceneName = SceneManager.GetActiveScene().name;
+        bool isRestrictedScene = restrictedPurchaseScenes.Contains(currentSceneName);
+        if (isRestrictedScene)
         {
             return 0f;
         }
@@ -587,23 +590,32 @@ public class ShopManager : MonoBehaviour
     {
         if (playerStatsManager == null || playerHealth == null || inventoryManager == null) return false;
 
-        bool isHubScene = SceneManager.GetActiveScene().name == "HUB";
-        bool isTutorial = SceneManager.GetActiveScene().name == "TutorialCompleto";
+        string currentSceneName = SceneManager.GetActiveScene().name;
+        bool isRestrictedScene = restrictedPurchaseScenes.Contains(currentSceneName);
 
         float finalCost = CalculateFinalCost(item.cost);
         bool ignoreDrawbacks = false;
 
-        if (isHubScene || isTutorial)
+        if (isRestrictedScene)
         {
             finalCost = 0f;
             ignoreDrawbacks = true;
         }
 
-        if (item.isAmulet)
+        bool isRestrictedItem = isRestrictedScene || item.isAmulet;
+
+        if (isRestrictedItem)
         {
             if (_amuletPurchasedInRun)
             {
-                if (inventoryManager != null) inventoryManager.ShowWarningMessage("Solo puedes comprar un amuleto por visita/run en el tutorial.");
+                if (inventoryManager != null)
+                {
+                    string warningMessage = isRestrictedScene
+                        ? "Solo puedes comprar un ítem por visita en esta zona."
+                        : "Solo puedes comprar un amuleto por run.";
+
+                    inventoryManager.ShowWarningMessage(warningMessage);
+                }
                 return false;
             }
         }
@@ -618,7 +630,7 @@ public class ShopManager : MonoBehaviour
 
         float healthAfterPurchase = currentHealth - finalCost;
 
-        if (healthAfterPurchase <= lowHealthThreshold && !isHubScene)
+        if (healthAfterPurchase <= lowHealthThreshold && !isRestrictedScene)
         {
             if (!_pendingPurchaseWarning.ContainsKey(item))
             {
@@ -683,7 +695,8 @@ public class ShopManager : MonoBehaviour
                 availableItems.Remove(item);
             }
         }
-        else
+
+        if (item.isAmulet || isRestrictedScene)
         {
             _amuletPurchasedInRun = true;
         }
@@ -695,12 +708,34 @@ public class ShopManager : MonoBehaviour
 
         lastPurchaseTime = Time.time;
 
+        if (isRestrictedScene)
+        {
+            DisableRemainingItems();
+        }
+
         if (item.benefits.Any(b => b.type == StatType.ShieldBlockUpgrade))
         {
             playerHealth.EnableShieldBlockUpgrade();
         }
 
         return true;
+    }
+
+    public void DisableRemainingItems()
+    {
+        if (_spawnedItemObjects != null)
+        {
+            foreach (var obj in _spawnedItemObjects)
+            {
+                if (obj != null)
+                {
+                    if (obj.activeSelf)
+                    {
+                        obj.SetActive(false);
+                    }
+                }
+            }
+        }
     }
 
     public void SetDistortionActive(DevilDistortionType distortion, bool isCase)

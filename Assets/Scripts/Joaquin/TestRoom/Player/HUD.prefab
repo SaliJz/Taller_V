@@ -6945,18 +6945,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   interactionMode: 1
-  allRelics:
-  - {fileID: 11400000, guid: 023cc81456ce6784ca035b314a80e25c, type: 2}
-  - {fileID: 11400000, guid: b998a9ab0e49c454e949e402080aff64, type: 2}
-  - {fileID: 11400000, guid: e42bca83f21b1fe4290fdf4af3c03bf0, type: 2}
-  - {fileID: 11400000, guid: 0f930e0fc71af954486f587038046da1, type: 2}
-  allGagans:
-  - {fileID: 11400000, guid: b72dba1c4d4b52d48b95e4bf5d9645ec, type: 2}
-  - {fileID: 11400000, guid: c904b55d20077964a9deb317354981b1, type: 2}
-  - {fileID: 11400000, guid: c8b435636ace3584599f56788ac7b7ce, type: 2}
+  allShopItems: []
   safeRelics: []
   allPacts: []
   allAmulets: []
+  allGachaponEffects: []
+  normalRarityWeight: 0.65
+  rareRarityWeight: 0.25
+  superRareRarityWeight: 0.1
   shopItemPrefabs:
   - {fileID: 2790493699222432776, guid: 3f233f07f502ad8429d387518ae486b8, type: 3}
   - {fileID: 2790493699222432776, guid: fb73de1475fe6fc47bf7300276c49958, type: 3}
@@ -6974,16 +6970,19 @@ MonoBehaviour:
   costBar: {fileID: 5837518066313530423}
   affordableColor: {r: 0.627451, g: 0, b: 1, a: 1}
   unaffordableColor: {r: 0.6792453, g: 0.50102204, b: 0.07369172, a: 1}
-  lowHealthThresholdPercentage: 20
-  mainCamera: {fileID: 0}
+  lowHealthThreshold: 10
+  lowHealthWarningColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  raycastDistance: 200
   shopItemLayer:
     serializedVersion: 2
     m_Bits: 1024
-  raycastDistance: 200
-  reRollKey: 114
-  canReroll: 1
-  virtualCursorRect: {fileID: 0}
-  purchaseCooldownTime: 0.5
+  restrictedPurchaseScenes:
+  - HUB
+  - TutorialCompleto
+  - TransitionLevel01
+  baseRerollCost: 10
+  useVirtualCursor: 1
+  purchaseCooldown: 0.5
 --- !u!114 &6456210848709519730
 MonoBehaviour:
   m_ObjectHideFlags: 0
