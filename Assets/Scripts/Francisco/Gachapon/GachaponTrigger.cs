@@ -190,7 +190,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
         GachaponResult result = gachaponSystem.PullGachapon();
 
-        onFinish?.Invoke(); 
+        onFinish?.Invoke();
         Debug.Log("Evento activando");
 
         if (rarityColorsMap.ContainsKey(result.rarity))
@@ -198,7 +198,8 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             if (result.effectPair != null)
             {
                 gachaponSystem.ApplyEffect(result);
-                ShowResultUI(true, result.effectPair.effectName, FormatModifiers(result.effectPair));
+                // Pasar la rareza obtenida al formatear los modificadores
+                ShowResultUI(true, result.effectPair.effectName, FormatModifiers(result.effectPair, result.rarity));
             }
             else
             {
@@ -415,29 +416,31 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         }
     }
 
-    private string FormatModifiers(GachaponEffectData effectData)
+    private string FormatModifiers(GachaponEffectData effectData, EffectRarity obtainedRarity)
     {
-        string description = $"<color=yellow>Rareza: {effectData.rarity}</color>\n\n";
+        string description = $"<color=yellow>Rareza: {obtainedRarity}</color>\n\n";
 
         if (effectData.HasAdvantage)
         {
             description += "<b><color=green>VENTAJA:</color></b>\n";
-            foreach (var mod in effectData.advantageModifiers)
+            var advantages = effectData.GetAdvantageModifiersForRarity(obtainedRarity);
+            foreach (var (statType, value, duration, isPercentage, durationType) in advantages)
             {
-                string statName = TranslateStatType(mod.statType);
-                string durationText = TranslateDurationType(mod.durationType, mod.durationValue); 
-                description += $"- {statName}: {mod.modifierValue}{(mod.isPercentage ? "%" : "")} ({durationText})\n";
+                string statName = TranslateStatType(statType);
+                string durationText = TranslateDurationType(durationType, duration);
+                description += $"- {statName}: {value}{(isPercentage ? "%" : "")} ({durationText})\n";
             }
         }
 
         if (effectData.HasDisadvantage)
         {
             description += "\n<b><color=red>DESVENTAJA:</color></b>\n";
-            foreach (var mod in effectData.disadvantageModifiers)
+            var disadvantages = effectData.GetDisadvantageModifiersForRarity(obtainedRarity);
+            foreach (var (statType, value, duration, isPercentage, durationType) in disadvantages)
             {
-                string statName = TranslateStatType(mod.statType);
-                string durationText = TranslateDurationType(mod.durationType, mod.durationValue);
-                description += $"- {statName}: {mod.modifierValue}{(mod.isPercentage ? "%" : "")} ({durationText})\n";
+                string statName = TranslateStatType(statType);
+                string durationText = TranslateDurationType(durationType, duration);
+                description += $"- {statName}: {value}{(isPercentage ? "%" : "")} ({durationText})\n";
             }
         }
 
@@ -472,7 +475,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             case StatType.LifestealOnKill: return "Robo de Vida al Matar";
             case StatType.CriticalDamageMultiplier: return "Multiplicador de Daño Crítico";
             case StatType.DashRangeMultiplier: return "Multiplicador de Alcance de Dash";
-            default: return statType.ToString(); 
+            default: return statType.ToString();
         }
     }
 

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
@@ -24,6 +23,11 @@ public class ShopManager : MonoBehaviour
     public List<ShopItem> safeRelics;
     public List<Pact> allPacts = new List<Pact>();
     public List<ShopItem> allAmulets;
+
+    [Header("Gachapon Effect Pools")]
+    public List<GachaponEffectData> allGachaponEffects = new List<GachaponEffectData>();
+    private List<GachaponEffectData> availableGachaponEffects = new List<GachaponEffectData>();
+    private List<GachaponEffectData> usedGachaponEffects = new List<GachaponEffectData>();
 
     [Header("Shop Generation Settings")]
     [Range(0f, 1f)] public float normalRarityWeight = 0.65f;
@@ -120,6 +124,7 @@ public class ShopManager : MonoBehaviour
         }
 
         InitializeShopItemPools();
+        InitializeGachaponEffectPool();
     }
 
     private void Update()
@@ -138,6 +143,118 @@ public class ShopManager : MonoBehaviour
         {
             availableItems.AddRange(allShopItems);
         }
+    }
+
+    public void InitializeGachaponEffectPool()
+    {
+        availableGachaponEffects.Clear();
+        usedGachaponEffects.Clear();
+
+        if (allGachaponEffects != null && allGachaponEffects.Count > 0)
+        {
+            availableGachaponEffects.AddRange(allGachaponEffects);
+            Debug.Log($"Pool de Gachapon inicializado con {availableGachaponEffects.Count} efectos disponibles.");
+        }
+        else
+        {
+            Debug.LogWarning("No hay efectos de Gachapon asignados en ShopManager.");
+        }
+    }
+
+    public GachaponEffectData GetAvailableGachaponEffect(EffectRarity targetRarity)
+    {
+        if (availableGachaponEffects.Count == 0)
+        {
+            ResetGachaponEffectPool();
+        }
+
+        List<GachaponEffectData> rarityPool = availableGachaponEffects
+            .Where(e => e.IsAvailableForRarity(targetRarity))
+            .ToList();
+
+        if (rarityPool.Count == 0)
+        {
+            EffectRarity[] fallbackOrder = { EffectRarity.Legendario, EffectRarity.Epico, EffectRarity.Raro, EffectRarity.Comun };
+
+            foreach (var fallbackRarity in fallbackOrder)
+            {
+                if (fallbackRarity == targetRarity) continue;
+
+                rarityPool = availableGachaponEffects
+                    .Where(e => e.IsAvailableForRarity(fallbackRarity))
+                    .ToList();
+
+                if (rarityPool.Count > 0)
+                {
+                    Debug.LogWarning($"No hay efectos disponibles para rareza {targetRarity}. Usando rareza {fallbackRarity} como fallback.");
+                    break;
+                }
+            }
+        }
+
+        if (rarityPool.Count == 0)
+        {
+            ResetGachaponEffectPool();
+            rarityPool = availableGachaponEffects
+                .Where(e => e.IsAvailableForRarity(targetRarity))
+                .ToList();
+
+            if (rarityPool.Count == 0)
+            {
+                rarityPool = availableGachaponEffects.ToList();
+            }
+        }
+
+        if (rarityPool.Count > 0)
+        {
+            float totalWeight = rarityPool.Sum(e => e.poolProbability);
+            float roll = Random.Range(0f, totalWeight);
+            float currentWeight = 0f;
+
+            foreach (GachaponEffectData effect in rarityPool)
+            {
+                currentWeight += effect.poolProbability;
+                if (roll <= currentWeight)
+                {
+                    return effect;
+                }
+            }
+
+            return rarityPool.Last();
+        }
+
+        Debug.LogError("No se pudo obtener ningún efecto de Gachapon. Asegúrate de que allGachaponEffects tenga elementos.");
+        return null;
+    }
+
+    public void MarkGachaponEffectAsUsed(GachaponEffectData effect)
+    {
+        if (effect == null) return;
+
+        if (availableGachaponEffects.Contains(effect))
+        {
+            availableGachaponEffects.Remove(effect);
+            usedGachaponEffects.Add(effect);
+            Debug.Log($"Efecto '{effect.effectName}' marcado como usado. Disponibles: {availableGachaponEffects.Count}, Usados: {usedGachaponEffects.Count}");
+        }
+    }
+
+    private void ResetGachaponEffectPool()
+    {
+        availableGachaponEffects.Clear();
+        availableGachaponEffects.AddRange(allGachaponEffects);
+        usedGachaponEffects.Clear();
+        Debug.Log($"Pool de Gachapon reiniciado. Todos los efectos están disponibles nuevamente ({availableGachaponEffects.Count} efectos).");
+    }
+
+    public int GetAvailableGachaponEffectsCount()
+    {
+        return availableGachaponEffects.Count;
+    }
+
+    public int GetUsedGachaponEffectsCount()
+    {
+        return usedGachaponEffects.Count;
     }
 
     public void ResetMerchantRunState()
@@ -324,7 +441,7 @@ public class ShopManager : MonoBehaviour
         float currentHealth = playerHealth.GetCurrentHealth();
         if (currentHealth < baseRerollCost)
         {
-            inventoryManager?.ShowWarningMessage("Vida insuficiente para hacer un 'Reroll'.");
+            if (inventoryManager != null) inventoryManager?.ShowWarningMessage("Vida insuficiente para hacer un 'Reroll'.");
             return;
         }
 
@@ -471,11 +588,12 @@ public class ShopManager : MonoBehaviour
         if (playerStatsManager == null || playerHealth == null || inventoryManager == null) return false;
 
         bool isHubScene = SceneManager.GetActiveScene().name == "HUB";
+        bool isTutorial = SceneManager.GetActiveScene().name == "TutorialCompleto";
 
         float finalCost = CalculateFinalCost(item.cost);
         bool ignoreDrawbacks = false;
 
-        if (isHubScene)
+        if (isHubScene || isTutorial)
         {
             finalCost = 0f;
             ignoreDrawbacks = true;
@@ -485,7 +603,7 @@ public class ShopManager : MonoBehaviour
         {
             if (_amuletPurchasedInRun)
             {
-                inventoryManager.ShowWarningMessage("Solo puedes comprar un amuleto por visita/run en el tutorial.");
+                if (inventoryManager != null) inventoryManager.ShowWarningMessage("Solo puedes comprar un amuleto por visita/run en el tutorial.");
                 return false;
             }
         }
@@ -494,10 +612,7 @@ public class ShopManager : MonoBehaviour
 
         if (finalCost > 0 && currentHealth <= finalCost)
         {
-            if (inventoryManager != null)
-            {
-                inventoryManager.ShowWarningMessage("Vida insuficiente para la compra. ¡Debes sobrevivir!");
-            }
+            if (inventoryManager != null) inventoryManager.ShowWarningMessage("Vida insuficiente para la compra. ¡Debes sobrevivir!");
             return false;
         }
 
@@ -507,7 +622,7 @@ public class ShopManager : MonoBehaviour
         {
             if (!_pendingPurchaseWarning.ContainsKey(item))
             {
-                inventoryManager.ShowWarningMessage("¡Advertencia! Esta compra te dejará con muy poca vida. Pulsa de nuevo para confirmar.");
+                if (inventoryManager != null) inventoryManager.ShowWarningMessage("¡Advertencia! Esta compra te dejará con muy poca vida. Pulsa de nuevo para confirmar.");
                 _pendingPurchaseWarning.Add(item, true);
                 return false;
             }

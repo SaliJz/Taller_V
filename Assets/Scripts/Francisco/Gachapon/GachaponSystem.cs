@@ -11,10 +11,7 @@ public struct GachaponResult
 public class GachaponSystem : MonoBehaviour
 {
     private PlayerStatsManager playerStatsManager;
-
-    [Header("Configuración y Pool de Efectos")]
-    public List<GachaponEffectData> allEffects;
-
+    private ShopManager shopManager;
 
     private Dictionary<EffectRarity, float> baseRarityChances = new Dictionary<EffectRarity, float>()
     {
@@ -30,32 +27,61 @@ public class GachaponSystem : MonoBehaviour
     private void Awake()
     {
         playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
+        shopManager = ShopManager.Instance;
+
+        if (shopManager == null)
+        {
+            shopManager = FindAnyObjectByType<ShopManager>();
+        }
 
         if (playerStatsManager == null)
         {
             Debug.LogError("GachaponSystem no pudo encontrar el PlayerStatsManager en la escena.");
         }
+
+        if (shopManager == null)
+        {
+            Debug.LogError("GachaponSystem no pudo encontrar el ShopManager en la escena.");
+        }
     }
 
     public GachaponResult PullGachapon()
     {
-        if (playerStatsManager == null) return new GachaponResult { effectPair = null, rarity = EffectRarity.Comun };
+        if (playerStatsManager == null || shopManager == null)
+        {
+            Debug.LogError("Faltan dependencias necesarias para realizar el Pull del Gachapon.");
+            return new GachaponResult { effectPair = null, rarity = EffectRarity.Comun };
+        }
 
-        GachaponEffectData selectedEffectPair = SelectEffectPairWithRarity(allEffects);
+        EffectRarity selectedRarity = CalculateRarityWithLuck();
+
+        GachaponEffectData selectedEffectPair = shopManager.GetAvailableGachaponEffect(selectedRarity);
 
         if (selectedEffectPair != null)
         {
+            if (!selectedEffectPair.IsAvailableForRarity(selectedRarity))
+            {
+                Debug.LogWarning($"El efecto '{selectedEffectPair.effectName}' no está configurado para rareza {selectedRarity}. Buscando alternativa...");
+
+                selectedEffectPair = shopManager.GetAvailableGachaponEffect(selectedRarity);
+            }
+
+            shopManager.MarkGachaponEffectAsUsed(selectedEffectPair);
+
+            Debug.Log($"Gachapon Pull exitoso: '{selectedEffectPair.effectName}' (Rareza obtenida: {selectedRarity})");
+
             return new GachaponResult
             {
                 effectPair = selectedEffectPair,
-                rarity = selectedEffectPair.rarity
+                rarity = selectedRarity
             };
         }
 
+        Debug.LogWarning("No se pudo obtener un efecto del pool de Gachapon.");
         return new GachaponResult { effectPair = null, rarity = EffectRarity.Comun };
     }
 
-    private GachaponEffectData SelectEffectPairWithRarity(List<GachaponEffectData> effectPool)
+    private EffectRarity CalculateRarityWithLuck()
     {
         float luckStacks = playerStatsManager.GetCurrentStat(StatType.LuckStack);
         luckStacks = Mathf.Min(luckStacks, MAX_LUCK_STACKS);
@@ -88,32 +114,7 @@ public class GachaponSystem : MonoBehaviour
             }
         }
 
-        EffectRarity selectedRarity = SelectRarity(currentRarityChances);
-
-        List<GachaponEffectData> rarityPool = effectPool
-            .Where(e => e.rarity == selectedRarity)
-            .ToList();
-
-        if (!rarityPool.Any()) return SelectEffectFromPool(effectPool);
-
-        return SelectEffectFromPool(rarityPool);
-    }
-
-    private GachaponEffectData SelectEffectFromPool(List<GachaponEffectData> pool)
-    {
-        float totalWeight = pool.Sum(e => e.poolProbability);
-        float roll = Random.Range(0f, totalWeight);
-        float currentWeight = 0f;
-
-        foreach (GachaponEffectData effect in pool)
-        {
-            currentWeight += effect.poolProbability;
-            if (roll <= currentWeight)
-            {
-                return effect;
-            }
-        }
-        return pool.Last();
+        return SelectRarity(currentRarityChances);
     }
 
     private EffectRarity SelectRarity(Dictionary<EffectRarity, float> rarityChances)
@@ -142,47 +143,67 @@ public class GachaponSystem : MonoBehaviour
     public void ApplyEffect(GachaponResult result)
     {
         GachaponEffectData effectPair = result.effectPair;
+        EffectRarity obtainedRarity = result.rarity;
 
-        if (effectPair == null) return;
-
-        foreach (var modifier in effectPair.advantageModifiers)
+        if (effectPair == null)
         {
-            ApplySingleModifier(modifier, true);
+            Debug.LogWarning("Intento de aplicar un efecto nulo.");
+            return;
         }
 
-        foreach (var modifier in effectPair.disadvantageModifiers)
+        var advantages = effectPair.GetAdvantageModifiersForRarity(obtainedRarity);
+        foreach (var (statType, value, duration, isPercentage, durationType) in advantages)
         {
-            ApplySingleModifier(modifier, false);
+            ApplySingleModifier(statType, value, duration, isPercentage, durationType, true, obtainedRarity);
         }
 
-        Debug.Log($"Gachapon aplicado: {effectPair.effectName}. Rareza: {effectPair.rarity}. Total Ventajas: {effectPair.advantageModifiers.Count}. Total Desventajas: {effectPair.disadvantageModifiers.Count}");
+        var disadvantages = effectPair.GetDisadvantageModifiersForRarity(obtainedRarity);
+        foreach (var (statType, value, duration, isPercentage, durationType) in disadvantages)
+        {
+            ApplySingleModifier(statType, value, duration, isPercentage, durationType, false, obtainedRarity);
+        }
+
+        Debug.Log($"Gachapon aplicado: {effectPair.effectName}. Rareza obtenida: {obtainedRarity}. Total Ventajas: {advantages.Count}. Total Desventajas: {disadvantages.Count}");
     }
 
-    private void ApplySingleModifier(GachaponModifier modifier, bool isAdvantage)
+    private void ApplySingleModifier(StatType statType, float modifierValue, float durationValue,
+                                    bool isPercentage, EffectDurationType durationType,
+                                    bool isAdvantage, EffectRarity rarity)
     {
-        float finalModifierValue = modifier.modifierValue;
+        float finalModifierValue = modifierValue;
 
-        if (modifier.isPercentage)
+        if (isPercentage)
         {
-            float currentStatValue = playerStatsManager.GetCurrentStat(modifier.statType);
-            finalModifierValue = currentStatValue * (modifier.modifierValue / 100f);
+            float currentStatValue = playerStatsManager.GetCurrentStat(statType);
+            finalModifierValue = currentStatValue * (modifierValue / 100f);
         }
 
         string type = isAdvantage ? "Ventaja" : "Desventaja";
 
-        if (modifier.durationType == EffectDurationType.Permanent)
+        if (durationType == EffectDurationType.Permanent)
         {
-            playerStatsManager.ModifyPermanentStat(modifier.statType, finalModifierValue);
+            playerStatsManager.ModifyPermanentStat(statType, finalModifierValue);
         }
-        else if (modifier.durationType == EffectDurationType.Rounds)
+        else if (durationType == EffectDurationType.Rounds)
         {
-            playerStatsManager.ApplyTemporaryStatByRooms(modifier.statType, finalModifierValue, (int)modifier.durationValue);
+            playerStatsManager.ApplyTemporaryStatByRooms(statType, finalModifierValue, (int)durationValue);
         }
-        else if (modifier.durationType == EffectDurationType.Time)
+        else if (durationType == EffectDurationType.Time)
         {
-            playerStatsManager.ApplyTemporaryStatByTime(modifier.statType, finalModifierValue, modifier.durationValue);
+            playerStatsManager.ApplyTemporaryStatByTime(statType, finalModifierValue, durationValue);
         }
 
-        Debug.Log($"   -> {type} aplicado: {modifier.statType}. Valor: {finalModifierValue} (Original: {modifier.modifierValue}{(modifier.isPercentage ? "%" : "")}). Duración: {modifier.durationType} por {modifier.durationValue}");
+        Debug.Log($"   -> {type} aplicado [{rarity}]: {statType}. Valor: {finalModifierValue} (Base: {modifierValue}{(isPercentage ? "%" : "")}). Duración: {durationType} por {durationValue}");
+    }
+
+    public string GetPoolStatus()
+    {
+        if (shopManager == null) return "ShopManager no disponible";
+
+        int available = shopManager.GetAvailableGachaponEffectsCount();
+        int used = shopManager.GetUsedGachaponEffectsCount();
+        int total = available + used;
+
+        return $"Pool de Gachapon: {available}/{total} efectos disponibles ({used} usados)";
     }
 }
