@@ -103,26 +103,53 @@ public class ShopItem : ScriptableObject
         return sb.ToString();
     }
 
-    private string FormatStatEffect(ItemEffect effect, bool isBenefit)
+    private bool IsInverseStat(StatType statType)
     {
-        string colorTag = isBenefit ? "<color=#00FF00>" : "<color=#FF0000>";
-
-        string sign = (effect.amount > 0 && isBenefit) ? "+" : "";
-
-        float displayAmount = effect.amount;
-
-        if (!isBenefit && effect.amount > 0)
+        switch (statType)
         {
-            sign = "+";
+            case StatType.DamageTaken:
+            case StatType.HealthDrainAmount:
+            case StatType.Gravity:
+            case StatType.DashCooldownPost:
+            case StatType.KnockbackReceived:
+            case StatType.StaminaConsumption:
+                return true;
+            default:
+                return false;
         }
-        else if (!isBenefit && effect.amount < 0)
+    }
+
+    private string FormatStatEffect(ItemEffect effect, bool isOriginalBenefit)
+    {
+        string colorTag = isOriginalBenefit ? "<color=#00FF00>" : "<color=#FF0000>";
+
+        if (effect.amount == 0f)
         {
-            sign = "";
+            return $"<color=#A0A0A0>0.0 a {GetStatTranslation(effect.type)}</color>";
         }
 
+        bool isInverse = IsInverseStat(effect.type);
+        string sign;
+
+        bool shouldBePositive;
+
+        if (isInverse)
+        {
+            shouldBePositive = (isOriginalBenefit && effect.amount < 0) ||
+                              (!isOriginalBenefit && effect.amount > 0);
+        }
+        else
+        {
+            shouldBePositive = (isOriginalBenefit && effect.amount > 0) ||
+                              (!isOriginalBenefit && effect.amount < 0);
+        }
+
+        sign = shouldBePositive ? "+" : "-";
+
+        float displayAmount = Mathf.Abs(effect.amount);
 
         string amountString = sign +
-                              displayAmount.ToString("F1").Replace(",", ".") + 
+                              displayAmount.ToString("F1").Replace(",", ".") +
                               (effect.isPercentage ? "%" : "");
 
         string statName = GetStatTranslation(effect.type);
