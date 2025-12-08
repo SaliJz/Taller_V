@@ -491,8 +491,8 @@ public class PlayerShieldController : MonoBehaviour
             case PlayerHealth.LifeStage.Adult:
                 return new ShieldConfig
                 {
-                    damage = Mathf.RoundToInt(youngShieldDamage * damageMultiplier),
-                    speed = youngShieldSpeed * speedMultiplier,
+                    damage = Mathf.RoundToInt(adultShieldDamage * damageMultiplier),
+                    speed = adultShieldSpeed * speedMultiplier,
                     maxDistance = shieldMaxDistance,
                     canRebound = false,
                     maxRebounds = 0,
@@ -505,8 +505,8 @@ public class PlayerShieldController : MonoBehaviour
             case PlayerHealth.LifeStage.Elder:
                 return new ShieldConfig
                 {
-                    damage = Mathf.RoundToInt(youngShieldDamage * damageMultiplier),
-                    speed = youngShieldSpeed * speedMultiplier,
+                    damage = Mathf.RoundToInt(elderShieldDamage * damageMultiplier),
+                    speed = elderShieldSpeed * speedMultiplier,
                     maxDistance = shieldMaxDistance,
                     canRebound = false,
                     maxRebounds = 0,
