@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
-using System.Linq; 
+using System.Linq;
 
 public class ResurrectedLarva : MonoBehaviour
 {
@@ -14,11 +14,15 @@ public class ResurrectedLarva : MonoBehaviour
     public float explosionRadius = 0.5f;
     public float baseDamage = 10f;
 
+    [Header("Configuración de Invulnerabilidad")]
+    public float invulnerabilityTime = 1f; 
+
     private Transform targetEnemy;
     private NavMeshAgent agent;
     private float calculatedDamage;
     private bool hasFoundTarget = false;
-    private float targetSearchInterval = 0.5f; 
+    private bool isInvulnerable = true; 
+    private float targetSearchInterval = 0.5f;
 
     public void Initialize(float originalEnemyBaseHealth)
     {
@@ -38,8 +42,20 @@ public class ResurrectedLarva : MonoBehaviour
 
         if (calculatedDamage == 0) calculatedDamage = baseDamage;
 
+        StartCoroutine(InvulnerabilityRoutine());
         StartCoroutine(LifeTimerRoutine());
-        StartCoroutine(TargetSearchRoutine()); 
+        StartCoroutine(TargetSearchRoutine());
+    }
+
+    private IEnumerator InvulnerabilityRoutine()
+    {
+        isInvulnerable = true;
+        Debug.Log($"[Larva] Invulnerabilidad activada por {invulnerabilityTime} segundos.");
+
+        yield return new WaitForSeconds(invulnerabilityTime);
+
+        isInvulnerable = false;
+        Debug.Log($"[Larva] Invulnerabilidad desactivada. Ahora puede hacer daño.");
     }
 
     private void Update()
@@ -53,13 +69,16 @@ public class ResurrectedLarva : MonoBehaviour
         {
             agent.SetDestination(targetEnemy.position);
 
-            float distanceToTarget = Vector3.Distance(transform.position, targetEnemy.position);
-            if (distanceToTarget <= explosionRadius)
+            if (!isInvulnerable)
             {
-                hasFoundTarget = true;
-                Debug.Log($"[Larva] Objetivo ({targetEnemy.name}) dentro del radio de explosión. Explotando...");
-                StopAllCoroutines();
-                DealDamageAndDie();
+                float distanceToTarget = Vector3.Distance(transform.position, targetEnemy.position);
+                if (distanceToTarget <= explosionRadius)
+                {
+                    hasFoundTarget = true;
+                    Debug.Log($"[Larva] Objetivo ({targetEnemy.name}) dentro del radio de explosión. Explotando...");
+                    StopAllCoroutines();
+                    DealDamageAndDie();
+                }
             }
         }
         else if (agent != null && agent.enabled)
@@ -72,7 +91,7 @@ public class ResurrectedLarva : MonoBehaviour
     {
         while (!hasFoundTarget)
         {
-            FindNearestEnemyInScene(); 
+            FindNearestEnemyInScene();
             yield return new WaitForSeconds(targetSearchInterval);
         }
     }
@@ -92,7 +111,7 @@ public class ResurrectedLarva : MonoBehaviour
             {
                 targetEnemy = nearest;
                 Debug.Log($"[Larva] Nuevo objetivo encontrado en la escena: {targetEnemy.name}.");
-                if (agent != null) agent.isStopped = false; 
+                if (agent != null) agent.isStopped = false;
             }
             else if (targetEnemy == null && nearest != null)
             {
@@ -108,6 +127,12 @@ public class ResurrectedLarva : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (isInvulnerable)
+        {
+            Debug.Log($"[Larva] Colisión ignorada con ({other.name}) - Invulnerable.");
+            return;
+        }
+
         if (other.CompareTag("Enemy"))
         {
             if (!hasFoundTarget)
@@ -133,6 +158,12 @@ public class ResurrectedLarva : MonoBehaviour
 
     private void DealDamageAndDie()
     {
+        if (isInvulnerable)
+        {
+            Debug.Log($"[Larva] Intento de explosión durante invulnerabilidad. Ignorado.");
+            return;
+        }
+
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, explosionRadius);
 
         foreach (var hitCollider in hitColliders)
@@ -150,11 +181,11 @@ public class ResurrectedLarva : MonoBehaviour
             if (damageable != null)
             {
                 damageable.TakeDamage(baseDamage, false);
-                Destroy(gameObject); Destroy(gameObject);
                 Debug.Log($"[Larva] Daño por explosión de {baseDamage:F2} aplicado a {hitCollider.gameObject.name}.");
             }
         }
 
+        Destroy(gameObject);
         if (agent != null) agent.enabled = false;
     }
 
@@ -167,6 +198,12 @@ public class ResurrectedLarva : MonoBehaviour
         {
             Gizmos.color = Color.blue;
             Gizmos.DrawLine(transform.position, targetEnemy.position);
+        }
+
+        if (isInvulnerable && Application.isPlaying)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(transform.position, explosionRadius * 1.5f);
         }
     }
 }
