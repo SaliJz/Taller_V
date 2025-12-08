@@ -132,14 +132,14 @@ MonoBehaviour:
   playerTransform: {fileID: 0}
   bondRadius: 15
   maxBonds: 10
-  toughnessRegenPerSecond: 6
+  toughnessRegenPerSecond: 10
   maxToughnessRegen: 30
   rebondCooldown: 4
   bondUpdateInterval: 0.25
   canEnableToughnessOnAllies: 1
-  frontalBlockAngle: 150
+  frontalBlockAngle: 160
   shieldForwardOverride: {fileID: 0}
-  moveSpeed: 3.5
+  moveSpeed: 5
   stoppingDistance: 2
   meleeDamage: 10
   attackInterval: 1.5
@@ -179,8 +179,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 0
+  maxHealth: 20
+  currentHealth: 20
   canDieAfterCooldown: 1
   deathCooldown: 0.5
   canDestroy: 1
