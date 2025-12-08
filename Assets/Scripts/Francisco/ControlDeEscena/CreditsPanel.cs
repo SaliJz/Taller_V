@@ -73,7 +73,7 @@ public class CreditsPanel : MonoBehaviour
     private List<GameObject> instantiatedObjects = new List<GameObject>();
     private float contentHeight;
     private float currentYPosition = 0f;
-    private float currentLineMaxHeight = 0f; 
+    private float currentLineMaxHeight = 0f;
 
     #endregion
 
@@ -130,6 +130,7 @@ public class CreditsPanel : MonoBehaviour
 
         if (creditsContainer != null)
         {
+            creditsContainer.DOKill(); 
             creditsContainer.anchoredPosition = new Vector2(creditsContainer.anchoredPosition.x, 0f);
         }
 
@@ -189,6 +190,10 @@ public class CreditsPanel : MonoBehaviour
                 {
                     gameObject.SetActive(false);
                     ClearCredits();
+                    if (creditsContainer != null)
+                    {
+                        creditsContainer.anchoredPosition = new Vector2(creditsContainer.anchoredPosition.x, 0f);
+                    }
                 });
         }
         else if (displayType == PanelDisplayType.CanvasFade && canvasGroup != null)
@@ -202,6 +207,10 @@ public class CreditsPanel : MonoBehaviour
                 {
                     gameObject.SetActive(false);
                     ClearCredits();
+                    if (creditsContainer != null)
+                    {
+                        creditsContainer.anchoredPosition = new Vector2(creditsContainer.anchoredPosition.x, 0f);
+                    }
                 });
         }
         else if (displayType == PanelDisplayType.Animator && panelAnimator != null)
@@ -213,6 +222,10 @@ public class CreditsPanel : MonoBehaviour
         {
             gameObject.SetActive(false);
             ClearCredits();
+            if (creditsContainer != null)
+            {
+                creditsContainer.anchoredPosition = new Vector2(creditsContainer.anchoredPosition.x, 0f);
+            }
         }
 
         if (EventSystem.current != null)
@@ -226,6 +239,10 @@ public class CreditsPanel : MonoBehaviour
         yield return new WaitForSecondsRealtime(openCloseDuration);
         gameObject.SetActive(false);
         ClearCredits();
+        if (creditsContainer != null)
+        {
+            creditsContainer.anchoredPosition = new Vector2(creditsContainer.anchoredPosition.x, 0f);
+        }
     }
 
     #endregion
@@ -245,7 +262,7 @@ public class CreditsPanel : MonoBehaviour
 
         bool isFirstInLine = true;
         float lineStartY = 0f;
-        float finalSpacingForLine = defaultSpacing; 
+        float finalSpacingForLine = defaultSpacing;
 
         for (int i = 0; i < creditsEntries.Length; i++)
         {
@@ -570,7 +587,11 @@ public class CreditsPanel : MonoBehaviour
 
         float duration = totalDistance / scrollSpeed;
 
-        creditsContainer.anchoredPosition = new Vector2(creditsContainer.anchoredPosition.x, 0f);
+        if (creditsContainer != null)
+        {
+            creditsContainer.DOKill(); 
+            creditsContainer.anchoredPosition = new Vector2(creditsContainer.anchoredPosition.x, 0f);
+        }
 
         float targetY = contentHeight + viewportHeight;
 
@@ -588,9 +609,9 @@ public class CreditsPanel : MonoBehaviour
 
     private void StopAutoScroll()
     {
-        if (scrollTween != null)
+        if (scrollTween != null && scrollTween.IsActive())
         {
-            scrollTween.Kill();
+            scrollTween.Kill(false); 
             scrollTween = null;
         }
     }

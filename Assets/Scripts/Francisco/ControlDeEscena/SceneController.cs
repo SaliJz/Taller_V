@@ -91,4 +91,12 @@ public class SceneController : MonoBehaviour
 
         SceneManager.LoadScene(sceneName);
     }
+
+    public void OnTutorialFinished()
+    {
+        if (SaveLoadManager.Instance != null)
+        {
+            SaveLoadManager.Instance.CompleteTutorialAndSave();
+        }
+    }
 }
