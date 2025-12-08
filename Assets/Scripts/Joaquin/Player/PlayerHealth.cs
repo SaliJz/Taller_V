@@ -960,6 +960,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
                         ReportDebug("InventoryManager es null en Die() durante callback de FadeOut.", 2);
                     }
 
+                    MerchantDialogHandler.ResetReputationState();
                     SceneManager.LoadScene(sceneToLoadOnDeath);
                 }));
         }
@@ -991,6 +992,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
                 ReportDebug("InventoryManager es null en Die() (sin FadeController).", 2);
             }
 
+            MerchantDialogHandler.ResetReputationState();
             SceneManager.LoadScene(sceneToLoadOnDeath);
         }
     }

@@ -302,6 +302,9 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         PlayClickSFX();
 
         Time.timeScale = 1f;
+        
+        MerchantDialogHandler.ResetReputationState();
+
         StartCoroutine(FadeAndReloadScene("MainMenu"));
     }
 

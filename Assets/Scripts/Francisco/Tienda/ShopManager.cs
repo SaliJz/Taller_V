@@ -782,4 +782,22 @@ public class ShopManager : MonoBehaviour
     {
         HUDManager.Instance.SetInteractionPrompt(active, "Interact", "COMPRAR");
     }
+
+    public ShopItem GetRandomRewardItem()
+    {
+        if (allShopItems != null && allShopItems.Count > 0)
+        {
+            int index = Random.Range(0, allShopItems.Count);
+            ShopItem selectedItem = allShopItems[index];
+
+            return selectedItem;
+        }
+
+        if (allAmulets != null && allAmulets.Count > 0)
+        {
+            return allAmulets[Random.Range(0, allAmulets.Count)];
+        }
+
+        return null;
+    }
 }

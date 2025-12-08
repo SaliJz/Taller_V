@@ -10,6 +10,7 @@ public class MerchantDialogHandler : MonoBehaviour
     [Header("Dependencies")]
     [SerializeField] private DialogManager dialogManager;
     [SerializeField] private MerchantRoomManager merchantManager;
+    [SerializeField] private InventoryManager inventoryManager;
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private GameObject optionsPanel;
     [SerializeField] private Button acceptButton;
@@ -30,6 +31,7 @@ public class MerchantDialogHandler : MonoBehaviour
     [SerializeField] private DialogLine[] blockedLine;
     [SerializeField] private DialogLine[] pactAcceptLines;
     [SerializeField] private DialogLine[] pactShowDetailsLines;
+    [SerializeField] private DialogLine[] maxReputationRewardLines;
 
     #endregion
 
@@ -50,16 +52,21 @@ public class MerchantDialogHandler : MonoBehaviour
     [Header("Events")]
     [SerializeField] private UnityEvent OnDialogCompleteEvent;
 
+    private static int globalReputation = 0;
+    private static bool hasReceivedMaxReward = false;
+
     private bool isPactAvailable = false;
     private const float PactHealthThreshold = 0.70f;
 
     private int conversationCount = 0;
-    private int reputation = 0;
+
     private bool isPactBlocked = false;
     private bool waitingForPactButtons = false;
     private MerchantMood currentMood = MerchantMood.Neutral;
 
     private enum MerchantMood { Neutral, Friendly, Hostile }
+
+    private const int ReputationRewardThreshold = 8;
 
     #endregion
 
@@ -70,6 +77,7 @@ public class MerchantDialogHandler : MonoBehaviour
         if (dialogManager == null) dialogManager = DialogManager.Instance;
         if (merchantManager == null) merchantManager = FindAnyObjectByType<MerchantRoomManager>();
         if (playerHealth == null) playerHealth = FindAnyObjectByType<PlayerHealth>();
+        if (inventoryManager == null) inventoryManager = FindAnyObjectByType<InventoryManager>();
 
         if (optionsPanel != null) optionsPanel.SetActive(false);
 
@@ -82,6 +90,9 @@ public class MerchantDialogHandler : MonoBehaviour
             OnDialogCompleteEvent = new UnityEvent();
         }
         OnDialogCompleteEvent.AddListener(OnDialogComplete);
+
+        UpdateMerchantMood();
+        UpdateShopPrices();
     }
 
     #endregion
@@ -159,10 +170,9 @@ public class MerchantDialogHandler : MonoBehaviour
 
         merchantManager.OnAcceptPact();
 
-        reputation += 1;
-        UpdateMerchantMood();
-        UpdateShopPrices();
-        Debug.Log($"Reputación actual: {reputation}");
+        ModifyReputation(1);
+
+        Debug.Log($"Reputación actual: {globalReputation}");
 
         string pactDetails = FormatPactDetails(currentPact);
         Debug.Log("Detalles del pacto: " + pactDetails);
@@ -187,34 +197,38 @@ public class MerchantDialogHandler : MonoBehaviour
     public void OnConverseOption()
     {
         if (converseButton == null) return;
-
         optionsPanel?.SetActive(false);
-
         conversationCount++;
+
+        int repChange = 0;
 
         if (conversationCount <= 3)
         {
-            reputation += 2;
+            repChange = 2;
             Debug.Log($"Conversación {conversationCount}: +2 reputación");
         }
         else if (conversationCount == 4)
         {
-            reputation -= 2;
+            repChange = -2;
             Debug.Log($"Conversación {conversationCount}: -2 reputación");
         }
         else if (conversationCount >= 5)
         {
-            reputation -= 4;
+            repChange = -4;
             isPactBlocked = true;
             Debug.Log($"Conversación {conversationCount}: -4 reputación. PACTOS BLOQUEADOS");
         }
 
-        UpdateMerchantMood();
-        UpdateShopPrices();
-        Debug.Log($"Reputación actual: {reputation}");
+        bool rewardJustGiven = ModifyReputation(repChange);
 
         DialogLine[] linesToUse;
-        if (currentMood == MerchantMood.Hostile)
+
+        if (rewardJustGiven && maxReputationRewardLines != null && maxReputationRewardLines.Length > 0)
+        {
+            linesToUse = maxReputationRewardLines;
+            Debug.Log("Mostrando diálogo de Recompensa Especial.");
+        }
+        else if (currentMood == MerchantMood.Hostile)
         {
             linesToUse = hostileLines;
         }
@@ -317,13 +331,59 @@ public class MerchantDialogHandler : MonoBehaviour
 
     public void ChangeRoomMerchant(MerchantRoomManager refe) => merchantManager = refe;
 
+    private bool ModifyReputation(int amount)
+    {
+        globalReputation += amount;
+        bool rewardTriggered = false;
+
+        if (amount > 0 && globalReputation >= ReputationRewardThreshold && !hasReceivedMaxReward)
+        {
+            rewardTriggered = GiveReputationReward();
+        }
+
+        UpdateMerchantMood();
+        UpdateShopPrices();
+        Debug.Log($"Reputación Global actual: {globalReputation}");
+
+        return rewardTriggered;
+    }
+
+    private bool GiveReputationReward()
+    {
+        if (ShopManager.Instance == null || inventoryManager == null) return false;
+
+        ShopItem rewardItem = ShopManager.Instance.GetRandomRewardItem();
+
+        if (rewardItem != null)
+        {
+            if (inventoryManager.TryAddItem(rewardItem))
+            {
+                hasReceivedMaxReward = true;
+
+                Debug.Log($"<color=yellow>¡RECOMPENSA DE LEALTAD! Recibido: {rewardItem.itemName}</color>");
+
+                inventoryManager.ShowWarningMessage($"¡Regalo de Lealtad: {rewardItem.itemName}!");
+
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void ResetReputationState()
+    {
+        globalReputation = 0;
+        hasReceivedMaxReward = false;
+        Debug.Log("Estado del mercader reiniciado (Reputación 0).");
+    }
+
     private void UpdateMerchantMood()
     {
-        if (reputation >= 4)
+        if (globalReputation >= 4)
         {
             currentMood = MerchantMood.Friendly;
         }
-        else if (reputation <= -2)
+        else if (globalReputation <= -2)
         {
             currentMood = MerchantMood.Hostile;
         }
@@ -347,34 +407,14 @@ public class MerchantDialogHandler : MonoBehaviour
 
     private float CalculatePriceModifier()
     {
-        if (reputation >= 6)
-        {
-            return 0.7f;
-        }
-        else if (reputation >= 4)
-        {
-            return 0.85f;
-        }
-        else if (reputation >= 2)
-        {
-            return 0.95f;
-        }
-        else if (reputation <= -6)
-        {
-            return 1.5f;
-        }
-        else if (reputation <= -4)
-        {
-            return 1.3f;
-        }
-        else if (reputation <= -2)
-        {
-            return 1.15f;
-        }
-        else
-        {
-            return 1.0f;
-        }
+        if (globalReputation >= ReputationRewardThreshold) return 0.6f;
+        else if (globalReputation >= 6) return 0.7f;
+        else if (globalReputation >= 4) return 0.85f;
+        else if (globalReputation >= 2) return 0.95f;
+        else if (globalReputation <= -6) return 1.5f;
+        else if (globalReputation <= -4) return 1.3f;
+        else if (globalReputation <= -2) return 1.15f;
+        else return 1.0f;
     }
 
     #endregion
