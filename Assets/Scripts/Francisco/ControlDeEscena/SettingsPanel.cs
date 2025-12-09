@@ -44,7 +44,9 @@ public class SettingsPanel : MonoBehaviour
     private const string MusicVolumeParam = "MusicVolume";
     private const string SfxVolumeParam = "SfxVolume";
 
-    private float currentMusicVolume = 0.75f;
+    private const float DefaultVolumeValue = 0.75f;
+
+    private float currentMusicVolume = DefaultVolumeValue;
     private bool isMusicDucked = false;
     private Coroutine musicDuckCoroutine;
 
@@ -199,10 +201,10 @@ public class SettingsPanel : MonoBehaviour
         LoadVolume(sfxSlider, SfxVolumeParam);
     }
 
-    private void LoadVolume(Slider slider, string paramName, float defaultValue = 0.75f)
+    private void LoadVolume(Slider slider, string paramName)
     {
         if (slider == null) return;
-        float savedVolume = PlayerPrefs.GetFloat(paramName, defaultValue);
+        float savedVolume = PlayerPrefs.GetFloat(paramName, DefaultVolumeValue);
         slider.value = savedVolume;
 
         if (paramName == MusicVolumeParam)
@@ -212,6 +214,28 @@ public class SettingsPanel : MonoBehaviour
 
         SetVolume(paramName, savedVolume);
     }
+    #endregion
+
+    #region [ Reset Control ]
+
+    public void ResetAllVolumeSettings()
+    {
+        if (masterSlider != null) masterSlider.value = DefaultVolumeValue;
+        if (musicSlider != null) musicSlider.value = DefaultVolumeValue;
+        if (sfxSlider != null) sfxSlider.value = DefaultVolumeValue;
+
+        SetMasterVolume(DefaultVolumeValue);
+        SetMusicVolume(DefaultVolumeValue);
+        SetSfxVolume(DefaultVolumeValue);
+
+        PlayerPrefs.Save();
+
+        if (isMusicDucked)
+        {
+            isMusicDucked = false;
+        }
+    }
+
     #endregion
 
     #region [ Gamepad Focus Control ]

@@ -22,7 +22,9 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     [SerializeField] private AudioClip openPauseClip;
     [SerializeField] private AudioClip clickButtonSFX;
 
-    // Guardamos el estado previo de cada AudioSource que desactivamos
+    [Header("Audio Exclusion Settings")]
+    [SerializeField] private string ignorePauseTag = "IgnorePause";
+
     private class AudioState
     {
         public bool enabled;
@@ -302,7 +304,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         PlayClickSFX();
 
         Time.timeScale = 1f;
-        
+
         MerchantDialogHandler.ResetReputationState();
 
         StartCoroutine(FadeAndReloadScene("MainMenu"));
@@ -370,7 +372,23 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         }
     }
 
-    // --- NUEVO: desactivar AudioSources no asignados (guardando estado y si estaban reproduciendo) ---
+    private bool ShouldIgnoreAudioSource(AudioSource src)
+    {
+        if (src == null) return true;
+
+        if (src == pauseMusicSource || src == sfxSource) return true;
+
+        if (!string.IsNullOrEmpty(ignorePauseTag))
+        {
+            if (src.gameObject.CompareTag(ignorePauseTag))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void DisableOtherAudioSources()
     {
         previousAudioStates.Clear();
@@ -382,8 +400,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         {
             if (src == null) continue;
 
-            // Excluir las fuentes asignadas a este script
-            if (src == pauseMusicSource || src == sfxSource) continue;
+            if (ShouldIgnoreAudioSource(src)) continue;
 
             // Guardar estado previo y si estaba reproduciendo
             AudioState state = new AudioState();
@@ -418,7 +435,6 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         }
     }
 
-    // --- NUEVO: restaurar los AudioSources desactivados ---
     private void RestoreAudioSources()
     {
         if (previousAudioStates == null || previousAudioStates.Count == 0) return;
