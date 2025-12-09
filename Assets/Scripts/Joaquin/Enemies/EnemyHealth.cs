@@ -226,6 +226,24 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         UpdateHealthUI();
     }
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.B))
+        {
+            DebugKill();
+        }
+    }
+
+    public void DebugKill()
+    {
+        if (currentHealth > 0)
+        {
+            Debug.Log("<color=red>[DEBUG] Astaroth Boss eliminado instantáneamente con la tecla 'P'.</color>");
+
+            TakeDamage(9999f);
+        }
+    }
+
     public void TakeDamage(float damageAmount, AttackDamageType damageType, Vector3 damageSourcePosition)
     {
         var drogathBlocker = GetComponent<DrogathEnemy>();

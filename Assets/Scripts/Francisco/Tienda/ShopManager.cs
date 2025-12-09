@@ -1,10 +1,11 @@
+using GameJolt.UI.Controllers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class ShopManager : MonoBehaviour
 {
@@ -707,6 +708,11 @@ public class ShopManager : MonoBehaviour
         }
 
         lastPurchaseTime = Time.time;
+
+        if (GameJoltTrophy.Instance != null)
+        {
+            GameJoltTrophy.Instance.TrackItemPurchase();
+        }
 
         if (isRestrictedScene)
         {

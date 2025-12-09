@@ -64,23 +64,22 @@ namespace GameJolt.UI.Controllers
                 user.SignIn(signInSuccess => {
                     if (signInSuccess)
                     {
-
-                        Trophies.Unlock(TROPHY_ID_LOGIN, trophySuccess => {
-                            if (trophySuccess)
-                            {
-                                Debug.Log($"[GAMEJOLT] Trophy {TROPHY_ID_LOGIN} unlocked upon successful sign-in.");
-                                Dismiss(true);
-                            }
-                            else
-                            {
-                                Debug.LogError($"[GAMEJOLT] Failed to unlock trophy {TROPHY_ID_LOGIN} upon sign-in.");
-                            }
-                        });
+                        if (GameJoltTrophy.Instance != null)
+                        {
+                            GameJoltTrophy.Instance.AwardLoginTrophy();
+                            Dismiss(true);
+                        }
+                        else
+                        {
+                            Debug.LogError("[GAME JOLT] GameJoltTrophy Instance no encontrado.");
+                            Dismiss(true);
+                        }
                     }
                     else
                     {
                         ErrorMessage.text = "Wrong username and/or token.";
                         ErrorMessage.enabled = true;
+                        Dismiss(false);
                     }
 
                     Animator.SetTrigger("HideLoadingIndicator");

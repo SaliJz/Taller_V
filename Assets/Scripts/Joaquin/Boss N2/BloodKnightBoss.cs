@@ -1,3 +1,4 @@
+using GameJolt.UI.Controllers;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Cinemachine;
@@ -224,7 +225,13 @@ public class BloodKnightBoss : MonoBehaviour
         isInLowHealthPhase = false;
         speedBuffApplied = false;
         forceApocalipsisNext = false;
-        
+
+        if (GameJoltTrophy.Instance != null)
+        {
+            GameJoltTrophy.Instance.AwardBoss2Trophy();
+            GameJoltTrophy.Instance.AwardGameCompletionTrophy();
+        }
+
         StopAllCoroutines();
         CleanUpEffects();
 

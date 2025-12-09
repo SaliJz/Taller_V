@@ -1,6 +1,7 @@
+using DG.Tweening.Plugins.Options;
+using GameJolt.UI.Controllers;
 using System.Collections;
 using System.Collections.Generic;
-using DG.Tweening.Plugins.Options;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.AI;
@@ -614,6 +615,11 @@ public class AstarothController : MonoBehaviour
 
         StopAllCoroutines();
         DestroyAllInstantiatedEffects();
+
+        if (GameJoltTrophy.Instance != null)
+        {
+            GameJoltTrophy.Instance.AwardBoss1Trophy();
+        }
 
         if (_navMeshAgent != null)
         {

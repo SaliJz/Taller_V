@@ -1,6 +1,7 @@
 using UnityEngine;
 using GameJolt.UI;
 using UnityEngine.SceneManagement;
+
 public class MainScene : MonoBehaviour
 {
     private void Start()
