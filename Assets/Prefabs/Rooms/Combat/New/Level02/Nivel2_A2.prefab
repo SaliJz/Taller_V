@@ -2748,8 +2748,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  audioSource: {fileID: 0}
-  audioClip: {fileID: 8300000, guid: d99bb598d052c384f8ec378ee2ec9453, type: 3}
+  audioSource: {fileID: 8228631279757240312}
+  OpenSFX: {fileID: 8300000, guid: d99bb598d052c384f8ec378ee2ec9453, type: 3}
+  riseSFX: {fileID: 8300000, guid: c5ef20730e399c54cac166e7611a8d73, type: 3}
   allowMultiplePulls: 0
   animationDuration: 1.5
   cycleSpeed: 0.15
@@ -5644,7 +5645,10 @@ MonoBehaviour:
   - {fileID: 2323673405599987265}
   - {fileID: 1069819388721534579}
   - {fileID: 6724229986314158372}
-  animatedDoors: []
+  animatedDoors:
+  - {fileID: 2377226289682587061}
+  - {fileID: 2377226289682587061}
+  - {fileID: 1509373602380720653}
   doorColliders: []
   onFinsih:
     m_PersistentCalls:
@@ -5686,12 +5690,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 746da4ae6472c1d4ea90ff44e937d234, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allEffects:
-  - {fileID: 11400000, guid: bceb29aaf7fa64e409f4888736ed08f7, type: 2}
-  - {fileID: 11400000, guid: af714e188f8a16b4fa795d8879a1f08a, type: 2}
-  - {fileID: 11400000, guid: f083025a3048d394fb058d6bf3a07746, type: 2}
-  - {fileID: 11400000, guid: 8bbc297dcd1a0004cb7b92f7c0aa1fc6, type: 2}
-  - {fileID: 11400000, guid: 3393616f9ae6cb4468c3d3825b2cf798, type: 2}
 --- !u!1001 &1510322758755588803
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6517,6 +6515,11 @@ SortingGroup:
   m_SortingLayer: 0
   m_SortingOrder: -1
   m_SortAtRoot: 0
+--- !u!95 &1509373602380720653 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 2218571003441358, guid: 631754cc54b01a043b04defcb495d9a2, type: 3}
+  m_PrefabInstance: {fileID: 1510322758755588803}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1699355293597263142 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 243454065510186981, guid: 631754cc54b01a043b04defcb495d9a2, type: 3}
@@ -6721,6 +6724,11 @@ SortingGroup:
   m_SortingLayer: 0
   m_SortingOrder: -1
   m_SortAtRoot: 0
+--- !u!95 &2377226289682587061 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 3749286526288168822, guid: 631754cc54b01a043b04defcb495d9a2, type: 3}
+  m_PrefabInstance: {fileID: 1510322758755588803}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &3703014778749392311 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2852606907790757748, guid: 631754cc54b01a043b04defcb495d9a2, type: 3}

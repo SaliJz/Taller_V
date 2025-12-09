@@ -33,7 +33,8 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     [Header("SFX")]
     [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip audioClip;
+    [SerializeField] private AudioClip OpenSFX;
+    [SerializeField] private AudioClip riseSFX;
 
     [Header("Configuración")]
     private bool playerIsNear = false;
@@ -179,6 +180,11 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         isAnimating = true;
         isActivated = true;
         ShowResultUI(false, "", "");
+
+        if (audioSource != null && OpenSFX != null)
+        {
+            audioSource.PlayOneShot(OpenSFX);
+        }
 
         if (HUDManager.Instance != null)
         {
@@ -362,11 +368,13 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
     private IEnumerator RiseGachapon()
     {
         isAnimating = true;
-        if (isAnimating)
-        {
-            if (audioSource != null && audioClip != null) audioSource.Play();
-        }
         GetComponent<Collider>().enabled = false;
+
+        if (audioSource != null && riseSFX != null)
+        {
+            audioSource.clip = riseSFX;
+            audioSource.Play();
+        }
 
         Vector3 startPos = transform.position;
         Vector3 endPos = riseTargetTransform.position;
@@ -386,9 +394,9 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         isActivated = false;
         isAnimating = false;
 
-        if (!isAnimating)
+        if (audioSource != null && audioSource.isPlaying && audioSource.clip == riseSFX)
         {
-            if (audioSource != null && audioClip != null) audioSource.Stop();
+            audioSource.Stop();
         }
 
         if (playerIsNear && HUDManager.Instance != null)
