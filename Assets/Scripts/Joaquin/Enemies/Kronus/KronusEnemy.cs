@@ -212,7 +212,7 @@ public class KronusEnemy : MonoBehaviour
     {
         if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
         if (enemyHealth != null) enemyHealth.OnDamaged -= AlertEnemy;
-        if (groundIndicator != null) Destroy(groundIndicator);
+        if (groundIndicator != null) Destroy(groundIndicator); //Revisar
         if (visualHit != null) Destroy(visualHit);
     }
 

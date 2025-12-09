@@ -1577,6 +1577,34 @@ PrefabInstance:
       propertyPath: MainCamera
       value: 
       objectReference: {fileID: 238635375}
+    - target: {fileID: 2888951513960009550, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: hitVolume
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2888951513960009550, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: dashVolume
+      value: 0.85
+      objectReference: {fileID: 0}
+    - target: {fileID: 2888951513960009550, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: stepVolume
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2888951513960009550, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: blockVolume
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2888951513960009550, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: deathVolume
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2888951513960009550, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: meleeVolume
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2888951513960009550, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: rangeVolume
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3158206734398763717, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: statsManager
       value: 
@@ -3299,6 +3327,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dialogManager: {fileID: 2052809767}
   merchantManager: {fileID: 0}
+  inventoryManager: {fileID: 0}
   playerHealth: {fileID: 1202095489}
   optionsPanel: {fileID: 17294023}
   acceptButton: {fileID: 988228960}
@@ -3446,6 +3475,7 @@ MonoBehaviour:
     VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
     VoicePitch: 1
     VoiceFrequency: 2
+  maxReputationRewardLines: []
   pactVoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
   pactVoicePitch: 1
   pactVoiceFrequency: 2
