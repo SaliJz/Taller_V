@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -13,6 +14,7 @@ public class MorlockEnemy : MonoBehaviour
     [SerializeField] private MorlockStats stats;
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private Transform firePoint;
+    [SerializeField] private GameObject teleportVFX;
 
     #region Variables
 
@@ -105,6 +107,8 @@ public class MorlockEnemy : MonoBehaviour
     private int currentWaypointIndex = 0;
 
     private Vector3 originPosition;
+
+    private List<GameObject> activeTeleportVFXs = new List<GameObject>();
 
     private float idleTimer;
     private float idleInterval;
@@ -246,6 +250,7 @@ public class MorlockEnemy : MonoBehaviour
     private void HandleEnemyDeath(GameObject enemy)
     {
         if (isDead || enemy != gameObject) return;
+
         isDead = true;
 
         if (animator != null) animator.SetBool(animHashAttack, false);
@@ -253,6 +258,12 @@ public class MorlockEnemy : MonoBehaviour
 
         ChangeState(MorlockState.Repositioning);
         StopAllCoroutines();
+
+        for (int i = activeTeleportVFXs.Count - 1; i >= 0; i--)
+        {
+            if (activeTeleportVFXs[i] != null) Destroy(activeTeleportVFXs[i]);
+        }
+        activeTeleportVFXs.Clear();
 
         if (agent != null && agent.enabled)
         {
@@ -657,10 +668,32 @@ public class MorlockEnemy : MonoBehaviour
                 agent.Warp(hit.position);
             }
 
+            if (teleportVFX != null)
+            {
+                Vector3 vfxPos = hit.position;
+                vfxPos.y += 0.01f;
+
+                GameObject vfxInstance = Instantiate(teleportVFX, vfxPos, Quaternion.identity);
+
+                activeTeleportVFXs.Add(vfxInstance);
+
+                StartCoroutine(RemoveVFXFromListAfterDelay(vfxInstance, 1.5f));
+            }
+
             if (playerTransform != null && currentState != MorlockState.Patrol)
             {
                 ForceFacePlayer();
             }
+        }
+    }
+
+    private IEnumerator RemoveVFXFromListAfterDelay(GameObject vfx, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (vfx != null)
+        {
+            activeTeleportVFXs.Remove(vfx);
+            Destroy(vfx);
         }
     }
 

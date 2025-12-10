@@ -12,6 +12,7 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private Transform hitPoint;
     [SerializeField] private GameObject visualHit;
     [SerializeField] private GameObject groundIndicator;
+    [SerializeField] private GameObject hammerVFX;
 
     [Header("Estadisticas (fallback si no hay KronusStats)")]
     [Header("Vida")]
@@ -112,6 +113,7 @@ public class KronusEnemy : MonoBehaviour
     private float detectionTimer = 0f;
 
     private List<GameObject> activeEchoes = new List<GameObject>();
+    private List<GameObject> activeHammerVFXs = new List<GameObject>();
 
     private float idleTimer;
     private float idleInterval;
@@ -246,7 +248,11 @@ public class KronusEnemy : MonoBehaviour
         if (enemy != gameObject) return;
 
         isAttacking = false;
+
+        if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
+
         if (dashCoroutine != null) StopCoroutine(dashCoroutine);
+        StopAllCoroutines();
 
         for (int i = activeEchoes.Count - 1; i >= 0; i--)
         {
@@ -256,6 +262,12 @@ public class KronusEnemy : MonoBehaviour
             }
         }
         activeEchoes.Clear();
+
+        for (int i = activeHammerVFXs.Count - 1; i >= 0; i--)
+        {
+            if (activeHammerVFXs[i] != null) Destroy(activeHammerVFXs[i]);
+        }
+        activeHammerVFXs.Clear();
 
         if (agent != null)
         {
@@ -271,8 +283,6 @@ public class KronusEnemy : MonoBehaviour
                 agent.enabled = false;
             }
         }
-
-        if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
 
         this.enabled = false;
     }
@@ -842,6 +852,34 @@ public class KronusEnemy : MonoBehaviour
 
     public void PerformHammerSmash()
     {
+        Vector3 sampleBase = (hitPoint != null) ? hitPoint.position : transform.position;
+        Vector3 impactPos = sampleBase;
+        NavMeshHit navHit;
+
+        if (NavMesh.SamplePosition(sampleBase, out navHit, 3f, NavMesh.AllAreas))
+        {
+            impactPos = navHit.position;
+            impactPos.y += 0.01f;
+        }
+        else
+        {
+            RaycastHit hit;
+            if (Physics.Raycast(sampleBase + Vector3.up * 3f, Vector3.down, out hit, 6f, groundLayer))
+            {
+                impactPos = hit.point;
+                impactPos.y += 0.01f;
+            }
+        }
+
+        if (hammerVFX != null)
+        {
+            GameObject hammerVFXEffect = Instantiate(hammerVFX, impactPos, Quaternion.identity);
+
+            activeHammerVFXs.Add(hammerVFXEffect);
+
+            StartCoroutine(RemoveVFXFromListAfterDelay(hammerVFXEffect, 5.5f));
+        }
+
         if (hasHitPlayerThisDash) return;
 
         if (hitPoint == null || playerHealth == null)
@@ -889,6 +927,16 @@ public class KronusEnemy : MonoBehaviour
         }
 
         StartCoroutine(ShowGizmoCoroutine());
+    }
+
+    private IEnumerator RemoveVFXFromListAfterDelay(GameObject vfx, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (vfx != null)
+        {
+            activeHammerVFXs.Remove(vfx);
+            Destroy(vfx);
+        }
     }
 
     private void ExecuteAttack(GameObject target, float damageAmount)
