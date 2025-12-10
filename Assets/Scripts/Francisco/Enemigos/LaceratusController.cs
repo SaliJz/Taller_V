@@ -129,7 +129,7 @@ public class LaceratusController : MonoBehaviour
         animator = GetComponent<Animator>();
         enemyHealth = GetComponent<EnemyHealth>();
         knockbackHandler = GetComponent<EnemyKnockbackHandler>();
-        if (audioSource == null) audioSource = GetComponent<AudioSource>();
+        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
 
         if (agent != null)
         {
@@ -264,7 +264,7 @@ public class LaceratusController : MonoBehaviour
                     if (isInFury) audioSource.pitch = Random.Range(1.1f, 1.3f);
                     else audioSource.pitch = Random.Range(0.9f, 1.1f);
 
-                    audioSource.PlayOneShot(clipToPlay);
+                    audioSource.PlayOneShot(clipToPlay, 0.75f);
                     audioSource.pitch = 1f;
                 }
                 audioStepTimer = 0f;
@@ -625,13 +625,18 @@ public class LaceratusController : MonoBehaviour
         }
 
         float elapsed = 0f;
+        float jumpHeight = 1.5f;
 
         while (elapsed < furyJumpDuration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / furyJumpDuration;
 
-            transform.position = Vector3.Lerp(startPosition, targetPosition, t);
+            Vector3 currentPos = Vector3.Lerp(startPosition, targetPosition, t);
+            float heightOffset = Mathf.Sin(t * Mathf.PI) * jumpHeight;
+
+            currentPos.y += heightOffset;
+            transform.position = currentPos;
 
             yield return null;
         }
@@ -713,7 +718,7 @@ public class LaceratusController : MonoBehaviour
         {
             if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
             {
-                transform.position = hit.position;
+                transform.position = hit.position + Vector3.up * agent.baseOffset;
             }
         }
     }
