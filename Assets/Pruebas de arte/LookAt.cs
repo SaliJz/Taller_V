@@ -2,15 +2,33 @@ using UnityEngine;
 
 public class LookAt : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    [SerializeField] Transform Target;
+    [SerializeField] float MaxAngle;
+    [SerializeField] float MinAngle;
 
-    // Update is called once per frame
-    void Update()
+    private void LateUpdate()
     {
-        
+        if (Target == null)
+        {
+            Target = GameObject.FindGameObjectWithTag("Player").transform;
+        }
+
+        if (Target != null)
+        {
+            transform.LookAt(Target);
+
+            Vector3 e = transform.eulerAngles;
+
+            float x = e.x;
+
+            if(x > 180f)
+            {
+                x -= 360f;
+            }
+
+            x = Mathf.Clamp(x, MinAngle, MaxAngle);
+
+            transform.rotation = Quaternion.Euler(x, e.y, e.z);
+        }
     }
 }
