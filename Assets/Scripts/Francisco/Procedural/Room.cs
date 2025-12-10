@@ -16,6 +16,9 @@ public class Room : MonoBehaviour
     [Header("Connection Points")]
     public ConnectionPoint[] connectionPoints;
 
+    public AudioSource roomAudioSource;
+    public AudioClip openDoorClip;
+
     [Header("Room Properties")]
     public RoomType roomType = RoomType.Normal;
     public bool isStartRoom = false;
@@ -37,6 +40,15 @@ public class Room : MonoBehaviour
 
     private ConnectionPoint cachedEntrancePoint;
     private EnemyManager enemyManager;
+
+    private void Awake()
+    {
+        if (roomAudioSource == null) roomAudioSource = GetComponentInChildren<AudioSource>();
+        if (roomAudioSource == null)
+        {
+            Debug.LogWarning("No se encontró AudioSource en Room ni en sus elementos hijos.");
+        }
+    }
 
     private void Start()
     {
@@ -156,6 +168,11 @@ public class Room : MonoBehaviour
         if (animator == null) return;
 
         animator.SetBool("Open", true);
+
+        if (roomAudioSource != null && openDoorClip != null)
+        {
+            roomAudioSource.PlayOneShot(openDoorClip);
+        }
 
         if (doorColliders != null && doorIndex < doorColliders.Length)
         {

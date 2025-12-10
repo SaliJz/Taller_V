@@ -64,15 +64,33 @@ public class BloodKnightBoss : MonoBehaviour
 
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
+
+    [Space(5)]
     [SerializeField] private AudioClip damageReceivedSFX;
+
+    [Space(5)]
     [SerializeField] private AudioClip sodomaChargeSFX;
     [SerializeField] private AudioClip sodomaAttackSFX;
     [SerializeField] private AudioClip apocalipsisSlashSFX;
     [SerializeField] private AudioClip necioPecadorSummonSFX;
     [SerializeField] private AudioClip necioPecadorExplosionSFX;
     [SerializeField] private AudioClip chargeAbilitySFX;
+
+    [Space(5)]
     [SerializeField] private AudioClip stunSFX;
     [SerializeField] private AudioClip deathSFX;
+
+    [Header("Audio - Ambient & Movement")]
+    [SerializeField] private AudioSource ambientAudioSource;
+
+    [Space(5)]
+    [SerializeField] private AudioClip idleClip;
+    [SerializeField] private float idleInterval = 3.0f;
+    [SerializeField] private float idleIntervalVariance = 0.5f;
+
+    [Space(5)]
+    [SerializeField] private AudioClip movementClip;
+    [SerializeField] private float movementInterval = 0.45f;
 
     [Header("Debug Options")]
     [SerializeField] private bool showDebugGUI = false;
@@ -144,6 +162,8 @@ public class BloodKnightBoss : MonoBehaviour
         {
             bossAICoroutine = StartCoroutine(BossFlowSequence());
         }
+
+        StartCoroutine(AmbientSoundRoutine());
     }
 
     private void InitializeComponents()
@@ -170,8 +190,14 @@ public class BloodKnightBoss : MonoBehaviour
 
         if (audioSource == null)
         {
-            audioSource = GetComponent<AudioSource>();
-            if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource = GetComponentInChildren<AudioSource>();
+            if (audioSource == null) ReportDebug("Warning: No AudioSource found on Boss.", 2);
+        }
+
+        if (ambientAudioSource == null)
+        {
+            ambientAudioSource = GetComponentInChildren<AudioSource>();
+            if (ambientAudioSource == null) ReportDebug("Warning: No Ambient AudioSource found on Boss.", 2);
         }
 
         // Setup Camera Shake
@@ -229,6 +255,7 @@ public class BloodKnightBoss : MonoBehaviour
         CleanUpEffects();
 
         if (agent != null) agent.enabled = false;
+        if (ambientAudioSource != null) ambientAudioSource.Stop();
         if (animator != null) animator.SetTrigger(AnimID_Death);
 
         this.enabled = false;
@@ -241,6 +268,44 @@ public class BloodKnightBoss : MonoBehaviour
             if (instantiatedEffects[i] != null) Destroy(instantiatedEffects[i]);
         }
         instantiatedEffects.Clear();
+    }
+
+    private IEnumerator AmbientSoundRoutine()
+    {
+        while (currentHealth > 0)
+        {
+            bool isMoving = agent != null && agent.enabled && !agent.isStopped && agent.velocity.sqrMagnitude > 0.1f;
+
+            if (currentState == BossState.Stunned || currentState == BossState.Vulnerable || currentState == BossState.Attacking || currentState == BossState.Charging)
+            {
+                yield return null;
+                continue;
+            }
+
+            if (isMoving)
+            {
+                if (movementClip != null && ambientAudioSource != null)
+                {
+                    ambientAudioSource.pitch = Random.Range(0.9f, 1.1f);
+                    ambientAudioSource.PlayOneShot(movementClip, 0.5f);
+                }
+
+                float currentInterval = isInLowHealthPhase ? movementInterval * 0.7f : movementInterval;
+
+                yield return new WaitForSeconds(currentInterval);
+            }
+            else
+            {
+                if (idleClip != null && ambientAudioSource != null)
+                {
+                    ambientAudioSource.pitch = Random.Range(0.95f, 1.05f);
+                    ambientAudioSource.PlayOneShot(idleClip, 0.5f);
+                }
+
+                float waitTime = idleInterval + Random.Range(-idleIntervalVariance, idleIntervalVariance);
+                yield return new WaitForSeconds(Mathf.Max(0.5f, waitTime));
+            }
+        }
     }
 
     #region Main AI Loop (The Flow Chart)
@@ -256,7 +321,11 @@ public class BloodKnightBoss : MonoBehaviour
         {
             while (enemyHealth != null && enemyHealth.IsStunned)
             {
-                if (agent != null && agent.enabled) agent.isStopped = true;
+                if (agent != null && agent.enabled)
+                {
+                    agent.isStopped = true;
+                    agent.velocity = Vector3.zero;
+                }
                 yield return null;
             }
 
@@ -344,14 +413,21 @@ public class BloodKnightBoss : MonoBehaviour
             float dashCycleStart = Time.time;
 
             // 1. Persecución breve
-            agent.isStopped = false;
+            if (agent != null && agent.enabled)
+            {
+                agent.isStopped = false;
+            }
             if (animator != null) animator.SetBool(AnimID_Walking, true);
             agent.SetDestination(player.position);
 
             yield return new WaitForSeconds(0.25f);
 
             // 2. Preparar Dash
-            agent.isStopped = true;
+            if (agent != null && agent.enabled)
+            {
+                agent.isStopped = true;
+                agent.velocity = Vector3.zero;
+            }
             if (animator != null) animator.SetBool(AnimID_Walking, false);
 
             Vector3 targetPos = GetZigZagDashPosition();
@@ -421,7 +497,10 @@ public class BloodKnightBoss : MonoBehaviour
         ReportDebug("ETAPA 2: POSICIONAMIENTO", 1);
 
         float timer = 0f;
-        agent.isStopped = false;
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = false;
+        }
 
         if (animator != null) animator.SetBool(AnimID_Walking, true);
 
@@ -439,7 +518,11 @@ public class BloodKnightBoss : MonoBehaviour
             yield return null;
         }
 
-        agent.isStopped = true;
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = true;
+            agent.velocity = Vector3.zero;
+        }
 
         if (animator != null) animator.SetBool(AnimID_Walking, false);
     }
@@ -515,7 +598,12 @@ public class BloodKnightBoss : MonoBehaviour
         ReportDebug("ETAPA 4: NECIO PECADOR", 1);
 
         float phaseTimer = 0f;
-        agent.isStopped = false;
+
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = false;
+        }
+
         agent.speed = isInLowHealthPhase ? (moveSpeed * lowHPSpeedMultiplier * 0.8f) : (moveSpeed * 0.7f);
 
         float currentWarningTime = isInLowHealthPhase ? (necioPecadorWarningTime * 0.6f) : necioPecadorWarningTime;
@@ -569,7 +657,12 @@ public class BloodKnightBoss : MonoBehaviour
         }
 
         agent.speed = isInLowHealthPhase ? (moveSpeed * lowHPSpeedMultiplier) : moveSpeed;
-        agent.isStopped = true;
+
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = true;
+            agent.velocity = Vector3.zero;
+        }
 
         if (animator != null) animator.SetBool(AnimID_Walking, false);
 
@@ -587,7 +680,12 @@ public class BloodKnightBoss : MonoBehaviour
     {
         ReportDebug("EJECUTANDO EMBESTIDA DEL FORNIDO", 1);
         currentState = BossState.Charging;
-        agent.isStopped = true;
+
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = true;
+            agent.velocity = Vector3.zero;
+        }
 
         yield return new WaitForSeconds(1f);
 
