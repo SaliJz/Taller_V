@@ -16,6 +16,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private bool canDieAfterCooldown = true;
     [SerializeField] private float deathCooldown = 2f;
     [SerializeField] private bool canDestroy = true;
+    [SerializeField] private bool canBeStunned = true;
     [SerializeField] private UnityEvent onDeathEvent;
 
     [Header("UI - Sliders")]
@@ -483,6 +484,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     public void ApplyStun(float duration) 
     {
+        if (!canBeStunned) return;
+
         if (isStunned)
         {
             if (stunCoroutine != null) StopCoroutine(stunCoroutine);
