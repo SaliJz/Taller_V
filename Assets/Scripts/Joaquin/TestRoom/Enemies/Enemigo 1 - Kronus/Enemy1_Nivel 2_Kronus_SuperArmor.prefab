@@ -153,6 +153,7 @@ GameObject:
   - component: {fileID: 4677421999564378367}
   - component: {fileID: 1041189110680168577}
   - component: {fileID: 4767542334991479020}
+  - component: {fileID: 1551063518253346385}
   m_Layer: 0
   m_Name: Enemy1_GroundIndicator
   m_TagString: Untagged
@@ -251,6 +252,18 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!210 &1551063518253346385
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1572984990117336674}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -2
+  m_SortAtRoot: 0
 --- !u!1 &1618859159596345659
 GameObject:
   m_ObjectHideFlags: 0
@@ -1208,9 +1221,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   animator: {fileID: 0}
   stats: {fileID: 0}
-  hitPoint: {fileID: 5079518724385511064, guid: 18245ca924e3b8a4c9c8824096a1b684, type: 3}
-  visualHit: {fileID: 8063014219262701350, guid: 18245ca924e3b8a4c9c8824096a1b684, type: 3}
-  groundIndicator: {fileID: 6065361561720221346, guid: 18245ca924e3b8a4c9c8824096a1b684, type: 3}
+  hitPoint: {fileID: 5160053042055890633}
+  visualHit: {fileID: 7866821104695215484}
+  groundIndicator: {fileID: 1572984990117336674}
   hammerVFX: {fileID: 7988865868457753275, guid: 348baf286e46cdc43849c5eb3bd7c12d, type: 3}
   health: 40
   moveSpeed: 6
