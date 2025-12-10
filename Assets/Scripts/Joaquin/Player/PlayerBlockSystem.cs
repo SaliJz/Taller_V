@@ -37,6 +37,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     [SerializeField] private float durabilityDrainRate = 15.24f;
     [SerializeField, Range(0f, 1f)] private float minimumDurabilityToUse = 0.99f;
     [SerializeField] private float rechargeDelay = 2f;
+    [SerializeField] private float drainDelay = 0.2f;
 
     [Header("Counter Attack System")]
     [Tooltip("Prefab del proyectil que se dispara al soltar.")]
@@ -100,6 +101,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
     private Coroutine hideDurabilityCoroutine;
     private Coroutine durabilityRechargeCoroutine;
+    private Coroutine durabilityDrainCoroutine;
     private Coroutine stunCoroutine;
 
     private Vector2 movementInput;
@@ -158,9 +160,6 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     {
         if (blockingEnabled) UpdateUI();
         if (!blockingEnabled || !IsBlocking) return;
-
-        HandleActiveDrain();
-        if (!IsBlocking) return;
 
         movementInput = playerControls.Movement.Move.ReadValue<Vector2>();
         HandleRotationWhileBlocking();
@@ -266,6 +265,13 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
             isDurabilityRecharging = false;
         }
 
+        if (durabilityDrainCoroutine != null)
+        {
+            StopCoroutine(durabilityDrainCoroutine);
+        }
+
+        durabilityDrainCoroutine = StartCoroutine(DrainDurability());
+
         if (durabilityUIGroup != null) durabilityUIGroup.SetActive(true);
         if (blockVFX != null) blockVFX.SetActive(true);
         if (blockParticles != null) blockParticles.Play();
@@ -299,6 +305,12 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         if (durabilityRechargeCoroutine == null && currentDurability < maxDurability)
         {
             durabilityRechargeCoroutine = StartCoroutine(RechargeDurability());
+        }
+
+        if (durabilityDrainCoroutine != null)
+        {
+            StopCoroutine(durabilityDrainCoroutine);
+            durabilityDrainCoroutine = null;
         }
 
         if (durabilityUIGroup != null && !isStunned) HideDurabilityBar(hideDelay);
@@ -571,22 +583,28 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
     #region Durability Logic & UI
 
-    private void HandleActiveDrain()
+    private IEnumerator DrainDurability()
     {
-        if (durabilityDrainRate <= 0f) return;
+        yield return new WaitForSeconds(drainDelay);
 
-        float drainAmount = durabilityDrainRate * Time.deltaTime;
-
-        currentDurability -= drainAmount;
-
-        accumulatedDamage += drainAmount;
-
-        OnDurabilityChanged?.Invoke(GetDurabilityPercentage());
-
-        if (currentDurability <= 0f)
+        while (IsBlocking)
         {
-            currentDurability = 0f;
-            BreakBlock();
+            float drainAmount = durabilityDrainRate * Time.deltaTime;
+
+            currentDurability -= drainAmount;
+
+            accumulatedDamage += drainAmount;
+
+            OnDurabilityChanged?.Invoke(GetDurabilityPercentage());
+
+            if (currentDurability <= 0f)
+            {
+                currentDurability = 0f;
+                BreakBlock();
+                yield break;
+            }
+
+            yield return null;
         }
     }
 
