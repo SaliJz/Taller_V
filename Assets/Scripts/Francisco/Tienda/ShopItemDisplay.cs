@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Audio;
 using UnityEngine.InputSystem;
 using static ShopManager;
 
@@ -10,7 +9,6 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
     private ShopManager shopManager;
     private MerchantRoomManager merchantRoomManager;
     private PlayerControlls playerControls;
-    private InventoryUIManager inventoryUIManager;
 
     [Header("SFX Configuration")]
     [SerializeField] private AudioSource audioSource;
@@ -22,7 +20,6 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
     {
         shopManager = FindAnyObjectByType<ShopManager>();
         merchantRoomManager = GetComponentInParent<MerchantRoomManager>();
-        inventoryUIManager = FindAnyObjectByType<InventoryUIManager>();
 
         audioSource = merchantRoomManager.GetComponentInChildren<AudioSource>();
 
@@ -53,7 +50,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
         {
             shopManager.SetInteractionPromptActive(false);
             shopManager.LockAndDisplayItemDetails(null);
-            shopManager.UpdateCostBar(0);
+            shopManager.ResetCostBar(); 
         }
     }
 
@@ -95,10 +92,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
 
             if (shopManager != null)
             {
-                bool invOpen = (inventoryUIManager != null && inventoryUIManager.IsInventoryOpen);
-                bool showPrompt = !invOpen;
-
-                shopManager.SetInteractionPromptActive(showPrompt);
+                shopManager.SetInteractionPromptActive(true);
                 shopManager.LockAndDisplayItemDetails(shopItemData);
             }
         }
@@ -110,24 +104,13 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
 
         if (!other.CompareTag("Player")) return;
 
-        bool invOpen = (inventoryUIManager != null && inventoryUIManager.IsInventoryOpen);
-
         if (shopManager != null)
         {
-            bool shouldBeActive = !invOpen;
-            shopManager.SetInteractionPromptActive(shouldBeActive);
+            shopManager.SetInteractionPromptActive(true);
 
-            if (invOpen)
-            {
-                shopManager.UpdateCostBar(0);
-                shopManager.LockAndDisplayItemDetails(null);
-            }
-            else
-            {
-                float finalCost = shopManager.CalculateFinalCost(shopItemData.cost); 
-                shopManager.UpdateCostBar(finalCost);
-                shopManager.LockAndDisplayItemDetails(shopItemData);
-            }
+            float finalCost = shopManager.CalculateFinalCost(shopItemData.cost);
+            shopManager.UpdateCostBar(finalCost);
+            shopManager.LockAndDisplayItemDetails(shopItemData);
         }
     }
 
@@ -143,7 +126,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
             if (shopManager != null)
             {
                 shopManager.SetInteractionPromptActive(false);
-                shopManager.UpdateCostBar(0);
+                shopManager.ResetCostBar();
                 shopManager.LockAndDisplayItemDetails(null);
             }
         }
@@ -160,7 +143,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
             {
                 if (purchaseSuccessful)
                 {
-                    shopManager.UpdateCostBar(0);
+                    shopManager.ResetCostBar(); 
                 }
             }
 

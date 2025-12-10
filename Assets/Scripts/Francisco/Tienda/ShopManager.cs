@@ -38,6 +38,9 @@ public class ShopManager : MonoBehaviour
     public List<GameObject> shopItemPrefabs;
     public GameObject itemAppearanceEffectPrefab;
 
+    [Header("Cost Bar Positioning")]
+    [SerializeField] private RectTransform costBarRectTransform;
+
     [Header("UI References")]
     [SerializeField] private GameObject shopUIPanel;
     [SerializeField] private RectTransform uiPanelTransform;
@@ -541,20 +544,45 @@ public class ShopManager : MonoBehaviour
         if (playerHealth == null || costBar == null || itemNameText == null || itemCostText == null) return;
 
         float currentHealth = playerHealth.GetCurrentHealth();
+        float maxHealth = playerHealth.GetMaxHealth();
         float finalCost = CalculateFinalCost(cost);
-        float fillAmount = 1f;
 
-        if (finalCost > 0)
+        float healthPercentage = Mathf.Clamp01(currentHealth / maxHealth);
+        float costPercentage = finalCost / maxHealth;
+
+        if (costBarRectTransform != null)
         {
-            fillAmount = Mathf.Clamp01(currentHealth / finalCost);
+            Vector2 currentAnchorMin = costBarRectTransform.anchorMin;
+            Vector2 currentAnchorMax = costBarRectTransform.anchorMax;
+
+            if (finalCost <= currentHealth)
+            {
+                float startPosition = healthPercentage - costPercentage;
+                float endPosition = healthPercentage;
+
+                costBarRectTransform.anchorMin = new Vector2(startPosition, currentAnchorMin.y);
+                costBarRectTransform.anchorMax = new Vector2(endPosition, currentAnchorMax.y);
+
+                costBar.fillOrigin = (int)Image.Origin180.Right;
+                costBar.fillAmount = 1f; 
+            }
+            else
+            {
+                costBarRectTransform.anchorMin = new Vector2(0f, currentAnchorMin.y);
+                costBarRectTransform.anchorMax = new Vector2(healthPercentage, currentAnchorMax.y);
+
+                costBar.fillOrigin = (int)Image.Origin180.Left;
+                costBar.fillAmount = 1f; 
+            }
         }
 
-        costBar.fillAmount = fillAmount;
-        costBar.color = (currentHealth > finalCost) ? affordableColor : unaffordableColor;
+        costBar.color = (currentHealth >= finalCost) ? affordableColor : unaffordableColor;
 
-        if (currentHealth > finalCost)
+        if (currentHealth >= finalCost)
         {
-            if (currentHealth <= lowHealthThreshold && finalCost > 0)
+            float healthAfterPurchase = currentHealth - finalCost;
+
+            if (healthAfterPurchase <= lowHealthThreshold && finalCost > 0)
             {
                 if (!lowHealthWarningActive)
                 {
@@ -735,6 +763,30 @@ public class ShopManager : MonoBehaviour
                     }
                 }
             }
+        }
+    }
+
+    public void ResetCostBar()
+    {
+        if (costBar == null) return;
+
+        costBar.fillAmount = 0f;
+        costBar.color = affordableColor;
+
+        if (costBarRectTransform != null)
+        {
+            Vector2 currentAnchorMin = costBarRectTransform.anchorMin;
+            Vector2 currentAnchorMax = costBarRectTransform.anchorMax;
+
+            costBarRectTransform.anchorMin = new Vector2(0f, currentAnchorMin.y);
+            costBarRectTransform.anchorMax = new Vector2(0f, currentAnchorMax.y);
+        }
+
+        if (lowHealthWarningActive)
+        {
+            if (itemNameText != null) itemNameText.color = Color.white;
+            if (itemCostText != null) itemCostText.color = Color.white;
+            lowHealthWarningActive = false;
         }
     }
 
