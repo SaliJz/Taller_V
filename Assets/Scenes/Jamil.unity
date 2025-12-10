@@ -1080,6 +1080,11 @@ MonoBehaviour:
   enemyLayers:
     serializedVersion: 2
     m_Bits: 128
+  audioSource: {fileID: 0}
+  hitMeleeClip: {fileID: 0}
+  hitRangedClip: {fileID: 0}
+  debrisSpawnClip: {fileID: 0}
+  pitchRandomness: 0.1
   debugMode: 0
 --- !u!208 &171227482
 NavMeshObstacle:
@@ -7511,6 +7516,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 3158206734398763717, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: elderShieldSpeed
+      value: 20
+      objectReference: {fileID: 0}
     - target: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
