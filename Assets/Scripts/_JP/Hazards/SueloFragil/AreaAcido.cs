@@ -61,8 +61,18 @@ public class AreaAcido : MonoBehaviour
     // Guarda la referencia de la coroutine de escalado para poder detenerla sin afectar otras coroutines
     private Coroutine scaleCoroutine;
 
+    // AudioSource localizado en el mismo GameObject (si existe)
+    private AudioSource localAudioSource;
+
     private void Start()
     {
+        // Intentar obtener AudioSource en el mismo GameObject
+        localAudioSource = GetComponent<AudioSource>();
+        if (localAudioSource == null)
+        {
+            Debug.LogWarning($"[AreaAcido] No se encontró AudioSource en '{gameObject.name}'. Usará PlayClipAtPoint como fallback.");
+        }
+
         // Alineado de posición/rotación local si fue instanciado como hijo en runtime
         if (Application.isPlaying && alignToParentOnStart && transform.parent != null)
         {
@@ -134,7 +144,19 @@ public class AreaAcido : MonoBehaviour
         Coroutine c = StartCoroutine(RutinaAplicarEfectos(go));
         coroutinesPorJugador.Add(go, c);
 
-        if (sfxEntrar != null) AudioSource.PlayClipAtPoint(sfxEntrar, transform.position);
+        // Reproducir SFX de entrada usando el AudioSource local si existe, si no fallback a PlayClipAtPoint
+        if (sfxEntrar != null)
+        {
+            if (localAudioSource != null)
+            {
+                localAudioSource.PlayOneShot(sfxEntrar);
+            }
+            else
+            {
+                AudioSource.PlayClipAtPoint(sfxEntrar, transform.position);
+            }
+        }
+
         if (psEnter != null) psEnter.Play();
     }
 
@@ -167,7 +189,20 @@ public class AreaAcido : MonoBehaviour
             {
                 ph.TakeDamage(dps * tickInterval);
             }
-            if (sfxDanoTick != null) AudioSource.PlayClipAtPoint(sfxDanoTick, transform.position);
+
+            // Reproducir SFX de daño por tick usando AudioSource local si existe, si no fallback a PlayClipAtPoint
+            if (sfxDanoTick != null)
+            {
+                if (localAudioSource != null)
+                {
+                    localAudioSource.PlayOneShot(sfxDanoTick);
+                }
+                else
+                {
+                    AudioSource.PlayClipAtPoint(sfxDanoTick, transform.position);
+                }
+            }
+
             yield return new WaitForSeconds(tickInterval);
         }
     }
