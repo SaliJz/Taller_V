@@ -65,6 +65,16 @@ public class SaveLoadManager : MonoBehaviour
         }
     }
 
+    public void StartTutorial(int slotIndex)
+    {
+        currentActiveSlot = slotIndex;
+
+        if (SceneController.Instance != null)
+        {
+            SceneController.Instance.LoadSceneByName(INTRO_SCENE);
+        }
+    }
+
     public void CompleteTutorialAndSave()
     {
         if (currentActiveSlot == -1)

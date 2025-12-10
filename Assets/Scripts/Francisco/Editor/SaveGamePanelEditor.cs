@@ -6,8 +6,9 @@ public class SaveGamePanelEditor : Editor
 {
     private SerializedProperty displayTypeProp;
     private SerializedProperty canvasGroupProp;
-    private SerializedProperty saveSlotButtonsProp;
-    private SerializedProperty deleteButtonsProp; 
+    private SerializedProperty playButtonProp;
+    private SerializedProperty tutorialButtonProp;
+    private SerializedProperty playButtonTextProp;
     private SerializedProperty openCloseDurationProp;
     private SerializedProperty openEaseProp;
     private SerializedProperty closeEaseProp;
@@ -19,8 +20,9 @@ public class SaveGamePanelEditor : Editor
     {
         displayTypeProp = serializedObject.FindProperty("displayType");
         canvasGroupProp = serializedObject.FindProperty("canvasGroup");
-        saveSlotButtonsProp = serializedObject.FindProperty("saveSlotButtons");
-        deleteButtonsProp = serializedObject.FindProperty("deleteButtons"); 
+        playButtonProp = serializedObject.FindProperty("playButton");
+        tutorialButtonProp = serializedObject.FindProperty("tutorialButton");
+        playButtonTextProp = serializedObject.FindProperty("playButtonText");
         openCloseDurationProp = serializedObject.FindProperty("openCloseDuration");
         openEaseProp = serializedObject.FindProperty("openEase");
         closeEaseProp = serializedObject.FindProperty("closeEase");
@@ -40,12 +42,10 @@ public class SaveGamePanelEditor : Editor
         EditorGUILayout.PropertyField(canvasGroupProp, new GUIContent("Canvas Group Ref"));
 
         EditorGUILayout.Space();
-        EditorGUILayout.LabelField("Save Slot Buttons", EditorStyles.boldLabel);
-        EditorGUILayout.PropertyField(saveSlotButtonsProp, true);
-
-        EditorGUILayout.Space();
-        EditorGUILayout.LabelField("Delete Buttons", EditorStyles.boldLabel); 
-        EditorGUILayout.PropertyField(deleteButtonsProp, true);
+        EditorGUILayout.LabelField("Main Buttons", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(playButtonProp, new GUIContent("Play Button"));
+        EditorGUILayout.PropertyField(tutorialButtonProp, new GUIContent("Tutorial Button"));
+        EditorGUILayout.PropertyField(playButtonTextProp, new GUIContent("Play Button Text"));
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("DOTween Settings", EditorStyles.boldLabel);

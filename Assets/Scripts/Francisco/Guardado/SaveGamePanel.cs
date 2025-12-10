@@ -1,9 +1,7 @@
 using DG.Tweening;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class SaveGamePanel : MonoBehaviour
@@ -16,11 +14,10 @@ public class SaveGamePanel : MonoBehaviour
     [Header("Canvas Group Reference")]
     [SerializeField] private CanvasGroup canvasGroup;
 
-    [Header("Save Slot Buttons")]
-    [SerializeField] private List<Button> saveSlotButtons;
-
-    [Header("Delete Buttons")]
-    [SerializeField] private List<GameObject> deleteButtons;
+    [Header("Main Buttons")]
+    [SerializeField] private Button playButton;
+    [SerializeField] private Button tutorialButton;
+    [SerializeField] private TextMeshProUGUI playButtonText;
 
     [Header("DOTween Settings")]
     [SerializeField] private float openCloseDuration = 0.3f;
@@ -35,6 +32,7 @@ public class SaveGamePanel : MonoBehaviour
     [SerializeField] private GameObject firstSelectedButton;
 
     private bool isPanelOpen = false;
+    private const int DEFAULT_SLOT = 1;
 
     private void Awake()
     {
@@ -52,57 +50,74 @@ public class SaveGamePanel : MonoBehaviour
         canvasGroup.blocksRaycasts = false;
         canvasGroup.interactable = false;
 
-        SetupSlotButtons();
+        SetupButtons();
     }
 
-    private void SetupSlotButtons()
+    private void SetupButtons()
     {
-        if (saveSlotButtons.Count != deleteButtons.Count)
+        if (playButton != null)
         {
-            Debug.LogError("[SaveGamePanel] Los arrays de 'Save Slot Buttons' y 'Delete Buttons' deben tener el mismo tamaño.");
-            return;
+            playButton.onClick.RemoveAllListeners();
+            playButton.onClick.AddListener(OnPlayButtonClicked);
         }
 
-        for (int i = 0; i < saveSlotButtons.Count; i++)
+        if (tutorialButton != null)
         {
-            int slotIndex = i + 1;
-            Button slotButton = saveSlotButtons[i];
-            GameObject deleteGameObject = deleteButtons[i];
+            tutorialButton.onClick.RemoveAllListeners();
+            tutorialButton.onClick.AddListener(OnTutorialButtonClicked);
+        }
 
-            slotButton.onClick.RemoveAllListeners();
-            slotButton.onClick.AddListener(() => OnSlotSelected(slotIndex));
+        bool hasCompletedTutorial = false;
 
-            Button deleteButton = deleteGameObject.GetComponent<Button>();
-            if (deleteButton != null)
+        if (SaveLoadManager.Instance != null && SaveLoadManager.Instance.DoesSlotExist(DEFAULT_SLOT))
+        {
+            SaveData data = SaveLoadManager.Instance.LoadGame(DEFAULT_SLOT);
+            hasCompletedTutorial = data.hasPassedTutorial;
+        }
+
+        if (hasCompletedTutorial)
+        {
+            if (playButtonText != null)
             {
-                deleteButton.onClick.RemoveAllListeners();
-                deleteButton.onClick.AddListener(() => HandleSlotDeletion(slotIndex));
+                playButtonText.text = "Jugar";
             }
 
-            bool slotExists = SaveLoadManager.Instance != null && SaveLoadManager.Instance.DoesSlotExist(slotIndex);
-
-            if (slotExists)
+            if (tutorialButton != null)
             {
-                slotButton.GetComponentInChildren<TextMeshProUGUI>().text = $"Slot {slotIndex}: Partida Guardada";
-                deleteGameObject.SetActive(true);
+                tutorialButton.gameObject.SetActive(true);
             }
-            else
+        }
+        else
+        {
+            if (playButtonText != null)
             {
-                slotButton.GetComponentInChildren<TextMeshProUGUI>().text = $"Slot {slotIndex}: Nueva Partida";
-                deleteGameObject.SetActive(false);
+                playButtonText.text = "Jugar";
+            }
+
+            if (tutorialButton != null)
+            {
+                tutorialButton.gameObject.SetActive(false);
             }
         }
     }
 
-    private void OnSlotSelected(int slotIndex)
+    private void OnPlayButtonClicked()
     {
         if (SaveLoadManager.Instance != null)
         {
-            FadeOutAndLoad(slotIndex);
+            FadeOutAndLoad(DEFAULT_SLOT, false);
         }
     }
 
-    private void FadeOutAndLoad(int slotIndex)
+    private void OnTutorialButtonClicked()
+    {
+        if (SaveLoadManager.Instance != null)
+        {
+            FadeOutAndLoad(DEFAULT_SLOT, true);
+        }
+    }
+
+    private void FadeOutAndLoad(int slotIndex, bool forceTutorial)
     {
         if (!isPanelOpen) return;
         isPanelOpen = false;
@@ -119,40 +134,13 @@ public class SaveGamePanel : MonoBehaviour
 
         if (SaveLoadManager.Instance != null)
         {
-            SaveLoadManager.Instance.StartGameFromSlot(slotIndex);
-        }
-    }
-
-    public void HandleSlotDeletion(int slotIndex)
-    {
-        if (SaveLoadManager.Instance != null)
-        {
-            GameObject focusedObject = EventSystem.current.currentSelectedGameObject;
-
-            SaveLoadManager.Instance.DeleteGameSlot(slotIndex);
-
-            SetupSlotButtons();
-
-            if (Gamepad.current != null)
+            if (forceTutorial)
             {
-                int arrayIndex = slotIndex - 1;
-
-                if (arrayIndex >= 0 && arrayIndex < saveSlotButtons.Count)
-                {
-                    Button targetButton = saveSlotButtons[arrayIndex];
-
-                    if (targetButton != null && targetButton.gameObject.activeInHierarchy)
-                    {
-                        EventSystem.current.SetSelectedGameObject(targetButton.gameObject);
-                    }
-                    else
-                    {
-                        if (firstSelectedButton != null)
-                        {
-                            EventSystem.current.SetSelectedGameObject(firstSelectedButton);
-                        }
-                    }
-                }
+                SaveLoadManager.Instance.StartTutorial(slotIndex);
+            }
+            else
+            {
+                SaveLoadManager.Instance.StartGameFromSlot(slotIndex);
             }
         }
     }
@@ -162,7 +150,7 @@ public class SaveGamePanel : MonoBehaviour
         if (isPanelOpen) return;
         isPanelOpen = true;
 
-        SetupSlotButtons();
+        SetupButtons();
 
         canvasGroup.blocksRaycasts = true;
         canvasGroup.interactable = true;
@@ -181,9 +169,11 @@ public class SaveGamePanel : MonoBehaviour
             canvasGroup.alpha = 1f;
         }
 
-        if (firstSelectedButton != null)
+        GameObject buttonToFocus = firstSelectedButton != null ? firstSelectedButton : (playButton != null ? playButton.gameObject : null);
+
+        if (buttonToFocus != null)
         {
-            EventSystem.current.SetSelectedGameObject(firstSelectedButton);
+            EventSystem.current.SetSelectedGameObject(buttonToFocus);
         }
     }
 
