@@ -9575,6 +9575,7 @@ GameObject:
   - component: {fileID: 1137419807}
   - component: {fileID: 1137419806}
   - component: {fileID: 1137419808}
+  - component: {fileID: 1137419809}
   m_Layer: 5
   m_Name: Button
   m_TagString: Untagged
@@ -9657,8 +9658,8 @@ MonoBehaviour:
     m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 271469990}
-    m_SelectOnLeft: {fileID: 0}
-    m_SelectOnRight: {fileID: 1034005212}
+    m_SelectOnLeft: {fileID: 1137419808}
+    m_SelectOnRight: {fileID: 1413611211}
   m_Transition: 1
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -9684,6 +9685,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1137419809
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1137419804}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f80d588b58ac38842a5600b4fdc7753b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  uiAudioSource: {fileID: 1841858257}
+  selectionClip: {fileID: 8300000, guid: a57a668027a859b4fb0dbd3d54145015, type: 3}
 --- !u!1 &1146576706
 GameObject:
   m_ObjectHideFlags: 0
@@ -10784,6 +10799,7 @@ GameObject:
   - component: {fileID: 1413611210}
   - component: {fileID: 1413611209}
   - component: {fileID: 1413611211}
+  - component: {fileID: 1413611212}
   m_Layer: 5
   m_Name: Button
   m_TagString: Untagged
@@ -10866,8 +10882,8 @@ MonoBehaviour:
     m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 271469990}
-    m_SelectOnLeft: {fileID: 0}
-    m_SelectOnRight: {fileID: 1034005212}
+    m_SelectOnLeft: {fileID: 1137419808}
+    m_SelectOnRight: {fileID: 1413611211}
   m_Transition: 1
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -10893,6 +10909,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1413611212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1413611207}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f80d588b58ac38842a5600b4fdc7753b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  uiAudioSource: {fileID: 1841858257}
+  selectionClip: {fileID: 8300000, guid: a57a668027a859b4fb0dbd3d54145015, type: 3}
 --- !u!1 &1413754463
 GameObject:
   m_ObjectHideFlags: 0
