@@ -161,7 +161,7 @@ MonoBehaviour:
   idleSFX: {fileID: 0}
   runSFX: {fileID: 8300000, guid: 7e27503bd7db8524eb0e3a24698e241b, type: 3}
   attackSFX: {fileID: 8300000, guid: 8a53138149e6e884aa70513502c0bac5, type: 3}
-  blockSFX: {fileID: 0}
+  blockSFX: {fileID: 8300000, guid: 687c4fa5aa05b324898c6bef92203d73, type: 3}
   deathSFX: {fileID: 8300000, guid: 6c142bb02cfeab74dbfdca3bfc3ae64c, type: 3}
   bondActivateSFX: {fileID: 8300000, guid: 196c75cca7d4d9645af62fef7e28c7aa, type: 3}
   bondRegenSFX: {fileID: 8300000, guid: 814347c750e0bfd4094a2f5956077ff8, type: 3}
@@ -184,6 +184,7 @@ MonoBehaviour:
   canDieAfterCooldown: 1
   deathCooldown: 0.5
   canDestroy: 1
+  canBeStunned: 1
   onDeathEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -767,7 +768,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: -1
   m_TargetDisplay: 0
 --- !u!114 &5073426021179532360
 MonoBehaviour:

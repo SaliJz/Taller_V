@@ -319,7 +319,11 @@ public class AstarothController : MonoBehaviour
         if (_enemyHealth != null && _enemyHealth.IsStunned)
         {
             Debug.Log("<color=yellow>[Astaroth] Stunned - Halting actions.</color>");
-            if (_navMeshAgent != null && _navMeshAgent.enabled) _navMeshAgent.isStopped = true;
+            if (_navMeshAgent != null && _navMeshAgent.enabled)
+            {
+                _navMeshAgent.isStopped = true;
+                _navMeshAgent.velocity = Vector3.zero;
+            }
             return;
         }
 

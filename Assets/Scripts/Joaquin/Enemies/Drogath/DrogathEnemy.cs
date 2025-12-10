@@ -258,7 +258,7 @@ public class DrogathEnemy : MonoBehaviour
                 if (audioSource != null && runSFX != null)
                 {
                     audioSource.pitch = Random.Range(0.9f, 1.05f);
-                    audioSource.PlayOneShot(runSFX, 0.25f);
+                    audioSource.PlayOneShot(runSFX, 0.35f);
                     audioSource.pitch = 1f;
                 }
                 stepTimer = 0f;
