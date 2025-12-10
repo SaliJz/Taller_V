@@ -1566,7 +1566,7 @@ MonoBehaviour:
   visualHit: {fileID: 963048917619979615}
   groundIndicator: {fileID: 5630910583302828604}
   hammerVFX: {fileID: 7988865868457753275, guid: c197e31198cf9a54591ea203463c4551, type: 3}
-  health: 30
+  health: 25
   moveSpeed: 6
   dashSpeedMultiplier: 5
   dashDuration: 1
@@ -1578,7 +1578,7 @@ MonoBehaviour:
   cooldownMedium: 1.6
   cooldownLong: 2.2
   isPercentageDmg: 0
-  attackCycleCooldown: 2
+  attackCycleCooldown: 2.2
   attackDamage: 15
   attackDamagePercentage: 0.2
   attackRadius: 2
@@ -1651,8 +1651,8 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeathByMelee: 0.75
-  lifestealAmountOnDeathByDistance: 0.5
+  lifestealAmountOnDeathByMelee: 5
+  lifestealAmountOnDeathByDistance: 2.5
   toughnessSystem: {fileID: 1367704949242477135}
   deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   deathVFXOffset: {x: 0, y: 1, z: 0}

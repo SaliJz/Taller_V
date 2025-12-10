@@ -789,7 +789,7 @@ public partial class PlayerStatsManager : MonoBehaviour
             case LifeStage.Adult:
                 Debug.Log("[PlayerStatsManager] Etapa Adulto: +10% a todas las stats de combate.");
                 ApplyLifeStageMod(StatType.MoveSpeed, -0.05f);
-                ApplyLifeStageMod(StatType.MeleeAttackSpeed, -0.3f);
+                ApplyLifeStageMod(StatType.MeleeAttackSpeed, -0.25f);
                 ApplyLifeStageMod(StatType.MeleeAttackDamage, 0.6f);
                 ApplyLifeStageMod(StatType.ShieldSpeed, 0f);
                 ApplyLifeStageMod(StatType.ShieldAttackDamage, 0f);
@@ -798,7 +798,7 @@ public partial class PlayerStatsManager : MonoBehaviour
             case LifeStage.Elder:
                 Debug.Log("[PlayerStatsManager] Etapa Anciano: +20% a todas las stats de combate.");
                 ApplyLifeStageMod(StatType.MoveSpeed, -0.1f);
-                ApplyLifeStageMod(StatType.MeleeAttackSpeed, -0.45f);
+                ApplyLifeStageMod(StatType.MeleeAttackSpeed, -0.35f);
                 ApplyLifeStageMod(StatType.MeleeAttackDamage,1.8f);
                 ApplyLifeStageMod(StatType.ShieldSpeed, 0f);
                 ApplyLifeStageMod(StatType.ShieldAttackDamage, 0f);
