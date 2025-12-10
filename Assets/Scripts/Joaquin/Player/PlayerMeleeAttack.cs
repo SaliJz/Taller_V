@@ -991,8 +991,14 @@ public class PlayerMeleeAttack : MonoBehaviour
                 MeatPillar meatPillar = enemy.GetComponent<MeatPillar>();
                 if (meatPillar != null)
                 {
-                    meatPillar.TakeDamage();
+                    meatPillar.TakeDamage(AttackDamageType.Melee);
                 }
+            }
+
+            ExplosiveHead explosiveHead = enemy.GetComponent<ExplosiveHead>();
+            if (explosiveHead != null)
+            {
+                explosiveHead.StartPriming(true);
             }
 
             CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, true);

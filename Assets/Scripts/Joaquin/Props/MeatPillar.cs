@@ -38,6 +38,13 @@ public class MeatPillar : MonoBehaviour
     [Tooltip("Layers de los enemigos que recibirán daño por los escombros.")]
     [SerializeField] private LayerMask enemyLayers;
 
+    [Header("Configuración de SFX")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip hitMeleeClip;
+    [SerializeField] private AudioClip hitRangedClip;
+    [SerializeField] private AudioClip debrisSpawnClip;
+    [SerializeField] private float pitchRandomness = 0.1f;
+
     [Header("Configuración Adicional")]
     [SerializeField] private bool debugMode = false;
 
@@ -47,6 +54,8 @@ public class MeatPillar : MonoBehaviour
     {
         currentHits = 0;
 
+        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
+
         if (innerSpawnRadius >= impactRadius)
         {
             impactRadius = innerSpawnRadius + 0.5f;
@@ -54,9 +63,23 @@ public class MeatPillar : MonoBehaviour
         }
     }
 
-    public void TakeDamage()
+    public void TakeDamage(AttackDamageType damageType = AttackDamageType.Melee)
     {
+        PlayHitSound(damageType);
         HitPillar();
+    }
+
+    private void PlayHitSound(AttackDamageType damageType)
+    {
+        if (audioSource == null) return;
+
+        AudioClip clipToPlay = (damageType == AttackDamageType.Ranged) ? hitRangedClip : hitMeleeClip;
+
+        if (clipToPlay != null)
+        {
+            audioSource.pitch = 1f + Random.Range(-pitchRandomness, pitchRandomness);
+            audioSource.PlayOneShot(clipToPlay);
+        }
     }
 
     private void HitPillar()
@@ -84,6 +107,11 @@ public class MeatPillar : MonoBehaviour
 
     private void SpawnDebris()
     {
+        if (audioSource != null && debrisSpawnClip != null)
+        {
+            audioSource.PlayOneShot(debrisSpawnClip);
+        }
+
         if (meatPiecePrefabs == null || meatPiecePrefabs.Count == 0) return;
 
         int piecesToSpawn = Random.Range(minPiecesPerHit, maxPiecesPerHit + 1); // +1 porque el rango es exclusivo en el máximo
@@ -155,6 +183,11 @@ public class MeatPillar : MonoBehaviour
 
     private void BreakPillar()
     {
+        if (audioSource != null && debrisSpawnClip != null)
+        {
+            audioSource.PlayOneShot(debrisSpawnClip);
+        }
+
         isDestroyed = true;
 
         if (finalExplosionPrefab != null)

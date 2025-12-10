@@ -320,7 +320,7 @@ public class Shield : MonoBehaviour
             MeatPillar meatPillar = enemy.GetComponent<MeatPillar>();
             if (meatPillar != null)
             {
-                meatPillar.TakeDamage();
+                meatPillar.TakeDamage(AttackDamageType.Ranged);
             }
 
             ExplosiveHead explosiveHead = enemy.GetComponent<ExplosiveHead>();

@@ -4,6 +4,7 @@ public class PlayerAudioController : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private AudioSource mainAudioSource;
+    [SerializeField] private AudioSource footstepsAudioSource;
 
     [Header("Damage SFX Configuration")]
     [SerializeField] private AudioClip damageClip;
@@ -96,9 +97,15 @@ public class PlayerAudioController : MonoBehaviour
         if (mainAudioSource == null)
         {
             mainAudioSource = GetComponentInChildren<AudioSource>();
-            if (mainAudioSource == null)
-                Debug.LogError($"{name}: No se encontró AudioSource hijo.");
+            if (mainAudioSource == null) Debug.LogError($"{name}: No se encontró AudioSource hijo.");
         }
+
+        if (footstepsAudioSource == null)
+        {
+            footstepsAudioSource = GetComponentInChildren<AudioSource>();
+            if (footstepsAudioSource == null) Debug.LogError($"{name}: No se encontró AudioSource hijo.");
+        }
+
     }
 
     public void PlayDamageSound()
@@ -133,7 +140,21 @@ public class PlayerAudioController : MonoBehaviour
                 return;
         }
 
-        PlayOneShotInternal(clipToPlay, stepVolume, stepPitch, useStepPitchVariance, stepPitchVariance);
+        if (clipToPlay != null && footstepsAudioSource != null)
+        {
+            if (useStepPitchVariance) footstepsAudioSource.pitch = stepPitch + Random.Range(-stepPitchVariance, stepPitchVariance);
+            else footstepsAudioSource.pitch = stepPitch;
+
+            footstepsAudioSource.PlayOneShot(clipToPlay, stepVolume);
+        }
+    }
+
+    public void StopFootsteps()
+    {
+        if (footstepsAudioSource != null && footstepsAudioSource.isPlaying)
+        {
+            footstepsAudioSource.Stop();
+        }
     }
 
     public void PlayDashSound()

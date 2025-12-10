@@ -298,7 +298,19 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         bool isMoving = hasInput && timeIsRunning;
 
         if (playerAnimator != null) playerAnimator.SetBool("Running", isMoving);
-        if (playerAudioController != null && isMoving) HandleFootstepsTimer();
+
+        if (playerAudioController != null)
+        {
+            if (isMoving && controller.isGrounded)
+            {
+                HandleFootstepsTimer();
+            }
+            else
+            {
+                playerAudioController.StopFootsteps();
+                stepTimer = 0f;
+            }
+        }
 
         if (timeIsRunning)
         {
@@ -321,28 +333,16 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     private void HandleFootstepsTimer()
     {
-        bool isMoving = currentInputVector.sqrMagnitude > 0.01f; // O usa tu variable isMoving
+        stepTimer -= Time.deltaTime;
 
-        if (isMoving && controller.isGrounded) // Solo suena si se mueve y pisa suelo
+        if (stepTimer <= 0f)
         {
-            stepTimer -= Time.deltaTime;
-
-            if (stepTimer <= 0f)
+            if (playerAudioController != null)
             {
-                // Reproducir sonido
-                if (playerAudioController != null)
-                {
-                    playerAudioController.PlayStepSound(level);
-                }
-
-                // Reiniciar timer
-                stepTimer = stepInterval;
+                playerAudioController.PlayStepSound(level);
             }
-        }
-        else
-        {
-            // Reiniciar timer para que suene inmediatamente al empezar a caminar de nuevo
-            stepTimer = 0f;
+
+            stepTimer = stepInterval;
         }
     }
 

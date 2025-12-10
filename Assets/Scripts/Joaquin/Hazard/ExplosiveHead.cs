@@ -192,7 +192,7 @@ public class ExplosiveHead : MonoBehaviour
     {
         currentState = HazardState.Priming;
         primingTimeLeft = primingDuration;
-        PlayAudio(screamSound);
+        PlayAudio(screamSound, 0.85f);
 
         float elapsed = 0f;
 
@@ -304,7 +304,7 @@ public class ExplosiveHead : MonoBehaviour
             if (vfxInstance != null) Destroy(vfxInstance.gameObject, 0.75f);
         }
 
-        PlayAudio(explosionSound);
+        PlayAudio(explosionSound, 1f);
         ResetVisuals();
         if (visuals != null) visuals.SetActive(false);
 
@@ -346,9 +346,9 @@ public class ExplosiveHead : MonoBehaviour
         }
     }
 
-    private void PlayAudio(AudioClip clip)
+    private void PlayAudio(AudioClip clip, float volume)
     {
-        if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
+        if (audioSource != null && clip != null) audioSource.PlayOneShot(clip, volume);
     }
 
     /// <summary>
