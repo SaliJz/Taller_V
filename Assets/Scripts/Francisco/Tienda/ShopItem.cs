@@ -125,7 +125,7 @@ public class ShopItem : ScriptableObject
 
         if (effect.amount == 0f)
         {
-            return $"<color=#A0A0A0>0.0 a {GetStatTranslation(effect.type)}</color>";
+            return $"<color=#A0A0A0>0.0 en {GetStatTranslation(effect.type)}</color>";
         }
 
         bool isInverse = IsInverseStat(effect.type);
@@ -154,7 +154,7 @@ public class ShopItem : ScriptableObject
 
         string statName = GetStatTranslation(effect.type);
 
-        return $"{colorTag}{amountString} a {statName}</color>";
+        return $"{colorTag}{amountString} {statName}</color>";
     }
 
     public string GetStatTranslation(StatType statType)
@@ -166,65 +166,65 @@ public class ShopItem : ScriptableObject
             case StatType.DamageTaken:
                 return "Daño Recibido";
             case StatType.HealthDrainAmount:
-                return "Drenaje de Vida (PS)";
+                return "Drenaje de Vida";
 
             case StatType.MoveSpeed:
                 return "Velocidad de Movimiento";
             case StatType.Gravity:
                 return "Gravedad";
             case StatType.DashRangeMultiplier:
-                return "Alcance de Dash";
+                return "Alcance del Dash";
             case StatType.DashCooldownPost:
-                return "Enfriamiento de Dash";
+                return "Enfriamiento del Dash";
             case StatType.KnockbackReceived:
                 return "Empuje Recibido";
             case StatType.StaminaConsumption:
                 return "Consumo de Aguante/Estamina";
 
             case StatType.AttackDamage:
-                return "Daño General de Ataque";
+                return "Daño a Melee y Distancia";
             case StatType.AttackSpeed:
-                return "Velocidad de Ataque General";
+                return "Velocidad de Ataque a Melee y Distancia";
             case StatType.MeleeAttackDamage:
-                return "Daño C/Cuerpo";
+                return "Daño a Melee";
             case StatType.MeleeAttackSpeed:
-                return "Velocidad de Ataque C/Cuerpo";
+                return "Velocidad de Ataque a Melee";
             case StatType.MeleeRadius:
-                return "Radio de Ataque C/Cuerpo";
+                return "Radio de Ataque Cicular a Melee";
             case StatType.MeleeComboDisplacement:
-                return "Desplazamiento de Combo C/Cuerpo";
+                return "Desplazamiento al Golpear";
             case StatType.CriticalChance:
-                return "Probabilidad Crítica";
+                return "Probabilidad de Crítico";
             case StatType.CriticalDamageMultiplier:
                 return "Multiplicador de Daño Crítico";
             case StatType.LifestealOnKill:
                 return "Robo de Vida por Eliminación";
 
             case StatType.ShieldAttackDamage:
-                return "Daño de Ataque de Escudo";
+                return "Daño a Distancia";
             case StatType.ShieldSpeed:
-                return "Velocidad de Lanzamiento de Escudo";
+                return "Velocidad de Lanzamiento del Escudo";
             case StatType.ShieldMaxDistance:
-                return "Distancia Máxima de Escudo";
+                return "Alcance del Escudo";
             case StatType.ShieldMaxRebounds:
-                return "Rebotes Máximos de Escudo";
+                return "Rebote del Escudo";
             case StatType.ShieldReboundRadius:
-                return "Radio de Rebote de Escudo";
+                return "Radio de Rebote del Escudo";
             case StatType.ShieldBlockUpgrade:
-                return "Mejora de Bloqueo de Escudo";
+                return "Vida del Escudo";
             case StatType.ShieldPushForce:
-                return "Fuerza de Empuje de Escudo";
+                return "Empuje del Escudo a Distancia";
             case StatType.ShieldReturnSpeed:
-                return "Velocidad de Retorno de Escudo";
+                return "Velocidad de Retorno del Escudo";
 
             case StatType.LuckStack:
                 return "Suerte Acumulada";
             case StatType.EssenceCostReduction:
                 return "Reducción de Costo de Esencia";
             case StatType.ShopPriceReduction:
-                return "Reducción de Precio de Tienda";
+                return "Reducción de Precio en Tienda";
             case StatType.HealthPerRoomRegen:
-                return "Regen. de Vida por Sala";
+                return "Regeneración por Sala";
 
             default:
                 return statType.ToString();

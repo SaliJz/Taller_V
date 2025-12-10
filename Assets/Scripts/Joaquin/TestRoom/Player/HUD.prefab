@@ -3354,9 +3354,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 2995713693002383137}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 660.75, y: -25}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 1321.5, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1417759108458566002
@@ -3610,6 +3610,7 @@ GameObject:
   - component: {fileID: 1880000986646482517}
   - component: {fileID: 3908377299942770090}
   - component: {fileID: 1522249548704971655}
+  - component: {fileID: 5231424676741012431}
   m_Layer: 5
   m_Name: HUD
   m_TagString: Untagged
@@ -3805,9 +3806,9 @@ MonoBehaviour:
   inputActions: {fileID: -944628639613478452, guid: ccc6e38482735884387854943591007c, type: 3}
   typingSpeed: 0.03
   inputBufferTime: 0.2
-  voiceAudioSource: {fileID: 0}
+  voiceAudioSource: {fileID: 3154760444949557352}
   voiceVolume: 0.6
-  settingsPanel: {fileID: 0}
+  settingsPanel: {fileID: 7614830359713240198}
   playerActionScripts:
   - {fileID: 0}
   - {fileID: 0}
@@ -3815,6 +3816,175 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+--- !u!114 &5231424676741012431
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2049424538277915923}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c65fd54c0297ab45a3a4dc0519e33e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dialogManager: {fileID: 1522249548704971655}
+  merchantManager: {fileID: 0}
+  inventoryManager: {fileID: 0}
+  playerHealth: {fileID: 0}
+  optionsPanel: {fileID: 316306556274045694}
+  acceptButton: {fileID: 63737860863256847}
+  backButton: {fileID: 7940734855780671619}
+  converseButton: {fileID: 0}
+  firstVisitLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"Ah, otra alma perdida que cae en mis dominios. \xBFBuscas alivio o una
+      deuda?\""
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  routineLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"Mis mercanc\xEDas son \xFAnicas y mi tiempo es oro, o lo que quede de
+      ti. \xBFNecesitas algo o solo vas a mirar?\""
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"En este lugar, la \xFAnica moneda real es la necesidad. No la desperdicies
+      con preguntas triviales.\""
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: '"Todo tiene un precio. La vida, la muerte, el silencio... y por supuesto,
+      mis servicios."'
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  pactOfferLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"Veo la marca de la agon\xEDa sobre ti. Un peque\xF1o sacrificio a cambio
+      de una gran ventaja. \xBFAceptas el precio que el Inframundo exige?\""
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  tooHealthyLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"Vienes a m\xED con las venas llenas de vida. No tengo nada que ofrecerte,
+      y t\xFA nada que perder. Vuelve cuando te acerques al borde.\""
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  friendlyLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"La oscuridad te sienta bien, viajero. Sigue aumentando tu deuda conmigo
+      y te mostrar\xE9 secretos que la luz nunca conoci\xF3.\""
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"Tus enemigos tienen grietas en sus defensas. Yo lo s\xE9. \xBFTe ayudo
+      a explotarlas? Por un precio, claro.\""
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"Me agradas. La avaricia es un buen motor. T\xF3malo de un experto: los
+      mejores tratos se hacen en silencio.\""
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  hostileLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"\xBFPor qu\xE9 pierdes el tiempo? Cada segundo que me haces esperar
+      cuesta algo m\xE1s que oro.\""
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"Me aburres. Tu conversaci\xF3n es tan ins\xEDpida como tu alma. Vuelve
+      cuando tengas algo interesante que ofrecer, o vete.\""
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: "\"No olvides qui\xE9n te permite seguir respirando en mi sala. No abuses
+      de mi... indulgencia.\""
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  blockedLine:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: '"Has agotado mi paciencia. Mis favores son para almas desesperadas, no
+      para parlanchines. Vete, antes de que te cobre por el tiempo perdido."'
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  pactAcceptLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: 8
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  pactShowDetailsLines:
+  - CharacterName: Mercader
+    ProfileImage: {fileID: 0}
+    Text: 9
+    WaitForInput: 0
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  maxReputationRewardLines: []
+  pactVoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+  pactVoicePitch: 1
+  pactVoiceFrequency: 2
+  OnDialogCompleteEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &2103124475952123271
 GameObject:
   m_ObjectHideFlags: 0
@@ -6685,9 +6855,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 2995713693002383137}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 660.75, y: -95}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 1321.5, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5492836524165227808
@@ -7234,23 +7404,68 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   interactionMode: 1
-  allShopItems: []
+  allShopItems:
+  - {fileID: 11400000, guid: 5ec85a9bd7b6ab0428bb200b8242c0de, type: 2}
+  - {fileID: 11400000, guid: 4e475eb13999ff942806be886574e892, type: 2}
+  - {fileID: 11400000, guid: 75153a61107fb4d43a2cb0fd63e747b9, type: 2}
+  - {fileID: 11400000, guid: 5c7fb377acd65a742bb4ed25e3f2cb8d, type: 2}
+  - {fileID: 11400000, guid: fe81d49879d83454582458204f9293ea, type: 2}
+  - {fileID: 11400000, guid: ee08385be1aedf44fb5a92fa6ee32200, type: 2}
+  - {fileID: 11400000, guid: c7b4b6896fceff547843e71d162a83cb, type: 2}
+  - {fileID: 11400000, guid: 0e42f97847ff2a04d86f8e739c817d18, type: 2}
+  - {fileID: 11400000, guid: 6ebe8424da1297c498b04053bb3ccc61, type: 2}
+  - {fileID: 11400000, guid: c4c63b01df110e54da5b946eda46f595, type: 2}
+  - {fileID: 11400000, guid: f7e373c4603f54b41a64a9f62bfe7977, type: 2}
+  - {fileID: 11400000, guid: 9a47ed7035eae334c8f50cb731cc4bed, type: 2}
+  - {fileID: 11400000, guid: 5d30ae7af0b95374eafe656699c6ea5a, type: 2}
+  - {fileID: 11400000, guid: 1a4de9c580b94d7488ad8f83fb744da4, type: 2}
+  - {fileID: 11400000, guid: 089595c08f8941246a7f8d6bf502ac98, type: 2}
+  - {fileID: 11400000, guid: 5f4afd6ff9480e940995325af51279ae, type: 2}
+  - {fileID: 11400000, guid: 201f8173fec56ec459cf3f4a521b14b5, type: 2}
+  - {fileID: 11400000, guid: a2ee5bb5380cee04491f29729929286e, type: 2}
+  - {fileID: 11400000, guid: 0287b0eff41e9284397a31fa7c4ee94e, type: 2}
+  - {fileID: 11400000, guid: b784cb26311d2274eb8497eac3df93cb, type: 2}
   safeRelics: []
-  allPacts: []
+  allPacts:
+  - {fileID: 11400000, guid: e9008f33002e1d946a13bc132a961ee4, type: 2}
+  - {fileID: 11400000, guid: 2a1dfa10348aec248b6395f56fc07f4f, type: 2}
+  - {fileID: 11400000, guid: 5e16c2a59cf90e34bb1ca03ef977856e, type: 2}
   allAmulets: []
-  allGachaponEffects: []
+  allGachaponEffects:
+  - {fileID: 11400000, guid: aea1a6e4e8b1ffa42a9f88ccecd25991, type: 2}
+  - {fileID: 11400000, guid: dcab09f0aed5aa34a9e6bb5b274ee42b, type: 2}
+  - {fileID: 11400000, guid: 4813f1bc22d83b74fb067d2799a8eebc, type: 2}
+  - {fileID: 11400000, guid: 3b977da33357c97459056f051dc5311c, type: 2}
+  - {fileID: 11400000, guid: 145e4685caf8e6245be526cd2bd1af05, type: 2}
+  - {fileID: 11400000, guid: 515148181717c3d42ae93232d8b13cf8, type: 2}
+  - {fileID: 11400000, guid: 8cc45f15f0633da4c919984ec446e8e0, type: 2}
+  - {fileID: 11400000, guid: 0353744e7ccafcd4ba8765d2a308bcf1, type: 2}
+  - {fileID: 11400000, guid: d74b52568f134b94985f2864a7403f12, type: 2}
   normalRarityWeight: 0.65
   rareRarityWeight: 0.25
   superRareRarityWeight: 0.1
   shopItemPrefabs:
-  - {fileID: 2790493699222432776, guid: 3f233f07f502ad8429d387518ae486b8, type: 3}
-  - {fileID: 2790493699222432776, guid: fb73de1475fe6fc47bf7300276c49958, type: 3}
-  - {fileID: 2790493699222432776, guid: 8e02ef526a771b043b79302caf107ff8, type: 3}
-  - {fileID: 2790493699222432776, guid: ea4bb7cb928dd004d90630528750fbae, type: 3}
-  - {fileID: 2790493699222432776, guid: 453a2138ca6b29b429efc6d8bd35e0d2, type: 3}
-  - {fileID: 2790493699222432776, guid: aabaf2f22a4ef504a87a245611b9b0f6, type: 3}
-  - {fileID: 2790493699222432776, guid: 93d679b1d4b391e4ab0438182556ffba, type: 3}
-  itemAppearanceEffectPrefab: {fileID: 3331059551027662099, guid: 2284c4e660fb31d448f6e834dae89219, type: 3}
+  - {fileID: 2790493699222432776, guid: f819faa9f76d1a74ca802745bec17eed, type: 3}
+  - {fileID: 2790493699222432776, guid: d98e20833ac5b8644baec8149aa845c1, type: 3}
+  - {fileID: 2790493699222432776, guid: 7aa57de4744b03b4f99d37813b827c4e, type: 3}
+  - {fileID: 2790493699222432776, guid: 538d51a9d74dfe64bb573f88d0218bf2, type: 3}
+  - {fileID: 2790493699222432776, guid: 224e2ca5a5c504146a6a419fa17bdd32, type: 3}
+  - {fileID: 2790493699222432776, guid: 8588847030507c14f8028ec2b375a942, type: 3}
+  - {fileID: 2790493699222432776, guid: 387f06f8eb2d3fa40b086c9375c428c3, type: 3}
+  - {fileID: 2790493699222432776, guid: e5ebcd1c099df0d4282cb0544aa175ba, type: 3}
+  - {fileID: 2790493699222432776, guid: fe832b41596ded04c9cee599708c586d, type: 3}
+  - {fileID: 2790493699222432776, guid: d68e548c845bec34bb760ace3b624761, type: 3}
+  - {fileID: 2790493699222432776, guid: 321449ac3b3a9db4b9c7c9b082f7a714, type: 3}
+  - {fileID: 2790493699222432776, guid: 7c169589f9ca6024590ac7ed04445b6f, type: 3}
+  - {fileID: 2790493699222432776, guid: d1f32f37bf8859940a53966a58af0076, type: 3}
+  - {fileID: 2790493699222432776, guid: 913d08bda0529bb47a2f5cdcfe65a5a9, type: 3}
+  - {fileID: 2790493699222432776, guid: bd76f1eeb07ed53419d1ca09e949ea80, type: 3}
+  - {fileID: 2790493699222432776, guid: 2999b926b508aab458acd8f223acf3be, type: 3}
+  - {fileID: 2790493699222432776, guid: 53acc8acf37cbf04db575caba63287fc, type: 3}
+  - {fileID: 2790493699222432776, guid: cfedc9e2735f42546bee5d41e07702aa, type: 3}
+  - {fileID: 2790493699222432776, guid: 2a1030ab6ff33fd4c9aeb0f9810e5c52, type: 3}
+  - {fileID: 2790493699222432776, guid: 935f438c4fa1e35448d984d8e0e0309c, type: 3}
+  itemAppearanceEffectPrefab: {fileID: 0}
   shopUIPanel: {fileID: 4853790811511156568}
   uiPanelTransform: {fileID: 6893052232125983173}
   itemNameText: {fileID: 7930261680716843682}
@@ -7258,7 +7473,7 @@ MonoBehaviour:
   itemDescriptionText: {fileID: 6504861832178530549}
   costBar: {fileID: 5837518066313530423}
   affordableColor: {r: 0.627451, g: 0, b: 1, a: 1}
-  unaffordableColor: {r: 0.6792453, g: 0.50102204, b: 0.07369172, a: 1}
+  unaffordableColor: {r: 0.41509432, g: 0.17169085, b: 0, a: 1}
   lowHealthThreshold: 10
   lowHealthWarningColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   raycastDistance: 200
@@ -11386,7 +11601,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7456591869228852233}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
