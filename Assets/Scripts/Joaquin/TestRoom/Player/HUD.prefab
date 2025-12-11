@@ -11990,7 +11990,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &5941803169571981351
 RectTransform:
   m_ObjectHideFlags: 0
@@ -12580,6 +12580,7 @@ GameObject:
   - component: {fileID: 147468937401996896}
   - component: {fileID: 4657666131534581008}
   - component: {fileID: 719326869745662899}
+  - component: {fileID: 4992587076165216506}
   m_Layer: 5
   m_Name: FillBar
   m_TagString: Untagged
@@ -12641,11 +12642,24 @@ MonoBehaviour:
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 0
-  m_FillAmount: 1
+  m_FillAmount: 0
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4992587076165216506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7977688044992908475}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31a19414c41e5ae4aae2af33fee712f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ShowMaskGraphic: 1
 --- !u!1 &8268717452019054285
 GameObject:
   m_ObjectHideFlags: 0
