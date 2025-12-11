@@ -10,6 +10,7 @@ public class KronusEnemy : MonoBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private KronusStats stats;
     [SerializeField] private Transform hitPoint;
+    [SerializeField] private bool showVisualHit = true;
     [SerializeField] private GameObject visualHit;
     [SerializeField] private GameObject groundIndicator;
     [SerializeField] private GameObject hammerVFX;
@@ -888,7 +889,7 @@ public class KronusEnemy : MonoBehaviour
             return;
         }
 
-        if (visualHit != null) visualHit.SetActive(true);
+        if (visualHit != null && showVisualHit) visualHit.SetActive(true);
 
         Collider[] hitPlayer = Physics.OverlapSphere(hitPoint.position, attackRadius, playerLayer);
 
@@ -1008,6 +1009,9 @@ public class KronusEnemy : MonoBehaviour
 
     private IEnumerator ShowGizmoCoroutine()
     {
+        if (visualHit == null || hitPoint == null) yield break;
+        if (!showVisualHit) yield break;
+
         Vector3 originalScale = visualHit.transform.localScale;
 
         if (visualHit != null && hitPoint != null)
