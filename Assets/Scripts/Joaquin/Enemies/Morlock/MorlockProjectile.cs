@@ -20,10 +20,12 @@ public class MorlockProjectile : MonoBehaviour
 
     [SerializeField] private LayerMask collisionLayers;
 
+    [SerializeField] private bool debugMode = false;
+
     private Vector3 direction;
     private bool wasReflected = false;
 
-    [SerializeField] private bool debugMode = false;
+    public bool WasReflected => wasReflected;
 
     public void Initialize(float projectileSpeed, float projectileDamage)
     {
@@ -125,6 +127,4 @@ public class MorlockProjectile : MonoBehaviour
 
         Debug.Log($"[Projectile] Reflejado hacia {newDirection}");
     }
-
-    public bool WasReflected => wasReflected;
 }

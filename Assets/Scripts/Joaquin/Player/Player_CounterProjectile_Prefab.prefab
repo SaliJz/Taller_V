@@ -14,9 +14,9 @@ GameObject:
   - component: {fileID: 3410251042622800462}
   - component: {fileID: 3113863302384302003}
   - component: {fileID: 6361149615806572099}
-  m_Layer: 13
+  m_Layer: 20
   m_Name: Player_CounterProjectile_Prefab
-  m_TagString: EnemyProjectile
+  m_TagString: PlayerProjectile
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -153,6 +153,9 @@ MonoBehaviour:
   speed: 20
   lifeTime: 5
   impactVFX: {fileID: 0}
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 68096
 --- !u!1 &9145668406424460264
 GameObject:
   m_ObjectHideFlags: 0

@@ -6,13 +6,19 @@ public class BlockCounterProjectile : MonoBehaviour
     [SerializeField] private float speed = 20f;
     [SerializeField] private float lifeTime = 5f;
     [SerializeField] private GameObject impactVFX;
+    [SerializeField] private LayerMask collisionLayers;
 
     private float damageToDeal;
     private bool isInitialized = false;
     private Vector3 direction;
+    private int enemyLayer;
+    private int enemyProjectileLayer;
 
     public void Initialize(float damage, Vector3 fireDirection)
     {
+        enemyLayer = LayerMask.NameToLayer("Enemy");
+        enemyProjectileLayer = LayerMask.NameToLayer("EnemyProjectile");
+
         this.damageToDeal = damage;
         this.direction = fireDirection.normalized;
         this.isInitialized = true;
@@ -33,21 +39,38 @@ public class BlockCounterProjectile : MonoBehaviour
     {
         if (!isInitialized) return;
 
-        if (other.CompareTag("Player") || other.isTrigger) return;
-        if (other.gameObject.layer == LayerMask.NameToLayer("Wall")) Destroy(gameObject);
+        if (other.CompareTag("Player")) return;
+        if (other.gameObject.layer == enemyProjectileLayer) Destroy(other.gameObject);
 
-        var damageable = other.GetComponent<IDamageable>();
-
-        if (damageable != null)
+        if ((collisionLayers.value & (1 << other.gameObject.layer)) != 0)
         {
-            damageable.TakeDamage(damageAmount: damageToDeal, attackDamageType: AttackDamageType.Ranged);
+            Destroy(gameObject);
+            return;
         }
 
-        if (impactVFX != null)
+        if (other.CompareTag("Enemy") || other.gameObject.layer == enemyLayer)
         {
-            Instantiate(impactVFX, transform.position, Quaternion.identity);
+            ExecuteAttack(other.gameObject, damageToDeal);
+            if (impactVFX != null) Instantiate(impactVFX, transform.position, Quaternion.identity);
+            Destroy(gameObject);
+            return;
         }
+    }
 
-        Destroy(gameObject);
+    private void ExecuteAttack(GameObject target, float damageAmount)
+    {
+        if (target.TryGetComponent<DrogathEnemy>(out var blockSystem) && target.TryGetComponent<EnemyHealth>(out var health))
+        {
+            if (blockSystem.ShouldBlockDamage(transform.position))
+            {
+                return;
+            }
+
+            health.TakeDamage(damageAmount, false, AttackDamageType.Ranged);
+        }
+        else if (target.TryGetComponent<IDamageable>(out var damageable))
+        {
+            damageable.TakeDamage(damageAmount, false, AttackDamageType.Ranged);
+        }
     }
 }
