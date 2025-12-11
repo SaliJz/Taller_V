@@ -194,7 +194,7 @@ public class ExplosiveHead : MonoBehaviour
         primingTimeLeft = primingDuration;
         PlayAudio(screamSound, 0.85f);
 
-        float elapsed = 0f;
+        float elapsed = 1.4f;
 
         bool canBeCanceled = cancelIfPlayerLeaves && !forceExplodeOnDamage;
 
