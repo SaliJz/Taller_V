@@ -14,7 +14,6 @@ public class MorlockEnemy : MonoBehaviour
     [SerializeField] private MorlockStats stats;
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private Transform firePoint;
-    [SerializeField] private GameObject teleportVFX;
 
     #region Variables
 
@@ -92,6 +91,13 @@ public class MorlockEnemy : MonoBehaviour
 
     [Header("SFX Combate")]
     [SerializeField] private AudioClip shootSFX;
+
+    [Header("VFX Teletransporte")]
+    [SerializeField] private float animTeleportDelay = 1f;
+    [SerializeField] private GameObject teleportVFX;
+    [SerializeField] private float teleportVFXHeightOffset = 1.5f;
+    [SerializeField] private float teleportVFXDurationToDestroy = 1.5f;
+    [SerializeField] private float teleportVFXDelay = 1.5f;
 
     #endregion
 
@@ -531,7 +537,7 @@ public class MorlockEnemy : MonoBehaviour
                 TryGetRandomPoint(center, patrolRadius, out targetPosition);
             }
 
-            TeleportToPosition(targetPosition);
+            yield return StartCoroutine(TeleportToPositionRoutine(targetPosition));
             yield return new WaitForSeconds(patrolIdleTime);
         }
     }
@@ -567,6 +573,8 @@ public class MorlockEnemy : MonoBehaviour
             if (animator != null) animator.SetTrigger("Teleport");
             if (audioSource != null && teleportSFX != null) audioSource.PlayOneShot(teleportSFX);
 
+            SpawnTeleportVFX(transform.position);
+
             yield return new WaitForSeconds(repositionTeleportCooldown);
         }
     }
@@ -583,7 +591,8 @@ public class MorlockEnemy : MonoBehaviour
 
             Vector3 targetPosition = advancePosition + lateralDirection * lateralOffset;
 
-            TeleportToPosition(targetPosition);
+            yield return StartCoroutine(TeleportToPositionRoutine(targetPosition));
+
             StartShootCoroutine();
 
             yield return new WaitForSeconds(p1_teleportCooldown);
@@ -636,8 +645,10 @@ public class MorlockEnemy : MonoBehaviour
                     selectedPos = validCandidates[Random.Range(0, validCandidates.Count)];
                 }
 
-                lastTargetPos = selectedPos; // Actualizar referencia
-                TeleportToPosition(selectedPos);
+                lastTargetPos = selectedPos;
+
+                yield return StartCoroutine(TeleportToPositionRoutine(selectedPos));
+
                 StartShootCoroutine();
             }
             else
@@ -653,37 +664,72 @@ public class MorlockEnemy : MonoBehaviour
 
     #region Teletransporte y Disparo
 
-    private void TeleportToPosition(Vector3 targetPosition)
+    private IEnumerator TeleportToPositionRoutine(Vector3 targetPosition)
     {
-        if (enemyHealth != null && enemyHealth.IsStunned) return;
+        if (enemyHealth != null && enemyHealth.IsStunned) yield break;
+
+        NavMeshHit hit;
+        Vector3 finalDestination = targetPosition;
+        bool validDestination = false;
+
+        if (NavMesh.SamplePosition(targetPosition, out hit, 10f, NavMesh.AllAreas))
+        {
+            finalDestination = hit.position;
+            validDestination = true;
+        }
+
+        if (!validDestination) yield break;
+
+        SpawnTeleportVFX(transform.position);
+
+        yield return new WaitForSeconds(teleportVFXDelay);
+
+        if (isDead || (enemyHealth != null && enemyHealth.IsStunned)) yield break;
 
         if (audioSource != null && teleportSFX != null) audioSource.PlayOneShot(teleportSFX);
 
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(targetPosition, out hit, 10f, NavMesh.AllAreas))
+        transform.position = finalDestination;
+        if (agent != null && agent.enabled)
         {
-            transform.position = hit.position;
-            if (agent != null && agent.enabled)
+            agent.Warp(finalDestination);
+        }
+
+        SpawnTeleportVFX(finalDestination);
+
+        if (playerTransform != null && currentState != MorlockState.Patrol)
+        {
+            ForceFacePlayer();
+        }
+    }
+
+    private void SpawnTeleportVFX(Vector3 basePosition)
+    {
+        Vector3 spawnPos = basePosition;
+        spawnPos.y += teleportVFXHeightOffset;
+
+        for (int i = activeTeleportVFXs.Count - 1; i >= 0; i--)
+        {
+            GameObject existingVFX = activeTeleportVFXs[i];
+
+            if (existingVFX != null)
             {
-                agent.Warp(hit.position);
+                if (Vector3.Distance(existingVFX.transform.position, spawnPos) < 1.0f)
+                {
+                    Destroy(existingVFX);
+                    activeTeleportVFXs.RemoveAt(i);
+                }
             }
-
-            if (teleportVFX != null)
+            else
             {
-                Vector3 vfxPos = hit.position;
-                vfxPos.y += 0.01f;
-
-                GameObject vfxInstance = Instantiate(teleportVFX, vfxPos, Quaternion.identity);
-
-                activeTeleportVFXs.Add(vfxInstance);
-
-                StartCoroutine(RemoveVFXFromListAfterDelay(vfxInstance, 1.5f));
+                activeTeleportVFXs.RemoveAt(i);
             }
+        }
 
-            if (playerTransform != null && currentState != MorlockState.Patrol)
-            {
-                ForceFacePlayer();
-            }
+        if (teleportVFX != null)
+        {
+            GameObject vfxInstance = Instantiate(teleportVFX, spawnPos, Quaternion.identity);
+            activeTeleportVFXs.Add(vfxInstance);
+            StartCoroutine(RemoveVFXFromListAfterDelay(vfxInstance, teleportVFXDurationToDestroy));
         }
     }
 
@@ -692,7 +738,10 @@ public class MorlockEnemy : MonoBehaviour
         yield return new WaitForSeconds(delay);
         if (vfx != null)
         {
-            activeTeleportVFXs.Remove(vfx);
+            if (activeTeleportVFXs.Contains(vfx))
+            {
+                activeTeleportVFXs.Remove(vfx);
+            }
             Destroy(vfx);
         }
     }
@@ -715,6 +764,10 @@ public class MorlockEnemy : MonoBehaviour
         }
 
         yield return new WaitForSeconds(fireRate);
+
+        animator.SetTrigger("HasAttack");
+
+        yield return new WaitForSeconds(animTeleportDelay);
 
         if (!isDead && currentState != MorlockState.Patrol && currentState != MorlockState.Repositioning)
         {
