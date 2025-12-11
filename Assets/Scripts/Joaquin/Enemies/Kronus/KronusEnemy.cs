@@ -962,6 +962,10 @@ public class KronusEnemy : MonoBehaviour
 
     private void ApplyKnockback(Transform target)
     {
+        PlayerMovement playerMove = target.GetComponent<PlayerMovement>();
+
+        if (playerMove != null && playerMove.IsDashing) return;
+
         // Calcula la dirección del empuje (desde Kronus hacia el jugador)
         Vector3 knockbackDirection = (target.position - transform.position).normalized;
         knockbackDirection.y = 0f; // Mantener en el plano horizontal
@@ -973,7 +977,7 @@ public class KronusEnemy : MonoBehaviour
         if (cc != null)
         {
             // Si el jugador usa CharacterController
-            StartCoroutine(ApplyKnockbackOverTime(cc, knockbackDirection * knockbackForce));
+            StartCoroutine(ApplyKnockbackOverTime(cc, knockbackDirection * knockbackForce, playerMove));
         }
         else if (rb != null)
         {
@@ -984,17 +988,19 @@ public class KronusEnemy : MonoBehaviour
         ReportDebug($"Empuje aplicado al jugador en dirección {knockbackDirection}", 1);
     }
 
-    private IEnumerator ApplyKnockbackOverTime(CharacterController cc, Vector3 knockbackVelocity)
+    private IEnumerator ApplyKnockbackOverTime(CharacterController cc, Vector3 knockbackVelocity, PlayerMovement playerMove = null)
     {
         float duration = 0.2f;
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
-            if (cc != null && cc.enabled)
-            {
-                cc.Move(knockbackVelocity * Time.deltaTime);
-            }
+            if (cc == null) yield break;
+
+            if (playerMove != null && playerMove.IsDashing) yield break;
+
+            if (cc.enabled) cc.Move(knockbackVelocity * Time.deltaTime);
+
             elapsed += Time.deltaTime;
             yield return null;
         }

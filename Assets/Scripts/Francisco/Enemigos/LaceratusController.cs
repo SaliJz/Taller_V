@@ -881,6 +881,14 @@ public class LaceratusController : MonoBehaviour
         {
             if (hit.CompareTag("Player"))
             {
+                PlayerMovement playerMove = hit.GetComponent<PlayerMovement>();
+
+                if (playerMove != null && playerMove.IsDashing)
+                {
+                    Debug.Log("Laceratus: Grito de empuje ignorado (Jugador en Dash).");
+                    continue;
+                }
+
                 Vector3 pushDirection = (hit.transform.position - transform.position).normalized;
                 pushDirection.y = 0;
 
@@ -894,7 +902,7 @@ public class LaceratusController : MonoBehaviour
                     CharacterController controller = hit.GetComponent<CharacterController>();
                     if (controller != null)
                     {
-                        StartCoroutine(PushPlayerWithController(controller, pushDirection));
+                        StartCoroutine(PushPlayerWithController(controller, pushDirection, playerMove));
                     }
                     else
                     {
@@ -912,14 +920,19 @@ public class LaceratusController : MonoBehaviour
         }
     }
 
-    private IEnumerator PushPlayerWithController(CharacterController controller, Vector3 direction)
+    private IEnumerator PushPlayerWithController(CharacterController controller, Vector3 direction, PlayerMovement playerMove = null)
     {
         float pushSpeed = consecutiveHitPushDistance / 0.3f;
         float elapsed = 0f;
 
         while (elapsed < 0.3f)
         {
-            controller.Move(direction * pushSpeed * Time.deltaTime);
+            if (controller == null) yield break;
+
+            if (playerMove != null && playerMove.IsDashing) yield break;
+
+            if (controller.enabled) controller.Move(direction * pushSpeed * Time.deltaTime);
+
             elapsed += Time.deltaTime;
             yield return null;
         }

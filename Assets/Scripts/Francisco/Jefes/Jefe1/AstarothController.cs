@@ -1160,13 +1160,16 @@ public class AstarothController : MonoBehaviour
 
     private void ApplySafeKnockback(GameObject target, Vector3 explosionCenter, float force)
     {
+        PlayerMovement playerMove = target.GetComponent<PlayerMovement>();
+        if (playerMove != null && playerMove.IsDashing) return;
+
         Vector3 direction = (target.transform.position - explosionCenter).normalized;
         direction.y = 0f;
 
         CharacterController cc = target.GetComponent<CharacterController>();
         if (cc != null)
         {
-            StartCoroutine(KnockbackCCRoutine(cc, direction, force, 0.5f));
+            StartCoroutine(KnockbackCCRoutine(cc, direction, force, 0.5f, playerMove));
             return;
         }
 
@@ -1178,13 +1181,18 @@ public class AstarothController : MonoBehaviour
         }
     }
 
-    private IEnumerator KnockbackCCRoutine(CharacterController cc, Vector3 direction, float force, float duration)
+    private IEnumerator KnockbackCCRoutine(CharacterController cc, Vector3 direction, float force, float duration, PlayerMovement playerMove = null)
     {
         float elapsed = 0f;
+
         while (elapsed < duration)
         {
             if (cc == null) yield break;
-            cc.SimpleMove(direction * force);
+
+            if (playerMove != null && playerMove.IsDashing) yield break;
+
+            if (cc.enabled) cc.SimpleMove(direction * force);
+
             elapsed += Time.deltaTime;
             yield return null;
         }
