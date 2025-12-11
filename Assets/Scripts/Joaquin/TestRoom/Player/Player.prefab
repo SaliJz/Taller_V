@@ -9362,6 +9362,7 @@ MonoBehaviour:
   visualBoxHit: {fileID: 6871184688509333741}
   playerShieldController: {fileID: 3158206734398763717}
   playerAudioController: {fileID: 0}
+  shieldSkill: {fileID: 0}
   playerAnimator: {fileID: 2511880707407823879}
   hitPoint: {fileID: 7029900753368981312}
   hitRadius: 1.8
@@ -9420,7 +9421,7 @@ MonoBehaviour:
   statsManager: {fileID: 7736777102245202428}
   playerMeleeAttack: {fileID: 9211243997880812482}
   playerShieldController: {fileID: 3158206734398763717}
-  playerAudioController: {fileID: 0}
+  playerAudioController: {fileID: 2888951513960009550}
   maxStamina: 100
   baseStaminaDrainRate: 10
   staminaRechargeRate: 20
@@ -9430,18 +9431,21 @@ MonoBehaviour:
     MoveMultiplier: 1.3
     AttackDamageMultiplier: 1
     AttackSpeedMultiplier: 1.25
+    ToughnessDamageMultiplier: 1
     HealthDrainAmount: 2
     DisableShieldThrow: 0
   adultBuffs:
     MoveMultiplier: 1.3
     AttackDamageMultiplier: 1.25
     AttackSpeedMultiplier: 1.3
+    ToughnessDamageMultiplier: 1
     HealthDrainAmount: 2
     DisableShieldThrow: 0
   elderBuffs:
     MoveMultiplier: 1.3
     AttackDamageMultiplier: 1.4
     AttackSpeedMultiplier: 1.3
+    ToughnessDamageMultiplier: 1
     HealthDrainAmount: 1
     DisableShieldThrow: 0
   visualModelObject: {fileID: 6991594973495407509}

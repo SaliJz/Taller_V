@@ -352,6 +352,12 @@ public class PlayerShieldController : MonoBehaviour
 
         bool isBerserker = shieldSkill != null && shieldSkill.IsActive;
 
+        float toughnessBonus = 0f;
+        if (isBerserker)
+        {
+            toughnessBonus = shieldSkill.CurrentToughnessMultiplier;
+        }
+
         if (playerAudioController != null)
         {
             playerAudioController.PlayThrowShieldSound(isBerserker);
@@ -386,7 +392,8 @@ public class PlayerShieldController : MonoBehaviour
                 config.maxPierceTargets,
                 config.knockbackForce,
                 playerHealth.CurrentLifeStage,
-                isBerserker
+                isBerserker,
+                toughnessBonus
             );
 
             ReportDebug($"Escudo lanzado ({playerHealth.CurrentLifeStage}): Daño={config.damage}, Velocidad={config.speed}", 1);
@@ -494,8 +501,8 @@ public class PlayerShieldController : MonoBehaviour
                     damage = Mathf.RoundToInt(adultShieldDamage * damageMultiplier),
                     speed = adultShieldSpeed * speedMultiplier,
                     maxDistance = shieldMaxDistance,
-                    canRebound = false,
-                    maxRebounds = 0,
+                    canRebound = true,
+                    maxRebounds = shieldMaxRebounds,
                     reboundRadius = 0f,
                     canPierce = false,
                     maxPierceTargets = 0,
@@ -508,8 +515,8 @@ public class PlayerShieldController : MonoBehaviour
                     damage = Mathf.RoundToInt(elderShieldDamage * damageMultiplier),
                     speed = elderShieldSpeed * speedMultiplier,
                     maxDistance = shieldMaxDistance,
-                    canRebound = false,
-                    maxRebounds = 0,
+                    canRebound = true,
+                    maxRebounds = shieldMaxRebounds,
                     reboundRadius = 0f,
                     canPierce = elderCanPierce,
                     maxPierceTargets = elderMaxPierceTargets,

@@ -18,6 +18,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private GameObject visualBoxHit;
     [SerializeField] private PlayerShieldController playerShieldController;
     [SerializeField] private PlayerAudioController playerAudioController;
+    [SerializeField] private ShieldSkill shieldSkill;
     [SerializeField] private Animator playerAnimator;
 
     [Header("Attack Configuration")]
@@ -122,6 +123,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         if (playerHealth == null) playerHealth = GetComponent<PlayerHealth>();
         if (playerShieldController == null) playerShieldController = GetComponent<PlayerShieldController>();
         if (playerMovement == null) playerMovement = GetComponent<PlayerMovement>();
+        if (shieldSkill == null) shieldSkill = GetComponent<ShieldSkill>();
         if (playerAnimator == null) playerAnimator = GetComponentInChildren<Animator>();
         if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
         if (gamepadPointer == null) gamepadPointer = FindAnyObjectByType<GamepadPointer>();
@@ -914,6 +916,12 @@ public class PlayerMeleeAttack : MonoBehaviour
         const DamageType damageTypeForDummy = DamageType.Melee;
         const AttackDamageType meleeDamageType = AttackDamageType.Melee;
 
+        float currentToughnessBonus = 0f;
+        if (shieldSkill != null && shieldSkill.IsActive)
+        {
+            currentToughnessBonus = shieldSkill.CurrentToughnessMultiplier;
+        }
+
         foreach (Collider enemy in hitEnemies)
         {
             if (hitEnemiesThisCombo.Contains(enemy))
@@ -958,7 +966,7 @@ public class PlayerMeleeAttack : MonoBehaviour
                 }
                 else
                 {
-                    bool attackSuccessful = ExecuteAttack(enemy.gameObject, finalAttackDamage);
+                    bool attackSuccessful = ExecuteAttack(enemy.gameObject, finalAttackDamage, currentToughnessBonus);
 
                     if (attackSuccessful)
                     {
@@ -1048,7 +1056,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         showGizmoRoutine = StartCoroutine(ShowGizmoCoroutine(displayDuration));
     }
 
-    private bool ExecuteAttack(GameObject target, float damageAmount)
+    private bool ExecuteAttack(GameObject target, float damageAmount, float toughnessBonus)
     {
         if (target.TryGetComponent<DrogathEnemy>(out var blockSystem) && target.TryGetComponent<EnemyHealth>(out var health))
         {
@@ -1059,11 +1067,13 @@ public class PlayerMeleeAttack : MonoBehaviour
                 return false;
             }
 
+            if (toughnessBonus > 0) health.PrepareToughnessBonus(toughnessBonus);
             health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
             return true;
         }
         else if (target.TryGetComponent<EnemyHealth>(out var enemyHealth))
         {
+            if (toughnessBonus > 0) enemyHealth.PrepareToughnessBonus(toughnessBonus);
             enemyHealth.TakeDamage(damageAmount, false, AttackDamageType.Melee);
             return true;
         }

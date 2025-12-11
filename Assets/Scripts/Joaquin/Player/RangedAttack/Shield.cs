@@ -69,6 +69,7 @@ public class Shield : MonoBehaviour
     private Material shieldTrailMatInstance;
 
     private bool isBerserkerMode = false;
+    private float storedToughnessBonus = 0f;
 
     private void Awake()
     {
@@ -83,7 +84,7 @@ public class Shield : MonoBehaviour
     /// <param name="canRebound"> Indica si el escudo puede rebotar entre enemigos </param>
     public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds,
    float reboundDetectionRadius, float damage, float speed, float distance,
-   bool canPierce, int maxPierceTargets, float knockbackForce, PlayerHealth.LifeStage lifeStage, bool isBerserker)
+   bool canPierce, int maxPierceTargets, float knockbackForce, PlayerHealth.LifeStage lifeStage, bool isBerserker, float toughnessBonus)
     {
         if (deactivationCoroutine != null)
         {
@@ -127,6 +128,7 @@ public class Shield : MonoBehaviour
         gameObject.SetActive(true);
 
         this.isBerserkerMode = isBerserker;
+        this.storedToughnessBonus = toughnessBonus;
 
         if (audioSource != null)
         {
@@ -294,6 +296,10 @@ public class Shield : MonoBehaviour
                     }
                     else if (iDamageable != null) 
                     {
+                        if (enemy.TryGetComponent<EnemyHealth>(out var eh) && storedToughnessBonus > 0)
+                        {
+                            eh.PrepareToughnessBonus(storedToughnessBonus);
+                        }
                         damageable.TakeDamage(Mathf.RoundToInt(finalDamage), isCritical, shieldDamageType);
                         ReportDebug($"Golpe a {enemy.name}: DUMMY DE TUTORIAL DETECTADO (Tag). Enviando {finalDamage:F2} de daño de {damageTypeForDummy}", 1);
                     }
@@ -383,10 +389,15 @@ public class Shield : MonoBehaviour
                 return;
             }
 
+            if (storedToughnessBonus > 0) health.PrepareToughnessBonus(storedToughnessBonus);
             health.TakeDamage(damageAmount, false, AttackDamageType.Ranged);
         }
         else if (target.TryGetComponent<IDamageable>(out var damageable))
         {
+            if (target.TryGetComponent<EnemyHealth>(out var simpleHealth) && storedToughnessBonus > 0)
+            {
+                simpleHealth.PrepareToughnessBonus(storedToughnessBonus);
+            }
             damageable.TakeDamage(damageAmount, false, AttackDamageType.Ranged);
         }
     }

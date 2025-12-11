@@ -121,6 +121,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private Transform playerTransform;
     private PlayerHealth playerHealth;
 
+    private float nextHitToughnessBonus = 0f;
+
     #region --- Armadura de área (configurable) ---
     [Header("Armadura Demoníaca (Auto)")]
     [Tooltip("Si true, este componente intentará activar la armadura de área cuando la vida <= areaTriggerPercent.")]
@@ -245,6 +247,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         TakeDamage(damageAmount: damageAmount, damageType: damageType);
     }
 
+    public void PrepareToughnessBonus(float bonusAmount)
+    {
+        nextHitToughnessBonus = bonusAmount;
+    }
+
     /// <summary>
     /// Toma daño (respetando la reducción local si existe).
     /// Firma original respetada para compatibilidad.
@@ -258,7 +265,9 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         // Procesar dureza
         if (toughnessSystem != null && toughnessSystem.HasToughness)
         {
-            finalDamage = toughnessSystem.ProcessDamage(damageAmount, damageType);
+            finalDamage = toughnessSystem.ProcessDamage(damageAmount, damageType, nextHitToughnessBonus);
+
+            nextHitToughnessBonus = 0f; // resetear el bonus tras usarlo
 
             if (finalDamage <= 0)
             {
@@ -276,6 +285,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             {
                 ReportDebug($"Daño reducido por dureza: {damageAmount} -> {finalDamage}", 1);
             }
+        }
+        else
+        {
+            nextHitToughnessBonus = 0f; // resetear si no hay sistema
         }
 
         float damageReductionTotal = localReduction + auraDamageReduction + dynamicDamageReduction; 

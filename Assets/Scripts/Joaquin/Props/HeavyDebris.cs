@@ -21,10 +21,10 @@ public class HeavyDebris : MonoBehaviour
     [SerializeField] private float shrinkDuration = 2.5f;
     [SerializeField] private float shrinkDelay = 1f;
 
-
     private bool hasLanded = false;
     private float debrisLifetime;
     private Rigidbody rb;
+    private Collider debrisCollider;
 
     private List<Transform> hitTargets = new List<Transform>();
 
@@ -32,6 +32,7 @@ public class HeavyDebris : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         trailRenderer = GetComponentInChildren<TrailRenderer>();
+        debrisCollider = GetComponent<Collider>();
     }
 
     public void Initialized(float lifeTime)
@@ -67,6 +68,11 @@ public class HeavyDebris : MonoBehaviour
         }
 
         if (canDamaged) DamageNearbyEnemies();
+
+        if (debrisCollider != null)
+        {
+            debrisCollider.enabled = false;
+        }
 
         StartCoroutine(Shrink(transform, shrinkDelay, shrinkDuration));
 

@@ -149,7 +149,7 @@ public class EnemyToughness : MonoBehaviour
     /// Procesa el daño considerando la dureza y el tipo de ataque.
     /// Retorna el daño que debe aplicarse a la vida.
     /// </summary>
-    public float ProcessDamage(float rawDamage, AttackDamageType damageType)
+    public float ProcessDamage(float rawDamage, AttackDamageType damageType, float attackerToughnessBonus = 0f)
     {
         if (!useToughness || currentToughness <= 0)
         {
@@ -158,8 +158,9 @@ public class EnemyToughness : MonoBehaviour
         }
 
         // Calcular multiplicador según tipo de ataque
-        float toughnessMultiplier = GetToughnessMultiplier(damageType);
-        float toughnessDamage = rawDamage * toughnessMultiplier;
+        float baseMultiplier = GetToughnessMultiplier(damageType);
+        float finalMultiplier = baseMultiplier + attackerToughnessBonus;
+        float toughnessDamage = rawDamage * finalMultiplier;
 
         // Aplicar daño a dureza
         float overflow = ApplyToughnessDamage(toughnessDamage);
@@ -168,11 +169,11 @@ public class EnemyToughness : MonoBehaviour
         if (overflow > 0)
         {
             ReportDebug($"Dureza rota. Overflow de {overflow} daño aplicado a vida.", 1);
-            return overflow / toughnessMultiplier; // Convertir overflow proporcional de vuelta
+            return overflow / finalMultiplier; // Convertir overflow proporcional de vuelta
         }
 
         // Dureza absorbió todo el daño
-        ReportDebug($"Dureza absorbió {toughnessDamage} de daño ({toughnessMultiplier * 100}% del total).", 1);
+        ReportDebug($"Dureza absorbió {toughnessDamage} de daño ({finalMultiplier * 100}% del total).", 1);
         return 0f;
     }
 

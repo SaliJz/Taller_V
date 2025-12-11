@@ -25,9 +25,9 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     [SerializeField] private float minStaminaToActivate = 10f;
 
     [Header("Buffs por Etapa de Vida")]
-    [SerializeField] private BuffSettings youngBuffs = new BuffSettings(1.2f, 1.1f, 1.2f, 2f);
-    [SerializeField] private BuffSettings adultBuffs = new BuffSettings(1.1f, 1.2f, 1.1f, 2f);
-    [SerializeField] private BuffSettings elderBuffs = new BuffSettings(1.1f, 1.12f, 1.1f, 1f);
+    [SerializeField] private BuffSettings youngBuffs = new BuffSettings(1.2f, 1.1f, 1.2f, 1f, 2f);
+    [SerializeField] private BuffSettings adultBuffs = new BuffSettings(1.1f, 1.2f, 1.1f, 1f, 2f);
+    [SerializeField] private BuffSettings elderBuffs = new BuffSettings(1.1f, 1.12f, 1.1f, 1f, 1f);
 
     [Header("VFX")]
     [Tooltip("El objeto hijo que contiene el Renderer del personaje.")]
@@ -76,6 +76,8 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
 
     private bool hasStaminaBeenFullyDepleted = false;
     public static event System.Action<float, float> OnStaminaChanged;
+    
+    public float CurrentToughnessMultiplier { get; private set; } = 1.0f;
 
     #endregion
 
@@ -141,8 +143,6 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         if (staminaConsumptionMod <= 0f) staminaConsumptionMod = 1f;
 
         currentStaminaDrainRate = baseStaminaDrainRate * staminaConsumptionMod;
-
-        Debug.Log($"[ShieldSkill] Consumo de stamina actualizado: Base={baseStaminaDrainRate}/s x Mod={staminaConsumptionMod} = {currentStaminaDrainRate}/s");
     }
 
     private void OnEnable()
@@ -349,6 +349,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
 
         RemoveHealthDrainModifier();
 
+        CurrentToughnessMultiplier = currentBuffs.ToughnessDamageMultiplier;
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "Move", StatType.MoveSpeed, currentBuffs.MoveMultiplier - 1.0f, true);
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeDmg", StatType.MeleeAttackDamage, currentBuffs.AttackDamageMultiplier - 1.0f, true);
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldDmg", StatType.ShieldAttackDamage, currentBuffs.AttackDamageMultiplier - 1.0f, true);
@@ -360,12 +361,6 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         UpdateMaterialState();
 
         OnAbilityActivated?.Invoke();
-
-        Debug.Log($"[HABILIDAD ACTIVADA] Etapa: {lastKnownLifeStage} " +
-                  $"- Buffs: Velocidad de movimiento x{currentBuffs.MoveMultiplier}, " +
-                  $"Daño de ataques x{currentBuffs.AttackDamageMultiplier}, " +
-                  $"Velolicad de ataques x{currentBuffs.AttackSpeedMultiplier} " +
-                  $"- Debuff: Cantidad de vida drenada +{currentBuffs.HealthDrainAmount}");
     }
 
     private void DeactivateSkill()
@@ -383,6 +378,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         float beforeMeleeSpeedValue = statsManager.GetStat(StatType.MeleeAttackSpeed);
         float beforeShieldSpeedValue = statsManager.GetStat(StatType.ShieldSpeed);
 
+        CurrentToughnessMultiplier = 1.0f;
         statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "Move");
         statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeDmg");
         statsManager.RemoveNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldDmg");
@@ -400,13 +396,6 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         float afterShieldSpeedValue = statsManager.GetStat(StatType.ShieldSpeed);
 
         OnAbilityDeactivated?.Invoke();
-
-        Debug.Log("[HABILIDAD DESACTIVADA] Modificadores removidos. " +
-                  $"Velocidad de movimiento: {beforeMoveValue} -> {afterMoveValue}, " +
-                  $"Daño de ataque melee: {beforeMeleeDmgValue} -> {afterMeleeDmgValue}, " +
-                  $"Daño de ataque con escudo: {beforeShieldDmgValue} -> {afterShieldDmgValue}, " +
-                  $"Velocidad de ataque melee: {beforeMeleeSpeedValue} -> {afterMeleeSpeedValue}, " +
-                  $"Velocidad de ataque con escudo: {beforeShieldSpeedValue} -> {afterShieldSpeedValue}");
     }
 
     public void DeactivateAbility()
@@ -425,6 +414,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
 
         RemoveHealthDrainModifier();
 
+        CurrentToughnessMultiplier = currentBuffs.ToughnessDamageMultiplier;
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "Move", StatType.MoveSpeed, currentBuffs.MoveMultiplier - 1.0f, true);
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeDmg", StatType.MeleeAttackDamage, currentBuffs.AttackDamageMultiplier - 1.0f, true);
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldDmg", StatType.ShieldAttackDamage, currentBuffs.AttackDamageMultiplier - 1.0f, true);
@@ -728,19 +718,21 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     [System.Serializable]
     public struct BuffSettings
     {
-        [Range(1f, 3f)] public float MoveMultiplier;
-        [Range(1f, 3f)] public float AttackDamageMultiplier;
-        [Range(1f, 3f)] public float AttackSpeedMultiplier;
-        [Range(1f, 3f)] public float HealthDrainAmount;
-        public bool DisableShieldThrow; 
+        [Range(0f, 3f)] public float MoveMultiplier;
+        [Range(0f, 3f)] public float AttackDamageMultiplier;
+        [Range(0f, 3f)] public float AttackSpeedMultiplier;
+        [Range(0f, 5f)] public float ToughnessDamageMultiplier;
+        [Range(0f, 3f)] public float HealthDrainAmount;
+        public bool DisableShieldThrow;
 
-        public BuffSettings(float moveMultiplier, float attackDamageMultiplier, float attackSpeedMultiplier, float healthDrainAmount, bool disableShieldThrow = true)
+        public BuffSettings(float move, float dmg, float speed, float drain, float toughnessMult = 1f, bool disableThrow = true)
         {
-            MoveMultiplier = moveMultiplier;
-            AttackDamageMultiplier = attackDamageMultiplier;
-            AttackSpeedMultiplier = attackSpeedMultiplier;
-            HealthDrainAmount = healthDrainAmount;
-            DisableShieldThrow = disableShieldThrow;
+            MoveMultiplier = move;
+            AttackDamageMultiplier = dmg;
+            AttackSpeedMultiplier = speed;
+            HealthDrainAmount = drain;
+            ToughnessDamageMultiplier = toughnessMult;
+            DisableShieldThrow = disableThrow;
         }
     }
 
