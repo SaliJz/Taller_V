@@ -131,6 +131,8 @@ public class ShopManager : MonoBehaviour
 
         InitializeShopItemPools();
         InitializeGachaponEffectPool();
+
+        ResetCostBar();
     }
 
     private void Update()
@@ -564,7 +566,7 @@ public class ShopManager : MonoBehaviour
                 costBarRectTransform.anchorMax = new Vector2(endPosition, currentAnchorMax.y);
 
                 costBar.fillOrigin = (int)Image.Origin180.Right;
-                costBar.fillAmount = 1f; 
+                costBar.fillAmount = 1f;
             }
             else
             {
@@ -572,11 +574,13 @@ public class ShopManager : MonoBehaviour
                 costBarRectTransform.anchorMax = new Vector2(healthPercentage, currentAnchorMax.y);
 
                 costBar.fillOrigin = (int)Image.Origin180.Left;
-                costBar.fillAmount = 1f; 
+                costBar.fillAmount = 1f;
             }
         }
 
-        costBar.color = (currentHealth >= finalCost) ? affordableColor : unaffordableColor;
+        Color barColor = (currentHealth >= finalCost) ? affordableColor : unaffordableColor;
+        barColor.a = 1f;
+        costBar.color = barColor;
 
         if (currentHealth >= finalCost)
         {
@@ -586,8 +590,8 @@ public class ShopManager : MonoBehaviour
             {
                 if (!lowHealthWarningActive)
                 {
-                    itemNameText.color = lowHealthWarningColor;
-                    itemCostText.color = lowHealthWarningColor;
+                    itemNameText.color = Color.white;
+                    itemCostText.color = Color.white;
                     lowHealthWarningActive = true;
                 }
             }
@@ -601,7 +605,7 @@ public class ShopManager : MonoBehaviour
         else
         {
             itemNameText.color = Color.white;
-            itemCostText.color = unaffordableColor;
+            itemCostText.color = Color.white;
             lowHealthWarningActive = false;
         }
     }
@@ -771,7 +775,10 @@ public class ShopManager : MonoBehaviour
         if (costBar == null) return;
 
         costBar.fillAmount = 0f;
-        costBar.color = affordableColor;
+
+        Color resetColor = affordableColor;
+        resetColor.a = 0f;
+        costBar.color = resetColor;
 
         if (costBarRectTransform != null)
         {
