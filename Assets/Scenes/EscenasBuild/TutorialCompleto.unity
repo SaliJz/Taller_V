@@ -8947,7 +8947,7 @@ MonoBehaviour:
   Sala1_IntroDialog:
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
-    Text: "\u201CVaya, as\xED que ya recuerdas\u2026 hagamos esto m\xE1s divertido\u201D "
+    Text: "Vaya, as\xED que comienzas a recordar\u2026 hagamos esto m\xE1s divertido."
     WaitForInput: 1
     AutoAdvanceDelay: 0
     VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
@@ -8966,7 +8966,7 @@ MonoBehaviour:
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: '!RANGEDATTACK para atacar lanzando el escudo. Derrota
-            a los slimes'
+            a los slimes.'
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 953363980}
@@ -11333,7 +11333,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Para moverte, usa !MOVE
+          m_StringArgument: Para moverte, usa !MOVE    y sigue el camino.
           m_BoolArgument: 1
         m_CallState: 2
       - m_Target: {fileID: 1821268779}
@@ -14171,7 +14171,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: 'Dashea con !DASH para pasar plataformas. '
+          m_StringArgument: 'Dashea con !DASH para pasar entre plataformas. '
           m_BoolArgument: 0
         m_CallState: 2
   OnObjectExited:
@@ -18955,6 +18955,22 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5231424676741012431, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: backButton
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5231424676741012431, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: acceptButton
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5231424676741012431, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: optionsPanel
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5231424676741012431, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: dialogManager
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 5278406076687513256, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -20131,8 +20147,16 @@ MonoBehaviour:
   Sala1_IntroDialog:
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
-    Text: "\u201CParece que por fin despiertas, anda, no me hagas esperar. Recuerda
-      tu uso.\u201D\r\n"
+    Text: "Por fin despiertas. Tu alma ahora est\xE1 en uno de mis recipientes. "
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: DIABLO
+    ProfileImage: {fileID: 0}
+    Text: "Deja que este cuerpo te ense\xF1e lo que la mente ha olvidado. Ahora anda\u2026
+      vuelve a empezar y da tus primeros pasos."
     WaitForInput: 1
     AutoAdvanceDelay: 0
     VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
@@ -20457,6 +20481,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   connectionPoints:
   - {fileID: 0}
+  roomAudioSource: {fileID: 0}
+  openDoorClip: {fileID: 0}
   roomType: 0
   isStartRoom: 0
   isEndRoom: 1
