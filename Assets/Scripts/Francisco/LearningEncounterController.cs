@@ -128,7 +128,7 @@ public class LearningEncounterController : MonoBehaviour
     {
         bool isMeleeKill = slimeArmor.LastAttackDamageType == AttackDamageType.Melee;
 
-        if (currentState == EncounterState.Phase3_LearningCombat && playerAbility.IsActive && isMeleeKill)
+        if (currentState == EncounterState.Phase3_LearningCombat && isMeleeKill)
         {
             if (DialogManager.Instance != null && dialogue4_Success.Length > 0)
             {
