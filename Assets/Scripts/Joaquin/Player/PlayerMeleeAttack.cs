@@ -58,6 +58,8 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private float attack3PreChargeDuration = 0.3f;
     [SerializeField] private float attack3ChargeDuration = 0.3f;
     [SerializeField] private float attack3SpinSpeed = 90f;
+    [Tooltip("Multiplicador de daño aplicado solo en el tercer golpe del combo")]
+    [SerializeField] private float attack3DamageMultiplier = 1.5f;
 
     [Header("knockback Configuration")]
     [SerializeField] private float knockbackYoung = 0.25f;
@@ -164,7 +166,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         hitRadius = hitRadiusStat;
 
         float attackDamageStat = statsManager != null ? statsManager.GetStat(StatType.MeleeAttackDamage) : fallbackAttackDamage;
-        attackDamage = Mathf.RoundToInt(attackDamageStat);
+        attackDamage = attackDamageStat;
 
         float attackSpeedStat = statsManager != null ? statsManager.GetStat(StatType.MeleeAttackSpeed) : fallbackAttackSpeed;
         attackSpeed = attackSpeedStat;
@@ -205,7 +207,7 @@ public class PlayerMeleeAttack : MonoBehaviour
                 speedMultiplier = newValue;
                 break;
             case StatType.MeleeAttackDamage:
-                attackDamage = Mathf.RoundToInt(newValue);
+                attackDamage = newValue;
                 break;
             case StatType.MeleeAttackSpeed:
                 attackSpeed = newValue;
@@ -918,6 +920,12 @@ public class PlayerMeleeAttack : MonoBehaviour
             currentToughnessBonus = shieldSkill.CurrentToughnessMultiplier;
         }
 
+        float calculatedDamage = finalAttackDamage;
+        if (currentAttackIndex == 2)
+        {
+            calculatedDamage *= attack3DamageMultiplier;
+        }
+
         foreach (Collider enemy in hitEnemies)
         {
             if (hitEnemiesThisCombo.Contains(enemy))
@@ -928,15 +936,12 @@ public class PlayerMeleeAttack : MonoBehaviour
             hitEnemiesThisCombo.Add(enemy);
             hitAnyEnemy = true;
 
-            if (hitAnyEnemy && playerAudioController != null)
-            {
-                playerAudioController.PlayHitSound();
-            }
+            if (hitAnyEnemy && playerAudioController != null) playerAudioController.PlayHitSound();
 
             ApplyKnockbackSafe(enemy);
 
             bool isCritical;
-            float finalDamage = CriticalHitSystem.CalculateDamage(finalAttackDamage, transform, enemy.transform, out isCritical);
+            float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(calculatedDamage, transform, enemy.transform, out isCritical);
 
             IDamageable damageable = enemy.GetComponent<IDamageable>();
             
@@ -952,17 +957,19 @@ public class PlayerMeleeAttack : MonoBehaviour
 
                     if (tutorialDummy != null)
                     {
-                        tutorialDummy.TakeDamage(finalDamage, false, meleeDamageType);
+                        tutorialDummy.TakeDamage(finalDamageWithCrit, false, meleeDamageType);
                     }
                     else if (iDamageable != null)
                     {
-                        damageable.TakeDamage(Mathf.RoundToInt(finalDamage), isCritical, meleeDamageType);
-                        ReportDebug($"Golpe a {enemy.name}: DUMMY DE TUTORIAL DETECTADO (Tag). Enviando {finalDamage:F2} de daño de {damageTypeForDummy}", 1);
+                        damageable.TakeDamage(Mathf.RoundToInt(finalDamageWithCrit), isCritical, meleeDamageType);
+                        ReportDebug($"Golpe a {enemy.name}: DUMMY DE TUTORIAL DETECTADO (Tag). Enviando {finalDamageWithCrit:F2} de daño de {damageTypeForDummy}", 1);
                     }
                 }
                 else
                 {
-                    bool attackSuccessful = ExecuteAttack(enemy.gameObject, finalAttackDamage, currentToughnessBonus);
+                    bool attackSuccessful = ExecuteAttack(enemy.gameObject, calculatedDamage, currentToughnessBonus);
+
+                    ReportDebug($"Golpe a {enemy.name} por {calculatedDamage} de daño.", 1);
 
                     if (attackSuccessful)
                     {
@@ -1008,12 +1015,6 @@ public class PlayerMeleeAttack : MonoBehaviour
             CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, true);
 
             PlayImpactVFX(enemy.transform.position);
-            ReportDebug($"Golpe a {enemy.name} por {finalDamage} de daño.", 1);
-        }
-
-        if (!hitAnyEnemy)
-        {
-            //ReportDebug("Ataque no golpeó a ningún enemigo.", 1);
         }
 
         float displayDuration = gizmoDuration;
@@ -1057,7 +1058,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         if (target.TryGetComponent<DrogathEnemy>(out var blockSystem) && target.TryGetComponent<EnemyHealth>(out var health))
         {
             // Verificar si el ataque es bloqueado
-            if (blockSystem.ShouldBlockDamage(hitPoint.transform.position))
+            if (blockSystem.ShouldBlockDamage(transform.position))
             {
                 ReportDebug("Ataque bloqueado por DrogathEnemy.", 1);
                 return false;
