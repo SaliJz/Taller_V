@@ -836,8 +836,8 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 2.5
-  m_Speed: 8
-  m_Acceleration: 8
+  m_Speed: 15
+  m_Acceleration: 9
   avoidancePriority: 50
   m_AngularSpeed: 360
   m_StoppingDistance: 0
@@ -868,17 +868,17 @@ MonoBehaviour:
   _safeDistance: 2.5
   _animator: {fileID: 9124850377905314242}
   _stompTriggerDistance: 5
-  _knockbackDistance: 5
+  _knockbackDistance: 8
   _stompCooldown: 8
   _enableStompDamage: 1
-  _stompDamage: 15
+  _stompDamage: 7.5
   _stompRadius: 4
-  _stompTelegraphTime: 0.6
+  _stompTelegraphTime: 0.8
   _stompVFXPrefab: {fileID: 0}
   _whipDamageOrigin: {fileID: 6711169147769174049}
-  _whipHitRadius: 3.5
-  _Attack1Damage: 5
-  _attack1Cooldown: 7
+  _whipHitRadius: 10
+  _Attack1Damage: 10
+  _attack1Cooldown: 10
   _whipDelay1: 1.54
   _whipDelay2: 0.42
   _whipDelay3: 0.42
@@ -900,16 +900,16 @@ MonoBehaviour:
     Scale: {x: 1, y: 1, z: 1}
     Time: 1
     IsTargetable: 0
-  _Attack2Damage: 25
-  _attack2Cooldown: 12
+  _Attack2Damage: 20
+  _attack2Cooldown: 8
   _smashRadius: 6
   _smashDetectionRadius: 12
   _smashRadiusPrefab: {fileID: 858073966183631630, guid: 50f8bfdafefbba447b7bfe665ac766b0, type: 3}
-  _smashDelay: 1.5
+  _smashDelay: 2.2
   _pulseExpansionDuration: 2
   _pulseWaitDuration: 1
   _pulseSlowPercentage: 0.8
-  _pulseSlowDuration: 3
+  _pulseSlowDuration: 5
   _pulseDamage: 20
   _nervesVisualizationPrefab: {fileID: 2528258679447591905, guid: d5198e4075e1272418df127375714aaa, type: 3}
   _crackEffectPrefab: {fileID: 0}
@@ -921,7 +921,7 @@ MonoBehaviour:
   _calculateRoomRadiusOnStart: 1
   _movementSpeedForPulse: 10
   _pulseDelay: 2.25
-  _speedBuffPerPulse: 0.2
+  _speedBuffPerPulse: 0.5
   _stompWarningPrefab: {fileID: 6660308544926178198, guid: 4819f89c015191d42947f71035b9aaf3, type: 3}
   _whipTelegraphPrefab: {fileID: 6660308544926178198, guid: 4819f89c015191d42947f71035b9aaf3, type: 3}
   _smashWarningPrefab: {fileID: 6660308544926178198, guid: 4819f89c015191d42947f71035b9aaf3, type: 3}
