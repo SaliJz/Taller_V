@@ -5464,11 +5464,45 @@ PrefabInstance:
       propertyPath: m_Name
       value: Drogarth_Animated
       objectReference: {fileID: 0}
+    - target: {fileID: 7558217645732622418, guid: 3201c2ea99a1aca42af1261a4bf6048d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 978e1d1031613c146843585e87420b5e, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4255749287353331573, guid: 3201c2ea99a1aca42af1261a4bf6048d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5996420671290936861}
   m_SourcePrefab: {fileID: 100100000, guid: 3201c2ea99a1aca42af1261a4bf6048d, type: 3}
+--- !u!1 &5996420671290936860 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4255749287353331573, guid: 3201c2ea99a1aca42af1261a4bf6048d, type: 3}
+  m_PrefabInstance: {fileID: 5996420671290936859}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &5996420671290936861
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5996420671290936860}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 4f5674fd477b8084daed42dab6267dcc, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1001 &6020922598419739948
 PrefabInstance:
   m_ObjectHideFlags: 0

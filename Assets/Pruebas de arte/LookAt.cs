@@ -8,7 +8,7 @@ public class LookAt : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (Target == null)
+        if (Target == null & GameObject.FindGameObjectWithTag("Player"))
         {
             Target = GameObject.FindGameObjectWithTag("Player").transform;
         }
