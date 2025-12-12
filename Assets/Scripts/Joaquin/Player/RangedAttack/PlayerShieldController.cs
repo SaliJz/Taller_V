@@ -187,10 +187,6 @@ public class PlayerShieldController : MonoBehaviour
 
         currentShieldDamage = finalAttackDamage;
         currentShieldSpeed = finalAttackSpeed;
-
-        ReportDebug($"Estadísticas recalculadas: " +
-                    $"Daño = {shieldDamage} x {damageMultiplier} = {currentShieldDamage}, " +
-                    $"Velocidad = {shieldSpeed} x {speedMultiplier} = {currentShieldSpeed}", 1);
     }
 
     private void Update()
@@ -463,12 +459,26 @@ public class PlayerShieldController : MonoBehaviour
 
     private ShieldConfig GetShieldConfigForCurrentStage()
     {
+        const float damageReferenceStatValue = 10f;
+
+        float currentDamageStat = statsManager != null ? statsManager.GetStat(StatType.ShieldAttackDamage) : fallbackshieldDamage;
+        float damagePowerFactor = (damageReferenceStatValue > 0) ? currentDamageStat / damageReferenceStatValue : 1f;
+
+        float totalDamageFactor = damageMultiplier * damagePowerFactor;
+
+        const float speedReferenceStatValue = 25f;
+
+        float currentSpeedStat = statsManager != null ? statsManager.GetStat(StatType.ShieldSpeed) : fallbackshieldSpeed;
+        float speedPowerFactor = (speedReferenceStatValue > 0) ? currentSpeedStat / speedReferenceStatValue : 1f;
+
+        float totalSpeedFactor = speedMultiplier * speedPowerFactor;
+
         if (playerHealth == null)
         {
             return new ShieldConfig
             {
-                damage = finalAttackDamage,
-                speed = finalAttackSpeed,
+                damage = Mathf.RoundToInt(finalAttackDamage * damagePowerFactor),
+                speed = finalAttackSpeed * speedPowerFactor,
                 maxDistance = shieldMaxDistance,
                 canRebound = true,
                 maxRebounds = 2,
@@ -484,8 +494,8 @@ public class PlayerShieldController : MonoBehaviour
             case PlayerHealth.LifeStage.Young:
                 return new ShieldConfig
                 {
-                    damage = Mathf.RoundToInt(youngShieldDamage * damageMultiplier),
-                    speed = youngShieldSpeed * speedMultiplier,
+                    damage = Mathf.RoundToInt(youngShieldDamage * totalDamageFactor),
+                    speed = youngShieldSpeed * totalSpeedFactor,
                     maxDistance = shieldMaxDistance,
                     canRebound = true,
                     maxRebounds = youngMaxRebounds,
@@ -498,8 +508,8 @@ public class PlayerShieldController : MonoBehaviour
             case PlayerHealth.LifeStage.Adult:
                 return new ShieldConfig
                 {
-                    damage = Mathf.RoundToInt(adultShieldDamage * damageMultiplier),
-                    speed = adultShieldSpeed * speedMultiplier,
+                    damage = Mathf.RoundToInt(adultShieldDamage * totalDamageFactor),
+                    speed = adultShieldSpeed * totalSpeedFactor,
                     maxDistance = shieldMaxDistance,
                     canRebound = true,
                     maxRebounds = shieldMaxRebounds,
@@ -512,8 +522,8 @@ public class PlayerShieldController : MonoBehaviour
             case PlayerHealth.LifeStage.Elder:
                 return new ShieldConfig
                 {
-                    damage = Mathf.RoundToInt(elderShieldDamage * damageMultiplier),
-                    speed = elderShieldSpeed * speedMultiplier,
+                    damage = Mathf.RoundToInt(elderShieldDamage * totalDamageFactor),
+                    speed = elderShieldSpeed * totalSpeedFactor,
                     maxDistance = shieldMaxDistance,
                     canRebound = true,
                     maxRebounds = shieldMaxRebounds,
@@ -526,8 +536,8 @@ public class PlayerShieldController : MonoBehaviour
             default:
                 return new ShieldConfig
                 {
-                    damage = finalAttackDamage,
-                    speed = finalAttackSpeed,
+                    damage = Mathf.RoundToInt(finalAttackDamage * damagePowerFactor),
+                    speed = finalAttackSpeed * speedPowerFactor,
                     maxDistance = shieldMaxDistance,
                     canRebound = true,
                     maxRebounds = 2,
