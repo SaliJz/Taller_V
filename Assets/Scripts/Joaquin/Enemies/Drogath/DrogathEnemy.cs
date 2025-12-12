@@ -17,11 +17,13 @@ public class DrogathEnemy : MonoBehaviour
 
     [Header("Core References")]
     [SerializeField] private Transform hitPoint;
+    [SerializeField] private bool showVisualHit = false;
     [SerializeField] private GameObject visualHit;
     [SerializeField] private EnemyHealth enemyHealth;
     [SerializeField] private EnemyToughness enemyToughness;
     [SerializeField] private NavMeshAgent navAgent;
-    [SerializeField] private Transform playerTransform; 
+    [SerializeField] private Transform playerTransform;
+    [SerializeField] private Animator animator;
 
     [Header("Bond System")]
     [Tooltip("Radio máximo para vincular aliados")]
@@ -44,11 +46,15 @@ public class DrogathEnemy : MonoBehaviour
     [SerializeField] private float frontalBlockAngle = 75f;
     [SerializeField] private Transform shieldForwardOverride = null;
 
-    [Header("Movement & Combat")]
+    [Header("Movement")]
     [Tooltip("Velocidad de movimiento hacia el jugador")]
     [SerializeField] private float moveSpeed = 3.5f;
     [Tooltip("Distancia de parada respecto al jugador")]
     [SerializeField] private float stoppingDistance = 2f;
+    [Tooltip("Distancia para considerar que debe atacar")]
+    [SerializeField] private float distanceToAttack = 2.5f;
+
+    [Header("Combat")]
     [Tooltip("Daño del ataque cuerpo a cuerpo")]
     [SerializeField] private float meleeDamage = 10f;
     [Tooltip("Intervalo entre ataques")]
@@ -57,6 +63,10 @@ public class DrogathEnemy : MonoBehaviour
     [SerializeField] private float attackRange = 2.5f;
     [Tooltip("Empuje aplicado al jugador al ser golpeado")]
     [SerializeField] private float knockbackForce = 4f;
+    [Tooltip("Tiempo de espera desde que inicia la animación hasta el impacto")]
+    [SerializeField] private float attackImpactDelay = 1.25f;
+    [Tooltip("Tiempo de recuperación tras un ataque")]
+    [SerializeField] private float attackRecoveryTime = 0.75f;
 
     [Header("Death Effect")]
     [Tooltip("Radio de la onda demoníaca al morir")]
@@ -118,6 +128,7 @@ public class DrogathEnemy : MonoBehaviour
     private bool hasHitPlayer = false;
     private bool isAttacking = false;
     private bool isDead = false;
+    private bool isPerformingAttackAnim = false;
     private float attackTimer = 0f;
 
     private float idleTimer;
@@ -125,6 +136,9 @@ public class DrogathEnemy : MonoBehaviour
     private float stepTimer;
     private float stepRate = 0.5f;
     private float regenSoundCooldown;
+
+    private static readonly int AnimID_Walk = Animator.StringToHash("Walk");
+    private static readonly int AnimID_Attack = Animator.StringToHash("Attack");
 
     #endregion
 
@@ -136,6 +150,7 @@ public class DrogathEnemy : MonoBehaviour
         if (enemyToughness == null) enemyToughness = GetComponent<EnemyToughness>();
         if (navAgent == null) navAgent = GetComponent<NavMeshAgent>();
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
+        if (animator == null) animator = GetComponentInChildren<Animator>();
 
         if (enemyHealth == null)
         {
@@ -242,11 +257,29 @@ public class DrogathEnemy : MonoBehaviour
         if (isDead || !enabled) return;
 
         HandleAudioLogic();
+        UpdateAnimationState();
     }
 
     #endregion
 
     #region Idle && Movement
+
+    #region Animation Handling
+
+    /// <summary>
+    /// Controla el parámetro de movimiento en el Animator
+    /// </summary>
+    private void UpdateAnimationState()
+    {
+        if (animator == null || navAgent == null) return;
+
+        // Comprobamos si se mueve calculando la velocidad del NavMeshAgent
+        bool isMoving = navAgent.velocity.sqrMagnitude > 0.1f && !navAgent.isStopped;
+
+        animator.SetBool(AnimID_Walk, isMoving);
+    }
+
+    #endregion
 
     private void HandleAudioLogic()
     {
@@ -693,6 +726,12 @@ public class DrogathEnemy : MonoBehaviour
     {
         if (playerTransform == null || navAgent == null) return;
 
+        if (isPerformingAttackAnim)
+        {
+            SafeStopAgent(); // Frenar para dar el golpe
+            return;
+        }
+
         // Verificar si está aturdido
         if (enemyHealth != null && enemyHealth.IsStunned)
         {
@@ -717,7 +756,7 @@ public class DrogathEnemy : MonoBehaviour
         // Verificar si está en rango de ataque
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
-        if (distanceToPlayer <= attackRange)
+        if (distanceToPlayer <= distanceToAttack)
         {
             // Mirar al jugador
             Vector3 directionToPlayer = (playerTransform.position - transform.position).normalized;
@@ -733,31 +772,53 @@ public class DrogathEnemy : MonoBehaviour
             if (attackTimer >= attackInterval)
             {
                 hasHitPlayer = false;
-                PerformMeleeAttack();
+                StartCoroutine(ExecuteAttackSequence());
                 attackTimer = 0f;
             }
         }
     }
 
-    private void PerformMeleeAttack()
+    private IEnumerator ExecuteAttackSequence()
     {
-        if (playerTransform == null) return;
+        isPerformingAttackAnim = true;
+        hasHitPlayer = false;
 
-        // Verificar distancia nuevamente
-        float distance = Vector3.Distance(transform.position, playerTransform.position);
-        if (distance > attackRange) return;
+        if (animator != null) animator.SetTrigger(AnimID_Attack);
 
-        if (hasHitPlayer) return;
+        // if (audioSource != null) audioSource.PlayOneShot(attackWindupSFX); 
+
+        yield return new WaitForSeconds(attackImpactDelay);
+
+        if (isDead || (enemyHealth != null && enemyHealth.IsStunned))
+        {
+            isPerformingAttackAnim = false;
+            yield break;
+        }
 
         if (audioSource != null && attackSFX != null)
         {
             audioSource.PlayOneShot(attackSFX, 0.75f);
         }
 
-        Collider[] hitPlayer = Physics.OverlapSphere(hitPoint.transform.position, attackRange, playerLayer);
+        CheckMeleeHitbox();
+
+        yield return new WaitForSeconds(attackRecoveryTime);
+
+        isPerformingAttackAnim = false;
+    }
+
+    private void CheckMeleeHitbox()
+    {
+        if (playerTransform == null) return;
+
+        Vector3 impactPos = hitPoint != null ? hitPoint.position : transform.position + transform.forward;
+
+        Collider[] hitPlayer = Physics.OverlapSphere(impactPos, attackRange, playerLayer);
 
         foreach (var hit in hitPlayer)
         {
+            if (hasHitPlayer) break;
+
             var hitTransform = hit.transform;
 
             // Ejecutar ataque
@@ -766,7 +827,7 @@ public class DrogathEnemy : MonoBehaviour
             // Aplicar empuje
             ApplyKnockback(hitTransform);
 
-            ReportDebug($"Drogath atacó al jugador por {meleeDamage} de daño", 1);
+            ReportDebug($"Drogath golpeó al jugador por {meleeDamage} de daño tras {attackImpactDelay}s de delay", 1);
 
             hasHitPlayer = true;
         }
@@ -837,6 +898,9 @@ public class DrogathEnemy : MonoBehaviour
 
     private IEnumerator ShowGizmoCoroutine()
     {
+        if (visualHit == null || hitPoint == null) yield break;
+        if (!showVisualHit) yield break;
+
         Vector3 originalScale = visualHit.transform.localScale;
 
         if (visualHit != null && hitPoint != null)
@@ -974,6 +1038,8 @@ public class DrogathEnemy : MonoBehaviour
 
         // Aplicar efecto de muerte
         ApplyDemonicArmorEffect();
+
+        if (animator != null) animator.SetBool(AnimID_Walk, false);
     }
 
     private void ApplyDemonicArmorEffect()
@@ -1059,23 +1125,31 @@ public class DrogathEnemy : MonoBehaviour
         if (!canDebug) return;
 
         // Radio de vinculación
-        Gizmos.color = new Color(0f, 1f, 1f, 0.3f);
-        Gizmos.DrawWireSphere(transform.position, bondRadius);
+        Gizmos.color = new Color(0f, 1f, 1f, 0.3f); // Cian
+        Gizmos.DrawWireSphere(transform.position + transform.up * 1.875f, bondRadius);
 
         // Radio de efecto de muerte
-        Gizmos.color = new Color(1f, 0f, 0f, 0.2f);
-        Gizmos.DrawWireSphere(transform.position, deathEffectRadius);
+        Gizmos.color = new Color(1f, 0f, 0f, 0.2f); // Rojo
+        Gizmos.DrawWireSphere(transform.position + transform.up * 1.875f, deathEffectRadius);
+
+        // Rango de parada
+        Gizmos.color = new Color(0f, 1f, 0f, 0.4f); // Verde
+        Gizmos.DrawWireSphere(transform.position + transform.up * 1.875f, stoppingDistance);
+
+        // Rango de distancia para atacar
+        Gizmos.color = new Color(1f, 1f, 0f, 0.4f); // Amarillo
+        Gizmos.DrawWireSphere(transform.position + transform.up * 1.875f, distanceToAttack);
 
         // Rango de ataque
-        Gizmos.color = new Color(1f, 0.5f, 0f, 0.4f);
-        Gizmos.DrawWireSphere(transform.position, attackRange);
+        Gizmos.color = new Color(1f, 0.5f, 0f, 0.4f); // Naranja
+        Gizmos.DrawWireSphere(transform.position + transform.up * 1.875f, attackRange);
 
         // Visualizar ángulo del escudo
         Vector3 forward = transform.forward;
         Vector3 right = Quaternion.Euler(0, frontalBlockAngle/2, 0) * forward;
         Vector3 left = Quaternion.Euler(0, -frontalBlockAngle/ 2, 0) * forward;
 
-        Gizmos.color = new Color(0f, 0.5f, 1f, 0.5f);
+        Gizmos.color = new Color(0f, 0.5f, 1f, 0.5f); // Azul claro
         Gizmos.DrawLine(transform.position, transform.position + forward * 3f);
         Gizmos.DrawLine(transform.position, transform.position + right * 3f);
         Gizmos.DrawLine(transform.position, transform.position + left * 3f);
