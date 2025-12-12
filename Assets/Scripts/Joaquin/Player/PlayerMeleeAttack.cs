@@ -233,10 +233,6 @@ public class PlayerMeleeAttack : MonoBehaviour
         finalAttackSpeed = Mathf.Max(0.1f, finalAttackSpeed); 
 
         currentSpeedFactor = finalAttackSpeed / baseSpeedReference;
-
-        ReportDebug($"Estadísticas recalculadas: " +
-                    $"Daño = {attackDamage} x {damageMultiplier} = {finalAttackDamage}, " +
-                    $"Velocidad = {attackSpeed} x {speedMultiplier} = {finalAttackSpeed} (factor: {currentSpeedFactor:F2})", 1);
     }
 
     private void Update()
