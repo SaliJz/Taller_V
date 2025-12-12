@@ -73,6 +73,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
     private Vector3 initialPosition;
 
     private PlayerControlls playerControls;
+    private PlayerBlockSystem cachedBlockSystem;
 
     private void Awake()
     {
@@ -146,11 +147,30 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     public void OnAdvanceDialogue(InputAction.CallbackContext context) { }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            cachedBlockSystem = other.GetComponent<PlayerBlockSystem>();
+            if (cachedBlockSystem != null)
+            {
+                cachedBlockSystem.SetBlockingEnabled(false);
+            }
+        }
+    }
+
     private void OnTriggerStay(Collider other)
     {
         if (other.CompareTag("Player") && !isAnimating)
         {
             playerIsNear = true;
+
+            if (cachedBlockSystem == null)
+            {
+                cachedBlockSystem = other.GetComponent<PlayerBlockSystem>();
+                if (cachedBlockSystem != null) cachedBlockSystem.SetBlockingEnabled(false);
+            }
+
             if (!isActivated && HUDManager.Instance != null)
             {
                 HUDManager.Instance.SetInteractionPrompt(true, "Interact", "TIRAR");
@@ -167,6 +187,12 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         if (other.CompareTag("Player"))
         {
             playerIsNear = false;
+
+            if (cachedBlockSystem != null)
+            {
+                cachedBlockSystem.SetBlockingEnabled(true);
+                cachedBlockSystem = null;
+            }
 
             if (HUDManager.Instance != null)
             {

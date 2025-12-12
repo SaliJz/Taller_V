@@ -9,6 +9,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
     private ShopManager shopManager;
     private MerchantRoomManager merchantRoomManager;
     private PlayerControlls playerControls;
+    private PlayerBlockSystem cachedBlockSystem;
 
     [Header("SFX Configuration")]
     [SerializeField] private AudioSource audioSource;
@@ -52,6 +53,12 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
             shopManager.LockAndDisplayItemDetails(null);
             shopManager.ResetCostBar(); 
         }
+
+        if (cachedBlockSystem != null)
+        {
+            cachedBlockSystem.SetBlockingEnabled(true);
+            cachedBlockSystem = null;
+        }
     }
 
     private void OnDestroy()
@@ -90,6 +97,12 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
         {
             isPlayerInProximity = true;
 
+            cachedBlockSystem = other.GetComponent<PlayerBlockSystem>();
+            if (cachedBlockSystem != null)
+            {
+                cachedBlockSystem.SetBlockingEnabled(false);
+            }
+
             if (shopManager != null)
             {
                 shopManager.SetInteractionPromptActive(true);
@@ -122,6 +135,12 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
         if (other.CompareTag("Player"))
         {
             isPlayerInProximity = false;
+
+            if (cachedBlockSystem != null)
+            {
+                cachedBlockSystem.SetBlockingEnabled(true);
+                cachedBlockSystem = null;
+            }
 
             if (shopManager != null)
             {
@@ -157,6 +176,12 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
                         audioSource.PlayOneShot(purchaseSound);
                         Debug.Log($"<color=yellow>[ShopItemDisplay] Reproduciendo sonido de compra.</color>");
                     }
+                }
+
+                if (cachedBlockSystem != null)
+                {
+                    cachedBlockSystem.SetBlockingEnabled(true);
+                    cachedBlockSystem = null;
                 }
 
                 Destroy(gameObject);
