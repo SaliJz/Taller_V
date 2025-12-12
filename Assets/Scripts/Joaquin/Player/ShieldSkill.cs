@@ -722,7 +722,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         [Range(0f, 3f)] public float AttackDamageMultiplier;
         [Range(0f, 3f)] public float AttackSpeedMultiplier;
         [Range(0f, 5f)] public float ToughnessDamageMultiplier;
-        [Range(0f, 3f)] public float HealthDrainAmount;
+        [Range(0f, 10f)] public float HealthDrainAmount;
         public bool DisableShieldThrow;
 
         public BuffSettings(float move, float dmg, float speed, float drain, float toughnessMult = 1f, bool disableThrow = true)

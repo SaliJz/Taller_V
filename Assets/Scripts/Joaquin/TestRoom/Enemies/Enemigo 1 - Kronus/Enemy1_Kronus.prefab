@@ -1311,7 +1311,7 @@ MonoBehaviour:
   cooldownLong: 2.2
   isPercentageDmg: 0
   attackCycleCooldown: 2.2
-  attackDamage: 15
+  attackDamage: 20
   attackDamagePercentage: 0.2
   attackRadius: 2
   preparationTime: 0.25
@@ -1383,8 +1383,8 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeathByMelee: 3.5
-  lifestealAmountOnDeathByDistance: 1.5
+  lifestealAmountOnDeathByMelee: 2
+  lifestealAmountOnDeathByDistance: 1
   toughnessSystem: {fileID: 1367704949242477135}
   deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   deathVFXOffset: {x: 0, y: 1, z: 0}
@@ -1413,10 +1413,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   useToughness: 0
-  maxToughness: 50
+  maxToughness: 70
   currentToughness: 0
   meleeToughnessDamageMultiplier: 1
-  rangedToughnessDamageMultiplier: 0.25
+  rangedToughnessDamageMultiplier: 1
   useDynamicBars: 0
   toughnessPerBar: 50
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}

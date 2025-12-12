@@ -143,7 +143,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 135.3, y: 191.1}
+  m_AnchoredPosition: {x: 136, y: 194}
   m_SizeDelta: {x: 51.5999, y: 51.5999}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8168851678307930727
@@ -804,8 +804,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -9011,6 +9011,7 @@ GameObject:
   - component: {fileID: 2888951513960009550}
   - component: {fileID: 4602725535163461728}
   - component: {fileID: 9091694157290843838}
+  - component: {fileID: 1443727538697155938}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -9135,20 +9136,47 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   positiveMessages:
-  - "\xA1Bien hecho!"
-  - Recuperando fuerza...
-  - "\xA1Eso es, sigue as\xED!"
-  - Salud restituida.
+  - "Oh, curado... pens\xE9 que morir\xEDas antes. Qu\xE9 esperaba, \xBFdrama?"
+  - "Bien, otra vez con vida. No me hagas esperar el espect\xE1culo."
+  - "Te arreglan y vuelves. Qu\xE9 persistente... o desesperado."
+  - "Has sanado. Me alegra seguir vi\xE9ndote fallar en directo."
+  - "Perfecto, vuelves a brillar \u2014 por ahora me entretienes."
+  - "Otra curaci\xF3n. Qu\xE9 adorable tu negaci\xF3n ante la muerte."
+  - "Te dejo vivir otra vez. Devu\xE9lveme algo de emoci\xF3n."
+  - "Regresaste \u2014 buen movimiento para mantener mi apuesta viva."
+  - "Salvaste un latido m\xE1s. Demu\xE9strame que vali\xF3 la pena."
+  - Sanas y sigues; me gusta tu tenacidad (y mi entretenimiento).
   negativeMessages:
-  - "\xA1Ay! Eso doli\xF3..."
-  - "Cuidado, est\xE1s herido."
-  - Necesitas curarte.
-  - "\xA1Te han golpeado!"
+  - "Jaja, tu familia nunca volver\xE1 a verte. Qu\xE9 l\xE1stima, \xBFeh?"
+  - "\xBFEso es todo? Pens\xE9 que durar\xEDas m\xE1s, rid\xEDculo."
+  - "\xBFTe duele? Qu\xE9 adorablemente pat\xE9tico."
+  - "Me est\xE1s aburriendo con esa debilidad, mu\xE9vete."
+  - "\xBFCre\xEDas que ser\xEDa f\xE1cil? ja, te equivoques."
+  - "Ves c\xF3mo caes; yo apuesto y gano. T\xFA pierdes."
+  - "No sabes ni levantarte bien. \xBFTu orgullo d\xF3nde est\xE1?"
+  - "\xBFQuieres que me r\xEDa un poco m\xE1s? Porque es divertido."
+  - "Apenas un rasgu\xF1o y ya te quejas. Pat\xE9tico."
+  - Te dije que no confiaras en nadie; sobre todo en ti.
+  - "\xBFTu madre te dijo que fueras as\xED de in\xFAtil? Qu\xE9 verg\xFCenza."
+  - "Sangras como si fuera arte. Yo aplaudo desde aqu\xED."
+  - "Se te nota el miedo en la voz. Me encanta o\xEDrlo."
+  - 'Tienes dos opciones: mejorar o ser mi entretenimiento.'
+  - "Ni siquiera te esfuerzas. \xBFQu\xE9 esperabas?"
+  - "Un golpe m\xE1s y me llevo todo. Me gusta esa sensaci\xF3n."
+  - Te doy oportunidades y las desperdicias. Triste.
+  - "\xBFVas a dejarme sin espect\xE1culo? Sigue fallando."
+  - "Tu final ser\xE1 bonito \u2014 para mis historias."
+  - No tengo piedad contigo; me diviertes demasiado.
+  - "Esa ca\xEDda fue preciosa. Gracias por el show."
+  - "\xBFD\xF3nde est\xE1 tu orgullo ahora que te tengo contra la pared?"
+  - Apenas sobrevives y ya me aburres. Haz algo digno.
+  - "No llores, que yo disfruto del drama m\xE1s que nadie."
+  - "Si te rindes, mi apuesta se cumple. \xBFNo te importa?"
+  - "Te siento d\xE9bil. Eso me pone de buen humor."
   passiveMessages:
   - "\xBFQu\xE9 haces? \xBFContemplando tu destino?"
   - "Mu\xE9vete r\xE1pido, \xBFo prefieres ser un adorno?"
   - "\xBFQuieto? Me aburres. Haz algo interesante."
-  - "No vas a avanzar r\xE1pido? \xBFNo quieres ver a tu madre ya?"
   - "Lev\xE1ntate, que la diversi\xF3n no espera."
   - "Digo\u2026 \xBFvas a quedarte parado toda la partida?"
   - "No me hagas intervenir \u2014 mu\xE9vete."
@@ -9164,9 +9192,9 @@ MonoBehaviour:
   iconPrefab: {fileID: 8038693908182381492}
   iconParent: {fileID: 5057739453585957435}
   devilSprite: {fileID: 21300000, guid: 3ba36d873c4260e4f8922d26c4d9cc93, type: 3}
-  negativeMockingClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
-  audioSource: {fileID: 5769126923226320478}
-  displayDuration: 1.1
+  negativeMockingClip: {fileID: 8300000, guid: 3191a9476cfda014288c0f33619f3a63, type: 3}
+  audioSource: {fileID: 0}
+  displayDuration: 2.6
   ignoreFirstHealthUpdate: 1
   enablePassiveMessages: 1
   idleTimeToShowPassive: 10
@@ -9398,6 +9426,7 @@ MonoBehaviour:
   attack3PreChargeDuration: 0.2
   attack3ChargeDuration: 0.1
   attack3SpinSpeed: 90
+  attack3DamageMultiplier: 1.5
   knockbackYoung: 3
   knockbackAdult: 3
   knockbackElder: 4
@@ -9423,30 +9452,30 @@ MonoBehaviour:
   playerShieldController: {fileID: 3158206734398763717}
   playerAudioController: {fileID: 2888951513960009550}
   maxStamina: 100
-  baseStaminaDrainRate: 10
+  baseStaminaDrainRate: 20
   staminaRechargeRate: 20
   requireFullStaminaToActivate: 0
   minStaminaToActivate: 0
   youngBuffs:
     MoveMultiplier: 1.3
-    AttackDamageMultiplier: 1
-    AttackSpeedMultiplier: 1.25
+    AttackDamageMultiplier: 1.15
+    AttackSpeedMultiplier: 1.1
     ToughnessDamageMultiplier: 1
-    HealthDrainAmount: 2
+    HealthDrainAmount: 4
     DisableShieldThrow: 0
   adultBuffs:
     MoveMultiplier: 1.3
-    AttackDamageMultiplier: 1.25
-    AttackSpeedMultiplier: 1.3
+    AttackDamageMultiplier: 1.2
+    AttackSpeedMultiplier: 1.15
     ToughnessDamageMultiplier: 1
-    HealthDrainAmount: 2
+    HealthDrainAmount: 4
     DisableShieldThrow: 0
   elderBuffs:
     MoveMultiplier: 1.3
-    AttackDamageMultiplier: 1.4
-    AttackSpeedMultiplier: 1.3
+    AttackDamageMultiplier: 1.25
+    AttackSpeedMultiplier: 1.2
     ToughnessDamageMultiplier: 1
-    HealthDrainAmount: 1
+    HealthDrainAmount: 2
     DisableShieldThrow: 0
   visualModelObject: {fileID: 6991594973495407509}
   skillActiveMaterial: {fileID: 2100000, guid: 4e1e7aeead7ca8c48bbaeb80796aec7b, type: 2}
@@ -9588,7 +9617,7 @@ MonoBehaviour:
   useDamagePitchVariance: 1
   damagePitchVariance: 0.1
   deathClip: {fileID: 8300000, guid: db03f176ca5e74f4f8fc48ff91ff9713, type: 3}
-  deathVolume: 1
+  deathVolume: 0.5
   deathPitch: 1
   useDeathPitchVariance: 0
   deathPitchVariance: 0.05
@@ -9596,24 +9625,24 @@ MonoBehaviour:
   footstepNivel1Clip: {fileID: 8300000, guid: c13d9a4a9d830e34c93e3929d871cfc1, type: 3}
   footstepNivel2Clip: {fileID: 8300000, guid: ac4521cdb1338cb4a95c77ac54191cc0, type: 3}
   footstepNivel3Clip: {fileID: 8300000, guid: 13cb6a00edceeea4ba0d007c828c0493, type: 3}
-  stepVolume: 0.8
+  stepVolume: 1
   stepPitch: 1
   useStepPitchVariance: 1
   stepPitchVariance: 0.1
   dashClip: {fileID: 8300000, guid: bd93c9883ffbb7b4790ea4f76e1cb5b0, type: 3}
-  dashVolume: 0.75
+  dashVolume: 0.85
   dashPitch: 1
   usePitchVariance: 1
   pitchVariance: 0.1
   basicSlashClip: {fileID: 8300000, guid: 4ec675e07a3c5404495034fe15499d99, type: 3}
   spinSlashClip: {fileID: 8300000, guid: 0ee7b9aa13b90944788bfd8a167f9742, type: 3}
   heavySlashClip: {fileID: 8300000, guid: 6a31d9b895d5f194c8cd4a752868db37, type: 3}
-  meleeVolume: 0.65
+  meleeVolume: 1
   meleePitch: 1
   useMeleePitchVariance: 0
   meleePitchVariance: 0.15
   hitClip: {fileID: 8300000, guid: b7a4800f68e0e5142a31aee70aecbd57, type: 3}
-  hitVolume: 0.9
+  hitVolume: 1
   hitPitch: 1
   useHitPitchVariance: 1
   hitPitchVariance: 0.1
@@ -9621,14 +9650,14 @@ MonoBehaviour:
   catchShieldClip: {fileID: 8300000, guid: 484b79f16957ecc468573e310b2b4d6f, type: 3}
   throwShieldBerserkerClip: {fileID: 8300000, guid: bf7d4c25a6edc7046a52b47c96a72a87, type: 3}
   catchShieldBerserkerClip: {fileID: 8300000, guid: 20d91630e985ad14cb2584dc36b9f5ea, type: 3}
-  rangeVolume: 0.75
+  rangeVolume: 1
   rangePitch: 1
   useRangePitchVariance: 1
   rangePitchVariance: 0.1
   activeBlockClip: {fileID: 0}
   blockHitClip: {fileID: 8300000, guid: 0bc2af1940611bf44a48eaa5d40fccca, type: 3}
   blockBreakClip: {fileID: 8300000, guid: 39ba32a43ae429240b41c1b6248a782b, type: 3}
-  blockVolume: 0.7
+  blockVolume: 1
   blockPitch: 1
   useblockPitchVariance: 1
   blockPitchVariance: 0.1
@@ -9658,6 +9687,18 @@ MonoBehaviour:
   healAmount: 20
   damageAmount: 10
 --- !u!114 &9091694157290843838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6679960082821164706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c46865d171e0d64da28ad366b7b38e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1443727538697155938
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

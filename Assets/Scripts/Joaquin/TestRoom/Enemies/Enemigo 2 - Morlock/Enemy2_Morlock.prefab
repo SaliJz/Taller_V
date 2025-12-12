@@ -1102,7 +1102,7 @@ MonoBehaviour:
   useRandomFireRate: 1
   minFireRate: 1
   maxFireRate: 1.5
-  projectileDamage: 3.5
+  projectileDamage: 7.5
   projectileSpeed: 15
   maxDamageIncrease: 3.5
   maxRangeForDamageIncrease: 7.5
@@ -1151,8 +1151,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 0
+  maxHealth: 15
+  currentHealth: 15
   canDieAfterCooldown: 1
   deathCooldown: 0.5
   canDestroy: 1
@@ -1171,8 +1171,8 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeathByMelee: 4
-  lifestealAmountOnDeathByDistance: 2
+  lifestealAmountOnDeathByMelee: 3
+  lifestealAmountOnDeathByDistance: 1.5
   toughnessSystem: {fileID: 6741422194599992414}
   deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   deathVFXOffset: {x: 0, y: 1, z: 0}
@@ -1201,12 +1201,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   useToughness: 0
-  maxToughness: 50
+  maxToughness: 30
   currentToughness: 0
   meleeToughnessDamageMultiplier: 1
-  rangedToughnessDamageMultiplier: 0.25
+  rangedToughnessDamageMultiplier: 1
   useDynamicBars: 0
-  toughnessPerBar: 50
+  toughnessPerBar: 45
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
   toughnessSlider: {fileID: 6453633825222193822}

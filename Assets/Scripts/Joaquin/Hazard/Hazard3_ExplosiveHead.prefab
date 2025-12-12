@@ -186,6 +186,7 @@ GameObject:
   - component: {fileID: 7984995673513485293}
   - component: {fileID: 1861094544010327080}
   - component: {fileID: 8692153687006870859}
+  - component: {fileID: 2083168606316272847}
   m_Layer: 11
   m_Name: Hazard3_ExplosiveHead
   m_TagString: Untagged
@@ -246,8 +247,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   primingDuration: 2.2
-  explosionRadius: 5.5
-  explosionDamage: 15
+  explosionRadius: 7
+  explosionDamage: 30
   rigidbodyKnockbackForce: 700
   ccKnockbackDistance: 3
   useDamageFalloff: 1
@@ -368,6 +369,18 @@ MonoBehaviour:
   maxTargets: 32
   showDebugHUD: 0
   verboseDebug: 0
+--- !u!210 &2083168606316272847
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4988881062650978434}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -1
+  m_SortAtRoot: 0
 --- !u!1 &5447821499572102184
 GameObject:
   m_ObjectHideFlags: 0

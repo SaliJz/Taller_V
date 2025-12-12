@@ -1500,7 +1500,7 @@ MonoBehaviour:
   useRandomFireRate: 1
   minFireRate: 1
   maxFireRate: 1.5
-  projectileDamage: 4.5
+  projectileDamage: 12
   projectileSpeed: 18
   maxDamageIncrease: 2
   maxRangeForDamageIncrease: 4.5
@@ -1549,8 +1549,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 0
+  maxHealth: 25
+  currentHealth: 25
   canDieAfterCooldown: 1
   deathCooldown: 0.5
   canDestroy: 1
@@ -1601,10 +1601,10 @@ MonoBehaviour:
   useToughness: 1
   maxToughness: 50
   currentToughness: 0
-  meleeToughnessDamageMultiplier: 1.25
-  rangedToughnessDamageMultiplier: 1.5
+  meleeToughnessDamageMultiplier: 1
+  rangedToughnessDamageMultiplier: 1
   useDynamicBars: 0
-  toughnessPerBar: 50
+  toughnessPerBar: 75
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
   toughnessSlider: {fileID: 67327719294153111}
