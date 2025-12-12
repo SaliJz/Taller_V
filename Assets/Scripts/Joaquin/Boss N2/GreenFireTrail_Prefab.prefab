@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 94089467593723426}
   - component: {fileID: 3312165811956696647}
   - component: {fileID: 1246520173725969899}
+  - component: {fileID: 3606199694472038781}
   m_Layer: 0
   m_Name: GreenFireTrail_Prefab
   m_TagString: Untagged
@@ -125,6 +126,18 @@ MonoBehaviour:
   damagePerSecond: 5
   lifetime: 10
   groundOffset: 0.1
+--- !u!210 &3606199694472038781
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1018580927016024537}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -2
+  m_SortAtRoot: 0
 --- !u!1 &5620760085534999811
 GameObject:
   m_ObjectHideFlags: 0
@@ -173,7 +186,7 @@ ParticleSystem:
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 1
-  looping: 1
+  looping: 0
   prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0

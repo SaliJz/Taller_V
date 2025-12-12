@@ -8,6 +8,10 @@ public class BloodKnightBoss : MonoBehaviour
 {
     #region Statistics and Configuration
 
+    [Header("References")]
+    [SerializeField] private EnemyHealth enemyHealth;
+    [SerializeField] private NavMeshAgent agent;
+
     [Header("Boss Configuration")]
     [SerializeField] private float maxHealth = 300f;
     [SerializeField] private float currentHealth;
@@ -19,7 +23,14 @@ public class BloodKnightBoss : MonoBehaviour
     [SerializeField] private float apocalipsisDamage = 7f;
     [SerializeField] private int apocalipsisTargetDashes = 10;
     [SerializeField] private float apocalipsisRange = 4f;
-    [SerializeField] private float apocalipsisImpactDelay = 0.5f;
+
+    [Header("Ciclo 1: Tiempos de Animación")]
+    [Tooltip("Duración del desplazamiento")]
+    [SerializeField] private float apocalipsisDashDuration = 0.43f;
+    [Tooltip("Tiempo desde que inicia el ataque hasta que golpea")]
+    [SerializeField] private float apocalipsisImpactDelay = 0.2f;
+    [Tooltip("Tiempo restante de la animación tras el impacto")]
+    [SerializeField] private float apocalipsisRecoveryTime = 0.3f;
 
     [Header("Ciclo 2: Pausa Posicionamiento")]
     [SerializeField] private float positioningDuration = 2f;
@@ -31,7 +42,14 @@ public class BloodKnightBoss : MonoBehaviour
     [SerializeField] private float fireTrailLifeTime = 2.5f;
     [SerializeField] private float sodomaChargeTime = 1.5f;
     [SerializeField] private float sodomaBackwardDistance = 3f;
-    [SerializeField] private float sodomaImpactDelay = 0.5f;
+
+    [Header("Ciclo 3: Tiempos de Animación")]
+    [Tooltip("Tiempo que tarda el jefe en recuperarse del Dash antes de cargar el ataque")]
+    [SerializeField] private float sodomaDashDuration = 0.66f;
+    [Tooltip("Momento exacto del impacto tras iniciar SwordStack")]
+    [SerializeField] private float sodomaImpactDelay = 0.63f;
+    [Tooltip("Tiempo de espera tras el impacto para finalizar la pose")]
+    [SerializeField] private float attackEndDuration = 0.56f;
 
     [Header("Ciclo 4: Fase Cooldown / Necio Pecador")]
     [SerializeField] private float necioAttackWindow = 12f;
@@ -110,10 +128,8 @@ public class BloodKnightBoss : MonoBehaviour
     }
 
     private BossState currentState = BossState.Idle;
-    private NavMeshAgent agent;
-    private EnemyHealth enemyHealth;
-    private PlayerHealth playerHealth;
 
+    private PlayerHealth playerHealth;
     private CharacterController playerController;
 
     private bool isInLowHealthPhase = false;
@@ -143,8 +159,12 @@ public class BloodKnightBoss : MonoBehaviour
     private static readonly int AnimID_Walking = Animator.StringToHash("Walking");
     private static readonly int AnimID_Death = Animator.StringToHash("Death");
     private static readonly int AnimID_AttackHand = Animator.StringToHash("AttackHand");
+
     private static readonly int AnimID_SoloDash = Animator.StringToHash("SoloDash");
     private static readonly int AnimID_AttackDash = Animator.StringToHash("AttackDash");
+
+    private static readonly int AnimID_SwordStack = Animator.StringToHash("SwordStack");
+    private static readonly int AnimID_AttackEnded = Animator.StringToHash("AttackEnded");
 
     #endregion
 
@@ -168,7 +188,7 @@ public class BloodKnightBoss : MonoBehaviour
 
     private void InitializeComponents()
     {
-        enemyHealth = GetComponent<EnemyHealth>();
+        if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
         if (enemyHealth != null) enemyHealth.SetMaxHealth(maxHealth);
         currentHealth = maxHealth;
 
@@ -397,16 +417,21 @@ public class BloodKnightBoss : MonoBehaviour
     private IEnumerator ExecuteApocalipsisSequence()
     {
         ReportDebug("ETAPA 1: APOCALIPSIS", 1);
+
         currentState = BossState.Attacking;
 
-        float startTime = Time.time;
-        int dashesPerformed = 0;
+        float totalAnimTime = apocalipsisDashDuration + apocalipsisImpactDelay + apocalipsisRecoveryTime;
         float timePerDash = apocalipsisDuration / (float)apocalipsisTargetDashes;
+        float waitTimeBetweenDashes = Mathf.Max(0f, timePerDash - totalAnimTime);
 
-        if (animator != null) animator.ResetTrigger(AnimID_AttackDash);
-        if (animator != null) animator.ResetTrigger(AnimID_SoloDash);
+        if (animator != null)
+        {
+            animator.ResetTrigger(AnimID_AttackDash);
+            animator.ResetTrigger(AnimID_SoloDash);
+            animator.SetBool(AnimID_AttackEnded, false);
+        }
 
-        if (animator != null) animator.SetTrigger(AnimID_SoloDash);
+        int dashesPerformed = 0;
 
         while (dashesPerformed < apocalipsisTargetDashes)
         {
@@ -416,8 +441,10 @@ public class BloodKnightBoss : MonoBehaviour
             if (agent != null && agent.enabled)
             {
                 agent.isStopped = false;
+                agent.velocity = Vector3.zero;
             }
             if (animator != null) animator.SetBool(AnimID_Walking, true);
+
             agent.SetDestination(player.position);
 
             yield return new WaitForSeconds(0.25f);
@@ -433,14 +460,10 @@ public class BloodKnightBoss : MonoBehaviour
             Vector3 targetPos = GetZigZagDashPosition();
             targetPos.y = transform.position.y;
 
-            // 3. Ejecutar Animación y Movimiento
-            if (animator != null) animator.SetTrigger(AnimID_SoloDash);
-
-            yield return new WaitForSeconds(0.1f);
-
-            yield return MoveToPositionFast(targetPos, 0.25f);
-
             if (animator != null) animator.SetTrigger(AnimID_AttackDash);
+
+            // 3. Ejecutar Dash
+            yield return MoveToPositionFast(targetPos, apocalipsisDashDuration);
 
             // 4. Esperar momento de impacto
             yield return new WaitForSeconds(apocalipsisImpactDelay);
@@ -451,6 +474,8 @@ public class BloodKnightBoss : MonoBehaviour
             if (audioSource) audioSource.PlayOneShot(apocalipsisSlashSFX, 0.5f);
 
             DealAreaDamage(swordTransform.position + transform.forward, apocalipsisRange, apocalipsisDamage);
+
+            yield return new WaitForSeconds(apocalipsisRecoveryTime);
 
             // 6. Retroceso
             Vector3 retreatPos = transform.position - transform.forward * 2.5f;
@@ -466,13 +491,11 @@ public class BloodKnightBoss : MonoBehaviour
 
             dashesPerformed++;
 
-            float elapsed = Time.time - dashCycleStart;
-            float wait = timePerDash - elapsed;
-
-            if (wait > 0) yield return new WaitForSeconds(wait);
-
+            if (waitTimeBetweenDashes > 0) yield return new WaitForSeconds(waitTimeBetweenDashes);
             else yield return null;
         }
+
+        if (animator != null) animator.SetBool(AnimID_AttackEnded, true);
 
         currentState = BossState.Idle;
     }
@@ -543,6 +566,13 @@ public class BloodKnightBoss : MonoBehaviour
             transform.LookAt(lookPos);
         }
 
+        if (animator != null)
+        {
+            animator.ResetTrigger(AnimID_SwordStack);
+            animator.ResetTrigger(AnimID_SoloDash);
+            animator.SetBool(AnimID_AttackEnded, false);
+        }
+
         yield return new WaitForSeconds(0.25f);
 
         Vector3 backwardPos = transform.position - transform.forward * sodomaBackwardDistance;
@@ -559,33 +589,42 @@ public class BloodKnightBoss : MonoBehaviour
         // Cálculo de posición de impacto
         Vector3 dirToPlayer = (player.position - transform.position).normalized;
         float stopDistance = 1.2f;
-        Vector3 strikePos = player.position - (dirToPlayer * stopDistance);
-        strikePos.y = transform.position.y;
-
-        GameObject warning = SpawnSodomaWarning(strikePos, sodomaCutRange);
+        Vector3 dashDestination = player.position - (dirToPlayer * stopDistance);
+        dashDestination.y = transform.position.y;
 
         yield return new WaitForSeconds(sodomaChargeTime);
 
         StopArmorGlow();
-        if (warning != null) Destroy(warning); // Eliminar warning antes del golpe
+
+        if (animator != null) animator.SetTrigger(AnimID_SoloDash);
 
         // 3. Movimiento y Ataque
-        if (animator != null) animator.SetTrigger(AnimID_AttackDash);
+        yield return MoveToPositionFast(dashDestination, 0.25f);
 
-        yield return MoveToPositionFast(strikePos, 0.25f);
+        SpawnGreenFireTrail(backwardPos, dashDestination);
+
+        yield return new WaitForSeconds(sodomaDashDuration);
+
+        if (animator != null) animator.SetTrigger(AnimID_SwordStack);
+
+        Vector3 impactCenter = swordTransform.position + transform.forward;
+        Vector3 activeWarningCenter = GetGroundPosition(impactCenter);
+        GameObject activeWarning = SpawnSodomaWarning(activeWarningCenter, sodomaCutRange);
 
         // 4. Esperar impacto
         yield return new WaitForSeconds(sodomaImpactDelay);
 
+        if (activeWarning != null) Destroy(activeWarning);
+
         // 5. Aplicar daño y vfx
         SpawnSlashVFX();
         if (audioSource) audioSource.PlayOneShot(sodomaAttackSFX);
-        DealAreaDamage(swordTransform.position + transform.forward, sodomaCutRange, sodomaDamage);
+        DealAreaDamage(impactCenter, sodomaCutRange, sodomaDamage);
 
-        // Rastro de fuego
-        SpawnGreenFireTrail(backwardPos, strikePos);
+        if (animator != null) animator.SetBool(AnimID_AttackEnded, true);
 
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(attackEndDuration);
+
         currentState = BossState.Idle;
     }
 
