@@ -42,6 +42,15 @@ public class BlockCounterProjectile : MonoBehaviour
         if (other.CompareTag("Player")) return;
         if (other.gameObject.layer == enemyProjectileLayer) Destroy(other.gameObject);
 
+        if (other.CompareTag("TutorialDummy") || other.gameObject.layer == enemyLayer)
+        {
+            ExecuteAttack(other.gameObject, damageToDeal);
+            Debug.Log("Golpe A dummy");
+            if (impactVFX != null) Instantiate(impactVFX, transform.position, Quaternion.identity);
+            Destroy(gameObject);
+            return;
+        }
+
         if ((collisionLayers.value & (1 << other.gameObject.layer)) != 0)
         {
             Destroy(gameObject);
@@ -58,8 +67,12 @@ public class BlockCounterProjectile : MonoBehaviour
     }
 
     private void ExecuteAttack(GameObject target, float damageAmount)
-    {
-        if (target.TryGetComponent<DrogathEnemy>(out var blockSystem) && target.TryGetComponent<EnemyHealth>(out var health))
+    {   
+        if (target.TryGetComponent<TutorialCombatDummy>(out var dummy))
+        {
+            dummy.TakeDamage(damageAmount, false, DamageType.Shield);
+        }
+        else if(target.TryGetComponent<DrogathEnemy>(out var blockSystem) && target.TryGetComponent<EnemyHealth>(out var health))
         {
             if (blockSystem.ShouldBlockDamage(transform.position))
             {
