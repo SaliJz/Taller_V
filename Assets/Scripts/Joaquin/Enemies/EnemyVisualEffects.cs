@@ -230,6 +230,36 @@ public class EnemyVisualEffects : MonoBehaviour
 
     #endregion
 
+    #region External Material Control
+
+    /// <summary>
+    /// Permite a scripts externos cambiar el material base
+    /// sin que el sistema de VFX lo sobrescriba con el cacheado en Awake.
+    /// </summary>
+    public void UpdateBaseMaterial(Renderer targetRenderer, Material newMaterial)
+    {
+        if (targetRenderer == null || newMaterial == null) return;
+
+        if (originalMeshMats.ContainsKey(targetRenderer))
+        {
+            originalMeshMats[targetRenderer] = newMaterial;
+        }
+        else
+        {
+            originalMeshMats.Add(targetRenderer, newMaterial);
+        }
+
+        if (!isStunned && glowCoroutine == null)
+        {
+            if (!activeBlinkRoutines.ContainsKey(targetRenderer))
+            {
+                targetRenderer.material = newMaterial;
+            }
+        }
+    }
+
+    #endregion
+
     #region Generic Blink System
 
     private void StartBlinkRoutine(Component target, Material flashMat, float interval, int count)

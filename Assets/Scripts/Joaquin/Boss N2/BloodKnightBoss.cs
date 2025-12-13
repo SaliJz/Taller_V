@@ -274,7 +274,11 @@ public class BloodKnightBoss : MonoBehaviour
         StopAllCoroutines();
         CleanUpEffects();
 
-        if (agent != null) agent.enabled = false;
+        if (agent != null)
+        {
+            agent.isStopped = true;
+            agent.enabled = false;
+        }
         if (ambientAudioSource != null) ambientAudioSource.Stop();
         if (animator != null) animator.SetTrigger(AnimID_Death);
 
@@ -1002,6 +1006,8 @@ public class BloodKnightBoss : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        if (!showDebugGUI) return;
+
         Vector3 damageOrigin = (swordTransform != null) ? swordTransform.position : transform.position;
 
         Color stateColor = currentState switch
