@@ -20,6 +20,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private PlayerAudioController playerAudioController;
     [SerializeField] private ShieldSkill shieldSkill;
     [SerializeField] private Animator playerAnimator;
+    [SerializeField] private AutoAim autoAim;
 
     [Header("Attack Configuration")]
     [SerializeField] private Transform hitPoint;
@@ -129,7 +130,9 @@ public class PlayerMeleeAttack : MonoBehaviour
         if (playerAnimator == null) playerAnimator = GetComponentInChildren<Animator>();
         if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
         if (gamepadPointer == null) gamepadPointer = FindAnyObjectByType<GamepadPointer>();
- 
+        if (autoAim == null) autoAim = GetComponent<AutoAim>();
+
+        if (autoAim == null) ReportDebug("ShieldAutoAim no encontrado. El auto-aim del melee no funcionará.", 2);
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMeleeAttack. Usando valores de fallback.", 2);
         if (playerHealth == null) ReportDebug("PlayerHealth no se encuentra en el objeto.", 3);
         if (playerShieldController == null) ReportDebug("PlayerShieldController no se encuentra en el objeto.", 3);
@@ -324,13 +327,63 @@ public class PlayerMeleeAttack : MonoBehaviour
         comboCount = (comboCount + 1) % 3; // Ciclo: 0 -> 1 -> 2 -> 0
     }
 
-    // Método nuevo para buscar el enemigo más cercano
     private bool TryGetNearestEnemyDirection(out Vector3 enemyDir)
     {
         enemyDir = Vector3.forward;
 
-        int layerMask = LayerMask.GetMask("Enemy");
+        if (autoAim != null && autoAim.EnableAutoAim)
+        {
+            bool isUsingGamepad = false;
+            Vector3? manualAimDirection = null;
 
+            if (gamepadPointer != null && gamepadPointer.GetCurrentActiveDevice() == gamepadPointer.GetCurrentGamepad())
+            {
+                isUsingGamepad = true;
+
+                Vector2 stickAim = gamepadPointer.GetAimDirectionValue();
+                if (stickAim.magnitude > 0.0001f)
+                {
+                    Camera camera = Camera.main;
+                    if (camera != null)
+                    {
+                        Vector3 camForward = camera.transform.forward;
+                        camForward.y = 0f;
+                        camForward.Normalize();
+
+                        Vector3 camRight = camera.transform.right;
+                        camRight.y = 0f;
+                        camRight.Normalize();
+
+                        Vector3 targetDirection = camForward * stickAim.y + camRight * stickAim.x;
+                        if (targetDirection.sqrMagnitude > 0.0001f)
+                        {
+                            manualAimDirection = targetDirection.normalized;
+                        }
+                    }
+                }
+            }
+
+            bool useAutoAim = isUsingGamepad;
+
+            if (!useAutoAim && !TryGetMouseWorldDirection(out _))
+            {
+                useAutoAim = true;
+            }
+
+            if (useAutoAim)
+            {
+                bool foundTarget;
+                enemyDir = autoAim.GetAimDirection(transform.position, transform.forward, manualAimDirection, out foundTarget);
+
+                if (foundTarget)
+                {
+                    ReportDebug($"Auto-aim de melee activado hacia: {autoAim.GetCurrentTarget()?.name}", 1);
+                    return true;
+                }
+            }
+        }
+
+        int layerMask = LayerMask.GetMask("Enemy");
         int hitCount = Physics.OverlapSphereNonAlloc(transform.position, autoAimRange, hitBuffer, layerMask);
 
         if (hitCount == 0) return false;
@@ -485,6 +538,20 @@ public class PlayerMeleeAttack : MonoBehaviour
         //if (playerAnimator != null) playerAnimator.SetBool("IsAttacking", false);
 
         //hitEnemiesThisCombo.Clear();
+    }
+
+    public void SetMeleeAutoAimEnabled(bool enabled)
+    {
+        if (autoAim != null)
+        {
+            autoAim.EnableAutoAim = enabled;
+            ReportDebug($"Auto-aim de melee {(enabled ? "activado" : "desactivado")}", 1);
+        }
+    }
+
+    public bool IsMeleeAutoAimEnabled()
+    {
+        return autoAim != null && autoAim.EnableAutoAim;
     }
 
     private IEnumerator WaitForRotationLock()

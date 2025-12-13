@@ -16,6 +16,7 @@ public class PlayerShieldController : MonoBehaviour
     [SerializeField] private PlayerAudioController playerAudioController;
     [SerializeField] private ShieldSkill shieldSkill;
     [SerializeField] private Animator playerAnimator;
+    [SerializeField] private AutoAim autoAim;
 
     [Header("Stats")]
     [Tooltip("Daño de ataque por defecto si no se encuentra PlayerStatsManager.")]
@@ -91,7 +92,9 @@ public class PlayerShieldController : MonoBehaviour
         if (playerAnimator == null) playerAnimator = GetComponentInChildren<Animator>();
         if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
         if (shieldSkill == null) shieldSkill = GetComponent<ShieldSkill>();
+        if (autoAim == null) autoAim = GetComponent<AutoAim>();
 
+        if (autoAim == null) ReportDebug("ShieldAutoAim no encontrado. El auto-aim no funcionará.", 2);
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerShieldController. Usando valores de fallback.", 2);
         if (playerMeleeAttack == null) ReportDebug("PlayerMeleeAttack no encontrado. No se podrá verificar estado de ataque melee.", 2);
         if (playerMovement == null) ReportDebug("PlayerMovement no encontrado. Lock de rotación no funcionará.", 2);
@@ -405,9 +408,12 @@ public class PlayerShieldController : MonoBehaviour
     private bool TryGetAimDirection(out Vector3 outDir)
     {
         outDir = transform.forward;
+        bool isUsingGamepad = false;
+        Vector3? manualAimDirection = null;
 
         if (GamepadPointer.Instance != null && GamepadPointer.Instance.GetCurrentActiveDevice() == GamepadPointer.Instance.GetCurrentGamepad())
         {
+            isUsingGamepad = true;
             Vector2 stickAim = GamepadPointer.Instance.GetAimDirectionValue();
 
             if (stickAim.magnitude > 0.0001f)
@@ -427,34 +433,62 @@ public class PlayerShieldController : MonoBehaviour
 
                 if (targetDirection.sqrMagnitude > 0.0001f)
                 {
-                    outDir = targetDirection.normalized;
+                    manualAimDirection = targetDirection.normalized;
+                }
+            }
+        }
+        else
+        {
+            Camera cam = Camera.main;
+            if (cam == null) return false;
+
+            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+            Plane plane = new Plane(Vector3.up, transform.position);
+            if (plane.Raycast(ray, out float enter))
+            {
+                Vector3 worldPoint = ray.GetPoint(enter);
+                Vector3 dir = worldPoint - transform.position;
+                dir.y = 0f;
+                if (dir.sqrMagnitude > 0.0001f)
+                {
+                    outDir = dir.normalized;
                     return true;
                 }
             }
 
             outDir = transform.forward;
+            return false;
+        }
+
+        if (isUsingGamepad && autoAim != null && autoAim.EnableAutoAim)
+        {
+            bool foundTarget;
+            outDir = autoAim.GetAimDirection(transform.position, transform.forward, manualAimDirection, out foundTarget);
+
+            if (foundTarget)
+            {
+                ReportDebug($"Auto-aim activado hacia: {autoAim.GetCurrentTarget()?.name}", 1);
+            }
+            else if (manualAimDirection.HasValue)
+            {
+                outDir = manualAimDirection.Value;
+            }
+            else
+            {
+                outDir = transform.forward;
+            }
+
             return true;
         }
 
-        Camera cam = Camera.main;
-        if (cam == null) return false;
-
-        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-        Plane plane = new Plane(Vector3.up, transform.position);
-        if (plane.Raycast(ray, out float enter))
+        if (manualAimDirection.HasValue)
         {
-            Vector3 worldPoint = ray.GetPoint(enter);
-            Vector3 dir = worldPoint - transform.position;
-            dir.y = 0f;
-            if (dir.sqrMagnitude > 0.0001f)
-            {
-                outDir = dir.normalized;
-                return true;
-            }
+            outDir = manualAimDirection.Value;
+            return true;
         }
 
         outDir = transform.forward;
-        return false;
+        return true;
     }
 
     private ShieldConfig GetShieldConfigForCurrentStage()
@@ -594,6 +628,20 @@ public class PlayerShieldController : MonoBehaviour
     public bool CanThrowShield()
     {
         return hasShield && !isThrowingShield;
+    }
+
+    public void SetAutoAimEnabled(bool enabled)
+    {
+        if (autoAim != null)
+        {
+            autoAim.EnableAutoAim = enabled;
+            ReportDebug($"Auto-aim {(enabled ? "activado" : "desactivado")}", 1);
+        }
+    }
+
+    public bool IsAutoAimEnabled()
+    {
+        return autoAim != null && autoAim.EnableAutoAim;
     }
 
     // Permite cambiar si el escudo puede rebotar o no

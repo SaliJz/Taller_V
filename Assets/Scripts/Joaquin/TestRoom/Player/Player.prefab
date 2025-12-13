@@ -9012,6 +9012,7 @@ GameObject:
   - component: {fileID: 4602725535163461728}
   - component: {fileID: 9091694157290843838}
   - component: {fileID: 1443727538697155938}
+  - component: {fileID: 2676318613311582842}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -9355,6 +9356,7 @@ MonoBehaviour:
   playerAudioController: {fileID: 0}
   shieldSkill: {fileID: 0}
   playerAnimator: {fileID: 2511880707407823879}
+  autoAim: {fileID: 0}
   shieldDamage: 10
   shieldSpeed: 25
   shieldMaxDistance: 20
@@ -9392,6 +9394,7 @@ MonoBehaviour:
   playerAudioController: {fileID: 0}
   shieldSkill: {fileID: 0}
   playerAnimator: {fileID: 2511880707407823879}
+  autoAim: {fileID: 0}
   hitPoint: {fileID: 7029900753368981312}
   hitRadius: 1.8
   attackDamage: 10
@@ -9710,6 +9713,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c46865d171e0d64da28ad366b7b38e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &2676318613311582842
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6679960082821164706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5072e6b5a2142bf408f262466c927ae7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableAutoAim: 1
+  onlyForGamepad: 1
+  autoAimRange: 25
+  autoAimAngle: 60
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  debugMode: 1
+  enableStickyTarget: 1
+  stickyTargetDuration: 0.5
+  showTargetFX: 1
+  arrowPrefab: {fileID: 0}
+  arrowDistance: 0.5
+  arrowOffset: 1.5
+  arrowColor: {r: 1, g: 0, b: 0, a: 0.8}
+  arrowSize: 0.3
+  animateFX: 1
+  pulseSpeed: 3
+  pulseScale: 1.2
+  rotationSpeed: 90
+  billboardToCamera: 1
 --- !u!1 &6769764421561134128
 GameObject:
   m_ObjectHideFlags: 0
