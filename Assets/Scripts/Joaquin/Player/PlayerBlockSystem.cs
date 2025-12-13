@@ -29,6 +29,12 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     [SerializeField] private bool useMouseRotation = true;
     [SerializeField] private float rotationSpeed = 10f;
 
+    [Header("Counter Attack Rotation")]
+    [Tooltip("Tiempo en segundos que el personaje forzará la mirada al objetivo al disparar.")]
+    [SerializeField] private float counterRotationDuration = 0.25f;
+    [Tooltip("Velocidad de interpolación para volver a la rotación original.")]
+    [SerializeField] private float counterRotationSmoothReturn = 15f;
+
     [Header("Durability System")]
     [Tooltip("Vida del escudo (Base 30).")]
     [SerializeField] private float maxDurability = 30f;
@@ -103,6 +109,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     private Coroutine durabilityRechargeCoroutine;
     private Coroutine durabilityDrainCoroutine;
     private Coroutine stunCoroutine;
+    private Coroutine counterRotationCoroutine;
 
     private Vector2 movementInput;
     private Vector3 originalScale;
@@ -154,6 +161,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         playerControls?.Defense.Disable();
         playerControls?.Movement.Disable();
         if (IsBlocking) StopBlocking(false);
+        if (playerMovement != null) playerMovement.IsRotationExternallyControlled = false;
     }
 
     private void Update()
@@ -162,7 +170,11 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         if (!blockingEnabled || !IsBlocking) return;
 
         movementInput = playerControls.Movement.Move.ReadValue<Vector2>();
-        HandleRotationWhileBlocking();
+
+        if (counterRotationCoroutine == null)
+        {
+            HandleRotationWhileBlocking();
+        }
 
         if (!isInitialized || durabilitySlider == null) return;
 
@@ -255,6 +267,13 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         IsBlocking = true;
         accumulatedDamage = 0f;
 
+        if (counterRotationCoroutine != null)
+        {
+            StopCoroutine(counterRotationCoroutine);
+            counterRotationCoroutine = null;
+            if (playerMovement != null) playerMovement.IsRotationExternallyControlled = false;
+        }
+
         if (playerAnimator != null) playerAnimator.SetBool("Block", true);
         if (playerMovement != null) playerMovement.SetCanMove(false);
 
@@ -287,11 +306,18 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     private void StopBlocking(bool fireProjectile)
     {
         IsBlocking = false;
+
         if (playerAnimator != null) playerAnimator.SetBool("Block", false);
+
+        if (!fireProjectile && playerMovement != null)
+        {
+            playerMovement.UnlockFacing();
+        }
+
         if (playerMovement != null)
         {
             playerMovement.SetCanMove(true);
-            playerMovement.UnlockFacing();
+            if (!fireProjectile) playerMovement.UnlockFacing();
         }
 
         if (blockVFX != null) blockVFX.SetActive(false);
@@ -300,6 +326,10 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         if (fireProjectile && accumulatedDamage > 0)
         {
             FireCounterProjectile(isBroken: false);
+        }
+        else if (!fireProjectile)
+        {
+            if (playerMovement != null) playerMovement.IsRotationExternallyControlled = false;
         }
 
         if (durabilityRechargeCoroutine == null && currentDurability < maxDurability)
@@ -438,17 +468,33 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         if (isBroken)
         {
             finalDamage *= 1f;
-            if (debugMode) Debug.Log("Escudo roto: Daño del proyectil reducido al 50%.");
+            //if (debugMode) Debug.Log("Escudo roto: Daño del proyectil reducido al 50%.");
         }
 
-        Vector3 fireDirection = transform.forward;
         Transform target = FindNearestEnemy();
+        Vector3 fireDirection;
+        bool hasTarget = false;
 
         if (target != null)
         {
             fireDirection = (target.position - GetSpawnPosition()).normalized;
             fireDirection.y = 0;
+            if (fireDirection.sqrMagnitude < 0.001f) fireDirection = transform.forward;
+            else fireDirection.Normalize();
+
+            hasTarget = true;
+        }
+        else
+        {
+            fireDirection = GetShieldForward();
+            fireDirection.y = 0;
             fireDirection.Normalize();
+        }
+
+        if (playerMovement != null)
+        {
+            if (counterRotationCoroutine != null) StopCoroutine(counterRotationCoroutine);
+            counterRotationCoroutine = StartCoroutine(HandleCounterRotation(fireDirection, hasTarget));
         }
 
         var projObj = Instantiate(counterProjectilePrefab, GetSpawnPosition(), Quaternion.LookRotation(fireDirection));
@@ -462,6 +508,25 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         if (debugMode) Debug.Log($"Contraataque disparado. Daño acumulado: {accumulatedDamage}, Final: {finalDamage}, Objetivo: {(target ? target.name : "Frente")}");
 
         accumulatedDamage = 0f;
+    }
+
+    private IEnumerator HandleCounterRotation(Vector3 targetDirection, bool forceSnap)
+    {
+        playerMovement.IsRotationExternallyControlled = true;
+
+        if (forceSnap && targetDirection.sqrMagnitude > 0.001f)
+        {
+            playerMovement.LockFacingTo8Directions(targetDirection, true);
+            playerMovement.ForceApplyLockedRotation();
+        }
+
+        yield return new WaitForSeconds(counterRotationDuration);
+
+        playerMovement.IsRotationExternallyControlled = false;
+
+        playerMovement.UnlockFacing();
+
+        counterRotationCoroutine = null;
     }
 
     private Transform FindNearestEnemy()
@@ -532,6 +597,8 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
     private void HandleRotationWhileBlocking()
     {
+        if (counterRotationCoroutine != null) return;
+
         if (useMouseRotation) RotateTowardsMouse();
         else RotateWithMovementInput();
     }
@@ -714,6 +781,12 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         Gizmos.DrawLine(origin, origin + forward * radius);
         Gizmos.DrawLine(origin, origin + leftDir * radius);
         Gizmos.DrawLine(origin, origin + rightDir * radius);
+
+        if (counterRotationCoroutine != null)
+        {
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawLine(transform.position, transform.position + transform.forward * 3f);
+        }
 
         // Dibujar arco
         int segments = 15;
