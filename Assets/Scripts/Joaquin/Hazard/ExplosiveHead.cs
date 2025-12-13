@@ -28,6 +28,8 @@ public class ExplosiveHead : MonoBehaviour
     [SerializeField] private float ccKnockbackDistance = 3f;
 
     [Header("Comportamiento")]
+    [Tooltip("Si true, inicia la secuencia automáticamente al detectar objetivos en el trigger.")]
+    [SerializeField] private bool enableProximityTrigger = true;
     [Tooltip("Si true, el daño decrece con la distancia (falloff).")]
     [SerializeField] private bool useDamageFalloff = true;
     [Tooltip("Si true, la priming se cancelará si el jugador sale del área antes de explotar.")]
@@ -135,7 +137,7 @@ public class ExplosiveHead : MonoBehaviour
 
     private void Update()
     {
-        if (currentState == HazardState.Armed && targetsInTrigger > 0 && hazardRoutine == null)
+        if (currentState == HazardState.Armed && enableProximityTrigger && targetsInTrigger > 0 && hazardRoutine == null)
         {
             if (verboseDebug) Debug.Log($"[ExplosiveHead] Objetivos detectados ({targetsInTrigger}), iniciando priming.");
 
@@ -183,6 +185,14 @@ public class ExplosiveHead : MonoBehaviour
             StopCoroutine(hazardRoutine);
         }
         hazardRoutine = StartCoroutine(ActivationSequence());
+    }
+
+    /// <summary>
+    /// Permite activar/desactivar el sensor de proximidad desde otros scripts.
+    /// </summary>
+    public void SetProximityTrigger(bool enabled)
+    {
+        enableProximityTrigger = enabled;
     }
 
     /// <summary>

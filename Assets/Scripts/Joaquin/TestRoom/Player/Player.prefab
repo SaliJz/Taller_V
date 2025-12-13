@@ -9463,21 +9463,21 @@ MonoBehaviour:
     MoveMultiplier: 1.3
     AttackDamageMultiplier: 1.15
     AttackSpeedMultiplier: 1.1
-    ToughnessDamageMultiplier: 1
+    ToughnessDamageMultiplier: 1.15
     HealthDrainAmount: 4
     DisableShieldThrow: 0
   adultBuffs:
     MoveMultiplier: 1.3
     AttackDamageMultiplier: 1.2
     AttackSpeedMultiplier: 1.15
-    ToughnessDamageMultiplier: 1
+    ToughnessDamageMultiplier: 1.15
     HealthDrainAmount: 4
     DisableShieldThrow: 0
   elderBuffs:
     MoveMultiplier: 1.3
     AttackDamageMultiplier: 1.25
     AttackSpeedMultiplier: 1.2
-    ToughnessDamageMultiplier: 1
+    ToughnessDamageMultiplier: 1.15
     HealthDrainAmount: 2
     DisableShieldThrow: 0
   visualModelObject: {fileID: 6991594973495407509}
@@ -9563,6 +9563,8 @@ MonoBehaviour:
   frontBlockAngle: 330
   useMouseRotation: 1
   rotationSpeed: 30
+  counterRotationDuration: 0.25
+  counterRotationSmoothReturn: 15
   maxDurability: 32
   currentDurability: 0
   durabilityRechargeTime: 1.5
