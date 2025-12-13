@@ -161,7 +161,11 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         playerControls?.Defense.Disable();
         playerControls?.Movement.Disable();
         if (IsBlocking) StopBlocking(false);
-        if (playerMovement != null) playerMovement.IsRotationExternallyControlled = false;
+        if (playerMovement != null)
+        {
+            playerMovement.IsRotationExternallyControlled = false;
+            playerMovement.UnlockFacing();
+        }
     }
 
     private void Update()
@@ -267,12 +271,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         IsBlocking = true;
         accumulatedDamage = 0f;
 
-        if (counterRotationCoroutine != null)
-        {
-            StopCoroutine(counterRotationCoroutine);
-            counterRotationCoroutine = null;
-            if (playerMovement != null) playerMovement.IsRotationExternallyControlled = false;
-        }
+        StopCounterRotation();
 
         if (playerAnimator != null) playerAnimator.SetBool("Block", true);
         if (playerMovement != null) playerMovement.SetCanMove(false);
@@ -309,25 +308,27 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
         if (playerAnimator != null) playerAnimator.SetBool("Block", false);
 
-        if (!fireProjectile && playerMovement != null)
-        {
-            playerMovement.UnlockFacing();
-        }
+        bool willActuallyFire = fireProjectile && accumulatedDamage > 0;
 
         if (playerMovement != null)
         {
             playerMovement.SetCanMove(true);
-            if (!fireProjectile) playerMovement.UnlockFacing();
+
+            if (!willActuallyFire)
+            {
+                playerMovement.UnlockFacing();
+                playerMovement.IsRotationExternallyControlled = false;
+            }
         }
 
         if (blockVFX != null) blockVFX.SetActive(false);
         if (blockParticles != null) blockParticles.Stop();
 
-        if (fireProjectile && accumulatedDamage > 0)
+        if (willActuallyFire)
         {
             FireCounterProjectile(isBroken: false);
         }
-        else if (!fireProjectile)
+        else
         {
             if (playerMovement != null) playerMovement.IsRotationExternallyControlled = false;
         }
@@ -493,7 +494,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
         if (playerMovement != null)
         {
-            if (counterRotationCoroutine != null) StopCoroutine(counterRotationCoroutine);
+            StopCounterRotation();
             counterRotationCoroutine = StartCoroutine(HandleCounterRotation(fireDirection, hasTarget));
         }
 
@@ -527,6 +528,21 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         playerMovement.UnlockFacing();
 
         counterRotationCoroutine = null;
+    }
+
+    private void StopCounterRotation()
+    {
+        if (counterRotationCoroutine != null)
+        {
+            StopCoroutine(counterRotationCoroutine);
+            counterRotationCoroutine = null;
+        }
+
+        if (playerMovement != null)
+        {
+            playerMovement.IsRotationExternallyControlled = false;
+            playerMovement.UnlockFacing();
+        }
     }
 
     private Transform FindNearestEnemy()
