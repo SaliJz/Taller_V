@@ -1,23 +1,25 @@
+using System;
 using UnityEngine;
 
 [RequireComponent(typeof(SpriteRenderer))]
-[RequireComponent(typeof(AnimDataBase))]
+[RequireComponent(typeof(PlayerAnimData))]
 public class SpriteAnimator : MonoBehaviour
 {
     SpriteRenderer sr;
     public AtlasLoader atlasLoader;
     public AnimDataLoader AnimLoader;
-    AnimDataBase DataBase;
+    PlayerAnimData DataBase;
 
     AnimDataLoader.AnimData currentAnim;
     int frameIndex;
     float timer;
+    [NonSerialized] public bool holdOnLastFrame;
 
     public System.Action onAnimFinished;
 
     private void Awake()
     {
-        DataBase = GetComponent<AnimDataBase>();
+        DataBase = GetComponent<PlayerAnimData>();
         sr = GetComponent<SpriteRenderer>();
     }
 
@@ -31,6 +33,9 @@ public class SpriteAnimator : MonoBehaviour
             if(timer >= frameTime) 
             {
                 timer -= frameTime;
+
+                if(holdOnLastFrame && frameIndex >= currentAnim.frames.Length - 1) return;
+                
                 frameIndex++;
 
                 if (frameIndex >= currentAnim.frames.Length)
@@ -56,6 +61,19 @@ public class SpriteAnimator : MonoBehaviour
         }
     }
 
+    void ApplyCurrentFrame()
+    {
+        if (currentAnim == null) return;
+
+        frameIndex = Mathf.Clamp(frameIndex, 0, currentAnim.frames.Length -1);
+
+        string spriteKey = currentAnim.frames[frameIndex]. frame;
+
+        if(atlasLoader.spriteAtlas.TryGetValue(spriteKey, out Sprite sprite))
+        {
+            sr.sprite = sprite;
+        }
+    }
     public void LoadAnim(string id)
     {
         var def = DataBase.GetAnim(id);
@@ -74,6 +92,8 @@ public class SpriteAnimator : MonoBehaviour
             timer = 0f;
         }
 
+        ApplyCurrentFrame();
+        
         Debug.Log($"{animID} - {direction} - {reset}");
     }
 

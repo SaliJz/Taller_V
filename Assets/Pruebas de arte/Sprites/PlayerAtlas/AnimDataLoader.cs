@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(AnimDataBase))]
+[RequireComponent(typeof(PlayerAnimData))]
 public class AnimDataLoader : MonoBehaviour
 {
     [System.Serializable]
