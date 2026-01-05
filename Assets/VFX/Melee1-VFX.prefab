@@ -28,7 +28,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: -1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -41,9 +41,9 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9018538249822168526}
   serializedVersion: 8
-  lengthInSec: 1
+  lengthInSec: 0.3
   simulationSpeed: 1
-  stopAction: 0
+  stopAction: 1
   cullingMode: 0
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
@@ -1261,15 +1261,15 @@ ParticleSystem:
         - serializedVersion: 3
           time: 0
           value: -0.34375
-          inSlope: 4.3094516
-          outSlope: 4.3094516
+          inSlope: 2.6583557
+          outSlope: 2.6583557
           tangentMode: 0
           weightedMode: 0
           inWeight: 0.33333334
-          outWeight: 0.079766534
+          outWeight: 0.15363881
         - serializedVersion: 3
           time: 1
-          value: 0.796875
+          value: 0.6
           inSlope: 0
           outSlope: 0
           tangentMode: 0
@@ -1368,7 +1368,7 @@ ParticleSystem:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 0}
         key1: {r: 1, g: 1, b: 1, a: 1}
-        key2: {r: 0, g: 0, b: 0, a: 0}
+        key2: {r: 0, g: 0, b: 0, a: 0.95724005}
         key3: {r: 0, g: 0, b: 0, a: 0}
         key4: {r: 0, g: 0, b: 0, a: 0}
         key5: {r: 0, g: 0, b: 0, a: 0}
@@ -1383,8 +1383,8 @@ ParticleSystem:
         ctime6: 0
         ctime7: 0
         atime0: 191
-        atime1: 26214
-        atime2: 65535
+        atime1: 2484
+        atime2: 36875
         atime3: 65535
         atime4: 0
         atime5: 0
@@ -1393,7 +1393,7 @@ ParticleSystem:
         m_Mode: 0
         m_ColorSpace: 0
         m_NumColorKeys: 2
-        m_NumAlphaKeys: 3
+        m_NumAlphaKeys: 4
       minGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}

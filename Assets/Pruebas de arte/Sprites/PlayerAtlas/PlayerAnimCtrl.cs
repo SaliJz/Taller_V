@@ -1,4 +1,3 @@
-using Unity.IO.LowLevel.Unsafe;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem.Users;
@@ -17,21 +16,24 @@ public class PlayerAnimCtrl : MonoBehaviour
 
     [Header("Estados")]
     public PlayerAnimData.Age currentAge = PlayerAnimData.Age.adult;
+    PlayerAnimData.Age nextAge;
     public AnimPriority currentPriority = AnimPriority.none;
     public PlayerState currentState;
     public string currentDirection;
-    public string LastDirection = "down";
+    string LastDirection = "down";
     public bool IsWalking;
     public bool HasShield = true;
-    public bool currentShield = true;
+    bool currentShield = true;
     public bool isForcedAnim;
-    public string forcedState;
     public bool damageActive;
     public bool isDashing;
-    public float dashTimer;
+    float dashTimer;
     public float dashDuration = 0.5f;
     public int meleeStep = 0;
     public bool isBlocking;
+
+    [Header("VFX")]
+    [SerializeField] GameObject[] VFX_melee;
 
     public enum PlayerState
     {
@@ -63,6 +65,9 @@ public class PlayerAnimCtrl : MonoBehaviour
         LoadAnimations();
 
         SA.onAnimFinished += onForceAnimFinished;
+        SA.onAnimEvent += onAnimEvent;
+
+        nextAge = currentAge;
     }
 
     private void Update()
@@ -81,6 +86,7 @@ public class PlayerAnimCtrl : MonoBehaviour
         bool StateChanged = nextState != currentState;
         bool DirectionChanged = nextDirection != currentDirection;
         bool ShiledChanged = nextHasShield != currentShield;
+        bool AgeChanged = currentAge != nextAge;
 
 
         // bool ShouldReset = StateChanged || (ShiledChanged && currentState != PlayerState.run && currentState != PlayerState.idle);
@@ -112,11 +118,12 @@ public class PlayerAnimCtrl : MonoBehaviour
         if (isForcedAnim) return;
 
 
-        if(StateChanged || DirectionChanged || ShiledChanged)
+        if(StateChanged || DirectionChanged || ShiledChanged || AgeChanged)
         {
             currentState = nextState;
             currentDirection = nextDirection;
             currentShield = nextHasShield;
+            currentAge = nextAge;
 
             playResolvedState(currentState, ShouldReset);
         }
@@ -159,15 +166,15 @@ public class PlayerAnimCtrl : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            currentAge = PlayerAnimData.Age.young;
+            nextAge = PlayerAnimData.Age.young;
         }
         if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-            currentAge = PlayerAnimData.Age.adult;
+            nextAge = PlayerAnimData.Age.adult;
         }
         if (Input.GetKeyDown(KeyCode.Alpha3))
         {
-            currentAge = PlayerAnimData.Age.old;
+            nextAge = PlayerAnimData.Age.old;
         }
 
         if (Input.GetKeyDown(KeyCode.B))
@@ -393,6 +400,28 @@ public class PlayerAnimCtrl : MonoBehaviour
         isForcedAnim = true;
         currentState = PlayerState.blockfb;
         forceAnimation(currentState, AnimPriority.action);
+    }
+
+    void onAnimEvent(string ev)
+    {
+        switch (ev)
+        {
+            case "MeleeSlash_1": SpawnSlash(0); break;
+            case "MeleeSlash_2": SpawnSlash(1); break;
+            case "MeleeSlash_3": SpawnSlash(2); break;
+        }
+    }
+
+    void SpawnSlash(int index)
+    {
+        GameObject prefab = VFX_melee[index];
+        prefab.SetActive(true);
+
+        Debug.LogWarning($"SLASH: {index + 1} INSTATIATED");
+
+        //melee1 = 0
+        //melee2 = 1
+        //melee3 = 2
     }
 
    
