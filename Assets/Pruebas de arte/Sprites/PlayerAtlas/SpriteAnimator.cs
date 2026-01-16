@@ -1,5 +1,4 @@
 using System;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 [RequireComponent(typeof(SpriteRenderer))]
@@ -115,7 +114,8 @@ public class SpriteAnimator : MonoBehaviour
 
         ApplyCurrentFrame();
         
-        Debug.Log($"{animID} - {direction} - {reset}");
+        // DEBUG ANIMACION - DIRECCION-----
+        // Debug.Log($"{animID} - {direction} - {reset}");
     }
 
     void triggerEnterEvents(int index)
@@ -131,7 +131,9 @@ public class SpriteAnimator : MonoBehaviour
             if (!string.IsNullOrEmpty(e))
             {
                 onAnimEvent?.Invoke(e);
-                Debug.Log($"[AnimEvent] {e} @ frame {index}");
+
+                // DEBUG CONFIRMACION DE EVENTOS-----------
+                // Debug.Log($"[AnimEvent] {e} @ frame {index}");
             }
         }
 

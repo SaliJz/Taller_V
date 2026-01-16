@@ -2,43 +2,63 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class AnimEventEditorWindow : EditorWindow
 {
+    //REFERENCIAS INTERNAS
     AnimJson.AnimJsonData animData;
     AtlasJson.AtlasData atlasData;
     Dictionary<string, AtlasJson.AtlasFrame> atlasLookup;
+
+    //IMPUTS DEL USUARIO
     Texture2D spriteSheet;
-    TextAsset atlasJson;
+    TextAsset atlasJsonFile;
     TextAsset animJsonFile;
-    TextAsset LASTanimJsonFile;
-    bool HasUnsavedChanges = false;
 
+    //REFERENCIAS DE APOYO
+    TextAsset lastLoadedAnimJson;
+
+    //VARIABLES DE NAVEGACION
+    bool UnsavedChanges = false;
     int selectedDirectionIndex = 0;
-    string[] directionKeys;
-
     int selectedFrameIndex = -1;
+    string[] directionKeys;
     Vector2 framesScroll;
 
-    Color SelectedFrameColor = new Color(0.3f, 0.8f, 1f);
-    Color EventIndicatorColor = new Color(1f, 0.6f, 0.1f);
-
+    //FEEDBACK VISUAL TIMELINE
+    Color selectedFrameColor = new Color(0.3f, 0.8f, 1f);
+    Color eventIndicatorColor = new Color(1f, 0.6f, 0.1f);
+    Color previewBCcolor = new Color(0.15f, 0.15f, 0.15f, 1f);
     const string EVENT_COLOR_PREF = "AninEventEditor_EventColor";
+
+    //PREVIEW ANIMADO
+    bool isPlaying = false;
+    double lastEditorTime;
+    float previewTimer = 0f;
+
     
 
-    [MenuItem("Tools/Animation/Anim Event Editor")]
+    [MenuItem("Tools/Animation/Json Anim Editor")]
     public static void Open()
     {
-        GetWindow<AnimEventEditorWindow>("Anim Event Editor");
+        GetWindow<AnimEventEditorWindow>("Json Anim Editor");
     }
 
     void OnEnable()
     {
         LoadEventColor();
+        EditorApplication.update += OnEditorUpdate;
+    }
+
+    void OnDisable()
+    {
+        EditorApplication.update += OnEditorUpdate;
     }
 
     void OnGUI()
     {
+        HandleKeyBoard();
         DrawTopBar();
         EditorGUILayout.Space(10);
 
@@ -84,6 +104,8 @@ public class AnimEventEditorWindow : EditorWindow
             return;
         }
 
+        isPlaying = false;
+
         animData = JsonUtility.FromJson<AnimJson.AnimJsonData>(animJsonFile.text);
 
         if(animData == null || animData.anims == null)
@@ -98,17 +120,18 @@ public class AnimEventEditorWindow : EditorWindow
         selectedFrameIndex = -1;
 
         directionKeys = animData.anims.Select(a => a.key).ToArray();
-        HasUnsavedChanges = false;
+        UnsavedChanges = false;
     }
     void loadAtlas()
     {
         atlasData = null;
         atlasLookup = null;
 
-        if (atlasJson == null) return;
+        if (atlasJsonFile == null) return;
         
+        isPlaying = false;
 
-        atlasData = JsonUtility.FromJson<AtlasJson.AtlasData>(atlasJson.text);
+        atlasData = JsonUtility.FromJson<AtlasJson.AtlasData>(atlasJsonFile.text);
 
         if(atlasData == null || atlasData.frames == null) return;
 
@@ -120,11 +143,6 @@ public class AnimEventEditorWindow : EditorWindow
                 atlasLookup.Add(f.filename, f);
             }
         }
-
-        // foreach(var key in atlasLookup.Keys.Take(10))
-        // {
-        //     Debug.Log($"[Atlas] Frame disponible {key}");
-        // }
     }
 
     void saveJson()
@@ -136,6 +154,7 @@ public class AnimEventEditorWindow : EditorWindow
         } 
 
         ApplyDataToAllDirections();
+        DuplicateEventsToAllDirections();
 
         string json = JsonUtility.ToJson(animData, true);
         string path = AssetDatabase.GetAssetPath(animJsonFile);
@@ -143,7 +162,7 @@ public class AnimEventEditorWindow : EditorWindow
         System.IO.File.WriteAllText(path, json);
         AssetDatabase.Refresh();
 
-        HasUnsavedChanges = false;
+        UnsavedChanges = false;
 
         EditorUtility.SetDirty(animJsonFile);
         AssetDatabase.SaveAssets();
@@ -166,6 +185,25 @@ public class AnimEventEditorWindow : EditorWindow
         Debug.Log("FrameRate y Repeat aplicado a todas las direcciones");
     }
 
+    void ReloadFromDisc()
+    {
+        if (animJsonFile == null) return;
+
+        string path = AssetDatabase.GetAssetPath(animJsonFile);
+        string json = System.IO.File.ReadAllText(path);
+
+        animData = JsonUtility.FromJson<AnimJson.AnimJsonData>(json);
+
+        selectedDirectionIndex = 0;
+        selectedFrameIndex = -1;
+        directionKeys = animData.anims.Select(a => a.key).ToArray();
+
+        UnsavedChanges = false;
+        isPlaying = false;
+
+        Repaint();
+    }
+
     bool hasValidClip()
     {
         if (animData == null) return false;
@@ -179,9 +217,9 @@ public class AnimEventEditorWindow : EditorWindow
 
     void OnAnimJsonChanged()
     {
-        if(animJsonFile == LASTanimJsonFile) return;
+        if(animJsonFile == lastLoadedAnimJson) return;
 
-        if (HasUnsavedChanges)
+        if (UnsavedChanges)
         {
             int options = EditorUtility.DisplayDialogComplex("Cambios sin guardar", "Hay cambios sin guardar en el anim.json actual. \n\n ¿Deseas guardar?",
             "Guardar y continuar", "Cancelar", "No guardar");
@@ -189,58 +227,75 @@ public class AnimEventEditorWindow : EditorWindow
             switch (options)
             {
                 case 0: saveJson(); break;
-                case 1: animJsonFile = LASTanimJsonFile; return;
+                case 1: animJsonFile = lastLoadedAnimJson; return;
                 case 2: break;
             }
         }
 
-        LASTanimJsonFile = animJsonFile;
+        lastLoadedAnimJson = animJsonFile;
         loadJson();
 
     }
 
     void DrawTopBar()
     {
-        string title = HasUnsavedChanges ? "Anim Event Editor *" : "Anim Event Editor";
+        string title = UnsavedChanges ? "Json Anim Editor *" : "Json Anim Editor";
         titleContent = new GUIContent(title);
 
         EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-        //// ANIM JSON
-        EditorGUI.BeginChangeCheck();
-        animJsonFile = (TextAsset)EditorGUILayout.ObjectField("Anim.json",animJsonFile, typeof(TextAsset), false, GUILayout.Width(300));
-        if (EditorGUI.EndChangeCheck())
-        {
-            OnAnimJsonChanged();
-        }
+            //// ANIM JSON
+            EditorGUI.BeginChangeCheck();
+            animJsonFile = (TextAsset)EditorGUILayout.ObjectField("Anim.json",animJsonFile, typeof(TextAsset), false, GUILayout.Width(300));
+            if (EditorGUI.EndChangeCheck())
+            {
+                OnAnimJsonChanged();
+            }
 
-        //// ATLAS Y SPRITESHEET
-        EditorGUI.BeginChangeCheck();
-        atlasJson = (TextAsset)EditorGUILayout.ObjectField("Atlas.json",atlasJson, typeof(TextAsset), false, GUILayout.Width(300));
-        spriteSheet = (Texture2D)EditorGUILayout.ObjectField("Sprite Sheet",spriteSheet, typeof(Texture2D), false, GUILayout.Width(300));
+            //// ATLAS Y SPRITESHEET
+            EditorGUI.BeginChangeCheck();
+            atlasJsonFile = (TextAsset)EditorGUILayout.ObjectField("Atlas.json",atlasJsonFile, typeof(TextAsset), false, GUILayout.Width(300));
+            spriteSheet = (Texture2D)EditorGUILayout.ObjectField("Sprite Sheet",spriteSheet, typeof(Texture2D), false, GUILayout.Width(300));
 
-        if(EditorGUI.EndChangeCheck()) 
-        {
-            loadAtlas();
-        }
-
+            //// CARGAR FRAMES DEL ATLAS
+            if(EditorGUI.EndChangeCheck()) 
+            {
+                loadAtlas();
+            }
         EditorGUILayout.EndHorizontal();
 
         //// EVENT COLOR
         EditorGUILayout.Space(4);
         EditorGUI.BeginChangeCheck();
-        EventIndicatorColor = EditorGUILayout.ColorField(new GUIContent("Event Color"), EventIndicatorColor, GUILayout.Width(220));
+        eventIndicatorColor = EditorGUILayout.ColorField(new GUIContent("Event Color"), eventIndicatorColor, GUILayout.Width(220));
         if (EditorGUI.EndChangeCheck())
         {
             SaveEventColor();
         }
 
-        //// SAVE
-        GUI.enabled = animData != null && HasUnsavedChanges;
-        if(GUILayout.Button("Save", EditorStyles.toolbarButton))
-        {
-            saveJson();
-        }
-        GUI.enabled = true;
+        EditorGUILayout.BeginHorizontal();
+            //// SAVE
+            GUI.enabled = animData != null && UnsavedChanges;
+            if(GUILayout.Button(UnsavedChanges?"Save all directions":"No changes to save", GUILayout.Width(400)))
+            {
+                saveJson();
+            }
+            GUI.enabled = true;
+
+            //// RESET VALUES
+            GUI.enabled = animData != null && UnsavedChanges;
+            if(GUILayout.Button(UnsavedChanges? "Reset the last saved":"No changes to reset", GUILayout.Width(400)))
+            {
+                bool confirm = EditorUtility.DisplayDialog("Revertir cambios", "Se perderan todos los cambios no guardados \n ¿Deseas continuar?",
+                "Si", "Cancelar");
+
+                if (confirm)
+                {
+                    ReloadFromDisc();
+                }
+            }
+            GUI.enabled = true;
+            
+        EditorGUILayout.EndHorizontal();
 
     }
 
@@ -263,10 +318,17 @@ public class AnimEventEditorWindow : EditorWindow
 
         EditorGUI.BeginChangeCheck();
 
-        clip.frameRate = EditorGUILayout.IntField("Frame Rate", clip.frameRate);
-        clip.repeat = EditorGUILayout.IntField("Repeat", clip.repeat);
+        clip.frameRate = EditorGUILayout.IntField("FPS", clip.frameRate);
+        // clip.repeat = EditorGUILayout.IntField("Repeat", clip.repeat);
+        bool repeatEnable = clip.repeat < 0;
+        EditorGUI.BeginChangeCheck();
+        repeatEnable = EditorGUILayout.Toggle("Is loop", repeatEnable);
 
-        if(EditorGUI.EndChangeCheck()) HasUnsavedChanges = true;
+        if(EditorGUI.EndChangeCheck())
+        {
+            clip.repeat = repeatEnable? -1: 0;
+            UnsavedChanges = true;
+        }
 
         EditorGUILayout.Space(4);
 
@@ -276,7 +338,7 @@ public class AnimEventEditorWindow : EditorWindow
         if(GUILayout.Button("Apply to all directions", GUILayout.Width(180)))
         {
             ApplyDataToAllDirections();
-            HasUnsavedChanges = true;
+            UnsavedChanges = true;
         }
 
         EditorGUILayout.EndHorizontal();
@@ -326,32 +388,60 @@ public class AnimEventEditorWindow : EditorWindow
 
     void drawFramePreview()
     {
+        drawPreviewControls();
+        EditorGUILayout.Space(6);
+
         GUILayout.Label("Preview", EditorStyles.boldLabel);
+
+        Rect previewRect = GUILayoutUtility.GetRect(350, 350, GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(false));
+        //// BACKGROUND
+        EditorGUI.DrawRect(previewRect, previewBCcolor);
+        //// BC BORDER
+        EditorGUI.DrawRect(new Rect(previewRect.x, previewRect.y, previewRect.width, 1), new Color(0,0,0,0.4f));
 
         if (selectedFrameIndex < 0)
         {
-            EditorGUILayout.HelpBox("Selecciona un frame para ver el preview", MessageType.Info);
+            // EditorGUILayout.HelpBox("Selecciona un frame para ver el preview", MessageType.Info);
+            EditorGUI.LabelField(previewRect, "Selecciona un frame para ver el preview", EditorStyles.centeredGreyMiniLabel);
             return;
         }
-        if (atlasJson == null || spriteSheet == null)
+        if (atlasJsonFile == null || spriteSheet == null)
         {
-            EditorGUILayout.HelpBox("Asigna un AtlasJson/SpriteSheet para ver el preview", MessageType.Info);
+            // EditorGUILayout.HelpBox("Asigna un AtlasJson/SpriteSheet para ver el preview", MessageType.Info);
+            EditorGUI.LabelField(previewRect, "Preview no disponible", EditorStyles.centeredGreyMiniLabel);
             return;
         }
         if (!TryGetSelectedAtlasFrame(out var atlasFrame))
         {
-            EditorGUILayout.HelpBox("No hay frame valido para preview", MessageType.None);
+            // EditorGUILayout.HelpBox("No hay frame valido para preview", MessageType.None);
+            EditorGUI.LabelField(previewRect, "Frame no encontrado en atlas", EditorStyles.centeredGreyMiniLabel);
             return;
         }
 
-        Rect previewRect = GUILayoutUtility.GetRect(350, 350, GUILayout.ExpandWidth(false));
+        DrawSpriteInRect(previewRect, atlasFrame);
+    }
+
+    void DrawSpriteInRect(Rect previewRect, AtlasJson.AtlasFrame atlasFrame)
+    {
         Rect texCoords = new Rect(atlasFrame.frame.x / (float)spriteSheet.width,
             1f - (atlasFrame.frame.y + atlasFrame.frame.h) / (float)spriteSheet.height, 
             (float)atlasFrame.frame.w / spriteSheet.width, (float)atlasFrame.frame.h / spriteSheet.height);
 
-        GUI.DrawTextureWithTexCoords(previewRect, spriteSheet, texCoords, true);
-        
-        // GUI.Box(previewRect, GUIContent.none);
+        float aspect = atlasFrame.frame.w / (float)atlasFrame.frame.h;
+        Rect drawRect = previewRect;
+
+        if (aspect > 1f)
+        {
+            drawRect.height /= aspect;
+            drawRect.y += (previewRect.height - drawRect.height) * 0.5f;
+        }
+        else
+        {
+            drawRect.width *= aspect;
+            drawRect.x += (previewRect.width - drawRect.width) * 0.5f;
+        }
+
+        GUI.DrawTextureWithTexCoords(drawRect, spriteSheet, texCoords);
     }
 
     void DrawFrameButton(int index, AnimJson.AnimFrameData frame)
@@ -390,25 +480,25 @@ public class AnimEventEditorWindow : EditorWindow
 
         Rect indicator = new Rect(frameRect.x + frameRect.width * 0.5f - 6, frameRect.yMax - 10, 12, 6);
 
-        EditorGUI.DrawRect(indicator, EventIndicatorColor);
+        EditorGUI.DrawRect(indicator, eventIndicatorColor);
     }
 
     void LoadEventColor()
     {
         if (EditorPrefs.HasKey(EVENT_COLOR_PREF))
         {
-            ColorUtility.TryParseHtmlString(EditorPrefs.GetString(EVENT_COLOR_PREF), out EventIndicatorColor);
+            ColorUtility.TryParseHtmlString(EditorPrefs.GetString(EVENT_COLOR_PREF), out eventIndicatorColor);
         }
     }
     void SaveEventColor()
     {
-        EditorPrefs.SetString(EVENT_COLOR_PREF, "#"+ ColorUtility.ToHtmlStringRGBA(EventIndicatorColor));
+        EditorPrefs.SetString(EVENT_COLOR_PREF, "#"+ ColorUtility.ToHtmlStringRGBA(eventIndicatorColor));
     }
 
     void drawSelectionBorder(Rect rect)
     {
         float thickness = 2f;
-        Color color = SelectedFrameColor;
+        Color color = selectedFrameColor;
 
         EditorGUI.DrawRect(new Rect(rect.x, rect.y, rect.width, thickness), color);
         EditorGUI.DrawRect(new Rect(rect.x, rect.yMax - thickness, rect.width, thickness), color);
@@ -454,20 +544,22 @@ public class AnimEventEditorWindow : EditorWindow
             if(removeIndex != -1)
             {
                 RemoveEventAt(ref frame.evnt, removeIndex);
-                HasUnsavedChanges = true;
+                UnsavedChanges = true;
                 Repaint();
             }
 
         if (GUILayout.Button("+ Add Event"))
         {
             AddEvent(ref frame.evnt);
+            UnsavedChanges = true;
+            Repaint();
         }
 
         EditorGUILayout.Space(6);
         if(GUILayout.Button("Duplicate events to all directions"))
         {
             DuplicateEventsToAllDirections();
-            HasUnsavedChanges = true;
+            UnsavedChanges = true;
         }
     }
 
@@ -488,10 +580,13 @@ public class AnimEventEditorWindow : EditorWindow
         if (!hasValidClip()) return;
         if (selectedFrameIndex < 0) return;
 
+        isPlaying = false;
+
         var sourceClip = animData.anims[selectedDirectionIndex];
         var sourceFrame = sourceClip.frames[selectedFrameIndex];
 
-        if(sourceFrame.evnt == null || sourceFrame.evnt.Length == 0) return;
+        // if(sourceFrame.evnt == null || sourceFrame.evnt.Length == 0) return;
+        string[] sourceEvents = sourceFrame.evnt ?? new string[0];
 
         for (int i = 0; i < animData.anims.Length; i++)
         {
@@ -501,7 +596,99 @@ public class AnimEventEditorWindow : EditorWindow
 
             if(selectedFrameIndex >= targetClip.frames.Count) continue;
 
-            targetClip.frames[selectedFrameIndex].evnt = (string[])sourceFrame.evnt.Clone();
+            targetClip.frames[selectedFrameIndex].evnt = (string[])sourceEvents.Clone();
+        }
+
+        Debug.Log("Events aplicados a todas las direcciones");
+    }
+
+    void OnEditorUpdate()
+    {
+        if(!isPlaying) return;
+        if(!hasValidClip()) return;
+
+        double time = EditorApplication.timeSinceStartup;
+        float delta = (float)(time - lastEditorTime);
+        lastEditorTime = time;
+
+        var clip = animData.anims[selectedDirectionIndex];
+        if (clip.frames == null || clip.frames.Count == 0) return;
+
+        previewTimer += delta;
+
+        float frameDuration = 1f / Mathf.Max(1, clip.frameRate);
+        int frameCount = clip.frames.Count;
+
+        int newFrame = Mathf.FloorToInt (previewTimer / frameDuration);
+
+        if (newFrame >= frameCount)
+        {
+            previewTimer = 0f;
+            newFrame = 0;
+        }
+        if (newFrame != selectedFrameIndex)
+        {
+            selectedFrameIndex = newFrame;
+            Repaint();
+        }
+    }
+
+    void drawPreviewControls()
+    {
+        EditorGUILayout.BeginHorizontal();
+
+        GUI.enabled = !isPlaying;
+        if (GUILayout.Button("◀◀", GUILayout.Width(32)))
+        {
+            StepFrame(-1);
+        }
+
+        GUI.enabled = true;
+
+        if (GUILayout.Button(isPlaying? "⏸ Pause" : "▶ Play", GUILayout.Width(80)))
+
+        {
+            isPlaying = !isPlaying;
+            lastEditorTime = EditorApplication.timeSinceStartup;
+        }
+
+        GUI.enabled = !isPlaying;
+
+        if (GUILayout.Button("▶▶", GUILayout.Width(32)))
+        {
+            StepFrame(1);
+        }
+
+        GUI.enabled = true;
+
+        EditorGUILayout.EndHorizontal();
+    }
+
+    void StepFrame(int dir)
+    {
+        if (!hasValidClip()) return;
+
+        var clip = animData.anims[selectedDirectionIndex];
+        if (clip.frames.Count == 0) return;
+
+        selectedFrameIndex += dir;
+
+        if (selectedFrameIndex < 0) selectedFrameIndex = clip.frames.Count - 1;
+        else if (selectedFrameIndex >= clip.frames.Count) selectedFrameIndex = 0;
+
+        previewTimer = selectedFrameIndex / (float)clip.frameRate;
+        Repaint();
+    }
+
+    void HandleKeyBoard()
+    {
+        Event e = Event.current;
+
+        if(e.type == EventType.KeyDown && e.keyCode == KeyCode.Space)
+        {
+            isPlaying = !isPlaying;
+            lastEditorTime = EditorApplication.timeSinceStartup;
+            e.Use();
         }
     }
 }
