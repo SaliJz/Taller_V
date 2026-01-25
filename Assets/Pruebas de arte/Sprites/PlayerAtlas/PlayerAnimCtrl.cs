@@ -44,14 +44,18 @@ public class PlayerAnimCtrl : MonoBehaviour
         melee,
         damage,
         block,
-        blockfb
+        blockfb,
+        store,
+        inventory,
+        bind
     }
     public enum AnimPriority
     {
         none = 0,
         damage = 10,
         action = 20, //distance, melee, inventory
-        dash = 30
+        dash = 30,
+        bind = 40
     }
 
     private void Awake()
@@ -220,10 +224,10 @@ public class PlayerAnimCtrl : MonoBehaviour
     {
         return currentAge switch
         {
-            PlayerAnimData.Age.young => "y_",
-            PlayerAnimData.Age.adult => "a_",
-            PlayerAnimData.Age.old => "o_",
-            _ => "a_"
+            PlayerAnimData.Age.young => "_young",
+            PlayerAnimData.Age.adult => "_adult",
+            PlayerAnimData.Age.old => "_old",
+            _ => "_adult"
         };
     }
 
@@ -250,7 +254,7 @@ public class PlayerAnimCtrl : MonoBehaviour
             resolved = isIdleGroup1(direction) ? "idle1" : "idle2";
         }
 
-        resolved = agePrefix() + resolved;
+        resolved = resolved + agePrefix();
 
         //CONFIRMA SI TIENE EL ESCUDO        
         if (!HasShield)
@@ -290,16 +294,6 @@ public class PlayerAnimCtrl : MonoBehaviour
             SA.holdOnLastFrame = true;
 
             playResolvedState(PlayerState.block, false);
-
-            // isForcedAnim = false;
-            // currentPriority = AnimPriority.action;
-
-            // if (isBlocking)
-            // {
-            //     SA.holdOnLastFrame = true;
-            //     SA.Play(ResolveAnim(PlayerState.block, currentDirection), currentDirection, false);
-            // }
-
             return;
         }
 
@@ -343,7 +337,7 @@ public class PlayerAnimCtrl : MonoBehaviour
     }
 
 
-    void startDash() //DASH---------------------------------------
+    public void startDash() //DASH---------------------------------------
     {
         isDashing = true;
         isForcedAnim = true;
@@ -368,14 +362,14 @@ public class PlayerAnimCtrl : MonoBehaviour
 
     public void playMelee(int index) //MELEE -------------------------------------
     {
-        if (!DataBase.AnimExist($"{agePrefix()}melee{index}")) return;
+        if (!DataBase.AnimExist($"melee{index}{agePrefix()}")) return;
 
         meleeStep = index;
         currentDirection = LastDirection;
         forceAnimation(PlayerState.melee, AnimPriority.action, true);
     }
 
-    void StartBlock() // BLOCK ------------------------------------------------------
+    public void StartBlock() // BLOCK ------------------------------------------------------
     {
         isBlocking = true;
         currentPriority = AnimPriority.action;
@@ -383,7 +377,7 @@ public class PlayerAnimCtrl : MonoBehaviour
         SA.holdOnLastFrame = true;
     }
 
-    void EndBlock()
+    public void EndBlock()
     {
         isBlocking = false;
         SA.holdOnLastFrame = false;
