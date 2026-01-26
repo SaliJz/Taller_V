@@ -95,10 +95,18 @@ public class SpriteAnimator : MonoBehaviour
     }
     public void LoadAnim(string id)
     {
+        // Debug.Log($"[ANIM] LoadAnim START -> {id}");
+
         var def = DataBase.GetAnim(id);
 
-        atlasLoader.LoadAtlas(def.sheet, def.atlasJSON);
-        animLoader.LoadAnim(def.id, def.animJSON);
+        // if(def == null) {Debug.LogError($"[ANIM] AnimDef es NULL for ID {id}"); return;}
+        // Debug.Log($"[ANIM] ANIM DEF OK -> {def.id}");
+
+        // Debug.Log($"sheet = {def.spriteSheet?.name}");
+        // Debug.Log($"atlas = {def.atlasJson?.name}");
+
+        atlasLoader.LoadAtlas(def.spriteSheet, def.atlasJson);
+        animLoader.LoadAnim(def.id, def.animJson);
     }
 
     public void Play(string animID, string direction, bool reset = true)

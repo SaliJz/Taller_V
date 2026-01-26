@@ -17,40 +17,68 @@ public class PlayerAnimData : MonoBehaviour
         public TextAsset animJSON;
     }
 
-    public AnimDef[] animations;
-    Dictionary<string, AnimDef> animDict = new Dictionary<string, AnimDef>();
+    // public AnimDef[] animations;
+    // Dictionary<string, AnimDef> animDict = new Dictionary<string, AnimDef>();
+
+    [Header("Animation Assets")]
+    Dictionary<string, JsonAnimAsset> animLookup = new Dictionary<string, JsonAnimAsset>();
+    public JsonAnimAsset[] Assets;
 
     private void Awake()
     {
-        foreach (var anim in animations)
-        {
-            if (!animDict.ContainsKey(anim.id))
-            {
-                animDict.Add(anim.id, anim);
-            } 
-        }
+        BuildDataBase();
+
+        // foreach (var anim in animations)
+        // {
+        //     if (!animDict.ContainsKey(anim.id))
+        //     {
+        //         animDict.Add(anim.id, anim);
+        //     } 
+        // }
     }
 
-    // public void loadAllAges(SpriteAnimator SA)
-    // {
-    //     foreach (var kvp in animDict)
-    //     {
-    //         string id = kvp.Key;
-    //         var set = kvp.Value;
+    // public AnimDef GetAnim(string id) => animDict.TryGetValue(id, out var def)? def : null;
 
-    //         SA.LoadAnim(id, set.young, set.adult, set.old);
-    //     }
-    // }
-    public AnimDef GetAnim(string id) => animDict.TryGetValue(id, out var def)? def : null;
+    // public bool AnimExist(string ID) => animDict.ContainsKey(ID);
 
-    public bool AnimExist(string ID) => animDict.ContainsKey(ID);
-    // {
-    //     // if (string.IsNullOrEmpty(ID)) return false;
+    void BuildDataBase()
+    {
+        foreach(var asset in Assets)
+        {
+            if (asset == null || string.IsNullOrEmpty(asset.id)) continue;
 
-    //     // return animDict.ContainsKey(ID);
+            if (!animLookup.ContainsKey(asset.id))
+            {
+                animLookup.Add(asset.id, asset);
+                // Debug.Log($"[DB] ADD -> {asset.id} | SHEET: {asset.spriteSheet} | ATLAS {asset.atlasJson} | ANIM {asset.animJson}");
+            }
+            else
+            {
+                Debug.LogWarning($"Duplicated animations ID: {asset.id}");
+            }
+        }
 
-    //     return animDict.ContainsKey(ID);
-    // }
+        // Debug.Log($"[DB] TOTAL ANIMS: {animLookup.Count}");
+        // Debug.Log($"[DB] HAS begin:idle1? {animLookup.ContainsKey("begin:idle1")}");
+    }
 
+    public JsonAnimAsset GetAnim(string ID)
+    {
+        if (animLookup.TryGetValue(ID, out var asset))
+        {
+            // Debug.Log($"[DB] GET OK -> '{ID}'");
+            return asset;
+        }
+
+        Debug.LogError($"[DB] GET FAIL ->' {ID}' not found");
+        // Debug.Log("[DB] KEYS");
+        // foreach(var k in animLookup.Keys)
+        // {
+        //     Debug.Log($"    - {k}");
+        // }
+        return null;
+    }
+
+    public bool AnimExist(string ID) => animLookup.ContainsKey(ID);
 
 }

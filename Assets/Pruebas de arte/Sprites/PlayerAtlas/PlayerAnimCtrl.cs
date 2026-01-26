@@ -158,14 +158,17 @@ public class PlayerAnimCtrl : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Keypad1))
         {
             playMelee(1);
+            Debug.Log("MELEE1");
         }
         if (Input.GetKeyDown(KeyCode.Keypad2))
         {
             playMelee(2);
+            Debug.Log("MELEE2");
         }
         if (Input.GetKeyDown(KeyCode.Keypad3))
         {
             playMelee(3);
+            Debug.Log("MELEE3");
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha1))
@@ -192,7 +195,7 @@ public class PlayerAnimCtrl : MonoBehaviour
     }
     void LoadAnimations()
     {
-        foreach (var anim in DataBase.animations)
+        foreach (var anim in DataBase.Assets)
         {
             SA.LoadAnim(anim.id);
         }
@@ -224,10 +227,10 @@ public class PlayerAnimCtrl : MonoBehaviour
     {
         return currentAge switch
         {
-            PlayerAnimData.Age.young => "_young",
-            PlayerAnimData.Age.adult => "_adult",
-            PlayerAnimData.Age.old => "_old",
-            _ => "_adult"
+            PlayerAnimData.Age.young => "begin:",
+            PlayerAnimData.Age.adult => "mid:",
+            PlayerAnimData.Age.old => "late:",
+            _ => "mid:"
         };
     }
 
@@ -254,7 +257,7 @@ public class PlayerAnimCtrl : MonoBehaviour
             resolved = isIdleGroup1(direction) ? "idle1" : "idle2";
         }
 
-        resolved = resolved + agePrefix();
+        resolved = agePrefix() + resolved; //Fijarse que PlayMelee() tenga el mismo orden//
 
         //CONFIRMA SI TIENE EL ESCUDO        
         if (!HasShield)
@@ -266,6 +269,7 @@ public class PlayerAnimCtrl : MonoBehaviour
             }
         }
 
+        Debug.Log($"Current ANim: {resolved}");
         return resolved;
     }
 
@@ -362,7 +366,7 @@ public class PlayerAnimCtrl : MonoBehaviour
 
     public void playMelee(int index) //MELEE -------------------------------------
     {
-        if (!DataBase.AnimExist($"melee{index}{agePrefix()}")) return;
+        if (!DataBase.AnimExist($"{agePrefix()}melee{index}")) return;
 
         meleeStep = index;
         currentDirection = LastDirection;
@@ -417,6 +421,5 @@ public class PlayerAnimCtrl : MonoBehaviour
         //melee2 = 1
         //melee3 = 2
     }
-
    
 }
