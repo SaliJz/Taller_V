@@ -269,7 +269,7 @@ public class PlayerAnimCtrl : MonoBehaviour
             }
         }
 
-        Debug.Log($"Current ANim: {resolved}");
+        // Debug.Log($"Current ANim: {resolved}");
         return resolved;
     }
 
