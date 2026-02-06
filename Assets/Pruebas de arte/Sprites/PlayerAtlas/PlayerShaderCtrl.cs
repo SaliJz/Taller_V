@@ -1,25 +1,34 @@
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class PlayerShaderCtrl : MonoBehaviour
 {
-    [Header("Renderer")]
+    //------------------------------------------------------------------
+    #region Variables
+    [Header("Referencias")]
     [SerializeField] Renderer targetRenderer;
+    [SerializeField] SpriteRenderer spriteRend;
 
-    [Header("Berserker Outline")]
+    [Header("Berserker Settings")]
     [SerializeField] float outlineActive = 0.001f;
     [SerializeField] float outlineMax = 0.002f;
     [SerializeField] GameObject BrokenVFX;
     [SerializeField] Material BrokenMat;
     
 
-    [Header("ShineSettings")]
+    [Header("Shine Settings")]
     [SerializeField] float shinePeak = 0.5f;
     [SerializeField] float damagePeak = 0.5f;
+
+    [Header("Damage Settings")]
+    [SerializeField] float damageFlashDuration = 0.15f;
 
     MaterialPropertyBlock mpb;
     Coroutine shineRoutine;
     Coroutine outlineRoutine;
+    Coroutine damageRoutine;
 
     static readonly int GrossorID = Shader.PropertyToID("_Grossor");
     static readonly int ShineID = Shader.PropertyToID("_ShineAmount");
@@ -29,6 +38,9 @@ public class PlayerShaderCtrl : MonoBehaviour
     bool testBerserActive = false;
     bool testStamina = true;
 
+    #endregion
+    //------------------------------------------------------------------
+    #region Unity Lifecycle
     void Start()
     {
         mpb = new MaterialPropertyBlock();
@@ -40,6 +52,8 @@ public class PlayerShaderCtrl : MonoBehaviour
         mpb.SetFloat(HasStaminaID, 1f);
 
         targetRenderer.SetPropertyBlock(mpb);
+
+        spriteRend = GetComponent<SpriteRenderer>();
     }
 
     void Update()
@@ -56,6 +70,9 @@ public class PlayerShaderCtrl : MonoBehaviour
 
         targetRenderer.bounds = b;
     }
+    #endregion
+    //------------------------------------------------------------------
+    #region Testing
 
     void TEST_IMPUTS()
     {
@@ -74,12 +91,14 @@ public class PlayerShaderCtrl : MonoBehaviour
             testStamina = !testStamina;
             SetHasStamina(testStamina);
         }
+        if (Input.GetKeyDown(KeyCode.J))
+        {
+            DamageTrigger();
+        }
     }
-
-
+    #endregion
     //-----------------------------------------------
-    //SHINE
-
+    #region Shine Functions
     public void ShineTrigger(float duration = 0.22f)
     {
         if(shineRoutine != null) StopCoroutine(shineRoutine);
@@ -118,10 +137,9 @@ public class PlayerShaderCtrl : MonoBehaviour
 
         targetRenderer.SetPropertyBlock(mpb);
     }
-
-    //-------------------------------------------------
-    //BERSERKER
-
+    #endregion
+    //------------------------------------------------------------------
+    #region Berserker Functions
     public void BersekerOutline(bool Active)
     {
         if (outlineRoutine != null) StopCoroutine(outlineRoutine);
@@ -213,4 +231,38 @@ public class PlayerShaderCtrl : MonoBehaviour
         ParticleSystemRenderer psRender = RefVFX.GetComponent<ParticleSystemRenderer>();
         psRender.material = copy;
     }
+    #endregion
+
+    //------------------------------------------------------------------
+    #region Damage Functions
+    public void DamageTrigger()
+    {
+        if(damageRoutine != null) StopCoroutine(damageRoutine);
+
+        damageRoutine = StartCoroutine(DamageRoutine());
+    }
+
+    IEnumerator DamageRoutine()
+    {
+        float t = 0;
+
+        while (t < 1)
+        {
+            t += Time.deltaTime / damageFlashDuration;
+            spriteRend.color = Color.Lerp(Color.white, Color.red, t);
+            yield return null;
+        }
+
+        t = 0;
+
+        while (t < 1)
+        {
+            t += Time.deltaTime / damageFlashDuration;
+            spriteRend.color = Color.Lerp(Color.red, Color.white, t);
+            yield return null;
+        }
+
+        spriteRend.color = Color.white;
+    }
+    #endregion
 }
