@@ -928,7 +928,7 @@ PrefabInstance:
     - target: {fileID: -7912283779423167248, guid: 6600ec07054bfbf48a9594e4331d56f4, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: f9991237cc772914d9f239a7960703d2, type: 2}
+      objectReference: {fileID: 2100000, guid: e5cf3a67799c81245a602f23d0981f8d, type: 2}
     - target: {fileID: -6123374103440983067, guid: 6600ec07054bfbf48a9594e4331d56f4, type: 3}
       propertyPath: m_LocalPosition.x
       value: -10890.002
@@ -1028,7 +1028,7 @@ PrefabInstance:
     - target: {fileID: -862499665185051225, guid: 6600ec07054bfbf48a9594e4331d56f4, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: f9991237cc772914d9f239a7960703d2, type: 2}
+      objectReference: {fileID: 2100000, guid: e5cf3a67799c81245a602f23d0981f8d, type: 2}
     - target: {fileID: -217234592878774335, guid: 6600ec07054bfbf48a9594e4331d56f4, type: 3}
       propertyPath: m_Mesh
       value: 
@@ -1052,7 +1052,7 @@ PrefabInstance:
     - target: {fileID: 1882554473484190804, guid: 6600ec07054bfbf48a9594e4331d56f4, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: f9991237cc772914d9f239a7960703d2, type: 2}
+      objectReference: {fileID: 2100000, guid: e5cf3a67799c81245a602f23d0981f8d, type: 2}
     - target: {fileID: 2845113819661814089, guid: 6600ec07054bfbf48a9594e4331d56f4, type: 3}
       propertyPath: m_LocalPosition.x
       value: -5469
@@ -1148,7 +1148,7 @@ PrefabInstance:
     - target: {fileID: 8369925229526213212, guid: 6600ec07054bfbf48a9594e4331d56f4, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: f9991237cc772914d9f239a7960703d2, type: 2}
+      objectReference: {fileID: 2100000, guid: e5cf3a67799c81245a602f23d0981f8d, type: 2}
     - target: {fileID: 8422888985239774468, guid: 6600ec07054bfbf48a9594e4331d56f4, type: 3}
       propertyPath: m_Mesh
       value: 
@@ -1204,8 +1204,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Target: {fileID: 0}
-  MaxAngle: 360
-  MinAngle: -360
+  lookAtEnabled: 1
+  lookYaxis: 1
+  useStepped: 0
+  stepRate: 0.12
+  multiplayer: 0
 --- !u!4 &4870753537836618349 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6600ec07054bfbf48a9594e4331d56f4, type: 3}
@@ -1229,8 +1232,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Target: {fileID: 0}
-  MaxAngle: 360
-  MinAngle: -360
+  lookAtEnabled: 1
+  lookYaxis: 1
+  useStepped: 0
+  stepRate: 0.12
+  multiplayer: 0
 --- !u!1 &6521813076962536156 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -7020830875422122150, guid: 6600ec07054bfbf48a9594e4331d56f4, type: 3}
@@ -1249,8 +1255,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Target: {fileID: 0}
-  MaxAngle: 360
-  MinAngle: -360
+  lookAtEnabled: 1
+  lookYaxis: 1
+  useStepped: 0
+  stepRate: 0.12
+  multiplayer: 0
 --- !u!1 &7473990446170878504 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2569918498069956526, guid: 6600ec07054bfbf48a9594e4331d56f4, type: 3}
@@ -1269,8 +1278,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Target: {fileID: 0}
-  MaxAngle: 360
-  MinAngle: -360
+  lookAtEnabled: 1
+  lookYaxis: 1
+  useStepped: 0
+  stepRate: 0.12
+  multiplayer: 0
 --- !u!1001 &5042224419802600512
 PrefabInstance:
   m_ObjectHideFlags: 0
