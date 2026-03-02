@@ -2,7 +2,11 @@
     "m_SGVersion": 3,
     "m_Type": "UnityEditor.ShaderGraph.GraphData",
     "m_ObjectId": "36c0ce18477d4645ae2a6aa120d17c5e",
-    "m_Properties": [],
+    "m_Properties": [
+        {
+            "m_Id": "f88aa6f1067a4373ae801f8ab8b25a79"
+        }
+    ],
     "m_Keywords": [],
     "m_Dropdowns": [],
     "m_CategoryData": [
@@ -49,6 +53,9 @@
         },
         {
             "m_Id": "769d46af68dc48f9b13df09262e2efd6"
+        },
+        {
+            "m_Id": "3f958f2015bf4a32a1536a7f262258e4"
         }
     ],
     "m_GroupDatas": [],
@@ -108,6 +115,20 @@
                     "m_Id": "c9fdea44ce00481c8fb239798b44368b"
                 },
                 "m_SlotId": 0
+            }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "3f958f2015bf4a32a1536a7f262258e4"
+                },
+                "m_SlotId": 0
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "3080dc37c5524660a7b157e1734d5b30"
+                },
+                "m_SlotId": 1
             }
         },
         {
@@ -421,9 +442,9 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": 320.0,
-            "y": 154.99998474121095,
-            "width": 207.99993896484376,
+            "x": 269.9999694824219,
+            "y": 136.0,
+            "width": 208.00003051757813,
             "height": 278.0
         }
     },
@@ -526,6 +547,57 @@
         "y": 0.0,
         "z": 0.0,
         "w": 0.0
+    }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
+    "m_ObjectId": "3735db46cc8445c2834c092b26a573e5",
+    "m_Id": 0,
+    "m_DisplayName": "Cel Shade",
+    "m_SlotType": 1,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "Out",
+    "m_StageCapability": 3,
+    "m_Value": 0.0,
+    "m_DefaultValue": 0.0,
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.PropertyNode",
+    "m_ObjectId": "3f958f2015bf4a32a1536a7f262258e4",
+    "m_Group": {
+        "m_Id": ""
+    },
+    "m_Name": "Property",
+    "m_DrawState": {
+        "m_Expanded": true,
+        "m_Position": {
+            "serializedVersion": "2",
+            "x": -455.0,
+            "y": 84.00000762939453,
+            "width": 129.0,
+            "height": 33.99999237060547
+        }
+    },
+    "m_Slots": [
+        {
+            "m_Id": "3735db46cc8445c2834c092b26a573e5"
+        }
+    ],
+    "synonyms": [],
+    "m_Precision": 0,
+    "m_PreviewExpanded": true,
+    "m_DismissedVersion": 0,
+    "m_PreviewMode": 0,
+    "m_CustomColors": {
+        "m_SerializableColors": []
+    },
+    "m_Property": {
+        "m_Id": "f88aa6f1067a4373ae801f8ab8b25a79"
     }
 }
 
@@ -657,7 +729,11 @@
     "m_Type": "UnityEditor.ShaderGraph.CategoryData",
     "m_ObjectId": "5a9b637bd04a42b8a4dfc1361f9b7e7c",
     "m_Name": "",
-    "m_ChildObjectList": []
+    "m_ChildObjectList": [
+        {
+            "m_Id": "f88aa6f1067a4373ae801f8ab8b25a79"
+        }
+    ]
 }
 
 {
@@ -1369,6 +1445,34 @@
         "m_SerializableColors": []
     },
     "m_SerializedDescriptor": "VertexDescription.Tangent"
+}
+
+{
+    "m_SGVersion": 1,
+    "m_Type": "UnityEditor.ShaderGraph.Internal.Vector1ShaderProperty",
+    "m_ObjectId": "f88aa6f1067a4373ae801f8ab8b25a79",
+    "m_Guid": {
+        "m_GuidSerialized": "5353ac80-ff42-4ab8-a5f7-4ea57aefeb22"
+    },
+    "m_Name": "Cel Shade",
+    "m_DefaultRefNameVersion": 1,
+    "m_RefNameGeneratedByDisplayName": "Cel Shade",
+    "m_DefaultReferenceName": "_Cel_Shade",
+    "m_OverrideReferenceName": "",
+    "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
+    "m_DismissedVersion": 0,
+    "m_Precision": 0,
+    "overrideHLSLDeclaration": false,
+    "hlslDeclarationOverride": 0,
+    "m_Hidden": false,
+    "m_Value": 0.49000000953674319,
+    "m_FloatType": 0,
+    "m_RangeValues": {
+        "x": 0.0,
+        "y": 1.0
+    }
 }
 
 {
