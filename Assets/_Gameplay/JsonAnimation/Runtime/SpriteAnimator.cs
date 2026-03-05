@@ -2,15 +2,15 @@ using System;
 using UnityEngine;
 
 [RequireComponent(typeof(SpriteRenderer))]
-[RequireComponent(typeof(PlayerAnimData))]
+[RequireComponent(typeof(PlayerAnimDataBase))]
 public class SpriteAnimator : MonoBehaviour
 {
     SpriteRenderer sr;
-    public AtlasLoader atlasLoader;
-    public AnimLoader animLoader;
-    PlayerAnimData DataBase;
+    public AtlasParser atlasLoader;
+    public AnimParser animLoader;
+    PlayerAnimDataBase DataBase;
 
-    AnimLoader.AnimData currentAnim;
+    AnimParser.AnimData currentAnim;
     int frameIndex;
     float timer;
     [NonSerialized] public bool holdOnLastFrame;
@@ -21,7 +21,7 @@ public class SpriteAnimator : MonoBehaviour
 
     private void Awake()
     {
-        DataBase = GetComponent<PlayerAnimData>();
+        DataBase = GetComponent<PlayerAnimDataBase>();
         sr = GetComponent<SpriteRenderer>();
     }
 

@@ -4,7 +4,7 @@ public class PlayerAnimCtrl : MonoBehaviour
 {
     //------------------------------------------------------------------------
     #region Referencias
-    PlayerAnimData DataBase;
+    PlayerAnimDataBase DataBase;
     SpriteAnimator SA;
     #endregion
 
@@ -16,8 +16,8 @@ public class PlayerAnimCtrl : MonoBehaviour
 
     //------------------------------------------------------------------------
     #region State
-    public PlayerAnimData.Age currentAge = PlayerAnimData.Age.adult;
-    PlayerAnimData.Age nextAge;
+    public PlayerAnimDataBase.Age currentAge = PlayerAnimDataBase.Age.adult;
+    PlayerAnimDataBase.Age nextAge;
 
     public AnimPriority currentPriority = AnimPriority.none;
     public PlayerState currentState;
@@ -65,7 +65,7 @@ public class PlayerAnimCtrl : MonoBehaviour
     private void Awake()
     {
         SA = GetComponent<SpriteAnimator>();
-        DataBase = GetComponent<PlayerAnimData>();
+        DataBase = GetComponent<PlayerAnimDataBase>();
     }
 
     private void Start()
@@ -134,15 +134,15 @@ public class PlayerAnimCtrl : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            nextAge = PlayerAnimData.Age.young;
+            nextAge = PlayerAnimDataBase.Age.young;
         }
         if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-            nextAge = PlayerAnimData.Age.adult;
+            nextAge = PlayerAnimDataBase.Age.adult;
         }
         if (Input.GetKeyDown(KeyCode.Alpha3))
         {
-            nextAge = PlayerAnimData.Age.old;
+            nextAge = PlayerAnimDataBase.Age.old;
         }
 
         if (Input.GetKeyDown(KeyCode.B))
@@ -247,9 +247,9 @@ public class PlayerAnimCtrl : MonoBehaviour
     {
         return currentAge switch
         {
-            PlayerAnimData.Age.young => "begin:",
-            PlayerAnimData.Age.adult => "mid:",
-            PlayerAnimData.Age.old => "late:",
+            PlayerAnimDataBase.Age.young => "begin:",
+            PlayerAnimDataBase.Age.adult => "mid:",
+            PlayerAnimDataBase.Age.old => "late:",
             _ => "mid:"
         };
     }

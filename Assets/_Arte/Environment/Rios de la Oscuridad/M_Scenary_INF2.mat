@@ -14,6 +14,7 @@ Material:
   m_ValidKeywords:
   - _ALPHATEST_ON
   - _USEDITHER
+  - _USE_EXTRA_TEXTURE
   m_InvalidKeywords: []
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 0
@@ -27,6 +28,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _Extra_Texture:
+        m_Texture: {fileID: 2800000, guid: efec7ab0d87d88844bd8a50067d19ba7, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: 1b5c1f63d0e2fc84281d205081d3d377, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -65,10 +70,12 @@ Material:
     - _AlphaToMask: 1
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
+    - _BlendTriplanar: 200
     - _C_Tilling: 0.2
     - _CastShadows: 1
     - _Cull: 2
     - _DstBlend: 0
+    - _Extra_Tilling: 0.2
     - _Main_Tilling: 0.04
     - _Metallic: 0
     - _QueueControl: 0
@@ -80,17 +87,19 @@ Material:
     - _Surface: 0
     - _Transition_Width: 1
     - _USEDITHER: 1
+    - _USE_EXTRA_TEXTURE: 1
     - _WorkflowMode: 1
     - _ZTest: 4
     - _ZWrite: 1
     - _ZWriteControl: 1
-    - _lower: 0.16
-    - _upper: 1.35
+    - _lower: 0.34
+    - _upper: 0.72
     m_Colors:
     - _A_Tiling: {r: 1, g: 1, b: 0, a: 0}
     - _B_Tiling: {r: 1, g: 1, b: 0, a: 0}
     - _Color_Multiplier_C: {r: 0.5996351, g: 0.6599242, b: 0.7264151, a: 0}
-    - _Dither_Size: {r: 0.5, g: 0.5, b: 0, a: 0}
+    - _Dither_Size: {r: 0.25, g: 0.25, b: 0, a: 0}
+    - _Extra_Color_Multiplier: {r: 0.5283019, g: 0.5283019, b: 0.5283019, a: 0}
     - _Main_Color_Multiplier: {r: 0.43253827, g: 0.5727717, b: 0.6792453, a: 0}
     - _Secondary_Color_Multiplier: {r: 0.72169816, g: 0.9007667, b: 0.9622642, a: 0}
   m_BuildTextureStacks: []
