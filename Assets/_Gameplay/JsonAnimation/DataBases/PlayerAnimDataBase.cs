@@ -3,23 +3,26 @@ using UnityEngine;
 
 public class PlayerAnimDataBase : MonoBehaviour
 {
+    Dictionary<string, JsonAnimAsset> animLookup = new Dictionary<string, JsonAnimAsset>();
+    public JsonAnimAsset[] assets;
+
     public enum Age
     {
         young, adult, old
     }
 
-    [System.Serializable]
-    public class AnimDef
-    {
-        public string id;
-        public Texture2D sheet;
-        public TextAsset atlasJSON;
-        public TextAsset animJSON;
-    }
+    // [System.Serializable]
+    // public class AnimDef
+    // {
+    //     public string id;
+    //     public Texture2D sheet;
+    //     public TextAsset atlasJSON;
+    //     public TextAsset animJSON;
+    // }
 
-    [Header("Animation Assets")]
-    Dictionary<string, JsonAnimAsset> animLookup = new Dictionary<string, JsonAnimAsset>();
-    public JsonAnimAsset[] Assets;
+    // [Header("Animation Assets")]
+    // Dictionary<string, JsonAnimAsset> animLookup = new Dictionary<string, JsonAnimAsset>();
+    // public JsonAnimAsset[] Assets;
 
     private void Awake()
     {
@@ -28,34 +31,51 @@ public class PlayerAnimDataBase : MonoBehaviour
 
     void BuildDataBase()
     {
-        foreach(var asset in Assets)
+        foreach(var a in assets)
         {
-            if (asset == null || string.IsNullOrEmpty(asset.id)) continue;
+            if (a == null || string.IsNullOrEmpty(a.id)) continue;
 
-            if (!animLookup.ContainsKey(asset.id))
+            if (!animLookup.ContainsKey(a.id))
             {
-                animLookup.Add(asset.id, asset);
-                // Debug.Log($"[DB] ADD -> {asset.id} | SHEET: {asset.spriteSheet} | ATLAS {asset.atlasJson} | ANIM {asset.animJson}");
+                animLookup.Add(a.id, a);
+                Debug.Log($"[DB] ADD -> {a.id} | SHEET: {a.spriteSheet} | ATLAS {a.atlasJson} | ANIM {a.animJson}");
             }
             else
             {
-                Debug.LogWarning($"Duplicated animations ID: {asset.id}");
+                Debug.LogWarning($"Duplicated animations ID: {a.id}");
             }
         }
 
-        // Debug.Log($"[DB] TOTAL ANIMS: {animLookup.Count}");
-        // Debug.Log($"[DB] HAS begin:idle1? {animLookup.ContainsKey("begin:idle1")}");
+        Debug.Log($"[DB] TOTAL ANIMS: {animLookup.Count}");
+        Debug.Log($"[DB] HAS begin:idle1? {animLookup.ContainsKey("begin:idle1")}");
     }
 
     public JsonAnimAsset GetAnim(string ID)
     {
-        if (animLookup.TryGetValue(ID, out var asset))
+        Debug.Log($"[DB] Searching asset -> {ID}");
+
+        foreach(var a in assets)
         {
-            // Debug.Log($"[DB] GET OK -> '{ID}'");
-            return asset;
+            Debug.Log($"[DB] Asset Available -> {a.id}");
+            if(a.id == ID) break;
         }
 
-        Debug.LogError($"[DB] GET FAIL ->' {ID}' not found");
+        foreach(var a in assets)
+        {
+            if(a.id == ID)
+            {
+                Debug.Log($"[DB] Asset Found {a.id}");
+                return a;
+            }
+        }
+
+        // if (animLookup.TryGetValue(ID, out var asset))
+        // {
+        //     // Debug.Log($"[DB] GET OK -> '{ID}'");
+        //     return asset;
+        // }
+
+        Debug.LogError($"[DB] Asset NOT FOUND ->'{ID}'");
         // Debug.Log("[DB] KEYS");
         // foreach(var k in animLookup.Keys)
         // {

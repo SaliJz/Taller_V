@@ -298,7 +298,7 @@ public class PlayerAnimCtrl : MonoBehaviour
     #region Anim Playback
     void LoadAnimations()
     {
-        foreach (var anim in DataBase.Assets)
+        foreach (var anim in DataBase.assets)
         {
             SA.LoadAnim(anim.id);
         }

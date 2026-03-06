@@ -1,4 +1,5 @@
 using System;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 [RequireComponent(typeof(SpriteRenderer))]
@@ -6,10 +7,9 @@ using UnityEngine;
 public class SpriteAnimator : MonoBehaviour
 {
     SpriteRenderer sr;
-    public AtlasParser atlasLoader;
-    public AnimParser animLoader;
     PlayerAnimDataBase DataBase;
 
+    JsonAnimAsset currentAsset;
     AnimParser.AnimData currentAnim;
     int frameIndex;
     float timer;
@@ -27,84 +27,95 @@ public class SpriteAnimator : MonoBehaviour
 
     private void Update()
     {
-        if(currentAnim != null)
+        if(currentAnim == null) return;
+
+        timer += Time.deltaTime;
+        float frameTime = 1f / currentAnim.frameRate;
+
+        if(timer >= frameTime) 
         {
-            timer += Time.deltaTime;
-            float frameTime = 1f / currentAnim.frameRate;
+            timer -= frameTime;
 
-            if(timer >= frameTime) 
+            if(holdOnLastFrame && frameIndex >= currentAnim.frames.Length - 1) return;
+            
+            frameIndex++;
+
+            if (frameIndex >= currentAnim.frames.Length)
             {
-                timer -= frameTime;
-
-                if(holdOnLastFrame && frameIndex >= currentAnim.frames.Length - 1) return;
-                
-                frameIndex++;
-
-                if (frameIndex >= currentAnim.frames.Length)
+                if(currentAnim.repeat == 0)
                 {
-                    if(currentAnim.repeat == 0)
-                    {
-                        frameIndex = currentAnim.frames.Length - 1;
-                        onAnimFinished?.Invoke();
-                    }
-                    else
-                    {
-                        frameIndex = 0;
-                    }
+                    frameIndex = currentAnim.frames.Length - 1;
+                    onAnimFinished?.Invoke();
                 }
-
-                triggerEnterEvents(frameIndex);
-                
-                //Aplicar frame
-                ApplyCurrentFrame();
+                else
+                {
+                    frameIndex = 0;
+                }
             }
+
+            triggerEnterEvents(frameIndex);
+            
+            //Aplicar frame
+            ApplyCurrentFrame();
         }
+        
     }
 
     void ApplyCurrentFrame()
     {
-        if (currentAnim == null) return;
+        if (currentAnim == null || currentAsset == null) return;
 
         frameIndex = Mathf.Clamp(frameIndex, 0, currentAnim.frames.Length -1);
 
-        string spriteKey = currentAnim.frames[frameIndex]. frame;
-
-        if(atlasLoader.spriteAtlas.TryGetValue(spriteKey, out Sprite sprite))
+        // int spriteIndex = frameIndex;
+        // if(spriteIndex < currentAsset.animLookup.Count)
         {
-            sr.sprite = sprite;
+            sr.sprite = currentAnim.frames[frameIndex].sprite;
         }
     }
     public void LoadAnim(string id)
     {
-        // Debug.Log($"[ANIM] LoadAnim START -> {id}");
+        currentAsset = DataBase.GetAnim(id);
 
-        var def = DataBase.GetAnim(id);
-
-        // if(def == null) {Debug.LogError($"[ANIM] AnimDef es NULL for ID {id}"); return;}
-        // Debug.Log($"[ANIM] ANIM DEF OK -> {def.id}");
-
-        // Debug.Log($"sheet = {def.spriteSheet?.name}");
-        // Debug.Log($"atlas = {def.atlasJson?.name}");
-
-        atlasLoader.LoadAtlas(def.spriteSheet, def.atlasJson);
-        animLoader.LoadAnim(def.id, def.animJson);
+        if(currentAsset == null)
+        {
+            Debug.LogError($"Anim Asser {id} not found");
+            return;
+        }
     }
 
     public void Play(string animID, string direction, bool reset = true)
     {
-        currentAnim = animLoader.GetAnim(animID, direction);
+        Debug.Log($"[SpriteAnimator] PLAY request -> animID: {animID} | direction {direction}");
+
+        currentAsset = DataBase.GetAnim(animID);
+
+        if(currentAsset == null)
+        {
+            Debug.LogError($"[SpriteAnimator] Asset NOT FOUND -> {animID}");
+            return;
+        }
+
+        Debug.Log($"[SpriteAnimator] Asset FOUND -> {currentAsset.name}");
+
+        currentAnim = currentAsset.GetDirection(direction);
+
+        if(currentAnim == null)
+        {
+            Debug.LogError($"Direccion '{direction}' not found in asset {animID}");
+            return;
+        }
+
+        Debug.Log($"[SpriteAnimator] Direction OK -> {direction} | frames: {currentAnim.frames.Length}");
 
         if (reset)
         {
             frameIndex = 0;
-            timer = 0f;
+            timer = 0;
             lastEventFrame = -1;
         }
 
         ApplyCurrentFrame();
-        
-        // DEBUG ANIMACION - DIRECCION-----
-        // Debug.Log($"{animID} - {direction} - {reset}");
     }
 
     void triggerEnterEvents(int index)
