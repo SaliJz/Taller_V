@@ -11,19 +11,6 @@ public class PlayerAnimDataBase : MonoBehaviour
         young, adult, old
     }
 
-    // [System.Serializable]
-    // public class AnimDef
-    // {
-    //     public string id;
-    //     public Texture2D sheet;
-    //     public TextAsset atlasJSON;
-    //     public TextAsset animJSON;
-    // }
-
-    // [Header("Animation Assets")]
-    // Dictionary<string, JsonAnimAsset> animLookup = new Dictionary<string, JsonAnimAsset>();
-    // public JsonAnimAsset[] Assets;
-
     private void Awake()
     {
         BuildDataBase();
@@ -38,7 +25,7 @@ public class PlayerAnimDataBase : MonoBehaviour
             if (!animLookup.ContainsKey(a.id))
             {
                 animLookup.Add(a.id, a);
-                Debug.Log($"[DB] ADD -> {a.id} | SHEET: {a.spriteSheet} | ATLAS {a.atlasJson} | ANIM {a.animJson}");
+                // Debug.Log($"[DB] ADD -> {a.id} | SHEET: {a.spriteSheet} | ATLAS {a.atlasJson} | ANIM {a.animJson}");
             }
             else
             {
@@ -46,17 +33,17 @@ public class PlayerAnimDataBase : MonoBehaviour
             }
         }
 
-        Debug.Log($"[DB] TOTAL ANIMS: {animLookup.Count}");
-        Debug.Log($"[DB] HAS begin:idle1? {animLookup.ContainsKey("begin:idle1")}");
+        // Debug.Log($"[DB] TOTAL ANIMS: {animLookup.Count}");
+        // Debug.Log($"[DB] HAS begin:idle1? {animLookup.ContainsKey("begin:idle1")}");
     }
 
     public JsonAnimAsset GetAnim(string ID)
     {
-        Debug.Log($"[DB] Searching asset -> {ID}");
+        // Debug.Log($"[DB] Searching asset -> {ID}");
 
         foreach(var a in assets)
         {
-            Debug.Log($"[DB] Asset Available -> {a.id}");
+            // Debug.Log($"[DB] Asset Available -> {a.id}");
             if(a.id == ID) break;
         }
 
@@ -64,23 +51,13 @@ public class PlayerAnimDataBase : MonoBehaviour
         {
             if(a.id == ID)
             {
-                Debug.Log($"[DB] Asset Found {a.id}");
+                // Debug.Log($"[DB] Asset Found {a.id}");
                 return a;
             }
         }
 
-        // if (animLookup.TryGetValue(ID, out var asset))
-        // {
-        //     // Debug.Log($"[DB] GET OK -> '{ID}'");
-        //     return asset;
-        // }
-
-        Debug.LogError($"[DB] Asset NOT FOUND ->'{ID}'");
-        // Debug.Log("[DB] KEYS");
-        // foreach(var k in animLookup.Keys)
-        // {
-        //     Debug.Log($"    - {k}");
-        // }
+        // Debug.LogError($"[DB] Asset NOT FOUND ->'{ID}'");
+        
         return null;
     }
 

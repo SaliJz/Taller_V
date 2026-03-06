@@ -1,5 +1,4 @@
 using System;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 [RequireComponent(typeof(SpriteRenderer))]
@@ -67,11 +66,7 @@ public class SpriteAnimator : MonoBehaviour
 
         frameIndex = Mathf.Clamp(frameIndex, 0, currentAnim.frames.Length -1);
 
-        // int spriteIndex = frameIndex;
-        // if(spriteIndex < currentAsset.animLookup.Count)
-        {
-            sr.sprite = currentAnim.frames[frameIndex].sprite;
-        }
+        sr.sprite = currentAnim.frames[frameIndex].sprite;
     }
     public void LoadAnim(string id)
     {
@@ -79,34 +74,34 @@ public class SpriteAnimator : MonoBehaviour
 
         if(currentAsset == null)
         {
-            Debug.LogError($"Anim Asser {id} not found");
+            // Debug.LogError($"Anim Asset {id} not found");
             return;
         }
     }
 
     public void Play(string animID, string direction, bool reset = true)
     {
-        Debug.Log($"[SpriteAnimator] PLAY request -> animID: {animID} | direction {direction}");
+        // Debug.Log($"[SpriteAnimator] PLAY request -> animID: {animID} | direction {direction}");
 
         currentAsset = DataBase.GetAnim(animID);
 
         if(currentAsset == null)
         {
-            Debug.LogError($"[SpriteAnimator] Asset NOT FOUND -> {animID}");
+            // Debug.LogError($"[SpriteAnimator] Asset NOT FOUND -> {animID}");
             return;
         }
 
-        Debug.Log($"[SpriteAnimator] Asset FOUND -> {currentAsset.name}");
+        // Debug.Log($"[SpriteAnimator] Asset FOUND -> {currentAsset.name}");
 
         currentAnim = currentAsset.GetDirection(direction);
 
         if(currentAnim == null)
         {
-            Debug.LogError($"Direccion '{direction}' not found in asset {animID}");
+            // Debug.LogError($"Direccion '{direction}' not found in asset {animID}");
             return;
         }
 
-        Debug.Log($"[SpriteAnimator] Direction OK -> {direction} | frames: {currentAnim.frames.Length}");
+        // Debug.Log($"[SpriteAnimator] Direction OK -> {direction} | frames: {currentAnim.frames.Length}");
 
         if (reset)
         {

@@ -4,7 +4,7 @@ using UnityEditor;
 
 public static class JsonAnimAssetBuilder
 {
-    [MenuItem("Tools/Animation/Rebuild JsonAnim's")]
+    [MenuItem("Tools/JsonAnimation/Rebuild JsonAnims")]
 
     public static void BuildSelected()
     {
@@ -19,7 +19,7 @@ public static class JsonAnimAssetBuilder
                 Build(asset);
                 build++;
 
-            Debug.Log($"[ANIM BUILD] Build {build} assets");
+            // Debug.Log($"[ANIM BUILD] Build {build} assets");
         }
     }
     public static void Build(JsonAnimAsset asset)
@@ -30,7 +30,7 @@ public static class JsonAnimAssetBuilder
         {
             if(asset.spriteSheet == null || asset.atlasJson == null || asset.animJson == null)
             {
-                Debug.LogWarning($"[ANIM BULDER] {asset.name} missing references");
+                // Debug.LogWarning($"[ANIM BULDER] {asset.name} missing references");
                 return;
             }
 

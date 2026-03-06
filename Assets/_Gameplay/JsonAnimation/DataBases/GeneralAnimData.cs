@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class GeneralAnimData : MonoBehaviour
+//----------------------------------------------------------------------------------
+//ACTUALIZAR EN BASE AL NUEVO PLAYERANIMDATABASE.CS
+//---------------------------------------------------------------------------------
 {
     [System.Serializable]
     public class AnimDef

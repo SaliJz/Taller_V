@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "AnimAsset", menuName = "Json Animations/JsonAnim Asset")]
@@ -46,9 +45,7 @@ public class JsonAnimAsset : ScriptableObject
 
     void BuildLookup()
     {
-        // if(spritesLookup != null && animLookup != null) return;
-
-        Debug.Log($"[JsonAnimAsset] Building lookup for {id} \nFrames stored: {framesList.Count} \nAnim Stored: {animList.Count}");
+        // Debug.Log($"[JsonAnimAsset] Building lookup for {id} \nFrames stored: {framesList.Count} \nAnim Stored: {animList.Count}");
 
         spritesLookup = new Dictionary<string, Sprite>();
         animLookup = new Dictionary<string, AnimParser.AnimData>();
@@ -56,45 +53,32 @@ public class JsonAnimAsset : ScriptableObject
         foreach (var f in framesList)
         {
             if(f.sprite != null){
-            Debug.Log($"[JsonAnimAsset] Register Sprite -> {f.name}");
+            // Debug.Log($"[JsonAnimAsset] Register Sprite -> {f.name}");
             spritesLookup[f.name] = f.sprite;}
         }
         foreach (var a in animList)
         {
             if(a.anim != null){
-            Debug.Log($"[JsonAnimAsset] Register Direction -> {a.direction}");
+            // Debug.Log($"[JsonAnimAsset] Register Direction -> {a.direction}");
             animLookup[a.direction] = a.anim;}
         }
 
-        Debug.Log($"[JsonAnimAsset] Lookup built -> sprites:{spritesLookup.Count} | anims:{animLookup.Count}");
+        // Debug.Log($"[JsonAnimAsset] Lookup built -> sprites:{spritesLookup.Count} | anims:{animLookup.Count}");
     }
 
     public AnimParser.AnimData GetDirection(string dir)
     {
         if(animLookup == null || animLookup.Count == 0) BuildLookup();
 
-        Debug.Log($"[SpriteAnimator] SEARCHING direction '{dir}' in asset '{id}'");
-
-        // if (animLookup == null) 
-        // {
-        //     Debug.LogError($"[SpriteAnimator] animLookup is NULL");
-        //     return null;
-        // }
-
-        // Debug.Log($"[SpriteAnimator] Total direction in asset: {animLookup.Count}");
-
-        // foreach(var k in animLookup.Keys)
-        // {
-        //     Debug.Log($"[SpriteAnimator] Direction available -> {k}");
-        // }
+        // Debug.Log($"[SpriteAnimator] SEARCHING direction '{dir}' in asset '{id}'");
 
         if(animLookup.TryGetValue(dir, out var data)) 
         {
-            Debug.Log($"[SpriteAnimator] Direction FOUND -> {dir}");
+            // Debug.Log($"[SpriteAnimator] Direction FOUND -> {dir}");
             return data;
         }
 
-        Debug.LogError($"[SpriteAnimator] Direction '{dir}' NOT FOUND in Asset {id}");
+        // Debug.LogError($"[SpriteAnimator] Direction '{dir}' NOT FOUND in Asset {id}");
         return null;
     }
 
@@ -108,12 +92,6 @@ public class JsonAnimAsset : ScriptableObject
         Debug.Log($"Sprite {frameName} not found in {id}");
         return null;
     }
-
-    // public AnimParser.AnimData GetAnim(string dir)
-    // {
-    //     BuildLookup();
-    //     return animLookup[dir];
-    // }
 
     public void SetData(Dictionary<string, Sprite> sprites, Dictionary<string, AnimParser.AnimData> animations)
     {
@@ -137,7 +115,7 @@ public class JsonAnimAsset : ScriptableObject
                 }
                 else
                 {
-                    Debug.LogWarning($"[Build] Sprite '{f.frame}' no encontrado en Atlas");
+                    // Debug.LogWarning($"[Build] Sprite '{f.frame}' no encontrado en Atlas");
                 }
             }
 
