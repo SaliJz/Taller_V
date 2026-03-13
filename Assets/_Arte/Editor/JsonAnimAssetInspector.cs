@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEditor;
 using UnityEngine;
 
@@ -295,6 +294,11 @@ public class JsonAnimmAssetInspector : Editor
     {
         int newIndex = EditorGUILayout.Popup("Direction", selectedDirectionIndex, directionKeys);
 
+        if (directionKeys != null && !isValidDirection(directionKeys[newIndex]))
+        {
+            EditorGUILayout.HelpBox($"Ojo: {directionKeys[newIndex]} no parece una dirección estandar (up, down, downleft, upright, etc)", MessageType.Warning);
+        }
+
         if (newIndex != selectedDirectionIndex)
         {
             selectedDirectionIndex =  newIndex;
@@ -580,18 +584,9 @@ void DrawFrameInspector()
 #endregion
 
 #region  Helpers & Tools
-    bool hasValidClip() => animData?.anims == null && selectedDirectionIndex >= 0 &&
+    bool hasValidClip() => animData?.anims != null && selectedDirectionIndex >= 0 &&
         selectedDirectionIndex < animData.anims.Length;
-    // {
-        
-    //     if (animData == null) return false;
-    //     if (animData.anims == null) return false;
-    //     if (animData.anims.Length == 0) return false;
-    //     if (selectedDirectionIndex < 0) return false;
-    //     if (selectedDirectionIndex >= animData.anims.Length) return false;
 
-    //     return true;
-    // }
      bool TryGetSelectedAtlasFrame (out AtlasJson.AtlasFrame atlasFrame)
     {
         atlasFrame = null;
@@ -603,7 +598,12 @@ void DrawFrameInspector()
         // if (selectedDirectionIndex >= clip.frames.Count) return false;
         if(selectedFrameIndex >= clip.frames.Count) return false;
 
-        return atlasLookup.TryGetValue(clip.frames[selectedDirectionIndex].frame, out atlasFrame);
+        return atlasLookup.TryGetValue(clip.frames[selectedFrameIndex].frame, out atlasFrame);
+    }
+    bool isValidDirection(string dir)
+    {
+        string[] validDirections = {"up", "upleft", "upright", "left", "right", "down", "downleft", "downright"};
+        return validDirections.Contains(dir);
     }
     void OnEditorUpdate()
     {

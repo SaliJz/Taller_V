@@ -1,120 +1,279 @@
 using UnityEngine;
 
-public class PlayerAnimCtrl : MonoBehaviour
+public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
 {
-    //------------------------------------------------------------------------
-    #region Referencias
-    PlayerAnimDataBase DataBase;
-    SpriteAnimator SA;
-    #endregion
-
-    //------------------------------------------------------------------------
-    #region Runtime Input
-    float H;
-    float V;
-    #endregion
-
-    //------------------------------------------------------------------------
-    #region State
-    public PlayerAnimDataBase.Age currentAge = PlayerAnimDataBase.Age.adult;
-    PlayerAnimDataBase.Age nextAge;
-
-    public AnimPriority currentPriority = AnimPriority.none;
-    public PlayerState currentState;
-    public string currentDirection;
-    string lastDirection = "down";
-
-    public bool IsWalking;
-    public bool HasShield = true;
-    bool currentShield = true;
-
-    public bool isForcedAnim;
-    public bool damageActive;
-    public bool isDashing;
-    public bool isBlocking;
-
-    float dashTimer;
-    public float dashDuration = 0.5f;
-    public int meleeStep = 0;
-    #endregion
-
-    //------------------------------------------------------------------------
-    #region VFX Variables
-    [SerializeField] GameObject[] VFX_melee;
-    #endregion
-
-    #region Enums
+#region Custom Classes
     public enum PlayerState
     {
         idle, run, dash, distance, melee, damage,
         block, blockfb, store, inventory, bind
     }
-    public enum AnimPriority
+    public enum Age
     {
-        none = 0, locomotion = 5,
-        damage = 10,
-        action = 20, //inventory, interact, transitions
-        attack = 25, //melee, distance
-        dash = 30, //movement override
-        bind = 40
-    }
-    #endregion
-
-    //------------------------------------------------------------------------
-    #region Unity Lifecycle
-    private void Awake()
-    {
-        SA = GetComponent<SpriteAnimator>();
-        DataBase = GetComponent<PlayerAnimDataBase>();
+        young, adult, old
     }
 
-    private void Start()
-    {
-        LoadAnimations();
+    [Header("Player Custom Status")]
+    public Age currentAge =Age.adult;
+    public Age nextAge;
+    public bool HasShield = true;
+    bool currentShield = true;
+    public int meleeStep = 1;
 
-        SA.onAnimFinished += OnForceAnimationFinished;
-        SA.onAnimEvent += OnAnimationEvent;
+    [Header("State Flags")]
+    public bool damageActive;
+    public bool isDashing;
+    public bool isBlocking;
+
+    [Header("Settings & VFX")]
+    float dashTimer;
+    public float dashDuration = 0.5f;
+    [SerializeField] GameObject[] VFX_melee;
+
+    float H, V;
+    bool IsWalking() => H != 0 || V != 0;
+
+
+#endregion
+#region Unity Lifecycle
+
+
+    protected override void Start()
+    {
+        base.Start();
 
         nextAge = currentAge;
+        currentShield = HasShield;
     }
 
     private void Update()
     {
-        ReadMovementInput();
-        UpdateDirectionFromInput(H, V);
+        H = Input.GetAxisRaw("Horizontal");
+        V = Input.GetAxisRaw("Vertical");
+        UpdateDirection(H,V);
         DebugInputs();
 
-        if (UpdateBlockState()) return;
-        if(UpdateDash()) return;
+        if (UpdateBlockLogic()) return;
+        if (UpdateDashLogic()) return;
         if (isForcedAnim) return;
 
-        UpdateBaseMovementState();
+        HandleLocomotion();
     }
-    #endregion
 
-    //------------------------------------------------------------------------
-    #region Debug
+
+
+#endregion
+#region Logica de Estados
+
+
+
+    void HandleLocomotion()
+    {
+        PlayerState nextState = IsWalking()? PlayerState.run : PlayerState.idle;
+        
+        bool shieldChanged = HasShield != currentShield;
+        bool ageChanged = currentAge != nextAge;
+
+        bool forceRefresh = shieldChanged || ageChanged;
+        // bool stateChanged = nextState != currentState;
+        // bool directionChanged = lastDirection != currentDirection;
+
+        // if(stateChanged || directionChanged || shieldChanged || ageChanged)
+        // {
+        //     bool shouldReset = stateChanged&& !IsLoopingState(nextState);
+        //     if(shieldChanged && !IsLoopingState(nextState)) shouldReset = false;
+
+        //     currentState = nextState;
+        //     currentShield = HasShield;
+        //     currentAge = nextAge;
+        //     currentDirection = lastDirection;
+
+        //     PlayState(currentState, AnimPriority.locomotion, shouldReset);
+        // }
+
+        if (forceRefresh)
+        {
+            currentShield = HasShield;
+            currentAge = nextAge;
+        }
+
+        PlayState(nextState, AnimPriority.locomotion, forceRefresh);
+    }
+
+    bool UpdateBlockLogic()
+    {
+        if (!isBlocking) return false;
+
+        // if(lastDirection != currentDirection)
+        {
+            PlayState(PlayerState.block, AnimPriority.action, false);
+        }
+        return true;
+    }
+
+    bool UpdateDashLogic()
+    {
+        if(!isDashing) return false;
+
+        dashTimer -= Time.deltaTime;
+        if(dashTimer <= 0) EndDash();
+        return true;
+    }
+
+    bool IsLoopingState(PlayerState state)
+    {
+        return state == PlayerState.idle || state == PlayerState.run;
+    }
+
+
+
+#endregion
+#region Public Actions
+
+
+
+    public void PlayDamage() //DAMAGE-------------------------------
+    {
+        if (damageActive) return;
+
+        if (isBlocking)
+        {
+            PlayBlockFeedback();
+            return;
+        }
+
+        damageActive = true;
+        PlayState(PlayerState.damage, AnimPriority.damage);
+    }
+    public void PlayDistanceAttack()
+    {
+        PlayState(PlayerState.distance, AnimPriority.attack);
+    }
+     public void PlayMelee(int index) //MELEE -------------------------------------
+    {
+        meleeStep = index;
+
+        if(provider.AnimExist(ResolveFullID("melee", lastDirection)))
+        {
+            PlayState(PlayerState.melee, AnimPriority.attack);
+        }
+    }
+
+    public void StartDash() //DASH---------------------------------------
+    {
+        if(isDashing) return;
+        isDashing = true;
+        dashTimer = dashDuration;
+        PlayState(PlayerState.dash, AnimPriority.dash);
+    }
+    void EndDash()
+    {
+        isDashing = false;
+        damageActive = false;
+        currentPriority = AnimPriority.none;
+        PlayState(PlayerState.idle, AnimPriority.locomotion);
+    }
+
+    public void PlayBlock() // BLOCK ------------------------------------------------------
+    {
+        isBlocking = true;
+        SA.holdOnLastFrame = true;
+        PlayState(PlayerState.block, AnimPriority.action);
+    }
+
+    public void EndBlock()
+    {
+        isBlocking = false;
+        SA.holdOnLastFrame = false;
+        currentPriority = AnimPriority.none;
+        PlayState(PlayerState.idle, AnimPriority.locomotion);
+    }
+
+    void PlayBlockFeedback()
+    {
+        SA.holdOnLastFrame = false;
+        PlayState(PlayerState.blockfb, AnimPriority.action);
+    }
+
+#endregion
+#region Resolver & Callbacks
+
+    protected override string ResolveFullID(string baseID, string direction)
+    {
+        string id = baseID;
+
+        if(baseID == "idle")
+        {
+            id = (direction.Contains("down") || direction == "left") ? "idle1" : "idle2";
+        }
+        if(baseID == "melee")
+        {
+            id = $"melee{meleeStep}";
+        }
+
+        //Contruccion de Prefix de edad
+        string prefix = currentAge switch
+        {
+            Age.young => "begin:",
+            Age.old => "late:",
+            _ => "mid:"
+        };
+
+        string resolved = prefix + id;
+
+        if(!HasShield && provider.AnimExist(resolved + "_ns"))
+        {
+            resolved += "_ns";
+        }
+
+        return resolved;
+    }
+    protected override void OnAnimationEvent(string ev)
+    {
+        switch (ev)
+        {
+            case "MeleeSlash_1": SpawnSlash(0); break;
+            case "MeleeSlash_2": SpawnSlash(1); break;
+            case "MeleeSlash_3": SpawnSlash(2); break;
+        }
+    }
+    protected override void OnFinishedAnimation()
+    {
+        if(currentPriority == AnimPriority.dash) return;
+        if(currentState == PlayerState.blockfb)
+        {
+            isBlocking = true;
+            SA.holdOnLastFrame = true;
+            PlayState(PlayerState.block, AnimPriority.action, false);
+            return;
+        }
+
+        damageActive = false;
+        PlayState(PlayerState.idle, AnimPriority.locomotion);
+    }
+
+#endregion
+
+    void SpawnSlash(int index)
+    {
+        GameObject prefab = VFX_melee[index];
+        prefab.SetActive(true);
+
+        Debug.LogWarning($"SLASH: {index + 1} INSTATIATED");
+
+        //melee1 = 0
+        //melee2 = 1
+        //melee3 = 2
+    }
     void DebugInputs()
     {
-        if (Input.GetKeyDown(KeyCode.H))
-        {
-            HasShield = !HasShield;
-        }
+        if (Input.GetKeyDown(KeyCode.H)) HasShield = !HasShield;
 
-        if (Input.GetKeyDown(KeyCode.J) && !damageActive)
-        {
-            PlayDamage();
-        }
-
-        if (Input.GetKeyDown(KeyCode.Space) && !isDashing)
-        {
-            StartDash();
-        }
-
-        if (Input.GetKeyDown(KeyCode.Keypad0))
-        {
-            PlayDistanceAttack();
-        }
+        if (Input.GetKeyDown(KeyCode.J) && !damageActive) PlayDamage();
+        if (Input.GetKeyDown(KeyCode.Space) && !isDashing) StartDash();
+        if (Input.GetKeyDown(KeyCode.B)) PlayBlock();
+        if (Input.GetKeyUp(KeyCode.B)) EndBlock();
+        if (Input.GetKeyDown(KeyCode.Keypad0)) PlayDistanceAttack();
 
         if (Input.GetKeyDown(KeyCode.Keypad1))
         {
@@ -132,340 +291,10 @@ public class PlayerAnimCtrl : MonoBehaviour
             Debug.Log("MELEE3");
         }
 
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            nextAge = PlayerAnimDataBase.Age.young;
-        }
-        if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            nextAge = PlayerAnimDataBase.Age.adult;
-        }
-        if (Input.GetKeyDown(KeyCode.Alpha3))
-        {
-            nextAge = PlayerAnimDataBase.Age.old;
-        }
+        if (Input.GetKeyDown(KeyCode.Alpha1)) nextAge = Age.young;
+        if (Input.GetKeyDown(KeyCode.Alpha2)) nextAge = Age.adult;
+        if (Input.GetKeyDown(KeyCode.Alpha3)) nextAge = Age.old;
 
-        if (Input.GetKeyDown(KeyCode.B))
-        {
-            PlayBlock();
-        }
-        if (Input.GetKeyUp(KeyCode.B))
-        {
-            EndBlock();
-        }
     }
-    #endregion
-
-    //------------------------------------------------------------------------
-    #region Input y movimiento
-    void ReadMovementInput()
-    {
-        H = Input.GetAxisRaw("Horizontal");
-        V = Input.GetAxisRaw("Vertical");
-        IsWalking = H != 0 || V != 0;
-    }
-    void UpdateDirectionFromInput(float h, float v)
-    {
-        if (h == 0 && v > 0) lastDirection = "up";
-        else if (h == 0 && v < 0) lastDirection = "down";
-        else if (h > 0 && v == 0) lastDirection = "right";
-        else if (h < 0 && v == 0) lastDirection = "left";
-        else if (h > 0 && v > 0) lastDirection = "upright";
-        else if (h < 0 && v > 0) lastDirection = "upleft";
-        else if (h > 0 && v < 0) lastDirection = "downright";
-        else if (h < 0 && v < 0) lastDirection = "downleft"; ;
-    }
-
-    bool UsesIdle1(string dir)
-    {
-        if (dir == "down") return true;
-        else if (dir == "downleft") return true;
-        else if (dir == "downright") return true;
-        else if (dir == "left") return true;
-        else { return false; }
-    }
-
-    void UpdateBaseMovementState()
-    {
-        PlayerState nextState = IsWalking? PlayerState.run: PlayerState.idle;
-        string nextDirection = lastDirection;
-        bool nextHasShield = HasShield;
-
-        bool StateChanged = nextState != currentState;
-        bool DirectionChanged = nextDirection != currentDirection;
-        bool ShiledChanged = nextHasShield != currentShield;
-        bool AgeChanged = currentAge != nextAge;
-
-        bool ShouldReset = false;
-
-        if (StateChanged)
-        ShouldReset = !IsLoopingState(nextState);
-
-        if (ShiledChanged && !IsLoopingState(nextState)) 
-        ShouldReset = true;
-
-        if(StateChanged || DirectionChanged || ShiledChanged || AgeChanged)
-        {
-            currentState = nextState;
-            currentDirection = nextDirection;
-            currentShield = nextHasShield;
-            currentAge = nextAge;
-
-            PlayResolvedState(currentState, ShouldReset);
-        }
-    }
-
-    bool UpdateBlockState()
-    {
-        if (!isBlocking) return false;
-        
-        bool directionChanged = lastDirection != currentDirection;
-
-        if (directionChanged && currentState != PlayerState.blockfb)
-        {
-            currentDirection = lastDirection;
-            PlayResolvedState (PlayerState.block, false);
-        }
-
-        return true;
-    }
-
-    bool UpdateDash()
-    {
-        if(!isDashing) return false;
-
-        dashTimer -= Time.deltaTime;
-        if(dashTimer <= 0) EndDash();
-        return true;
-    }
-
-    #endregion
-
-    //------------------------------------------------------------------------
-    #region Anim Resolution
-    string GetAgePrefix()
-    {
-        return currentAge switch
-        {
-            PlayerAnimDataBase.Age.young => "begin:",
-            PlayerAnimDataBase.Age.adult => "mid:",
-            PlayerAnimDataBase.Age.old => "late:",
-            _ => "mid:"
-        };
-    }
-
-    string ResolveAnimationID(PlayerState state, string direction)
-    {
-        string baseID = state switch
-        {
-            PlayerState.idle => "idle",
-            PlayerState.run => "run",
-            PlayerState.dash => "dash",
-            PlayerState.distance => "distance",
-            PlayerState.melee => $"melee{meleeStep}",
-            PlayerState.damage => "damage",
-            PlayerState.block => "block",
-            PlayerState.blockfb => "blockfb",
-            _ => "idle"
-
-        };
-
-        string resolved = baseID;
-
-        if (baseID == "idle")
-        {
-            resolved = UsesIdle1(direction) ? "idle1" : "idle2";
-        }
-
-        resolved = GetAgePrefix() + resolved; //Fijarse que PlayMelee() tenga el mismo orden//
-
-        //CONFIRMA SI TIENE EL ESCUDO        
-        if (!HasShield)
-        {
-            string nsVariant = resolved + "_ns";
-            if (DataBase.AnimExist(nsVariant))
-            {
-                resolved = nsVariant;
-            }
-        }
-
-        // Debug.Log($"Current ANim: {resolved}");
-        return resolved;
-    }
-    #endregion
-
-    //------------------------------------------------------------------------
-    #region Anim Playback
-    void LoadAnimations()
-    {
-        foreach (var anim in DataBase.assets)
-        {
-            SA.LoadAnim(anim.id);
-        }
-    }
-
-    void PlayResolvedState(PlayerState state, bool reset = true)
-    {
-        string resolved = ResolveAnimationID(state, currentDirection);
-        SA.Play(resolved, currentDirection, reset);
-    }
-
-    bool IsLoopingState(PlayerState state)
-    {
-        return state == PlayerState.idle || state == PlayerState.run;
-    }
-    #endregion
-
-    //------------------------------------------------------------------------
-    #region Force Animations
-    void PlayForcedAnimation(PlayerState newstate, AnimPriority priority, bool reset = true)
-    {
-        if (priority < currentPriority) return;
-
-        currentPriority = priority;
-        currentState = newstate;
-        isForcedAnim = true;
-
-        PlayResolvedState(currentState, reset);
-    }
-    #endregion
-
-    //------------------------------------------------------------------------
-    #region Public Actions
-    public void PlayDamage() //DAMAGE-------------------------------
-    {
-        if (damageActive) return;
-
-        if (isBlocking)
-        {
-            PlayBlockFeedback();
-            return;
-        }
-
-        damageActive = true;
-        PlayForcedAnimation(PlayerState.damage, AnimPriority.damage);
-    }
-    public void PlayDistanceAttack()
-    {
-        PlayForcedAnimation(PlayerState.distance, AnimPriority.attack);
-    }
-
-
-    public void StartDash() //DASH---------------------------------------
-    {
-        isDashing = true;
-        isForcedAnim = true;
-        dashTimer = dashDuration;
-
-        currentPriority = AnimPriority.dash;
-        currentState = PlayerState.dash;
-        currentDirection = lastDirection;
-
-        PlayResolvedState(currentState);
-    }
-    void EndDash()
-    {
-        isDashing = false;
-        damageActive = false;
-        isForcedAnim = false;
-        currentPriority = AnimPriority.none;
-        currentState = PlayerState.idle;
-
-        PlayResolvedState(currentState);
-    }
-
-    public void PlayMelee(int index) //MELEE -------------------------------------
-    {
-        if (!DataBase.AnimExist($"{GetAgePrefix()}melee{index}")) return;
-
-        meleeStep = index;
-        currentDirection = lastDirection;
-        PlayForcedAnimation(PlayerState.melee, AnimPriority.attack, true);
-    }
-
-    public void PlayBlock() // BLOCK ------------------------------------------------------
-    {
-        isBlocking = true;
-        currentPriority = AnimPriority.action;
-        SA.Play(ResolveAnimationID(PlayerState.block,currentDirection),currentDirection, false);
-        SA.holdOnLastFrame = true;
-    }
-
-    public void EndBlock()
-    {
-        isBlocking = false;
-        SA.holdOnLastFrame = false;
-        isForcedAnim = false;
-        currentPriority = AnimPriority.none;
-        currentState = PlayerState.idle;
-
-        PlayResolvedState(currentState, true);
-    }
-
-    void PlayBlockFeedback()
-    {
-        SA.holdOnLastFrame = false;
-        isForcedAnim = true;
-        currentState = PlayerState.blockfb;
-        PlayForcedAnimation(currentState, AnimPriority.action);
-    }
-    #endregion
-
-    //------------------------------------------------------------------------
-    #region Animator Callbacks
-    void OnForceAnimationFinished()
-    {
-        if (currentPriority == AnimPriority.dash) return; //No se interrumpe el dash
-
-        if(currentState == PlayerState.blockfb)
-        {
-            currentState = PlayerState.block;
-            isForcedAnim = true;
-            currentPriority = AnimPriority.action;
-
-            SA.holdOnLastFrame = true;
-
-            PlayResolvedState(PlayerState.block, false);
-            return;
-        }
-
-        damageActive = false;
-        isForcedAnim = false;
-
-        currentPriority = AnimPriority.none;
-        currentState = PlayerState.idle;
-        currentDirection = lastDirection;
-        
-        PlayResolvedState(currentState);
-    }
-
-    void OnAnimationEvent(string ev)
-    {
-        switch (ev)
-        {
-            case "MeleeSlash_1": SpawnSlash(0); break;
-            case "MeleeSlash_2": SpawnSlash(1); break;
-            case "MeleeSlash_3": SpawnSlash(2); break;
-        }
-    }
-    #endregion
-
-    //------------------------------------------------------------------------
-    #region VFX
-    void SpawnSlash(int index)
-    {
-        GameObject prefab = VFX_melee[index];
-        prefab.SetActive(true);
-
-        Debug.LogWarning($"SLASH: {index + 1} INSTATIATED");
-
-        //melee1 = 0
-        //melee2 = 1
-        //melee3 = 2
-    }
-    #endregion
-
-
-    
 
 }

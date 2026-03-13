@@ -26,14 +26,12 @@ public static class JsonAnimAssetBuilder
     {
         // JsonAnimAsset asset = Selection.activeObject as JsonAnimAsset;
         // if(asset == null) {Debug.LogWarning("[ANIM BUILDER] Select a JsonAnimAsset first"); return;}
+        if(asset.spriteSheet == null || asset.atlasJson == null || asset.animJson == null) return;
+
+        AssetDatabase.StartAssetEditing();
+
         try
         {
-            if(asset.spriteSheet == null || asset.atlasJson == null || asset.animJson == null)
-            {
-                // Debug.LogWarning($"[ANIM BULDER] {asset.name} missing references");
-                return;
-            }
-
             var subAssets = AssetDatabase.LoadAllAssetsAtPath(AssetDatabase.GetAssetPath(asset));
             foreach (var sub in subAssets)
             {

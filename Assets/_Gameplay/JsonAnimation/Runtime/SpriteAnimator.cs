@@ -2,11 +2,11 @@ using System;
 using UnityEngine;
 
 [RequireComponent(typeof(SpriteRenderer))]
-[RequireComponent(typeof(PlayerAnimDataBase))]
 public class SpriteAnimator : MonoBehaviour
 {
     SpriteRenderer sr;
-    PlayerAnimDataBase DataBase;
+    // PlayerAnimDataBase DataBase;
+    JsonAnimProvider _provider;
 
     JsonAnimAsset currentAsset;
     AnimParser.AnimData currentAnim;
@@ -20,8 +20,12 @@ public class SpriteAnimator : MonoBehaviour
 
     private void Awake()
     {
-        DataBase = GetComponent<PlayerAnimDataBase>();
+        // DataBase = GetComponent<PlayerAnimDataBase>();
         sr = GetComponent<SpriteRenderer>();
+    }
+    public void SetProvider(JsonAnimProvider provider)
+    {
+        _provider = provider;
     }
 
     private void Update()
@@ -68,23 +72,29 @@ public class SpriteAnimator : MonoBehaviour
 
         sr.sprite = currentAnim.frames[frameIndex].sprite;
     }
-    public void LoadAnim(string id)
-    {
-        currentAsset = DataBase.GetAnim(id);
+    // public void LoadAnim(string id)
+    // {
+    //     currentAsset = DataBase.GetAnim(id);
 
-        if(currentAsset == null)
-        {
-            // Debug.LogError($"Anim Asset {id} not found");
-            return;
-        }
-    }
+    //     if(currentAsset == null)
+    //     {
+    //         // Debug.LogError($"Anim Asset {id} not found");
+    //         return;
+    //     }
+    // }
 
     public void Play(string animID, string direction, bool reset = true)
     {
         // Debug.Log($"[SpriteAnimator] PLAY request -> animID: {animID} | direction {direction}");
 
-        currentAsset = DataBase.GetAnim(animID);
+        // currentAsset = DataBase.GetAnim(animID);
+        if(_provider == null)
+        {
+            Debug.LogError($"[SpriteAnimator] No hay Provider asignado en {name}");
+            return;
+        }
 
+        currentAsset = _provider.GetAnim(animID);
         if(currentAsset == null)
         {
             // Debug.LogError($"[SpriteAnimator] Asset NOT FOUND -> {animID}");
@@ -94,7 +104,6 @@ public class SpriteAnimator : MonoBehaviour
         // Debug.Log($"[SpriteAnimator] Asset FOUND -> {currentAsset.name}");
 
         currentAnim = currentAsset.GetDirection(direction);
-
         if(currentAnim == null)
         {
             // Debug.LogError($"Direccion '{direction}' not found in asset {animID}");
