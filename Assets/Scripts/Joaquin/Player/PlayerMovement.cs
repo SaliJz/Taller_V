@@ -1,4 +1,4 @@
-using System.Collections;
+Ôªøusing System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -22,10 +22,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     [Header("Audio Step Settings")]
     [SerializeField] private int level = 0;
-    [SerializeField] private float stepInterval = 0.35f; // Tiempo entre pasos
+    [SerializeField] private float stepInterval = 0.35f;
     private float stepTimer = 0f;
 
-    public int Level // Para el gestor de niveles en un futuro
+    public int Level
     {
         get { return level; }
         set { level = value; }
@@ -159,7 +159,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     private void Start()
     {
         statsManager = GetComponent<PlayerStatsManager>();
-        if (statsManager == null) ReportDebug("StatsManager no est· asignado en PlayerMovement. Usando valores de fallback.", 2);
+        if (statsManager == null) ReportDebug("StatsManager no est√° asignado en PlayerMovement. Usando valores de fallback.", 2);
 
         controller = GetComponent<CharacterController>();
         mainCameraTransform = Camera.main != null ? Camera.main.transform : mainCameraTransform;
@@ -238,11 +238,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
 
         ApplyGravity();
-
-        //if (Input.GetKeyDown(KeyCode.Space) && dashCooldownTimer <= 0 && !IsDashing && !isDashDisabled)
-        //{
-        //    StartCoroutine(DashRoutine());
-        //}
     }
 
     private void FixedUpdate()
@@ -346,12 +341,11 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
-    // Alinea al jugador en la direcciÛn del movimiento o hacia la rotaciÛn bloqueada si existe.
     private void RotateTowardsMovement()
     {
         if (rotationLocked)
         {
-            // Mantener la rotaciÛn bloqueada (suave)
+
             transform.rotation = Quaternion.Slerp(transform.rotation, lockedRotation, 12f * Time.fixedDeltaTime);
             return;
         }
@@ -363,10 +357,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 12f * Time.fixedDeltaTime);
         }
     }
-
-    /// <summary>
-    /// MÈtodo p˙blico llamado por PlayerCombatActionManager para ejecutar el dash.
-    /// </summary>
     public IEnumerator ExecuteDashFromManager()
     {
         yield return StartCoroutine(DashRoutine());
@@ -439,7 +429,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
             if (!IsPositionSafeForCapsule(nextPos))
             {
-                ReportDebug("Safety push detenido: posiciÛn insegura detectada.", 1);
+                ReportDebug("Safety push detenido: posici√≥n insegura detectada.", 1);
                 break;
             }
 
@@ -557,7 +547,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         if (controller != null) controller.stepOffset = prevStepOffset;
     }
 
-    // Activa o desactiva las colisiones entre el jugador y las capas definidas en traversableLayers.
     private void ToggleLayerCollisions(bool ignore)
     {
         for (int i = 0; i < 32; i++)
@@ -569,22 +558,15 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
-    /// <summary>
-    /// Sistema de detecciÛn de bordes estilo Hades.
-    /// Previene que el jugador se caiga de plataformas durante movimiento normal.
-    /// Si detecta un vacÌo adelante, anula el movimiento en esa direcciÛn.
-    /// </summary>
-    /// <param name="movement">Vector de movimiento propuesto</param>
-    /// <returns>Vector de movimiento ajustado (o cero si hay vacÌo)</returns>
     private Vector3 ApplyEdgeDetection(Vector3 movement)
     {
-        // Solo aplicar detecciÛn de bordes si el jugador est· en el suelo
+
         if (!controller.isGrounded)
         {
             return movement;
         }
 
-        // Calcular posiciÛn de origen del raycast
+
         Vector3 horizontalMovement = new Vector3(movement.x, 0f, movement.z);
         if (horizontalMovement.magnitude < 0.01f)
         {
@@ -595,27 +577,20 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         Vector3 rayOrigin = transform.position + Vector3.up * edgeRaycastHeight;
         Vector3 checkPosition = rayOrigin + movementDirection * (controller.radius + edgeDetectionDistance);
 
-        // Raycast hacia abajo para detectar suelo
+
         float rayDistance = controller.height + 0.5f;
 
         if (!Physics.Raycast(checkPosition, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore))
         {
-            ReportDebug("Borde detectado. Bloqueando movimiento para prevenir caÌda.", 1);
+            ReportDebug("Borde detectado. Bloqueando movimiento para prevenir ca√≠da.", 1);
 
-            // Anular movimiento horizontal
+
             return new Vector3(0f, movement.y, 0f);
         }
 
-        // Hay suelo, permitir movimiento normal
+
         return movement;
     }
-
-    /// <summary>
-    /// Valida la ruta del dash para detectar obst·culos o vacÌos cruzables.
-    /// </summary>
-    /// <param name="direction">La direcciÛn normalizada del dash.</param>
-    /// <param name="finalPosition">El punto de aterrizaje seguro par·metro de salida.</param>
-    /// <returns>True si el dash es posible, false si est· bloqueado.</returns>
     private bool ValidateDashPath(Vector3 direction, out Vector3 finalPosition)
     {
         Vector3 origin = transform.position;
@@ -625,7 +600,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         Vector3 p1 = origin + controller.center + Vector3.up * (playerHeight / 2f - playerRadius);
         Vector3 p2 = origin + controller.center - Vector3.up * (playerHeight / 2f - playerRadius);
 
-        // Paso 1: Comprobar colisiones con obst·culos
+
         if (Physics.CapsuleCast(p1, p2, playerRadius, direction, out RaycastHit obstacleHit, currentDashDistance, dashCollisionLayers, QueryTriggerInteraction.Ignore))
         {
             float adjustedDistance = Mathf.Max(0f, obstacleHit.distance - playerRadius);
@@ -635,18 +610,18 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
                 finalPosition = origin;
                 lastTargetCheck = origin;
                 lastTargetHit = false;
-                ReportDebug("Dash cancelado: vacÌo detectado entre jugador y obst·culo.", 2);
+                ReportDebug("Dash cancelado: vac√≠o detectado entre jugador y obst√°culo.", 2);
                 return false;
             }
 
             finalPosition = origin + direction * adjustedDistance;
             lastTargetCheck = finalPosition;
             lastTargetHit = true;
-            ReportDebug("El camino est· bloqueado por un obst·culo. Ajustando la distancia.", 1);
+            ReportDebug("El camino est√° bloqueado por un obst√°culo. Ajustando la distancia.", 1);
             return true;
         }
 
-        // Paso 2: Dash normal en terreno plano
+
         float scanHeight = 2.0f;
         Vector3 baseTarget = origin + direction * currentDashDistance + Vector3.up * scanHeight;
 
@@ -655,11 +630,11 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             finalPosition = baseGroundHit.point;
             lastTargetCheck = finalPosition;
             lastTargetHit = true;
-            ReportDebug("Dash est·ndar seguro.", 1);
+            ReportDebug("Dash est√°ndar seguro.", 1);
             return true;
         }
 
-        // Paso 3: Cruzar vacÌos
+
         float scanStart = currentDashDistance + 0.1f;
         float scanMax = currentDashDistance + gapDashBonusDistance;
         float scanStep = Mathf.Max(0.5f, playerRadius * 0.5f);
@@ -705,11 +680,11 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             finalPosition = foundHit.point + (direction.normalized * 0.05f);
             lastTargetCheck = finalPosition;
             lastTargetHit = true;
-            ReportDebug("Aterrizaje en borde crÌtico (Plataforma pequeÒa).", 2);
+            ReportDebug("Aterrizaje en borde cr√≠tico (Plataforma peque√±a).", 2);
             return true;
         }
 
-        // Paso 4: Borde detectado
+
         float safeLedgeDistance = GetMaxSafeDistance(direction, currentDashDistance);
 
         float minEffectiveDashDistance = 0.5f;
@@ -739,7 +714,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             return true;
         }
 
-        // Paso 5: Totalmente inseguro
+
         finalPosition = origin;
         lastTargetCheck = origin;
         lastTargetHit = false;
@@ -749,7 +724,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     private IEnumerator AfterimageRoutine()
     {
-        float interval = 0.05f; // Frecuencia de apariciÛn
+        float interval = 0.05f;
 
         while (IsDashing)
         {
@@ -767,14 +742,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
                     if (dstSprite != null)
                     {
-                        // Copiar el frame exacto de la animaciÛn
-                        dstSprite.sprite = srcSprite.sprite;
 
-                        // Copiar la orientaciÛn
+                        dstSprite.sprite = srcSprite.sprite;
                         dstSprite.flipX = srcSprite.flipX;
                         dstSprite.flipY = srcSprite.flipY;
-
-                        // Configurar Color y Alpha
                         Color color = srcSprite.color;
                         color.a = afterimageAlpha;
                         dstSprite.color = color;
@@ -782,8 +753,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
                         dstSprite.sortingLayerID = srcSprite.sortingLayerID;
                         dstSprite.sortingOrder = srcSprite.sortingOrder - 1;
                     }
-
-                    // Destruir despuÈs del tiempo de vida
                     Destroy(afterimage, afterimageLifetime);
                 }
             }
@@ -899,27 +868,23 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         return false;
     }
 
-    /// <summary>
-    /// Comprueba si una posiciÛn es segura para que el personaje estÈ de pie,
-    /// verificando el centro Y cuatro puntos cardinales alrededor del radio.
-    /// </summary>
     public bool IsPositionSafeForCapsule(Vector3 pos)
     {
         float checkRadius = controller.radius * 0.95f;
         float rayLength = controller.height + 1.0f;
 
-        // Puntos de control: Centro + 8 direcciones (4 cardinales + 4 diagonales)
+
         Vector3[] checkPoints = new Vector3[]
         {
-        pos,                                                              // Centro
-        pos + Vector3.forward * checkRadius,                              // Norte
-        pos + Vector3.back * checkRadius,                                 // Sur
-        pos + Vector3.right * checkRadius,                                // Este
-        pos + Vector3.left * checkRadius,                                 // Oeste
-        pos + (Vector3.forward + Vector3.right).normalized * checkRadius, // Noreste
-        pos + (Vector3.forward + Vector3.left).normalized * checkRadius,  // Noroeste
-        pos + (Vector3.back + Vector3.right).normalized * checkRadius,    // Sureste
-        pos + (Vector3.back + Vector3.left).normalized * checkRadius      // Suroeste
+        pos,
+        pos + Vector3.forward * checkRadius,
+        pos + Vector3.back * checkRadius,
+        pos + Vector3.right * checkRadius,
+        pos + Vector3.left * checkRadius,
+        pos + (Vector3.forward + Vector3.right).normalized * checkRadius,
+        pos + (Vector3.forward + Vector3.left).normalized * checkRadius,
+        pos + (Vector3.back + Vector3.right).normalized * checkRadius,
+        pos + (Vector3.back + Vector3.left).normalized * checkRadius
         };
 
         foreach (var p in checkPoints)
@@ -935,10 +900,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         return true;
     }
 
-    /// <summary>
-    /// Verifica que el camino hasta la distancia dada tenga suelo continuo.
-    /// Previene dashear sobre vacÌos hacia obst·culos lejanos.
-    /// </summary>
     private bool HasGroundAlongPath(Vector3 direction, float distance)
     {
         if (distance < 0.1f) return true;
@@ -954,7 +915,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
             if (!Physics.Raycast(checkPos, Vector3.down, controller.height + 3f, groundLayerMask, QueryTriggerInteraction.Ignore))
             {
-                ReportDebug($"VacÌo detectado en el camino a {(step * i):F2}m de {distance:F2}m totales.", 2);
+                ReportDebug($"Vac√≠o detectado en el camino a {(step * i):F2}m de {distance:F2}m totales.", 2);
                 return false;
             }
         }
@@ -1038,11 +999,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         return Vector3.zero;
     }
-
-    /// <summary>
-    /// Aplica detecciÛn de bordes a un desplazamiento especÌfico (usado en ataques).
-    /// Similar a ApplyEdgeDetection pero trabaja con un vector de desplazamiento directo.
-    /// </summary>
     private Vector3 ApplyEdgeDetectionToDisplacement(Vector3 displacement)
     {
         if (!enableEdgeDetection || controller == null || !IsEffectivelyGrounded()) return displacement;
@@ -1061,7 +1017,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             Vector3 slide = TryComputeSlideAlongEdge(desiredHorizontal.normalized, safeHorizontal.magnitude);
             if (slide.sqrMagnitude > 0.0001f)
             {
-                // mantener Y original del desplazamiento
+
                 return new Vector3(slide.x, displacement.y, slide.z);
             }
 
@@ -1070,16 +1026,11 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         return displacement;
     }
-
-    /// <summary>
-    /// Mueve el personaje usando el CharacterController, respetando colisiones.
-    /// Ideal para movimientos forzados como los de un combo de ataque.
-    /// </summary>
     public void MoveCharacter(Vector3 displacement)
     {
         if (controller != null && controller.enabled)
         {
-            // Aplicar detecciÛn de bordes al desplazamiento de ataque
+
             if (enableEdgeDetection && controller.isGrounded)
             {
                 displacement = ApplyEdgeDetectionToDisplacement(displacement);
@@ -1110,10 +1061,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         return false;
     }
 
-    /// <summary>
-    /// Lockea la rotaciÛn del jugador hacia la direcciÛn mundial dada, pero ajustada a las 8 direcciones (octantes).
-    /// Si setAnimatorAxes es true se actualizar·n lastMoveX/lastMoveY y los par·metros del Animator para que la animaciÛn corresponda.
-    /// </summary>
     public void LockFacingTo8Directions(Vector3 worldDirection, bool setAnimatorAxes = true)
     {
         if (worldDirection.sqrMagnitude < 0.0001f) return;
@@ -1147,18 +1094,13 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
             playerAnimator.SetFloat("Xaxis", lastMoveX);
             playerAnimator.SetFloat("Yaxis", lastMoveY);
-            //playerAnimator.SetBool("Running", (x != 0f || y != 0f));
+
         }
     }
-
-    /// <summary>
-    /// Desbloquea la rotaciÛn permitiendo que el jugador vuelva a rotar seg˙n su movimiento.
-    /// Adem·s sincroniza los ejes del animator con la entrada de movimiento actual para evitar saltos.
-    /// </summary>
     public void UnlockFacing()
     {
-        // Al desbloquear, si el jugador est· moviendo con WASD usamos esa direcciÛn para los ejes,
-        // si no, conservamos la ˙ltima direcciÛn del lock (para evitar saltos).
+
+
         rotationLocked = false;
 
         if (playerAnimator != null && mainCameraTransform != null)
@@ -1181,12 +1123,12 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             }
             else
             {
-                // Si no se est· moviendo, mantener los valores que impuso el lock (ya estaban en lastMoveX/Y).
+
             }
 
             playerAnimator.SetFloat("Xaxis", lastMoveX);
             playerAnimator.SetFloat("Yaxis", lastMoveY);
-            //playerAnimator.SetBool("Running", (moveDirection.magnitude > 0.1f));
+
         }
     }
 
@@ -1209,18 +1151,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     }
 
     public void SetExternalForcesAllowed(bool allowed) { allowExternalForces = allowed; }
-
-    /// <summary>
-    /// Devuelve la rotaciÛn objetivo del lock para que otros scripts puedan comparar.
-    /// </summary>
     public Quaternion GetLockedRotation()
     {
         return lockedRotation;
     }
-
-    /// <summary>
-    /// Aplica inmediatamente la rotaciÛn lockeada (˙til si quieres forzar el snapped rotation).
-    /// </summary>
     public void ForceApplyLockedRotation()
     {
         transform.rotation = lockedRotation;
@@ -1320,15 +1254,15 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         UnityEditor.Handles.Label(origin + Vector3.up * 1.5f, "Origen de Dash");
         UnityEditor.Handles.Label(baseEnd + Vector3.up * 1.5f, "Alcance base");
-        UnityEditor.Handles.Label(bonusEnd + Vector3.up * 1.5f, "M·ximo con bonificaciÛn");
+        UnityEditor.Handles.Label(bonusEnd + Vector3.up * 1.5f, "M√°ximo con bonificaci√≥n");
 
         if (enableEdgeDetection && controller.isGrounded)
         {
-            UnityEditor.Handles.Label(origin + Vector3.up * 2.0f, "DetecciÛn de bordes activada");
+            UnityEditor.Handles.Label(origin + Vector3.up * 2.0f, "Detecci√≥n de bordes activada");
         }
         else
         {
-            UnityEditor.Handles.Label(origin + Vector3.up * 2.0f, "DetecciÛn de bordes desactivada");
+            UnityEditor.Handles.Label(origin + Vector3.up * 2.0f, "Detecci√≥n de bordes desactivada");
         }
 
         Vector3 testDir = moveDirection.magnitude > 0.1f ? moveDirection.normalized : transform.forward;
@@ -1357,12 +1291,12 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
                 if (!hasGround)
                 {
                     UnityEditor.Handles.color = Color.red;
-                    UnityEditor.Handles.Label(checkPos + Vector3.up * 0.5f, "°VACÕO!");
+                    UnityEditor.Handles.Label(checkPos + Vector3.up * 0.5f, "¬°VAC√çO!");
                 }
             }
 
             UnityEditor.Handles.color = Color.yellow;
-            UnityEditor.Handles.Label(origin + Vector3.up * 2.5f, $"Obst·culo a {obsHit.distance:F1}m - Verificando camino");
+            UnityEditor.Handles.Label(origin + Vector3.up * 2.5f, $"Obst√°culo a {obsHit.distance:F1}m - Verificando camino");
         }
 
         if (lastTargetCheck != Vector3.zero)
