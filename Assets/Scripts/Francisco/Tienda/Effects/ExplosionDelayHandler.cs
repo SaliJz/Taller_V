@@ -15,6 +15,8 @@ public class ExplosionDelayHandler : MonoBehaviour
         _explosionVisualizerPrefab = visualizerPrefab;
         _enemyBaseHealth = baseHealth;
 
+        transform.SetParent(null);
+
         StartCoroutine(ExplosionRoutine(delay));
     }
 
@@ -22,35 +24,23 @@ public class ExplosionDelayHandler : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
 
-        //float explosionDamage = _enemyBaseHealth * _explosionDamagePercentage;
-        Vector3 position = transform.position;
-
-        //Collider[] hitColliders = Physics.OverlapSphere(position, _explosionRadius);
-        //foreach (var hitCollider in hitColliders)
-        //{
-        //    if (hitCollider.gameObject == gameObject) continue;
-
-        //    IDamageable damageable = hitCollider.GetComponentInParent<IDamageable>();
-        //    if (damageable != null)
-        //    {
-        //        damageable.TakeDamage(explosionDamage, false);
-        //        Debug.Log($"[ExplosionDelayHandler] Daño por explosión de {explosionDamage:F2} aplicado a {hitCollider.gameObject.name}.");
-        //    }
-        //}
-
         if (_explosionVisualizerPrefab != null)
         {
-            GameObject visualzerExplosion = Instantiate(_explosionVisualizerPrefab, position, Quaternion.identity);
+            Instantiate(_explosionVisualizerPrefab, transform.position, Quaternion.identity);
+        }
+        else
+        {
+            Debug.LogWarning("[ExplosionDelayHandler] explosionVisualizerPrefab es nulo. Asignalo en ExplosiveItemEffect.");
         }
 
-        Destroy(this);
+        Destroy(gameObject);
     }
 
     private void OnDrawGizmos()
     {
         if (_explosionRadius > 0)
         {
-            Gizmos.color = Color.red; 
+            Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, _explosionRadius);
         }
     }

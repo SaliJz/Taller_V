@@ -28,7 +28,7 @@ public class ResurrectionItemEffect : ItemEffectBase
     public override void ApplyEffect(PlayerStatsManager statsManager)
     {
         CombatEventsManager.OnEnemyKilled += HandleEnemyResurrection;
-        Debug.Log($"[ResurrectionEffect] Aplicado. Probabilidad de resurrección: {resurrectionChance * 100}% de aparición del evento.");
+        Debug.Log($"[ResurrectionEffect] Aplicado. Probabilidad de resurrección: {resurrectionChance * 100}%.");
     }
 
     public override void RemoveEffect(PlayerStatsManager statsManager)
@@ -44,46 +44,33 @@ public class ResurrectionItemEffect : ItemEffectBase
 
     private void HandleEnemyResurrection(GameObject killedEnemy, float enemyBaseHealth)
     {
-        EnemyHealth enemyHealthComponent = killedEnemy.GetComponent<EnemyHealth>();
+        if (Random.value >= resurrectionChance) return;
 
-        if (enemyHealthComponent != null && enemyHealthComponent.ItemEffectHandledDeath)
+        Debug.Log($"[ResurrectionEffect] Evento de resurrección activado para {killedEnemy.name}.");
+
+        bool shouldInstantiateCurative = Random.value < curativeLarvaChance;
+
+        int curativeCount = shouldInstantiateCurative ? 1 : 0;
+        int explosiveCount = totalLarvasToInstantiate - curativeCount;
+
+        if (explosiveLarvaPrefab == null)
         {
+            Debug.LogError("[ResurrectionEffect] explosiveLarvaPrefab es nulo.");
             return;
         }
 
-        if (Random.value < resurrectionChance)
+        if (curativeCount > 0 && curativeLarvaPrefab != null)
         {
-            Debug.Log($"[ResurrectionEffect] Evento de resurrección activado para {killedEnemy.name}.");
+            InstantiateLarva(curativeLarvaPrefab, killedEnemy.transform.position, enemyBaseHealth, true);
+        }
+        else if (curativeLarvaPrefab == null && curativeCount > 0)
+        {
+            explosiveCount++;
+        }
 
-            if (enemyHealthComponent != null)
-            {
-                enemyHealthComponent.ItemEffectHandledDeath = true;
-            }
-
-            bool shouldInstantiateCurative = Random.value < curativeLarvaChance;
-
-            int curativeCount = shouldInstantiateCurative ? 1 : 0;
-            int explosiveCount = totalLarvasToInstantiate - curativeCount;
-
-            if (explosiveLarvaPrefab == null)
-            {
-                Debug.LogError("[ResurrectionEffect] explosiveLarvaPrefab es nulo.");
-                return;
-            }
-
-            if (curativeCount > 0 && curativeLarvaPrefab != null)
-            {
-                InstantiateLarva(curativeLarvaPrefab, killedEnemy.transform.position, enemyBaseHealth, true);
-            }
-            else if (curativeLarvaPrefab == null && curativeCount > 0)
-            {
-                explosiveCount++;
-            }
-
-            for (int i = 0; i < explosiveCount; i++)
-            {
-                InstantiateLarva(explosiveLarvaPrefab, killedEnemy.transform.position, enemyBaseHealth, false);
-            }
+        for (int i = 0; i < explosiveCount; i++)
+        {
+            InstantiateLarva(explosiveLarvaPrefab, killedEnemy.transform.position, enemyBaseHealth, false);
         }
     }
 
@@ -95,16 +82,12 @@ public class ResurrectionItemEffect : ItemEffectBase
         if (isCurative)
         {
             if (larva.TryGetComponent<CurativeLarva>(out var curativeScript))
-            {
                 curativeScript.Initialize(enemyBaseHealth);
-            }
         }
         else
         {
             if (larva.TryGetComponent<ResurrectedLarva>(out var explosiveScript))
-            {
                 explosiveScript.Initialize(enemyBaseHealth);
-            }
         }
 
         Debug.Log($"[ResurrectionEffect] Instanciada larva: {(isCurative ? "CURATIVA" : "EXPLOSIVA")}");

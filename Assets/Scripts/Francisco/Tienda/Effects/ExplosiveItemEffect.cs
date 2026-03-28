@@ -8,12 +8,10 @@ public class ExplosiveItemEffect : ItemEffectBase
     public float explosionRadius = 10f;
 
     [Header("Modificadores de Enemigos Explosivos")]
-    public float explosiveEnemyDetonationDelayBonus = 1.5f;
+    public float explosiveEnemyDetonationDelayBonus = 0.5f;
 
     [Header("Visualización")]
     public GameObject explosionVisualizerPrefab;
-
-    private Vector3 lastExplosionPosition = Vector3.zero;
 
     private void OnEnable()
     {
@@ -28,14 +26,12 @@ public class ExplosiveItemEffect : ItemEffectBase
     public override void ApplyEffect(PlayerStatsManager statsManager)
     {
         CombatEventsManager.OnEnemyKilled += HandleEnemyExplosion;
-
         Debug.Log($"[ExplosiveItemEffect] Aplicado. Radio de explosión: {explosionRadius}.");
     }
 
     public override void RemoveEffect(PlayerStatsManager statsManager)
     {
         CombatEventsManager.OnEnemyKilled -= HandleEnemyExplosion;
-
         Debug.Log("[ExplosiveItemEffect] Removido.");
     }
 
@@ -47,15 +43,12 @@ public class ExplosiveItemEffect : ItemEffectBase
 
     private void HandleEnemyExplosion(GameObject killedEnemy, float enemyBaseHealth)
     {
-        EnemyHealth enemyHealthComponent = killedEnemy.GetComponent<EnemyHealth>();
+        Vector3 position = killedEnemy.transform.position;
 
-        if (enemyHealthComponent != null && enemyHealthComponent.ItemEffectHandledDeath)
-        {
-            return;
-        }
+        GameObject handlerObject = new GameObject("ExplosionDelayHandler");
+        handlerObject.transform.position = position;
 
-        ExplosionDelayHandler handler = killedEnemy.AddComponent<ExplosionDelayHandler>();
-
+        ExplosionDelayHandler handler = handlerObject.AddComponent<ExplosionDelayHandler>();
         handler.StartExplosion(
             explosionDamagePercentage,
             explosionRadius,
@@ -63,9 +56,6 @@ public class ExplosiveItemEffect : ItemEffectBase
             enemyBaseHealth,
             explosiveEnemyDetonationDelayBonus);
 
-        if (enemyHealthComponent != null)
-        {
-            enemyHealthComponent.ItemEffectHandledDeath = true;
-        }
+        Debug.Log($"[ExplosiveItemEffect] Handler instanciado en {position} para '{killedEnemy.name}'. Delay: {explosiveEnemyDetonationDelayBonus}s.");
     }
 }

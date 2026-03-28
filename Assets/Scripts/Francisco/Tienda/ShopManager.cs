@@ -716,6 +716,7 @@ public class ShopManager : MonoBehaviour
 
         foreach (var effect in item.behavioralEffects)
         {
+            effect.RemoveEffect(playerStatsManager);
             effect.ApplyEffect(playerStatsManager);
         }
 

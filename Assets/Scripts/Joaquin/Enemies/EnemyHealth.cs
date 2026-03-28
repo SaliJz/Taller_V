@@ -55,13 +55,13 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private PlayerStatsManager playerStatsManager;
     private EnemyAuraManager _auraManager;
 
-    private float _initialHealthMultiplier = 1.0f; 
-    private float auraDamageReduction = 0.0f;  
+    private float _initialHealthMultiplier = 1.0f;
+    private float auraDamageReduction = 0.0f;
 
     private bool canHealPlayer = true;
     private bool isDead = false;
     private bool isStunned = false;
-    private Renderer enemyRenderer; 
+    private Renderer enemyRenderer;
     private Color originalColor;
     private Coroutine stunCoroutine;
     private Coroutine currentCriticalDamageCoroutine;
@@ -186,7 +186,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private void ApplyInitialHealth()
     {
         currentHealth = maxHealth * _initialHealthMultiplier;
-        maxHealth *= _initialHealthMultiplier; 
+        maxHealth *= _initialHealthMultiplier;
     }
 
     public void SetInitialHealthMultiplier(float multiplier)
@@ -222,7 +222,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     }
 
     public void SetMaxHealth(float health)
-    {   
+    {
         maxHealth = health;
         currentHealth = maxHealth;
         InitializeHealthUI();
@@ -291,7 +291,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             nextHitToughnessBonus = 0f; // resetear si no hay sistema
         }
 
-        float damageReductionTotal = localReduction + auraDamageReduction + dynamicDamageReduction; 
+        float damageReductionTotal = localReduction + auraDamageReduction + dynamicDamageReduction;
         finalDamage *= (1f - damageReductionTotal);
 
         if (finalDamage <= 0 && damageAmount > 0)
@@ -351,7 +351,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             enemyVisualEffects.StopArmorGlow();
         }
     }
-        
+
     public void Heal(float healAmount)
     {
         if (currentHealth <= 0) return;
@@ -370,6 +370,24 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         if (triggerEffects)
         {
+            InventoryManager inventoryManager = FindAnyObjectByType<InventoryManager>();
+            if (inventoryManager != null)
+            {
+                var effects = inventoryManager.ActiveBehavioralEffects;
+                if (effects.Count == 0)
+                {
+                    Debug.Log($"[EnemyHealth] '{gameObject.name}' muere. No hay efectos de muerte activos.");
+                }
+                else
+                {
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                    sb.Append($"[EnemyHealth] '{gameObject.name}' muere. Efectos activos ({effects.Count}): ");
+                    foreach (var e in effects)
+                        sb.Append($"[{e.EffectID}] ");
+                    Debug.Log(sb.ToString());
+                }
+            }
+
             CombatEventsManager.TriggerEnemyKilled(gameObject, maxHealth);
         }
 
@@ -495,7 +513,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         }
     }
 
-    public void ApplyStun(float duration) 
+    public void ApplyStun(float duration)
     {
         if (!canBeStunned) return;
 
@@ -811,4 +829,3 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         }
     }
 }
-

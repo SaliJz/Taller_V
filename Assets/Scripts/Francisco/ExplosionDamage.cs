@@ -31,13 +31,13 @@ public class ExplosionDamage : MonoBehaviour
 
     private void ApplyDamage(Collider col)
     {
-        PlayerHealth playerHealth = col.GetComponent<PlayerHealth>();
-        if (playerHealth != null)
-        {
-            playerHealth.TakeDamage(damage);
-            damagedTargets.Add(col); 
-            return;
-        }
+        //PlayerHealth playerHealth = col.GetComponent<PlayerHealth>();
+        //if (playerHealth != null)
+        //{
+        //    playerHealth.TakeDamage(damage);
+        //    damagedTargets.Add(col); 
+        //    return;
+        //}
 
         EnemyHealth enemyHealth = col.GetComponent<EnemyHealth>();
         if (enemyHealth != null)
