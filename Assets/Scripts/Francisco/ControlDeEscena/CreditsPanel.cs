@@ -130,7 +130,7 @@ public class CreditsPanel : MonoBehaviour
 
         if (creditsContainer != null)
         {
-            creditsContainer.DOKill(); 
+            creditsContainer.DOKill();
             creditsContainer.anchoredPosition = new Vector2(creditsContainer.anchoredPosition.x, 0f);
         }
 
@@ -251,105 +251,50 @@ public class CreditsPanel : MonoBehaviour
 
     private void BuildCredits()
     {
-        currentYPosition = 0f;
-        currentLineMaxHeight = 0f;
-
         if (creditsContainer == null)
         {
             Debug.LogError("CreditsPanel: creditsContainer es nulo!");
             return;
         }
 
+        currentYPosition = 0f;
+        currentLineMaxHeight = 0f;
+
         bool isFirstInLine = true;
         float lineStartY = 0f;
-        float finalSpacingForLine = defaultSpacing;
+        float spacingForThisLine = defaultSpacing;
 
-        for (int i = 0; i < creditsEntries.Length; i++)
+        foreach (CreditsEntry entry in creditsEntries)
         {
-            var entry = creditsEntries[i];
-            GameObject instance = null;
-            float entryHeight = 0f;
-            float entrySpacing = entry.customSpacing > 0 ? entry.customSpacing : defaultSpacing;
-
             if (isFirstInLine)
             {
                 lineStartY = currentYPosition;
                 currentLineMaxHeight = 0f;
             }
 
-            finalSpacingForLine = entrySpacing;
+            spacingForThisLine = entry.customSpacing > 0f ? entry.customSpacing : defaultSpacing;
 
-            switch (entry.entryType)
+            GameObject instance = SpawnEntry(entry);
+            if (instance == null) continue;
+
+            SetAlignment(instance, entry);
+
+            float entryHeight = MeasureHeight(instance, entry, spacingForThisLine);
+            PositionInstance(instance, lineStartY, entryHeight);
+
+            if (entryHeight > currentLineMaxHeight)
+                currentLineMaxHeight = entryHeight;
+
+            instantiatedObjects.Add(instance);
+
+            if (entry.continueOnSameLine)
             {
-                case EntryType.Title:
-                    instance = InstantiatePrefab(titlePrefab);
-                    SetupTextElement(instance, entry.textContent, entry);
-                    break;
-
-                case EntryType.Subtitle:
-                    instance = InstantiatePrefab(subtitlePrefab);
-                    SetupTextElement(instance, entry.textContent, entry);
-                    break;
-
-                case EntryType.Role:
-                    instance = InstantiatePrefab(rolePrefab);
-                    SetupTextElement(instance, entry.textContent, entry);
-                    break;
-
-                case EntryType.Name:
-                    instance = InstantiatePrefab(namePrefab);
-                    SetupTextElement(instance, entry.textContent, entry);
-                    break;
-
-                case EntryType.RoleWithName:
-                    instance = InstantiatePrefab(roleWithNamePrefab);
-                    SetupRoleWithName(instance, entry);
-                    break;
-
-                case EntryType.ImageWithText:
-                    instance = InstantiatePrefab(imageWithTextPrefab);
-                    SetupImageWithText(instance, entry);
-                    break;
-
-                case EntryType.Spacer:
-                    instance = InstantiatePrefab(spacerPrefab);
-                    entryHeight = entrySpacing * 2;
-                    break;
+                isFirstInLine = false;
             }
-
-            if (instance != null)
+            else
             {
-                SetAlignment(instance, entry);
-
-                if (entry.entryType != EntryType.Spacer)
-                {
-                    Canvas.ForceUpdateCanvases();
-                    entryHeight = instance.GetComponent<RectTransform>().rect.height;
-                }
-
-                RectTransform rt = instance.GetComponent<RectTransform>();
-
-                float pivotY = rt.pivot.y;
-                float posY = -lineStartY - entryHeight * pivotY;
-
-                rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, posY);
-
-                if (entryHeight > currentLineMaxHeight)
-                {
-                    currentLineMaxHeight = entryHeight;
-                }
-
-                instantiatedObjects.Add(instance);
-
-                if (!entry.continueOnSameLine)
-                {
-                    currentYPosition = lineStartY + currentLineMaxHeight + finalSpacingForLine;
-                    isFirstInLine = true;
-                }
-                else
-                {
-                    isFirstInLine = false;
-                }
+                currentYPosition = lineStartY + currentLineMaxHeight + spacingForThisLine;
+                isFirstInLine = true;
             }
         }
 
@@ -357,16 +302,138 @@ public class CreditsPanel : MonoBehaviour
         contentHeight = currentYPosition;
     }
 
+    private GameObject SpawnEntry(CreditsEntry entry)
+    {
+        switch (entry.entryType)
+        {
+            case EntryType.Title:
+            case EntryType.Subtitle:
+            case EntryType.Role:
+            case EntryType.Name:
+                return SpawnText(GetPrefabForType(entry.entryType), entry.textContent, entry);
+
+            case EntryType.RoleWithName:
+                return SpawnRoleWithName(entry);
+
+            case EntryType.ImageWithText:
+                return SpawnImageWithText(entry);
+
+            case EntryType.Spacer:
+                return InstantiatePrefab(spacerPrefab);
+
+            default:
+                return null;
+        }
+    }
+
+    private GameObject GetPrefabForType(EntryType type)
+    {
+        switch (type)
+        {
+            case EntryType.Title: return titlePrefab;
+            case EntryType.Subtitle: return subtitlePrefab;
+            case EntryType.Role: return rolePrefab;
+            case EntryType.Name: return namePrefab;
+            default: return null;
+        }
+    }
+
+    private float MeasureHeight(GameObject instance, CreditsEntry entry, float spacing)
+    {
+        if (entry.entryType == EntryType.Spacer)
+            return spacing * 2f;
+
+        Canvas.ForceUpdateCanvases();
+        return instance.GetComponent<RectTransform>().rect.height;
+    }
+
+    private void PositionInstance(GameObject instance, float lineStartY, float entryHeight)
+    {
+        RectTransform rt = instance.GetComponent<RectTransform>();
+        float posY = -lineStartY - entryHeight * rt.pivot.y;
+        rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, posY);
+    }
+
     private void ClearCredits()
     {
-        foreach (var obj in instantiatedObjects)
+        foreach (GameObject obj in instantiatedObjects)
         {
-            if (obj != null)
-            {
-                Destroy(obj);
-            }
+            if (obj != null) Destroy(obj);
         }
         instantiatedObjects.Clear();
+    }
+
+    #endregion
+
+    #region [ Entry Spawners ]
+
+    private GameObject SpawnText(GameObject prefab, string text, CreditsEntry entry)
+    {
+        GameObject instance = InstantiatePrefab(prefab);
+        if (instance == null) return null;
+
+        TextMeshProUGUI tmp = instance.GetComponent<TextMeshProUGUI>();
+        if (tmp == null)
+        {
+            Debug.LogError($"CreditsPanel: '{instance.name}' ({entry.entryType}) no tiene TextMeshProUGUI.");
+            return instance;
+        }
+
+        tmp.text = text;
+        tmp.color = entry.useCustomColor ? entry.customColor : GetDefaultColor(entry.entryType);
+        if (entry.fontSize > 0) tmp.fontSize = entry.fontSize;
+
+        return instance;
+    }
+
+    private GameObject SpawnRoleWithName(CreditsEntry entry)
+    {
+        GameObject instance = InstantiatePrefab(roleWithNamePrefab);
+        if (instance == null) return null;
+
+        TextMeshProUGUI[] texts = instance.GetComponentsInChildren<TextMeshProUGUI>();
+        if (texts.Length < 2)
+        {
+            Debug.LogError($"CreditsPanel: '{instance.name}' (RoleWithName) necesita al menos 2 TextMeshProUGUI.");
+            return instance;
+        }
+
+        texts[0].text = entry.textContent;
+        texts[1].text = entry.secondaryText;
+
+        texts[0].color = entry.useCustomColor ? entry.customColor : roleColor;
+        texts[1].color = entry.useCustomColor ? entry.customColor : nameColor;
+
+        if (entry.fontSize > 0)
+        {
+            texts[0].fontSize = entry.fontSize;
+            texts[1].fontSize = entry.fontSize;
+        }
+
+        return instance;
+    }
+
+    private GameObject SpawnImageWithText(CreditsEntry entry)
+    {
+        GameObject instance = InstantiatePrefab(imageWithTextPrefab);
+        if (instance == null) return null;
+
+        Image img = instance.GetComponentInChildren<Image>();
+        if (img != null && entry.image != null)
+            img.sprite = entry.image;
+
+        TextMeshProUGUI tmp = instance.GetComponentInChildren<TextMeshProUGUI>();
+        if (tmp == null)
+        {
+            Debug.LogError($"CreditsPanel: '{instance.name}' (ImageWithText) no tiene TextMeshProUGUI.");
+            return instance;
+        }
+
+        tmp.text = entry.textContent;
+        tmp.color = entry.useCustomColor ? entry.customColor : Color.white;
+        if (entry.fontSize > 0) tmp.fontSize = entry.fontSize;
+
+        return instance;
     }
 
     private GameObject InstantiatePrefab(GameObject prefab)
@@ -375,145 +442,57 @@ public class CreditsPanel : MonoBehaviour
         return Instantiate(prefab, creditsContainer);
     }
 
-    private void SetupTextElement(GameObject instance, string text, CreditsEntry entry)
+    #endregion
+
+    #region [ Alignment & Style ]
+
+    private float GetTargetX(EntryAlignment alignment)
     {
-        if (instance == null) return;
+        if (creditsViewport == null) return 0f;
 
-        TextMeshProUGUI textComponent = instance.GetComponent<TextMeshProUGUI>();
-        if (textComponent != null)
+        Vector3[] viewportCorners = new Vector3[4];
+        creditsViewport.GetWorldCorners(viewportCorners);
+
+        float viewportLeft = viewportCorners[0].x;
+        float viewportRight = viewportCorners[2].x;
+        float viewportWidth = viewportRight - viewportLeft;
+        float boxWidth = viewportWidth / 3f;
+
+        switch (alignment)
         {
-            textComponent.text = text;
-
-            if (entry.useCustomColor)
-            {
-                textComponent.color = entry.customColor;
-            }
-            else
-            {
-                textComponent.color = GetDefaultColor(entry.entryType);
-            }
-
-            if (entry.fontSize > 0)
-            {
-                textComponent.fontSize = entry.fontSize;
-            }
-        }
-        else
-        {
-            Debug.LogError($"CreditsPanel: El prefab '{instance.name}' para {entry.entryType} NO tiene componente 'TextMeshProUGUI'.");
-        }
-    }
-
-    private void SetupRoleWithName(GameObject instance, CreditsEntry entry)
-    {
-        if (instance == null) return;
-
-        TextMeshProUGUI[] texts = instance.GetComponentsInChildren<TextMeshProUGUI>();
-
-        if (texts.Length >= 2)
-        {
-            texts[0].text = entry.textContent;
-            texts[1].text = entry.secondaryText;
-
-            if (entry.useCustomColor)
-            {
-                texts[0].color = entry.customColor;
-                texts[1].color = entry.customColor;
-            }
-            else
-            {
-                texts[0].color = roleColor;
-                texts[1].color = nameColor;
-            }
-
-            if (entry.fontSize > 0)
-            {
-                texts[0].fontSize = entry.fontSize;
-                texts[1].fontSize = entry.fontSize;
-            }
-        }
-        else
-        {
-            Debug.LogError($"CreditsPanel: El prefab '{instance.name}' para RoleWithName NO tiene al menos 2 componentes 'TextMeshProUGUI'.");
-        }
-    }
-
-    private void SetupImageWithText(GameObject instance, CreditsEntry entry)
-    {
-        if (instance == null) return;
-
-        Image imageComponent = instance.GetComponentInChildren<Image>();
-        if (imageComponent != null && entry.image != null)
-        {
-            imageComponent.sprite = entry.image;
-        }
-
-        TextMeshProUGUI textComponent = instance.GetComponentInChildren<TextMeshProUGUI>();
-        if (textComponent != null)
-        {
-            textComponent.text = entry.textContent;
-
-            if (entry.useCustomColor)
-            {
-                textComponent.color = entry.customColor;
-            }
-
-            if (entry.fontSize > 0)
-            {
-                textComponent.fontSize = entry.fontSize;
-            }
-        }
-        else
-        {
-            Debug.LogError($"CreditsPanel: El prefab '{instance.name}' para ImageWithText NO tiene componente 'TextMeshProUGUI'.");
+            case EntryAlignment.Left:
+                return viewportLeft + (boxWidth * 0.5f); 
+            case EntryAlignment.Center:
+                return viewportLeft + (boxWidth * 1.5f); 
+            case EntryAlignment.Right:
+                return viewportRight - (boxWidth * 0.5f); 
+            default:
+                return 0f;
         }
     }
 
     private void SetAlignment(GameObject instance, CreditsEntry entry)
     {
-        if (instance == null) return;
+        RectTransform rt = instance.GetComponent<RectTransform>();
+        if (rt == null) return;
 
-        RectTransform rectTransform = instance.GetComponent<RectTransform>();
-        if (rectTransform != null)
-        {
-            switch (entry.alignment)
-            {
-                case EntryAlignment.Left:
-                    rectTransform.anchorMin = new Vector2(0f, 0.5f);
-                    rectTransform.anchorMax = new Vector2(0f, 0.5f);
-                    rectTransform.pivot = new Vector2(0f, 0.5f);
-                    rectTransform.anchoredPosition = new Vector2(leftAlignmentOffset, rectTransform.anchoredPosition.y);
-                    break;
-                case EntryAlignment.Center:
-                    rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-                    rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-                    rectTransform.pivot = new Vector2(0.5f, 0.5f);
-                    rectTransform.anchoredPosition = new Vector2(centerAlignmentOffset, rectTransform.anchoredPosition.y);
-                    break;
-                case EntryAlignment.Right:
-                    rectTransform.anchorMin = new Vector2(1f, 0.5f);
-                    rectTransform.anchorMax = new Vector2(1f, 0.5f);
-                    rectTransform.pivot = new Vector2(1f, 0.5f);
-                    rectTransform.anchoredPosition = new Vector2(-rightAlignmentOffset, rectTransform.anchoredPosition.y);
-                    break;
-            }
-        }
+        float worldX = GetTargetX(entry.alignment);
+
+        rt.pivot = new Vector2(0.5f, 0.5f);
+
+        Vector3 currentPos = rt.position;
+        rt.position = new Vector3(worldX, currentPos.y, currentPos.z);
     }
 
     private Color GetDefaultColor(EntryType type)
     {
         switch (type)
         {
-            case EntryType.Title:
-                return titleColor;
-            case EntryType.Subtitle:
-                return subtitleColor;
-            case EntryType.Role:
-                return roleColor;
-            case EntryType.Name:
-                return nameColor;
-            default:
-                return Color.white;
+            case EntryType.Title: return titleColor;
+            case EntryType.Subtitle: return subtitleColor;
+            case EntryType.Role: return roleColor;
+            case EntryType.Name: return nameColor;
+            default: return Color.white;
         }
     }
 
@@ -589,7 +568,7 @@ public class CreditsPanel : MonoBehaviour
 
         if (creditsContainer != null)
         {
-            creditsContainer.DOKill(); 
+            creditsContainer.DOKill();
             creditsContainer.anchoredPosition = new Vector2(creditsContainer.anchoredPosition.x, 0f);
         }
 
@@ -611,7 +590,7 @@ public class CreditsPanel : MonoBehaviour
     {
         if (scrollTween != null && scrollTween.IsActive())
         {
-            scrollTween.Kill(false); 
+            scrollTween.Kill(false);
             scrollTween = null;
         }
     }
@@ -658,28 +637,59 @@ public class CreditsPanel : MonoBehaviour
         creditsViewport.GetWorldCorners(viewportCorners);
 
         float viewportZ = viewportCorners[0].z;
-
-        float leftX = viewportCorners[0].x + leftAlignmentOffset;
-        float centerX = (viewportCorners[0].x + viewportCorners[2].x) / 2f + centerAlignmentOffset;
-        float rightX = viewportCorners[2].x - rightAlignmentOffset;
-
+        float viewportLeft = viewportCorners[0].x;
+        float viewportRight = viewportCorners[2].x;
+        float viewportWidth = viewportRight - viewportLeft;
         float topY = viewportCorners[1].y;
         float bottomY = viewportCorners[0].y;
+        float viewportHeight = topY - bottomY;
 
-        Gizmos.color = new Color(1f, 0f, 0f, 0.5f);
-        Gizmos.DrawLine(new Vector3(leftX, bottomY, viewportZ), new Vector3(leftX, topY, viewportZ));
+        float boxWidth = viewportWidth / 3f;
+        float boxHeight = viewportHeight;
+        float boxCenterY = bottomY + viewportHeight * 0.5f;
 
-        Gizmos.color = new Color(0f, 1f, 0f, 0.5f);
-        Gizmos.DrawLine(new Vector3(centerX, bottomY, viewportZ), new Vector3(centerX, topY, viewportZ));
+        float leftX = viewportLeft + (boxWidth * 0.5f);
+        float centerX = viewportLeft + (boxWidth * 1.5f);
+        float rightX = viewportRight - (boxWidth * 0.5f);
 
-        Gizmos.color = new Color(0f, 0.5f, 1f, 0.5f);
-        Gizmos.DrawLine(new Vector3(rightX, bottomY, viewportZ), new Vector3(rightX, topY, viewportZ));
+        void DrawBox(float cx, float cy, float w, float h)
+        {
+            float hw = w * 0.5f;
+            float hh = h * 0.5f;
+            Vector3 bl = new Vector3(cx - hw, cy - hh, viewportZ);
+            Vector3 tl = new Vector3(cx - hw, cy + hh, viewportZ);
+            Vector3 tr = new Vector3(cx + hw, cy + hh, viewportZ);
+            Vector3 br = new Vector3(cx + hw, cy - hh, viewportZ);
+            Gizmos.DrawLine(bl, tl);
+            Gizmos.DrawLine(tl, tr);
+            Gizmos.DrawLine(tr, br);
+            Gizmos.DrawLine(br, bl);
+        }
 
-        Gizmos.color = new Color(1f, 1f, 1f, 0.3f);
-        Gizmos.DrawLine(viewportCorners[0], viewportCorners[1]);
-        Gizmos.DrawLine(viewportCorners[1], viewportCorners[2]);
-        Gizmos.DrawLine(viewportCorners[2], viewportCorners[3]);
-        Gizmos.DrawLine(viewportCorners[3], viewportCorners[0]);
+        void DrawCenterLine(float cx)
+        {
+            Gizmos.DrawLine(
+                new Vector3(cx, bottomY, viewportZ),
+                new Vector3(cx, topY, viewportZ));
+        }
+
+        Gizmos.color = new Color(0f, 1f, 0f, 0.8f);
+        DrawBox(leftX, boxCenterY, boxWidth, boxHeight);
+        DrawBox(centerX, boxCenterY, boxWidth, boxHeight);
+        DrawBox(rightX, boxCenterY, boxWidth, boxHeight);
+
+        Gizmos.color = new Color(1f, 0f, 0f, 0.9f);
+        DrawCenterLine(leftX);
+        DrawCenterLine(centerX);
+        DrawCenterLine(rightX);
+
+#if UNITY_EDITOR
+        UnityEditor.Handles.color = Color.red;
+        float labelY = topY + 12f;
+        UnityEditor.Handles.Label(new Vector3(leftX, labelY, viewportZ), "L");
+        UnityEditor.Handles.Label(new Vector3(centerX, labelY, viewportZ), "C");
+        UnityEditor.Handles.Label(new Vector3(rightX, labelY, viewportZ), "R");
+#endif
     }
 
     #endregion
