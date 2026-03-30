@@ -70,10 +70,10 @@ public class OveruseLuminaryFall : MonoBehaviour
         if (playerObj != null)
         {
             playerTransform = playerObj.transform;
-            playerScreenEffect = playerObj.GetComponent<OveruseScreenManager>();
+            playerScreenEffect = OveruseScreenManager.Instance;
 
             if (playerScreenEffect == null)
-                Log("OveruseScreenEffect not found on Player.", 2);
+                Log("OveruseScreenEffect Instance not found in scene.", 2);
         }
         else
         {
@@ -165,15 +165,18 @@ public class OveruseLuminaryFall : MonoBehaviour
         SpawnBeamVFX(beamType);
 
         float elapsed = 0f;
-        float coneAngle = beamType == BeamType.Lantern ? lanternConeAngle : projectorConeAngle;
-        float coneRadius = beamType == BeamType.Lantern ? lanternConeRadius : projectorConeRadius;
-        float valueRate = beamType == BeamType.Lantern ? lanternValuePerSecond : projectorValuePerSecond;
+        float coneAngle = (beamType == BeamType.Lantern) ? lanternConeAngle : projectorConeAngle;
+        float coneRadius = (beamType == BeamType.Lantern) ? lanternConeRadius : projectorConeRadius;
+        float valueRate = (beamType == BeamType.Lantern) ? lanternValuePerSecond : projectorValuePerSecond;
 
         while (elapsed < beamGroundedDuration)
         {
             if (playerTransform != null && IsPlayerInCone(coneAngle, coneRadius))
             {
-                playerScreenEffect?.AddValue(valueRate * Time.deltaTime);
+                if (playerScreenEffect != null)
+                {
+                    playerScreenEffect.AddValue(valueRate);
+                }
             }
 
             elapsed += Time.deltaTime;
@@ -181,8 +184,6 @@ public class OveruseLuminaryFall : MonoBehaviour
         }
 
         CleanupBeamVFX();
-        Log($"Beam {beamType} finished after {beamGroundedDuration}s.", 1);
-
         beamRoutine = null;
     }
 
