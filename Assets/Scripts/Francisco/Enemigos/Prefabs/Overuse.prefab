@@ -345,11 +345,10 @@ MonoBehaviour:
   projectorConeAngle: 120
   projectorConeRadius: 5
   projectorValuePerSecond: 0.3
-  maxImpacts: 5
   noBeamChanceIncreasePerImpact: 0.1
-  lanternBeamVFXPrefab: {fileID: 0}
-  projectorBeamVFXPrefab: {fileID: 0}
-  flickerVFXPrefab: {fileID: 0}
+  lanternBeamVFXPrefab: {fileID: 4455187696743402694, guid: bdfa9d6be44a26e49baa0eeb6b7aa1a4, type: 3}
+  projectorBeamVFXPrefab: {fileID: 4455187696743402694, guid: e2bbcc3bfcadda34fbc44b970c493419, type: 3}
+  flickerVFXPrefab: {fileID: 8680913996898057376, guid: ce3efcca641146d4094b9d16f5dd357f, type: 3}
   beamOrigin: {fileID: 5793352946377413185}
 --- !u!54 &-6911708886511219662
 Rigidbody:
@@ -949,7 +948,7 @@ Transform:
   m_GameObject: {fileID: 6192554065821653881}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1166,7 +1165,7 @@ Transform:
   m_GameObject: {fileID: 8687496543134400047}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.3499999, z: 0.30999756}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

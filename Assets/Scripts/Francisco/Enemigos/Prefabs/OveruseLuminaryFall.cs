@@ -36,7 +36,6 @@ public class OveruseLuminaryFall : MonoBehaviour
     [SerializeField] private float projectorValuePerSecond = 0.3f;
 
     [Header("Deterioration")]
-    [SerializeField] private int maxImpacts = 5;
     [SerializeField] private float noBeamChanceIncreasePerImpact = 0.1f;
 
     [Header("VFX")]
@@ -51,6 +50,7 @@ public class OveruseLuminaryFall : MonoBehaviour
 
     private int impactCount = 0;
     private float currentNoBeamChance = 0f;
+    private bool stompAppliedThisLanding = false;
 
     private GameObject activeBeamVFX;
     private GameObject activeFlickerVFX;
@@ -58,7 +58,7 @@ public class OveruseLuminaryFall : MonoBehaviour
     private Coroutine flickerRoutine;
 
     private Transform playerTransform;
-    private OveruseScreenManager playerScreenEffect;
+    private OveruseScreenManager screenManager;
 
     #endregion
 
@@ -67,18 +67,16 @@ public class OveruseLuminaryFall : MonoBehaviour
     private void Start()
     {
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-        if (playerObj != null)
-        {
-            playerTransform = playerObj.transform;
-            playerScreenEffect = OveruseScreenManager.Instance;
 
-            if (playerScreenEffect == null)
-                Log("OveruseScreenEffect Instance not found in scene.", 2);
-        }
+        if (playerObj != null)
+            playerTransform = playerObj.transform;
         else
-        {
-            Log("Player not found. Beam effects will not apply screen value.", 2);
-        }
+            Log("Player not found. Beam and stomp effects will not work.", 2);
+
+        screenManager = OveruseScreenManager.Instance;
+
+        if (screenManager == null)
+            Log("OveruseScreenManager instance not found in scene.", 2);
     }
 
     private void OnDestroy()
@@ -94,16 +92,26 @@ public class OveruseLuminaryFall : MonoBehaviour
     public void OnLanded()
     {
         impactCount++;
+        stompAppliedThisLanding = false;
         currentNoBeamChance = Mathf.Clamp01(noBeamChanceIncreasePerImpact * (impactCount - 1));
 
         ApplyStompDamage();
 
         BeamType selectedBeam = RollBeamType();
 
-        Log($"Impact #{impactCount} | NoBeamChance: {currentNoBeamChance:P0} | Selected beam: {selectedBeam}", 1);
+        Log($"Impact #{impactCount} | NoBeamChance: {currentNoBeamChance:P0} | Beam: {selectedBeam}", 1);
 
         if (beamRoutine != null)
+        {
             StopCoroutine(beamRoutine);
+            beamRoutine = null;
+        }
+
+        if (flickerRoutine != null)
+        {
+            StopCoroutine(flickerRoutine);
+            flickerRoutine = null;
+        }
 
         beamRoutine = StartCoroutine(BeamRoutine(selectedBeam));
     }
@@ -114,14 +122,27 @@ public class OveruseLuminaryFall : MonoBehaviour
 
     private void ApplyStompDamage()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, stompRadius, playerLayer);
-        foreach (Collider hit in hits)
+        if (stompAppliedThisLanding) return;
+        stompAppliedThisLanding = true;
+
+        if (playerLayer.value == 0)
         {
-            IDamageable damageable = hit.GetComponent<IDamageable>();
-            damageable?.TakeDamage(stompDamage, false, AttackDamageType.Melee);
+            Log("playerLayer is not assigned. Stomp damage will not be applied.", 2);
+            return;
         }
 
-        Log($"Stomp applied {stompDamage} damage in radius {stompRadius}m.", 1);
+        Collider[] hits = Physics.OverlapSphere(transform.position, stompRadius, playerLayer, QueryTriggerInteraction.Ignore);
+
+        foreach (Collider hit in hits)
+        {
+            if (hit == null) continue;
+
+            IDamageable damageable = hit.GetComponentInParent<IDamageable>();
+            if (damageable == null) continue;
+
+            damageable.TakeDamage(stompDamage, false, AttackDamageType.Melee);
+            Log($"Stomp hit {hit.gameObject.name} for {stompDamage}.", 1);
+        }
     }
 
     #endregion
@@ -131,20 +152,10 @@ public class OveruseLuminaryFall : MonoBehaviour
     private BeamType RollBeamType()
     {
         float roll = Random.value;
+        float threshold = currentNoBeamChance + (1f - currentNoBeamChance) * 0.5f;
 
-        if (roll < currentNoBeamChance)
-            return BeamType.None;
-
-        float lanternChance = (1f - currentNoBeamChance) * 0.5f;
-        float projectorChance = (1f - currentNoBeamChance) * 0.5f;
-
-        if (roll < currentNoBeamChance + lanternChance)
-            return BeamType.Lantern;
-
-        if (roll < currentNoBeamChance + lanternChance + projectorChance)
-            return BeamType.Projector;
-
-        return BeamType.None;
+        if (roll < currentNoBeamChance) return BeamType.None;
+        return roll < threshold ? BeamType.Lantern : BeamType.Projector;
     }
 
     #endregion
@@ -157,7 +168,7 @@ public class OveruseLuminaryFall : MonoBehaviour
 
         if (beamType == BeamType.None)
         {
-            Log("No beam emitted this impact (deterioration).", 1);
+            Log("No beam emitted (deterioration).", 1);
             flickerRoutine = StartCoroutine(FlickerRoutine());
             yield break;
         }
@@ -165,25 +176,21 @@ public class OveruseLuminaryFall : MonoBehaviour
         SpawnBeamVFX(beamType);
 
         float elapsed = 0f;
-        float coneAngle = (beamType == BeamType.Lantern) ? lanternConeAngle : projectorConeAngle;
-        float coneRadius = (beamType == BeamType.Lantern) ? lanternConeRadius : projectorConeRadius;
-        float valueRate = (beamType == BeamType.Lantern) ? lanternValuePerSecond : projectorValuePerSecond;
+        float coneAngle = beamType == BeamType.Lantern ? lanternConeAngle : projectorConeAngle;
+        float coneRadius = beamType == BeamType.Lantern ? lanternConeRadius : projectorConeRadius;
+        float valueRate = beamType == BeamType.Lantern ? lanternValuePerSecond : projectorValuePerSecond;
 
         while (elapsed < beamGroundedDuration)
         {
             if (playerTransform != null && IsPlayerInCone(coneAngle, coneRadius))
-            {
-                if (playerScreenEffect != null)
-                {
-                    playerScreenEffect.AddValue(valueRate);
-                }
-            }
+                screenManager?.AddValue(valueRate);
 
             elapsed += Time.deltaTime;
             yield return null;
         }
 
         CleanupBeamVFX();
+        Log($"Beam {beamType} ended.", 1);
         beamRoutine = null;
     }
 
@@ -197,12 +204,10 @@ public class OveruseLuminaryFall : MonoBehaviour
 
         Vector3 origin = beamOrigin != null ? beamOrigin.position : transform.position;
         Vector3 toPlayer = playerTransform.position - origin;
-        float distance = toPlayer.magnitude;
 
-        if (distance > coneRadius) return false;
+        if (toPlayer.magnitude > coneRadius) return false;
 
-        float angle = Vector3.Angle(transform.forward, toPlayer);
-        return angle <= coneAngle * 0.5f;
+        return Vector3.Angle(transform.forward, toPlayer) <= coneAngle * 0.5f;
     }
 
     #endregion
@@ -239,20 +244,16 @@ public class OveruseLuminaryFall : MonoBehaviour
 
     private void CleanupBeamVFX()
     {
-        if (activeBeamVFX != null)
-        {
-            Destroy(activeBeamVFX);
-            activeBeamVFX = null;
-        }
+        if (activeBeamVFX == null) return;
+        Destroy(activeBeamVFX);
+        activeBeamVFX = null;
     }
 
     private void CleanupFlickerVFX()
     {
-        if (activeFlickerVFX != null)
-        {
-            Destroy(activeFlickerVFX);
-            activeFlickerVFX = null;
-        }
+        if (activeFlickerVFX == null) return;
+        Destroy(activeFlickerVFX);
+        activeFlickerVFX = null;
     }
 
     #endregion
@@ -261,11 +262,11 @@ public class OveruseLuminaryFall : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        DrawConeGizmo(lanternConeAngle, lanternConeRadius, new Color(0f, 0.8f, 1f, 0.2f));
-        DrawConeGizmo(projectorConeAngle, projectorConeRadius, new Color(1f, 0.9f, 0f, 0.15f));
-
         Gizmos.color = new Color(1f, 0.3f, 0.3f, 0.3f);
         Gizmos.DrawWireSphere(transform.position, stompRadius);
+
+        DrawConeGizmo(lanternConeAngle, lanternConeRadius, new Color(0f, 0.8f, 1f, 0.2f));
+        DrawConeGizmo(projectorConeAngle, projectorConeRadius, new Color(1f, 0.9f, 0f, 0.15f));
     }
 
     private void DrawConeGizmo(float angle, float radius, Color color)
@@ -274,20 +275,17 @@ public class OveruseLuminaryFall : MonoBehaviour
 
         Vector3 origin = beamOrigin != null ? beamOrigin.position : transform.position;
         float halfAngle = angle * 0.5f * Mathf.Deg2Rad;
-        int segments = 20;
-
         Vector3 prevPoint = Vector3.zero;
 
-        for (int i = 0; i <= segments; i++)
+        for (int i = 0; i <= 20; i++)
         {
-            float t = (float)i / segments;
+            float t = (float)i / 20;
             float currentAngle = Mathf.Lerp(-halfAngle, halfAngle, t);
-            Vector3 direction = Quaternion.AngleAxis(currentAngle * Mathf.Rad2Deg, Vector3.up) * transform.forward;
-            Vector3 point = origin + direction * radius;
+            Vector3 dir = Quaternion.AngleAxis(currentAngle * Mathf.Rad2Deg, Vector3.up) * transform.forward;
+            Vector3 point = origin + dir * radius;
 
             if (i > 0) Gizmos.DrawLine(prevPoint, point);
             Gizmos.DrawLine(origin, point);
-
             prevPoint = point;
         }
     }
