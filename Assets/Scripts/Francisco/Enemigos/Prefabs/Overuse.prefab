@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: 6494686938590651640}
   - component: {fileID: 259481900692050276}
   - component: {fileID: -6911708886511219662}
+  - component: {fileID: -7382725947867380315}
   m_Layer: 7
   m_Name: Overuse
   m_TagString: Enemy
@@ -377,6 +378,25 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &-7382725947867380315
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 106869071380381363}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f93f1efd8bef5984093b009d08dc6858, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  checkRadius: 0.6
+  checkHeightOffset: 1
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  pushForce: 12
+  upwardBias: 2
 --- !u!1 &718566699159129061
 GameObject:
   m_ObjectHideFlags: 0
