@@ -85,7 +85,7 @@ public class FleshPulseController : MonoBehaviour
         if (health != null)
         {
             ExecuteAttack(player, _damage);
-            health.IsMarked = true;
+            health.IsMarkedByAstaroth = true;
         }
 
         if (stats != null)

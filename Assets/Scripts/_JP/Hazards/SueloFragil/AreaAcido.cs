@@ -170,7 +170,7 @@ public class AreaAcido : MonoBehaviour
             StopCoroutine(c);
             coroutinesPorJugador.Remove(go);
             PlayerHealth ph = go.GetComponent<PlayerHealth>();
-            if (ph != null) ph.RemoverRalentizacion();
+            if (ph != null) ph.RemoveSlow();
         }
     }
 
@@ -179,8 +179,8 @@ public class AreaAcido : MonoBehaviour
         PlayerHealth ph = jugador.GetComponent<PlayerHealth>();
         if (ph != null)
         {
-            ph.AplicarRalentizacion(porcentajeRalentizacion, duracionVeneno);
-            ph.AplicarVeneno(duracionVeneno, danoVenenoPorSeg, tickInterval);
+            ph.ApplySlow(porcentajeRalentizacion, duracionVeneno);
+            ph.ApplyPoison(duracionVeneno, danoVenenoPorSeg, tickInterval);
         }
 
         while (true)

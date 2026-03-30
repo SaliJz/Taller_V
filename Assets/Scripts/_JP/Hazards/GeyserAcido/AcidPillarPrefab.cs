@@ -197,7 +197,7 @@ public class AcidPillarPrefab : MonoBehaviour
         if (ph != null)
         {
             ph.TakeDamage(instantDamage);
-            ph.AplicarVeneno(poisonDuration, poisonDPS);
+            ph.ApplyPoison(poisonDuration, poisonDPS);
             return;
         }
 

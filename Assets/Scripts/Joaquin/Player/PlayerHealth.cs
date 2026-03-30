@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// Clase que maneja la salud del jugador, incluyendo dano, curacion y etapas de vida.
+/// Clase que maneja la salud del jugador, incluyendo danio, curacion y etapas de vida.
 /// Archivo adaptado para soportar: veneno por tiempo y ralentizacion aplicada por areas (acido).
 /// </summary>
 public class PlayerHealth : MonoBehaviour, IDamageable
@@ -20,16 +20,17 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         Elder
     }
 
-    [Header("References")]
-    [SerializeField] private PlayerStatsManager statsManager;
-    [SerializeField] private PlayerBlockSystem blockSystem;
+    [Header("Referencias")]
     [SerializeField] private SpriteRenderer playerSpriteRenderer;
+    [SerializeField] private PlayerStatsManager statsManager;
+    [SerializeField] private PlayerCombatActionManager combatActionManager;
+    [SerializeField] private PlayerBlockSystem blockSystem;
     [SerializeField] private PlayerAudioController playerAudioController;
     [SerializeField] private Animator playerAnimator;
 
     [Header("Configuracion de Vida")]
     [Tooltip("Vida maxima por defecto si no se encuentra PlayerStatsManager.")]
-    [HideInInspector] private float fallbackMaxHealth = 100;
+    [SerializeField][HideInInspector] private float fallbackMaxHealth = 100;
     [SerializeField] private float damageInvulnerabilityTime = 0.5f;
     private float currentHealth;
 
@@ -48,12 +49,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private float yOffsetAdult = 0.5f;
     [SerializeField] private float yOffsetElder = 0.625f;
 
-    [Header("VFX - Age Transition")]
+    [Header("VFX - Transicion de Vida")]
     [SerializeField] private GameObject afterimagePrefab;
     [SerializeField] private Material whiteFlashMaterial;
     [SerializeField] private float transitionDuration = 0.8f;
 
-    [Header("Damage VFX")]
+    [Header("VFX - Daño recibido")]
     [SerializeField] private Color damageEmissionColor = Color.red;
     [SerializeField] private float damageEmissionIntensity = 2f;
     [SerializeField] private float damageFlashDuration = 0.1f;
@@ -69,6 +70,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     [Header("UI")]
     [SerializeField] private TMP_Text lifeStageText;
+
+    private static readonly int EmissionColorID = Shader.PropertyToID("_EmissionColor");
+    private const float LifeStageYoungThreshold = 0.666f;
+    private const float LifeStageAdultThreshold = 0.333f;
 
     private float currentTemporaryHealth = 0f;
     private float maxTemporaryHealthLimit = 0f;
@@ -87,7 +92,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         get
         {
-            float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
+            float maxHealth = MaxHealth;
 
             if (maxHealth <= 0) return 0f;
 
@@ -126,19 +131,15 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     public static event Action<PlayerHealth> OnPlayerInstantiated;
 
     // Variables para el veneno de Morlock
-    private int morlockHitCounter = 0;
-    private Coroutine morlockPoisonResetCoroutine;
-    private Coroutine morlockPoisonHitCoroutine;
+    //private int morlockHitCounter = 0;
+    //private Coroutine morlockPoisonResetCoroutine;
+    //private Coroutine morlockPoisonHitCoroutine;
 
-    // Variables para el stun
+    // Variables para la paralizacion por rotura de escudo
     private bool isStunned = false;
     private Coroutine stunCoroutine;
 
-    // Referencia al PlayerCombatActionManager para interacciones de combate
-    private PlayerCombatActionManager combatActionManager;
-
-    // Variable por si el jugador ha sido marcado por el Pulso Carnal
-    public bool IsMarked { get; set; } = false;
+    public bool IsMarkedByAstaroth { get; set; } = false; // Variable por si el jugador ha sido marcado por el Pulso Carnal
 
     private void Awake()
     {
@@ -152,25 +153,25 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
 
         statsManager = GetComponent<PlayerStatsManager>();
-        // FindAnyObjectByType puede devolver null; lo guardamos y comprobamos antes de usar.
-        inventoryManager = FindAnyObjectByType<InventoryManager>();
         if (statsManager == null) ReportDebug("StatsManager no esta asignado en PlayerHealth. Usando vida maxima de fallback.", 2);
 
-        playerMovement = GetComponent<PlayerMovement>();
-        playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
-        playerShieldController = GetComponent<PlayerShieldController>();
-        blockSystem = GetComponent<PlayerBlockSystem>();
-        combatActionManager = GetComponent<PlayerCombatActionManager>();
-        playerAnimator = GetComponentInChildren<Animator>();
+        // FindAnyObjectByType puede devolver null; lo guardamos y comprobamos antes de usar.
+        inventoryManager = FindAnyObjectByType<InventoryManager>();
 
-        if (playerAudioController == null)
-        {
-            playerAudioController = GetComponent<PlayerAudioController>();
-            if (playerAudioController == null)
-            {
-                ReportDebug("PlayerAudioController no encontrado en PlayerHealth.", 2);
-            }
-        }
+        playerMovement = GetComponent<PlayerMovement>();
+        
+        playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
+        
+        playerShieldController = GetComponent<PlayerShieldController>();
+        
+        blockSystem = GetComponent<PlayerBlockSystem>();
+        
+        combatActionManager = GetComponent<PlayerCombatActionManager>();
+        
+        playerAnimator = GetComponentInChildren<Animator>();
+        
+        playerAudioController = GetComponentInChildren<PlayerAudioController>();
+        if (playerAudioController == null) ReportDebug("PlayerAudioController no encontrado en PlayerHealth.", 2);
 
         InitializeMaterialCache();
 
@@ -179,8 +180,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void Start()
     {
-        bool isTutoScene = SceneManager.GetActiveScene().name == "HUB";
-        bool isTutoSceneComplete = SceneManager.GetActiveScene().name == "TutorialCompleto";
+        string activeSceneName = SceneManager.GetActiveScene().name;
+        bool isTutoScene = activeSceneName == "HUB";
+        bool isTutoSceneComplete = activeSceneName == "TutorialCompleto";
+
         if ((isTutoScene || isTutoSceneComplete) && statsManager != null)
         {
             statsManager.ResetRunStatsToDefaults();
@@ -251,9 +254,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             {
                 if (materials[i] != null)
                 {
-                    if (materials[i].HasProperty("_EmissionColor"))
+                    if (materials[i].HasProperty(EmissionColorID))
                     {
-                        colors[i] = materials[i].GetColor("_EmissionColor");
+                        colors[i] = materials[i].GetColor(EmissionColorID);
                         originalEmissionEnabled[renderer] = materials[i].IsKeywordEnabled("_EMISSION");
                     }
                     else
@@ -306,20 +309,21 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         foreach (var renderer in cachedMeshRenderers)
         {
-            if (renderer == null || !materialPropertyBlocks.ContainsKey(renderer)) continue;
+            if (renderer == null) continue;
 
-            MaterialPropertyBlock mpb = materialPropertyBlocks[renderer];
+            // Obtener el MaterialPropertyBlock del cache
+            if (!materialPropertyBlocks.TryGetValue(renderer, out MaterialPropertyBlock mpb)) continue;
             renderer.GetPropertyBlock(mpb);
 
             // Aplicar emisión
-            mpb.SetColor("_EmissionColor", emissionColor);
+            mpb.SetColor(EmissionColorID, emissionColor);
             renderer.SetPropertyBlock(mpb);
 
             // Habilitar keyword de emisión en el material si no está habilitado
             Material[] materials = renderer.sharedMaterials;
             foreach (var mat in materials)
             {
-                if (mat != null && mat.HasProperty("_EmissionColor"))
+                if (mat != null && mat.HasProperty(EmissionColorID))
                 {
                     mat.EnableKeyword("_EMISSION");
                 }
@@ -336,30 +340,26 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         foreach (var renderer in cachedMeshRenderers)
         {
-            if (renderer == null || !materialPropertyBlocks.ContainsKey(renderer)) continue;
+            if (renderer == null) continue;
 
-            MaterialPropertyBlock mpb = materialPropertyBlocks[renderer];
+            // Obtener el MaterialPropertyBlock del cache
+            if (!materialPropertyBlocks.TryGetValue(renderer, out MaterialPropertyBlock mpb)) continue;
             renderer.GetPropertyBlock(mpb);
 
-            // Restaurar emisión original
-            if (originalEmissionColors.ContainsKey(renderer))
+            // Restaurar color de emisión original
+            if (originalEmissionColors.TryGetValue(renderer, out Color[] originalColors))
             {
-                Color[] originalColors = originalEmissionColors[renderer];
-                if (originalColors != null && originalColors.Length > 0)
-                {
-                    // Usamos el primer color como referencia (podrías expandir esto para multi-material)
-                    mpb.SetColor("_EmissionColor", originalColors[0]);
-                    renderer.SetPropertyBlock(mpb);
-                }
+                mpb.SetColor(EmissionColorID, originalColors[0]);
+                renderer.SetPropertyBlock(mpb);
             }
 
             // Restaurar estado de keyword de emisión
-            if (originalEmissionEnabled.ContainsKey(renderer))
+            if (originalEmissionEnabled.TryGetValue(renderer, out bool wasEnabled))
             {
                 Material[] materials = renderer.sharedMaterials;
                 foreach (var mat in materials)
                 {
-                    if (mat != null && mat.HasProperty("_EmissionColor"))
+                    if (mat != null && mat.HasProperty(EmissionColorID))
                     {
                         if (originalEmissionEnabled[renderer])
                         {
@@ -459,7 +459,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
             OnHealthChanged?.Invoke(currentHealth, newValue);
 
-            GetKnockbackResistance();
+            //GetKnockbackResistance();
 
             UpdateLifeStage();
 
@@ -467,10 +467,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
     }
 
-    private void ChangeLifeStage(LifeStage newStage)
-    {
-        OnLifeStageChanged?.Invoke(newStage);
-    }
+    //private void ChangeLifeStage(LifeStage newStage)
+    //{
+    //    OnLifeStageChanged?.Invoke(newStage);
+    //}
 
     /// <summary>
     /// Funcion que aplica dano al jugador.
@@ -480,12 +480,14 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         if (isDying) return;
 
+        // Si el dano no es por costo de esencia, verifica invulnerabilidades y bloqueos.
         if (!isCostDamage && (isDamageInvulnerable || IsInvulnerable))
         {
             ReportDebug("El jugador es invulnerable y no recibe dano.", 1);
             return;
         }
 
+        // Si el dano no es por costo de esencia y el jugador tiene la mejora de bloqueo de escudo, intenta bloquear el dano.
         if (!isCostDamage && HasShieldBlockUpgrade)
         {
             if (isShieldBlockReady)
@@ -498,16 +500,18 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             }
         }
 
-        if (IsMarked && !isCostDamage)
+        // Si el jugador esta marcado por Astaroth y el dano no es por costo de esencia, aplica el efecto de la marca.
+        if (IsMarkedByAstaroth && !isCostDamage)
         {
             damageAmount *= 2f; // Duplicar el daño entrante
-            IsMarked = false;   // Consumir la marca inmediatamente
+            IsMarkedByAstaroth = false;   // Consumir la marca inmediatamente
 
             ReportDebug($"<color=red>Marca consumida: El jugador recibe el doble de daño ({damageAmount}).</color>", 1);
         }
 
         float damageToApply = damageAmount;
 
+        // Primero aplica el daño a la vida temporal si el jugador tiene.
         if (currentTemporaryHealth > 0f)
         {
             float remainingTemporaryHealth = currentTemporaryHealth - damageToApply;
@@ -534,6 +538,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
 
+        // Luego aplica el daño restante a la vida normal.
         if (damageToApply > 0f)
         {
             OnDamageReceived?.Invoke(damageToApply);
@@ -569,7 +574,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         UpdateTemporaryHealthUI();
     }
-
+    /*
     public float GetKnockbackResistance()
     {
         if (statsManager == null) return 1f;
@@ -632,12 +637,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         ReportDebug("Knockback finalizado.", 1);
     }
-
+    */
     /// <summary>
     /// Rutina que hace parpadear la emisión roja en los materiales del jugador.
     /// </summary>
     private IEnumerator DamageFlashRoutine()
     {
+        // Si no hay MeshRenderers cacheados, no intenta hacer el flash.
         for (int i = 0; i < damageFlashCount; i++)
         {
             ApplyDamageEmission();
@@ -658,7 +664,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         float blinkInterval = 0.1f;
         float timer = 0f;
 
-        // Si no hay SpriteRenderer asignado, solo esperamos el tiempo sin intentar cambiar color.
+        // Si no hay SpriteRenderer asignado, solo espera el tiempo sin intentar cambiar color.
         if (playerSpriteRenderer == null)
         {
             yield return new WaitForSeconds(damageInvulnerabilityTime);
@@ -668,6 +674,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             yield break;
         }
 
+        // Parpadeo del sprite para indicar invulnerabilidad.
         while (timer < damageInvulnerabilityTime)
         {
             playerSpriteRenderer.color = new Color(1f, 1f, 1f, 0.5f);
@@ -702,6 +709,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     /// <param name="healAmount"> Cantidad de dano a curar </param>
     public void Heal(float healAmount)
     {
+        // Verifica si esta bloqueada por algun efecto.
         if (IsKillHealBlocked)
         {
             ReportDebug($"Curación BLOQUEADA por Distorsión.", 2);
@@ -710,6 +718,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
 
+        // Si el jugador tiene el Amuleto de Resistencia, la curación se aplica a la vida temporal en lugar de la vida normal.
         if (HasAmuletOfEndurance)
         {
             AddTemporaryHealth(healAmount, maxHealth);
@@ -722,6 +731,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             ReportDebug($"El jugador ha sido curado {healAmount} de vida normal.", 1);
         }
 
+        // Reproducir sonido de absorción de vida solo si realmente se ha curado algo y el audio controller está asignado.
         if (healAmount > 0 && playerAudioController != null)
         {
             playerAudioController.PlayLifeAbsorbSound();
@@ -745,8 +755,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         float maxHealth = statsManager != null ? statsManager.GetStat(StatType.MaxHealth) : fallbackMaxHealth;
         float healthPercentage = currentHealth / maxHealth;
 
-        if (healthPercentage > 0.666f) CurrentLifeStage = LifeStage.Young;
-        else if (healthPercentage > 0.333f) CurrentLifeStage = LifeStage.Adult;
+        // Determina la etapa de vida actual basada en el porcentaje de salud.
+        if (healthPercentage > LifeStageYoungThreshold) CurrentLifeStage = LifeStage.Young;
+        else if (healthPercentage > LifeStageAdultThreshold) CurrentLifeStage = LifeStage.Adult;
         else CurrentLifeStage = LifeStage.Elder;
 
         // Solo notificar si la etapa realmente ha cambiado, o si se fuerza al inicio
@@ -787,7 +798,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     }
 
     /// <summary>
-    /// Genera una copia estática ("Fantasma") del frame actual del jugador, 
+    /// Genera una copia estática del frame actual del jugador, 
     /// la pinta de blanco y hace un fade out.
     /// </summary>
     private void TriggerAgeTransitionEffect()
@@ -932,69 +943,49 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         {
             StartCoroutine(FadeController.Instance.FadeOut(
                 fadeColor: deathFadeColor,
-                onComplete: () =>
-                {
-                    if (sm != null)
-                    {
-                        if (im != null && im.ActiveBehavioralEffects != null)
-                        {
-                            sm.RemoveAllBehavioralEffects(im.ActiveBehavioralEffects);
-                        }
-
-                        sm.ClearAllNamedModifiers();
-
-                        sm.ResetRunStatsToDefaults();
-                        sm.ResetStatsOnDeath();
-                    }
-                    else
-                    {
-                        ReportDebug("StatsManager es null en Die() durante callback de FadeOut.", 2);
-                    }
-
-                    if (im != null)
-                    {
-                        im.ClearInventory();
-                    }
-                    else
-                    {
-                        ReportDebug("InventoryManager es null en Die() durante callback de FadeOut.", 2);
-                    }
-
-                    MerchantDialogHandler.ResetReputationState();
-                    SceneManager.LoadScene(sceneToLoadOnDeath);
-                }));
+                onComplete: () => ExecuteDeathCleanup(sm, im)));
         }
         else
         {
-            if (sm != null)
-            {
-                if (im != null && im.ActiveBehavioralEffects != null)
-                {
-                    sm.RemoveAllBehavioralEffects(im.ActiveBehavioralEffects);
-                }
-
-                sm.ClearAllNamedModifiers();
-
-                sm.ResetRunStatsToDefaults();
-                sm.ResetStatsOnDeath();
-            }
-            else
-            {
-                ReportDebug("StatsManager es null en Die() (sin FadeController).", 2);
-            }
-
-            if (im != null)
-            {
-                im.ClearInventory();
-            }
-            else
-            {
-                ReportDebug("InventoryManager es null en Die() (sin FadeController).", 2);
-            }
-
-            MerchantDialogHandler.ResetReputationState();
-            SceneManager.LoadScene(sceneToLoadOnDeath);
+            ExecuteDeathCleanup(sm, im);
         }
+    }
+
+    /// <summary>
+    /// Ejecuta la limpieza de estado al morir el jugador: reset de stats, inventario y carga de escena.
+    /// Se invoca tanto desde el callback del FadeController como en su ausencia.
+    /// </summary>
+    private void ExecuteDeathCleanup(PlayerStatsManager sm, InventoryManager im)
+    {
+        // Limpiar efectos, modificadores y resetear stats a valores por defecto.
+        if (sm != null)
+        {
+            if (im != null && im.ActiveBehavioralEffects != null)
+            {
+                sm.RemoveAllBehavioralEffects(im.ActiveBehavioralEffects);
+            }
+
+            sm.ClearAllNamedModifiers();
+            sm.ResetRunStatsToDefaults();
+            sm.ResetStatsOnDeath();
+        }
+        else
+        {
+            ReportDebug("StatsManager es null en ExecuteDeathCleanup().", 2);
+        }
+
+        // Limpiar el inventario del jugador.
+        if (im != null)
+        {
+            im.ClearInventory();
+        }
+        else
+        {
+            ReportDebug("InventoryManager es null en ExecuteDeathCleanup().", 2);
+        }
+
+        MerchantDialogHandler.ResetReputationState(); // Resetear el estado de reputación de los mercaderes al morir.
+        SceneManager.LoadScene(sceneToLoadOnDeath); // Cargar la escena de muerte o reinicio.
     }
 
     public float GetCurrentHealth()
@@ -1136,10 +1127,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         ReportDebug("Decaimiento de vida temporal completado.", 1);
     }
+
     public void GrantTemporaryHealthOnKill(float amount)
     {
         if (!HasAmuletOfEndurance) return;
-
 
         float maxLimit = 30f;
         float currentMax = statsManager.GetCurrentStat(StatType.MaxHealth);
@@ -1151,13 +1142,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
 
         AddTemporaryHealth(amount, maxLimit);
-
-        if (temporaryHealthDecayCoroutine != null)
-        {
-            StopCoroutine(temporaryHealthDecayCoroutine);
-        }
-        temporaryHealthDecayCoroutine = StartCoroutine(TemporaryHealthDecayRoutine());
     }
+
     public void UpdateTemporaryHealthUI()
     {
         if (HUDManager.Instance != null)
@@ -1165,6 +1151,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             HUDManager.Instance.SetTemporaryHealthValues(currentTemporaryHealth, MaxHealth);
         }
     }
+
     public void AcquireAmuletOfEndurance()
     {
         HasAmuletOfEndurance = true;
@@ -1178,7 +1165,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     }
 
     #region Debuffs
-
+    /*
     /// <summary>
     /// Funcion que aplica el efecto de veneno al jugador cuando es golpeado por un proyectil de Morlock.
     /// </summary>
@@ -1201,9 +1188,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         if (morlockHitCounter >= hitThreshold)
         {
-            float baseDamagePerTick = initialDamage;
             float damageIncrement = morlockHitCounter - hitThreshold;
-            float damagePerSecond = baseDamagePerTick + damageIncrement;
+            float damagePerSecond = initialDamage + damageIncrement;
 
             ApplyMorlockPoison(duration: 5f, damagePerSecond: damagePerSecond, tickInterval: 1f);
 
@@ -1233,7 +1219,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         {
             if (isDying) yield break;
             TakeDamage(damagePerSecond);
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(tickInterval);
             timeElapsed += tickInterval;
         }
         morlockPoisonHitCoroutine = null;
@@ -1246,91 +1232,87 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         morlockHitCounter = 0;
         morlockPoisonResetCoroutine = null;
     }
-
-    #endregion
-
-    // ------------------ METODOS AGREGADOS PARA ACIDO / VENENO / RALENTIZACION ------------------
-
-    private Coroutine rutinaVenenoCoroutine;
-    private Coroutine rutinaRalentizacionCoroutine;
+    */
+    private Coroutine poisonCoroutine;
+    private Coroutine slowCoroutine;
 
     /// <summary>
     /// Aplica un veneno que causa dano por segundo durante 'duracion' segundos.
     /// Internamente llama a TakeDamage() para aplicar cada tick.
     /// </summary>
-    /// <param name="duracion">Tiempo total del veneno en segundos.</param>
-    /// <param name="danoPorSegundo">Dano por segundo aplicado por el veneno.</param>
-    /// <param name="intervaloTick">Intervalo entre ticks (por defecto 1s).</param>
-    public void AplicarVeneno(float duracion, float danoPorSegundo, float intervaloTick = 1f)
+    /// <param name="duration">Tiempo total del veneno en segundos.</param>
+    /// <param name="damagePerSecond">Dano por segundo aplicado por el veneno.</param>
+    /// <param name="tickInterval">Intervalo entre ticks (por defecto 1s).</param>
+    public void ApplyPoison(float duration, float damagePerSecond, float tickInterval = 1f)
     {
-        // si ya hay una rutina de veneno, reiniciamos con la nueva duracion
-        if (rutinaVenenoCoroutine != null) StopCoroutine(rutinaVenenoCoroutine);
-        rutinaVenenoCoroutine = StartCoroutine(RutinaVeneno(duracion, danoPorSegundo, intervaloTick));
+        // Si ya hay una rutina de veneno, reinicia con la nueva duracion
+        if (poisonCoroutine != null) StopCoroutine(poisonCoroutine);
+        poisonCoroutine = StartCoroutine(PoisonRoutine(duration, damagePerSecond, tickInterval));
     }
 
-    private IEnumerator RutinaVeneno(float duracion, float danoPorSegundo, float intervaloTick)
+    private IEnumerator PoisonRoutine(float duration, float damagePerSecond, float tickInterval)
     {
         float tiempo = 0f;
-        while (tiempo < duracion)
+        while (tiempo < duration)
         {
             if (isDying) yield break;
-            float danoTick = danoPorSegundo * intervaloTick;
-            // marcado como cost damage false para que respete invulnerabilidades/escudos
-            TakeDamage(danoTick);
-            yield return new WaitForSeconds(intervaloTick);
-            tiempo += intervaloTick;
+            float tickDamage = damagePerSecond * tickInterval;
+            // Marcado como cost damage false para que respete invulnerabilidades/escudos
+            TakeDamage(tickDamage);
+            yield return new WaitForSeconds(tickInterval);
+            tiempo += tickInterval;
         }
-        rutinaVenenoCoroutine = null;
+        poisonCoroutine = null;
     }
 
     /// <summary>
     /// Propone una ralentizacion logica. Esto no cambia automaticamente la velocidad
     /// del movimiento; expone propiedades que PlayerMovement puede leer para aplicar la reduccion.
     /// </summary>
-    public bool EstaRalentizado { get; private set; } = false;
-    public float MultiplicadorVelocidadPorRalentizacion { get; private set; } = 1f;
+    public bool isSlowed { get; private set; } = false;
+    public float slowSpeedMultiplier { get; private set; } = 1f;
 
     /// <summary>
     /// Aplica una ralentizacion (porcentaje entre 0 y 1: 0.5 = 50% de velocidad) durante 'duracion' segundos.
     /// Deja propiedades publicas que PlayerMovement puede consultar al mover.
     /// </summary>
-    /// <param name="porcentajeRalentizacion">Fraccion de velocidad que queda (0..1).</param>
-    /// <param name="duracion">Duracion en segundos.</param>
-    public void AplicarRalentizacion(float porcentajeRalentizacion, float duracion)
+    /// <param name="slowFraction">Fraccion de velocidad que queda (0..1).</param>
+    /// <param name="duration">Duracion en segundos.</param>
+    public void ApplySlow(float slowFraction, float duration)
     {
-        if (porcentajeRalentizacion < 0.01f) porcentajeRalentizacion = 0.01f;
-        if (rutinaRalentizacionCoroutine != null) StopCoroutine(rutinaRalentizacionCoroutine);
-        MultiplicadorVelocidadPorRalentizacion = Mathf.Clamp01(porcentajeRalentizacion);
-        rutinaRalentizacionCoroutine = StartCoroutine(RutinaRalentizacion(duracion));
+        if (slowFraction < 0.01f) slowFraction = 0.01f;
+        if (slowCoroutine != null) StopCoroutine(slowCoroutine);
+        slowSpeedMultiplier = Mathf.Clamp01(slowFraction);
+        slowCoroutine = StartCoroutine(SlowRoutine(duration));
     }
 
-    private IEnumerator RutinaRalentizacion(float duracion)
+    private IEnumerator SlowRoutine(float duracion)
     {
-        EstaRalentizado = true;
+        isSlowed = true;
         float tiempo = 0f;
         while (tiempo < duracion)
         {
-            if (isDying) break;
+            if (isDying) yield break;
             tiempo += Time.deltaTime;
             yield return null;
         }
-        EstaRalentizado = false;
-        MultiplicadorVelocidadPorRalentizacion = 1f;
-        rutinaRalentizacionCoroutine = null;
+        isSlowed = false;
+        slowSpeedMultiplier = 1f;
+        slowCoroutine = null;
     }
 
     /// <summary>
     /// Remueve la ralentizacion inmediatamente (util por AreaAcido al salir).
     /// </summary>
-    public void RemoverRalentizacion()
+    public void RemoveSlow()
     {
-        if (rutinaRalentizacionCoroutine != null) StopCoroutine(rutinaRalentizacionCoroutine);
-        EstaRalentizado = false;
-        MultiplicadorVelocidadPorRalentizacion = 1f;
-        rutinaRalentizacionCoroutine = null;
+        if (slowCoroutine != null) StopCoroutine(slowCoroutine);
+        isSlowed = false;
+        slowSpeedMultiplier = 1f;
+        slowCoroutine = null;
     }
 
-    // -------------------------------------------------------------------------------------------
+    #endregion
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     /// <summary> 

@@ -13,10 +13,10 @@ public class MorlockProjectile : MonoBehaviour
     [SerializeField] private float lifetime = 5f;
     [SerializeField] private float damage = 2f;
 
-    [Header("Poison Effect")]
-    [SerializeField] private int poisonHitThreshold = 3;
-    [SerializeField] private float poisonInitialDamage = 2f;
-    [SerializeField] private float poisonResetTime = 5f;
+    //[Header("Poison Effect")]
+    //[SerializeField] private int poisonHitThreshold = 3;
+    //[SerializeField] private float poisonInitialDamage = 2f;
+    //[SerializeField] private float poisonResetTime = 5f;
 
     [SerializeField] private LayerMask collisionLayers;
 
@@ -29,16 +29,16 @@ public class MorlockProjectile : MonoBehaviour
 
     public void Initialize(float projectileSpeed, float projectileDamage)
     {
-        if (morlockStats != null)
-        {
-            poisonHitThreshold = morlockStats.poisonHitThreshold;
-            poisonInitialDamage = morlockStats.poisonInitialDamage;
-            poisonResetTime = morlockStats.poisonResetTime;
-        }
-        else
-        {
-            if (debugMode) Debug.LogWarning("MorlockStats no esta asignado en MorlockProjectile. Usando valores de veneno por defecto.");
-        }
+        //if (morlockStats != null)
+        //{
+        //    poisonHitThreshold = morlockStats.poisonHitThreshold;
+        //    poisonInitialDamage = morlockStats.poisonInitialDamage;
+        //    poisonResetTime = morlockStats.poisonResetTime;
+        //}
+        //else
+        //{
+        //    if (debugMode) Debug.LogWarning("MorlockStats no esta asignado en MorlockProjectile. Usando valores de veneno por defecto.");
+        //}
 
         speed = projectileSpeed;
         damage = projectileDamage;
