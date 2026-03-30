@@ -91,7 +91,7 @@ public class OveruseEnemyAI : MonoBehaviour
         animator = GetComponentInChildren<Animator>();
 
         agent.speed = moveSpeed;
-        agent.updateRotation = false; 
+        agent.updateRotation = false;
     }
 
     private void Start()
@@ -184,12 +184,15 @@ public class OveruseEnemyAI : MonoBehaviour
 
     private void GenerateDynamicPatrolPoints()
     {
+        float safeRadius = Mathf.Min(patrolRadius, jumpDistance * 2f);
         dynamicPatrolPoints = new Vector3[dynamicWaypointCount];
         int pointsFound = 0;
 
-        for (int i = 0; i < dynamicWaypointCount * 3 && pointsFound < dynamicWaypointCount; i++)
+        for (int i = 0; i < dynamicWaypointCount * 5 && pointsFound < dynamicWaypointCount; i++)
         {
-            Vector3 randomPoint = transform.position + Random.insideUnitSphere * patrolRadius;
+            Vector2 circle = Random.insideUnitCircle * safeRadius;
+            Vector3 randomPoint = transform.position + new Vector3(circle.x, 0f, circle.y);
+
             if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, navMeshSampleDistance, NavMesh.AllAreas))
             {
                 dynamicPatrolPoints[pointsFound] = hit.position;
@@ -198,15 +201,16 @@ public class OveruseEnemyAI : MonoBehaviour
         }
 
         if (pointsFound < dynamicWaypointCount)
-        {
             System.Array.Resize(ref dynamicPatrolPoints, pointsFound);
-        }
+
+        Log($"Generated {pointsFound} patrol points within radius {safeRadius}m.", 1);
     }
 
     private IEnumerator PatrolRoutine()
     {
         if (dynamicPatrolPoints == null || dynamicPatrolPoints.Length == 0)
         {
+            Log("No patrol points available.", 2);
             yield break;
         }
 
@@ -215,11 +219,19 @@ public class OveruseEnemyAI : MonoBehaviour
         while (currentState == EnemyState.Patrolling)
         {
             Vector3 targetPos = dynamicPatrolPoints[currentWaypointIndex];
+            float distToTarget = Vector3.Distance(
+                new Vector3(transform.position.x, 0f, transform.position.z),
+                new Vector3(targetPos.x, 0f, targetPos.z));
+
+            if (distToTarget <= waypointReachedDistance)
+            {
+                currentWaypointIndex = (currentWaypointIndex + 1) % dynamicPatrolPoints.Length;
+                Log($"Waypoint reached. Next index: {currentWaypointIndex}", 1);
+                continue;
+            }
 
             yield return StartCoroutine(JumpTowardsTarget(targetPos, isChasing: false));
             yield return StartCoroutine(GroundedPhase());
-
-            currentWaypointIndex = (currentWaypointIndex + 1) % dynamicPatrolPoints.Length;
         }
 
         SetAnimatorMoving(false);

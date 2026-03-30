@@ -37,6 +37,7 @@ public class OveruseLuminaryFall : MonoBehaviour
 
     [Header("Deterioration")]
     [SerializeField] private float noBeamChanceIncreasePerImpact = 0.1f;
+    [SerializeField] private float maxNoBeamChance = 0.4f;
 
     [Header("VFX")]
     [SerializeField] private GameObject lanternBeamVFXPrefab;
@@ -93,7 +94,7 @@ public class OveruseLuminaryFall : MonoBehaviour
     {
         impactCount++;
         stompAppliedThisLanding = false;
-        currentNoBeamChance = Mathf.Clamp01(noBeamChanceIncreasePerImpact * (impactCount - 1));
+        currentNoBeamChance = Mathf.Clamp(noBeamChanceIncreasePerImpact * (impactCount - 1), 0f, maxNoBeamChance);
 
         ApplyStompDamage();
 
@@ -152,10 +153,12 @@ public class OveruseLuminaryFall : MonoBehaviour
     private BeamType RollBeamType()
     {
         float roll = Random.value;
-        float threshold = currentNoBeamChance + (1f - currentNoBeamChance) * 0.5f;
 
-        if (roll < currentNoBeamChance) return BeamType.None;
-        return roll < threshold ? BeamType.Lantern : BeamType.Projector;
+        if (roll < currentNoBeamChance)
+            return BeamType.None;
+
+        float remapped = (roll - currentNoBeamChance) / (1f - currentNoBeamChance);
+        return remapped < 0.5f ? BeamType.Lantern : BeamType.Projector;
     }
 
     #endregion
@@ -220,8 +223,10 @@ public class OveruseLuminaryFall : MonoBehaviour
 
         if (flickerVFXPrefab == null) yield break;
 
-        Vector3 spawnPosition = beamOrigin != null ? beamOrigin.position : transform.position;
-        activeFlickerVFX = Instantiate(flickerVFXPrefab, spawnPosition, Quaternion.identity, transform);
+        Transform parent = beamOrigin != null ? beamOrigin : transform;
+        activeFlickerVFX = Instantiate(flickerVFXPrefab, parent);
+        activeFlickerVFX.transform.localPosition = Vector3.zero;
+        activeFlickerVFX.transform.localRotation = Quaternion.identity;
 
         yield return new WaitForSeconds(beamGroundedDuration);
 
@@ -238,8 +243,10 @@ public class OveruseLuminaryFall : MonoBehaviour
         GameObject prefab = beamType == BeamType.Lantern ? lanternBeamVFXPrefab : projectorBeamVFXPrefab;
         if (prefab == null) return;
 
-        Vector3 spawnPosition = beamOrigin != null ? beamOrigin.position : transform.position;
-        activeBeamVFX = Instantiate(prefab, spawnPosition, transform.rotation, transform);
+        Transform parent = beamOrigin != null ? beamOrigin : transform;
+        activeBeamVFX = Instantiate(prefab, parent);
+        activeBeamVFX.transform.localPosition = Vector3.zero;
+        activeBeamVFX.transform.localRotation = Quaternion.identity;
     }
 
     private void CleanupBeamVFX()
