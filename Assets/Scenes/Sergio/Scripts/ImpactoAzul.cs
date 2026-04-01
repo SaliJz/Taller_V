@@ -22,7 +22,7 @@ public class BlueAttack : MonoBehaviour
             SoulEnemy enemy = col.GetComponent<SoulEnemy>();
             if (enemy != null)
             {
-                enemy.TakeDamage(attackDamage);
+                //enemy.TakeDamage(attackDamage);
             }
         }
     }

@@ -190,6 +190,16 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         InitializeHealthUI();
     }
 
+    public void SubscribeToDeath(UnityAction action)
+    {
+        onDeathEvent.AddListener(action);
+    }
+
+    public void UnsubscribeFromDeath(UnityAction action)
+    {
+        onDeathEvent.RemoveListener(action);
+    }
+
     private void ApplyInitialHealth()
     {
         currentHealth = maxHealth * _initialHealthMultiplier;

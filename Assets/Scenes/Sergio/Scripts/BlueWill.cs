@@ -41,7 +41,7 @@ public class BlueWill : MonoBehaviour
 
             if (enemy != null)
             {
-                enemy.TakeDamage(attackDamage);
+                //enemy.TakeDamage(attackDamage);
                 Debug.Log("Impacto directo al SoulEnemy. Daño: " + attackDamage + "</color>");
             }
         }

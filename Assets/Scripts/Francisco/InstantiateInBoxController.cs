@@ -3,11 +3,34 @@ using System.Collections.Generic;
 
 public class InstantiateInBoxController : MonoBehaviour
 {
-    [SerializeField] private List<GameObject> itemPrefabs = new List<GameObject>(); 
+    public enum SpawnMode { Simple, Specific }
+
+    [System.Serializable]
+    public class SpecificEntry
+    {
+        public GameObject prefab;
+        public KeyCode key = KeyCode.None;
+    }
+
+    [Header("Configuration")]
+    [SerializeField] private SpawnMode spawnMode = SpawnMode.Simple;
+
+    [Header("Simple Mode")]
+    [SerializeField] private List<GameObject> prefabList = new List<GameObject>();
     [SerializeField] private KeyCode spawnKey = KeyCode.R;
 
+    [Header("Specific Mode")]
+    [SerializeField] private List<SpecificEntry> specificEntries = new List<SpecificEntry>();
+
     private BoxCollider spawnArea;
-    private int currentItemIndex = 0; 
+    private int simpleCurrentIndex = 0;
+    private int specificActivePrefabIndex = -1;
+    private List<GameObject> specificSpawnedObjects = new List<GameObject>();
+
+    public SpawnMode CurrentSpawnMode => spawnMode;
+    public List<GameObject> PrefabList => prefabList;
+    public KeyCode SpawnKey => spawnKey;
+    public List<SpecificEntry> SpecificEntries => specificEntries;
 
     private void Awake()
     {
@@ -15,49 +38,117 @@ public class InstantiateInBoxController : MonoBehaviour
 
         if (spawnArea == null)
         {
-            Debug.LogError("Se requiere un BoxCollider en este GameObject para definir el área de spawn.");
+            Debug.LogError("[InstantiateInBoxController] A BoxCollider is required on this GameObject to define the spawn area.");
             enabled = false;
         }
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(spawnKey))
+        if (spawnMode == SpawnMode.Simple && Input.GetKeyDown(spawnKey))
         {
-            InstantiateOneItem();
+            SpawnNextSimpleItem();
+        }
+
+        if (spawnMode == SpawnMode.Specific)
+        {
+            for (int i = 0; i < specificEntries.Count; i++)
+            {
+                var entry = specificEntries[i];
+                if (entry.key != KeyCode.None && Input.GetKeyDown(entry.key))
+                    SpawnSpecificEntry(i);
+            }
         }
     }
 
-    private void InstantiateOneItem()
+    public void SpawnNextSimpleItem()
     {
-        if (itemPrefabs == null || itemPrefabs.Count == 0)
+        if (!ValidatePrefabList(prefabList, "Simple")) return;
+
+        GameObject prefab = prefabList[simpleCurrentIndex];
+        simpleCurrentIndex = (simpleCurrentIndex + 1) % prefabList.Count;
+
+        SpawnPrefab(prefab);
+    }
+
+    public void SpawnSpecificEntry(int index)
+    {
+        if (specificEntries == null || specificEntries.Count == 0)
         {
-            Debug.LogError("La lista de Prefabs está vacía. No se puede instanciar el ítem.");
+            Debug.LogError("[InstantiateInBoxController] Specific entries list is empty.");
             return;
         }
 
+        if (index < 0 || index >= specificEntries.Count)
+        {
+            Debug.LogError($"[InstantiateInBoxController] Index {index} is out of range.");
+            return;
+        }
+
+        var entry = specificEntries[index];
+
+        if (entry.prefab == null)
+        {
+            Debug.LogError($"[InstantiateInBoxController] Entry {index} has no prefab assigned.");
+            return;
+        }
+
+        bool isSamePrefab = index == specificActivePrefabIndex;
+
+        if (!isSamePrefab)
+        {
+            DestroyAllSpecificObjects();
+            specificActivePrefabIndex = index;
+        }
+
+        SpawnPrefab(entry.prefab);
+        specificSpawnedObjects.RemoveAll(obj => obj == null);
+    }
+
+    private void DestroyAllSpecificObjects()
+    {
+        foreach (GameObject obj in specificSpawnedObjects)
+        {
+            if (obj != null) Destroy(obj);
+        }
+        specificSpawnedObjects.Clear();
+    }
+
+    private GameObject SpawnPrefab(GameObject prefab)
+    {
         if (spawnArea == null)
         {
-            Debug.LogError("BoxCollider no encontrado. No se puede instanciar el ítem.");
-            return;
+            Debug.LogError("[InstantiateInBoxController] BoxCollider not found. Cannot spawn.");
+            return null;
         }
 
-        GameObject prefabToInstantiate = itemPrefabs[currentItemIndex];
+        Vector3 randomPosition = GetRandomPositionInBounds(spawnArea.bounds);
+        GameObject spawned = Instantiate(prefab, randomPosition, Quaternion.identity);
+        spawned.transform.SetParent(transform);
 
-        currentItemIndex = (currentItemIndex + 1) % itemPrefabs.Count;
+        if (spawnMode == SpawnMode.Specific)
+            specificSpawnedObjects.Add(spawned);
 
-        Bounds bounds = spawnArea.bounds;
+        Debug.Log($"[InstantiateInBoxController] '{prefab.name}' spawned at: {randomPosition}");
+        return spawned;
+    }
 
-        float randomX = Random.Range(bounds.min.x, bounds.max.x);
-        float randomY = Random.Range(bounds.min.y, bounds.max.y);
-        float randomZ = Random.Range(bounds.min.z, bounds.max.z);
+    private Vector3 GetRandomPositionInBounds(Bounds bounds)
+    {
+        return new Vector3(
+            Random.Range(bounds.min.x, bounds.max.x),
+            Random.Range(bounds.min.y, bounds.max.y),
+            Random.Range(bounds.min.z, bounds.max.z)
+        );
+    }
 
-        Vector3 randomPosition = new Vector3(randomX, randomY, randomZ);
-
-        GameObject newItem = Instantiate(prefabToInstantiate, randomPosition, Quaternion.identity);
-
-        newItem.transform.SetParent(transform);
-
-        Debug.Log($"Ítem '{prefabToInstantiate.name}' instanciado en: {randomPosition}");
+    private bool ValidatePrefabList(List<GameObject> list, string modeName)
+    {
+        if (list == null || list.Count == 0)
+        {
+            Debug.LogError($"[InstantiateInBoxController] The prefab list for {modeName} mode is empty.");
+            return false;
+        }
+        return true;
     }
 }
