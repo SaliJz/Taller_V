@@ -16,6 +16,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private bool canDieAfterCooldown = true;
     [SerializeField] private float deathCooldown = 2f;
     [SerializeField] private bool canDestroy = true;
+    [SerializeField] private bool canDisable = false;
     [SerializeField] private bool canBeStunned = true;
     [SerializeField] private UnityEvent onDeathEvent;
 
@@ -103,6 +104,12 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     {
         get { return canDestroy; }
         set { canDestroy = value; }
+    }
+
+    public bool CanDisable
+    {
+        get { return canDisable; }
+        set { canDisable = value; }
     }
 
     public float DeathCooldown
@@ -461,7 +468,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
                 Destroy(gameObject);
             }
         }
-        else
+        else if (canDisable)
         {
             gameObject.SetActive(false);
         }

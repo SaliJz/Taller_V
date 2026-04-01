@@ -32,11 +32,16 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     }
 
     [Header("Dash")]
+    [Tooltip("Distancia base del dash antes de aplicar multiplicadores.")]
     [SerializeField] private float baseDashDistance = 10f;
-    [SerializeField] private float baseDashCooldown = 0.3f; 
-    [SerializeField] private float dashDuration = 0.3f;
+    [Tooltip("Cooldown base del dash antes de aplicar modificadores.")]
+    [SerializeField] private float baseDashCooldown = 0.3f;
+    [Tooltip("Distancia total del dash después de aplicar multiplicadores.")]
     [SerializeField] private float dashDistance = 10f;
+    [Tooltip("Cooldown actual del dash después de aplicar modificadores.")]
     [SerializeField] private float dashCooldown = 0.3f;
+    [Tooltip("Duración del dash en segundos.")]
+    [SerializeField] private float dashDuration = 0.3f;
     [SerializeField] private LayerMask traversableLayers;
     [SerializeField] private LayerMask dashCollisionLayers;
 
