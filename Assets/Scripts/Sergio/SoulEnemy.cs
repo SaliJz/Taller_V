@@ -149,6 +149,7 @@ public class SoulEnemy : MonoBehaviour
         if (playerMove != null)
         {
             playerMove.SetCanMove(false);
+            playerMove.DisableDashForDuration(paralyzeDuration);
             yield return new WaitForSeconds(paralyzeDuration);
             playerMove.SetCanMove(true);
         }
@@ -177,6 +178,7 @@ public class SoulEnemy : MonoBehaviour
         canParalyzeByCollision = false;
 
         playerMove.SetCanMove(false);
+        playerMove.DisableDashForDuration(collisionParalyzeDuration);
         yield return new WaitForSeconds(collisionParalyzeDuration);
         playerMove.SetCanMove(true);
 
