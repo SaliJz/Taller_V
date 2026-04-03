@@ -25,6 +25,11 @@ public class SoulEnemy : MonoBehaviour
     public float attackCooldown = 2f;
     private bool isAttacking = false;
 
+    [Header("Collision Paralysis")]
+    public float collisionParalyzeDuration = 2f;
+    public float collisionParalyzeCooldown = 2f;
+    private bool canParalyzeByCollision = true;
+
     [Header("Death Effects")]
     public float explosionForce = 7f;
 
@@ -153,6 +158,30 @@ public class SoulEnemy : MonoBehaviour
         agent.updateRotation = true;
         agent.isStopped = false;
         isAttacking = false;
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!canParalyzeByCollision || isDead) return;
+        if (!other.CompareTag("Player")) return;
+
+        PlayerMovement playerMove = other.GetComponent<PlayerMovement>();
+        if (playerMove != null)
+        {
+            StartCoroutine(ParalyzePlayerOnCollision(playerMove));
+        }
+    }
+
+    private IEnumerator ParalyzePlayerOnCollision(PlayerMovement playerMove)
+    {
+        canParalyzeByCollision = false;
+
+        playerMove.SetCanMove(false);
+        yield return new WaitForSeconds(collisionParalyzeDuration);
+        playerMove.SetCanMove(true);
+
+        yield return new WaitForSeconds(collisionParalyzeCooldown);
+        canParalyzeByCollision = true;
     }
     #endregion
 

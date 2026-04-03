@@ -1010,6 +1010,7 @@ GameObject:
   - component: {fileID: 422749010}
   - component: {fileID: 422749009}
   - component: {fileID: 422749008}
+  - component: {fileID: 422749015}
   m_Layer: 7
   m_Name: Enemy_Nivel2_Lostdog
   m_TagString: Untagged
@@ -1081,12 +1082,14 @@ MonoBehaviour:
   numberOfWaypoints: 4
   patrolRadius: 15
   baseSpeed: 4
-  target: {fileID: 0}
+  target: {fileID: 327909412}
   detectionRange: 10
   chaseSpeed: 8
   attackDistance: 1.8
-  paralyzeDuration: 0.5
+  paralyzeDuration: 2
   attackCooldown: 2
+  collisionParalyzeDuration: 2
+  collisionParalyzeCooldown: 2
   explosionForce: 5
 --- !u!136 &422749011
 CapsuleCollider:
@@ -1183,6 +1186,56 @@ Transform:
   - {fileID: 1415925097}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &422749015
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 422749007}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 100
+  currentHealth: 0
+  canDieAfterCooldown: 1
+  deathCooldown: 2
+  canDestroy: 1
+  canDisable: 0
+  canBeStunned: 1
+  onDeathEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  healthSlider: {fileID: 0}
+  healthFillImage: {fileID: 0}
+  offsetAboveEnemy: 2
+  glowDelayAfterCritical: 2
+  healthPercentageText: {fileID: 0}
+  healthMultiplierText: {fileID: 0}
+  useDynamicHealthBars: 0
+  healthPerBar: 100
+  healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
+  colorGradientIntensity: 0.3
+  canGrantLifestealOnDeath: 1
+  lifestealAmountOnDeathByMelee: 10
+  lifestealAmountOnDeathByDistance: 10
+  toughnessSystem: {fileID: 0}
+  deathVFXPrefab: {fileID: 0}
+  deathVFXOffset: {x: 0, y: 1, z: 0}
+  invulnerableLayerIndex: 0
+  enableAutoArea: 0
+  areaTriggerPercent: 0.25
+  areaReductionPercent: 0.25
+  areaDuration: 10
+  areaCooldown: 4.5
+  areaRadius: 8
+  areaLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  flattenHeightThreshold: 1.2
+  areaCheckInterval: 0.25
 --- !u!1 &447330827
 GameObject:
   m_ObjectHideFlags: 0
