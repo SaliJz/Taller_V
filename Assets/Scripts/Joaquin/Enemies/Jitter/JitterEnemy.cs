@@ -23,7 +23,11 @@ public class JitterEnemy : MonoBehaviour
     #endregion
 
     #region Configuración en el Inspector
-    
+
+    [Header("Spawn")]
+    [Tooltip("Tiempo de espera desde que el Jitter aparece en escena hasta que comienza a actuar.")]
+    [SerializeField] private float spawnDelay = 1.0f;
+
     [Header("Patrol")]
     [Tooltip("Waypoints que el Jitter recorre en bucle. Si no hay, permanece estático.")]
     [SerializeField] private Transform[] patrolPoints;
@@ -35,21 +39,23 @@ public class JitterEnemy : MonoBehaviour
 
     [Header("Detection & Chase")]
     [Tooltip("Radio en el que el Jitter detecta al jugador.")]
-    [SerializeField] private float detectionRange = 8f;
+    [SerializeField] private float detectionRange = 10f;
     [Tooltip("Velocidad base de persecución.")]
-    [SerializeField] private float baseChaseSpeed = 4f;
+    [SerializeField] private float baseChaseSpeed = 8f;
     [Tooltip("Velocidad máxima alcanzable tras múltiples estados errático.")]
-    [SerializeField] private float maxChaseSpeed = 12f;
+    [SerializeField] private float maxChaseSpeed = 10.4f;
 
     [Header("Erratic Flee")]
-    [Tooltip("Tiempo total de la fase de huida aleatoria.")]
-    [SerializeField] private float erraticFleeDuration = 2.5f;
+    [Tooltip("Número exacto de cambios de dirección aleatorios antes de retomar la persecución.")]
+    [SerializeField] private int erraticFleeDirectionCount = 5;
+    [Tooltip("Intervalo mínimo en segundos entre cada cambio de dirección.")]
+    [SerializeField] private float erraticFleeMinInterval = 0.15f;
+    [Tooltip("Intervalo máximo en segundos entre cada cambio de dirección.")]
+    [SerializeField] private float erraticFleeMaxInterval = 0.3f;   
     [Tooltip("Distancia mínima de cada destino de huida aleatorio.")]
     [SerializeField] private float erraticFleeMinDistance = 3f;
     [Tooltip("Distancia máxima de cada destino de huida aleatorio.")]
     [SerializeField] private float erraticFleeMaxDistance = 8f;
-    [Tooltip("Con qué frecuencia elige una nueva dirección aleatoria durante la huida.")]
-    [SerializeField] private float erraticFleeRedirectInterval = 0.6f;
 
     [Header("Erratic Chase")]
     [Tooltip(
@@ -65,15 +71,15 @@ public class JitterEnemy : MonoBehaviour
 
     [Header("Explosion — Triggers")]
     [Tooltip("Distancia al jugador que activa el conteo de explosión por proximidad.")]
-    [SerializeField] private float explosionProximityRange = 2.5f;
+    [SerializeField] private float explosionProximityRange = 5f;
     [Tooltip("Radio del área de daño de la explosión.")]
     [SerializeField] private float explosionRadius = 5f;
     [Tooltip("Daño que aplica la explosión a cada objetivo.")]
-    [SerializeField] private float explosionDamage = 60f;
+    [SerializeField] private float explosionDamage = 5f;
     [Tooltip("Espera antes de explotar cuando el Jitter muere.")]
     [SerializeField] private float deathExplosionDelay = 1f;
     [Tooltip("Espera antes de explotar cuando el jugador está demasiado cerca.")]
-    [SerializeField] private float proximityExplosionDelay = 3f;
+    [SerializeField] private float proximityExplosionDelay = 1.5f;
     [SerializeField] private LayerMask explosionTargetLayers;
     [Tooltip("Prefab VFX instanciado al explotar.")]
     [SerializeField] private GameObject explosionVFXPrefab;
@@ -113,6 +119,12 @@ public class JitterEnemy : MonoBehaviour
 
     #region Estado de Tiempo de Ejecución
 
+    /// <summary>
+    /// Indica si el Jitter ha completado su spawn y puede actuar.
+    /// Previene que se ejecute lógica antes de tiempo.
+    /// </summary>
+    private bool isReady = false;
+
     private JitterState currentState;
     private JitterState stateBeforeExplosion; // Para restaurar al cancelar explosión por proximidad
 
@@ -132,6 +144,7 @@ public class JitterEnemy : MonoBehaviour
 
     #region Coroutines
     
+    private Coroutine spawnCoroutine;
     private Coroutine patrolWaitCoroutine;
     private Coroutine erraticCoroutine;
     private Coroutine erraticChaseCoroutine;
@@ -169,12 +182,24 @@ public class JitterEnemy : MonoBehaviour
         currentChaseSpeed = baseChaseSpeed;
         agent.speed = patrolSpeed;
 
+        if (spawnCoroutine != null) StopCoroutine(spawnCoroutine);
+        spawnCoroutine = StartCoroutine(SpawnRoutine());
+    }
+
+    private IEnumerator SpawnRoutine()
+    {
+        isReady = false;
+
+        yield return new WaitForSeconds(spawnDelay);
+
+        isReady = true;
         TransitionTo(JitterState.Patrol);
+        spawnCoroutine = null;
     }
 
     private void Update()
     {
-        if (currentState == JitterState.Dead) return;
+        if (currentState == JitterState.Dead || !isReady) return;
 
         switch (currentState)
         {
@@ -391,25 +416,17 @@ public class JitterEnemy : MonoBehaviour
 
     private IEnumerator ErraticBehaviorCoroutine()
     {
-        // Fase 1: Huida aleatoria
-        float elapsed = 0f;
-        float nextRedirectTime = 0f;
-
-        while (elapsed < erraticFleeDuration)
+        // Ejecuta exactamente erraticFleeDirectionCount cambios de dirección.
+        // Cada cambio espera un intervalo aleatorio entre erraticFleeMinInterval y erraticFleeMaxInterval.
+        for (int i = 0; i < erraticFleeDirectionCount; i++)
         {
-            if (elapsed >= nextRedirectTime)
-            {
-                Vector3 fleeTarget = GetRandomNavMeshPosition();
-                if (agent.enabled && agent.isOnNavMesh) agent.SetDestination(fleeTarget);
+            Vector3 fleeTarget = GetRandomNavMeshPosition();
+            if (agent.enabled && agent.isOnNavMesh) agent.SetDestination(fleeTarget);
 
-                nextRedirectTime = elapsed + erraticFleeRedirectInterval;
-            }
-
-            elapsed += Time.deltaTime;
-            yield return null;
+            float waitTime = Random.Range(erraticFleeMinInterval, erraticFleeMaxInterval);
+            yield return new WaitForSeconds(waitTime);
         }
 
-        // Fase 2: Reanuda persecución con velocidad ya incrementada
         erraticCoroutine = null;
         TransitionTo(JitterState.ErraticChase);
     }

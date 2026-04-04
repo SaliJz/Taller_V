@@ -504,6 +504,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aca7de99dfc86414dbfd6bed5b1f1355, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  spawnDelay: 1
   patrolPoints:
   - {fileID: 1730512675262385864}
   - {fileID: 697560720775647540}
@@ -512,21 +513,22 @@ MonoBehaviour:
   patrolWaitTime: 1.5
   waypointReachedThreshold: 0.4
   patrolSpeed: 2
-  detectionRange: 8
-  baseChaseSpeed: 4
-  maxChaseSpeed: 12
-  erraticFleeDuration: 2.5
+  detectionRange: 10
+  baseChaseSpeed: 8
+  maxChaseSpeed: 10.4
+  erraticFleeDirectionCount: 5
+  erraticFleeMinInterval: 0.15
+  erraticFleeMaxInterval: 0.3
   erraticFleeMinDistance: 3
   erraticFleeMaxDistance: 8
-  erraticFleeRedirectInterval: 0.6
   erraticSpeedIncremental: 0
   erraticSpeedBonus: 1.5
   erraticChaseDuration: 5
-  explosionProximityRange: 2.5
+  explosionProximityRange: 5
   explosionRadius: 5
-  explosionDamage: 60
-  deathExplosionDelay: 1
-  proximityExplosionDelay: 3
+  explosionDamage: 5
+  deathExplosionDelay: 1.5
+  proximityExplosionDelay: 1.5
   explosionTargetLayers:
     serializedVersion: 2
     m_Bits: 256
