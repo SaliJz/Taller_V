@@ -250,7 +250,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     {
         if (currentHealth > 0 && gameObject.name.Contains("Boss", StringComparison.OrdinalIgnoreCase))
         {
-            Debug.Log("<color=red>[DEBUG] Astaroth Boss eliminado instantáneamente con la tecla 'B'.</color>");
+            Debug.Log("<color=red>[DEBUG] Boss eliminado instantáneamente con la tecla 'B'.</color>");
             TakeDamage(9999f);
         }
     }
