@@ -238,6 +238,23 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         if (isDead) StopAllCoroutines();
     }
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.B))
+        {
+            DebugKill();
+        }
+    }
+
+    public void DebugKill()
+    {
+        if (currentHealth > 0 && gameObject.name.Contains("Boss", StringComparison.OrdinalIgnoreCase))
+        {
+            Debug.Log("<color=red>[DEBUG] Astaroth Boss eliminado instantáneamente con la tecla 'B'.</color>");
+            TakeDamage(9999f);
+        }
+    }
+
     public void SetMaxHealth(float health)
     {
         maxHealth = health;
