@@ -1,6 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Collections;
 
 public class FichaTorre : FichaBase
 {
@@ -8,34 +8,67 @@ public class FichaTorre : FichaBase
     {
         List<Vector2Int> lista = new List<Vector2Int>();
         Vector2Int origen = coordActual;
-        Vector2Int[] dirs = new Vector2Int[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+
+        Vector2Int[] dirs = new Vector2Int[]
+        {
+            Vector2Int.up,
+            Vector2Int.down,
+            Vector2Int.left,
+            Vector2Int.right
+        };
+
+        Vector2Int coordJugador = new Vector2Int(int.MinValue, int.MinValue);
+        if (jugadorTransform == null)
+        {
+            var pj = GameObject.FindGameObjectWithTag(tagJugador);
+            if (pj != null) jugadorTransform = pj.transform;
+        }
+        if (jugadorTransform != null)
+            coordJugador = WorldPosACoord(jugadorTransform.position);
+
         foreach (var d in dirs)
         {
-            List<Casilla> r = tablero.RayCasillasEnDireccion(origen, d);
-            foreach (var c in r) lista.Add(c.coord);
+            List<Vector2Int> r = tablero.RayCasillasEnDireccion(origen, d);
+            foreach (var c in r)
+            {
+                lista.Add(c);
+                if (c == coordJugador)
+                    break;
+            }
         }
+
         return lista;
     }
 
     protected override List<Vector2Int> CalcularRutaHasta(Vector2Int destino)
     {
         List<Vector2Int> ruta = new List<Vector2Int>();
-        Vector2Int dir = new Vector2Int(Mathf.Clamp(destino.x - coordActual.x, -1, 1), Mathf.Clamp(destino.y - coordActual.y, -1, 1));
-        // si no está alineado en fila/columna, devolver ruta vacía (no mueve en diagonales)
-        if (dir.x != 0 && dir.y != 0) return ruta;
+
+        Vector2Int dir = new Vector2Int(
+            Mathf.Clamp(destino.x - coordActual.x, -1, 1),
+            Mathf.Clamp(destino.y - coordActual.y, -1, 1)
+        );
+
+        if (dir.x != 0 && dir.y != 0)
+            return ruta;
+
         Vector2Int cur = coordActual;
+
         while (cur != destino)
         {
             cur += dir;
             ruta.Add(cur);
-            if (!tablero.ExisteCasilla(cur)) break;
-            Casilla c = tablero.GetCasilla(cur);
-            if (c != null && c.tieneOcupante) break;
+
+            if (!tablero.ExisteCasilla(cur))
+                break;
+
+            if (tablero.EstaOcupada(cur) && cur != destino)
+                break;
         }
+
         return ruta;
     }
 
-    // Rutina específica para torre: intenta reservar la ruta recta y si lo logra se desplaza DIRECTAMENTE hasta destino.
     public IEnumerator RutinaAtaqueDirecta(Vector2Int destino)
     {
         estaMoviendo = true;
@@ -49,93 +82,74 @@ public class FichaTorre : FichaBase
             yield break;
         }
 
-        // si la ruta no es recta (debe serlo por CalcularRutaHasta), abortar aquí
-        // Estimación de ETA (tiempoBefore + distancia/velocidad)
         float eta = tiempoAntesMover + (ruta.Count / Mathf.Max(1f, tilesPorSegundo));
 
-        // Intentar reservar toda la ruta (preferimos mover de una vez)
-        bool reserved = tablero.RequestRouteReservation(ruta, gameObject, eta);
+        bool reserved = tablero.RequestRouteReservation(ruta, gameObject, eta, true);
 
         if (!reserved)
         {
-            // fallback: intentar reservar la casilla final directamente (si está libre)
             var ultima = ruta[ruta.Count - 1];
-            var cFinal = tablero.GetCasilla(ultima);
-            if (cFinal != null && !cFinal.tieneOcupante && (cFinal.reservadoPor == null || cFinal.reservadoPor == gameObject))
+            if (tablero.RequestRouteReservation(new List<Vector2Int> { ultima }, gameObject, eta, true))
             {
-                if (tablero.RequestRouteReservation(new List<Vector2Int> { ultima }, gameObject, eta))
-                {
-                    ruta = new List<Vector2Int> { ultima };
-                    reserved = true;
-                }
+                ruta = new List<Vector2Int> { ultima };
+                reserved = true;
             }
         }
 
         if (!reserved)
         {
-            // no se pudo reservar nada, no nos quedamos bloqueando
             estaMoviendo = false;
             yield break;
         }
 
-        // marcar ruta para feedback visual (aunque nos moveremos directo)
         foreach (var c in ruta)
-        {
-            var cas = tablero.GetCasilla(c);
-            if (cas != null) cas.AgregarMarca(marcadorTrailPrefab, tiempoAntesMover + (ruta.Count / tilesPorSegundo) + 0.2f);
-        }
+            tablero.AgregarMarcaEnCoord(c, marcadorTrailPrefab, tiempoAntesMover + (ruta.Count / Mathf.Max(1f, tilesPorSegundo)) + 0.2f);
 
-        // esperar intención
         yield return new WaitForSeconds(tiempoAntesMover);
 
-        // notificar que empezamos (evita preemption)
         tablero.NotifyRouteStarted(gameObject);
 
-        // Movimiento directo: calculamos el world target como la casilla final
         Vector2Int finalCoord = ruta[ruta.Count - 1];
-        Casilla origen = tablero.GetCasilla(coordActual);
-        Casilla destinoCas = tablero.GetCasilla(finalCoord);
-        if (destinoCas == null)
-        {
-            // limpieza en caso de fallo
-            tablero.ReleaseRutaReservation(ruta, gameObject);
-            tablero.NotifyRouteFinished(gameObject);
-            estaMoviendo = false;
-            yield break;
-        }
+        Vector2Int origenCoord = coordActual;
 
-        Vector3 start = transform.position;
-        Vector3 target = destinoCas.worldPos + Vector3.up * 0.1f;
-        float distancia = Vector3.Distance(start, target);
+        tablero.SetOcupante(origenCoord, null);
+
         float velocidad = tilesPorSegundo * tamCasilla;
-        float tiempo = velocidad > 0 ? distancia / velocidad : 0.01f;
-        float t = 0f;
+        if (velocidad <= 0f) velocidad = tamCasilla;
 
-        // actualizar ocupantes: liberar origen, marcar destino (pero mantenemos reserva hasta llegar)
-        if (origen != null) origen.SetOcupante(null);
-        destinoCas.SetOcupante(gameObject);
-
-        while (t < tiempo)
+        for (int i = 0; i < ruta.Count; i++)
         {
-            transform.position = Vector3.MoveTowards(transform.position, target, velocidad * Time.deltaTime);
-            t += Time.deltaTime;
+            Vector2Int coordPaso = ruta[i];
+            Vector3 target = tablero.GetWorldPos(coordPaso) + Vector3.up * 0.1f;
+
+            while (Vector3.Distance(transform.position, target) > 0.01f)
+            {
+                transform.position = Vector3.MoveTowards(transform.position, target, velocidad * Time.deltaTime);
+                yield return null;
+            }
+
+            transform.position = target;
+            coordActual = coordPaso;
+            tablero.SetOcupante(coordActual, gameObject);
+
             yield return null;
         }
-        transform.position = target;
-        coordActual = finalCoord;
 
-        // liberar todas las reservas asociadas a esta ruta (ya llegó)
         tablero.ReleaseRutaReservation(ruta, gameObject);
 
-        // comprobar si el jugador está en la casilla final para atacar
-        if (destinoCas.tieneOcupante && destinoCas.ocupanteGO != null && destinoCas.ocupanteGO.CompareTag(tagJugador))
+        Vector2Int coordJugadorActual = new Vector2Int(int.MinValue, int.MinValue);
+        if (jugadorTransform == null)
         {
-            AttackPlayer(transform.position);
+            var pj = GameObject.FindGameObjectWithTag(tagJugador);
+            if (pj != null) jugadorTransform = pj.transform;
         }
+        if (jugadorTransform != null)
+            coordJugadorActual = WorldPosACoord(jugadorTransform.position);
 
-        // notificar que terminamos
+        if (coordActual == coordJugadorActual)
+            AttackPlayer(transform.position);
+
         tablero.NotifyRouteFinished(gameObject);
-
         estaMoviendo = false;
     }
 }
