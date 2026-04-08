@@ -13,6 +13,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [SerializeField] private Animator playerAnimator;
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private PlayerAudioController playerAudioController;
+    [SerializeField] private PlayerInputModifier inputModifier;
 
     [Header("Movement")]
     [HideInInspector] private float fallbackMoveSpeed = 5f;
@@ -275,7 +276,16 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     #region Custom Methods
     public void OnMove(InputAction.CallbackContext context)
     {
-        currentInputVector = context.ReadValue<Vector2>();
+        Vector2 rawInput = context.ReadValue<Vector2>();
+
+        if (inputModifier != null)
+        {
+            currentInputVector = inputModifier.ProcessInput(rawInput);
+        }
+        else
+        {
+            currentInputVector = rawInput;
+        }
     }
 
     private void HandleMovementInput()
