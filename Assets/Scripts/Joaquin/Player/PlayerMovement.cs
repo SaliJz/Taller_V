@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -118,6 +119,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     public bool IsRotationExternallyControlled { get; set; } = false;
 
     private Coroutine _dashDisableCoroutine;
+    private bool hasIsAttackingParameter = false;
+    private readonly Dictionary<string, float> runAnimationSpeedOverrides = new Dictionary<string, float>();
 
     #endregion
 
@@ -172,6 +175,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         playerAnimator = GetComponentInChildren<Animator>();
         playerHealth = GetComponent<PlayerHealth>();
         if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
+        hasIsAttackingParameter = AnimatorHasParameter(playerAnimator, "IsAttacking");
 
         playerLayer = LayerMask.NameToLayer("Player");
 
@@ -186,6 +190,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         InitializeDashVFX();
         UpdateDashStatsFromManager();
+        UpdateMovementAnimationSpeed(false);
     }
 
     private void UpdateDashStatsFromManager()
@@ -241,6 +246,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         {
             moveDirection = Vector3.zero;
             if (playerAnimator != null) playerAnimator.SetBool("Running", false);
+            UpdateMovementAnimationSpeed(false);
         }
 
         ApplyGravity();
@@ -308,6 +314,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         bool isMoving = hasInput && timeIsRunning;
 
         if (playerAnimator != null) playerAnimator.SetBool("Running", isMoving);
+        UpdateMovementAnimationSpeed(isMoving);
 
         if (playerAudioController != null)
         {
@@ -857,7 +864,86 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             {
                 playerAnimator.SetBool("Running", false);
             }
+
+            UpdateMovementAnimationSpeed(false);
         }
+    }
+
+    private void UpdateMovementAnimationSpeed(bool isMoving)
+    {
+        if (playerAnimator == null)
+        {
+            return;
+        }
+
+        if (hasIsAttackingParameter && playerAnimator.GetBool("IsAttacking"))
+        {
+            return;
+        }
+
+        float targetAnimatorSpeed = 1f;
+
+        if (isMoving && runAnimationSpeedOverrides.Count > 0)
+        {
+            targetAnimatorSpeed = GetLowestRunAnimationSpeedOverride();
+        }
+
+        playerAnimator.speed = targetAnimatorSpeed;
+    }
+
+    private bool AnimatorHasParameter(Animator animator, string parameterName)
+    {
+        if (animator == null)
+        {
+            return false;
+        }
+
+        foreach (AnimatorControllerParameter parameter in animator.parameters)
+        {
+            if (parameter.name == parameterName)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void SetRunAnimationSpeedOverride(string key, float animatorSpeed)
+    {
+        if (string.IsNullOrEmpty(key))
+        {
+            return;
+        }
+
+        runAnimationSpeedOverrides[key] = Mathf.Clamp(animatorSpeed, 0.1f, 3f);
+        UpdateMovementAnimationSpeed(playerAnimator != null && playerAnimator.GetBool("Running"));
+    }
+
+    public void ClearRunAnimationSpeedOverride(string key)
+    {
+        if (string.IsNullOrEmpty(key))
+        {
+            return;
+        }
+
+        runAnimationSpeedOverrides.Remove(key);
+        UpdateMovementAnimationSpeed(playerAnimator != null && playerAnimator.GetBool("Running"));
+    }
+
+    private float GetLowestRunAnimationSpeedOverride()
+    {
+        float lowestSpeed = 1f;
+
+        foreach (float overrideSpeed in runAnimationSpeedOverrides.Values)
+        {
+            if (overrideSpeed < lowestSpeed)
+            {
+                lowestSpeed = overrideSpeed;
+            }
+        }
+
+        return lowestSpeed;
     }
 
     public void TeleportTo(Vector3 position)
