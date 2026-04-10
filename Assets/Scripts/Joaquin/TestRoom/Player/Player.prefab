@@ -9013,6 +9013,7 @@ GameObject:
   - component: {fileID: 9091694157290843838}
   - component: {fileID: 1443727538697155938}
   - component: {fileID: 2676318613311582842}
+  - component: {fileID: 530321809443592086}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -9242,11 +9243,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8496e4d407ba7de4287e8b7e7390c1de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  statsManager: {fileID: 7736777102245202428}
-  blockSystem: {fileID: 3496064612389669479}
   playerSpriteRenderer: {fileID: 853946800129297378}
+  statsManager: {fileID: 7736777102245202428}
+  combatActionManager: {fileID: 0}
+  blockSystem: {fileID: 3496064612389669479}
   playerAudioController: {fileID: 0}
   playerAnimator: {fileID: 2511880707407823879}
+  fallbackMaxHealth: 100
   damageInvulnerabilityTime: 0
   sceneToLoadOnDeath: TransitionDead
   deathFadeColor: {r: 0, g: 0, b: 0, a: 1}
@@ -9304,15 +9307,16 @@ MonoBehaviour:
   playerAnimator: {fileID: 2511880707407823879}
   playerHealth: {fileID: 6110564483166717353}
   playerAudioController: {fileID: 0}
+  inputModifier: {fileID: 530321809443592086}
   moveSpeed: 5
   gravity: -9.81
   level: 1
   stepInterval: 0.35
   baseDashDistance: 10
   baseDashCooldown: 0.3
-  dashDuration: 0.35
   dashDistance: 9
   dashCooldown: 0.3
+  dashDuration: 0.35
   traversableLayers:
     serializedVersion: 2
     m_Bits: 2359424
@@ -9748,6 +9752,18 @@ MonoBehaviour:
   pulseScale: 1.2
   rotationSpeed: 90
   billboardToCamera: 1
+--- !u!114 &530321809443592086
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6679960082821164706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5618e8a69e971d249bb84a0bfc46aefe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &6769764421561134128
 GameObject:
   m_ObjectHideFlags: 0
