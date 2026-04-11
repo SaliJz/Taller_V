@@ -733,63 +733,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &567802252
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 2403310968284499597, guid: de8465d9c81040f4d94b66aacc98399c, type: 3}
-      propertyPath: m_Name
-      value: SoulDitchHazard
-      objectReference: {fileID: 0}
-    - target: {fileID: 7882714018293328220, guid: de8465d9c81040f4d94b66aacc98399c, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -2.64
-      objectReference: {fileID: 0}
-    - target: {fileID: 7882714018293328220, guid: de8465d9c81040f4d94b66aacc98399c, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.19281544
-      objectReference: {fileID: 0}
-    - target: {fileID: 7882714018293328220, guid: de8465d9c81040f4d94b66aacc98399c, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 4.21
-      objectReference: {fileID: 0}
-    - target: {fileID: 7882714018293328220, guid: de8465d9c81040f4d94b66aacc98399c, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7882714018293328220, guid: de8465d9c81040f4d94b66aacc98399c, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7882714018293328220, guid: de8465d9c81040f4d94b66aacc98399c, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7882714018293328220, guid: de8465d9c81040f4d94b66aacc98399c, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7882714018293328220, guid: de8465d9c81040f4d94b66aacc98399c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7882714018293328220, guid: de8465d9c81040f4d94b66aacc98399c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7882714018293328220, guid: de8465d9c81040f4d94b66aacc98399c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: de8465d9c81040f4d94b66aacc98399c, type: 3}
 --- !u!1 &669507414
 GameObject:
   m_ObjectHideFlags: 0
@@ -2282,82 +2225,35 @@ MonoBehaviour:
   roomGenerationRules: []
   roomTypeProbabilities:
   - roomType: 1
-    probability: 100
+    probability: 90
     roomPrefabs:
-    - {fileID: 1482729654027300797, guid: 7d2f6a12ba8508941b08a51399a9dd15, type: 3}
-    - {fileID: 1482729654027300797, guid: 2b7455c699c26e74ca0cd38a8b5336d2, type: 3}
-    - {fileID: 4837703137612241022, guid: 268183ceda606764398f8308f7ccc5fe, type: 3}
-    - {fileID: 1406286082122936213, guid: b3578fe19d8d5d34d8d6ed4e21bc0ead, type: 3}
-    - {fileID: 4837703137612241022, guid: 3b99d80ccf7eea245aa4ad220ebc647c, type: 3}
-    - {fileID: 1482729654027300797, guid: b3588a7c5489e1e42b6be3a69c2c968e, type: 3}
+    - {fileID: 8863224677180504647, guid: c63bb4d5eba60114fbaf425a73bfe5eb, type: 3}
+    - {fileID: 8863224677180504647, guid: 6d259bd473584bd459237cfc76cbcfea, type: 3}
+    - {fileID: 8863224677180504647, guid: 20af27e7306f41e4d874e53253c110d9, type: 3}
+    - {fileID: 8863224677180504647, guid: d41c43d796df4214eb589b2b5d887576, type: 3}
+    - {fileID: 8863224677180504647, guid: f8fcc0e6451d53043ad82d8e0f38143e, type: 3}
     roomDataList: []
   - roomType: 4
-    probability: 100
+    probability: 10
     roomPrefabs:
     - {fileID: -2013639086596557405, guid: c250c216b2025824eb281a70914547a7, type: 3}
     - {fileID: -2013639086596557405, guid: fca8b3385a8f516499a041ca914555a2, type: 3}
     roomDataList: []
-  generationRules: []
+  generationRules:
+  - currentRoomType: 4
+    allowedNextRoomTypes: 01000000
   progressionRules:
   - useMultipleRoomTypes: 1
-    roomType: 1
-    multipleRoomTypes: []
-    useCustomPrefabs: 1
-    customRoomPrefabs:
-    - {fileID: 1482729654027300797, guid: 2b7455c699c26e74ca0cd38a8b5336d2, type: 3}
-    minRoomNumber: 1
-    maxRoomNumber: 1
-    isMandatory: 1
-    isProbableMandatory: 0
-    generateOnce: 1
-    probability: 100
-    combatContent:
-      waves: []
-      timeBetweenWaves: 0
-  - useMultipleRoomTypes: 0
     roomType: 4
     multipleRoomTypes: []
-    useCustomPrefabs: 1
-    customRoomPrefabs:
-    - {fileID: -2013639086596557405, guid: c250c216b2025824eb281a70914547a7, type: 3}
-    - {fileID: -2013639086596557405, guid: fca8b3385a8f516499a041ca914555a2, type: 3}
+    useCustomPrefabs: 0
+    customRoomPrefabs: []
     minRoomNumber: 2
     maxRoomNumber: 2
     isMandatory: 1
     isProbableMandatory: 0
     generateOnce: 1
-    probability: 100
-    combatContent:
-      waves: []
-      timeBetweenWaves: 0
-  - useMultipleRoomTypes: 1
-    roomType: 1
-    multipleRoomTypes: []
-    useCustomPrefabs: 1
-    customRoomPrefabs:
-    - {fileID: 1406286082122936213, guid: b3578fe19d8d5d34d8d6ed4e21bc0ead, type: 3}
-    - {fileID: 4837703137612241022, guid: 3b99d80ccf7eea245aa4ad220ebc647c, type: 3}
-    minRoomNumber: 3
-    maxRoomNumber: 3
-    isMandatory: 1
-    isProbableMandatory: 0
-    generateOnce: 1
-    probability: 100
-    combatContent:
-      waves: []
-      timeBetweenWaves: 0
-  - useMultipleRoomTypes: 1
-    roomType: 1
-    multipleRoomTypes: []
-    useCustomPrefabs: 1
-    customRoomPrefabs:
-    - {fileID: 4837703137612241022, guid: 268183ceda606764398f8308f7ccc5fe, type: 3}
-    - {fileID: 1482729654027300797, guid: b3588a7c5489e1e42b6be3a69c2c968e, type: 3}
-    minRoomNumber: 4
-    maxRoomNumber: 4
-    isMandatory: 1
-    isProbableMandatory: 0
-    generateOnce: 1
+    allowMultipleDoorsOfSameType: 0
     probability: 100
     combatContent:
       waves: []
@@ -2371,25 +2267,25 @@ MonoBehaviour:
     - {fileID: -2013639086596557405, guid: fca8b3385a8f516499a041ca914555a2, type: 3}
     minRoomNumber: 5
     maxRoomNumber: 5
-    isMandatory: 1
-    isProbableMandatory: 0
+    isMandatory: 0
+    isProbableMandatory: 1
     generateOnce: 1
+    allowMultipleDoorsOfSameType: 0
     probability: 100
     combatContent:
       waves: []
       timeBetweenWaves: 0
-  - useMultipleRoomTypes: 1
+  - useMultipleRoomTypes: 0
     roomType: 1
     multipleRoomTypes: []
     useCustomPrefabs: 1
-    customRoomPrefabs:
-    - {fileID: 1406286082122936213, guid: b3578fe19d8d5d34d8d6ed4e21bc0ead, type: 3}
-    - {fileID: 4837703137612241022, guid: 3b99d80ccf7eea245aa4ad220ebc647c, type: 3}
-    minRoomNumber: 6
-    maxRoomNumber: 6
+    customRoomPrefabs: []
+    minRoomNumber: 1
+    maxRoomNumber: 1
     isMandatory: 1
     isProbableMandatory: 0
-    generateOnce: 1
+    generateOnce: 0
+    allowMultipleDoorsOfSameType: 0
     probability: 100
     combatContent:
       waves: []
@@ -2863,4 +2759,3 @@ SceneRoots:
   - {fileID: 961770970}
   - {fileID: 1358156444}
   - {fileID: 1902850564}
-  - {fileID: 567802252}

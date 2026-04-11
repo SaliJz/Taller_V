@@ -22,6 +22,7 @@ public class RoomProgressionRule
     public bool isMandatory;
     public bool isProbableMandatory;
     public bool generateOnce;
+    public bool allowMultipleDoorsOfSameType = false;
     [Range(0f, 100f)]
     public float probability = 0;
 
