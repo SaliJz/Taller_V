@@ -38,22 +38,19 @@ public class BishopPiece : BoardPiece
     #region Unity Events
     private void Start()
     {
-        if (boardManager == null) boardManager = FindAnyObjectByType<BoardManager>();
-        if (playerTransform == null) playerTransform = GameObject.FindGameObjectWithTag("Player")?.transform;
+        if (playerTransform == null)
+            playerTransform = GameObject.FindGameObjectWithTag("Player")?.transform;
+
+        AutoConnectToNearestBoard();
+
         if (boardManager != null)
-        {
-            Vector2Int spawnCoord = boardManager.WorldPosToCoord(transform.position);
-            boardManager.ConnectPiece(this, spawnCoord);
             brainCoroutine = StartCoroutine(BishopBrain());
-        }
     }
 
     private void Update()
     {
         if (isMoving && !isStunned)
-        {
             LookAtTarget(currentTargetWorldPos, rotationSpeed);
-        }
     }
     #endregion
 

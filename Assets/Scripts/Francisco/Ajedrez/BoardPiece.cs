@@ -32,6 +32,43 @@ public abstract class BoardPiece : MonoBehaviour
     public bool IsMoving => isMoving;
     #endregion
 
+    #region Board Resolution
+
+    protected void AutoConnectToNearestBoard()
+    {
+        if (boardManager != null)
+        {
+            Vector2Int spawnCoord = boardManager.WorldPosToCoord(transform.position);
+            boardManager.ConnectPiece(this, spawnCoord);
+            return;
+        }
+
+        BoardManager[] allBoards = FindObjectsByType<BoardManager>(FindObjectsSortMode.None);
+
+        if (allBoards.Length == 0)
+        {
+            Debug.LogWarning($"[BoardPiece] {name}: No BoardManager found in scene.");
+            return;
+        }
+
+        BoardManager nearest = null;
+        float bestDist = float.MaxValue;
+        foreach (var bm in allBoards)
+        {
+            float dist = Vector3.Distance(transform.position, bm.transform.position);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                nearest = bm;
+            }
+        }
+
+        boardManager = nearest;
+        Vector2Int coord = boardManager.WorldPosToCoord(transform.position);
+        boardManager.ConnectPiece(this, coord);
+    }
+    #endregion
+
     #region Logic & Helpers
     public Vector2Int WorldPosToCoord(Vector3 worldPos)
     {
