@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf585f2f5315add4d93d4355ea4e5889, type: 3}
+  m_Name: SedimentsOfPetraEffect
+  m_EditorClassIdentifier: 
+  EffectID: Sedimentos de Petra
+  effectDescription: "Descripci\xF3n del efecto."
+  category: 0
+  smallSpikeDamagePercent: 0.1
+  smallSpikeDuration: 4
+  minDistanceBetweenSpikes: 1.5
+  smallSpikeTiltAngle: 20
+  smallSpikePrefab: {fileID: 8447674756652148179, guid: 425e180227974194195409b333bc9b1f, type: 3}
+  trailMaterial: {fileID: -5575037680647899189, guid: 127fe90738b040f489d0e62bb57a4e0c, type: 3}
+  trailWidth: 0.25
+  trailColor: {r: 0.45, g: 0.28, b: 0.1, a: 0.75}
+  trailFadeDuration: 3
+  largeSpikeDamagePercent: 0.5
+  largeSpikeDuration: 0.3
+  largeSpikeCount: 3
+  spikeSpreadAngle: 30
+  spikeForwardDistance: 3
+  spikeRandomDelayMin: 0
+  spikeRandomDelayMax: 0.12
+  largeSpikeAngle: 25
+  largeSpikePrefab: {fileID: 18565707977423876, guid: 2f5ba42e001bad94abc88d85e442ea5e, type: 3}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 128

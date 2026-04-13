@@ -1504,6 +1504,53 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+--- !u!1 &1102182625
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1102182627}
+  - component: {fileID: 1102182626}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1102182626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1102182625}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0bd74fef856b843489a5822800e3890e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spikeColor: {r: 0.45, g: 0.32, b: 0.18, a: 1}
+  spikeEmissive: {r: 0.15, g: 0.08, b: 0.02, a: 1}
+  trailColor: {r: 0.55, g: 0.4, b: 0.2, a: 0.6}
+--- !u!4 &1102182627
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1102182625}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 241.96498, y: 5.4419947, z: 268.1248}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1130311632
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1713,8 +1760,24 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7470225785151341199, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: safeRelics.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7470225785151341199, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: allShopItems.Array.size
-      value: 19
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7470225785151341199, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: 'safeRelics.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 4b0aa26234be5fe4983700d37a0544f1, type: 2}
+    - target: {fileID: 7470225785151341199, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: 'allShopItems.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 4b0aa26234be5fe4983700d37a0544f1, type: 2}
+    - target: {fileID: 7470225785151341199, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: shopItemPrefabs.Array.size
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7470225785151341199, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: 'allShopItems.Array.data[17]'
@@ -1728,6 +1791,10 @@ PrefabInstance:
       propertyPath: 'allShopItems.Array.data[19]'
       value: 
       objectReference: {fileID: 11400000, guid: a2ee5bb5380cee04491f29729929286e, type: 2}
+    - target: {fileID: 7470225785151341199, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: 'shopItemPrefabs.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2790493699222432776, guid: ee3c3fcd0776f6647a60ac1543a8e205, type: 3}
     - target: {fileID: 8371086651481551111, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -2229,6 +2296,7 @@ MonoBehaviour:
     roomPrefabs:
     - {fileID: 8863224677180504647, guid: c63bb4d5eba60114fbaf425a73bfe5eb, type: 3}
     - {fileID: 8863224677180504647, guid: 6d259bd473584bd459237cfc76cbcfea, type: 3}
+    - {fileID: 8863224677180504647, guid: 63b3c4de720ab5b489fae79286378294, type: 3}
     - {fileID: 8863224677180504647, guid: 20af27e7306f41e4d874e53253c110d9, type: 3}
     - {fileID: 8863224677180504647, guid: d41c43d796df4214eb589b2b5d887576, type: 3}
     - {fileID: 8863224677180504647, guid: f8fcc0e6451d53043ad82d8e0f38143e, type: 3}
@@ -2759,3 +2827,4 @@ SceneRoots:
   - {fileID: 961770970}
   - {fileID: 1358156444}
   - {fileID: 1902850564}
+  - {fileID: 1102182627}

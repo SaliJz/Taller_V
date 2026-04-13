@@ -170,49 +170,52 @@ public class Shield : MonoBehaviour
     /// <summary>
     /// Función que maneja el movimiento y estado del escudo en cada frame.
     /// </summary>
-    private void Update()
+  private void Update()
+{
+    if (currentState == ShieldState.Inactive) return;
+
+    currentSpeed = Mathf.Min(currentSpeed + acceleration * Time.deltaTime, maxSpeed);
+
+    if (currentState == ShieldState.Thrown)
     {
-        if (currentState == ShieldState.Inactive) return;
+        transform.position += transform.forward * currentSpeed * Time.deltaTime;
+        PlayerCombatEvents.RaiseShieldMoved(transform.position, attackDamage);
 
-        currentSpeed = Mathf.Min(currentSpeed + acceleration * Time.deltaTime, maxSpeed);
-
-        if (currentState == ShieldState.Thrown)
+        if (Vector3.Distance(startPosition, transform.position) >= maxDistance)
         {
-            transform.position += transform.forward * currentSpeed * Time.deltaTime;
-
-            if (Vector3.Distance(startPosition, transform.position) >= maxDistance)
-            {
-                StartReturning();
-            }
+            StartReturning();
         }
-        else if (currentState == ShieldState.Rebounding)
+    }
+    else if (currentState == ShieldState.Rebounding)
+    {
+        if (currentTarget == null)
         {
-            if (currentTarget == null)
-            {
-                StartReturning();
-                return;
-            }
-
-            Vector3 directionToTarget = (currentTarget.position - transform.position).normalized;
-            transform.position += directionToTarget * currentSpeed * Time.deltaTime;
-            transform.forward = directionToTarget;
+            StartReturning();
+            return;
         }
-        else if (currentState == ShieldState.Returning)
+
+        Vector3 directionToTarget = (currentTarget.position - transform.position).normalized;
+        transform.position += directionToTarget * currentSpeed * Time.deltaTime;
+        transform.forward = directionToTarget;
+        PlayerCombatEvents.RaiseShieldMoved(transform.position, attackDamage);
+    }
+    else if (currentState == ShieldState.Returning)
+    {
+        Vector3 directionToTarget = (returnTarget.position - transform.position).normalized;
+
+        float returnSpeed = currentSpeed * currentReturnSpeedMultiplier;
+        transform.position += directionToTarget * returnSpeed * Time.deltaTime;
+        PlayerCombatEvents.RaiseShieldMoved(transform.position, attackDamage);
+
+        if (Vector3.Distance(transform.position, returnTarget.position) < 1.0f)
         {
-            Vector3 directionToTarget = (returnTarget.position - transform.position).normalized;
-
-            float returnSpeed = currentSpeed * currentReturnSpeedMultiplier;
-            transform.position += directionToTarget * returnSpeed * Time.deltaTime;
-
-            if (Vector3.Distance(transform.position, returnTarget.position) < 1.0f)
+            if (deactivationCoroutine == null)
             {
-                if (deactivationCoroutine == null)
-                {
-                    deactivationCoroutine = StartCoroutine(SafeDeactivateShieldCoroutine());
-                }
+                deactivationCoroutine = StartCoroutine(SafeDeactivateShieldCoroutine());
             }
         }
     }
+}
 
     private void OnTriggerEnter(Collider other)
     {
@@ -520,6 +523,8 @@ public class Shield : MonoBehaviour
     {
         owner.CatchShield();
         currentState = ShieldState.Inactive;
+
+        PlayerCombatEvents.RaiseShieldLanded();
 
         // Detener VFX antes de desactivar el GameObject
         if (shieldTrailVFX != null && shieldTrail != null)

@@ -1,0 +1,25 @@
+using System;
+using UnityEngine;
+
+public static class PlayerCombatEvents
+{
+    #region Shield Events
+
+    public static event Action<Vector3, float> OnShieldMoved;
+    public static void RaiseShieldMoved(Vector3 position, float playerBaseDamage)
+        => OnShieldMoved?.Invoke(position, playerBaseDamage);
+
+    public static event Action OnShieldLanded;
+    public static void RaiseShieldLanded()
+        => OnShieldLanded?.Invoke();
+
+    #endregion
+
+    #region Melee Events
+
+    public static event Action<Vector3, Vector3, float> OnMeleeHit;
+    public static void RaiseMeleeHit(Vector3 playerPosition, Vector3 playerForward, float meleeDamage)
+        => OnMeleeHit?.Invoke(playerPosition, playerForward, meleeDamage);
+
+    #endregion
+}

@@ -441,74 +441,57 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         if (playerAnimator != null) playerAnimator.SetBool("IsAttacking", true);
 
-        if (playerMovement != null)
-        {
-            playerMovement.SetCanMove(false);
-        }
+        if (playerMovement != null) playerMovement.SetCanMove(false);
 
-        // Limpiar enemigos golpeados para este nuevo ataque
         hitEnemiesThisCombo.Clear();
 
-        // 1) Dirección objetivo
         Vector3 targetDir;
         bool enemyFound = TryGetNearestEnemyDirection(out Vector3 autoAimDir);
 
         if (enemyFound)
         {
-            // Si hay enemigo cerca, prioriza esa dirección
             targetDir = autoAimDir;
         }
         else
         {
-            // Lógica original de Gamepad / Mouse
             bool isGamepadActive = false;
             if (gamepadPointer != null)
-            {
                 isGamepadActive = (gamepadPointer.GetCurrentActiveDevice() == gamepadPointer.GetCurrentGamepad());
-            }
 
             if (isGamepadActive)
-            {
                 targetDir = transform.forward;
-            }
             else if (!TryGetMouseWorldDirection(out targetDir))
-            {
                 targetDir = transform.forward;
-            }
         }
 
-        // 2) Lockear rotación snapped
         if (playerMovement != null)
-        {
             playerMovement.LockFacingTo8Directions(targetDir, true);
-        }
         else
-        {
-            // fallback: aplicar rotación instantánea snappeada
             RotateTowardsMouseInstant();
-        }
 
-        // Esperar a que se alcance la rotación
         yield return StartCoroutine(WaitForRotationLock());
 
         if (playerMovement != null) playerMovement.StartForcedMovement(true);
 
-        if (playerAnimator != null)
-        {
-            playerAnimator.speed = currentSpeedFactor;
-        }
+        if (playerAnimator != null) playerAnimator.speed = currentSpeedFactor;
 
         switch (attackIndex)
         {
-            case 0: yield return StartCoroutine(ExecuteAttack1()); break;
-            case 1: yield return StartCoroutine(ExecuteAttack2()); break;
-            case 2: yield return StartCoroutine(ExecuteAttack3()); break;
+            case 0:
+                PlayerCombatEvents.RaiseMeleeHit(transform.position, transform.forward, finalAttackDamage);
+                yield return StartCoroutine(ExecuteAttack1());
+                break;
+            case 1:
+                PlayerCombatEvents.RaiseMeleeHit(transform.position, transform.forward, finalAttackDamage);
+                yield return StartCoroutine(ExecuteAttack2());
+                break;
+            case 2:
+                PlayerCombatEvents.RaiseMeleeHit(transform.position, transform.forward, finalAttackDamage * attack3DamageMultiplier);
+                yield return StartCoroutine(ExecuteAttack3());
+                break;
         }
 
-        if (playerAnimator != null)
-        {
-            playerAnimator.speed = 1f;
-        }
+        if (playerAnimator != null) playerAnimator.speed = 1f;
 
         if (playerMovement != null)
         {
