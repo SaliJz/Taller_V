@@ -124,6 +124,7 @@ GameObject:
   - component: {fileID: 5520911903259029833}
   - component: {fileID: 4331931491591265538}
   - component: {fileID: 5639506919213850001}
+  - component: {fileID: 5125764265376309499}
   m_Layer: 7
   m_Name: Alfil
   m_TagString: Enemy
@@ -238,18 +239,30 @@ MonoBehaviour:
   currentCoord: {x: 0, y: 0}
   cellSize: 1
   stunDuration: 1.5
+  detectionRadius: 10
+  detectionInterval: 0.4
+  chaseGracePeriod: 1.5
+  trailHeight: 1.5
+  trailStartWidth: 1
+  trailEndWidth: 1
+  trailStartColor: {r: 1, g: 0.49820757, b: 0, a: 0.11764706}
+  trailEndColor: {r: 1, g: 0.49803922, b: 0, a: 1}
   showGizmos: 1
+  faceColor: {r: 0, g: 0, b: 1, a: 1}
+  faceOffset: {x: 0, y: 1.5, z: 0.62}
+  faceSize: {x: 1.25, y: 3, z: 0.38}
+  faceForwardLength: 0.6
   gizmoHeight: 1.5
   gizmosAnchor: 1.5
   gizmosLenght: 3
   playerTransform: {fileID: 0}
-  baseMoveSpeed: 8
-  fastMoveSpeed: 16
-  farDistanceThreshold: 5
-  detectionRadius: 10
-  detectionInterval: 0.4
-  chaseGracePeriod: 1.5
-  patrolStepDistance: 2
+  patrolMoveSpeed: 8
+  attackMoveSpeed: 16
+  patrolRotSpeed: 10
+  attackRotSpeed: 20
+  farDistThreshold: 5
+  patrolStepDist: 2
+  attackWindupTime: 1
 --- !u!54 &5639506919213850001
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -277,6 +290,28 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &5125764265376309499
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1604773290213956917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19a597a42b59392498799846d891c130, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  damage: 10
+  damageCooldown: 1
+  hitboxOffset: {x: 0, y: 0.1, z: 0}
+  hitboxSize: {x: 0.8, y: 0.1, z: 0.8}
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  showHitboxGizmo: 1
+  gizmoIdleColor: {r: 1, g: 1, b: 0, a: 0.3}
+  gizmoHitColor: {r: 1, g: 0, b: 0, a: 0.5}
 --- !u!1 &2895337764722904657
 GameObject:
   m_ObjectHideFlags: 0

@@ -2,13 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(ChessPieceAttack))]
 public class BishopPiece : BoardPiece
 {
     #region Enums
-    public enum AIState { Patrolling, Chasing, Stunned }
+
+    public enum AIState { Patrolling, Alerted, Committed, Moving }
+
     #endregion
 
     #region Variables
+
     [Header("Bishop Settings")]
     [SerializeField] private float gizmoHeight = 1.5f;
     [SerializeField] private float gizmosAnchor = 0.7f;
@@ -16,28 +20,35 @@ public class BishopPiece : BoardPiece
     [SerializeField] private Transform playerTransform;
 
     [Header("Movement")]
-    [SerializeField] private float baseMoveSpeed = 8f;
-    [SerializeField] private float fastMoveSpeed = 16f;
-    [SerializeField] private float rotationSpeed = 10f;
-    [SerializeField] private float farDistanceThreshold = 5f;
-    [SerializeField] private int patrolStepDistance = 2;
+    [SerializeField] private float patrolMoveSpeed = 8f;
+    [SerializeField] private float attackMoveSpeed = 16f;
+    [SerializeField] private float patrolRotSpeed = 10f;
+    [SerializeField] private float attackRotSpeed = 20f;
+    [SerializeField] private float farDistThreshold = 5f;
+    [SerializeField] private int patrolStepDist = 2;
+    [SerializeField] private float attackWindupTime = 1f;
 
     private int currentPatrolIndex = 0;
     private AIState currentState = AIState.Patrolling;
     private Vector3 currentTargetWorldPos;
-    private float lastSeenTime;
+    private Vector2Int committedTargetCoord;
     private Coroutine brainCoroutine;
+    private ChessPieceAttack attackComponent;
 
-    private readonly Vector2Int[] moveDirections = new Vector2Int[]
+    private readonly Vector2Int[] moveDirs = new Vector2Int[]
     {
-        new Vector2Int(1, 1), new Vector2Int(1, -1),
-        new Vector2Int(-1, -1), new Vector2Int(-1, 1)
+        new Vector2Int( 1,  1), new Vector2Int( 1, -1),
+        new Vector2Int(-1, -1), new Vector2Int(-1,  1)
     };
+
     #endregion
 
     #region Unity Events
+
     private void Start()
     {
+        attackComponent = GetComponent<ChessPieceAttack>();
+
         if (playerTransform == null)
             playerTransform = GameObject.FindGameObjectWithTag("Player")?.transform;
 
@@ -49,68 +60,138 @@ public class BishopPiece : BoardPiece
 
     private void Update()
     {
-        if (isMoving && !isStunned)
-            LookAtTarget(currentTargetWorldPos, rotationSpeed);
+        if (!isMoving || isStunned) return;
+        float rot = (currentState == AIState.Moving) ? attackRotSpeed : patrolRotSpeed;
+        LookAtTarget(currentTargetWorldPos, rot);
     }
+
     #endregion
 
-    #region Brain Logic
+    #region Brain
+
     private IEnumerator BishopBrain()
     {
         yield return new WaitUntil(() => boardManager != null);
+
         while (true)
         {
-            if (isStunned)
-            {
-                currentState = AIState.Stunned;
-                yield return new WaitForSeconds(0.2f);
-                continue;
-            }
-            if (isMoving)
-            {
-                yield return new WaitForSeconds(0.1f);
-                continue;
-            }
+            if (isStunned) { yield return new WaitForSeconds(0.2f); continue; }
+            if (isMoving) { yield return new WaitForSeconds(0.1f); continue; }
 
             Vector2Int playerCoord = boardManager.WorldPosToCoord(playerTransform.position);
-            bool canSee = CanSeePlayer(playerCoord);
+            bool canAttack = CanSeePlayer(playerCoord);
             bool isNearby = IsPlayerNearby(playerTransform);
 
-            if (canSee || isNearby)
+            switch (currentState)
             {
-                lastSeenTime = Time.time;
-                currentState = AIState.Chasing;
-            }
-            else if (Time.time - lastSeenTime > chaseGracePeriod)
-            {
-                currentState = AIState.Patrolling;
+                case AIState.Patrolling:
+                    if (canAttack)
+                    {
+                        committedTargetCoord = playerCoord;
+                        currentState = AIState.Committed;
+                        yield return StartCoroutine(AttackWindup());
+                    }
+                    else
+                    {
+                        if (isNearby) currentState = AIState.Alerted;
+                        else yield return StartCoroutine(PatrolRoutine());
+                    }
+                    break;
+
+                case AIState.Alerted:
+                    if (canAttack)
+                    {
+                        committedTargetCoord = playerCoord;
+                        currentState = AIState.Committed;
+                        yield return StartCoroutine(AttackWindup());
+                    }
+                    else if (!isNearby)
+                    {
+                        currentState = AIState.Patrolling;
+                    }
+                    else
+                    {
+                        Vector2Int approach = GetSmartApproach(playerCoord);
+                        if (approach != currentCoord)
+                            yield return StartCoroutine(MoveRoutine(approach, patrolMoveSpeed));
+                        else
+                            yield return new WaitForSeconds(detectionInterval);
+                    }
+                    break;
+
+                case AIState.Committed:
+                    currentState = isNearby ? AIState.Alerted : AIState.Patrolling;
+                    break;
+
+                case AIState.Moving:
+                    break;
             }
 
-            if (currentState == AIState.Chasing)
-            {
-                if (canSee) yield return StartCoroutine(MoveRoutine(playerCoord));
-                else
-                {
-                    Vector2Int searchTile = GetSmartChaseTile(playerCoord);
-                    if (searchTile != currentCoord) yield return StartCoroutine(MoveRoutine(searchTile));
-                }
-            }
-            else yield return StartCoroutine(PatrolRoutine());
-
-            yield return new WaitForSeconds(detectionInterval);
+            yield return new WaitForSeconds(detectionInterval * 0.5f);
         }
     }
+
     #endregion
 
-    #region Movement Skills
-    private IEnumerator MoveRoutine(Vector2Int targetCoord)
-    {
-        if (!boardManager.TileExists(targetCoord) || boardManager.IsTileOccupied(targetCoord)) yield break;
-        isMoving = true;
+    #region Attack Flow
 
-        float dist = Vector3.Distance(transform.position, playerTransform.position);
-        bool canAttack = CanSeePlayer(boardManager.WorldPosToCoord(playerTransform.position));
-        float speed = (currentState == AIState.Chasing && canAttack && dist > farDistanceThreshold) ? fastMoveSpeed : baseMoveSpeed;
+    private IEnumerator AttackWindup()
+    {
+        ShowPathLine(currentCoord, committedTargetCoord);
+
+        float elapsed = 0f;
+        while (elapsed < attackWindupTime)
+        {
+            if (isStunned) { HideTrail(); yield break; }
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        currentState = AIState.Moving;
+        yield return StartCoroutine(MoveRoutine(committedTargetCoord, attackMoveSpeed));
+
+        HideTrail();
+        attackComponent.ForceHitCheck();
+
+        currentState = IsPlayerNearby(playerTransform) ? AIState.Alerted : AIState.Patrolling;
+    }
+
+    #endregion
+
+    #region Trail / Path Line
+
+    private void ShowPathLine(Vector2Int from, Vector2Int to)
+    {
+        Vector2Int diff = to - from;
+        if (Mathf.Abs(diff.x) != Mathf.Abs(diff.y) || diff.x == 0) return;
+
+        Vector2Int dir = new Vector2Int((int)Mathf.Sign(diff.x), (int)Mathf.Sign(diff.y));
+        Vector2Int cur = from;
+        var points = new List<Vector3>();
+
+        while (cur != to)
+        {
+            points.Add(boardManager.GetWorldPosFromCoord(cur) + Vector3.up * trailHeight);
+            cur += dir;
+        }
+        points.Add(boardManager.GetWorldPosFromCoord(to) + Vector3.up * trailHeight);
+
+        SetTrailPoints(points.ToArray());
+    }
+
+    #endregion
+
+    #region Movement
+
+    private IEnumerator MoveRoutine(Vector2Int targetCoord, float speed)
+    {
+        if (!boardManager.TileExists(targetCoord) || boardManager.IsTileOccupied(targetCoord))
+        {
+            currentState = IsPlayerNearby(playerTransform) ? AIState.Alerted : AIState.Patrolling;
+            yield break;
+        }
+
+        isMoving = true;
 
         currentTargetWorldPos = boardManager.GetWorldPosFromCoord(targetCoord);
         currentTargetWorldPos.y = transform.position.y;
@@ -130,64 +211,97 @@ public class BishopPiece : BoardPiece
 
     private IEnumerator PatrolRoutine()
     {
-        Vector2Int targetCoord = currentCoord + (moveDirections[currentPatrolIndex] * patrolStepDistance);
-        if (!boardManager.TileExists(targetCoord) || boardManager.IsTileOccupied(targetCoord))
+        float dist = playerTransform != null ? Vector3.Distance(transform.position, playerTransform.position) : 0f;
+        float speed = dist > farDistThreshold ? patrolMoveSpeed * 1.3f : patrolMoveSpeed;
+
+        Vector2Int target = currentCoord + (moveDirs[currentPatrolIndex] * patrolStepDist);
+
+        if (!IsDiagonalPathValid(currentCoord, target))
         {
-            currentPatrolIndex = (currentPatrolIndex + 1) % moveDirections.Length;
+            currentPatrolIndex = (currentPatrolIndex + 1) % moveDirs.Length;
             yield break;
         }
-        yield return StartCoroutine(MoveRoutine(targetCoord));
-        currentPatrolIndex = (currentPatrolIndex + 1) % moveDirections.Length;
+
+        yield return StartCoroutine(MoveRoutine(target, speed));
+        currentPatrolIndex = (currentPatrolIndex + 1) % moveDirs.Length;
     }
+
     #endregion
 
-    #region Overrides & Detection
-    public override void OnStunEnd()
-    {
-        isStunned = false;
-        isMoving = false;
-        if (brainCoroutine != null) StopCoroutine(brainCoroutine);
-        brainCoroutine = StartCoroutine(BishopBrain());
-    }
+    #region Detection
 
     public override bool CanSeePlayer(Vector2Int playerCoord)
     {
         Vector2Int diff = playerCoord - currentCoord;
-        if (Mathf.Abs(diff.x) == Mathf.Abs(diff.y) && diff.x != 0)
+        if (Mathf.Abs(diff.x) != Mathf.Abs(diff.y) || diff.x == 0) return false;
+
+        Vector2Int dir = new Vector2Int((int)Mathf.Sign(diff.x), (int)Mathf.Sign(diff.y));
+        Vector2Int check = currentCoord + dir;
+        while (check != playerCoord)
         {
-            Vector2Int dir = new Vector2Int((int)Mathf.Sign(diff.x), (int)Mathf.Sign(diff.y));
-            Vector2Int check = currentCoord + dir;
-            while (check != playerCoord)
-            {
-                if (boardManager.IsTileOccupied(check)) return false;
-                check += dir;
-            }
-            return true;
+            if (!boardManager.TileExists(check) || boardManager.IsTileOccupied(check)) return false;
+            check += dir;
         }
-        return false;
+        return true;
     }
 
-    private Vector2Int GetSmartChaseTile(Vector2Int playerCoord)
+    private bool IsDiagonalPathValid(Vector2Int from, Vector2Int to)
     {
-        List<Vector2Int> goodTiles = new List<Vector2Int>();
-        float minScore = float.MaxValue;
-        foreach (var dir in moveDirections)
+        Vector2Int diff = to - from;
+        if (Mathf.Abs(diff.x) != Mathf.Abs(diff.y) || diff.x == 0) return false;
+
+        Vector2Int dir = new Vector2Int((int)Mathf.Sign(diff.x), (int)Mathf.Sign(diff.y));
+        Vector2Int cur = from + dir;
+        while (cur != to)
         {
-            for (int i = 1; i <= 3; i++)
+            if (!boardManager.TileExists(cur)) return false;
+            cur += dir;
+        }
+        return boardManager.TileExists(to);
+    }
+
+    private Vector2Int GetSmartApproach(Vector2Int playerCoord)
+    {
+        var candidates = new List<Vector2Int>();
+        float minScore = float.MaxValue;
+
+        foreach (var dir in moveDirs)
+        {
+            for (int i = 1; i <= 8; i++)
             {
-                Vector2Int testCoord = currentCoord + (dir * i);
-                if (!boardManager.TileExists(testCoord) || boardManager.IsTileOccupied(testCoord)) break;
-                float score = Vector2Int.Distance(testCoord, playerCoord);
-                if (Mathf.Abs((playerCoord - testCoord).x) == Mathf.Abs((playerCoord - testCoord).y)) score -= 12f;
-                if (score < minScore) { minScore = score; goodTiles.Clear(); goodTiles.Add(testCoord); }
-                else if (Mathf.Abs(score - minScore) < 0.1f) goodTiles.Add(testCoord);
+                Vector2Int test = currentCoord + (dir * i);
+                if (!boardManager.TileExists(test) || boardManager.IsTileOccupied(test)) break;
+                if (!IsDiagonalPathValid(currentCoord, test)) break;
+
+                float score = Vector2Int.Distance(test, playerCoord);
+                Vector2Int d = playerCoord - test;
+                if (Mathf.Abs(d.x) == Mathf.Abs(d.y) && d.x != 0) score -= 20f;
+
+                if (score < minScore) { minScore = score; candidates.Clear(); candidates.Add(test); }
+                else if (Mathf.Abs(score - minScore) < 0.1f) candidates.Add(test);
             }
         }
-        return goodTiles.Count > 0 ? goodTiles[Random.Range(0, goodTiles.Count)] : currentCoord;
+        return candidates.Count > 0 ? candidates[Random.Range(0, candidates.Count)] : currentCoord;
     }
+
     #endregion
 
-    #region Gizmos Override
+    #region Overrides
+
+    public override void OnStunEnd()
+    {
+        isStunned = false;
+        isMoving = false;
+        HideTrail();
+
+        if (brainCoroutine != null) StopCoroutine(brainCoroutine);
+        brainCoroutine = StartCoroutine(BishopBrain());
+    }
+
+    #endregion
+
+    #region Gizmos
+
     protected override void OnDrawGizmos()
     {
         base.OnDrawGizmos();
@@ -196,18 +310,24 @@ public class BishopPiece : BoardPiece
         Gizmos.color = new Color(1, 1, 1, 0.1f);
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
 
-        Color stateColor = isStunned ? new Color(1, 0.9f, 0, 0.4f) :
-                          (currentState == AIState.Chasing ? new Color(1, 0, 0, 0.3f) : new Color(0, 1, 0, 0.3f));
+        Color stateColor =
+            isStunned ? new Color(1f, 0.9f, 0f, 0.4f) :
+            currentState == AIState.Moving ? new Color(1f, 0f, 0f, 0.6f) :
+            currentState == AIState.Committed ? new Color(1f, 0.4f, 0f, 0.5f) :
+            currentState == AIState.Alerted ? new Color(1f, 0.8f, 0f, 0.4f) :
+                                                new Color(0f, 1f, 0f, 0.3f);
 
-        Vector3 gizmoPos = transform.position + Vector3.up * gizmoHeight;
         Gizmos.color = stateColor;
-        Gizmos.DrawCube(gizmoPos, new Vector3(gizmosAnchor, gizmosLenght, gizmosAnchor));
+        Gizmos.DrawCube(transform.position + Vector3.up * gizmoHeight,
+                        new Vector3(gizmosAnchor, gizmosLenght, gizmosAnchor));
 
         if (isMoving)
         {
             Gizmos.color = Color.cyan;
-            DrawPathArrow(transform.position + Vector3.up * 0.3f, currentTargetWorldPos + Vector3.up * 0.3f);
+            DrawPathArrow(transform.position + Vector3.up * 0.3f,
+                          currentTargetWorldPos + Vector3.up * 0.3f);
         }
     }
+
     #endregion
 }
