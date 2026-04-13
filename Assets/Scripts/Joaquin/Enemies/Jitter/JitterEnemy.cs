@@ -170,7 +170,7 @@ public class JitterEnemy : MonoBehaviour
         var playerGO = GameObject.FindGameObjectWithTag("Player");
         playerTransform = playerGO != null ? playerGO.transform : null;
 
-        if (playerTransform == null) Debug.LogWarning($"[JitterEnemy] Jugador no encontrado en la escena ('{gameObject.name}').");
+        if (playerTransform == null) ReportDebug($"Jugador no encontrado en la escena ('{gameObject.name}').", 2);
 
         // Suscribir eventos de salud
         enemyHealth.OnDamaged += HandleDamaged;
@@ -698,8 +698,8 @@ public class JitterEnemy : MonoBehaviour
 
         if (all == null || all.Length == 0)
         {
-            Debug.LogWarning($"[JitterEnemy] No se encontraron Renderers bajo '{root.name}'. " +
-                             $"Asigna 'Visual Root' en el Inspector.");
+            ReportDebug($"No se encontraron Renderers bajo '{root.name}'. " +
+                             $"Asigna 'Visual Root' en el Inspector.", 2);
             return;
         }
 
@@ -813,4 +813,24 @@ public class JitterEnemy : MonoBehaviour
         }
     }
 #endif
+
+    [System.Diagnostics.Conditional("UNITY_EDITOR")]
+    private static void ReportDebug(string message, int reportPriorityLevel)
+    {
+        switch (reportPriorityLevel)
+        {
+            case 1:
+                Debug.Log($"[JitterEnemy] {message}");
+                break;
+            case 2:
+                Debug.LogWarning($"[JitterEnemy] {message}");
+                break;
+            case 3:
+                Debug.LogError($"[JitterEnemy] {message}");
+                break;
+            default:
+                Debug.Log($"[JitterEnemy] {message}");
+                break;
+        }
+    }
 }
