@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,16 +13,23 @@ public class PetraSpike : MonoBehaviour
     private float tickCooldown = 0.5f;
     private float tickTimer = 0f;
     private HashSet<Collider> overlappingEnemies = new HashSet<Collider>();
+    private Action onReturn;
 
     #endregion
 
     #region Public Methods
 
-    public void Initialize(float damage, float lifetime, LayerMask enemyLayer, bool isLargeSpike = false)
+    public void Initialize(float damage, float lifetime, LayerMask enemyLayer, bool isLargeSpike, Action onReturn)
     {
         this.damage = damage;
         this.enemyLayer = enemyLayer;
         this.isLargeSpike = isLargeSpike;
+        this.onReturn = onReturn;
+
+        overlappingEnemies.Clear();
+        tickTimer = 0f;
+
+        StopAllCoroutines();
         StartCoroutine(LifetimeRoutine(lifetime));
     }
 
@@ -76,7 +84,7 @@ public class PetraSpike : MonoBehaviour
     private IEnumerator LifetimeRoutine(float lifetime)
     {
         yield return new WaitForSeconds(lifetime);
-        Destroy(gameObject);
+        onReturn?.Invoke();
     }
 
     #endregion

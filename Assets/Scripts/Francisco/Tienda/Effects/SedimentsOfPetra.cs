@@ -12,7 +12,6 @@ public class SedimentsOfPetraItemEffect : ItemEffectBase
     public float smallSpikeDuration = 4f;
     public float minDistanceBetweenSpikes = 1.5f;
     public float smallSpikeTiltAngle = 20f;
-    public GameObject smallSpikePrefab;
 
     [Header("Rastro Visual en Suelo")]
     public Material trailMaterial;
@@ -29,7 +28,6 @@ public class SedimentsOfPetraItemEffect : ItemEffectBase
     public float spikeRandomDelayMin = 0f;
     public float spikeRandomDelayMax = 0.12f;
     public float largeSpikeAngle = 25f;
-    public GameObject largeSpikePrefab;
 
     [Header("Compartido")]
     public LayerMask enemyLayer;
@@ -114,18 +112,15 @@ public class SedimentsOfPetraItemEffect : ItemEffectBase
         lastShieldPosition = shieldPosition;
         lastSpikePosition = groundPos;
 
-        if (smallSpikePrefab == null) return;
-
         Vector3 flatDir = new Vector3(travelDir.x, 0f, travelDir.z).normalized;
         Quaternion rotation = Quaternion.LookRotation(flatDir) * Quaternion.Euler(-smallSpikeTiltAngle, 0f, 0f);
 
         float spikeDamage = playerBaseDamage * smallSpikeDamagePercent;
-        GameObject spikeGO = Object.Instantiate(smallSpikePrefab, groundPos, rotation);
-        PetraSpike spike = spikeGO.GetComponent<PetraSpike>();
-        if (spike != null)
-            spike.Initialize(spikeDamage, smallSpikeDuration, enemyLayer, false);
-        else
-            Object.Destroy(spikeGO, smallSpikeDuration);
+
+        if (ItemEffectPool.Instance != null)
+        {
+            ItemEffectPool.Instance.SpawnSpike(groundPos, rotation, spikeDamage, smallSpikeDuration, enemyLayer, false);
+        }
     }
 
     private void HandleShieldLanded()
@@ -141,8 +136,6 @@ public class SedimentsOfPetraItemEffect : ItemEffectBase
 
     private void HandleMeleeHit(Vector3 playerPosition, Vector3 playerForward, float meleeDamage)
     {
-        if (largeSpikePrefab == null) return;
-
         float spikeDamage = meleeDamage * largeSpikeDamagePercent;
         float angleStep = largeSpikeCount > 1 ? (spikeSpreadAngle * 2f) / (largeSpikeCount - 1) : 0f;
         float startAngle = largeSpikeCount > 1 ? -spikeSpreadAngle : 0f;
@@ -169,12 +162,10 @@ public class SedimentsOfPetraItemEffect : ItemEffectBase
         if (delay > 0f)
             await Task.Delay(System.TimeSpan.FromSeconds(delay));
 
-        GameObject spikeGO = Object.Instantiate(largeSpikePrefab, position, rotation);
-        PetraSpike spike = spikeGO.GetComponent<PetraSpike>();
-        if (spike != null)
-            spike.Initialize(damage, largeSpikeDuration, enemyLayer, true);
-        else
-            Object.Destroy(spikeGO, largeSpikeDuration);
+        if (ItemEffectPool.Instance != null)
+        {
+            ItemEffectPool.Instance.SpawnSpike(position, rotation, damage, largeSpikeDuration, enemyLayer, true);
+        }
     }
 
     #endregion

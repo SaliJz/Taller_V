@@ -22,4 +22,12 @@ public static class PlayerCombatEvents
         => OnMeleeHit?.Invoke(playerPosition, playerForward, meleeDamage);
 
     #endregion
+
+    #region Dash Events
+
+    public static event Action<Vector3> OnDashStarted;
+    public static void RaiseDashStarted(Vector3 playerPosition)
+        => OnDashStarted?.Invoke(playerPosition);
+
+    #endregion
 }
