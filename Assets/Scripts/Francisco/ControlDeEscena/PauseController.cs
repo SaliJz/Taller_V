@@ -139,35 +139,36 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     {
         if (isPaused) return;
 
-        // --- Desactivar todos los AudioSources no asignados a este script (guardando su estado) ---
         DisableOtherAudioSources();
 
-        // --- Reproducir música de pausa sin duplicados ---
-        if (openPauseClip != null)
+        if (openPauseClip != null && pauseMusicSource != null)
         {
-            if (pauseMusicSource != null)
+            if (pauseMusicSource.clip != openPauseClip)
             {
-                if (pauseMusicSource.clip != openPauseClip)
-                {
-                    pauseMusicSource.clip = openPauseClip;
-                    pauseMusicSource.loop = true; // opcional: repetir mientras esté en pausa
-                }
-
-                if (!pauseMusicSource.isPlaying)
-                {
-                    pauseMusicSource.Play();
-                }
+                pauseMusicSource.clip = openPauseClip;
+                pauseMusicSource.loop = true;
             }
+
+            if (!pauseMusicSource.isPlaying)
+                pauseMusicSource.Play();
         }
 
-        // --- Desactivar controles de jugador ---
         if (playerControls != null)
         {
             playerControls.Movement.Disable();
             playerControls.Combat.Disable();
         }
 
-        previousTimeScale = Time.timeScale;
+        if (SlowMotion.Instance != null && SlowMotion.Instance.IsSlowMotionActive)
+        {
+            SlowMotion.Instance.NotifyPaused();
+            previousTimeScale = SlowMotion.Instance.slowTimeScale;
+        }
+        else
+        {
+            previousTimeScale = Time.timeScale;
+        }
+
         Time.timeScale = 0f;
         isPaused = true;
         StartCoroutine(PauseCooldown());
@@ -177,13 +178,9 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
             pausePanel.SetActive(true);
 
             if (Gamepad.current != null)
-            {
                 SetFocus(firstSelectedButton, "PauseController");
-            }
             else
-            {
                 EventSystem.current?.SetSelectedGameObject(null);
-            }
         }
     }
 
@@ -191,40 +188,31 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     {
         if (!isPaused) return;
 
-        // --- Click SFX ---
         PlayClickSFX();
 
         if (isSettingsOpen) return;
 
-        if (EventSystem.current != null)
-        {
-            EventSystem.current.SetSelectedGameObject(null);
-        }
+        EventSystem.current?.SetSelectedGameObject(null);
 
-        if (Gamepad.current != null)
-        {
-            InputSystem.ResetDevice(Gamepad.current);
-        }
-        if (Keyboard.current != null)
-        {
-            InputSystem.ResetDevice(Keyboard.current);
-        }
-        if (Mouse.current != null)
-        {
-            InputSystem.ResetDevice(Mouse.current);
-        }
+        if (Gamepad.current != null) InputSystem.ResetDevice(Gamepad.current);
+        if (Keyboard.current != null) InputSystem.ResetDevice(Keyboard.current);
+        if (Mouse.current != null) InputSystem.ResetDevice(Mouse.current);
 
-        // --- Detener música de pausa (si está sonando) ---
         if (pauseMusicSource != null && pauseMusicSource.isPlaying)
-        {
             pauseMusicSource.Stop();
-            // pauseMusicSource.clip = null; // opcional
-        }
 
-        // --- Restaurar AudioSources que desactivamos al pausar ---
         RestoreAudioSources();
 
-        Time.timeScale = previousTimeScale;
+        if (SlowMotion.Instance != null && SlowMotion.Instance.IsSlowMotionActive)
+        {
+            SlowMotion.Instance.NotifyResumed();
+            previousTimeScale = Time.timeScale;
+        }
+        else
+        {
+            Time.timeScale = previousTimeScale;
+        }
+
         isPaused = false;
         StartCoroutine(PauseCooldown());
 
@@ -235,9 +223,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         }
 
         if (pausePanel != null)
-        {
             pausePanel.SetActive(false);
-        }
     }
 
     public void OpenSettings()

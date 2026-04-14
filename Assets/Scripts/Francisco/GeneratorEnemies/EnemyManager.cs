@@ -22,6 +22,8 @@ public class EnemyManager : MonoBehaviour
 
     public int ExtraWavesCount { get; private set; } = 0;
 
+    private bool _isLastWave = false;
+
     private struct EnemyMultipliers
     {
         public float HealthMultiplier { get; set; }
@@ -60,11 +62,11 @@ public class EnemyManager : MonoBehaviour
 
         if (aura == DevilAuraType.PartialResurrection)
         {
-            initialHealthMultiplier = 0.8f; 
+            initialHealthMultiplier = 0.8f;
         }
         else
         {
-            initialHealthMultiplier = 1.0f; 
+            initialHealthMultiplier = 1.0f;
         }
 
         if (DevilManipulationManager.Instance != null)
@@ -120,9 +122,10 @@ public class EnemyManager : MonoBehaviour
 
             yield return StartCoroutine(SpawnEnemiesInWave(wave));
 
-            yield return StartCoroutine(WaitForAllEnemiesToDie());
-
             bool isLastWave = (i == combatConfig.waves.Count - 1);
+            _isLastWave = isLastWave;
+
+            yield return StartCoroutine(WaitForAllEnemiesToDie());
             if (!isLastWave)
             {
                 yield return new WaitForSeconds(combatConfig.timeBetweenWaves);
@@ -236,7 +239,7 @@ public class EnemyManager : MonoBehaviour
                 Destroy(instantiatedEffects[i]);
             }
 
-            GameObject enemyPrefab = prefabsToUse[i]; 
+            GameObject enemyPrefab = prefabsToUse[i];
             GameObject newEnemy = Instantiate(enemyPrefab, spawnPositions[i], Quaternion.identity);
 
             ReportDebug($"Spawneado enemigo {i + 1}/{enemyCount}: {enemyPrefab.name}", 1);
@@ -284,6 +287,11 @@ public class EnemyManager : MonoBehaviour
     private void OnEnemyDeath(GameObject enemyGO)
     {
         activeEnemies.Remove(enemyGO);
+
+        if (activeEnemies.Count == 0 && _isLastWave)
+        {
+            SlowMotion.Instance?.TriggerSlowMotion();
+        }
     }
 
     private IEnumerator WaitForAllEnemiesToDie()
