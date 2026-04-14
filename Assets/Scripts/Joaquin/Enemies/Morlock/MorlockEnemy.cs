@@ -105,6 +105,7 @@ public class MorlockEnemy : MonoBehaviour
     private NavMeshAgent agent;
     private Transform playerTransform;
     private CharacterController playerCharacterController;
+    private MorlockWordLibrary wordLibrary;
 
     private bool isDead = false;
     private Coroutine currentBehaviorCoroutine = null;
@@ -132,6 +133,7 @@ public class MorlockEnemy : MonoBehaviour
         if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
         if (agent == null) agent = GetComponent<NavMeshAgent>();
         if (animator == null) animator = GetComponentInChildren<Animator>();
+        if (wordLibrary == null) wordLibrary = GetComponent<MorlockWordLibrary>();
 
         animHashX = Animator.StringToHash("Xaxis");
         animHashY = Animator.StringToHash("Yaxis");
@@ -813,7 +815,8 @@ public class MorlockEnemy : MonoBehaviour
         {
             float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
             float calculatedDamage = CalculateDamageByDistance(distanceToPlayer);
-            projectile.Initialize(projectileSpeed, calculatedDamage);
+            string selectedWord = wordLibrary != null ? wordLibrary.GetRandomWord() : string.Empty;
+            projectile.Initialize(projectileSpeed, calculatedDamage, selectedWord);
         }
     }
 

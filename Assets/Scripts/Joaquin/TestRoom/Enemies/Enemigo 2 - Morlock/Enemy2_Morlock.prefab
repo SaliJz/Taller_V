@@ -981,6 +981,7 @@ GameObject:
   - component: {fileID: 5355768341301424616}
   - component: {fileID: 69844080327497481}
   - component: {fileID: 5610431210469880052}
+  - component: {fileID: 3472915638274612345}
   m_Layer: 7
   m_Name: Enemy2_Morlock
   m_TagString: Enemy
@@ -1139,6 +1140,25 @@ MonoBehaviour:
   teleportVFXHeightOffset: 1.5
   teleportVFXDurationToDestroy: 1.1
   teleportVFXDelay: 1.5
+--- !u!114 &3472915638274612345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7967318150890097738}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f62b8e0f2dc4e9388f61ed8cc2de8a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  words:
+  - STATIC
+  - GLITCH
+  - ERROR
+  - SIGNAL
+  - VECTOR
+  fallbackWord: STATIC
 --- !u!114 &8291591988962821256
 MonoBehaviour:
   m_ObjectHideFlags: 0

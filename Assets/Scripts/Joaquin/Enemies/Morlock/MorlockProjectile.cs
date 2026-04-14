@@ -3,6 +3,7 @@ using UnityEngine;
 public class MorlockProjectile : MonoBehaviour
 {
     [SerializeField] private MorlockStats morlockStats;
+    [SerializeField] private MorlockProjectileWordTrail wordTrail;
 
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
@@ -27,7 +28,15 @@ public class MorlockProjectile : MonoBehaviour
 
     public bool WasReflected => wasReflected;
 
-    public void Initialize(float projectileSpeed, float projectileDamage)
+    private void Awake()
+    {
+        if (wordTrail == null)
+        {
+            wordTrail = GetComponent<MorlockProjectileWordTrail>();
+        }
+    }
+
+    public void Initialize(float projectileSpeed, float projectileDamage, string projectileWord = "")
     {
         //if (morlockStats != null)
         //{
@@ -42,6 +51,11 @@ public class MorlockProjectile : MonoBehaviour
 
         speed = projectileSpeed;
         damage = projectileDamage;
+
+        if (wordTrail != null)
+        {
+            wordTrail.InitializeWord(projectileWord);
+        }
     }
 
     private void Start()

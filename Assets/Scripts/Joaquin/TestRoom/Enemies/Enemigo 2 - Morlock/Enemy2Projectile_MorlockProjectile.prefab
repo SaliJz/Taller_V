@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3410251042622800462}
   - component: {fileID: 8170297578272491613}
   - component: {fileID: 3113863302384302003}
+  - component: {fileID: 7721368556956942331}
   m_Layer: 13
   m_Name: Enemy2Projectile_MorlockProjectile
   m_TagString: EnemyProjectile
@@ -124,18 +125,33 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   morlockStats: {fileID: 0}
+  wordTrail: {fileID: 7721368556956942331}
   audioSource: {fileID: 426139657424295564}
   clip: {fileID: 8300000, guid: 8563e78c996742044a9768bb5c347dad, type: 3}
   speed: 20
   lifetime: 5
   damage: 0
-  poisonHitThreshold: 3
-  poisonInitialDamage: 2
-  poisonResetTime: 5
   collisionLayers:
     serializedVersion: 2
     m_Bits: 68096
   debugMode: 0
+--- !u!114 &7721368556956942331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5442904530204617264}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c0d6f98d1254e3e93b6e48f0330ef7d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  letterPrefab: {fileID: 110001, guid: 312b2d08098d483f9f91fc59bf3cd7cc, type: 3}
+  revealDelay: 0.16
+  firstLetterLocalOffset: {x: -0.18, y: 0.2, z: 0.06}
+  letterLocalStep: {x: 0.8, y: -0.08, z: 0.3}
+  alwaysFaceMainCamera: 1
 --- !u!54 &3113863302384302003
 Rigidbody:
   m_ObjectHideFlags: 0
