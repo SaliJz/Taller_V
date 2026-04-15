@@ -146,11 +146,11 @@ public class StaticEnemy : BaseEnemyRanged
                 5f,
                 30f,
                 20f,
-                word,
                 swarmDuration,
                 swarmDPS,
                 swarmRadius,
-                swarmParticlePrefab
+                swarmParticlePrefab,
+                word
             );
         }
     }
@@ -202,11 +202,11 @@ public class StaticEnemy : BaseEnemyRanged
                 5f,
                 30f,
                 20f,
-                word,
                 swarmDuration,
                 swarmDPS,
                 swarmRadius,
-                swarmParticlePrefab
+                swarmParticlePrefab,
+                word
             );
         }
     }

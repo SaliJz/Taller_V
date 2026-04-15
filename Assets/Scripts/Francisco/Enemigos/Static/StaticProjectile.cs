@@ -1,23 +1,14 @@
 using UnityEngine;
-using TMPro;
 
 [RequireComponent(typeof(Rigidbody))]
 public class StaticProjectile : MonoBehaviour
 {
-    #region Inspector Fields
-
-    [Header("UI")]
-    [SerializeField] private TextMeshProUGUI wordText;
-
-    #endregion
-
     #region Private State
 
     private float speed;
     [SerializeField] private float currentDamage;
     [SerializeField] private float maxDamageLimit;
     [SerializeField] private float damageGainPerSecond;
-    private string word;
     private float swarmDuration;
     private float swarmDPS;
     private float swarmRadius;
@@ -32,20 +23,23 @@ public class StaticProjectile : MonoBehaviour
 
     #region Init
 
-    public void Initialize(float projectileSpeed, float minDamage, float maxDamage, float distanceToMax, string projectileWord,
-        float inSwarmDuration, float inSwarmDPS, float inSwarmRadius, GameObject inSwarmParticlePrefab)
+    public void Initialize(float projectileSpeed, float minDamage, float maxDamage, float distanceToMax,
+        float inSwarmDuration, float inSwarmDPS, float inSwarmRadius, GameObject inSwarmParticlePrefab, string word)
     {
         speed = projectileSpeed;
         currentDamage = minDamage;
         maxDamageLimit = maxDamage;
-        word = projectileWord;
         swarmDuration = inSwarmDuration;
         swarmDPS = inSwarmDPS;
         swarmRadius = inSwarmRadius;
         swarmParticlePrefab = inSwarmParticlePrefab;
         originPosition = transform.position;
 
-        if (wordText != null) wordText.text = word;
+        MorlockProjectileWordTrail trail = GetComponent<MorlockProjectileWordTrail>();
+        if (trail != null)
+        {
+            trail.InitializeWord(word);
+        }
 
         float timeToMax = distanceToMax / speed;
         damageGainPerSecond = (maxDamage - minDamage) / timeToMax;
@@ -86,7 +80,6 @@ public class StaticProjectile : MonoBehaviour
         {
             IDamageable damageable = other.GetComponent<IDamageable>();
             damageable?.TakeDamage(currentDamage);
-            Debug.Log("Damage " + currentDamage);
         }
 
         TriggerImpact(transform.position);
@@ -100,7 +93,6 @@ public class StaticProjectile : MonoBehaviour
         {
             IDamageable damageable = collision.gameObject.GetComponent<IDamageable>();
             damageable?.TakeDamage(currentDamage);
-            Debug.Log("Damage " + currentDamage);
         }
 
         TriggerImpact(transform.position);
