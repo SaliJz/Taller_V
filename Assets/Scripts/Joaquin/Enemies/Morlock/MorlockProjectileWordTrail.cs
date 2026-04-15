@@ -2,20 +2,43 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class MorlockProjectileWordTrail : MonoBehaviour
 {
     [Header("Letter Visuals")]
     [SerializeField] private GameObject letterPrefab;
-    [SerializeField] private float revealDelay = 0.05f;
-    [SerializeField] private Vector3 firstLetterLocalOffset = new Vector3(0f, 0.2f, 0f);
-    [SerializeField] private Vector3 letterLocalStep = new Vector3(-0.08f, 0.08f, -0.24f);
+
+    [Tooltip("Scale multiplier applied to each spawned letter prefab.")]
+    [SerializeField, Min(0.1f)] private float letterScaleMultiplier = 0.7f;
+
+    [Tooltip("Time between one visible letter and the next.")]
+    [FormerlySerializedAs("revealDelay")]
+    [SerializeField, Min(0f)] private float letterRevealDelay = 0.03f;
+
+    [Tooltip("Initial offset of the first letter relative to the projectile.")]
+    [FormerlySerializedAs("firstLetterLocalOffset")]
+    [SerializeField] private Vector3 firstLetterOffset = new Vector3(-0.08f, 0.12f, 0.04f);
+
+    [Tooltip("Minimum spacing kept between letters, even for narrow glyphs.")]
+    [SerializeField, Min(0f)] private float baseLetterSpacing = 0.06f;
+
+    [Tooltip("How much of each letter's real width is used to separate the trail.")]
+    [SerializeField, Min(0f)] private float widthSpacingMultiplier = 1.15f;
+
+    [Tooltip("Minimum local width used when calculating dynamic spacing.")]
+    [SerializeField, Min(0f)] private float minimumLetterWidth = 32f;
+
+    [Tooltip("Additional per-letter offsets. X adds extra horizontal spacing, Y vertical falloff, Z depth lag.")]
+    [FormerlySerializedAs("letterLocalStep")]
+    [SerializeField] private Vector3 letterOffsetStep = new Vector3(0.12f, -0.015f, 0.08f);
 
     [Header("Billboard")]
     [SerializeField] private bool alwaysFaceMainCamera = true;
 
     private readonly List<Transform> activeLetters = new List<Transform>();
     private readonly List<int> activeLetterIndices = new List<int>();
+    private readonly List<float> activeLetterTrailOffsets = new List<float>();
 
     private Camera targetCamera;
     private Coroutine spawnRoutine;
@@ -80,7 +103,11 @@ public class MorlockProjectileWordTrail : MonoBehaviour
                 continue;
             }
 
-            UpdateLetterPosition(letter, activeLetterIndices[index], targetCamera.transform);
+            UpdateLetterPosition(
+                letter,
+                activeLetterIndices[index],
+                activeLetterTrailOffsets[index],
+                targetCamera.transform);
             FaceCamera(letter, targetCamera.transform);
         }
     }
@@ -105,9 +132,12 @@ public class MorlockProjectileWordTrail : MonoBehaviour
     {
         if (letterPrefab == null)
         {
-            Debug.LogWarning($"[{nameof(MorlockProjectileWordTrail)}] No hay letterPrefab asignado en {name}.", this);
+            Debug.LogWarning($"[{nameof(MorlockProjectileWordTrail)}] Missing letterPrefab on {name}.", this);
             yield break;
         }
+
+        int visibleLetterIndex = 0;
+        float accumulatedTrailOffset = 0f;
 
         for (int index = 0; index < currentWord.Length; index++)
         {
@@ -116,9 +146,10 @@ public class MorlockProjectileWordTrail : MonoBehaviour
             if (!char.IsWhiteSpace(currentCharacter))
             {
                 GameObject letterObject = Instantiate(letterPrefab, transform);
-                letterObject.name = $"Letter_{index}_{currentCharacter}";
+                letterObject.name = $"Letter_{visibleLetterIndex}_{currentCharacter}";
 
                 Transform letterTransform = letterObject.transform;
+                letterTransform.localScale *= letterScaleMultiplier;
 
                 TMP_Text textComponent = letterObject.GetComponentInChildren<TMP_Text>(true);
                 if (textComponent != null)
@@ -127,6 +158,8 @@ public class MorlockProjectileWordTrail : MonoBehaviour
                 }
 
                 activeLetters.Add(letterTransform);
+                activeLetterIndices.Add(visibleLetterIndex);
+                activeLetterTrailOffsets.Add(accumulatedTrailOffset);
 
                 if (targetCamera == null)
                 {
@@ -135,31 +168,56 @@ public class MorlockProjectileWordTrail : MonoBehaviour
 
                 if (targetCamera != null)
                 {
-                    UpdateLetterPosition(letterTransform, index, targetCamera.transform);
+                    UpdateLetterPosition(
+                        letterTransform,
+                        visibleLetterIndex,
+                        accumulatedTrailOffset,
+                        targetCamera.transform);
                     FaceCamera(letterTransform, targetCamera.transform);
                 }
 
-                activeLetterIndices.Add(index);
-            }
+                accumulatedTrailOffset += CalculateLetterSpacing(letterTransform, textComponent);
+                visibleLetterIndex++;
 
-            if (revealDelay > 0f)
-            {
-                yield return new WaitForSeconds(revealDelay);
-            }
-            else
-            {
-                yield return null;
+                if (letterRevealDelay > 0f)
+                {
+                    yield return new WaitForSeconds(letterRevealDelay);
+                }
+                else
+                {
+                    yield return null;
+                }
             }
         }
 
         spawnRoutine = null;
     }
 
-    private void UpdateLetterPosition(Transform letterTransform, int index, Transform cameraTransform)
+    private float CalculateLetterSpacing(Transform letterTransform, TMP_Text textComponent)
     {
-        float horizontalOffset = firstLetterLocalOffset.x + (letterLocalStep.x * index);
-        float verticalOffset = firstLetterLocalOffset.y + (letterLocalStep.y * index);
-        float depthOffset = firstLetterLocalOffset.z + (letterLocalStep.z * index);
+        float worldLetterWidth = minimumLetterWidth * letterTransform.lossyScale.x;
+
+        if (textComponent != null)
+        {
+            Canvas.ForceUpdateCanvases();
+            textComponent.ForceMeshUpdate();
+
+            float measuredWidth = Mathf.Max(minimumLetterWidth, textComponent.preferredWidth);
+            worldLetterWidth = measuredWidth * letterTransform.lossyScale.x;
+        }
+
+        return baseLetterSpacing + (worldLetterWidth * widthSpacingMultiplier);
+    }
+
+    private void UpdateLetterPosition(
+        Transform letterTransform,
+        int index,
+        float trailOffset,
+        Transform cameraTransform)
+    {
+        float horizontalOffset = firstLetterOffset.x + trailOffset + (letterOffsetStep.x * index);
+        float verticalOffset = firstLetterOffset.y + (letterOffsetStep.y * index);
+        float depthOffset = firstLetterOffset.z + (letterOffsetStep.z * index);
 
         Vector3 projectedTrailDirection = Vector3.ProjectOnPlane(-transform.forward, cameraTransform.forward);
         if (projectedTrailDirection.sqrMagnitude <= 0.0001f)
@@ -208,5 +266,6 @@ public class MorlockProjectileWordTrail : MonoBehaviour
 
         activeLetters.Clear();
         activeLetterIndices.Clear();
+        activeLetterTrailOffsets.Clear();
     }
 }
