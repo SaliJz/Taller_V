@@ -450,30 +450,6 @@ public class DevilManipulationManager : MonoBehaviour
         ReportDebug("Contador de Salas Limpias reseteado.", 1);
     }
 
-    public void SpawnDevilLarva(Vector3 position, float enemyBaseHealth)
-    {
-        float speedMult = Instance.EnemySpeedMultiplier;
-        float damageMult = Instance.EnemyDamageMultiplier;
-        Color levelColor = Instance.GetCurrentLevelColor();
-
-        if (config == null)
-        {
-            Debug.LogError("DevilConfiguration no está asignado en el Inspector de DevilManipulationManager.");
-            return;
-        }
-        GameObject larvaPrefab = config.EscurridizoPrefab;
-
-        if (larvaPrefab != null)
-        {
-            GameObject larvaGO = Instantiate(larvaPrefab, position, Quaternion.identity);
-
-            if (larvaGO.TryGetComponent<ResurrectedDevilLarva>(out var devilLarva))
-            {
-                devilLarva.Initialize(enemyBaseHealth, speedMult, damageMult, levelColor);
-            }
-        }
-    }
-
     private bool CheckRelicAndHealthCondition()
     {
         if (playerHealthManager != null && playerHealthManager.CurrentHealthPercent >= 0.25f)

@@ -1,137 +1,91 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
-using System.Linq;
 
 public class ResurrectedDevilLarva : MonoBehaviour
 {
-    [Header("Configuración de Movimiento")]
+    #region Headers
+    [Header("Configuración")]
     public float moveSpeed = 5f;
     public float lifetime = 5f;
-
-    [Header("Configuración de Daño")]
-    public float damagePercentOfEnemyBase = 0.5f;
-    public float explosionRadius = 0.5f;
     public float baseDamage = 10f;
-
-    [Header("Visuales")]
+    public float explosionRadius = 1.2f;
     [SerializeField] private Renderer larvaRenderer;
+    #endregion
 
-    private Transform targetEnemy;
+    private Transform playerTarget;
     private NavMeshAgent agent;
-    private float calculatedDamage;
-    private bool hasFoundTarget = false;
-    private float targetSearchInterval = 0.5f;
-
-    private float _speedMultiplier = 1.0f;
-    private float _damageMultiplier = 1.0f;
-    private Color _levelColor = Color.white;
-
-    public void Initialize(float originalEnemyBaseHealth, float speedMult, float damageMult, Color levelColor)
-    {
-        _speedMultiplier = speedMult;
-        _damageMultiplier = damageMult;
-        _levelColor = levelColor;
-
-        calculatedDamage = originalEnemyBaseHealth * damagePercentOfEnemyBase;
-        if (calculatedDamage < baseDamage) calculatedDamage = baseDamage;
-
-        calculatedDamage *= _damageMultiplier;
-
-        ApplyLarvaColor(_levelColor);
-    }
+    private bool isExploding = false;
+    private EnemyHealth health; 
 
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
-        if (agent != null)
-        {
-            agent.speed = moveSpeed * _speedMultiplier;
-        }
-
-        if (calculatedDamage == 0) calculatedDamage = baseDamage;
-
-        StartCoroutine(LifeTimerRoutine());
-        StartCoroutine(TargetSearchRoutine());
+        health = GetComponent<EnemyHealth>();
     }
 
     private void Start()
     {
-        if (agent != null)
-        {
-            agent.speed = moveSpeed * _speedMultiplier;
-        }
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player) playerTarget = player.transform;
+
+        if (agent != null) agent.speed = moveSpeed;
+
+        StartCoroutine(LifeTimerRoutine());
+    }
+
+    private void OnEnable()
+    {
+        if (health) health.OnDeath += HandleDeath;
+    }
+
+    private void OnDisable()
+    {
+        if (health) health.OnDeath -= HandleDeath;
     }
 
     private void Update()
     {
-        if (agent != null && agent.enabled && targetEnemy != null && hasFoundTarget)
-        {
-            if (Vector3.Distance(transform.position, targetEnemy.position) <= explosionRadius)
-            {
-                DealDamageAndDie();
-            }
-            else
-            {
-                agent.SetDestination(targetEnemy.position);
-            }
-        }
-    }
+        if (isExploding || (health != null && health.IsDead) || playerTarget == null || agent == null || !agent.enabled) return;
 
-    private void ApplyLarvaColor(Color color)
-    {
-        if (larvaRenderer != null)
-        {
-            larvaRenderer.material.color = color;
-        }
-    }
+        agent.SetDestination(playerTarget.position);
 
-    private IEnumerator TargetSearchRoutine()
-    {
-        while (targetEnemy == null)
-        {
-            var closest = FindObjectsByType<EnemyHealth>(FindObjectsSortMode.None)
-                          .Where(e => e.gameObject != gameObject && !e.IsDead)
-                          .OrderBy(e => Vector3.Distance(transform.position, e.transform.position))
-                          .FirstOrDefault();
-
-            if (closest != null)
-            {
-                targetEnemy = closest.transform;
-                hasFoundTarget = true;
-            }
-
-            yield return new WaitForSeconds(targetSearchInterval);
-        }
-    }
-
-    private IEnumerator LifeTimerRoutine()
-    {
-        yield return new WaitForSeconds(lifetime);
-
-        if (!hasFoundTarget)
+        if (Vector3.Distance(transform.position, playerTarget.position) <= explosionRadius)
         {
             DealDamageAndDie();
         }
     }
 
+    private void HandleDeath(GameObject obj)
+    {
+        isExploding = true; 
+        StopAllCoroutines();
+        if (agent) agent.enabled = false;
+    }
+
+    private IEnumerator LifeTimerRoutine()
+    {
+        yield return new WaitForSeconds(lifetime);
+        if (!isExploding && (health == null || !health.IsDead)) DealDamageAndDie();
+    }
+
     private void DealDamageAndDie()
     {
+        if (isExploding) return;
+        isExploding = true;
+
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, explosionRadius);
         foreach (var hitCollider in hitColliders)
         {
-            if (hitCollider.gameObject == gameObject) continue;
-
-            if (hitCollider.CompareTag("Player")) continue;
-
-            IDamageable damageable = hitCollider.GetComponentInParent<IDamageable>();
-            if (damageable != null)
+            if (hitCollider.CompareTag("Player") && hitCollider.TryGetComponent<PlayerHealth>(out var pHealth))
             {
-                damageable.TakeDamage(calculatedDamage, false);
+                pHealth.TakeDamage(baseDamage);
             }
         }
 
-        if (agent != null) agent.enabled = false;
-        Destroy(gameObject);
+        if (agent) agent.enabled = false;
+
+        if (health) health.Die();
+        else Destroy(gameObject);
     }
 }

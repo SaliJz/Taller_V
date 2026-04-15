@@ -139,23 +139,6 @@ public class EnemyAuraManager : MonoBehaviour
             return;
         }
 
-        for (int i = 0; i < config.ResurrectionSplitCount; i++)
-        {
-            Vector3 offset = UnityEngine.Random.insideUnitSphere * 1.5f;
-            offset.y = 0;
-            GameObject minionGO = Instantiate(config.EscurridizoPrefab, spawnCenter.position + offset, Quaternion.identity);
-
-            if (minionGO.TryGetComponent<ResurrectedDevilLarva>(out var minionLarva))
-            {
-                float enemyBaseHealth = enemyHealth.MaxHealth;
-                float speedMult = 1f;
-                float damageMult = 1f;
-                Color levelColor = Color.white;
-
-                minionLarva.Initialize(enemyBaseHealth, speedMult, damageMult, levelColor);
-            }
-        }
-
         ReportDebug($"Resurrección Parcial: Generados {config.ResurrectionSplitCount} minions (Nivel {ActiveResurrectionLevel}).", 3);
     }
 
