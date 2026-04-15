@@ -423,6 +423,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             }
 
             CombatEventsManager.TriggerEnemyKilled(gameObject, maxHealth);
+            CombatEventsManager.TriggerEnemyKilledType(gameObject, deathByDamageType);
         }
 
         isDead = true;
