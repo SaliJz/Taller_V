@@ -46,8 +46,6 @@ public class CreditsPanel : MonoBehaviour
     [SerializeField] private bool loopCredits = true;
 
     [Header("Alignment Offsets")]
-    [SerializeField] private float leftAlignmentOffset = 0f;
-    [SerializeField] private float centerAlignmentOffset = 0f;
     [SerializeField] private float rightAlignmentOffset = 0f;
 
     [Header("Credits Content")]
