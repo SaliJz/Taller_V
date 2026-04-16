@@ -103,10 +103,25 @@ public class ShopManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+            return;
         }
 
         playerControls = new PlayerControlls();
+
+        InitializeShopItemPools();
+        InitializeGachaponEffectPool();
     }
+
+    private void Start()
+    {
+        playerHealth = FindAnyObjectByType<PlayerHealth>();
+        playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
+        inventoryManager = FindAnyObjectByType<InventoryManager>();
+
+        if (shopUIPanel != null) shopUIPanel.SetActive(false);
+        ResetCostBar();
+    }
+
 
     private void OnEnable()
     {
@@ -116,23 +131,6 @@ public class ShopManager : MonoBehaviour
     private void OnDisable()
     {
         playerControls.Disable();
-    }
-
-    private void Start()
-    {
-        playerHealth = FindAnyObjectByType<PlayerHealth>();
-        playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
-        inventoryManager = FindAnyObjectByType<InventoryManager>();
-
-        if (shopUIPanel != null)
-        {
-            shopUIPanel.SetActive(false);
-        }
-
-        InitializeShopItemPools();
-        InitializeGachaponEffectPool();
-
-        ResetCostBar();
     }
 
     private void Update()
@@ -149,7 +147,7 @@ public class ShopManager : MonoBehaviour
         spawnedItems.Clear();
         if (allShopItems != null)
         {
-            availableItems.AddRange(allShopItems);
+            availableItems.AddRange(new List<ShopItem>(allShopItems));
         }
     }
 

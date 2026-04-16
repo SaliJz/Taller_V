@@ -20,11 +20,14 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
     private void Awake()
     {
         shopManager = FindAnyObjectByType<ShopManager>();
+
         merchantRoomManager = GetComponentInParent<MerchantRoomManager>();
 
-        audioSource = merchantRoomManager.GetComponentInChildren<AudioSource>();
-
-        if (audioSource == null)
+        if (merchantRoomManager != null)
+        {
+            audioSource = merchantRoomManager.GetComponentInChildren<AudioSource>();
+        }
+        else
         {
             Debug.LogWarning("AudioSource no asignado en ShopItemDisplay. Se intentará obtenerlo del MerchantRoomManager.");
         }
