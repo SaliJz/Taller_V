@@ -24,6 +24,10 @@ public class ItemEffectPool : MonoBehaviour
     [SerializeField] private GameObject largeSpikePrefab;
     [SerializeField] private int largeSpikePoolSize = 10;
 
+    [Header("Kai Wave Pool")]
+    [SerializeField] private GameObject kaiWavePrefab;
+    [SerializeField] private int kaiWavePoolSize = 9;
+
     #endregion
 
     #region Private Fields
@@ -36,6 +40,11 @@ public class ItemEffectPool : MonoBehaviour
 
     private Queue<PetraSpike> largeSpikeAvailable = new Queue<PetraSpike>();
     private List<PetraSpike> largeSpikeAll = new List<PetraSpike>();
+
+    private Queue<KaiWave> kaiWaveAvailable = new Queue<KaiWave>();
+    private List<KaiWave> kaiWaveAll = new List<KaiWave>();
+
+    private Vector3 _lastKnownShieldLaunchDir = Vector3.forward;
 
     #endregion
 
@@ -54,6 +63,7 @@ public class ItemEffectPool : MonoBehaviour
         InitializeDashPool();
         InitializeSmallSpikePool();
         InitializeLargeSpikePool();
+        InitializeKaiWavePool();
     }
 
     #endregion
@@ -96,6 +106,19 @@ public class ItemEffectPool : MonoBehaviour
             go.SetActive(false);
             largeSpikeAvailable.Enqueue(spike);
             largeSpikeAll.Add(spike);
+        }
+    }
+
+    private void InitializeKaiWavePool()
+    {
+        if (kaiWavePrefab == null) return;
+        for (int i = 0; i < kaiWavePoolSize; i++)
+        {
+            GameObject go = Instantiate(kaiWavePrefab, Vector3.zero, Quaternion.identity, transform);
+            KaiWave wave = go.GetComponent<KaiWave>();
+            go.SetActive(false);
+            kaiWaveAvailable.Enqueue(wave);
+            kaiWaveAll.Add(wave);
         }
     }
 
@@ -178,6 +201,104 @@ public class ItemEffectPool : MonoBehaviour
         {
             targetQueue.Enqueue(spike);
         }
+    }
+
+    #endregion
+
+    #region Kai Wave Methods
+
+    public void RegisterShieldLaunchDirection(Vector3 dir)
+    {
+        if (dir != Vector3.zero)
+            _lastKnownShieldLaunchDir = dir.normalized;
+    }
+
+    public void SpawnKaiShieldWaves(
+        Vector3 originPosition,
+        float damage,
+        float speed,
+        float maxWidth,
+        float growthDuration,
+        float totalDuration,
+        LayerMask enemyLayer)
+    {
+        Vector3 launchDir = _lastKnownShieldLaunchDir;
+        Vector3 groundOrigin = new Vector3(originPosition.x, 0.05f, originPosition.z);
+
+        Vector3 right = Vector3.Cross(Vector3.up, launchDir).normalized;
+
+        Vector3[] directions = new Vector3[]
+        {
+            right,          
+            -right,         
+            -launchDir      
+        };
+
+        foreach (Vector3 dir in directions)
+        {
+            KaiWave wave = GetKaiWaveFromPool();
+            if (wave == null) continue;
+
+            wave.Activate(
+                groundOrigin,
+                dir,
+                damage,
+                speed,
+                maxWidth,
+                growthDuration,
+                totalDuration,
+                enemyLayer,
+                () => ReturnKaiWave(wave)
+            );
+        }
+    }
+
+    public void SpawnKaiMeleeWave(
+        Vector3 originPosition,
+        Vector3 backDirection,
+        float damage,
+        float maxWidth,
+        float duration,
+        LayerMask enemyLayer)
+    {
+        KaiWave wave = GetKaiWaveFromPool();
+        if (wave == null) return;
+
+        wave.Activate(
+            originPosition,
+            backDirection,
+            damage,
+            0f,          
+            maxWidth,
+            duration,   
+            duration,   
+            enemyLayer,
+            () => ReturnKaiWave(wave)
+        );
+    }
+
+    private KaiWave GetKaiWaveFromPool()
+    {
+        if (kaiWaveAvailable.Count > 0)
+            return kaiWaveAvailable.Dequeue();
+
+        if (kaiWaveAll.Count > 0)
+        {
+            KaiWave oldest = kaiWaveAll[0];
+            oldest.ForceReturn();
+            if (kaiWaveAvailable.Count > 0)
+                return kaiWaveAvailable.Dequeue();
+        }
+
+        Debug.LogWarning("[ItemEffectPool] Pool de KaiWave agotado y sin candidatos para reciclar.");
+        return null;
+    }
+
+    private void ReturnKaiWave(KaiWave wave)
+    {
+        wave.gameObject.SetActive(false);
+        if (!kaiWaveAvailable.Contains(wave))
+            kaiWaveAvailable.Enqueue(wave);
     }
 
     #endregion

@@ -368,6 +368,9 @@ public class PlayerShieldController : MonoBehaviour
             direction = transform.forward;
         }
 
+        ItemEffectPool.Instance?.RegisterShieldLaunchDirection(direction);
+        PlayerCombatEvents.RaiseShieldThrown(shieldSpawnPoint.position, direction, currentShieldDamage);
+
         GameObject shieldInstance = ShieldPooler.Instance.GetPooledObject();
 
         if (shieldInstance != null)
