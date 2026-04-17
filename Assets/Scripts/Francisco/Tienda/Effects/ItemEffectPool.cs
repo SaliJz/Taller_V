@@ -126,7 +126,7 @@ public class ItemEffectPool : MonoBehaviour
 
     #region Dash Fire Methods
 
-    public void SpawnDashFire(Vector3 position, float damage, float expandDuration, float maxRadius,
+    public void SpawnDashFire(Vector3 position, float expandDuration, float maxRadius,
                       float stayDuration, float tickInterval, LayerMask enemyLayer)
     {
         DashFire circle;
@@ -141,7 +141,7 @@ public class ItemEffectPool : MonoBehaviour
             circle.ForceReturn();
         }
 
-        circle.Activate(position, damage, expandDuration, maxRadius,
+        circle.Activate(position, expandDuration, maxRadius,
                         stayDuration, tickInterval, enemyLayer,
                         () => ReturnDashFire(circle));
     }

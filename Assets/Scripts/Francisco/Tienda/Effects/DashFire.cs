@@ -21,6 +21,8 @@ public class DashFire : MonoBehaviour
 
     private HashSet<Collider> overlapping = new HashSet<Collider>();
 
+    private HashSet<Collider> chargedThisTick = new HashSet<Collider>();
+
     private Transform visual;
     private CapsuleCollider capsule;
     private Coroutine routine;
@@ -47,11 +49,14 @@ public class DashFire : MonoBehaviour
         if (tickTimer <= 0f)
         {
             tickTimer = tickInterval;
+            chargedThisTick.Clear();
             overlapping.RemoveWhere(col => col == null);
 
             foreach (var col in overlapping)
             {
-                DealDamageTo(col.gameObject);
+                if (chargedThisTick.Contains(col)) continue;
+                chargedThisTick.Add(col);
+                ApplyChargeOrDamage(col.gameObject);
             }
         }
     }
@@ -59,7 +64,11 @@ public class DashFire : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if ((enemyLayer.value & (1 << other.gameObject.layer)) > 0)
+        {
             overlapping.Add(other);
+
+            ApplyChargeOrDamage(other.gameObject);
+        }
     }
 
     private void OnTriggerExit(Collider other)
@@ -71,10 +80,9 @@ public class DashFire : MonoBehaviour
 
     #region Public Methods
 
-    public void Activate(Vector3 position, float damage, float expandDuration, float maxRadius,
+    public void Activate(Vector3 position, float expandDuration, float maxRadius,
                           float stayDuration, float tickInterval, LayerMask enemyLayer, Action onReturn)
     {
-        this.damage = damage;
         this.expandDuration = expandDuration;
         this.maxRadius = maxRadius;
         this.stayDuration = stayDuration;
@@ -99,6 +107,7 @@ public class DashFire : MonoBehaviour
         tickTimer = tickInterval;
         isStaying = false;
         overlapping.Clear();
+        chargedThisTick.Clear();
 
         SetSize(0f);
         gameObject.SetActive(true);
@@ -112,6 +121,7 @@ public class DashFire : MonoBehaviour
         if (routine != null) StopCoroutine(routine);
         isStaying = false;
         overlapping.Clear();
+        chargedThisTick.Clear();
         onReturn?.Invoke();
     }
 
@@ -141,6 +151,7 @@ public class DashFire : MonoBehaviour
 
         isStaying = false;
         overlapping.Clear();
+        chargedThisTick.Clear();
         onReturn?.Invoke();
     }
 
@@ -157,10 +168,20 @@ public class DashFire : MonoBehaviour
         }
     }
 
-    private void DealDamageTo(GameObject enemy)
+    private void ApplyChargeOrDamage(GameObject enemy)
     {
-        var health = enemy.GetComponent<EnemyHealth>();
-        if (health != null) health.TakeDamage(Mathf.RoundToInt(damage));
+        EntropyChargeSystem chargeSystem = enemy.GetComponentInParent<EntropyChargeSystem>();
+        if (chargeSystem != null)
+        {
+            chargeSystem.ApplyCharge();
+            return;
+        }
+
+        EnemyHealth health = enemy.GetComponentInParent<EnemyHealth>();
+        if (health != null)
+        {
+            health.TakeDamage(damage);
+        }
     }
 
     #endregion
