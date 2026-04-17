@@ -3,25 +3,25 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(ChessPieceAttack))]
-public class BishopPiece : BoardPiece
+public class RookPiece : BoardPiece
 {
     #region Enums
     public enum AIState { Patrolling, Alerted, Committed, Moving }
     #endregion
 
     #region Variables
-    [Header("Bishop Settings")]
+    [Header("Rook Settings")]
     [SerializeField] private float gizmoHeight = 1.5f;
     [SerializeField] private float gizmosAnchor = 0.7f;
     [SerializeField] private float gizmosLenght = 1.2f;
     [SerializeField] private Transform playerTransform;
 
     [Header("Movement")]
-    [SerializeField] private float patrolMoveSpeed = 8f;
-    [SerializeField] private float attackMoveSpeed = 16f;
+    [SerializeField] private float patrolMoveSpeed = 7f;
+    [SerializeField] private float attackMoveSpeed = 18f;
     [SerializeField] private float rotationSpeed = 12f;
-    [SerializeField] private int patrolStepDist = 2;
-    [SerializeField] private float attackWindupTime = 1f;
+    [SerializeField] private int patrolStepDist = 3;
+    [SerializeField] private float attackWindupTime = 0.8f;
 
     private AIState currentState = AIState.Patrolling;
     private Vector3 currentTargetWorldPos;
@@ -31,8 +31,8 @@ public class BishopPiece : BoardPiece
 
     private readonly Vector2Int[] moveDirs = new Vector2Int[]
     {
-        new Vector2Int(1, 1), new Vector2Int(1, -1),
-        new Vector2Int(-1, 1), new Vector2Int(-1, -1)
+        new Vector2Int(0, 1), new Vector2Int(0, -1),
+        new Vector2Int(1, 0), new Vector2Int(-1, 0)
     };
     #endregion
 
@@ -44,8 +44,9 @@ public class BishopPiece : BoardPiece
             playerTransform = GameObject.FindGameObjectWithTag("Player")?.transform;
 
         AutoConnectToNearestBoard();
+
         if (boardManager != null)
-            brainCoroutine = StartCoroutine(BishopBrain());
+            brainCoroutine = StartCoroutine(RookBrain());
     }
 
     private void Update()
@@ -56,9 +57,10 @@ public class BishopPiece : BoardPiece
     #endregion
 
     #region Brain
-    private IEnumerator BishopBrain()
+    private IEnumerator RookBrain()
     {
         yield return new WaitUntil(() => boardManager != null);
+
         while (true)
         {
             if (isStunned) { yield return new WaitForSeconds(0.2f); continue; }
@@ -100,9 +102,11 @@ public class BishopPiece : BoardPiece
                     else if (!isNearby) currentState = AIState.Patrolling;
                     else
                     {
-                        Vector2Int approach = GetSmartApproach(playerCoord);
+                        Vector2Int approach = GetBestMoveTowards(playerCoord);
                         if (approach != currentCoord)
                             yield return StartCoroutine(MoveRoutine(approach, patrolMoveSpeed));
+                        else
+                            yield return new WaitForSeconds(detectionInterval);
                     }
                     break;
 
@@ -110,6 +114,7 @@ public class BishopPiece : BoardPiece
                     currentState = isNearby ? AIState.Alerted : AIState.Patrolling;
                     break;
             }
+
             yield return new WaitForSeconds(detectionInterval * 0.5f);
         }
     }
@@ -126,6 +131,7 @@ public class BishopPiece : BoardPiece
             elapsed += Time.deltaTime;
             yield return null;
         }
+
         currentState = AIState.Moving;
         yield return StartCoroutine(MoveRoutine(committedTargetCoord, attackMoveSpeed));
         HideTrail();
@@ -134,14 +140,40 @@ public class BishopPiece : BoardPiece
     }
     #endregion
 
+    #region Trail
+    private void ShowPathLine(Vector2Int from, Vector2Int to)
+    {
+        Vector2Int diff = to - from;
+        if (diff.x != 0 && diff.y != 0) return;
+        Vector2Int dir = new Vector2Int((int)Mathf.Sign(diff.x), (int)Mathf.Sign(diff.y));
+        if (diff.x == 0) dir.x = 0;
+        if (diff.y == 0) dir.y = 0;
+
+        var points = new List<Vector3>();
+        Vector2Int cur = from;
+        while (cur != to)
+        {
+            points.Add(boardManager.GetWorldPosFromCoord(cur) + Vector3.up * trailHeight);
+            cur += dir;
+        }
+        points.Add(boardManager.GetWorldPosFromCoord(to) + Vector3.up * trailHeight);
+        SetTrailPoints(points.ToArray());
+    }
+    #endregion
+
     #region Movement
     private IEnumerator MoveRoutine(Vector2Int targetCoord, float speed)
     {
-        if (!boardManager.TileExists(targetCoord) || boardManager.IsTileOccupied(targetCoord)) yield break;
+        if (!boardManager.TileExists(targetCoord) || boardManager.IsTileOccupied(targetCoord))
+        {
+            yield break;
+        }
+
         isMoving = true;
         currentTargetWorldPos = boardManager.GetWorldPosFromCoord(targetCoord);
         currentTargetWorldPos.y = transform.position.y;
         UpdateBoardPosition(targetCoord);
+
         while (Vector3.Distance(transform.position, currentTargetWorldPos) > 0.05f)
         {
             if (isStunned) { isMoving = false; yield break; }
@@ -170,8 +202,11 @@ public class BishopPiece : BoardPiece
     public override bool CanSeePlayer(Vector2Int playerCoord)
     {
         Vector2Int diff = playerCoord - currentCoord;
-        if (Mathf.Abs(diff.x) != Mathf.Abs(diff.y)) return false;
+        if (diff.x != 0 && diff.y != 0) return false;
         Vector2Int dir = new Vector2Int((int)Mathf.Sign(diff.x), (int)Mathf.Sign(diff.y));
+        if (diff.x == 0) dir.x = 0;
+        if (diff.y == 0) dir.y = 0;
+
         Vector2Int check = currentCoord + dir;
         while (check != playerCoord)
         {
@@ -181,48 +216,34 @@ public class BishopPiece : BoardPiece
         return true;
     }
 
-    private Vector2Int GetSmartApproach(Vector2Int target)
+    private Vector2Int GetBestMoveTowards(Vector2Int target)
     {
         var candidates = new List<Vector2Int>();
         float minDist = float.MaxValue;
         foreach (var dir in moveDirs)
         {
-            for (int i = 1; i <= 4; i++)
+            for (int i = 1; i <= 5; i++)
             {
                 Vector2Int test = currentCoord + (dir * i);
                 if (!boardManager.TileExists(test) || boardManager.IsTileOccupied(test)) break;
                 float dist = Vector2Int.Distance(test, target);
-                if (Mathf.Abs(test.x - target.x) == Mathf.Abs(test.y - target.y)) dist -= 8f;
+                if (test.x == target.x || test.y == target.y) dist -= 10f;
                 if (dist < minDist) { minDist = dist; candidates.Clear(); candidates.Add(test); }
+                else if (Mathf.Abs(dist - minDist) < 0.1f) candidates.Add(test);
             }
         }
         return candidates.Count > 0 ? candidates[Random.Range(0, candidates.Count)] : currentCoord;
     }
     #endregion
 
-    #region Trail
-    private void ShowPathLine(Vector2Int from, Vector2Int to)
-    {
-        var points = new List<Vector3>();
-        Vector2Int diff = to - from;
-        Vector2Int dir = new Vector2Int((int)Mathf.Sign(diff.x), (int)Mathf.Sign(diff.y));
-        Vector2Int cur = from;
-        while (cur != to)
-        {
-            points.Add(boardManager.GetWorldPosFromCoord(cur) + Vector3.up * trailHeight);
-            cur += dir;
-        }
-        points.Add(boardManager.GetWorldPosFromCoord(to) + Vector3.up * trailHeight);
-        SetTrailPoints(points.ToArray());
-    }
-    #endregion
-
     #region Overrides
     public override void OnStunEnd()
     {
-        isStunned = false; isMoving = false; HideTrail();
+        isStunned = false;
+        isMoving = false;
+        HideTrail();
         if (brainCoroutine != null) StopCoroutine(brainCoroutine);
-        brainCoroutine = StartCoroutine(BishopBrain());
+        brainCoroutine = StartCoroutine(RookBrain());
     }
     #endregion
 
