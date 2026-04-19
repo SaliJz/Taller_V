@@ -29,9 +29,9 @@ public static class PlayerCombatEvents
 
     #region Dash Events
 
-    public static event Action<Vector3> OnDashStarted;
-    public static void RaiseDashStarted(Vector3 playerPosition)
-        => OnDashStarted?.Invoke(playerPosition);
+    public static event Action<Vector3, Vector3> OnDashStarted;
+    public static void RaiseDashStarted(Vector3 playerPosition, Vector3 dashDirection)
+        => OnDashStarted?.Invoke(playerPosition, dashDirection);
 
     #endregion
 }

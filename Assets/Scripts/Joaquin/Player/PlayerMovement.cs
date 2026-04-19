@@ -412,7 +412,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
 
         IsDashing = true;
-        PlayerCombatEvents.RaiseDashStarted(transform.position);
+        PlayerCombatEvents.RaiseDashStarted(transform.position, dashDirection);
         yVelocity = 0f;
         moveDirection = Vector3.zero;
         if (playerHealth != null) playerHealth.IsInvulnerable = true;

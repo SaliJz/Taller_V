@@ -10,15 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 174d2dc184576af458b3e60b73f88392, type: 3}
-  m_Name: Item III
+  m_Name: SedimentsOfPetraShield
   m_EditorClassIdentifier: 
-  itemName: ???
-  description: 
+  itemName: Sedimentos de Petra Shield
+  description: '"El escudo deja un rastro de estacas"'
   cost: 0
-  benefits: []
+  benefits:
+  - type: 11
+    amount: 10
+    isPercentage: 1
   drawbacks: []
   category: 0
-  rarity: 2
+  rarity: 1
   individualRarityWeight: 20
   isAmulet: 0
   isTemporary: 0
@@ -27,4 +30,4 @@ MonoBehaviour:
   temporaryRooms: 0
   itemIcon: {fileID: 0}
   behavioralEffects:
-  - {fileID: 11400000, guid: bff069fd0fa66f048b78796d4e715d4a, type: 2}
+  - {fileID: 11400000, guid: 8c498e75fe119cb44b4b22100350228c, type: 2}

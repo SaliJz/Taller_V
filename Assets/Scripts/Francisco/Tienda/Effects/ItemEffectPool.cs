@@ -277,6 +277,33 @@ public class ItemEffectPool : MonoBehaviour
         );
     }
 
+
+    public void SpawnKaiDashWave(
+        Vector3 originPosition,
+        Vector3 dashDirection,
+        float damage,
+        float speed,
+        float maxWidth,
+        float growthDuration,
+        float totalDuration,
+        LayerMask enemyLayer)
+    {
+        KaiWave wave = GetKaiWaveFromPool();
+        if (wave == null) return;
+
+        wave.Activate(
+            originPosition,
+            dashDirection,
+            damage,
+            speed,
+            maxWidth,
+            growthDuration,
+            totalDuration,
+            enemyLayer,
+            () => ReturnKaiWave(wave)
+        );
+    }
+
     private KaiWave GetKaiWaveFromPool()
     {
         if (kaiWaveAvailable.Count > 0)
@@ -302,4 +329,53 @@ public class ItemEffectPool : MonoBehaviour
     }
 
     #endregion
+
+    public PetraSpike SpawnSpikeWithScale(
+    Vector3 position,
+    Quaternion rotation,
+    float damage,
+    float lifetime,
+    LayerMask enemyLayer,
+    bool isLargeSpike,
+    float scale = 1f)
+    {
+        Queue<PetraSpike> targetQueue = isLargeSpike ? largeSpikeAvailable : smallSpikeAvailable;
+        List<PetraSpike> targetList = isLargeSpike ? largeSpikeAll : smallSpikeAll;
+
+        PetraSpike spike;
+
+        if (targetQueue.Count > 0)
+        {
+            spike = targetQueue.Dequeue();
+        }
+        else
+        {
+            spike = targetList[0];
+            spike.StopAllCoroutines();
+            ReturnSpike(spike, isLargeSpike);
+            spike = targetQueue.Dequeue();
+        }
+
+        Vector3 finalPos = position;
+        if (Physics.Raycast(position + Vector3.up * 1f, Vector3.down, out RaycastHit hit, 2f))
+        {
+            if (hit.collider.CompareTag("Ground"))
+            {
+                float sinkAmount = isLargeSpike ? 0.3f : 0.15f;
+                finalPos = hit.point - (Vector3.up * sinkAmount);
+            }
+        }
+
+        spike.transform.SetPositionAndRotation(finalPos, rotation);
+        spike.transform.localScale = Vector3.one * scale;  
+        spike.gameObject.SetActive(true);
+
+        spike.Initialize(damage, lifetime, enemyLayer, isLargeSpike, () =>
+        {
+            spike.transform.localScale = Vector3.one;      
+            ReturnSpike(spike, isLargeSpike);
+        });
+
+        return spike;
+    }
 }

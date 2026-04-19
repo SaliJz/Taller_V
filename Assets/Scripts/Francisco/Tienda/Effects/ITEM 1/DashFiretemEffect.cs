@@ -6,15 +6,15 @@ public class DashFiretemEffect : ItemEffectBase
     #region Inspector Fields
 
     [Header("Expansion")]
-    public float expandDuration = 0.4f;
-    public float maxRadius = 3f;
+    [SerializeField] private float expandDuration = 0.4f;
+    [SerializeField] private float maxRadius = 3f;
 
     [Header("Permanencia")]
-    public float stayDuration = 2.5f;
-    public float tickInterval = 0.3f;
+    [SerializeField] private float stayDuration = 2.5f;
+    [SerializeField] private float tickInterval = 0.3f;
 
     [Header("Compartido")]
-    public LayerMask enemyLayer;
+    [SerializeField] private LayerMask enemyLayer;
 
     #endregion
 
@@ -47,7 +47,7 @@ public class DashFiretemEffect : ItemEffectBase
 
     #region Private Methods
 
-    private void HandleDash(Vector3 playerPosition)
+    private void HandleDash(Vector3 playerPosition, Vector3 _)
     {
         if (ItemEffectPool.Instance == null) return;
 
