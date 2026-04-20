@@ -15,7 +15,7 @@ public class PlayerShieldController : MonoBehaviour
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private PlayerAudioController playerAudioController;
     [SerializeField] private ShieldSkill shieldSkill;
-    [SerializeField] private Animator playerAnimator;
+    [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
     [SerializeField] private AutoAim autoAim;
 
     [Header("Stats")]
@@ -85,21 +85,21 @@ public class PlayerShieldController : MonoBehaviour
 
     private void Awake()
     {
-        if (statsManager == null) statsManager = GetComponent<PlayerStatsManager>();
-        if (playerMeleeAttack == null) playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
-        if (playerMovement == null) playerMovement = GetComponent<PlayerMovement>();
-        if (playerHealth == null) playerHealth = GetComponent<PlayerHealth>();
-        if (playerAnimator == null) playerAnimator = GetComponentInChildren<Animator>();
-        if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
-        if (shieldSkill == null) shieldSkill = GetComponent<ShieldSkill>();
-        if (autoAim == null) autoAim = GetComponent<AutoAim>();
+        statsManager = GetComponent<PlayerStatsManager>();
+        playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
+        playerMovement = GetComponent<PlayerMovement>();
+        playerHealth = GetComponent<PlayerHealth>();
+        playerAnimCtrl = GetComponentInChildren<PlayerAnimCtrl>();
+        playerAudioController = GetComponent<PlayerAudioController>();
+        shieldSkill = GetComponent<ShieldSkill>();
+        autoAim = GetComponent<AutoAim>();
 
         if (autoAim == null) ReportDebug("ShieldAutoAim no encontrado. El auto-aim no funcionará.", 2);
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerShieldController. Usando valores de fallback.", 2);
         if (playerMeleeAttack == null) ReportDebug("PlayerMeleeAttack no encontrado. No se podrá verificar estado de ataque melee.", 2);
         if (playerMovement == null) ReportDebug("PlayerMovement no encontrado. Lock de rotación no funcionará.", 2);
         if (playerHealth == null) ReportDebug("PlayerHealth no encontrado. Configuración por etapa no funcionará.", 2);
-        if (playerAnimator == null) ReportDebug("Animator no encontrado en hijos. Las animaciones de escudo no funcionarán.", 2);
+        if (playerAnimCtrl == null) ReportDebug("PlayerAnimCtrl no encontrado en hijos. Las animaciones de escudo no funcionarán.", 2);
         if (playerAudioController == null) ReportDebug("PlayerAudioController no encontrado. Los sonidos de escudo no funcionarán.", 2);
         if (shieldSkill == null) ReportDebug("ShieldSkill no encontrado. Los sonidos de escudo no funcionarán.", 2);
     }
@@ -247,7 +247,7 @@ public class PlayerShieldController : MonoBehaviour
             playerMovement.ForceApplyLockedRotation();
         }
 
-        if (playerAnimator != null) playerAnimator.SetTrigger("ThrowShield");
+        playerAnimCtrl?.PlayDistanceAttack();
 
         ThrowShield();
 
@@ -347,7 +347,7 @@ public class PlayerShieldController : MonoBehaviour
     private void ThrowShield()
     {
         hasShield = false;
-        if (playerAnimator != null) playerAnimator.SetBool("HaveShield", false);
+        if (playerAnimCtrl != null) playerAnimCtrl.HasShield = false;
 
         bool isBerserker = shieldSkill != null && shieldSkill.IsActive;
 
@@ -403,7 +403,7 @@ public class PlayerShieldController : MonoBehaviour
         else
         {
             hasShield = true;
-            if (playerAnimator != null) playerAnimator.SetBool("HaveShield", true);
+            if (playerAnimCtrl != null) playerAnimCtrl.HasShield = true;
             ReportDebug("No se pudo obtener instancia del escudo del pool.", 2);
         }
     }
@@ -601,10 +601,9 @@ public class PlayerShieldController : MonoBehaviour
 
         if (hasShield)
         {
-            if (playerAnimator != null)
+            if (playerAnimCtrl != null)
             {
-                playerAnimator.SetBool("HaveShield", true);
-                playerAnimator.ResetTrigger("ThrowShield");
+                playerAnimCtrl.HasShield = true;
             }
         }
 
@@ -616,7 +615,10 @@ public class PlayerShieldController : MonoBehaviour
     {
         hasShield = true;
         
-        if (playerAnimator != null) playerAnimator.SetBool("HaveShield", true);
+        if (playerAnimCtrl != null)
+        {
+            playerAnimCtrl.HasShield = true;
+        }
 
         bool isBerserker = shieldSkill != null && shieldSkill.IsActive;
 

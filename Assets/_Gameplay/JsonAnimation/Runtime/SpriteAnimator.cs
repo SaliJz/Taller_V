@@ -23,6 +23,7 @@ public class SpriteAnimator : MonoBehaviour
         // DataBase = GetComponent<PlayerAnimDataBase>();
         sr = GetComponent<SpriteRenderer>();
     }
+
     public void SetProvider(JsonAnimProvider provider)
     {
         _provider = provider;
@@ -142,8 +143,5 @@ public class SpriteAnimator : MonoBehaviour
         }
 
         lastEventFrame = index;
-    
     }
-
-
 }

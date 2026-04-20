@@ -5,7 +5,6 @@ using System.Collections;
 
 /// <summary>
 /// Componente opcional para animar la apertura/cierre del inventario
-/// Añade efectos visuales profesionales al sistema de inventario
 /// </summary>
 [RequireComponent(typeof(CanvasGroup))]
 public class InventoryAnimator : MonoBehaviour

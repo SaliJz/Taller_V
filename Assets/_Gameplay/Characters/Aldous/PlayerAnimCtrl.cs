@@ -2,12 +2,14 @@ using UnityEngine;
 
 public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
 {
-#region Custom Classes
+    #region Custom Classes
+
     public enum PlayerState
     {
         idle, run, dash, distance, melee, damage,
         block, blockfb, store, inventory, bind
     }
+
     public enum Age
     {
         young, adult, old
@@ -17,7 +19,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
     public Age currentAge =Age.adult;
     public Age nextAge;
     public bool HasShield = true;
-    bool currentShield = true;
+    private bool currentShield = true;
     public int meleeStep = 1;
 
     [Header("State Flags")]
@@ -26,17 +28,25 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
     public bool isBlocking;
 
     [Header("Settings & VFX")]
-    float dashTimer;
+    private float dashTimer;
     public float dashDuration = 0.5f;
     [SerializeField] GameObject[] VFX_melee;
 
-    float H, V;
-    bool IsWalking() => H != 0 || V != 0;
+    private float H, V;
+    private bool IsWalking() => H != 0 || V != 0;
 
+    private bool _externalInputThisFrame = false;
 
-#endregion
-#region Unity Lifecycle
+    public void SetInputAxes(float h, float v)
+    {
+        H = h;
+        V = v;
+        _externalInputThisFrame = true;
+    }
 
+    #endregion
+
+    #region Unity Lifecycle
 
     protected override void Start()
     {
@@ -48,8 +58,13 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
 
     private void Update()
     {
-        H = Input.GetAxisRaw("Horizontal");
-        V = Input.GetAxisRaw("Vertical");
+        if (!_externalInputThisFrame)
+        {
+            H = Input.GetAxisRaw("Horizontal");
+            V = Input.GetAxisRaw("Vertical");
+        }
+        _externalInputThisFrame = false;
+
         UpdateDirection(H,V);
         DebugInputs();
 
@@ -60,14 +75,11 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         HandleLocomotion();
     }
 
+    #endregion
 
+    #region Logica de Estados
 
-#endregion
-#region Logica de Estados
-
-
-
-    void HandleLocomotion()
+    private void HandleLocomotion()
     {
         PlayerState nextState = IsWalking()? PlayerState.run : PlayerState.idle;
         
@@ -100,18 +112,18 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         PlayState(nextState, AnimPriority.locomotion, forceRefresh);
     }
 
-    bool UpdateBlockLogic()
+    private bool UpdateBlockLogic()
     {
         if (!isBlocking) return false;
 
         // if(lastDirection != currentDirection)
-        {
-            PlayState(PlayerState.block, AnimPriority.action, false);
-        }
+
+        PlayState(PlayerState.block, AnimPriority.action, false);
+
         return true;
     }
 
-    bool UpdateDashLogic()
+    private bool UpdateDashLogic()
     {
         if(!isDashing) return false;
 
@@ -120,17 +132,24 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         return true;
     }
 
-    bool IsLoopingState(PlayerState state)
+    private bool IsLoopingState(PlayerState state)
     {
         return state == PlayerState.idle || state == PlayerState.run;
     }
 
+    #endregion
 
+    #region Public Actions
 
-#endregion
-#region Public Actions
-
-
+    public void SetAgeStage(int age)
+    {
+        switch (age)
+        {
+            case 3: nextAge = Age.young; break;
+            case 2: nextAge = Age.adult; break;
+            case 1: nextAge = Age.old; break;
+        }
+    }
 
     public void PlayDamage() //DAMAGE-------------------------------
     {
@@ -145,15 +164,17 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         damageActive = true;
         PlayState(PlayerState.damage, AnimPriority.damage);
     }
+
     public void PlayDistanceAttack()
     {
         PlayState(PlayerState.distance, AnimPriority.attack);
     }
-     public void PlayMelee(int index) //MELEE -------------------------------------
+
+    public void PlayMelee(int index) //MELEE -------------------------------------
     {
         meleeStep = index;
 
-        if(provider.AnimExist(ResolveFullID("melee", lastDirection)))
+        if (provider.AnimExist(ResolveFullID("melee", lastDirection)))
         {
             PlayState(PlayerState.melee, AnimPriority.attack);
         }
@@ -166,7 +187,8 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         dashTimer = dashDuration;
         PlayState(PlayerState.dash, AnimPriority.dash);
     }
-    void EndDash()
+
+    public void EndDash()
     {
         isDashing = false;
         damageActive = false;
@@ -189,14 +211,15 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         PlayState(PlayerState.idle, AnimPriority.locomotion);
     }
 
-    void PlayBlockFeedback()
+    private void PlayBlockFeedback()
     {
         SA.holdOnLastFrame = false;
         PlayState(PlayerState.blockfb, AnimPriority.action);
     }
 
-#endregion
-#region Resolver & Callbacks
+    #endregion
+
+    #region Resolver & Callbacks
 
     protected override string ResolveFullID(string baseID, string direction)
     {
@@ -228,6 +251,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
 
         return resolved;
     }
+
     protected override void OnAnimationEvent(string ev)
     {
         switch (ev)
@@ -237,6 +261,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
             case "MeleeSlash_3": SpawnSlash(2); break;
         }
     }
+
     protected override void OnFinishedAnimation()
     {
         if(currentPriority == AnimPriority.dash) return;
@@ -252,9 +277,9 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         PlayState(PlayerState.idle, AnimPriority.locomotion);
     }
 
-#endregion
+    #endregion
 
-    void SpawnSlash(int index)
+    private void SpawnSlash(int index)
     {
         GameObject prefab = VFX_melee[index];
         prefab.SetActive(true);
@@ -265,7 +290,8 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         //melee2 = 1
         //melee3 = 2
     }
-    void DebugInputs()
+
+    private void DebugInputs()
     {
         if (Input.GetKeyDown(KeyCode.H)) HasShield = !HasShield;
 
@@ -294,7 +320,5 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         if (Input.GetKeyDown(KeyCode.Alpha1)) nextAge = Age.young;
         if (Input.GetKeyDown(KeyCode.Alpha2)) nextAge = Age.adult;
         if (Input.GetKeyDown(KeyCode.Alpha3)) nextAge = Age.old;
-
     }
-
 }

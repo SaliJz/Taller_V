@@ -133,10 +133,10 @@ public class HojasEstancadasHazard : MonoBehaviour
         state.StatsManager.ApplyMultiplierModifier(state.ModifierKey, StatType.MoveSpeed, movementMultiplier);
         state.IsSlowApplied = true;
 
-        if (state.PlayerMovement != null)
-        {
-            state.PlayerMovement.SetRunAnimationSpeedOverride(state.ModifierKey, slowedRunAnimationSpeed);
-        }
+        //if (state.PlayerMovement != null)
+        //{
+        //    state.PlayerMovement.SetRunAnimationSpeedOverride(state.ModifierKey, slowedRunAnimationSpeed);
+        //}
 
         UpdateVisualState();
     }
@@ -163,10 +163,10 @@ public class HojasEstancadasHazard : MonoBehaviour
         state.StatsManager.RemoveNamedModifier(state.ModifierKey);
         state.IsSlowApplied = false;
 
-        if (state.PlayerMovement != null)
-        {
-            state.PlayerMovement.ClearRunAnimationSpeedOverride(state.ModifierKey);
-        }
+        //if (state.PlayerMovement != null)
+        //{
+        //    state.PlayerMovement.ClearRunAnimationSpeedOverride(state.ModifierKey);
+        //}
     }
 
     private string BuildModifierKey(GameObject playerObject)

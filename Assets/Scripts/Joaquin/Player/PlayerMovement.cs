@@ -11,7 +11,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [SerializeField] private PlayerStatsManager statsManager;
     [SerializeField] private CharacterController controller;
     [SerializeField] private Transform mainCameraTransform;
-    [SerializeField] private Animator playerAnimator;
+    [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private PlayerAudioController playerAudioController;
     [SerializeField] private PlayerInputModifier inputModifier;
@@ -172,10 +172,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         controller = GetComponent<CharacterController>();
         mainCameraTransform = Camera.main != null ? Camera.main.transform : mainCameraTransform;
-        playerAnimator = GetComponentInChildren<Animator>();
+        playerAnimCtrl = GetComponentInChildren<PlayerAnimCtrl>();
         playerHealth = GetComponent<PlayerHealth>();
-        if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
-        hasIsAttackingParameter = AnimatorHasParameter(playerAnimator, "IsAttacking");
+        playerAudioController = GetComponent<PlayerAudioController>();
+        //hasIsAttackingParameter = AnimatorHasParameter(animCtrl, "IsAttacking");
 
         playerLayer = LayerMask.NameToLayer("Player");
 
@@ -190,7 +190,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         InitializeDashVFX();
         UpdateDashStatsFromManager();
-        UpdateMovementAnimationSpeed(false);
+        //UpdateMovementAnimationSpeed(false);
     }
 
     private void UpdateDashStatsFromManager()
@@ -245,8 +245,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         else
         {
             moveDirection = Vector3.zero;
-            if (playerAnimator != null) playerAnimator.SetBool("Running", false);
-            UpdateMovementAnimationSpeed(false);
+            playerAnimCtrl?.SetInputAxes(0f, 0f);
+            //UpdateMovementAnimationSpeed(false);
         }
 
         ApplyGravity();
@@ -313,8 +313,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         bool timeIsRunning = Time.timeScale > 0.01f;
         bool isMoving = hasInput && timeIsRunning;
 
-        if (playerAnimator != null) playerAnimator.SetBool("Running", isMoving);
-        UpdateMovementAnimationSpeed(isMoving);
+        //if (playerAnimator != null) playerAnimator.SetBool("Running", isMoving);
+        //UpdateMovementAnimationSpeed(isMoving);
 
         if (playerAudioController != null)
         {
@@ -337,12 +337,12 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
                 {
                     lastMoveX = Mathf.Round(moveX);
                     lastMoveY = Mathf.Round(moveY);
-                }
 
-                if (playerAnimator != null)
+                    playerAnimCtrl?.SetInputAxes(lastMoveX, lastMoveY);
+                }
+                else
                 {
-                    playerAnimator.SetFloat("Xaxis", lastMoveX);
-                    playerAnimator.SetFloat("Yaxis", lastMoveY);
+                    playerAnimCtrl?.SetInputAxes(0f, 0f);
                 }
             }
         }
@@ -418,10 +418,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         if (playerHealth != null) playerHealth.IsInvulnerable = true;
         ToggleLayerCollisions(true);
 
-        if (playerAnimator != null)
-        {
-            playerAnimator.SetBool("Dashing", true);
-        }
+        playerAnimCtrl?.StartDash();
 
         if (playerAudioController != null)
         {
@@ -473,10 +470,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         IsDashing = false;
 
-        if (playerAnimator != null)
-        {
-            playerAnimator.SetBool("Dashing", false);
-        }
+        playerAnimCtrl?.EndDash();
 
         dashCooldownTimer = currentDashCooldown;
     }
@@ -831,10 +825,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         IsDashing = false;
 
-        if (playerAnimator != null)
-        {
-            playerAnimator.SetBool("Dashing", false);
-        }
+        playerAnimCtrl?.EndDash();
 
         if (dashDustVFX != null) PlayDashVFX(false);
 
@@ -861,15 +852,12 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         {
             moveDirection = Vector3.zero;
 
-            if (playerAnimator != null)
-            {
-                playerAnimator.SetBool("Running", false);
-            }
+            playerAnimCtrl?.SetInputAxes(0f, 0f);
 
-            UpdateMovementAnimationSpeed(false);
+            //UpdateMovementAnimationSpeed(false);
         }
     }
-
+    /*
     private void UpdateMovementAnimationSpeed(bool isMoving)
     {
         if (playerAnimator == null)
@@ -891,7 +879,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         playerAnimator.speed = targetAnimatorSpeed;
     }
-
+    
     private bool AnimatorHasParameter(Animator animator, string parameterName)
     {
         if (animator == null)
@@ -946,7 +934,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         return lowestSpeed;
     }
-
+    */
     public void TeleportTo(Vector3 position)
     {
         controller.enabled = false;
@@ -1178,7 +1166,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         rotationLocked = true;
         lockedRotation = target;
 
-        if (setAnimatorAxes && playerAnimator != null && mainCameraTransform != null)
+        if (setAnimatorAxes && playerAnimCtrl != null && mainCameraTransform != null)
         {
             Vector3 camForward = mainCameraTransform.forward;
             Vector3 camRight = mainCameraTransform.right;
@@ -1194,18 +1182,14 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             lastMoveX = x;
             lastMoveY = y;
 
-            playerAnimator.SetFloat("Xaxis", lastMoveX);
-            playerAnimator.SetFloat("Yaxis", lastMoveY);
-
+            playerAnimCtrl.SetInputAxes(lastMoveX, lastMoveY);
         }
     }
     public void UnlockFacing()
     {
-
-
         rotationLocked = false;
 
-        if (playerAnimator != null && mainCameraTransform != null)
+        if (playerAnimCtrl != null && mainCameraTransform != null)
         {
             Vector3 camForward = mainCameraTransform.forward;
             Vector3 camRight = mainCameraTransform.right;
@@ -1223,14 +1207,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
                 lastMoveX = x;
                 lastMoveY = y;
             }
-            else
-            {
 
-            }
-
-            playerAnimator.SetFloat("Xaxis", lastMoveX);
-            playerAnimator.SetFloat("Yaxis", lastMoveY);
-
+            playerAnimCtrl.SetInputAxes(lastMoveX, lastMoveY);
         }
     }
 

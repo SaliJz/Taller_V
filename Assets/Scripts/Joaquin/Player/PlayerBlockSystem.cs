@@ -16,9 +16,9 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     #region Serialized Fields
 
     [Header("References")]
-    [SerializeField] private Animator playerAnimator;
     [SerializeField] private PlayerAudioController playerAudioController;
     [SerializeField] private PlayerHealth playerHealth;
+    [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
 
     [Header("Core Configuration")]
     [SerializeField] private Transform shieldForwardOverride = null;
@@ -134,11 +134,14 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         playerControls.Defense.SetCallbacks(this);
         playerControls.Movement.SetCallbacks(null);
 
-        if (playerMovement == null) playerMovement = GetComponent<PlayerMovement>();
-        if (playerHealth == null) playerHealth = GetComponent<PlayerHealth>();
-        if (playerShieldController == null) playerShieldController = GetComponent<PlayerShieldController>();
-        if (combatActionManager == null) combatActionManager = GetComponent<PlayerCombatActionManager>();
-        if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
+        playerMovement = GetComponent<PlayerMovement>();
+        playerHealth = GetComponent<PlayerHealth>();
+        playerShieldController = GetComponent<PlayerShieldController>();
+        combatActionManager = GetComponent<PlayerCombatActionManager>();
+        playerAudioController = GetComponent<PlayerAudioController>();
+        playerAnimCtrl = GetComponentInChildren<PlayerAnimCtrl>();
+
+        if (playerAnimCtrl == null) Debug.LogWarning("[PlayerBlockSystem] PlayerAnimCtrl no encontrado.");
 
         mainCamera = Camera.main;
         currentDurability = maxDurability;
@@ -273,7 +276,8 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
         StopCounterRotation();
 
-        if (playerAnimator != null) playerAnimator.SetBool("Block", true);
+        playerAnimCtrl?.PlayBlock();
+
         if (playerMovement != null) playerMovement.SetCanMove(false);
 
         if (durabilityRechargeCoroutine != null)
@@ -306,7 +310,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     {
         IsBlocking = false;
 
-        if (playerAnimator != null) playerAnimator.SetBool("Block", false);
+        playerAnimCtrl?.EndBlock();
 
         bool willActuallyFire = fireProjectile && accumulatedDamage > 0;
 
@@ -413,7 +417,6 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     {
         if (!IsBlocking) return incomingDamage;
 
-        if (playerAnimator != null) playerAnimator.SetTrigger("BlockSuccess");
         if (playerAudioController != null) playerAudioController.PlayBlockHitSound();
 
         currentDurability -= incomingDamage;

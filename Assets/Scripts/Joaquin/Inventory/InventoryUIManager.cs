@@ -10,615 +10,359 @@ using UnityEngine.UI;
 /// </summary>
 public class InventoryUIManager : MonoBehaviour
 {
-    [Header("Animador de Inventario")]
+    #region Datos externos
+
+    public static InventoryUIManager Instance { get; private set; }
+
+    // Columnas de slots
+    private const int COL1_COUNT = 7;
+    private const int COL2_COUNT = 8;
+    private const int COL3_COUNT = 9;
+
+    // Índices de los slots dorados dentro de col1
+    private static readonly int[] GoldenIndices = { 2, 3, 4 };
+
+    // Orden de llenado de pasivos en col1 (arriba a abajo, saltando dorados)
+    private static readonly int[] Col1PassiveOrder = { 0, 1, 5, 6 };
+
+    [Header("Panel Principal")]
+    [SerializeField] private GameObject inventoryPanel;
     [SerializeField] private InventoryAnimator inventoryAnimator;
 
-    [Header("Referencias de Paneles")]
-    [SerializeField] private GameObject inventoryPanel;
-    [SerializeField] private GameObject leftPanel; // Panel de estadísticas
-    [SerializeField] private GameObject rightPanel; // Panel de ítems
+    [Header("Contenedores de Columnas")]
+    [SerializeField] private Transform column1Container;
+    [SerializeField] private Transform column2Container;
+    [SerializeField] private Transform column3Container;
+    [SerializeField] private CanvasGroup column2Group;
+    [SerializeField] private CanvasGroup column3Group;
 
-    [Header("Panel Izquierdo - Estadísticas")]
-    [SerializeField] private TextMeshProUGUI statsTitle;
-    [SerializeField] private TextMeshProUGUI statsContent;
-    [SerializeField] private Button closeDetailButton;
+    [Header("Prefab de Slot")]
+    [SerializeField] private GameObject inventorySlotPrefab;
 
-    [Header("Panel Derecho - Categorías")]
-    [SerializeField] private ScrollRect categoryScrollRect;
-    [SerializeField] private Transform categoryContainer;
-    [SerializeField] private GameObject categoryPrefab;
+    [Header("Slots Dorados")]
+    [SerializeField] private Color goldenSlotColor = new Color(1f, 0.84f, 0f);
 
-    [Header("Prefabs")]
-    [SerializeField] private GameObject itemSlotPrefab;
+    [Header("Opacidad de Columnas")]
+    [SerializeField] private float col2Alpha = 0.7f;
+    [SerializeField] private float col3Alpha = 0.3f;
 
-    [Header("Configuración")]
-    [SerializeField] private int slotsPerRow = 4;
-    [SerializeField] private Color highlightColor = new Color(0.8f, 0.1f, 0.1f); // Carmesí
-    [SerializeField] private Color positiveStatColor = Color.green;
-    [SerializeField] private Color negativeStatColor = Color.red;
+    [Header("Panel de Detalle de Ítem")]
+    [SerializeField] private GameObject detailPanel;
+    [SerializeField] private TextMeshProUGUI detailName;
+    [SerializeField] private TextMeshProUGUI detailDescription;
+    [SerializeField] private Image detailIcon;
 
-    [Header("Fuentes")]
-    [SerializeField] private TMP_FontAsset demonicFont;
+    [Header("Panel de Confirmación de Reemplazo")]
+    [SerializeField] private GameObject replaceConfirmPanel;
+    [SerializeField] private TextMeshProUGUI replaceConfirmText;
+    [SerializeField] private Button confirmReplaceButton;
+    [SerializeField] private Button cancelReplaceButton;
 
-    private PlayerControlls playerControls;
-    private PlayerStatsManager statsManager;
-    private PlayerHealth playerHealth;
-    private InventoryManager inventoryManager;
-    private PauseController pauseController;
+    [Header("Highlight de Hover")]
+    [SerializeField] private Color highlightColor = new Color(0.6f, 0.1f, 0.1f);
 
-    private bool isInventoryOpen = false;
-    private ShopItem selectedItem = null;
+    [Header("Registro de Ítems Mecánicos")]
+    [SerializeField] private List<MechanicItemEntry> mechanicRegistry = new List<MechanicItemEntry>();
 
-    public bool IsInventoryOpen => isInventoryOpen;
+    #endregion
 
-    private Dictionary<ItemCategory, CategorySection> categorySections = new Dictionary<ItemCategory, CategorySection>();
+    #region Datos internos
+    
+    private readonly List<InventorySlot> col1Slots = new List<InventorySlot>();
+    private readonly List<InventorySlot> col2Slots = new List<InventorySlot>();
+    private readonly List<InventorySlot> col3Slots = new List<InventorySlot>();
 
-    private class CategorySection
-    {
-        public GameObject sectionObject;
-        public TextMeshProUGUI titleText;
-        public Transform slotsContainer;
-        public List<InventorySlot> slots = new List<InventorySlot>();
-    }
+    // Slot mecánico [0 = Melee, 1 = Ranged, 2 = Dash]
+    private readonly ShopItem[] mechanicSlots = new ShopItem[3];
+
+    private bool isOpen;
+    private ShopItem pendingReplaceItem;
+    private int pendingReplaceSlotIndex;
+
+    #endregion
+
+    #region Ciclo de vida
 
     private void Awake()
     {
-        playerControls = new PlayerControlls();
-        statsManager = FindAnyObjectByType<PlayerStatsManager>();
-        playerHealth = FindAnyObjectByType<PlayerHealth>();
-        inventoryManager = FindAnyObjectByType<InventoryManager>();
-        pauseController = FindAnyObjectByType<PauseController>();
-
-        if (inventoryPanel != null)
-        {
-            inventoryPanel.SetActive(false);
+        if (Instance != null && Instance != this) 
+        { 
+            Destroy(gameObject);
+            return; 
         }
-    }
-
-    private void OnEnable()
-    {
-        playerControls?.Enable();
-    }
-
-    private void OnDisable()
-    {
-        playerControls?.Disable();
+        Instance = this;
     }
 
     private void Start()
     {
-        InitializeCategorySections();
+        BuildSlots();
+        ApplyColumnAlpha();
 
-        if (closeDetailButton != null)
-        {
-            closeDetailButton.onClick.AddListener(ShowPlayerStats);
-            closeDetailButton.gameObject.SetActive(false);
-        }
+        if (inventoryPanel != null) inventoryPanel.SetActive(false);
+        if (detailPanel != null) detailPanel.SetActive(false);
+        if (replaceConfirmPanel != null) replaceConfirmPanel.SetActive(false);
 
-        if (statsTitle != null && demonicFont != null)
-        {
-            statsTitle.font = demonicFont;
-        }
+        confirmReplaceButton?.onClick.AddListener(OnConfirmReplace);
+        cancelReplaceButton?.onClick.AddListener(OnCancelReplace);
     }
 
     private void Update()
     {
-        if (PauseController.IsGamePaused) return;
-
-        // Toggle inventario con I o Tab
-        if (Keyboard.current != null)
+        if (Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame)
         {
-            if (Keyboard.current.iKey.wasPressedThisFrame || Keyboard.current.tabKey.wasPressedThisFrame)
-            {
-                ToggleInventory();
-            }
+            ToggleInventory(); return;
         }
 
-        // Soporte para gamepad (botón Select/View)
-        if (Gamepad.current != null)
+        if (Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame)
         {
-            if (Gamepad.current.selectButton.wasPressedThisFrame)
-            {
-                ToggleInventory();
-            }
-        }
-
-        // ESC para cerrar
-        if (isInventoryOpen && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
-        {
-            CloseInventory();
+            ToggleInventory();
         }
     }
 
-    /// <summary>
-    /// Inicializa las secciones de categorías
-    /// </summary>
-    private void InitializeCategorySections()
+    #endregion
+
+    #region Construcción de UI
+    
+    private void BuildSlots()
     {
-        if (categoryContainer == null || categoryPrefab == null) return;
+        CreateSlots(column1Container, COL1_COUNT, col1Slots);
+        CreateSlots(column2Container, COL2_COUNT, col2Slots);
+        CreateSlots(column3Container, COL3_COUNT, col3Slots);
 
-        foreach (ItemCategory category in System.Enum.GetValues(typeof(ItemCategory)))
+        foreach (int idx in GoldenIndices)
         {
-            GameObject sectionObj = Instantiate(categoryPrefab, categoryContainer);
-            CategorySection section = new CategorySection
-            {
-                sectionObject = sectionObj,
-                titleText = sectionObj.GetComponentInChildren<TextMeshProUGUI>(),
-                slotsContainer = sectionObj.transform.Find("SlotsContainer")
-            };
-
-            if (section.titleText != null)
-            {
-                section.titleText.text = GetCategoryName(category);
-                if (demonicFont != null)
-                {
-                    section.titleText.font = demonicFont;
-                }
-            }
-
-            categorySections[category] = section;
-
-            // Crear slots iniciales (4 por categoría)
-            CreateSlotsForCategory(category, slotsPerRow);
+            if (idx < col1Slots.Count) col1Slots[idx].SetGolden(true, goldenSlotColor);
         }
     }
 
-    /// <summary>
-    /// Crea slots para una categoría específica
-    /// </summary>
-    private void CreateSlotsForCategory(ItemCategory category, int count)
+    private void CreateSlots(Transform container, int count, List<InventorySlot> list)
     {
-        if (!categorySections.ContainsKey(category)) return;
+        if (container == null || inventorySlotPrefab == null) return;
 
-        CategorySection section = categorySections[category];
+        foreach (Transform child in container) Destroy(child.gameObject);
+        list.Clear();
 
         for (int i = 0; i < count; i++)
         {
-            GameObject slotObj = Instantiate(itemSlotPrefab, section.slotsContainer);
-            InventorySlot slot = slotObj.GetComponent<InventorySlot>();
-
-            if (slot != null)
-            {
-                slot.Initialize(this);
-                section.slots.Add(slot);
-            }
+            var go = Instantiate(inventorySlotPrefab, container);
+            var slot = go.GetComponent<InventorySlot>();
+            if (slot != null) { slot.Initialize(this); list.Add(slot); }
         }
     }
 
-    /// <summary>
-    /// Toggle del inventario
-    /// </summary>
+    private void ApplyColumnAlpha()
+    {
+        if (column2Group != null) column2Group.alpha = col2Alpha;
+        if (column3Group != null) column3Group.alpha = col3Alpha;
+    }
+
+    #endregion
+
+    #region Control de Inventario
+
     public void ToggleInventory()
     {
-        if (isInventoryOpen)
-        {
-            CloseInventory();
-        }
-        else
-        {
-            OpenInventory();
-        }
+        if (isOpen) CloseInventory();
+        else OpenInventory();
     }
 
-    /// <summary>
-    /// Abre el inventario
-    /// </summary>
     public void OpenInventory()
     {
-        if (inventoryPanel == null) return;
+        isOpen = true;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
 
-        isInventoryOpen = true;
+        RefreshDisplay();
 
-        // Deshabilitar el controlador de pausa si existe
-        if (pauseController != null)
-        {
-            pauseController.enabled = false;
-        }
+        if (inventoryAnimator != null) inventoryAnimator.AnimateOpen();
+        else if (inventoryPanel != null) inventoryPanel.SetActive(true);
 
-        RefreshInventory();
-        ShowPlayerStats();
-
-        // Pausar el juego
-        Time.timeScale = 0f;
-
-        // Usar animación si está disponible
-        if (inventoryAnimator != null)
-        {
-            inventoryAnimator.AnimateOpen();
-        }
-        else
-        {
-            inventoryPanel.SetActive(true);
-        }
+        InventoryAudioManager.Instance?.PlayOpenSound();
     }
 
-    /// <summary>
-    /// Cierra el inventario
-    /// </summary>
     public void CloseInventory()
     {
-        if (inventoryPanel == null) return;
+        isOpen = false;
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
 
-        isInventoryOpen = false;
-        selectedItem = null;
+        detailPanel?.SetActive(false);
+        replaceConfirmPanel?.SetActive(false);
 
-        if (pauseController != null)
-        {
-            pauseController.enabled = true;
-        }
-
-        // Reanudar el juego
-        Time.timeScale = 1f;
-
-        // Usar animación si está disponible
         if (inventoryAnimator != null)
         {
-            inventoryAnimator.AnimateClose();
+            inventoryAnimator.AnimateClose(null);
         }
-        else
+        else if (inventoryPanel != null)
         {
             inventoryPanel.SetActive(false);
         }
+
+        InventoryAudioManager.Instance?.PlayCloseSound();
     }
 
-    /// <summary>
-    /// Refresca todo el inventario
-    /// </summary>
-    public void RefreshInventory()
+    #endregion
+
+    #region Lógica de Slots
+
+    public void RefreshDisplay()
     {
-        if (inventoryManager == null) return;
+        // Limpia todo
+        foreach (var s in col1Slots) s.ClearSlot();
+        foreach (var s in col2Slots) s.ClearSlot();
+        foreach (var s in col3Slots) s.ClearSlot();
 
-        // Limpiar todos los slots
-        foreach (var section in categorySections.Values)
+        // Reconstruye estado mecánico desde CurrentRunItems
+        RebuildMechanicState();
+
+        // Slots dorados
+        for (int i = 0; i < GoldenIndices.Length; i++)
         {
-            foreach (var slot in section.slots)
-            {
-                slot.ClearSlot();
-            }
+            int idx = GoldenIndices[i];
+            if (idx >= col1Slots.Count) continue;
+            col1Slots[idx].SetGolden(true, goldenSlotColor);
+            if (mechanicSlots[i] != null) col1Slots[idx].SetItem(mechanicSlots[i]);
         }
 
-        // Agrupar ítems por categoría
-        var itemsByCategory = InventoryManager.CurrentRunItems
-            .GroupBy(item => item.category)
-            .ToDictionary(g => g.Key, g => g.ToList());
+        // Slots pasivos
+        var passives = CollectPassives();
+        int p = 0;
 
-        // Llenar los slots
-        foreach (var kvp in itemsByCategory)
+        foreach (int slotIdx in Col1PassiveOrder)
         {
-            ItemCategory category = kvp.Key;
-            List<ShopItem> items = kvp.Value;
-
-            if (!categorySections.ContainsKey(category)) continue;
-
-            CategorySection section = categorySections[category];
-
-            // Si hay más ítems que slots, crear más slots
-            while (items.Count > section.slots.Count)
-            {
-                CreateSlotsForCategory(category, slotsPerRow);
-            }
-
-            // Asignar ítems a slots
-            for (int i = 0; i < items.Count; i++)
-            {
-                section.slots[i].SetItem(items[i]);
-            }
+            if (p >= passives.Count) break;
+            if (slotIdx < col1Slots.Count) col1Slots[slotIdx].SetItem(passives[p++]);
+        }
+        for (int i = 0; i < col2Slots.Count && p < passives.Count; i++)
+        {
+            col2Slots[i].SetItem(passives[p++]);
+        }
+        for (int i = 0; i < col3Slots.Count && p < passives.Count; i++)
+        {
+            col3Slots[i].SetItem(passives[p++]);
         }
     }
 
-    /// <summary>
-    /// Muestra las estadísticas del jugador en el panel izquierdo
-    /// </summary>
-    public void ShowPlayerStats()
+    private void RebuildMechanicState()
     {
-        selectedItem = null;
+        for (int i = 0; i < mechanicSlots.Length; i++) mechanicSlots[i] = null;
 
-        if (statsTitle != null)
+        foreach (var item in InventoryManager.CurrentRunItems)
         {
-            statsTitle.text = "Estadísticas del Jugador";
-        }
-
-        if (closeDetailButton != null)
-        {
-            closeDetailButton.gameObject.SetActive(false);
-        }
-
-        if (statsContent != null && statsManager != null)
-        {
-            statsContent.text = GeneratePlayerStatsText();
+            int slotIdx = GetMechanicSlotIndex(item);
+            if (slotIdx >= 0) mechanicSlots[slotIdx] = item;
         }
     }
 
+    private List<ShopItem> CollectPassives()
+    {
+        var list = new List<ShopItem>();
+        foreach (var item in InventoryManager.CurrentRunItems)
+        {
+            if (GetMechanicSlotIndex(item) < 0) list.Add(item);
+        }
+        return list;
+    }
+
+    public int GetMechanicSlotIndex(ShopItem item)
+    {
+        if (item == null || item.category != ItemCategory.SkillEnhancers) return -1;
+
+        foreach (var entry in mechanicRegistry)
+        {
+            if (entry.item == item) return (int)entry.slotType;
+        }
+
+        return -1;
+    }
+
+    #endregion
+
+    #region Metodos auxiliares
+
     /// <summary>
-    /// Muestra los detalles de un ítem en el panel izquierdo
+    /// Muestra confirmación si ya hay un ítem en esa ranura.
+    /// Retorna true si se puede comprar directamente, false si espera confirmación.
     /// </summary>
+    public bool RequestMechanicItemPurchase(ShopItem newItem, int slotIndex)
+    {
+        if (mechanicSlots[slotIndex] != null)
+        {
+            pendingReplaceItem = newItem;
+            pendingReplaceSlotIndex = slotIndex;
+            ShowReplaceConfirm(newItem, mechanicSlots[slotIndex]);
+            return false;
+        }
+        return true;
+    }
+
+    private void ShowReplaceConfirm(ShopItem newItem, ShopItem currentItem)
+    {
+        if (replaceConfirmPanel == null) return;
+        replaceConfirmPanel.SetActive(true);
+
+        if (replaceConfirmText != null)
+        {
+            replaceConfirmText.text = $"¿Reemplazar <b>{currentItem.itemName}</b> " +
+                $"con <b>{newItem.itemName}</b>?\n" +
+                "El ítem anterior será descartado.";
+        }
+    }
+
+    private void OnConfirmReplace()
+    {
+        if (pendingReplaceItem != null)
+        {
+            // Remueve ítem anterior del inventario y añade el nuevo
+            var old = mechanicSlots[pendingReplaceSlotIndex];
+            if (old != null) InventoryManager.CurrentRunItems.Remove(old);
+
+            InventoryManager.CurrentRunItems.Add(pendingReplaceItem);
+            pendingReplaceItem = null;
+            RefreshDisplay();
+        }
+        replaceConfirmPanel?.SetActive(false);
+    }
+
+    private void OnCancelReplace()
+    {
+        pendingReplaceItem = null;
+        replaceConfirmPanel?.SetActive(false);
+    }
+
     public void ShowItemDetails(ShopItem item)
     {
-        selectedItem = item;
+        if (detailPanel == null || item == null) return;
+        detailPanel.SetActive(true);
 
-        if (statsTitle != null)
+        if (detailName != null)
         {
-            statsTitle.text = "Descripción del Ítem";
+            detailName.text = item.itemName;
+            detailName.color = item.GetRarityColor();
         }
 
-        if (closeDetailButton != null)
+        if (detailDescription != null)
         {
-            closeDetailButton.gameObject.SetActive(true);
+            detailDescription.text = item.GetFormattedDescriptionAndStats();
         }
 
-        if (statsContent != null)
+        if (detailIcon != null)
         {
-            statsContent.text = GenerateItemDetailsText(item);
-        }
-    }
-
-    /// <summary>
-    /// Genera el texto de estadísticas del jugador
-    /// </summary>
-    private string GeneratePlayerStatsText()
-    {
-        if (statsManager == null || playerHealth == null) return "No hay datos disponibles";
-
-        System.Text.StringBuilder sb = new System.Text.StringBuilder();
-
-        // Vida
-        float currentHealth = playerHealth.CurrentHealth;
-        float currentMaxHealth = statsManager.GetStat(StatType.MaxHealth);
-        float baseMaxHealth = statsManager.GetBaseStat(StatType.MaxHealth);
-
-        sb.AppendLine($"<b>Vida:</b> {currentHealth:F0} / {FormatStatValue(currentMaxHealth, baseMaxHealth)}");
-
-        // Otras estadísticas principales
-        StatType[] mainStats = new StatType[]
-        {
-            StatType.MoveSpeed,
-            StatType.AttackDamage,
-            StatType.AttackSpeed,
-            StatType.MeleeAttackDamage,
-            StatType.MeleeAttackSpeed,
-            StatType.ShieldAttackDamage,
-            StatType.ShieldSpeed,
-            StatType.CriticalChance,
-            StatType.LifestealOnKill
-        };
-
-        foreach (var statType in mainStats)
-        {
-            float current = statsManager.GetStat(statType);
-            float baseVal = statsManager.GetBaseStat(statType);
-            string statName = GetStatDisplayName(statType);
-
-            // Formateador decimal F2
-            sb.AppendLine($"<b>{statName}:</b> {FormatStatValueDecimal(current, baseVal)}");
-        }
-
-        if (inventoryManager != null)
-        {
-            var activeBehavioralEffects = inventoryManager.ActiveBehavioralEffects;
-
-            if (activeBehavioralEffects != null && activeBehavioralEffects.Count > 0)
-            {
-                sb.AppendLine();
-                sb.AppendLine("<b><color=#FFD700>--- Efectos Activos ---</color></b>");
-
-                // Agrupar por categoría
-                var effectsByCategory = activeBehavioralEffects
-                    .Where(e => e != null)
-                    .GroupBy(e => e.category)
-                    .OrderBy(g => g.Key);
-
-                foreach (var categoryGroup in effectsByCategory)
-                {
-                    sb.AppendLine();
-                    sb.AppendLine($"<b><color=#FFA500>{GetEffectCategoryName(categoryGroup.Key)}</color></b>");
-
-                    foreach (var effect in categoryGroup)
-                    {
-                        string shortSummary = effect.GetShortSummary();
-                        sb.AppendLine($"<color=#FFE4B5>  • {shortSummary}</color>");
-                    }
-                }
-            }
-        }
-
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// Genera el texto de detalles de un ítem
-    /// </summary>
-    private string GenerateItemDetailsText(ShopItem item)
-    {
-        System.Text.StringBuilder sb = new System.Text.StringBuilder();
-
-        // Nombre
-        sb.AppendLine($"<size=120%><b>{item.itemName}</b></size>");
-        sb.AppendLine();
-
-        // Rareza
-        string rarityColor = ColorUtility.ToHtmlStringRGB(item.GetRarityColor());
-        sb.AppendLine($"<color=#{rarityColor}><b>Rareza:</b> {item.rarity}</color>");
-        sb.AppendLine();
-
-        // Descripción
-        sb.AppendLine($"<i>{item.description}</i>");
-        sb.AppendLine();
-
-        // Beneficios
-        if (item.benefits != null && item.benefits.Count > 0)
-        {
-            sb.AppendLine("<b>Beneficios:</b>");
-            foreach (var benefit in item.benefits)
-            {
-                string effectText = FormatEffect(benefit, true);
-                sb.AppendLine($"<color=#{ColorUtility.ToHtmlStringRGB(positiveStatColor)}>{effectText}</color>");
-            }
-            sb.AppendLine();
-        }
-
-        // Desventajas
-        if (item.drawbacks != null && item.drawbacks.Count > 0)
-        {
-            sb.AppendLine("<b>Desventajas:</b>");
-            foreach (var drawback in item.drawbacks)
-            {
-                string effectText = FormatEffect(drawback, false);
-                sb.AppendLine($"<color=#{ColorUtility.ToHtmlStringRGB(negativeStatColor)}>{effectText}</color>");
-            }
-            sb.AppendLine();
-        }
-
-        // Efectos especiales de amuletos
-        if (item.behavioralEffects != null && item.behavioralEffects.Count > 0)
-        {
-            sb.AppendLine("<b><color=#FFD700>Efectos Especiales:</color></b>");
-            foreach (var behavioralEffect in item.behavioralEffects)
-            {
-                if (behavioralEffect != null)
-                {
-                    string formattedDescription = behavioralEffect.GetFormattedDescription();
-                    sb.AppendLine($"<color=#FFA500>• {formattedDescription}</color>");
-                }
-            }
-            sb.AppendLine();
-        }
-
-        // Información temporal
-        if (item.isTemporary)
-        {
-            sb.AppendLine("<b><color=orange>? TEMPORAL</color></b>");
-            if (item.temporaryDuration > 0)
-            {
-                sb.AppendLine($"Duración: {item.temporaryDuration:F0} segundos");
-            }
-            if (item.temporaryRooms > 0)
-            {
-                sb.AppendLine($"Duración: {item.temporaryRooms} salas");
-            }
-        }
-
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// Formatea un efecto para mostrar
-    /// </summary>
-    private string FormatEffect(ItemEffect effect, bool isBenefit)
-    {
-        string statName = GetStatDisplayName(effect.type);
-        string sign = isBenefit ? "+" : "-";
-
-        if (effect.isPercentage)
-        {
-            return $"{sign}{effect.amount:F0}% {statName}";
-        }
-        else
-        {
-            return $"{sign}{effect.amount:F2} {statName}";
+            detailIcon.sprite = item.itemIcon;
+            detailIcon.enabled = item.itemIcon != null;
         }
     }
 
-    /// <summary>
-    /// Formatea un valor de estadística con su modificador
-    /// </summary>
-    private string FormatStatValue(float current, float baseValue)
+    public void HideItemDetails() => detailPanel?.SetActive(false);
+
+    public void SetInteractiveOpacity(bool active)
     {
-        float diff = current - baseValue;
-
-        if (Mathf.Abs(diff) < 0.01f)
-        {
-            return $"{current:F0}";
-        }
-        else if (diff > 0)
-        {
-            string color = ColorUtility.ToHtmlStringRGB(positiveStatColor);
-            return $"{baseValue:F0} <color=#{color}>+{diff:F0}</color>";
-        }
-        else
-        {
-            string color = ColorUtility.ToHtmlStringRGB(negativeStatColor);
-            return $"{baseValue:F0} <color=#{color}>{diff:F0}</color>";
-        }
-    }
-
-    /// <summary>
-    /// Formatea un valor de estadística con su modificador (CON DECIMALES)
-    /// </summary>
-    private string FormatStatValueDecimal(float current, float baseValue)
-    {
-        float diff = current - baseValue;
-
-        if (Mathf.Abs(diff) < 0.01f)
-        {
-            return $"{current:F2}";
-        }
-        else if (diff > 0)
-        {
-            string color = ColorUtility.ToHtmlStringRGB(positiveStatColor);
-            return $"{baseValue:F2} <color=#{color}>+{diff:F2}</color>";
-        }
-        else
-        {
-            string color = ColorUtility.ToHtmlStringRGB(negativeStatColor);
-            return $"{baseValue:F2} <color=#{color}>{diff:F2}</color>";
-        }
-    }
-
-    /// <summary>
-    /// Obtiene el nombre de visualización de una estadística
-    /// </summary>
-    private string GetStatDisplayName(StatType type)
-    {
-        switch (type)
-        {
-            case StatType.MaxHealth: return "Vida Máxima";
-            case StatType.MoveSpeed: return "Velocidad";
-            case StatType.AttackDamage: return "Daño";
-            case StatType.AttackSpeed: return "Velocidad de Ataque";
-            case StatType.MeleeAttackDamage: return "Daño Cuerpo a Cuerpo";
-            case StatType.MeleeAttackSpeed: return "Vel. Ataque Cuerpo aC";
-            case StatType.ShieldAttackDamage: return "Daño de Escudo";
-            case StatType.ShieldSpeed: return "Velocidad de Escudo";
-            case StatType.CriticalChance: return "Prob. Crítico";
-            case StatType.LifestealOnKill: return "Robo de Vida";
-            default: return type.ToString();
-        }
-    }
-
-    /// <summary>
-    /// Obtiene el nombre de una categoría
-    /// </summary>
-    private string GetCategoryName(ItemCategory category)
-    {
-        switch (category)
-        {
-            case ItemCategory.AttributeModifiers:
-                return "Variadores de atributos";
-            case ItemCategory.SkillEnhancers:
-                return "Mejoradores de habilidades";
-            case ItemCategory.CounterDistortions:
-                return "Contra distorsiones";
-            default:
-                return category.ToString();
-        }
-    }
-
-    /// <summary>
-    /// Obtiene el nombre de una categoría de efecto
-    /// </summary>
-    private string GetEffectCategoryName(EffectCategory category)
-    {
-        switch (category)
-        {
-            case EffectCategory.Combat: return "Combate";
-            case EffectCategory.Defense: return "Defensa";
-            case EffectCategory.Utility: return "Utilidad";
-            case EffectCategory.Healing: return "Curación";
-            case EffectCategory.Damage: return "Daño";
-            case EffectCategory.Special: return "Especial";
-            default: return category.ToString();
-        }
+        if (column2Group != null) column2Group.alpha = active ? 1f : col2Alpha;
+        if (column3Group != null) column3Group.alpha = active ? 1f : col3Alpha;
     }
 
     public Color GetHighlightColor() => highlightColor;
+    public bool IsOpen => isOpen;
+
+    #endregion
 }

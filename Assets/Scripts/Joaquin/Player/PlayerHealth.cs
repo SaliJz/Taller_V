@@ -6,10 +6,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// Clase que maneja la salud del jugador, incluyendo danio, curacion y etapas de vida.
-/// Archivo adaptado para soportar: veneno por tiempo y ralentizacion aplicada por areas (acido).
-/// </summary>
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
     // Tipos de etapas de vida del jugador.
@@ -21,12 +17,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     }
 
     [Header("Referencias")]
-    [SerializeField] private SpriteRenderer playerSpriteRenderer;
+    [SerializeField] private SpriteRenderer sprtRenderer;
     [SerializeField] private PlayerStatsManager statsManager;
     [SerializeField] private PlayerCombatActionManager combatActionManager;
     [SerializeField] private PlayerBlockSystem blockSystem;
-    [SerializeField] private PlayerAudioController playerAudioController;
-    [SerializeField] private Animator playerAnimator;
+    [SerializeField] private PlayerAudioController audioController;
+    [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
 
     [Header("Configuracion de Vida")]
     [Tooltip("Vida maxima por defecto si no se encuentra PlayerStatsManager.")]
@@ -159,19 +155,16 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         inventoryManager = FindAnyObjectByType<InventoryManager>();
 
         playerMovement = GetComponent<PlayerMovement>();
-        
         playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
-        
         playerShieldController = GetComponent<PlayerShieldController>();
-        
         blockSystem = GetComponent<PlayerBlockSystem>();
-        
         combatActionManager = GetComponent<PlayerCombatActionManager>();
-        
-        playerAnimator = GetComponentInChildren<Animator>();
-        
-        playerAudioController = GetComponentInChildren<PlayerAudioController>();
-        if (playerAudioController == null) ReportDebug("PlayerAudioController no encontrado en PlayerHealth.", 2);
+
+        playerAnimCtrl = GetComponentInChildren<PlayerAnimCtrl>();
+        if (playerAnimCtrl == null) ReportDebug("PlayerAnimCtrl no encontrado en PlayerHealth.", 2);
+
+        audioController = GetComponentInChildren<PlayerAudioController>();
+        if (audioController == null) ReportDebug("PlayerAudioController no encontrado en PlayerHealth.", 2);
 
         InitializeMaterialCache();
 
@@ -543,11 +536,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         {
             OnDamageReceived?.Invoke(damageToApply);
 
-            if (playerAnimator) playerAnimator.SetTrigger("GetHit");
-            if (playerAudioController != null)
-            {
-                playerAudioController.PlayDamageSound();
-            }
+            playerAnimCtrl?.PlayDamage();
+            audioController?.PlayDamageSound();
 
             currentHealth -= damageToApply;
             currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
@@ -665,7 +655,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         float timer = 0f;
 
         // Si no hay SpriteRenderer asignado, solo espera el tiempo sin intentar cambiar color.
-        if (playerSpriteRenderer == null)
+        if (sprtRenderer == null)
         {
             yield return new WaitForSeconds(damageInvulnerabilityTime);
             isDamageInvulnerable = false;
@@ -677,10 +667,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         // Parpadeo del sprite para indicar invulnerabilidad.
         while (timer < damageInvulnerabilityTime)
         {
-            playerSpriteRenderer.color = new Color(1f, 1f, 1f, 0.5f);
+            sprtRenderer.color = new Color(1f, 1f, 1f, 0.5f);
             yield return new WaitForSeconds(blinkInterval);
 
-            playerSpriteRenderer.color = Color.white;
+            sprtRenderer.color = Color.white;
             yield return new WaitForSeconds(blinkInterval);
 
             timer += blinkInterval * 2;
@@ -690,7 +680,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         damageInvulnerabilityCoroutine = null;
         ReportDebug("La invulnerabilidad por dano ha terminado.", 1);
 
-        playerSpriteRenderer.color = Color.white;
+        sprtRenderer.color = Color.white;
     }
 
     // Funcion que maneja el cooldown del bloqueo del escudo.
@@ -732,9 +722,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
 
         // Reproducir sonido de absorción de vida solo si realmente se ha curado algo y el audio controller está asignado.
-        if (healAmount > 0 && playerAudioController != null)
+        if (healAmount > 0 && audioController != null)
         {
-            playerAudioController.PlayLifeAbsorbSound();
+            audioController.PlayLifeAbsorbSound();
         }
 
         SyncCurrentHealthToSO();
@@ -780,7 +770,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
                     break;
             }
 
-            if (playerAnimator != null) playerAnimator.SetFloat("AgeState", ageStageValue);
+            playerAnimCtrl?.SetAgeStage(ageStageValue);
             ReportDebug($"Etapa de vida cambiada a {CurrentLifeStage}. Animator AgeStage seteado a {ageStageValue}.", 1);
 
             // Actualizar TextMeshPro si esta asignado
@@ -803,18 +793,18 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     /// </summary>
     private void TriggerAgeTransitionEffect()
     {
-        if (afterimagePrefab == null || playerSpriteRenderer == null) return;
+        if (afterimagePrefab == null || sprtRenderer == null) return;
 
-        GameObject ghost = Instantiate(afterimagePrefab, playerSpriteRenderer.transform.position, playerSpriteRenderer.transform.rotation);
+        GameObject ghost = Instantiate(afterimagePrefab, sprtRenderer.transform.position, sprtRenderer.transform.rotation);
 
-        ghost.transform.localScale = playerSpriteRenderer.transform.lossyScale;
+        ghost.transform.localScale = sprtRenderer.transform.lossyScale;
 
         SpriteRenderer ghostSR = ghost.GetComponent<SpriteRenderer>();
         if (ghostSR != null)
         {
-            ghostSR.sprite = playerSpriteRenderer.sprite;
-            ghostSR.flipX = playerSpriteRenderer.flipX;
-            ghostSR.flipY = playerSpriteRenderer.flipY;
+            ghostSR.sprite = sprtRenderer.sprite;
+            ghostSR.flipX = sprtRenderer.flipX;
+            ghostSR.flipY = sprtRenderer.flipY;
 
             if (whiteFlashMaterial != null)
             {
@@ -825,8 +815,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
                 ghostSR.color = new Color(10f, 10f, 10f, 1f);
             }
 
-            ghostSR.sortingLayerID = playerSpriteRenderer.sortingLayerID;
-            ghostSR.sortingOrder = playerSpriteRenderer.sortingOrder + 1;
+            ghostSR.sortingLayerID = sprtRenderer.sortingLayerID;
+            ghostSR.sortingOrder = sprtRenderer.sortingOrder + 1;
 
             StartCoroutine(AnimateAgeGhost(ghostSR, ghost));
         }
@@ -922,9 +912,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         isDying = true;
 
-        if (playerAudioController != null)
+        if (audioController != null)
         {
-            playerAudioController.PlayDeathSound();
+            audioController.PlayDeathSound();
         }
 
         ReportDebug("El jugador ha muerto. Cargando escena: " + sceneToLoadOnDeath, 1);

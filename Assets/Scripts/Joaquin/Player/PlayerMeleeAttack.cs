@@ -1,14 +1,10 @@
-// PlayerMeleeAttack.cs
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 /// <summary>
 /// Clase que maneja el ataque cuerpo a cuerpo del jugador.
-/// Ahora: primero se rota (snap a 8 direcciones), espera la rotación, y luego ejecuta el ataque.
 /// </summary>
 public class PlayerMeleeAttack : MonoBehaviour
 {
@@ -18,8 +14,8 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private GameObject visualBoxHit;
     [SerializeField] private PlayerShieldController playerShieldController;
     [SerializeField] private PlayerAudioController playerAudioController;
-    [SerializeField] private ShieldSkill shieldSkill;
-    [SerializeField] private Animator playerAnimator;
+    [SerializeField] private ShieldSkill playerShieldSkill;
+    [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
     [SerializeField] private AutoAim autoAim;
 
     [Header("Attack Configuration")]
@@ -122,22 +118,22 @@ public class PlayerMeleeAttack : MonoBehaviour
         //if (attack2Slash != null) attack2Slash.SetActive(false);
         //if (attack3Slash != null) attack3Slash.SetActive(false);
 
-        if (statsManager == null) statsManager = GetComponent<PlayerStatsManager>();
-        if (playerHealth == null) playerHealth = GetComponent<PlayerHealth>();
-        if (playerShieldController == null) playerShieldController = GetComponent<PlayerShieldController>();
-        if (playerMovement == null) playerMovement = GetComponent<PlayerMovement>();
-        if (shieldSkill == null) shieldSkill = GetComponent<ShieldSkill>();
-        if (playerAnimator == null) playerAnimator = GetComponentInChildren<Animator>();
-        if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
-        if (gamepadPointer == null) gamepadPointer = FindAnyObjectByType<GamepadPointer>();
-        if (autoAim == null) autoAim = GetComponent<AutoAim>();
+        statsManager = GetComponent<PlayerStatsManager>();
+        playerHealth = GetComponent<PlayerHealth>();
+        playerShieldController = GetComponent<PlayerShieldController>();
+        playerMovement = GetComponent<PlayerMovement>();
+        playerShieldSkill = GetComponent<ShieldSkill>();
+        playerAnimCtrl = GetComponentInChildren<PlayerAnimCtrl>();
+        playerAudioController = GetComponent<PlayerAudioController>();
+        gamepadPointer = FindAnyObjectByType<GamepadPointer>();
+        autoAim = GetComponent<AutoAim>();
 
         if (autoAim == null) ReportDebug("ShieldAutoAim no encontrado. El auto-aim del melee no funcionará.", 2);
         if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMeleeAttack. Usando valores de fallback.", 2);
         if (playerHealth == null) ReportDebug("PlayerHealth no se encuentra en el objeto.", 3);
         if (playerShieldController == null) ReportDebug("PlayerShieldController no se encuentra en el objeto.", 3);
         if (playerMovement == null) ReportDebug("PlayerMovement no se encuentra en el objeto. Lock de rotación no funcionará.", 2);
-        if (playerAnimator == null) ReportDebug("Animator no se encuentra en los hijos del objeto.", 2);
+        if (playerAnimCtrl == null) ReportDebug("PlayerAnimCtrl no se encuentra en los hijos del objeto.", 2);
         if (playerAudioController == null) ReportDebug("PlayerAudioController no se encuentra en el objeto.", 3);
         if (gamepadPointer == null) ReportDebug("GamepadPointer no se encuentra en la escena. La detección de dispositivo activo para el ataque podría fallar.", 2);
     }
@@ -286,8 +282,6 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         isAttacking = false;
 
-        if (playerAnimator != null) playerAnimator.speed = 1f;
-
         // Resetear combo para que no guarde el estado intermedio
         comboCount = 0;
         lastAttackTime = 0; // Forzar reset de tiempo
@@ -303,9 +297,9 @@ public class PlayerMeleeAttack : MonoBehaviour
             playerMovement.SetCanMove(true);
         }
 
-        if (playerAnimator != null)
+        if (playerAnimCtrl != null)
         {
-            playerAnimator.SetBool("IsAttacking", false);
+            playerAnimCtrl.damageActive = false;
         }
 
         // Ocultar gizmos de debug si se quedaron encendidos
@@ -433,13 +427,9 @@ public class PlayerMeleeAttack : MonoBehaviour
     {
         currentAttackIndex = attackIndex;
 
-        if (playerAnimator != null) playerAnimator.SetInteger("ComboNum", currentAttackIndex);
-
         isAttacking = true;
 
         OnAttacked?.Invoke(true);
-
-        if (playerAnimator != null) playerAnimator.SetBool("IsAttacking", true);
 
         if (playerMovement != null) playerMovement.SetCanMove(false);
 
@@ -465,15 +455,16 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
 
         if (playerMovement != null)
+        {
             playerMovement.LockFacingTo8Directions(targetDir, true);
-        else
-            RotateTowardsMouseInstant();
+        }
+        else RotateTowardsMouseInstant();
 
         yield return StartCoroutine(WaitForRotationLock());
 
         if (playerMovement != null) playerMovement.StartForcedMovement(true);
 
-        if (playerAnimator != null) playerAnimator.speed = currentSpeedFactor;
+        playerAnimCtrl?.PlayMelee(currentAttackIndex + 1);
 
         switch (attackIndex)
         {
@@ -491,8 +482,6 @@ public class PlayerMeleeAttack : MonoBehaviour
                 break;
         }
 
-        if (playerAnimator != null) playerAnimator.speed = 1f;
-
         if (playerMovement != null)
         {
             playerMovement.StopForcedMovement();
@@ -504,7 +493,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         OnAttacked?.Invoke(false);
 
-        if (playerAnimator != null) playerAnimator.SetBool("IsAttacking", false);
+        if (playerAnimCtrl != null) playerAnimCtrl.damageActive = false;
 
         hitEnemiesThisCombo.Clear();
     }
@@ -965,9 +954,9 @@ public class PlayerMeleeAttack : MonoBehaviour
         const AttackDamageType meleeDamageType = AttackDamageType.Melee;
 
         float currentToughnessBonus = 0f;
-        if (shieldSkill != null && shieldSkill.IsActive)
+        if (playerShieldSkill != null && playerShieldSkill.IsActive)
         {
-            currentToughnessBonus = shieldSkill.CurrentToughnessMultiplier;
+            currentToughnessBonus = playerShieldSkill.CurrentToughnessMultiplier;
         }
 
         float calculatedDamage = finalAttackDamage;
