@@ -72,24 +72,44 @@ public class PetraDashEffect : ItemEffectBase
 
     private void HandleDashStarted(Vector3 playerPosition, Vector3 dashDirection)
     {
-        Vector3 groundPos = new Vector3(playerPosition.x, 0.02f, playerPosition.z);
+        _statsManager.StartCoroutine(GenerateSpikesDuringDash(dashDirection));
+    }
 
-        AddTrailPoint(groundPos);
-        CloseCurrentTrail();
+    private System.Collections.IEnumerator GenerateSpikesDuringDash(Vector3 dashDirection)
+    {
+        float elapsed = 0f;
+        float duration = 0.3f; 
+        lastSpikeSpawnPos = Vector3.positiveInfinity;
 
-        bool tooClose = !float.IsPositiveInfinity(lastSpikeSpawnPos.x) &&
-                        Vector3.Distance(groundPos, lastSpikeSpawnPos) < spawnSpacingMin;
-        if (tooClose) return;
+        Vector3 startPos = new Vector3(_statsManager.transform.position.x, 0.02f, _statsManager.transform.position.z);
+        AddTrailPoint(startPos);
 
-        lastSpikeSpawnPos = groundPos;
-
-        float damage = 50f * dashSpikeDamagePercent;
-
-        for (int i = 0; i < spikesPerBurst; i++)
+        while (elapsed < duration)
         {
-            float delay = Random.Range(burstDelayMin, burstDelayMax);
-            SpawnDashSpikeDelayed(groundPos, dashDirection, damage, delay, i, spikesPerBurst);
+            Vector3 currentPos = new Vector3(_statsManager.transform.position.x, 0.02f, _statsManager.transform.position.z);
+
+            float dist = float.IsPositiveInfinity(lastSpikeSpawnPos.x) ?
+                         float.MaxValue : Vector3.Distance(currentPos, lastSpikeSpawnPos);
+
+            if (dist >= spawnSpacingMin)
+            {
+                lastSpikeSpawnPos = currentPos;
+                AddTrailPoint(currentPos); 
+
+                float damage = 50f * dashSpikeDamagePercent;
+
+                for (int i = 0; i < spikesPerBurst; i++)
+                {
+                    float delay = Random.Range(burstDelayMin, burstDelayMax);
+                    SpawnDashSpikeDelayed(currentPos, dashDirection, damage, delay, i, spikesPerBurst);
+                }
+            }
+
+            elapsed += Time.deltaTime;
+            yield return null;
         }
+
+        CloseCurrentTrail();
     }
 
     #endregion

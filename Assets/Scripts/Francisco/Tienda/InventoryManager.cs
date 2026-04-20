@@ -1,14 +1,16 @@
-using System.Collections.Generic;
-using UnityEngine;
-using TMPro;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using TMPro;
+using UnityEditorInternal.Profiling.Memory.Experimental;
+using UnityEngine;
 
 public class InventoryManager : MonoBehaviour
 {
     public const int MaxInventorySize = 10;
     private static readonly List<ShopItem> currentRunItems = new List<ShopItem>();
-    private readonly List<ItemEffectBase> activeAmuletEffects = new List<ItemEffectBase>(); 
+    private readonly List<ItemEffectBase> activeAmuletEffects = new List<ItemEffectBase>();
+    private readonly List<ItemEffectBase> activeEffects = new List<ItemEffectBase>();
 
     private PlayerStatsManager playerStatsManager;
     private PlayerHealth playerHealth;
@@ -111,15 +113,53 @@ public class InventoryManager : MonoBehaviour
 
     public bool TryAddItem(ShopItem item)
     {
-        if (CurrentRunItems.Count < MaxInventorySize) 
+        if (item.behavioralEffects != null && item.behavioralEffects.Count > 0)
         {
-            CurrentRunItems.Add(item); 
+            HandleEffectReplacement(item);
+        }
+
+        if (CurrentRunItems.Count < MaxInventorySize)
+        {
+            CurrentRunItems.Add(item);
             UpdateInventoryUI();
             return true;
         }
 
         ShowInventoryFullMessage();
         return false;
+    }
+
+    private void HandleEffectReplacement(ShopItem newItem)
+    {
+        foreach (var newEffect in newItem.behavioralEffects)
+        {
+            ItemEffectBase existingEffect = activeEffects.Find(e => e.typeEffect == newEffect.typeEffect);
+
+            if (existingEffect != null)
+            {
+                existingEffect.RemoveEffect(playerStatsManager);
+                activeEffects.Remove(existingEffect);
+
+                ShopItem itemToRemove = CurrentRunItems.Find(it =>
+                    it.behavioralEffects != null &&
+                    it.behavioralEffects.Contains(existingEffect));
+
+                if (itemToRemove != null)
+                {
+                    CurrentRunItems.Remove(itemToRemove);
+
+                    if (ShopManager.Instance != null)
+                    {
+                        ShopManager.Instance.ReturnItemToPool(itemToRemove);
+                    }
+
+                    Debug.Log($"[Inventory] Ítem '{itemToRemove.itemName}' reemplazado y devuelto a la tienda.");
+                }
+            }
+
+            activeEffects.Add(newEffect);
+            newEffect.ApplyEffect(playerStatsManager);
+        }
     }
 
     public int GetCurrentItemCount()
@@ -141,6 +181,23 @@ public class InventoryManager : MonoBehaviour
         ResetRunItems(); 
         UpdateInventoryUI();
     }
+
+    public void AddEffectToPlayer(ItemEffectBase newEffect)
+    {
+        ItemEffectBase existingEffect = activeEffects.Find(e => e.typeEffect == newEffect.typeEffect);
+
+        if (existingEffect != null)
+        {
+            existingEffect.RemoveEffect(playerStatsManager);
+            activeEffects.Remove(existingEffect);
+
+            Debug.Log($"[Inventory] Mecánica previa de tipo {existingEffect.typeEffect} eliminada.");
+        }
+
+        activeEffects.Add(newEffect);
+        newEffect.ApplyEffect(playerStatsManager);
+    }
+
 
     public bool RemoveRandomRelic()
     {

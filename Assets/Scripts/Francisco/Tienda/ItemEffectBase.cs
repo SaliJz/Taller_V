@@ -13,6 +13,13 @@ public enum EffectCategory
     Special      // Efectos especiales/únicos
 }
 
+public enum TypeEffect
+{
+    Dash,     
+    Shield,   
+    Melee
+}
+
 public abstract class ItemEffectBase : ScriptableObject
 {
     [Header("Identificación")]
@@ -21,6 +28,9 @@ public abstract class ItemEffectBase : ScriptableObject
     [TextArea(2, 4)]
     [Tooltip("Descripción detallada del efecto para mostrar en el inventario")]
     public string effectDescription = "Descripción del efecto.";
+
+    [Tooltip("Tipo de efecto para reglas de reemplazo (Dash, Shield, etc.)")]
+    public TypeEffect typeEffect;
 
     [Tooltip("Categoría del efecto (para organización visual)")]
     public EffectCategory category = EffectCategory.Combat;

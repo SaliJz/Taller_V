@@ -52,6 +52,12 @@ public class ShopItem : ScriptableObject
     [Tooltip("Duración en rooms (si es temporal por rooms)")]
     public int temporaryRooms = 0;
 
+    [Header("Categoría de Efecto")]
+    public bool hasEffectCategory = false;
+    public TypeEffect effectCategory = TypeEffect.Melee;
+
+    public bool IsEffectItem => hasEffectCategory && behavioralEffects != null && behavioralEffects.Count > 0;
+
     [Header("Visual")]
     [Tooltip("Sprite del ítem para el inventario")]
     public Sprite itemIcon;

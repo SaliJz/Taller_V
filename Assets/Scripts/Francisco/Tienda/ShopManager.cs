@@ -167,6 +167,20 @@ public class ShopManager : MonoBehaviour
         }
     }
 
+    public void ReturnItemToPool(ShopItem item)
+    {
+        if (!item.isAmulet && !allShopItems.Contains(item))
+        {
+            allShopItems.Add(item);
+        }
+        else if (item.isAmulet && !allAmulets.Contains(item))
+        {
+            allAmulets.Add(item);
+        }
+
+        Debug.Log($"[Shop] {item.itemName} ha vuelto a la reserva de objetos disponibles.");
+    }
+
     public GachaponEffectData GetAvailableGachaponEffect(EffectRarity targetRarity)
     {
         if (availableGachaponEffects.Count == 0)
