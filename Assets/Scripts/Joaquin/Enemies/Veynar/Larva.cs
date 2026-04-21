@@ -31,6 +31,9 @@ public class Larva : MonoBehaviour
     [SerializeField] private AudioClip attackExplosionSFX;
     [SerializeField] private AudioClip deathSFX;
 
+    [Header("Behavior Options")]
+    [SerializeField] private bool autoSearchPlayer = false;
+
     [Header("Debug")]
     [SerializeField] private bool drawGizmos = true;
 
@@ -47,6 +50,15 @@ public class Larva : MonoBehaviour
     private float lastAttackTime = -999f;
     private float lastDestinationTime = -999f;
     private bool initialized = false;
+
+    private void Start()
+    {
+        // Si al iniciar no tiene player y la opción está activa, lo busca.
+        if (player == null && autoSearchPlayer)
+        {
+            FindPlayerFallback();
+        }
+    }
 
     private void Awake()
     {
@@ -142,8 +154,11 @@ public class Larva : MonoBehaviour
 
     public void Initialize(Transform playerTransform)
     {
-        player = playerTransform ?? GameObject.FindGameObjectWithTag("Player")?.transform;
-        playerHealth = player ? player.GetComponent<PlayerHealth>() : null;
+        if (!autoSearchPlayer)
+        {
+            player = playerTransform ?? GameObject.FindGameObjectWithTag("Player")?.transform;
+            playerHealth = player ? player.GetComponent<PlayerHealth>() : null;
+        }
 
         if (agent == null) agent = GetComponent<NavMeshAgent>();
         if (agent != null && !agent.isOnNavMesh)
@@ -171,6 +186,17 @@ public class Larva : MonoBehaviour
 
         StartCoroutine(LifeCycle());
         initialized = true;
+    }
+
+    private void FindPlayerFallback()
+    {
+        GameObject p = GameObject.FindGameObjectWithTag("Player");
+        if (p != null)
+        {
+            player = p.transform;
+            playerHealth = p.GetComponent<PlayerHealth>();
+            ReportDebug("Player encontrado mediante auto-búsqueda.", 1);
+        }
     }
 
     private IEnumerator LifeCycle()

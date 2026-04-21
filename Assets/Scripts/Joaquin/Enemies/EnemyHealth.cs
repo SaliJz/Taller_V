@@ -70,6 +70,12 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private int currentHealthBars;
     private int totalHealthBars;
 
+    public bool CanBeStunned
+    {
+        get { return canBeStunned; }
+        set { canBeStunned = value; }
+    }
+
     public bool IsStunned => isStunned;
 
     public float CurrentHealth
@@ -261,6 +267,18 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         currentHealth = maxHealth;
         InitializeHealthUI();
         UpdateHealthUI();
+    }
+
+    public void SetInvulnerable(bool invulnerable)
+    {
+        if (invulnerable)
+        {
+            healthSlider.gameObject.SetActive(false);
+        }
+        else
+        {
+            healthSlider.gameObject.SetActive(true);
+        }
     }
 
     public void TakeDamage(float damageAmount, AttackDamageType damageType, Vector3 damageSourcePosition)
