@@ -295,7 +295,6 @@ public class Larva : MonoBehaviour
     {
         if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
         {
-            // Verificar si el ataque es bloqueado
             if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(transform.position))
             {
                 float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
@@ -304,11 +303,10 @@ public class Larva : MonoBehaviour
                 {
                     health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
                 }
-
                 return;
             }
 
-            health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+            health.TakeDamage(Mathf.Max(0, damageAmount), false, AttackDamageType.Melee);
         }
     }
 
@@ -359,7 +357,7 @@ public class Larva : MonoBehaviour
     {
         if (enemyHealth != null && !enemyHealth.IsDead)
         {
-            enemyHealth.Die();
+            Destroy(gameObject);
         }
     }
 
