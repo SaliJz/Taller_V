@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6365894302114309126}
   - component: {fileID: 4816279148211623788}
   - component: {fileID: 116740013267779213}
+  - component: {fileID: 7141668062536499444}
   m_Layer: 0
   m_Name: DerretirGota
   m_TagString: Untagged
@@ -138,6 +139,19 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &7141668062536499444
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6559599935256484765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64b34b6e31a20964fa0802483d47f26d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MainCamera: {fileID: 0}
 --- !u!1 &7534994044792997477
 GameObject:
   m_ObjectHideFlags: 0
@@ -150,6 +164,7 @@ GameObject:
   - component: {fileID: 2580667039341467086}
   - component: {fileID: 414728768716759239}
   - component: {fileID: 646799471791538117}
+  - component: {fileID: 9208128043908682360}
   m_Layer: 0
   m_Name: Derritiendoce
   m_TagString: Untagged
@@ -167,7 +182,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.3420201, z: 0, w: 0.9396927}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 8, y: 8, z: 8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5636512718677819681}
@@ -263,5 +278,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gota: {fileID: 6559599935256484765}
-  Velocidad: 1000
-  Tiempo: 5
+  Velocidad: 200
+  Tiempo: 1
+--- !u!114 &9208128043908682360
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7534994044792997477}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64b34b6e31a20964fa0802483d47f26d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MainCamera: {fileID: 0}
