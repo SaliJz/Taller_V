@@ -8555,6 +8555,8 @@ MonoBehaviour:
     key: 108
   - prefab: {fileID: 7000052904529192738, guid: 7737618296baa204dbf36392249e084b, type: 3}
     key: 111
+  - prefab: {fileID: 3837119024263144154, guid: 05f56586a38c92741809393681643a36, type: 3}
+    key: 48
 --- !u!4 &1599747484
 Transform:
   m_ObjectHideFlags: 0
@@ -9735,8 +9737,10 @@ MonoBehaviour:
 
     L: enemigo variante nivel 3 static
 
-    o: enemigo variante
+    O: enemigo variante
     nivel 3 aporia
+
+    0: enemigo veynar
 
 
     1:  Main Menu                       '
@@ -11512,6 +11516,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5887762237279078087, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: 'VFX_melee.Array.data[0]'
+      value: 
+      objectReference: {fileID: 8691761627428509639, guid: 96cc9f7ffcfaf894db40fbf042e3e5b9, type: 3}
+    - target: {fileID: 5887762237279078087, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: 'VFX_melee.Array.data[1]'
+      value: 
+      objectReference: {fileID: 8703670209187893264, guid: 05228ff2e426a9b46bf9968209f295e8, type: 3}
+    - target: {fileID: 5887762237279078087, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: 'VFX_melee.Array.data[2]'
+      value: 
+      objectReference: {fileID: 179912013950389617, guid: b71c5601d20b4c441828c4ef37840c91, type: 3}
     - target: {fileID: 6110564483166717353, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: sceneToLoadOnDeath
       value: TestEnemiesNew

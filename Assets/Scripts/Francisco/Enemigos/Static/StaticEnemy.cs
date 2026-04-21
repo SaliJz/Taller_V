@@ -47,12 +47,16 @@ public class StaticEnemy : BaseEnemyRanged
     [SerializeField] private AudioClip swarmSFX;
     [SerializeField] private AudioClip retaliatoryShootSFX;
 
+    [Header("Static - Animation")]
+    [SerializeField] private StaticAnimCtrl animCtrl;
+
     #endregion
 
     #region Private State
 
     private bool evasionOnCooldown = false;
     private bool evasionReady = true;
+    private bool isTeleporting = false;
     private Coroutine evasionCooldownRoutine;
     private Coroutine screenFeedbackRoutine;
     private List<GameObject> activeResidues = new List<GameObject>();
@@ -74,12 +78,56 @@ public class StaticEnemy : BaseEnemyRanged
         Health = staticHealth;
         ProjectileSpeed = staticProjectileSpeed;
         FireRate = staticFireInterval;
+
+        if (animCtrl == null)
+            animCtrl = GetComponentInChildren<StaticAnimCtrl>();
+
         UpdateEvasionFeedback();
     }
 
     #endregion
 
-    #region Pursue Overrides
+    #region Core Overrides
+
+    protected override void Update()
+    {
+        if (isTeleporting || isDead) return;
+        base.Update();
+    }
+
+    protected virtual void UpdateAnimationAndRotation() { }
+
+    protected override void OnBeforeTeleport(Vector3 fromPosition)
+    {
+        isTeleporting = true;
+        SpawnStressResidue(fromPosition);
+        animCtrl?.PlayTPout();
+        TogglePresence(false);
+    }
+
+    protected override void OnAfterTeleport(Vector3 toPosition)
+    {
+        animCtrl?.PlayTPin();
+        TogglePresence(true);
+        isTeleporting = false;
+    }
+
+    private void TogglePresence(bool active)
+    {
+        CapsuleCollider col = GetComponent<CapsuleCollider>();
+        if (col != null) col.enabled = active;
+
+        if (agent != null && agent.enabled) agent.isStopped = !active;
+
+        Transform vfxFolder = transform.Find("Enemy2_VisualEffects");
+        if (vfxFolder != null) vfxFolder.gameObject.SetActive(active);
+
+        if (screenRenderer != null) screenRenderer.enabled = active;
+    }
+
+    #endregion
+
+    #region Pursue Routines
 
     protected override IEnumerator Pursue1Routine()
     {
@@ -92,7 +140,8 @@ public class StaticEnemy : BaseEnemyRanged
             Vector3 targetPos = advancePos + lateral * lateralOffset;
 
             yield return StartCoroutine(TeleportToPositionRoutine(targetPos));
-            StartShootCoroutine();
+
+            if (!isTeleporting) StartShootCoroutine();
 
             yield return new WaitForSeconds(staticP1_teleportCooldown);
         }
@@ -112,7 +161,7 @@ public class StaticEnemy : BaseEnemyRanged
             if (NavMesh.SamplePosition(targetPos, out NavMeshHit hit, 3f, NavMesh.AllAreas))
             {
                 yield return StartCoroutine(TeleportToPositionRoutine(hit.position));
-                StartShootCoroutine();
+                if (!isTeleporting) StartShootCoroutine();
             }
 
             currentPointIndex = (currentPointIndex + 1) % cardinals.Length;
@@ -122,15 +171,16 @@ public class StaticEnemy : BaseEnemyRanged
 
     #endregion
 
-    #region Combat Logic
+    #region Combat & Evasion
 
     protected override void FireProjectile()
     {
-        if (enemyHealth != null && enemyHealth.IsStunned) return;
+        if (isTeleporting || isDead || (enemyHealth != null && enemyHealth.IsStunned)) return;
 
         if (AudioSource != null && swarmSFX != null) AudioSource.PlayOneShot(swarmSFX);
 
         ForceFacePlayer();
+        animCtrl?.PlayShoot();
 
         Vector3 dir = (playerTransform.position - FirePoint.position).normalized;
         FirePoint.rotation = Quaternion.LookRotation(dir);
@@ -141,23 +191,13 @@ public class StaticEnemy : BaseEnemyRanged
         if (staticProjectile != null)
         {
             string word = wordLibrary != null ? wordLibrary.GetRandomWord() : "STATIC";
-            staticProjectile.Initialize(
-                staticProjectileSpeed,
-                5f,
-                30f,
-                20f,
-                swarmDuration,
-                swarmDPS,
-                swarmRadius,
-                swarmParticlePrefab,
-                word
-            );
+            staticProjectile.Initialize(staticProjectileSpeed, 5f, 30f, 20f, swarmDuration, swarmDPS, swarmRadius, swarmParticlePrefab, word);
         }
     }
 
     protected override void HandleDamageTaken()
     {
-        if (isDead || !evasionReady || evasionOnCooldown) return;
+        if (isDead || isTeleporting || !evasionReady || evasionOnCooldown) return;
         StartCoroutine(ReactiveEvasionRoutine());
     }
 
@@ -171,11 +211,10 @@ public class StaticEnemy : BaseEnemyRanged
         Vector3 awayFromPlayer = (transform.position - playerTransform.position).normalized;
         Vector3 evasionTarget = transform.position + awayFromPlayer * evasionTeleportDistance;
 
-        SpawnStressResidue(playerTransform.position);
         yield return StartCoroutine(TeleportToPositionRoutine(evasionTarget));
 
         yield return new WaitForSeconds(0.1f);
-        FireRetaliatory();
+        if (!isDead) FireRetaliatory();
 
         if (evasionCooldownRoutine != null) StopCoroutine(evasionCooldownRoutine);
         evasionCooldownRoutine = StartCoroutine(EvasionCooldownRoutine());
@@ -183,10 +222,12 @@ public class StaticEnemy : BaseEnemyRanged
 
     private void FireRetaliatory()
     {
-        if (playerTransform == null || FirePoint == null || ProjectilePrefab == null) return;
+        if (isTeleporting || playerTransform == null || FirePoint == null || ProjectilePrefab == null) return;
 
         ForceFacePlayer();
         if (AudioSource != null && retaliatoryShootSFX != null) AudioSource.PlayOneShot(retaliatoryShootSFX);
+
+        animCtrl?.PlayShoot();
 
         Vector3 dir = (playerTransform.position - FirePoint.position).normalized;
         FirePoint.rotation = Quaternion.LookRotation(dir);
@@ -197,23 +238,13 @@ public class StaticEnemy : BaseEnemyRanged
         if (staticProjectile != null)
         {
             string word = wordLibrary != null ? wordLibrary.GetRandomWord() : "STATIC";
-            staticProjectile.Initialize(
-                staticProjectileSpeed,
-                5f,
-                30f,
-                20f,
-                swarmDuration,
-                swarmDPS,
-                swarmRadius,
-                swarmParticlePrefab,
-                word
-            );
+            staticProjectile.Initialize(staticProjectileSpeed, 5f, 30f, 20f, swarmDuration, swarmDPS, swarmRadius, swarmParticlePrefab, word);
         }
     }
 
     #endregion
 
-    #region Evasion & Residue Logic
+    #region VFX & Feedback
 
     private IEnumerator EvasionCooldownRoutine()
     {
@@ -246,10 +277,6 @@ public class StaticEnemy : BaseEnemyRanged
         }
     }
 
-    #endregion
-
-    #region Visual Feedback
-
     private void UpdateEvasionFeedback()
     {
         if (screenFeedbackRoutine != null) StopCoroutine(screenFeedbackRoutine);
@@ -264,29 +291,27 @@ public class StaticEnemy : BaseEnemyRanged
         {
             mat.SetColor(ShaderBorderColorId, evasionReadyBorderColor);
             mat.SetFloat(ShaderIconTypeId, ICON_EYE);
-            mat.SetFloat(ShaderShowIconId, 1f);
         }
         else
         {
             mat.SetColor(ShaderBorderColorId, evasionCooldownBorderColor);
             mat.SetFloat(ShaderIconTypeId, ICON_NO_SIGNAL);
-            mat.SetFloat(ShaderShowIconId, 1f);
         }
-        yield return new WaitForSeconds(0.1f);
         mat.SetFloat(ShaderShowIconId, 1f);
+        yield return null;
         screenFeedbackRoutine = null;
     }
 
     #endregion
 
-    #region Overrides
-
-    protected override void OnBeforeTeleport(Vector3 fromPosition) => SpawnStressResidue(fromPosition);
-    protected override void OnAfterTeleport(Vector3 toPosition) { }
+    #region Death
 
     protected override void HandleEnemyDeath(GameObject enemy)
     {
         if (isDead || enemy != gameObject) return;
+        isTeleporting = false;
+        animCtrl?.PlayDeath();
+        TogglePresence(false);
         for (int i = activeResidues.Count - 1; i >= 0; i--)
             if (activeResidues[i] != null) Destroy(activeResidues[i]);
         activeResidues.Clear();
