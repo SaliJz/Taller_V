@@ -9,7 +9,6 @@ public abstract class BaseEnemyRanged : MonoBehaviour
     #region Inspector Fields
 
     [Header("References")]
-    [SerializeField] private Animator animator;
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private Transform firePoint;
     [SerializeField] private AudioSource audioSource;
@@ -117,7 +116,6 @@ public abstract class BaseEnemyRanged : MonoBehaviour
 
     #region Properties
 
-    protected Animator Animator => animator;
     protected AudioSource AudioSource => audioSource;
     protected GameObject ProjectilePrefab => projectilePrefab;
     protected Transform FirePoint => firePoint;
@@ -146,7 +144,6 @@ public abstract class BaseEnemyRanged : MonoBehaviour
     {
         enemyHealth = GetComponent<EnemyHealth>();
         agent = GetComponent<NavMeshAgent>();
-        if (animator == null) animator = GetComponentInChildren<Animator>();
         wordLibrary = GetComponent<MorlockWordLibrary>();
 
         animHashX = Animator.StringToHash("Xaxis");
@@ -299,7 +296,6 @@ public abstract class BaseEnemyRanged : MonoBehaviour
 
         isDead = true;
 
-        if (animator != null) animator.SetBool(animHashAttack, false);
         if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
 
         ChangeState(EnemyState.Repositioning);
@@ -336,8 +332,6 @@ public abstract class BaseEnemyRanged : MonoBehaviour
             StopCoroutine(shootCoroutine);
             shootCoroutine = null;
         }
-
-        if (animator != null) animator.SetBool(animHashAttack, false);
 
         currentState = newState;
 
@@ -426,7 +420,6 @@ public abstract class BaseEnemyRanged : MonoBehaviour
                 if (agent != null && agent.enabled) agent.Warp(stepTarget);
             }
 
-            if (animator != null) animator.SetTrigger("Teleport");
             if (audioSource != null && teleportSFX != null) audioSource.PlayOneShot(teleportSFX);
             SpawnTeleportVFX(transform.position);
 
@@ -581,7 +574,6 @@ public abstract class BaseEnemyRanged : MonoBehaviour
     {
         float resolvedFireRate = useRandomFireRate ? Random.Range(minFireRate, maxFireRate) : fireRate;
         yield return new WaitForSeconds(resolvedFireRate);
-        if (animator != null) animator.SetTrigger("HasAttack");
         yield return new WaitForSeconds(animTeleportDelay);
 
         if (!isDead && currentState != EnemyState.Patrol && currentState != EnemyState.Repositioning)
@@ -671,12 +663,6 @@ public abstract class BaseEnemyRanged : MonoBehaviour
             float xInt = Mathf.Round(dirVec.x);
             float yInt = Mathf.Round(dirVec.z);
 
-            if (animator != null)
-            {
-                //animator.SetFloat(animHashX, xInt);
-                //animator.SetFloat(animHashY, yInt);
-            }
-
             lastLookDirection = new Vector3(xInt, 0, yInt);
         }
     }
@@ -696,12 +682,6 @@ public abstract class BaseEnemyRanged : MonoBehaviour
         float xInt = Mathf.Round(dirVec.x);
         float yInt = Mathf.Round(dirVec.z);
         lastLookDirection = new Vector3(xInt, 0, yInt);
-
-        if (animator != null)
-        {
-            animator.SetFloat(animHashX, xInt);
-            animator.SetFloat(animHashY, yInt);
-        }
     }
 
     #endregion
