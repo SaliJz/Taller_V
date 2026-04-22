@@ -66,7 +66,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         _externalInputThisFrame = false;
 
         UpdateDirection(H,V);
-        DebugInputs();
+        //DebugInputs();
 
         if (UpdateBlockLogic()) return;
         if (UpdateDashLogic()) return;
@@ -291,6 +291,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         //melee3 = 2
     }
 
+    /*
     private void DebugInputs()
     {
         if (Input.GetKeyDown(KeyCode.H)) HasShield = !HasShield;
@@ -321,4 +322,5 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         if (Input.GetKeyDown(KeyCode.Alpha2)) nextAge = Age.adult;
         if (Input.GetKeyDown(KeyCode.Alpha3)) nextAge = Age.old;
     }
+    */
 }

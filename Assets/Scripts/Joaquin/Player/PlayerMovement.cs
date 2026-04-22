@@ -222,7 +222,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         else
         {
             moveDirection = Vector3.zero;
-            playerAnimCtrl?.SetInputAxes(0f, 0f);
+            playerAnimCtrl?.SetInputAxes(lastMoveX, lastMoveY);
             //UpdateMovementAnimationSpeed(false);
         }
 
