@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 {
-    #region Variables
+    #region Inspector – References
 
     [Header("References")]
     [SerializeField] private PlayerStatsManager statsManager;
@@ -16,22 +16,27 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [SerializeField] private PlayerAudioController playerAudioController;
     [SerializeField] private PlayerInputModifier inputModifier;
 
+    #endregion
+
+    #region Inspector – Movement Settings
+
     [Header("Movement")]
     [HideInInspector] private float fallbackMoveSpeed = 5f;
     [SerializeField] private float moveSpeed = 5f;
     [HideInInspector] private float fallbackGravity = -9.81f;
     [SerializeField] private float gravity = -9.81f;
 
+    #endregion
+
+    #region Inspector – Audio Step Settings
+
     [Header("Audio Step Settings")]
     [SerializeField] private int level = 0;
     [SerializeField] private float stepInterval = 0.35f;
-    private float stepTimer = 0f;
 
-    public int Level
-    {
-        get { return level; }
-        set { level = value; }
-    }
+    #endregion
+
+    #region Inspector – Dash Settings
 
     [Header("Dash")]
     [Tooltip("Distancia base del dash antes de aplicar multiplicadores.")]
@@ -40,8 +45,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [SerializeField] private float baseDashCooldown = 0.3f;
     [Tooltip("Distancia total del dash después de aplicar multiplicadores.")]
     [SerializeField] private float dashDistance = 10f;
-    [Tooltip("Cooldown actual del dash después de aplicar modificadores.")]
-    [SerializeField] private float dashCooldown = 0.3f;
+    //[Tooltip("Cooldown actual del dash después de aplicar modificadores.")]
+    //[SerializeField] private float dashCooldown = 0.3f;
     [Tooltip("Duración del dash en segundos.")]
     [SerializeField] private float dashDuration = 0.3f;
     [SerializeField] private LayerMask traversableLayers;
@@ -50,6 +55,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [Header("Dash - Gap Crossing")]
     [SerializeField] private float gapDashBonusDistance = 3f;
     [SerializeField] private LayerMask groundLayerMask;
+
+    #endregion
+
+    #region Inspector – Edge Detection
 
     [Header("Edge Detection")]
     [SerializeField] private bool enableEdgeDetection = true;
@@ -60,6 +69,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [SerializeField] private float minHorizontalMagnitude = 0.01f;
     [SerializeField] private float groundTolerance = 0.15f;
 
+    #endregion
+
+    #region Inspector – Effects
+
     [Header("Effects")]
     [Header("Afterimage Settings")]
     [SerializeField] private GameObject afterimagePrefab;
@@ -69,14 +82,65 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [Header("Dash VFX")]
     [SerializeField] private ParticleSystem dashDustVFX;
 
+    #endregion
+
+    #region Inspector – Debug
+
     [Header("Debug")]
     [SerializeField] private bool canDebug = true;
 
+    #endregion
+
+    #region Internal State
+
+    // Input & Controllers
     private PlayerControlls playerControls;
     private Vector2 currentInputVector = Vector2.zero;
-
     private int playerLayer;
+
+    // Movement Physics
+    private Vector3 moveDirection;
+    private float yVelocity;
+    private float lastMoveX;
+    private float lastMoveY;
+    private float prevStepOffset = 0f;
+
+    // Flags & Modifiers
+    private bool canMove = true;
+    private bool allowExternalForces = true;
+    private bool inForcedMove = false;
+    private bool ignoreGravityDuringForcedMove = false;
+    private bool rotationLocked = false;
+    private Quaternion lockedRotation = Quaternion.identity;
+
+    // Dash State
     private float dashCooldownTimer = 0f;
+    private float currentDashDistance;
+    private float currentDashCooldown;
+    private bool isDashDisabled = false;
+    private Coroutine _dashDisableCoroutine;
+
+    // VFX & Audio State
+    private Material dashVFXMaterialInstance;
+    private float stepTimer = 0f;
+
+    // Debugging State
+    private Vector3 lastTargetCheck = Vector3.zero;
+    private bool lastTargetHit = false;
+
+    // External Tracking & Animation
+    //private bool hasIsAttackingParameter = false;
+    //private readonly Dictionary<string, float> runAnimationSpeedOverrides = new Dictionary<string, float>();
+
+    #endregion
+
+    #region Public Properties
+
+    public int Level
+    {
+        get { return level; }
+        set { level = value; }
+    }
 
     public bool IsDashing { get; private set; }
     public float DashCooldownTimer => dashCooldownTimer;
@@ -86,83 +150,22 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         set { moveSpeed = value; }
     }
 
-    private float prevStepOffset = 0f;
-    private Vector3 moveDirection;
-    private float yVelocity;
-    private bool canMove = true;
-    private float lastMoveX;
-    private float lastMoveY;
-
-    private float currentDashDistance;
-    private float currentDashCooldown;
-
-    private bool allowExternalForces = true;
-
-    private bool rotationLocked = false;
-    private Quaternion lockedRotation = Quaternion.identity;
-
-    private bool isDashDisabled = false;
     public bool IsDashDisabled
     {
         get { return isDashDisabled; }
         set { isDashDisabled = value; }
     }
 
-    private Material dashVFXMaterialInstance;
-
-    private bool inForcedMove = false;
-    private bool ignoreGravityDuringForcedMove = false;
-
-    private Vector3 lastTargetCheck = Vector3.zero;
-    private bool lastTargetHit = false;
-
     public bool IsRotationExternallyControlled { get; set; } = false;
-
-    private Coroutine _dashDisableCoroutine;
-    private bool hasIsAttackingParameter = false;
-    private readonly Dictionary<string, float> runAnimationSpeedOverrides = new Dictionary<string, float>();
 
     #endregion
 
-    #region Unity Methods
-
-    private void OnEnable()
-    {
-        PlayerStatsManager.OnStatChanged += HandleStatChanged;
-
-        playerControls?.Movement.Enable();
-    }
-
-    private void OnDisable()
-    {
-        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
-
-        playerControls?.Movement.Disable();
-    }
-
-    private void OnDestroy()
-    {
-        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
-
-        if (dashDustVFX != null)
-        {
-            dashDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            dashDustVFX.Clear(true);
-        }
-
-        if (dashVFXMaterialInstance != null)
-        {
-            Destroy(dashVFXMaterialInstance);
-            dashVFXMaterialInstance = null;
-        }
-
-        StopAllCoroutines();
-    }
+    #region Unity Lifecycle
 
     private void Awake()
     {
         playerControls = new PlayerControlls();
-        playerControls.Movement.SetCallbacks(this); 
+        playerControls.Movement.SetCallbacks(this);
     }
 
     private void Start()
@@ -193,42 +196,16 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         //UpdateMovementAnimationSpeed(false);
     }
 
-    private void UpdateDashStatsFromManager()
+    private void OnEnable()
     {
-        if (statsManager == null)
-        {
-            currentDashDistance = baseDashDistance;
-            currentDashCooldown = baseDashCooldown;
-            return;
-        }
-
-        float dashRangeMultiplier = statsManager.GetStat(StatType.DashRangeMultiplier);
-        if (dashRangeMultiplier <= 0f) dashRangeMultiplier = 1f; 
-
-        currentDashDistance = baseDashDistance * dashRangeMultiplier;
-
-        float dashCooldownMod = statsManager.GetStat(StatType.DashCooldownPost);
-        currentDashCooldown = Mathf.Max(0.1f, baseDashCooldown + dashCooldownMod);
-
-        ReportDebug($"Dash Stats actualizados: Distancia={currentDashDistance} (base:{baseDashDistance} x {dashRangeMultiplier}), Cooldown={currentDashCooldown} (base:{baseDashCooldown} + {dashCooldownMod}s)", 1);
+        PlayerStatsManager.OnStatChanged += HandleStatChanged;
+        playerControls?.Movement.Enable();
     }
 
-    private void HandleStatChanged(StatType statType, float newValue)
+    private void OnDisable()
     {
-        if (statType == StatType.MoveSpeed)
-        {
-            moveSpeed = newValue;
-        }
-        else if (statType == StatType.Gravity)
-        {
-            gravity = newValue;
-        }
-        else if (statType == StatType.DashRangeMultiplier || statType == StatType.DashCooldownPost)
-        {
-            UpdateDashStatsFromManager();
-        }
-
-        ReportDebug($"Stat {statType} cambiado a {newValue}.", 1);
+        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
+        playerControls?.Movement.Disable();
     }
 
     private void Update()
@@ -277,9 +254,71 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
+    private void OnDestroy()
+    {
+        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
+
+        if (dashDustVFX != null)
+        {
+            dashDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            dashDustVFX.Clear(true);
+        }
+
+        if (dashVFXMaterialInstance != null)
+        {
+            Destroy(dashVFXMaterialInstance);
+            dashVFXMaterialInstance = null;
+        }
+
+        StopAllCoroutines();
+    }
+
     #endregion
 
-    #region Custom Methods
+    #region Initialization & Event Handlers
+
+    private void UpdateDashStatsFromManager()
+    {
+        if (statsManager == null)
+        {
+            currentDashDistance = baseDashDistance;
+            currentDashCooldown = baseDashCooldown;
+            return;
+        }
+
+        float dashRangeMultiplier = statsManager.GetStat(StatType.DashRangeMultiplier);
+        if (dashRangeMultiplier <= 0f) dashRangeMultiplier = 1f;
+
+        currentDashDistance = baseDashDistance * dashRangeMultiplier;
+
+        float dashCooldownMod = statsManager.GetStat(StatType.DashCooldownPost);
+        currentDashCooldown = Mathf.Max(0.1f, baseDashCooldown + dashCooldownMod);
+
+        ReportDebug($"Dash Stats actualizados: Distancia={currentDashDistance} (base:{baseDashDistance} x {dashRangeMultiplier}), Cooldown={currentDashCooldown} (base:{baseDashCooldown} + {dashCooldownMod}s)", 1);
+    }
+
+    private void HandleStatChanged(StatType statType, float newValue)
+    {
+        if (statType == StatType.MoveSpeed)
+        {
+            moveSpeed = newValue;
+        }
+        else if (statType == StatType.Gravity)
+        {
+            gravity = newValue;
+        }
+        else if (statType == StatType.DashRangeMultiplier || statType == StatType.DashCooldownPost)
+        {
+            UpdateDashStatsFromManager();
+        }
+
+        ReportDebug($"Stat {statType} cambiado a {newValue}.", 1);
+    }
+
+    #endregion
+
+    #region Input Handling
+
     public void OnMove(InputAction.CallbackContext context)
     {
         Vector2 rawInput = context.ReadValue<Vector2>();
@@ -304,7 +343,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         cameraForward.y = 0;
         cameraRight.y = 0;
-        cameraForward.Normalize();  
+        cameraForward.Normalize();
         cameraRight.Normalize();
 
         moveDirection = (cameraForward * moveY + cameraRight * moveX).normalized;
@@ -348,26 +387,106 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
-    private void HandleFootstepsTimer()
+    #endregion
+
+    #region Core Movement Physics
+
+    private void ApplyGravity()
     {
-        stepTimer -= Time.deltaTime;
+        if (IsDashing) return;
 
-        if (stepTimer <= 0f)
+        if (inForcedMove && ignoreGravityDuringForcedMove)
         {
-            if (playerAudioController != null)
-            {
-                playerAudioController.PlayStepSound(level);
-            }
+            yVelocity = -0.5f;
+            return;
+        }
 
-            stepTimer = stepInterval;
+        if (controller.enabled && controller.isGrounded)
+        {
+            yVelocity = -0.5f;
+        }
+        else if (controller.enabled)
+        {
+            yVelocity += gravity * Time.deltaTime;
         }
     }
+
+    public void MoveCharacter(Vector3 displacement)
+    {
+        if (controller != null && controller.enabled)
+        {
+            if (enableEdgeDetection && controller.isGrounded)
+            {
+                displacement = ApplyEdgeDetectionToDisplacement(displacement);
+            }
+
+            controller.Move(displacement);
+        }
+    }
+
+    public void SetCanMove(bool state)
+    {
+        canMove = state;
+
+        if (!state)
+        {
+            moveDirection = Vector3.zero;
+            playerAnimCtrl?.SetInputAxes(0f, 0f);
+            //UpdateMovementAnimationSpeed(false);
+        }
+    }
+
+    public void StartForcedMovement(bool ignoreGravity)
+    {
+        inForcedMove = true;
+        ignoreGravityDuringForcedMove = ignoreGravity;
+        allowExternalForces = false;
+        if (ignoreGravity)
+        {
+            yVelocity = -0.5f;
+        }
+    }
+
+    public void StopForcedMovement()
+    {
+        inForcedMove = false;
+        ignoreGravityDuringForcedMove = false;
+        allowExternalForces = true;
+    }
+
+    public void SetExternalForcesAllowed(bool allowed) { allowExternalForces = allowed; }
+
+    public void TeleportTo(Vector3 position)
+    {
+        controller.enabled = false;
+        transform.position = position;
+        controller.enabled = true;
+
+        yVelocity = -0.5f;
+        moveDirection = Vector3.zero;
+    }
+
+    public bool IsEffectivelyGrounded()
+    {
+        if (controller == null) return false;
+        if (controller.isGrounded) return true;
+
+        Vector3 origin = transform.position + Vector3.up * 0.1f;
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit h, groundTolerance + 0.05f, groundLayerMask, QueryTriggerInteraction.Ignore))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    #endregion
+
+    #region Facing & Rotation Control
 
     private void RotateTowardsMovement()
     {
         if (rotationLocked)
         {
-
             transform.rotation = Quaternion.Slerp(transform.rotation, lockedRotation, 12f * Time.fixedDeltaTime);
             return;
         }
@@ -379,6 +498,83 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 12f * Time.fixedDeltaTime);
         }
     }
+
+    public void LockFacingTo8Directions(Vector3 worldDirection, bool setAnimatorAxes = true)
+    {
+        if (worldDirection.sqrMagnitude < 0.0001f) return;
+
+        Vector3 dir = worldDirection;
+        dir.y = 0f;
+        dir.Normalize();
+
+        float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+        float snapped = Mathf.Round(angle / 45f) * 45f;
+        Quaternion target = Quaternion.Euler(0f, snapped, 0f);
+
+        rotationLocked = true;
+        lockedRotation = target;
+
+        if (setAnimatorAxes && playerAnimCtrl != null && mainCameraTransform != null)
+        {
+            Vector3 camForward = mainCameraTransform.forward;
+            Vector3 camRight = mainCameraTransform.right;
+            camForward.y = 0f;
+            camRight.y = 0f;
+            camForward.Normalize();
+            camRight.Normalize();
+
+            Vector3 snappedDir = target * Vector3.forward;
+            float x = Mathf.Round(Vector3.Dot(snappedDir, camRight));
+            float y = Mathf.Round(Vector3.Dot(snappedDir, camForward));
+
+            lastMoveX = x;
+            lastMoveY = y;
+
+            playerAnimCtrl.SetInputAxes(lastMoveX, lastMoveY);
+        }
+    }
+
+    public void UnlockFacing()
+    {
+        rotationLocked = false;
+
+        if (playerAnimCtrl != null && mainCameraTransform != null)
+        {
+            Vector3 camForward = mainCameraTransform.forward;
+            Vector3 camRight = mainCameraTransform.right;
+            camForward.y = 0f;
+            camRight.y = 0f;
+            camForward.Normalize();
+            camRight.Normalize();
+
+            if (moveDirection.magnitude > 0.1f)
+            {
+                Vector3 currentDir = moveDirection.normalized;
+                float x = Mathf.Round(Vector3.Dot(currentDir, camRight));
+                float y = Mathf.Round(Vector3.Dot(currentDir, camForward));
+
+                lastMoveX = x;
+                lastMoveY = y;
+            }
+
+            playerAnimCtrl.SetInputAxes(lastMoveX, lastMoveY);
+        }
+    }
+
+    public Quaternion GetLockedRotation()
+    {
+        return lockedRotation;
+    }
+
+    public void ForceApplyLockedRotation()
+    {
+        transform.rotation = lockedRotation;
+    }
+
+    #endregion
+
+    #region Dash Mechanics
+
     public IEnumerator ExecuteDashFromManager()
     {
         yield return StartCoroutine(DashRoutine());
@@ -475,34 +671,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         dashCooldownTimer = currentDashCooldown;
     }
 
-    private void InitializeDashVFX()
-    {
-        if (dashDustVFX == null) return;
-
-        dashVFXMaterialInstance = new Material(dashDustVFX.GetComponent<ParticleSystemRenderer>().sharedMaterial);
-        dashDustVFX.GetComponent<ParticleSystemRenderer>().material = dashVFXMaterialInstance;
-
-        dashDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        dashDustVFX.Clear(true);
-    }
-
-    private void PlayDashVFX(bool active)
-    {
-        if (dashDustVFX == null) return;
-        var emission = dashDustVFX.emission;
-        emission.enabled = active;
-
-        if (active)
-        {
-            if (!dashDustVFX.isPlaying) dashDustVFX.Play();
-        }
-        else
-        {
-            dashDustVFX.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
-            dashDustVFX.Clear(false);
-        }
-    }
-
     private IEnumerator PerformDash(Vector3 targetPosition, float duration)
     {
         float savedGravity = gravity;
@@ -564,50 +732,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         if (controller != null) controller.stepOffset = prevStepOffset;
     }
 
-    private void ToggleLayerCollisions(bool ignore)
-    {
-        for (int i = 0; i < 32; i++)
-        {
-            if (traversableLayers == (traversableLayers | (1 << i)))
-            {
-                Physics.IgnoreLayerCollision(playerLayer, i, ignore);
-            }
-        }
-    }
-
-    private Vector3 ApplyEdgeDetection(Vector3 movement)
-    {
-
-        if (!controller.isGrounded)
-        {
-            return movement;
-        }
-
-
-        Vector3 horizontalMovement = new Vector3(movement.x, 0f, movement.z);
-        if (horizontalMovement.magnitude < 0.01f)
-        {
-            return movement;
-        }
-
-        Vector3 movementDirection = horizontalMovement.normalized;
-        Vector3 rayOrigin = transform.position + Vector3.up * edgeRaycastHeight;
-        Vector3 checkPosition = rayOrigin + movementDirection * (controller.radius + edgeDetectionDistance);
-
-
-        float rayDistance = controller.height + 0.5f;
-
-        if (!Physics.Raycast(checkPosition, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore))
-        {
-            ReportDebug("Borde detectado. Bloqueando movimiento para prevenir caída.", 1);
-
-
-            return new Vector3(0f, movement.y, 0f);
-        }
-
-
-        return movement;
-    }
     private bool ValidateDashPath(Vector3 direction, out Vector3 finalPosition)
     {
         Vector3 origin = transform.position;
@@ -616,7 +740,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         Vector3 p1 = origin + controller.center + Vector3.up * (playerHeight / 2f - playerRadius);
         Vector3 p2 = origin + controller.center - Vector3.up * (playerHeight / 2f - playerRadius);
-
 
         if (Physics.CapsuleCast(p1, p2, playerRadius, direction, out RaycastHit obstacleHit, currentDashDistance, dashCollisionLayers, QueryTriggerInteraction.Ignore))
         {
@@ -638,7 +761,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             return true;
         }
 
-
         float scanHeight = 2.0f;
         Vector3 baseTarget = origin + direction * currentDashDistance + Vector3.up * scanHeight;
 
@@ -650,7 +772,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             ReportDebug("Dash estándar seguro.", 1);
             return true;
         }
-
 
         float scanStart = currentDashDistance + 0.1f;
         float scanMax = currentDashDistance + gapDashBonusDistance;
@@ -701,7 +822,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             return true;
         }
 
-
         float safeLedgeDistance = GetMaxSafeDistance(direction, currentDashDistance);
 
         float minEffectiveDashDistance = 0.5f;
@@ -731,90 +851,11 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             return true;
         }
 
-
         finalPosition = origin;
         lastTargetCheck = origin;
         lastTargetHit = false;
         ReportDebug("Dash cancelado por inseguridad total.", 2);
         return true;
-    }
-
-    private IEnumerator AfterimageRoutine()
-    {
-        float interval = 0.05f;
-
-        while (IsDashing)
-        {
-            if (afterimagePrefab != null)
-            {
-                SpriteRenderer srcSprite = GetComponentInChildren<SpriteRenderer>();
-
-                if (srcSprite != null)
-                {
-                    GameObject afterimage = Instantiate(afterimagePrefab, srcSprite.transform.position, srcSprite.transform.rotation);
-
-                    afterimage.transform.localScale = srcSprite.transform.lossyScale;
-
-                    SpriteRenderer dstSprite = afterimage.GetComponent<SpriteRenderer>();
-
-                    if (dstSprite != null)
-                    {
-
-                        dstSprite.sprite = srcSprite.sprite;
-                        dstSprite.flipX = srcSprite.flipX;
-                        dstSprite.flipY = srcSprite.flipY;
-                        Color color = srcSprite.color;
-                        color.a = afterimageAlpha;
-                        dstSprite.color = color;
-
-                        dstSprite.sortingLayerID = srcSprite.sortingLayerID;
-                        dstSprite.sortingOrder = srcSprite.sortingOrder - 1;
-                    }
-                    Destroy(afterimage, afterimageLifetime);
-                }
-            }
-            yield return new WaitForSeconds(interval);
-        }
-    }
-
-    public void DisableDashForDuration(float duration)
-    {
-        if (_dashDisableCoroutine != null)
-        {
-            StopCoroutine(_dashDisableCoroutine);
-        }
-
-        _dashDisableCoroutine = StartCoroutine(DashDisableRoutine(duration));
-    }
-
-    private IEnumerator DashDisableRoutine(float duration)
-    {
-        IsDashDisabled = true;
-
-        yield return new WaitForSeconds(duration);
-
-        IsDashDisabled = false;
-        _dashDisableCoroutine = null;
-    }
-
-    private void ApplyGravity()
-    {
-        if (IsDashing) return;
-
-        if (inForcedMove && ignoreGravityDuringForcedMove)
-        {
-            yVelocity = -0.5f;
-            return;
-        }
-
-        if (controller.enabled && controller.isGrounded)
-        {
-            yVelocity = -0.5f;
-        }
-        else if (controller.enabled)
-        {
-            yVelocity += gravity * Time.deltaTime;
-        }
     }
 
     public void CancelDash()
@@ -844,125 +885,60 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         ReportDebug("Dash cancelado.", 1);
     }
 
-    public void SetCanMove(bool state)
+    public void DisableDashForDuration(float duration)
     {
-        canMove = state;
-
-        if (!state)
+        if (_dashDisableCoroutine != null)
         {
-            moveDirection = Vector3.zero;
-
-            playerAnimCtrl?.SetInputAxes(0f, 0f);
-
-            //UpdateMovementAnimationSpeed(false);
-        }
-    }
-    /*
-    private void UpdateMovementAnimationSpeed(bool isMoving)
-    {
-        if (playerAnimator == null)
-        {
-            return;
+            StopCoroutine(_dashDisableCoroutine);
         }
 
-        if (hasIsAttackingParameter && playerAnimator.GetBool("IsAttacking"))
-        {
-            return;
-        }
-
-        float targetAnimatorSpeed = 1f;
-
-        if (isMoving && runAnimationSpeedOverrides.Count > 0)
-        {
-            targetAnimatorSpeed = GetLowestRunAnimationSpeedOverride();
-        }
-
-        playerAnimator.speed = targetAnimatorSpeed;
-    }
-    
-    private bool AnimatorHasParameter(Animator animator, string parameterName)
-    {
-        if (animator == null)
-        {
-            return false;
-        }
-
-        foreach (AnimatorControllerParameter parameter in animator.parameters)
-        {
-            if (parameter.name == parameterName)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        _dashDisableCoroutine = StartCoroutine(DashDisableRoutine(duration));
     }
 
-    public void SetRunAnimationSpeedOverride(string key, float animatorSpeed)
+    private IEnumerator DashDisableRoutine(float duration)
     {
-        if (string.IsNullOrEmpty(key))
-        {
-            return;
-        }
-
-        runAnimationSpeedOverrides[key] = Mathf.Clamp(animatorSpeed, 0.1f, 3f);
-        UpdateMovementAnimationSpeed(playerAnimator != null && playerAnimator.GetBool("Running"));
+        IsDashDisabled = true;
+        yield return new WaitForSeconds(duration);
+        IsDashDisabled = false;
+        _dashDisableCoroutine = null;
     }
 
-    public void ClearRunAnimationSpeedOverride(string key)
+    #endregion
+
+    #region Edge Detection & Environment Navigation
+
+    private Vector3 ApplyEdgeDetection(Vector3 movement)
     {
-        if (string.IsNullOrEmpty(key))
+        if (!controller.isGrounded)
         {
-            return;
+            return movement;
         }
 
-        runAnimationSpeedOverrides.Remove(key);
-        UpdateMovementAnimationSpeed(playerAnimator != null && playerAnimator.GetBool("Running"));
-    }
-
-    private float GetLowestRunAnimationSpeedOverride()
-    {
-        float lowestSpeed = 1f;
-
-        foreach (float overrideSpeed in runAnimationSpeedOverrides.Values)
+        Vector3 horizontalMovement = new Vector3(movement.x, 0f, movement.z);
+        if (horizontalMovement.magnitude < 0.01f)
         {
-            if (overrideSpeed < lowestSpeed)
-            {
-                lowestSpeed = overrideSpeed;
-            }
+            return movement;
         }
 
-        return lowestSpeed;
-    }
-    */
-    public void TeleportTo(Vector3 position)
-    {
-        controller.enabled = false;
-        transform.position = position;
-        controller.enabled = true;
+        Vector3 movementDirection = horizontalMovement.normalized;
+        Vector3 rayOrigin = transform.position + Vector3.up * edgeRaycastHeight;
+        Vector3 checkPosition = rayOrigin + movementDirection * (controller.radius + edgeDetectionDistance);
 
-        yVelocity = -0.5f;
-        moveDirection = Vector3.zero;
-    }
+        float rayDistance = controller.height + 0.5f;
 
-    public bool IsEffectivelyGrounded()
-    {
-        if (controller == null) return false;
-        if (controller.isGrounded) return true;
-
-        Vector3 origin = transform.position + Vector3.up * 0.1f;
-        if (Physics.Raycast(origin, Vector3.down, out RaycastHit h, groundTolerance + 0.05f, groundLayerMask, QueryTriggerInteraction.Ignore))
+        if (!Physics.Raycast(checkPosition, Vector3.down, rayDistance, groundLayerMask, QueryTriggerInteraction.Ignore))
         {
-            return true;
+            ReportDebug("Borde detectado. Bloqueando movimiento para prevenir caída.", 1);
+            return new Vector3(0f, movement.y, 0f);
         }
-        return false;
+
+        return movement;
     }
 
     public bool IsPositionSafeForCapsule(Vector3 pos)
     {
         float checkRadius = controller.radius * 0.95f;
         float rayLength = controller.height + 1.0f;
-
 
         Vector3[] checkPoints = new Vector3[]
         {
@@ -1089,6 +1065,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         return Vector3.zero;
     }
+
     private Vector3 ApplyEdgeDetectionToDisplacement(Vector3 displacement)
     {
         if (!enableEdgeDetection || controller == null || !IsEffectivelyGrounded()) return displacement;
@@ -1107,7 +1084,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             Vector3 slide = TryComputeSlideAlongEdge(desiredHorizontal.normalized, safeHorizontal.magnitude);
             if (slide.sqrMagnitude > 0.0001f)
             {
-
                 return new Vector3(slide.x, displacement.y, slide.z);
             }
 
@@ -1115,19 +1091,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
 
         return displacement;
-    }
-    public void MoveCharacter(Vector3 displacement)
-    {
-        if (controller != null && controller.enabled)
-        {
-
-            if (enableEdgeDetection && controller.isGrounded)
-            {
-                displacement = ApplyEdgeDetectionToDisplacement(displacement);
-            }
-
-            controller.Move(displacement);
-        }
     }
 
     public bool IsMovementSafeDirection(Vector3 dir, float distance)
@@ -1151,98 +1114,185 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         return false;
     }
 
-    public void LockFacingTo8Directions(Vector3 worldDirection, bool setAnimatorAxes = true)
+    private void ToggleLayerCollisions(bool ignore)
     {
-        if (worldDirection.sqrMagnitude < 0.0001f) return;
-
-        Vector3 dir = worldDirection;
-        dir.y = 0f;
-        dir.Normalize();
-
-        float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
-        float snapped = Mathf.Round(angle / 45f) * 45f;
-        Quaternion target = Quaternion.Euler(0f, snapped, 0f);
-
-        rotationLocked = true;
-        lockedRotation = target;
-
-        if (setAnimatorAxes && playerAnimCtrl != null && mainCameraTransform != null)
+        for (int i = 0; i < 32; i++)
         {
-            Vector3 camForward = mainCameraTransform.forward;
-            Vector3 camRight = mainCameraTransform.right;
-            camForward.y = 0f;
-            camRight.y = 0f;
-            camForward.Normalize();
-            camRight.Normalize();
-
-            Vector3 snappedDir = target * Vector3.forward;
-            float x = Mathf.Round(Vector3.Dot(snappedDir, camRight));
-            float y = Mathf.Round(Vector3.Dot(snappedDir, camForward));
-
-            lastMoveX = x;
-            lastMoveY = y;
-
-            playerAnimCtrl.SetInputAxes(lastMoveX, lastMoveY);
-        }
-    }
-    public void UnlockFacing()
-    {
-        rotationLocked = false;
-
-        if (playerAnimCtrl != null && mainCameraTransform != null)
-        {
-            Vector3 camForward = mainCameraTransform.forward;
-            Vector3 camRight = mainCameraTransform.right;
-            camForward.y = 0f;
-            camRight.y = 0f;
-            camForward.Normalize();
-            camRight.Normalize();
-
-            if (moveDirection.magnitude > 0.1f)
+            if (traversableLayers == (traversableLayers | (1 << i)))
             {
-                Vector3 currentDir = moveDirection.normalized;
-                float x = Mathf.Round(Vector3.Dot(currentDir, camRight));
-                float y = Mathf.Round(Vector3.Dot(currentDir, camForward));
-
-                lastMoveX = x;
-                lastMoveY = y;
+                Physics.IgnoreLayerCollision(playerLayer, i, ignore);
             }
-
-            playerAnimCtrl.SetInputAxes(lastMoveX, lastMoveY);
         }
-    }
-
-    public void StartForcedMovement(bool ignoreGravity)
-    {
-        inForcedMove = true;
-        ignoreGravityDuringForcedMove = ignoreGravity;
-        allowExternalForces = false;
-        if (ignoreGravity)
-        {
-            yVelocity = -0.5f;
-        }
-    }
-
-    public void StopForcedMovement()
-    {
-        inForcedMove = false;
-        ignoreGravityDuringForcedMove = false;
-        allowExternalForces = true;
-    }
-
-    public void SetExternalForcesAllowed(bool allowed) { allowExternalForces = allowed; }
-    public Quaternion GetLockedRotation()
-    {
-        return lockedRotation;
-    }
-    public void ForceApplyLockedRotation()
-    {
-        transform.rotation = lockedRotation;
     }
 
     #endregion
 
-    #region Debugging
+    #region Visual & Audio Effects
+
+    private void HandleFootstepsTimer()
+    {
+        stepTimer -= Time.deltaTime;
+
+        if (stepTimer <= 0f)
+        {
+            if (playerAudioController != null)
+            {
+                playerAudioController.PlayStepSound(level);
+            }
+
+            stepTimer = stepInterval;
+        }
+    }
+
+    private void InitializeDashVFX()
+    {
+        if (dashDustVFX == null) return;
+
+        dashVFXMaterialInstance = new Material(dashDustVFX.GetComponent<ParticleSystemRenderer>().sharedMaterial);
+        dashDustVFX.GetComponent<ParticleSystemRenderer>().material = dashVFXMaterialInstance;
+
+        dashDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        dashDustVFX.Clear(true);
+    }
+
+    private void PlayDashVFX(bool active)
+    {
+        if (dashDustVFX == null) return;
+        var emission = dashDustVFX.emission;
+        emission.enabled = active;
+
+        if (active)
+        {
+            if (!dashDustVFX.isPlaying) dashDustVFX.Play();
+        }
+        else
+        {
+            dashDustVFX.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+            dashDustVFX.Clear(false);
+        }
+    }
+
+    private IEnumerator AfterimageRoutine()
+    {
+        float interval = 0.05f;
+
+        while (IsDashing)
+        {
+            if (afterimagePrefab != null)
+            {
+                SpriteRenderer srcSprite = GetComponentInChildren<SpriteRenderer>();
+
+                if (srcSprite != null)
+                {
+                    GameObject afterimage = Instantiate(afterimagePrefab, srcSprite.transform.position, srcSprite.transform.rotation);
+
+                    afterimage.transform.localScale = srcSprite.transform.lossyScale;
+
+                    SpriteRenderer dstSprite = afterimage.GetComponent<SpriteRenderer>();
+
+                    if (dstSprite != null)
+                    {
+                        dstSprite.sprite = srcSprite.sprite;
+                        dstSprite.flipX = srcSprite.flipX;
+                        dstSprite.flipY = srcSprite.flipY;
+                        Color color = srcSprite.color;
+                        color.a = afterimageAlpha;
+                        dstSprite.color = color;
+
+                        dstSprite.sortingLayerID = srcSprite.sortingLayerID;
+                        dstSprite.sortingOrder = srcSprite.sortingOrder - 1;
+                    }
+                    Destroy(afterimage, afterimageLifetime);
+                }
+            }
+            yield return new WaitForSeconds(interval);
+        }
+    }
+
+    #endregion
+
+    #region Legacy & Animation Support
+
+    /*
+    private void UpdateMovementAnimationSpeed(bool isMoving)
+    {
+        if (playerAnimator == null)
+        {
+            return;
+        }
+
+        if (hasIsAttackingParameter && playerAnimator.GetBool("IsAttacking"))
+        {
+            return;
+        }
+
+        float targetAnimatorSpeed = 1f;
+
+        if (isMoving && runAnimationSpeedOverrides.Count > 0)
+        {
+            targetAnimatorSpeed = GetLowestRunAnimationSpeedOverride();
+        }
+
+        playerAnimator.speed = targetAnimatorSpeed;
+    }
+    
+    private bool AnimatorHasParameter(Animator animator, string parameterName)
+    {
+        if (animator == null)
+        {
+            return false;
+        }
+
+        foreach (AnimatorControllerParameter parameter in animator.parameters)
+        {
+            if (parameter.name == parameterName)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void SetRunAnimationSpeedOverride(string key, float animatorSpeed)
+    {
+        if (string.IsNullOrEmpty(key))
+        {
+            return;
+        }
+
+        runAnimationSpeedOverrides[key] = Mathf.Clamp(animatorSpeed, 0.1f, 3f);
+        UpdateMovementAnimationSpeed(playerAnimator != null && playerAnimator.GetBool("Running"));
+    }
+
+    public void ClearRunAnimationSpeedOverride(string key)
+    {
+        if (string.IsNullOrEmpty(key))
+        {
+            return;
+        }
+
+        runAnimationSpeedOverrides.Remove(key);
+        UpdateMovementAnimationSpeed(playerAnimator != null && playerAnimator.GetBool("Running"));
+    }
+
+    private float GetLowestRunAnimationSpeedOverride()
+    {
+        float lowestSpeed = 1f;
+
+        foreach (float overrideSpeed in runAnimationSpeedOverrides.Values)
+        {
+            if (overrideSpeed < lowestSpeed)
+            {
+                lowestSpeed = overrideSpeed;
+            }
+        }
+
+        return lowestSpeed;
+    }
+    */
+
+    #endregion
 
     #region Debugging
 
@@ -1408,7 +1458,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     #endregion
 
-    #endregion
+    #region Logging
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     private static void ReportDebug(string message, int reportPriorityLevel)
@@ -1429,4 +1479,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
                 break;
         }
     }
+
+    #endregion
 }

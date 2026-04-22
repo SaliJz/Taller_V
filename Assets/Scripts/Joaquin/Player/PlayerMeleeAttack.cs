@@ -8,6 +8,8 @@ using UnityEngine;
 /// </summary>
 public class PlayerMeleeAttack : MonoBehaviour
 {
+    #region Inspector – References
+
     [Header("References")]
     [SerializeField] private PlayerStatsManager statsManager;
     [SerializeField] private GameObject visualSphereHit;
@@ -17,6 +19,10 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private ShieldSkill playerShieldSkill;
     [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
     [SerializeField] private AutoAim autoAim;
+
+    #endregion
+
+    #region Inspector – Base Attack Configuration
 
     [Header("Attack Configuration")]
     [SerializeField] private Transform hitPoint;
@@ -32,12 +38,20 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private bool canShowHitGizmo = false;
 
+    #endregion
+
+    #region Inspector – Combo Configuration
+
     [Header("Combo Configuration")]
     [SerializeField] private float autoAimRange = 5f;
     [SerializeField] private float comboResetTime = 2f;
-    [SerializeField] private float[] baseComboMovementForces = new float[3] { 1.5f, 2f, 1.8f }; 
+    [SerializeField] private float[] baseComboMovementForces = new float[3] { 1.5f, 2f, 1.8f };
     [SerializeField] private float[] comboLockDurations = new float[3] { 0.4f, 0.6f, 0.8f };
     [SerializeField] private float[] comboStunDurations = new float[3] { 0.5f, 0.5f, 1f };
+
+    #endregion
+
+    #region Inspector – Attack Moves Settings
 
     [Header("Attack 1 (Basic)")]
     [SerializeField] private ParticleSystem vfxAttack1Slash;
@@ -58,11 +72,19 @@ public class PlayerMeleeAttack : MonoBehaviour
     [Tooltip("Multiplicador de daño aplicado solo en el tercer golpe del combo")]
     [SerializeField] private float attack3DamageMultiplier = 1.5f;
 
+    #endregion
+
+    #region Inspector – Knockback Configuration
+
     [Header("knockback Configuration")]
     [SerializeField] private float knockbackYoung = 0.25f;
     [SerializeField] private float knockbackAdult = 0.5f;
     [SerializeField] private float knockbackElder = 0.75f;
     [SerializeField] private float knockbackMaxDistance = 3f; // Distancia máxima de knockback
+
+    #endregion
+
+    #region Inspector – VFX & Debug
 
     [Header("Melee Impact VFX")]
     [SerializeField] private GameObject meleeImpactVFX;
@@ -73,25 +95,41 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private bool showGizmo = false;
     [SerializeField] private float gizmoDuration = 0.2f;
 
+    #endregion
+
+    #region Internal State
+
+    // Core Combat Stats
     private float attackCooldown = 0f;
     private int finalAttackDamage;
     private float finalAttackSpeed;
-
     private float damageMultiplier = 1f;
     private float speedMultiplier = 1f;
-
     private float currentSpeedFactor = 1f;
 
+    // Combo & Movement State
     private bool isAttacking = false;
     private float[] currentComboMovementForces = new float[3];
-
     private int comboCount = 0;
     private float lastAttackTime = 0f;
     private int currentAttackIndex = -1;
 
+    // Detection Buffers & Tracking
     private HashSet<Collider> hitEnemiesThisCombo = new HashSet<Collider>();
-    private GamepadPointer gamepadPointer;
     private Collider[] hitBuffer = new Collider[64]; // Buffer para detección de enemigos
+    private GamepadPointer gamepadPointer;
+
+    // Cached Components
+    private PlayerHealth playerHealth;
+    private PlayerMovement playerMovement;
+
+    // Coroutines
+    private Coroutine cleanupCoroutine;
+    private Coroutine showGizmoRoutine = null;
+
+    #endregion
+
+    #region Public Properties & Events
 
     public float AttackDamage
     {
@@ -102,12 +140,11 @@ public class PlayerMeleeAttack : MonoBehaviour
     public bool IsAttacking => isAttacking;
     public int ComboCount => comboCount;
 
-    private PlayerHealth playerHealth;
-    private PlayerMovement playerMovement;
-    private Coroutine cleanupCoroutine;
-    private Coroutine showGizmoRoutine = null;
-
     public event Action<bool> OnAttacked;
+
+    #endregion
+
+    #region Unity Lifecycle
 
     private void Awake()
     {
@@ -143,20 +180,6 @@ public class PlayerMeleeAttack : MonoBehaviour
         PlayerStatsManager.OnStatChanged += HandleStatChanged;
     }
 
-    private void OnDestroy()
-    {
-        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
-
-        if (cleanupCoroutine != null)
-        {
-            StopCoroutine(cleanupCoroutine);
-            cleanupCoroutine = null;
-        }
-
-        //CleanupVFXImmediate();
-        StopAllCoroutines();
-    }
-
     private void Start()
     {
         showGizmo = false;
@@ -180,6 +203,40 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         UpdateComboDisplacementFromStats();
     }
+
+    private void Update()
+    {
+        if (attackCooldown > 0f) attackCooldown -= Time.deltaTime;
+
+        if (Time.time - lastAttackTime > comboResetTime) comboCount = 0;
+
+        //if (Input.GetMouseButtonDown(0) && attackCooldown <= 0f && !isAttacking)
+        //{
+        //    if (!CanAttack()) return;
+
+        //    lastAttackTime = Time.time;
+        //    StartCoroutine(AttackSequence(comboCount));
+        //    comboCount = (comboCount + 1) % 3; // Ciclo: 0 -> 1 -> 2 -> 0
+        //}
+    }
+
+    private void OnDestroy()
+    {
+        PlayerStatsManager.OnStatChanged -= HandleStatChanged;
+
+        if (cleanupCoroutine != null)
+        {
+            StopCoroutine(cleanupCoroutine);
+            cleanupCoroutine = null;
+        }
+
+        //CleanupVFXImmediate();
+        StopAllCoroutines();
+    }
+
+    #endregion
+
+    #region Initialization & Stats Synchronization
 
     private void UpdateComboDisplacementFromStats()
     {
@@ -231,26 +288,14 @@ public class PlayerMeleeAttack : MonoBehaviour
         finalAttackDamage = Mathf.Max(1, finalAttackDamage);
 
         finalAttackSpeed = attackSpeed * speedMultiplier;
-        finalAttackSpeed = Mathf.Max(0.1f, finalAttackSpeed); 
+        finalAttackSpeed = Mathf.Max(0.1f, finalAttackSpeed);
 
         currentSpeedFactor = finalAttackSpeed / baseSpeedReference;
     }
 
-    private void Update()
-    {
-        if (attackCooldown > 0f) attackCooldown -= Time.deltaTime;
+    #endregion
 
-        if (Time.time - lastAttackTime > comboResetTime) comboCount = 0;
-
-        //if (Input.GetMouseButtonDown(0) && attackCooldown <= 0f && !isAttacking)
-        //{
-        //    if (!CanAttack()) return;
-
-        //    lastAttackTime = Time.time;
-        //    StartCoroutine(AttackSequence(comboCount));
-        //    comboCount = (comboCount + 1) % 3; // Ciclo: 0 -> 1 -> 2 -> 0
-        //}
-    }
+    #region Combat Flow & Core Logic
 
     // Verifica si el jugador puede atacar (tiene escudo y no está lanzándolo).
     public bool CanAttack()
@@ -319,100 +364,6 @@ public class PlayerMeleeAttack : MonoBehaviour
         lastAttackTime = Time.time;
         yield return StartCoroutine(AttackSequence(comboCount));
         comboCount = (comboCount + 1) % 3; // Ciclo: 0 -> 1 -> 2 -> 0
-    }
-
-    private bool TryGetNearestEnemyDirection(out Vector3 enemyDir)
-    {
-        enemyDir = Vector3.forward;
-
-        if (autoAim != null && autoAim.EnableAutoAim)
-        {
-            bool isUsingGamepad = false;
-            Vector3? manualAimDirection = null;
-
-            if (gamepadPointer != null && gamepadPointer.GetCurrentActiveDevice() == gamepadPointer.GetCurrentGamepad())
-            {
-                isUsingGamepad = true;
-
-                Vector2 stickAim = gamepadPointer.GetAimDirectionValue();
-                if (stickAim.magnitude > 0.0001f)
-                {
-                    Camera camera = Camera.main;
-                    if (camera != null)
-                    {
-                        Vector3 camForward = camera.transform.forward;
-                        camForward.y = 0f;
-                        camForward.Normalize();
-
-                        Vector3 camRight = camera.transform.right;
-                        camRight.y = 0f;
-                        camRight.Normalize();
-
-                        Vector3 targetDirection = camForward * stickAim.y + camRight * stickAim.x;
-                        if (targetDirection.sqrMagnitude > 0.0001f)
-                        {
-                            manualAimDirection = targetDirection.normalized;
-                        }
-                    }
-                }
-            }
-
-            bool useAutoAim = isUsingGamepad;
-
-            if (!useAutoAim && !TryGetMouseWorldDirection(out _))
-            {
-                useAutoAim = true;
-            }
-
-            if (useAutoAim)
-            {
-                bool foundTarget;
-                enemyDir = autoAim.GetAimDirection(transform.position, transform.forward, manualAimDirection, out foundTarget);
-
-                if (foundTarget)
-                {
-                    ReportDebug($"Auto-aim de melee activado hacia: {autoAim.GetCurrentTarget()?.name}", 1);
-                    return true;
-                }
-            }
-        }
-
-        int layerMask = LayerMask.GetMask("Enemy");
-        int hitCount = Physics.OverlapSphereNonAlloc(transform.position, autoAimRange, hitBuffer, layerMask);
-
-        if (hitCount == 0) return false;
-
-        Collider nearestEnemy = null;
-        float closestDistanceSqr = Mathf.Infinity;
-        Vector3 currentPos = transform.position;
-
-        for (int i = 0; i < hitCount; i++)
-        {
-            Collider col = hitBuffer[i];
-            if (col == null) continue;
-
-            Vector3 dirToEnemy = col.transform.position - currentPos;
-            float dSqrToTarget = dirToEnemy.sqrMagnitude;
-
-            if (dSqrToTarget < closestDistanceSqr)
-            {
-                closestDistanceSqr = dSqrToTarget;
-                nearestEnemy = col;
-            }
-        }
-
-        if (nearestEnemy != null)
-        {
-            Vector3 direction = nearestEnemy.transform.position - currentPos;
-            direction.y = 0;
-            if (direction.sqrMagnitude > 0.001f)
-            {
-                enemyDir = direction.normalized;
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /// <summary>
@@ -512,6 +463,104 @@ public class PlayerMeleeAttack : MonoBehaviour
         //hitEnemiesThisCombo.Clear();
     }
 
+    #endregion
+
+    #region Targeting & Rotation
+
+    private bool TryGetNearestEnemyDirection(out Vector3 enemyDir)
+    {
+        enemyDir = Vector3.forward;
+
+        if (autoAim != null && autoAim.EnableAutoAim)
+        {
+            bool isUsingGamepad = false;
+            Vector3? manualAimDirection = null;
+
+            if (gamepadPointer != null && gamepadPointer.GetCurrentActiveDevice() == gamepadPointer.GetCurrentGamepad())
+            {
+                isUsingGamepad = true;
+
+                Vector2 stickAim = gamepadPointer.GetAimDirectionValue();
+                if (stickAim.magnitude > 0.0001f)
+                {
+                    Camera camera = Camera.main;
+                    if (camera != null)
+                    {
+                        Vector3 camForward = camera.transform.forward;
+                        camForward.y = 0f;
+                        camForward.Normalize();
+
+                        Vector3 camRight = camera.transform.right;
+                        camRight.y = 0f;
+                        camRight.Normalize();
+
+                        Vector3 targetDirection = camForward * stickAim.y + camRight * stickAim.x;
+                        if (targetDirection.sqrMagnitude > 0.0001f)
+                        {
+                            manualAimDirection = targetDirection.normalized;
+                        }
+                    }
+                }
+            }
+
+            bool useAutoAim = isUsingGamepad;
+
+            if (!useAutoAim && !TryGetMouseWorldDirection(out _))
+            {
+                useAutoAim = true;
+            }
+
+            if (useAutoAim)
+            {
+                bool foundTarget;
+                enemyDir = autoAim.GetAimDirection(transform.position, transform.forward, manualAimDirection, out foundTarget);
+
+                if (foundTarget)
+                {
+                    ReportDebug($"Auto-aim de melee activado hacia: {autoAim.GetCurrentTarget()?.name}", 1);
+                    return true;
+                }
+            }
+        }
+
+        int layerMask = LayerMask.GetMask("Enemy");
+        int hitCount = Physics.OverlapSphereNonAlloc(transform.position, autoAimRange, hitBuffer, layerMask);
+
+        if (hitCount == 0) return false;
+
+        Collider nearestEnemy = null;
+        float closestDistanceSqr = Mathf.Infinity;
+        Vector3 currentPos = transform.position;
+
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider col = hitBuffer[i];
+            if (col == null) continue;
+
+            Vector3 dirToEnemy = col.transform.position - currentPos;
+            float dSqrToTarget = dirToEnemy.sqrMagnitude;
+
+            if (dSqrToTarget < closestDistanceSqr)
+            {
+                closestDistanceSqr = dSqrToTarget;
+                nearestEnemy = col;
+            }
+        }
+
+        if (nearestEnemy != null)
+        {
+            Vector3 direction = nearestEnemy.transform.position - currentPos;
+            direction.y = 0;
+            if (direction.sqrMagnitude > 0.001f)
+            {
+                enemyDir = direction.normalized;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public void SetMeleeAutoAimEnabled(bool enabled)
     {
         if (autoAim != null)
@@ -549,6 +598,55 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         if (playerMovement != null) playerMovement.ForceApplyLockedRotation();
     }
+
+    // Rota instantaneamente al mouse proyectado en el plano horizontal (y = transform.position.y), con snap a 8 direcciones.
+    private void RotateTowardsMouseInstant()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+        Plane plane = new Plane(Vector3.up, transform.position);
+        if (plane.Raycast(ray, out float enter))
+        {
+            Vector3 worldPoint = ray.GetPoint(enter);
+            Vector3 dir = worldPoint - transform.position;
+            dir.y = 0f;
+            if (dir.sqrMagnitude > 0.0001f)
+            {
+                float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+                float snapped = Mathf.Round(angle / 45f) * 45f;
+                Quaternion snappedRot = Quaternion.Euler(0f, snapped, 0f);
+                transform.rotation = snappedRot;
+            }
+        }
+    }
+
+    private bool TryGetMouseWorldDirection(out Vector3 outDir)
+    {
+        outDir = Vector3.zero;
+        Camera cam = Camera.main;
+        if (cam == null) return false;
+
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+        Plane plane = new Plane(Vector3.up, transform.position);
+        if (plane.Raycast(ray, out float enter))
+        {
+            Vector3 worldPoint = ray.GetPoint(enter);
+            Vector3 dir = worldPoint - transform.position;
+            dir.y = 0f;
+            if (dir.sqrMagnitude > 0.0001f)
+            {
+                outDir = dir.normalized;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    #endregion
+
+    #region Attack Moves (Coroutines)
 
     private IEnumerator ExecuteAttack1()
     {
@@ -895,50 +993,9 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
-    // Rota instantaneamente al mouse proyectado en el plano horizontal (y = transform.position.y), con snap a 8 direcciones.
-    private void RotateTowardsMouseInstant()
-    {
-        Camera cam = Camera.main;
-        if (cam == null) return;
+    #endregion
 
-        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-        Plane plane = new Plane(Vector3.up, transform.position);
-        if (plane.Raycast(ray, out float enter))
-        {
-            Vector3 worldPoint = ray.GetPoint(enter);
-            Vector3 dir = worldPoint - transform.position;
-            dir.y = 0f;
-            if (dir.sqrMagnitude > 0.0001f)
-            {
-                float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
-                float snapped = Mathf.Round(angle / 45f) * 45f;
-                Quaternion snappedRot = Quaternion.Euler(0f, snapped, 0f);
-                transform.rotation = snappedRot;
-            }
-        }
-    }
-
-    private bool TryGetMouseWorldDirection(out Vector3 outDir)
-    {
-        outDir = Vector3.zero;
-        Camera cam = Camera.main;
-        if (cam == null) return false;
-
-        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-        Plane plane = new Plane(Vector3.up, transform.position);
-        if (plane.Raycast(ray, out float enter))
-        {
-            Vector3 worldPoint = ray.GetPoint(enter);
-            Vector3 dir = worldPoint - transform.position;
-            dir.y = 0f;
-            if (dir.sqrMagnitude > 0.0001f)
-            {
-                outDir = dir.normalized;
-                return true;
-            }
-        }
-        return false;
-    }
+    #region Hit Detection & Damage Application
 
     public void PerformHitDetectionWithTracking()
     {
@@ -983,7 +1040,7 @@ public class PlayerMeleeAttack : MonoBehaviour
             float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(calculatedDamage, transform, enemy.transform, out isCritical);
 
             IDamageable damageable = enemy.GetComponent<IDamageable>();
-            
+
             if (damageable != null)
             {
                 const string TUTORIAL_DUMMY_TAG = "TutorialDummy";
@@ -1147,10 +1204,24 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
+    #endregion
+
+    #region VFX & Debugging
+
+    /// <summary>
+    /// Reproduce el efecto de impacto en una posición específica.
+    /// </summary>
+    private void PlayImpactVFX(Vector3 position)
+    {
+        if (meleeImpactVFX == null) return;
+
+        Instantiate(meleeImpactVFX, position, Quaternion.identity);
+    }
+
     private IEnumerator ShowGizmoCoroutine(float duration)
     {
         if (!canShowHitGizmo) yield break;
-        
+
         float time = (duration > 0f) ? duration : gizmoDuration;
 
         showGizmo = true;
@@ -1165,20 +1236,6 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         showGizmoRoutine = null;
     }
-
-    #region VFX Methods
-
-    /// <summary>
-    /// Reproduce el efecto de impacto en una posición específica.
-    /// </summary>
-    private void PlayImpactVFX(Vector3 position)
-    {
-        if (meleeImpactVFX == null) return;
-
-        Instantiate(meleeImpactVFX, position, Quaternion.identity);
-    }
-
-    #endregion
 
     private void OnDrawGizmos()
     {
@@ -1220,4 +1277,6 @@ public class PlayerMeleeAttack : MonoBehaviour
                 break;
         }
     }
+
+    #endregion
 }

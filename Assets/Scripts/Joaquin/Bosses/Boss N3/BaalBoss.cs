@@ -8,6 +8,7 @@ public class BaalBoss : MonoBehaviour
     #region Inspector – References
 
     [Header("Core References")]
+    [SerializeField] private Transform hitPoint;
     [SerializeField] private EnemyHealth enemyHealth;
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private Animator animator;
@@ -613,7 +614,7 @@ public class BaalBoss : MonoBehaviour
         yield return StartCoroutine(DashToPosition(dashTarget, bufferOverrunDashDuration));
 
         // Impacto
-        Vector3 impactPoint = transform.position;
+        Vector3 impactPoint = hitPoint.position;
         DealAreaDamage(impactPoint, bufferOverrunAttackRange, bufferOverrunDamage);
 
         if (audioSource != null && bufferOverrunImpactSFX != null)
@@ -653,7 +654,24 @@ public class BaalBoss : MonoBehaviour
             return;
         }
 
-        GameObject cluster = Instantiate(necroticClusterPrefab, position, Quaternion.identity);
+        // Valida posición en el NavMesh
+        Vector3 spawnPosition = position;
+        NavMeshHit hit;
+
+        // Buscam el punto más cercano en un radio de 10 unidades
+        if (NavMesh.SamplePosition(position, out hit, 10.0f, NavMesh.AllAreas))
+        {
+            spawnPosition = hit.position;
+        }
+        else
+        {
+            // Si no encuentra suelo, cancela el spawn para evitar clusters flotantes
+            ReportDebug("WARNING: No se encontró suelo NavMesh cerca de la posición.", 1);
+            return;
+        }
+
+        // Instancia en la posición corregida
+        GameObject cluster = Instantiate(necroticClusterPrefab, spawnPosition, Quaternion.identity);
         instantiatedEffects.Add(cluster);
 
         NecroticCluster clusterScript = cluster.GetComponent<NecroticCluster>();

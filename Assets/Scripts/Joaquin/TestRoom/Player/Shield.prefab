@@ -238,7 +238,7 @@ TrailRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 7de71e6093f23134dbc058b29b45bc74, type: 2}
+  - {fileID: 2100000, guid: 136c92d776b2e8f4987f42954ba5c60b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -351,6 +351,7 @@ GameObject:
   - component: {fileID: 6095467305624953827}
   - component: {fileID: 1473839826769255671}
   - component: {fileID: 7892049479462916120}
+  - component: {fileID: 6030086512640457703}
   m_Layer: 0
   m_Name: Shield_Throw.1_tmp
   m_TagString: Untagged
@@ -463,6 +464,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MainCamera: {fileID: 0}
+--- !u!114 &6030086512640457703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6080422196327213691}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 631f69a0b012e70499d0a7a477953f60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sourceRenderer: {fileID: 6095467305624953827}
+  afterImagePrefab: {fileID: 4288463191799180, guid: 59035ba29f5af9c46be28e21b85deb98, type: 3}
+  spawnInterval: 0.01
+  lifetime: 0.5
+  startColor: {r: 1, g: 0.9484065, b: 0.4575472, a: 0.7}
+  endColor: {r: 0.990566, g: 0.2663314, b: 0.97846663, a: 0.3}
 --- !u!1 &6423612430742599801
 GameObject:
   m_ObjectHideFlags: 0
