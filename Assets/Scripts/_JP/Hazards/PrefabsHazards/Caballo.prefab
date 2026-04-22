@@ -1202,7 +1202,6 @@ GameObject:
   - component: {fileID: 8692667500294162609}
   - component: {fileID: 5251414241240438325}
   - component: {fileID: 947541293653417628}
-  - component: {fileID: 305313608160411223}
   m_Layer: 0
   m_Name: Caballo
   m_TagString: Untagged
@@ -1310,32 +1309,3 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1.7227077, z: 1}
   m_Center: {x: 0, y: 0.90623474, z: 0}
---- !u!114 &305313608160411223
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7697216806974027402}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 989d952bf53c8c049903253c9eb05c65, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  tablero: {fileID: 0}
-  marcadorTrailPrefab: {fileID: 8492918354279214268, guid: a59c5597a31b1334597ec76e1a7842f7, type: 3}
-  tagJugador: Player
-  coordActual: {x: -2147483648, y: -2147483648}
-  tamCasilla: 1
-  tiempoEsperaInicial: 1
-  tiempoAntesMover: 1
-  tilesPorSegundo: 6
-  dano: 10
-  fuerzaEmpuje: 0
-  danoPorColision: 1
-  cooldownDanoColision: 0.6
-  detectionRadius: 0.6
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  manualCheckInterval: 0.12

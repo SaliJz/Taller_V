@@ -3,12 +3,16 @@ using UnityEngine;
 
 public partial class PlayerStatsManager : MonoBehaviour
 {
-    #region DEBUG ONGUI - Draggable / Corner Snap / Persistente
+    #region Debug Enums
 
     /// <summary>
     /// Anclas válidas para el panel de debug.
     /// </summary>
     public enum DebugAnchor { TopLeft, TopRight, BottomLeft, BottomRight, Custom }
+
+    #endregion
+
+    #region Inspector - Debug Settings
 
     [Header("Debug OnGUI Positioning")]
     [Tooltip("Activa el panel OnGUI (debug).")]
@@ -37,10 +41,14 @@ public partial class PlayerStatsManager : MonoBehaviour
     [Tooltip("PlayerPrefs key usada para persistir la posición del GUI (opcional).")]
     [SerializeField] private string guiPrefsKey = "PlayerStatsManager_DebugGUI_Pos";
 
+    #endregion
+
+    #region Internal Debug State
+
     // Runtime
     private Rect guiWindowRect = new Rect(10, 10, 440, 600);
     private bool guiWindowRectInitialized = false;
-    private bool guiPositionLoadedFromPrefs = false;
+    //private bool guiPositionLoadedFromPrefs = false;
 
     // Estilos y scroll
     private GUIStyle guiTitleStyle;
@@ -64,135 +72,9 @@ public partial class PlayerStatsManager : MonoBehaviour
     private bool guiModIsByRooms = false;
     private string guiModRooms = "1";
 
-    /// <summary>
-    /// Asegura los estilos de GUI usados por el OnGUI de debug. Cachea estilos para evitar recrearlos cada frame.
-    /// </summary>
-    private void EnsureDebugGuiStyles()
-    {
-        if (guiTitleStyle != null) return;
+    #endregion
 
-        guiTitleStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 14,
-            fontStyle = FontStyle.Bold,
-            normal = { textColor = Color.white }
-        };
-
-        guiLabelStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 12,
-            normal = { textColor = Color.white }
-        };
-
-        guiSmallLabelStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 11,
-            normal = { textColor = Color.white }
-        };
-
-        guiBoxStyle = new GUIStyle(GUI.skin.box)
-        {
-            padding = new RectOffset(8, 8, 6, 6)
-        };
-
-        guiButtonStyle = new GUIStyle(GUI.skin.button)
-        {
-            fontSize = 12,
-            padding = new RectOffset(6, 6, 4, 4)
-        };
-    }
-
-    /// <summary>
-    /// Inicializa la rect de la ventana (una sola vez) y carga prefs si aplica.
-    /// </summary>
-    private void EnsureGuiWindowRectInitialized()
-    {
-        if (guiWindowRectInitialized) return;
-
-        // Tamaño inicial (clamped respecto pantalla actual)
-        guiWindowRect.width = Mathf.Clamp(guiWidth, 200, Mathf.Max(200, Screen.width - 20));
-        guiWindowRect.height = Mathf.Clamp(guiHeight, 120, Mathf.Max(120, Screen.height - 20));
-
-        // Intentar cargar posición guardada si está activado y existe
-        if (guiPersistPosition && PlayerPrefs.HasKey(guiPrefsKey + "_x") && PlayerPrefs.HasKey(guiPrefsKey + "_y"))
-        {
-            float px = PlayerPrefs.GetFloat(guiPrefsKey + "_x", guiCustomPosition.x);
-            float py = PlayerPrefs.GetFloat(guiPrefsKey + "_y", guiCustomPosition.y);
-            guiWindowRect.x = Mathf.Clamp(px, 0, Screen.width - guiWindowRect.width);
-            guiWindowRect.y = Mathf.Clamp(py, 0, Screen.height - guiWindowRect.height);
-            guiPositionLoadedFromPrefs = true;
-        }
-        else
-        {
-            ApplyGuiAnchorImmediate();
-        }
-
-        // Cache pantalla actual
-        lastScreenW = Screen.width;
-        lastScreenH = Screen.height;
-
-        // Marcar inicializado
-        guiWindowRectInitialized = true;
-
-        // Inicial lastSavedGuiPos para evitar salvados innecesarios
-        lastSavedGuiPos = new Vector2(guiWindowRect.x, guiWindowRect.y);
-    }
-
-    private void ApplyGuiAnchorImmediate()
-    {
-        switch (guiAnchor)
-        {
-            case DebugAnchor.TopLeft:
-                guiWindowRect.x = guiCornerPadding;
-                guiWindowRect.y = guiCornerPadding;
-                break;
-            case DebugAnchor.TopRight:
-                guiWindowRect.x = Mathf.Max(0, Screen.width - guiWindowRect.width - guiCornerPadding);
-                guiWindowRect.y = guiCornerPadding;
-                break;
-            case DebugAnchor.BottomLeft:
-                guiWindowRect.x = guiCornerPadding;
-                guiWindowRect.y = Mathf.Max(0, Screen.height - guiWindowRect.height - guiCornerPadding);
-                break;
-            case DebugAnchor.BottomRight:
-                guiWindowRect.x = Mathf.Max(0, Screen.width - guiWindowRect.width - guiCornerPadding);
-                guiWindowRect.y = Mathf.Max(0, Screen.height - guiWindowRect.height - guiCornerPadding);
-                break;
-            case DebugAnchor.Custom:
-                guiWindowRect.x = Mathf.Clamp(guiCustomPosition.x, 0, Mathf.Max(0, Screen.width - guiWindowRect.width));
-                guiWindowRect.y = Mathf.Clamp(guiCustomPosition.y, 0, Mathf.Max(0, Screen.height - guiWindowRect.height));
-                break;
-        }
-    }
-
-    /// <summary>
-    /// Persiste la posición actual de la ventana en PlayerPrefs (si guiPersistPosition==true).
-    /// </summary>
-    private void SaveGuiPositionToPrefs()
-    {
-        if (!guiPersistPosition || string.IsNullOrEmpty(guiPrefsKey)) return;
-
-        Vector2 cur = new Vector2(guiWindowRect.x, guiWindowRect.y);
-        // Solo save si cambió la posición lo suficiente (evitar saves por sub-pixel jitter)
-        if (Vector2.Distance(cur, lastSavedGuiPos) > 0.5f)
-        {
-            PlayerPrefs.SetFloat(guiPrefsKey + "_x", guiWindowRect.x);
-            PlayerPrefs.SetFloat(guiPrefsKey + "_y", guiWindowRect.y);
-            PlayerPrefs.Save();
-            lastSavedGuiPos = cur;
-        }
-    }
-
-    /// <summary>
-    /// Snap rápido a la esquina seleccionada en tiempo de ejecución.
-    /// </summary>
-    /// <param name="anchor">Ancla objetivo.</param>
-    private void SnapGuiTo(DebugAnchor anchor)
-    {
-        guiAnchor = anchor;
-        ApplyGuiAnchorImmediate();
-        SaveGuiPositionToPrefs();
-    }
+    #region Debug Unity Lifecycle
 
     /// <summary>
     /// OnGUI del panel debug (usa GUI.Window para permitir DragWindow).
@@ -235,6 +117,10 @@ public partial class PlayerStatsManager : MonoBehaviour
             SaveGuiPositionToPrefs();
         }
     }
+
+    #endregion
+
+    #region Debug UI Layout
 
     /// <summary>
     /// Contenido interno de la ventana debug con toda la funcionalidad.
@@ -444,6 +330,140 @@ public partial class PlayerStatsManager : MonoBehaviour
         {
             SaveGuiPositionToPrefs();
         }
+    }
+
+    #endregion
+
+    #region Debug Helpers
+
+    /// <summary>
+    /// Asegura los estilos de GUI usados por el OnGUI de debug. Cachea estilos para evitar recrearlos cada frame.
+    /// </summary>
+    private void EnsureDebugGuiStyles()
+    {
+        if (guiTitleStyle != null) return;
+
+        guiTitleStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 14,
+            fontStyle = FontStyle.Bold,
+            normal = { textColor = Color.white }
+        };
+
+        guiLabelStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 12,
+            normal = { textColor = Color.white }
+        };
+
+        guiSmallLabelStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 11,
+            normal = { textColor = Color.white }
+        };
+
+        guiBoxStyle = new GUIStyle(GUI.skin.box)
+        {
+            padding = new RectOffset(8, 8, 6, 6)
+        };
+
+        guiButtonStyle = new GUIStyle(GUI.skin.button)
+        {
+            fontSize = 12,
+            padding = new RectOffset(6, 6, 4, 4)
+        };
+    }
+
+    /// <summary>
+    /// Inicializa la rect de la ventana (una sola vez) y carga prefs si aplica.
+    /// </summary>
+    private void EnsureGuiWindowRectInitialized()
+    {
+        if (guiWindowRectInitialized) return;
+
+        // Tamaño inicial (clamped respecto pantalla actual)
+        guiWindowRect.width = Mathf.Clamp(guiWidth, 200, Mathf.Max(200, Screen.width - 20));
+        guiWindowRect.height = Mathf.Clamp(guiHeight, 120, Mathf.Max(120, Screen.height - 20));
+
+        // Intentar cargar posición guardada si está activado y existe
+        if (guiPersistPosition && PlayerPrefs.HasKey(guiPrefsKey + "_x") && PlayerPrefs.HasKey(guiPrefsKey + "_y"))
+        {
+            float px = PlayerPrefs.GetFloat(guiPrefsKey + "_x", guiCustomPosition.x);
+            float py = PlayerPrefs.GetFloat(guiPrefsKey + "_y", guiCustomPosition.y);
+            guiWindowRect.x = Mathf.Clamp(px, 0, Screen.width - guiWindowRect.width);
+            guiWindowRect.y = Mathf.Clamp(py, 0, Screen.height - guiWindowRect.height);
+            //guiPositionLoadedFromPrefs = true;
+        }
+        else
+        {
+            ApplyGuiAnchorImmediate();
+        }
+
+        // Cache pantalla actual
+        lastScreenW = Screen.width;
+        lastScreenH = Screen.height;
+
+        // Marcar inicializado
+        guiWindowRectInitialized = true;
+
+        // Inicial lastSavedGuiPos para evitar salvados innecesarios
+        lastSavedGuiPos = new Vector2(guiWindowRect.x, guiWindowRect.y);
+    }
+
+    private void ApplyGuiAnchorImmediate()
+    {
+        switch (guiAnchor)
+        {
+            case DebugAnchor.TopLeft:
+                guiWindowRect.x = guiCornerPadding;
+                guiWindowRect.y = guiCornerPadding;
+                break;
+            case DebugAnchor.TopRight:
+                guiWindowRect.x = Mathf.Max(0, Screen.width - guiWindowRect.width - guiCornerPadding);
+                guiWindowRect.y = guiCornerPadding;
+                break;
+            case DebugAnchor.BottomLeft:
+                guiWindowRect.x = guiCornerPadding;
+                guiWindowRect.y = Mathf.Max(0, Screen.height - guiWindowRect.height - guiCornerPadding);
+                break;
+            case DebugAnchor.BottomRight:
+                guiWindowRect.x = Mathf.Max(0, Screen.width - guiWindowRect.width - guiCornerPadding);
+                guiWindowRect.y = Mathf.Max(0, Screen.height - guiWindowRect.height - guiCornerPadding);
+                break;
+            case DebugAnchor.Custom:
+                guiWindowRect.x = Mathf.Clamp(guiCustomPosition.x, 0, Mathf.Max(0, Screen.width - guiWindowRect.width));
+                guiWindowRect.y = Mathf.Clamp(guiCustomPosition.y, 0, Mathf.Max(0, Screen.height - guiWindowRect.height));
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Persiste la posición actual de la ventana en PlayerPrefs (si guiPersistPosition==true).
+    /// </summary>
+    private void SaveGuiPositionToPrefs()
+    {
+        if (!guiPersistPosition || string.IsNullOrEmpty(guiPrefsKey)) return;
+
+        Vector2 cur = new Vector2(guiWindowRect.x, guiWindowRect.y);
+        // Solo save si cambió la posición lo suficiente (evitar saves por sub-pixel jitter)
+        if (Vector2.Distance(cur, lastSavedGuiPos) > 0.5f)
+        {
+            PlayerPrefs.SetFloat(guiPrefsKey + "_x", guiWindowRect.x);
+            PlayerPrefs.SetFloat(guiPrefsKey + "_y", guiWindowRect.y);
+            PlayerPrefs.Save();
+            lastSavedGuiPos = cur;
+        }
+    }
+
+    /// <summary>
+    /// Snap rápido a la esquina seleccionada en tiempo de ejecución.
+    /// </summary>
+    /// <param name="anchor">Ancla objetivo.</param>
+    private void SnapGuiTo(DebugAnchor anchor)
+    {
+        guiAnchor = anchor;
+        ApplyGuiAnchorImmediate();
+        SaveGuiPositionToPrefs();
     }
 
     #endregion

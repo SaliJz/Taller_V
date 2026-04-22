@@ -21,7 +21,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     [Header("Efectos de Pulso")]
     [SerializeField] private float pulseSpeed = 2f;
     [SerializeField] private float pulseIntensity = 0.3f;
-    [SerializeField] private bool enableDebugLogs = false;
+    //[SerializeField] private bool enableDebugLogs = false;
 
     #endregion
 

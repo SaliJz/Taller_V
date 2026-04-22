@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 7634142035069058171}
   - component: {fileID: 1053929979442497775}
   - component: {fileID: 2018905927176992545}
-  - component: {fileID: 901262017019643144}
   - component: {fileID: 4539549941295741407}
   m_Layer: 0
   m_Name: Alfil
@@ -90,35 +89,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &901262017019643144
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1844887390376475868}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d6bc11bfefd9e743af0e938dd658059, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  tablero: {fileID: 0}
-  marcadorTrailPrefab: {fileID: 8492918354279214268, guid: a59c5597a31b1334597ec76e1a7842f7, type: 3}
-  tagJugador: Player
-  coordActual: {x: -2147483648, y: -2147483648}
-  tamCasilla: 1
-  tiempoEsperaInicial: 1
-  tiempoAntesMover: 1
-  tilesPorSegundo: 10
-  dano: 10
-  fuerzaEmpuje: 0
-  danoPorColision: 1
-  cooldownDanoColision: 0.6
-  detectionRadius: 0.6
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  manualCheckInterval: 0.12
 --- !u!65 &4539549941295741407
 BoxCollider:
   m_ObjectHideFlags: 0

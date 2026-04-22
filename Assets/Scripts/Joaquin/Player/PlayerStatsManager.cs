@@ -6,8 +6,10 @@ using TMPro;
 using UnityEngine;
 using static PlayerHealth;
 
+#region Enums
+
 /// <summary>
-/// Enumeraci�n de los diferentes tipos de estad�sticas del jugador.
+/// Enumeracin de los diferentes tipos de estadsticas del jugador.
 /// </summary>
 public enum StatType
 {
@@ -38,55 +40,80 @@ public enum StatType
     CriticalDamageMultiplier,
     DashRangeMultiplier,
 
-    KnockbackReceived,          
-    DashCooldownPost,        
-    MeleeComboDisplacement,        
-    ShieldPushForce,             
-    ShieldReturnSpeed,        
+    KnockbackReceived,
+    DashCooldownPost,
+    MeleeComboDisplacement,
+    ShieldPushForce,
+    ShieldReturnSpeed,
     StaminaConsumption
 }
 
+#endregion
+
 /// <summary>
-/// Clase que maneja las estad�sticas del jugador, incluyendo buffs y debuffs temporales (por tiempo o salas/habitaciones/enfrentamientos) o permanentes.
-/// Adem�s muestra todas las stats en un TextMeshProUGUI ordenado y permite abrir/cerrar el panel con la tecla P.
+/// Clase que maneja las estadsticas del jugador, incluyendo buffs y debuffs temporales (por tiempo o salas/habitaciones/enfrentamientos) o permanentes.
+/// Adems muestra todas las stats en un TextMeshProUGUI ordenado y permite abrir/cerrar el panel con la tecla P.
 /// </summary>
 public partial class PlayerStatsManager : MonoBehaviour
 {
+    #region Structs
+
     private struct NamedModifierData
     {
         public bool IsPercentage; // true si value es porcentaje (0.20 = 20%), false si es absoluto
         public float Value;       // porcentaje (0.20) o absoluto (1.25)
-        public float AppliedAmount;  // cantidad absoluta que se aplic� a currentStats al momento de aplicar (para remover de forma determinista)
+        public float AppliedAmount;  // cantidad absoluta que se aplic a currentStats al momento de aplicar (para remover de forma determinista)
     }
+
+    #endregion
+
+    #region Inspector - ScriptableObjects
 
     [Header("ScriptableObjects")]
     [SerializeField] private PlayerStats playerStats;
     [SerializeField] private PlayerStats currentStatSO;
-    public PlayerStats _currentStatSO => currentStatSO;
+
+    #endregion
+
+    #region Inspector - UI & Settings
+
+    [Header("UI: Mostrar estadsticas")]
+    [SerializeField] private TextMeshProUGUI statsText;
+    [Tooltip("GameObject que contiene el panel con el TextMeshProUGUI. Si no se asigna, se intentar usar el parent del statsText.")]
+    [SerializeField] private GameObject statsPanel;
+    [Tooltip("Si est activo, se mostrar tambin el valor base entre parntesis.")]
+    [SerializeField] private bool showBaseValues = true;
+    [Tooltip("Cantidad de decimales a mostrar para los valores.")]
+    [SerializeField] private int decimals = 2;
+
+    #endregion
+
+    #region Internal State
 
     [Header("Stats (internas)")]
     [SerializeField] private Dictionary<StatType, float> baseStats = new();
     [SerializeField] private Dictionary<StatType, float> currentStats = new();
     private Dictionary<string, Dictionary<StatType, NamedModifierData>> namedModifiers = new();
 
-    [Header("UI: Mostrar estad�sticas")]
-    [SerializeField] private TextMeshProUGUI statsText;
-    [Tooltip("GameObject que contiene el panel con el TextMeshProUGUI. Si no se asigna, se intentar� usar el parent del statsText.")]
-    [SerializeField] private GameObject statsPanel;
-    [Tooltip("Si est� activo, se mostrar� tambi�n el valor base entre par�ntesis.")]
-    [SerializeField] private bool showBaseValues = true;
-    [Tooltip("Cantidad de decimales a mostrar para los valores.")]
-    [SerializeField] private int decimals = 2;
-
     [Header("Life Stage Modifiers")]
     private Dictionary<StatType, float> lifeStageModifiers = new Dictionary<StatType, float>();
 
     private Dictionary<StatType, int> statVisualState = new();
 
-    public static event Action<StatType, float> OnStatChanged;
-
     private PlayerHealth playerHealth;
     private int roomsCompletedSinceStart = 0;
+
+    #endregion
+
+    #region Public Properties & Events
+
+    public PlayerStats _currentStatSO => currentStatSO;
+
+    public static event Action<StatType, float> OnStatChanged;
+
+    #endregion
+
+    #region Unity Lifecycle
 
     private void Awake()
     {
@@ -104,7 +131,7 @@ public partial class PlayerStatsManager : MonoBehaviour
     {
         playerHealth = GetComponent<PlayerHealth>();
 
-        // Si no se asign� explicitamente el panel, intentamos usar el parent del TextMeshProUGUI
+        // Si no se asign explicitamente el panel, intentamos usar el parent del TextMeshProUGUI
         if (statsPanel == null && statsText != null)
         {
             if (statsText.transform.parent != null)
@@ -120,22 +147,6 @@ public partial class PlayerStatsManager : MonoBehaviour
         }
 
         UpdateStatsDisplay(); // asegurar display inicial
-    }
-
-    public float GetCurrentStatValue(StatType stat)
-    {
-        if (currentStats.ContainsKey(stat))
-        {
-            return currentStats[stat];
-        }
-
-        Debug.LogWarning($"[PlayerStatsManager] Intento de obtener stat '{stat}' que no está inicializada. Devolviendo 0.");
-        return 0f;
-    }
-
-    private void NotifyStatChanged(StatType stat, float newValue)
-    {
-        OnStatChanged?.Invoke(stat, newValue);
     }
 
     private void OnEnable()
@@ -166,45 +177,12 @@ public partial class PlayerStatsManager : MonoBehaviour
         }
     }
 
-    private void HandleStatChanged(StatType type, float newValue)
-    {
-        // Simplemente refresca todo el display cuando cambie cualquier stat.
-        UpdateStatsDisplay();
-    }
+    #endregion
+
+    #region Initialization & Reset
 
     /// <summary>
-    /// Alterna el estado (activo/inactivo) del panel de estad�sticas.
-    /// </summary>
-    private void ToggleStatsPanel()
-    {
-        if (statsPanel == null)
-        {
-            // Si no hay panel, intentamos alternar directamente el objeto de statsText
-            if (statsText != null)
-            {
-                statsText.gameObject.SetActive(!statsText.gameObject.activeSelf);
-                if (statsText.gameObject.activeSelf) UpdateStatsDisplay();
-            }
-            return;
-        }
-
-        bool newState = !statsPanel.activeSelf;
-        statsPanel.SetActive(newState);
-
-        // Si se abre el panel, actualizamos el texto para mostrar valores recientes.
-        if (newState)
-            UpdateStatsDisplay();
-    }
-
-    // Incrementa el contador de habitaciones completadas.
-    private void IncrementRoomCount()
-    {
-        roomsCompletedSinceStart++;
-        Debug.Log($"[PlayerStatsManager] Sala completada. Contador: {roomsCompletedSinceStart}");
-    }
-
-    /// <summary>
-    /// Inicializa las estad�sticas base del jugador a partir de un ScriptableObject.
+    /// Inicializa las estadsticas base del jugador a partir de un ScriptableObject.
     /// Se llama en Awake para asegurar que siempre haya valores.
     /// </summary>
     private void InitializeStats()
@@ -262,7 +240,7 @@ public partial class PlayerStatsManager : MonoBehaviour
 
             case StatType.KnockbackReceived: return 1.0f;
 
-            case StatType.DashCooldownPost: return 0f; 
+            case StatType.DashCooldownPost: return 0f;
 
             case StatType.MeleeComboDisplacement: return 1.0f;
 
@@ -270,7 +248,7 @@ public partial class PlayerStatsManager : MonoBehaviour
 
             case StatType.ShieldReturnSpeed: return 1.0f;
 
-            case StatType.StaminaConsumption: return 1.0f; 
+            case StatType.StaminaConsumption: return 1.0f;
 
             case StatType.DamageTaken: return 0f;
 
@@ -281,7 +259,7 @@ public partial class PlayerStatsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Funci�n que reinicia las estad�sticas actuales a sus valores base.
+    /// Funcin que reinicia las estadsticas actuales a sus valores base.
     /// Esto ocurre en cada carga de escena para la nueva instancia.
     /// </summary>
     private void ResetCurrentStatsToBase()
@@ -297,7 +275,7 @@ public partial class PlayerStatsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Resetea las estad�sticas al morir el jugador.
+    /// Resetea las estadsticas al morir el jugador.
     /// </summary> 
     public void ResetStatsOnDeath()
     {
@@ -311,7 +289,7 @@ public partial class PlayerStatsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Resetea las estad�sticas al iniciar una nueva Run.
+    /// Resetea las estadsticas al iniciar una nueva Run.
     /// </summary>
     public void ResetRunStatsToDefaults()
     {
@@ -354,24 +332,74 @@ public partial class PlayerStatsManager : MonoBehaviour
         target.shieldReboundRadius = sourceStats.shieldReboundRadius;
         target.isShieldBlockUpgradeActive = sourceStats.isShieldBlockUpgradeActive;
         target.luckStackBase = sourceStats.luckStackBase;
-        
+
         //target.essenceCostReductionBase = source.essenceCostReductionBase; 
-        
+
         target.criticalChanceBase = sourceStats.criticalChanceBase;
         target.criticalDamageMultiplierBase = sourceStats.criticalDamageMultiplierBase;
         target.dashRangeMultiplierBase = sourceStats.dashRangeMultiplierBase;
     }
 
+    #endregion
+
+    #region Getters & Queries
+
+    public float GetCurrentStatValue(StatType stat)
+    {
+        if (currentStats.ContainsKey(stat))
+        {
+            return currentStats[stat];
+        }
+
+        Debug.LogWarning($"[PlayerStatsManager] Intento de obtener stat '{stat}' que no está inicializada. Devolviendo 0.");
+        return 0f;
+    }
+
     /// <summary>
-    /// Lee el valor actual de la estad�stica especificada.
+    /// Lee el valor actual de la estadstica especificada.
     /// </summary> 
     /// <param name="type"> Stat a consultar.</param>
     public float GetStat(StatType type) => currentStats.TryGetValue(type, out var value) ? value : 0;
 
     /// <summary>
+    /// Lee el valor actual de la estadstica especificada.
+    /// </summary> 
+    /// <param name="type"> Stat a consultar.</param>
+    public float GetCurrentStat(StatType type)
+    {
+        if (currentStats.ContainsKey(type))
+        {
+            return currentStats[type];
+        }
+
+        return 0f;
+    }
+
+    /// <summary>
+    /// Lee el valor base de la estadística especificada.
+    /// </summary> 
+    /// <param name="type"> Stat a consultar.</param>
+    public float GetBaseStat(StatType type) => baseStats.TryGetValue(type, out var value) ? value : 0;
+
+    #endregion
+
+    #region Core Stat Modifiers
+
+    private void HandleStatChanged(StatType type, float newValue)
+    {
+        // Simplemente refresca todo el display cuando cambie cualquier stat.
+        UpdateStatsDisplay();
+    }
+
+    private void NotifyStatChanged(StatType stat, float newValue)
+    {
+        OnStatChanged?.Invoke(stat, newValue);
+    }
+
+    /// <summary>
     /// Marca el estado visual basado en el delta aplicado.
-    /// delta > 0 => subi� (verde)
-    /// delta < 0 => baj� (rojo)
+    /// delta > 0 => subi (verde)
+    /// delta < 0 => baj (rojo)
     /// delta == 0 => no cambia el estado (se mantiene)
     /// </summary>
     private void MarkVisualStateFromDelta(StatType type, float delta)
@@ -380,129 +408,11 @@ public partial class PlayerStatsManager : MonoBehaviour
             statVisualState[type] = 1;
         else if (delta < 0f)
             statVisualState[type] = -1;
-        // si delta == 0 no tocamos el estado: se mantiene la coloraci�n anterior
+        // si delta == 0 no tocamos el estado: se mantiene la coloracin anterior
     }
 
     /// <summary>
-    /// Aplica un buff/debuff al stat especificado.
-    /// </summary>
-    /// <param name="type">Stat a modificar.</param>
-    /// <param name="amount">Cantidad (positiva o negativa).</param>
-    /// <param name="isPercentage">Si es true, el buff es proporcional al valor base.</param>
-    /// <param name="isTemporary">Si es false, el buff es permanente hasta morir.</param>
-    /// <param name="duration">Duraci�n en segundos (solo si es temporal por tiempo).</param>
-    /// <param name="isByRooms">Si es true, la duraci�n se mide por salas/habitaciones/enfrentamientos.</param>
-    /// <param name="roomsDuration">Cantidad de salas/habitaciones/enfrentamientos que debe durar.</param>
-    public void ApplyModifier(StatType type, float amount, bool isPercentage = false, bool isTemporary = false, float duration = 0f, bool isByRooms = false, int roomsDuration = 0)
-    {
-        Debug.Log($"[PlayerStatsManager] Aplicando modificador: Stat={type}, Amount={amount}, IsPercentage={isPercentage}, IsTemporary={isTemporary}, Duration={duration}, IsByRooms={isByRooms}, RoomsDuration={roomsDuration}");
-
-        if (!baseStats.ContainsKey(type))
-        {
-            return;
-        }
-
-        float modifierValue = amount;
-
-        if (isPercentage && type != StatType.ShieldBlockUpgrade)
-        {
-            float percentageFactor = amount / 100f;
-            modifierValue = baseStats[type] * percentageFactor;
-        }
-
-        // registra valor previo para calcular delta visual
-        float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
-
-        currentStats[type] += modifierValue;
-
-        float delta = currentStats[type] - prev;
-        MarkVisualStateFromDelta(type, delta);
-
-        if (float.IsNaN(currentStats[type]) || float.IsInfinity(currentStats[type]))
-        {
-            Debug.LogError($"[PlayerStatsManager] Stat '{type}' result� en un valor inv�lido ({currentStats[type]}). Se ha reseteado al valor base.");
-            currentStats[type] = baseStats.ContainsKey(type) ? baseStats[type] : 0f;
-            // Al resetear por seguridad, ajustamos visual a neutro
-            statVisualState[type] = 0;
-        }
-
-        OnStatChanged?.Invoke(type, currentStats[type]);
-
-        if (!isTemporary)
-        {
-            baseStats[type] = currentStats[type];
-            SetStatOnSO(currentStatSO, type, currentStats[type]);
-
-            return;
-        }
-
-        if (isByRooms)
-        {
-            StartCoroutine(RemoveModifierAfterRooms(type, modifierValue, roomsDuration));
-        }
-        else if (duration > 0f)
-        {
-            StartCoroutine(RemoveModifierAfterTime(type, modifierValue, duration));
-        }
-    }
-
-    public void ModifyPermanentStat(StatType type, float modifierValue)
-    {
-        if (!baseStats.ContainsKey(type)) return;
-
-        float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
-
-        currentStats[type] += modifierValue;
-
-        float delta = currentStats[type] - prev;
-        MarkVisualStateFromDelta(type, delta);
-
-        if (float.IsNaN(currentStats[type]) || float.IsInfinity(currentStats[type]))
-        {
-            Debug.LogError($"[PlayerStatsManager] Stat permanente '{type}' result� en un valor inv�lido ({currentStats[type]}). Se ha reseteado al valor base.");
-            currentStats[type] = baseStats.ContainsKey(type) ? baseStats[type] : 0f;
-            statVisualState[type] = 0;
-        }
-
-        baseStats[type] = currentStats[type];
-        SetStatOnSO(currentStatSO, type, currentStats[type]);
-
-        OnStatChanged?.Invoke(type, currentStats[type]);
-    }
-
-    public void ApplyTemporaryStatByRooms(StatType type, float modifierValue, int rooms)
-    {
-        float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
-
-        currentStats[type] += modifierValue;
-
-        float delta = currentStats[type] - prev;
-        MarkVisualStateFromDelta(type, delta);
-
-        OnStatChanged?.Invoke(type, currentStats[type]);
-
-        StartCoroutine(RemoveModifierAfterRooms(type, modifierValue, rooms));
-    }
-
-    /// <summary>
-    /// Aplica una modificaci�n de estad�stica temporal que dura por un tiempo espec�fico.
-    /// </summary>
-    public void ApplyTemporaryStatByTime(StatType type, float modifierValue, float duration)
-    {
-        float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
-
-        currentStats[type] += modifierValue;
-
-        float delta = currentStats[type] - prev;
-        MarkVisualStateFromDelta(type, delta);
-
-        OnStatChanged?.Invoke(type, currentStats[type]);
-
-        StartCoroutine(RemoveModifierAfterTime(type, modifierValue, duration));
-    }
-
-    /// <summary>
-    /// Setea el valor de la estad�stica en el ScriptableObject actual.
+    /// Setea el valor de la estadstica en el ScriptableObject actual.
     /// </summary>
     /// <param name="so"> ScriptableObject a modificar.</param>
     /// <param name="type"> Stat a modificar.</param>
@@ -554,36 +464,216 @@ public partial class PlayerStatsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Remueve un modificador temporal despu�s de que pase el tiempo especificado.
+    /// Aplica un buff/debuff al stat especificado.
     /// </summary>
-    /// <param name="type"> Stat a modificar.</param>
-    /// <param name="modifierValue"> Valor del modificador a remover.</param>
-    /// <param name="duration"> Duraci�n en segundos.</param>
-    /// <returns> IEnumerator para la corrutina.</returns>
-    private IEnumerator RemoveModifierAfterTime(StatType type, float modifierValue, float duration)
+    /// <param name="type">Stat a modificar.</param>
+    /// <param name="amount">Cantidad (positiva o negativa).</param>
+    /// <param name="isPercentage">Si es true, el buff es proporcional al valor base.</param>
+    /// <param name="isTemporary">Si es false, el buff es permanente hasta morir.</param>
+    /// <param name="duration">Duracin en segundos (solo si es temporal por tiempo).</param>
+    /// <param name="isByRooms">Si es true, la duracin se mide por salas/habitaciones/enfrentamientos.</param>
+    /// <param name="roomsDuration">Cantidad de salas/habitaciones/enfrentamientos que debe durar.</param>
+    public void ApplyModifier(StatType type, float amount, bool isPercentage = false, bool isTemporary = false, float duration = 0f, bool isByRooms = false, int roomsDuration = 0)
     {
-        Debug.Log($"Iniciando corrutina para remover modificador '{type}' despu�s de {duration} segundos.");
+        Debug.Log($"[PlayerStatsManager] Aplicando modificador: Stat={type}, Amount={amount}, IsPercentage={isPercentage}, IsTemporary={isTemporary}, Duration={duration}, IsByRooms={isByRooms}, RoomsDuration={roomsDuration}");
 
-        yield return new WaitForSeconds(duration);
+        if (!baseStats.ContainsKey(type))
+        {
+            return;
+        }
+
+        float modifierValue = amount;
+
+        if (isPercentage && type != StatType.ShieldBlockUpgrade)
+        {
+            float percentageFactor = amount / 100f;
+            modifierValue = baseStats[type] * percentageFactor;
+        }
+
+        // registra valor previo para calcular delta visual
+        float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
+
+        currentStats[type] += modifierValue;
+
+        float delta = currentStats[type] - prev;
+        MarkVisualStateFromDelta(type, delta);
+
+        if (float.IsNaN(currentStats[type]) || float.IsInfinity(currentStats[type]))
+        {
+            Debug.LogError($"[PlayerStatsManager] Stat '{type}' result en un valor invlido ({currentStats[type]}). Se ha reseteado al valor base.");
+            currentStats[type] = baseStats.ContainsKey(type) ? baseStats[type] : 0f;
+            // Al resetear por seguridad, ajustamos visual a neutro
+            statVisualState[type] = 0;
+        }
+
+        OnStatChanged?.Invoke(type, currentStats[type]);
+
+        if (!isTemporary)
+        {
+            baseStats[type] = currentStats[type];
+            SetStatOnSO(currentStatSO, type, currentStats[type]);
+
+            return;
+        }
+
+        if (isByRooms)
+        {
+            StartCoroutine(RemoveModifierAfterRooms(type, modifierValue, roomsDuration));
+        }
+        else if (duration > 0f)
+        {
+            StartCoroutine(RemoveModifierAfterTime(type, modifierValue, duration));
+        }
+    }
+
+    public void ModifyPermanentStat(StatType type, float modifierValue)
+    {
+        if (!baseStats.ContainsKey(type)) return;
 
         float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
 
-        currentStats[type] -= modifierValue;
+        currentStats[type] += modifierValue;
+
+        float delta = currentStats[type] - prev;
+        MarkVisualStateFromDelta(type, delta);
+
+        if (float.IsNaN(currentStats[type]) || float.IsInfinity(currentStats[type]))
+        {
+            Debug.LogError($"[PlayerStatsManager] Stat permanente '{type}' result en un valor invlido ({currentStats[type]}). Se ha reseteado al valor base.");
+            currentStats[type] = baseStats.ContainsKey(type) ? baseStats[type] : 0f;
+            statVisualState[type] = 0;
+        }
+
+        baseStats[type] = currentStats[type];
+        SetStatOnSO(currentStatSO, type, currentStats[type]);
+
+        OnStatChanged?.Invoke(type, currentStats[type]);
+    }
+
+    #endregion
+
+    #region Named & Temporary Modifiers
+
+    /// <summary>
+    /// Aplica un modificador temporal identificado por una clave nica. Si ya existe un modificador con esa clave, se sobrescribe.
+    /// </summary>
+    /// <param name="key">Una clave nica para este modificador (ej. "ShieldSkillBuff").</param>
+    /// <param name="type">El tipo de stat a modificar.</param>
+    /// <param name="amount">La cantidad a aadir (puede ser negativa).</param>
+    public void ApplyNamedModifier(string key, StatType type, float amount, bool isPercentage = false)
+    {
+        RemoveNamedModifier(key);
+
+        if (!baseStats.ContainsKey(type))
+        {
+            if (!currentStats.ContainsKey(type)) currentStats[type] = 0f;
+        }
+
+        float referenceBase = currentStats.TryGetValue(type, out var curVal) ? curVal : (baseStats.TryGetValue(type, out var b) ? b : 0f);
+
+        float appliedAmount = isPercentage ? referenceBase * amount : amount;
+
+        if (!namedModifiers.ContainsKey(key)) namedModifiers[key] = new Dictionary<StatType, NamedModifierData>();
+
+        namedModifiers[key][type] = new NamedModifierData
+        {
+            IsPercentage = isPercentage,
+            Value = amount,
+            AppliedAmount = appliedAmount
+        };
+
+        currentStats[type] = referenceBase + appliedAmount;
+        OnStatChanged?.Invoke(type, currentStats[type]);
+    }
+
+    /// <summary>
+    /// Remueve un modificador previamente aplicado con una clave nica.
+    /// </summary>
+    /// <param name="key">La clave nica del modificador a remover.</param>
+    public void RemoveNamedModifier(string key)
+    {
+        if (namedModifiers.TryGetValue(key, out var modifiers))
+        {
+            foreach (var modifier in modifiers)
+            {
+                var stat = modifier.Key;
+                var modifiersData = modifier.Value;
+
+                float amountToRemove = modifiersData.AppliedAmount;
+                currentStats[stat] = currentStats.TryGetValue(stat, out var cur) ? cur - amountToRemove : -amountToRemove;
+                OnStatChanged?.Invoke(stat, currentStats[stat]);
+            }
+            namedModifiers.Remove(key);
+            Debug.Log($"[PlayerStatsManager] Modificador '{key}' removido.");
+        }
+    }
+
+    public void ClearAllNamedModifiers()
+    {
+        List<string> keysToRemove = new List<string>(namedModifiers.Keys);
+        foreach (string key in keysToRemove)
+        {
+            RemoveNamedModifier(key);
+        }
+        Debug.Log("Todos los modificadores de estadísticas nombrados han sido limpiados.");
+    }
+
+    public void ApplyMultiplierModifier(string key, StatType type, float multiplier)
+    {
+        ApplyNamedModifier(key, type, multiplier - 1.0f, true);
+        Debug.Log($"[PlayerStatsManager] Multiplicador aplicado: {key} a {type} = x{multiplier}");
+    }
+
+    public void ApplyAdditiveModifier(string key, StatType type, float amount)
+    {
+        ApplyNamedModifier(key, type, amount, false);
+        Debug.Log($"[PlayerStatsManager] Modificador aditivo aplicado: {key} a {type} = +{amount}");
+    }
+
+    /// <summary>
+    /// Aplica un modificador a un stat durante un tiempo determinado y luego lo revierte.
+    /// sIRVE para efectos como venenos, ralentizaciones, o buffs.
+    /// </summary>
+    /// <param name="key">Una clave única para este efecto (ej. "EnemySlow_123").</param>
+    /// <param name="type">El stat a modificar.</param>
+    /// <param name="amount">La cantidad a añadir (negativa para un debuff).</param>
+    /// <param name="duration">La duración del efecto en segundos.</param>
+    public void ApplyTimedModifier(string key, StatType type, float amount, float duration)
+    {
+        StartCoroutine(TimedModifierCoroutine(key, type, amount, duration));
+    }
+
+    private IEnumerator TimedModifierCoroutine(string key, StatType type, float amount, float duration)
+    {
+        Debug.Log($"[PlayerStatsManager] Aplicando efecto temporal '{key}' a {type} ({amount}) por {duration}s.");
+        ApplyNamedModifier(key, type, amount);
+
+        yield return new WaitForSeconds(duration);
+
+        Debug.Log($"[PlayerStatsManager] Efecto temporal '{key}' ha expirado. Revirtiendo.");
+        RemoveNamedModifier(key);
+    }
+
+    public void ApplyTemporaryStatByRooms(StatType type, float modifierValue, int rooms)
+    {
+        float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
+
+        currentStats[type] += modifierValue;
 
         float delta = currentStats[type] - prev;
         MarkVisualStateFromDelta(type, delta);
 
         OnStatChanged?.Invoke(type, currentStats[type]);
 
-        Debug.Log($"Efecto temporal '{type}' removido despu�s de {duration} segundos.");
+        StartCoroutine(RemoveModifierAfterRooms(type, modifierValue, rooms));
     }
 
     /// <summary>
-    /// Remueve un modificador temporal despu�s de que se completen la cantidad especificada de habitaciones.
+    /// Remueve un modificador temporal despus de que se completen la cantidad especificada de habitaciones.
     /// </summary>
     /// <param name="type"> Stat a modificar.</param>
     /// <param name="modifierValue"> Valor del modificador a remover.</param>
-    /// <param name="duration"> Duraci�n en segundos.</param>
+    /// <param name="duration"> Duracin en segundos.</param>
     /// <returns> IEnumerator para la corrutina.</returns>
     private IEnumerator RemoveModifierAfterRooms(StatType type, float modifierValue, int rooms)
     {
@@ -603,7 +693,49 @@ public partial class PlayerStatsManager : MonoBehaviour
         MarkVisualStateFromDelta(type, delta);
 
         OnStatChanged?.Invoke(type, currentStats[type]);
-        Debug.Log($"Efecto temporal '{type}' removido despu�s de {rooms} habitaciones.");
+        Debug.Log($"Efecto temporal '{type}' removido despus de {rooms} habitaciones.");
+    }
+
+    /// <summary>
+    /// Aplica una modificacin de estadstica temporal que dura por un tiempo especfico.
+    /// </summary>
+    public void ApplyTemporaryStatByTime(StatType type, float modifierValue, float duration)
+    {
+        float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
+
+        currentStats[type] += modifierValue;
+
+        float delta = currentStats[type] - prev;
+        MarkVisualStateFromDelta(type, delta);
+
+        OnStatChanged?.Invoke(type, currentStats[type]);
+
+        StartCoroutine(RemoveModifierAfterTime(type, modifierValue, duration));
+    }
+
+    /// <summary>
+    /// Remueve un modificador temporal despus de que pase el tiempo especificado.
+    /// </summary>
+    /// <param name="type"> Stat a modificar.</param>
+    /// <param name="modifierValue"> Valor del modificador a remover.</param>
+    /// <param name="duration"> Duracin en segundos.</param>
+    /// <returns> IEnumerator para la corrutina.</returns>
+    private IEnumerator RemoveModifierAfterTime(StatType type, float modifierValue, float duration)
+    {
+        Debug.Log($"Iniciando corrutina para remover modificador '{type}' despus de {duration} segundos.");
+
+        yield return new WaitForSeconds(duration);
+
+        float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
+
+        currentStats[type] -= modifierValue;
+
+        float delta = currentStats[type] - prev;
+        MarkVisualStateFromDelta(type, delta);
+
+        OnStatChanged?.Invoke(type, currentStats[type]);
+
+        Debug.Log($"Efecto temporal '{type}' removido despus de {duration} segundos.");
     }
 
     public void RemoveAllBehavioralEffects(List<ItemEffectBase> effectsToClean)
@@ -617,131 +749,14 @@ public partial class PlayerStatsManager : MonoBehaviour
         }
     }
 
-    public void ApplyMultiplierModifier(string key, StatType type, float multiplier)
-    {
-        ApplyNamedModifier(key, type, multiplier - 1.0f, true);
-        Debug.Log($"[PlayerStatsManager] Multiplicador aplicado: {key} a {type} = x{multiplier}");
-    }
-
-    public void ApplyAdditiveModifier(string key, StatType type, float amount)
-    {
-        ApplyNamedModifier(key, type, amount, false);
-        Debug.Log($"[PlayerStatsManager] Modificador aditivo aplicado: {key} a {type} = +{amount}");
-    }
-
-    public void ClearAllNamedModifiers()
-    {
-        List<string> keysToRemove = new List<string>(namedModifiers.Keys);
-        foreach (string key in keysToRemove)
-        {
-            RemoveNamedModifier(key);
-        }
-        Debug.Log("Todos los modificadores de estadísticas nombrados han sido limpiados.");
-    }
-
-    /// <summary>
-    /// Lee el valor actual de la estad�stica especificada.
-    /// </summary> 
-    /// <param name="type"> Stat a consultar.</param>
-    public float GetCurrentStat(StatType type)
-    {
-        if (currentStats.ContainsKey(type))
-        {
-            return currentStats[type];
-        }
-
-        return 0f;
-    }
-
-    /// <summary>
-    /// Lee el valor base de la estadística especificada.
-    /// </summary> 
-    /// <param name="type"> Stat a consultar.</param>
-    public float GetBaseStat(StatType type) => baseStats.TryGetValue(type, out var value) ? value : 0;
-
-    #region UI Helper: Construir y actualizar el TextMeshPro
-
-    /// <summary>
-    /// Construye el texto que se mostrar� en el TextMeshProUGUI con todas las stats ordenadas.
-    /// </summary>
-    private void UpdateStatsDisplay()
-    {
-        if (statsText == null)
-        {
-            return;
-        }
-
-        var sb = new StringBuilder();
-
-        foreach (StatType stat in Enum.GetValues(typeof(StatType)))
-        {
-            float current = currentStats.TryGetValue(stat, out var cur) ? cur : 0f;
-            float baseVal = baseStats.TryGetValue(stat, out var b) ? b : 0f;
-
-            string formattedCurrent = current.ToString($"F{Mathf.Max(0, decimals)}");
-            string coloredCurrent = formattedCurrent;
-
-            // Usamos el estado visual persistente en lugar de comparar con base directamente.
-            int visualState = statVisualState.ContainsKey(stat) ? statVisualState[stat] : 0;
-            if (visualState == 1)
-            {
-                // verde para aumento persistente
-                coloredCurrent = $"<color=#00FF00>{formattedCurrent}</color>";
-            }
-            else if (visualState == -1)
-            {
-                // rojo para disminuci�n persistente
-                coloredCurrent = $"<color=#FF0000>{formattedCurrent}</color>";
-            }
-            else
-            {
-                // neutro: mostramos sin color
-                coloredCurrent = formattedCurrent;
-            }
-
-            if (showBaseValues)
-            {
-                string formattedBase = baseVal.ToString($"F{Mathf.Max(0, decimals)}");
-                sb.AppendLine($"{SplitCamelCase(stat.ToString())}: {coloredCurrent} (base: {formattedBase})");
-            }
-            else
-            {
-                sb.AppendLine($"{SplitCamelCase(stat.ToString())}: {coloredCurrent}");
-            }
-        }
-
-        statsText.text = sb.ToString();
-    }
-
-    /// <summary>
-    /// Convierte un nombre en CamelCase a una cadena con espacios para mejor lectura.
-    /// Ej: ShieldMaxDistance -> Shield Max Distance
-    /// </summary>
-    private string SplitCamelCase(string input)
-    {
-        if (string.IsNullOrEmpty(input)) return input;
-        var sb = new StringBuilder();
-        sb.Append(input[0]);
-        for (int i = 1; i < input.Length; i++)
-        {
-            char c = input[i];
-            if (char.IsUpper(c) && !char.IsUpper(input[i - 1]))
-            {
-                sb.Append(' ');
-            }
-            sb.Append(c);
-        }
-        return sb.ToString();
-    }
-
     #endregion
 
-    #region Modificadores por etapa de vida
+    #region Life Stage System
 
     /// <summary>
-    /// Aplica modificadores de estad�sticas permanentes basados en la etapa de vida del jugador.
-    /// Este m�todo es llamado por el evento OnLifeStageChanged de PlayerHealth.
-    /// CORRECCI�N: ahora aplica solo incrementos positivos seg�n la etapa (no resta).
+    /// Aplica modificadores de estadsticas permanentes basados en la etapa de vida del jugador.
+    /// Este mtodo es llamado por el evento OnLifeStageChanged de PlayerHealth.
+    /// CORRECCIN: ahora aplica solo incrementos positivos segn la etapa (no resta).
     /// </summary>
     /// <param name="newStage">La nueva etapa de vida del jugador.</param>
     private void ApplyLifeStageModifiers(LifeStage newStage)
@@ -799,7 +814,7 @@ public partial class PlayerStatsManager : MonoBehaviour
                 Debug.Log("[PlayerStatsManager] Etapa Anciano: +20% a todas las stats de combate.");
                 ApplyLifeStageMod(StatType.MoveSpeed, -0.1f);
                 ApplyLifeStageMod(StatType.MeleeAttackSpeed, -0.35f);
-                ApplyLifeStageMod(StatType.MeleeAttackDamage,1.8f);
+                ApplyLifeStageMod(StatType.MeleeAttackDamage, 1.8f);
                 ApplyLifeStageMod(StatType.ShieldSpeed, 0f);
                 ApplyLifeStageMod(StatType.ShieldAttackDamage, 0f);
                 break;
@@ -867,86 +882,116 @@ public partial class PlayerStatsManager : MonoBehaviour
         Debug.Log($"[PlayerStatsManager] Modificador de etapa aplicado: {stat} +{percentage * 100}% = +{modifier}");
     }
 
-    /// <summary>
-    /// Aplica un modificador temporal identificado por una clave �nica. Si ya existe un modificador con esa clave, se sobrescribe.
-    /// </summary>
-    /// <param name="key">Una clave �nica para este modificador (ej. "ShieldSkillBuff").</param>
-    /// <param name="type">El tipo de stat a modificar.</param>
-    /// <param name="amount">La cantidad a a�adir (puede ser negativa).</param>
-    public void ApplyNamedModifier(string key, StatType type, float amount, bool isPercentage = false)
-    {
-        RemoveNamedModifier(key);
+    #endregion
 
-        if (!baseStats.ContainsKey(type))
+    #region UI & Display Helpers
+
+    /// <summary>
+    /// Alterna el estado (activo/inactivo) del panel de estadsticas.
+    /// </summary>
+    private void ToggleStatsPanel()
+    {
+        if (statsPanel == null)
         {
-            if (!currentStats.ContainsKey(type)) currentStats[type] = 0f;
+            // Si no hay panel, intentamos alternar directamente el objeto de statsText
+            if (statsText != null)
+            {
+                statsText.gameObject.SetActive(!statsText.gameObject.activeSelf);
+                if (statsText.gameObject.activeSelf) UpdateStatsDisplay();
+            }
+            return;
         }
 
-        float referenceBase = currentStats.TryGetValue(type, out var curVal) ? curVal : (baseStats.TryGetValue(type, out var b) ? b : 0f);
+        bool newState = !statsPanel.activeSelf;
+        statsPanel.SetActive(newState);
 
-        float appliedAmount = isPercentage ? referenceBase * amount : amount;
-
-        if (!namedModifiers.ContainsKey(key)) namedModifiers[key] = new Dictionary<StatType, NamedModifierData>();
-
-        namedModifiers[key][type] = new NamedModifierData
-        {
-            IsPercentage = isPercentage,
-            Value = amount,
-            AppliedAmount = appliedAmount
-        };
-
-        currentStats[type] = referenceBase + appliedAmount;
-        OnStatChanged?.Invoke(type, currentStats[type]);
+        // Si se abre el panel, actualizamos el texto para mostrar valores recientes.
+        if (newState)
+            UpdateStatsDisplay();
     }
 
     /// <summary>
-    /// Remueve un modificador previamente aplicado con una clave �nica.
+    /// Construye el texto que se mostrar en el TextMeshProUGUI con todas las stats ordenadas.
     /// </summary>
-    /// <param name="key">La clave �nica del modificador a remover.</param>
-    public void RemoveNamedModifier(string key)
+    private void UpdateStatsDisplay()
     {
-        if (namedModifiers.TryGetValue(key, out var modifiers))
+        if (statsText == null)
         {
-            foreach (var modifier in modifiers)
-            {
-                var stat = modifier.Key;
-                var modifiersData = modifier.Value;
-
-                float amountToRemove = modifiersData.AppliedAmount;
-                currentStats[stat] = currentStats.TryGetValue(stat, out var cur) ? cur - amountToRemove : -amountToRemove;
-                OnStatChanged?.Invoke(stat, currentStats[stat]);
-            }
-            namedModifiers.Remove(key);
-            Debug.Log($"[PlayerStatsManager] Modificador '{key}' removido.");
+            return;
         }
+
+        var sb = new StringBuilder();
+
+        foreach (StatType stat in Enum.GetValues(typeof(StatType)))
+        {
+            float current = currentStats.TryGetValue(stat, out var cur) ? cur : 0f;
+            float baseVal = baseStats.TryGetValue(stat, out var b) ? b : 0f;
+
+            string formattedCurrent = current.ToString($"F{Mathf.Max(0, decimals)}");
+            string coloredCurrent = formattedCurrent;
+
+            // Usamos el estado visual persistente en lugar de comparar con base directamente.
+            int visualState = statVisualState.ContainsKey(stat) ? statVisualState[stat] : 0;
+            if (visualState == 1)
+            {
+                // verde para aumento persistente
+                coloredCurrent = $"<color=#00FF00>{formattedCurrent}</color>";
+            }
+            else if (visualState == -1)
+            {
+                // rojo para disminucin persistente
+                coloredCurrent = $"<color=#FF0000>{formattedCurrent}</color>";
+            }
+            else
+            {
+                // neutro: mostramos sin color
+                coloredCurrent = formattedCurrent;
+            }
+
+            if (showBaseValues)
+            {
+                string formattedBase = baseVal.ToString($"F{Mathf.Max(0, decimals)}");
+                sb.AppendLine($"{SplitCamelCase(stat.ToString())}: {coloredCurrent} (base: {formattedBase})");
+            }
+            else
+            {
+                sb.AppendLine($"{SplitCamelCase(stat.ToString())}: {coloredCurrent}");
+            }
+        }
+
+        statsText.text = sb.ToString();
+    }
+
+    /// <summary>
+    /// Convierte un nombre en CamelCase a una cadena con espacios para mejor lectura.
+    /// Ej: ShieldMaxDistance -> Shield Max Distance
+    /// </summary>
+    private string SplitCamelCase(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+        var sb = new StringBuilder();
+        sb.Append(input[0]);
+        for (int i = 1; i < input.Length; i++)
+        {
+            char c = input[i];
+            if (char.IsUpper(c) && !char.IsUpper(input[i - 1]))
+            {
+                sb.Append(' ');
+            }
+            sb.Append(c);
+        }
+        return sb.ToString();
     }
 
     #endregion
 
-    #region Efectos temporales por tiempo
+    #region Tracking
 
-    /// <summary>
-    /// Aplica un modificador a un stat durante un tiempo determinado y luego lo revierte.
-    /// sIRVE para efectos como venenos, ralentizaciones, o buffs.
-    /// </summary>
-    /// <param name="key">Una clave única para este efecto (ej. "EnemySlow_123").</param>
-    /// <param name="type">El stat a modificar.</param>
-    /// <param name="amount">La cantidad a añadir (negativa para un debuff).</param>
-    /// <param name="duration">La duración del efecto en segundos.</param>
-    public void ApplyTimedModifier(string key, StatType type, float amount, float duration)
+    // Incrementa el contador de habitaciones completadas.
+    private void IncrementRoomCount()
     {
-        StartCoroutine(TimedModifierCoroutine(key, type, amount, duration));
-    }
-
-    private IEnumerator TimedModifierCoroutine(string key, StatType type, float amount, float duration)
-    {
-        Debug.Log($"[PlayerStatsManager] Aplicando efecto temporal '{key}' a {type} ({amount}) por {duration}s.");
-        ApplyNamedModifier(key, type, amount);
-
-        yield return new WaitForSeconds(duration);
-
-        Debug.Log($"[PlayerStatsManager] Efecto temporal '{key}' ha expirado. Revirtiendo.");
-        RemoveNamedModifier(key);
+        roomsCompletedSinceStart++;
+        Debug.Log($"[PlayerStatsManager] Sala completada. Contador: {roomsCompletedSinceStart}");
     }
 
     #endregion

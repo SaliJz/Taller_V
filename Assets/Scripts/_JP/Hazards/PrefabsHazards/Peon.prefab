@@ -338,7 +338,6 @@ GameObject:
   - component: {fileID: 5572706748302728645}
   - component: {fileID: 2796348487033591447}
   - component: {fileID: 7036375574350101513}
-  - component: {fileID: 2612964578053084481}
   m_Layer: 0
   m_Name: Peon
   m_TagString: Untagged
@@ -438,33 +437,3 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1.7227077, z: 1}
   m_Center: {x: 0, y: 0.90623474, z: 0}
---- !u!114 &2612964578053084481
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8826328293595461507}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: addc9677b1f4c3449ac81c9e0e575ed7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  tablero: {fileID: 0}
-  marcadorTrailPrefab: {fileID: 8492918354279214268, guid: a59c5597a31b1334597ec76e1a7842f7, type: 3}
-  tagJugador: Player
-  coordActual: {x: -2147483648, y: -2147483648}
-  tamCasilla: 1
-  tiempoEsperaInicial: 1
-  tiempoAntesMover: 1
-  tilesPorSegundo: 6
-  dano: 10
-  fuerzaEmpuje: 0
-  danoPorColision: 1
-  cooldownDanoColision: 0.6
-  detectionRadius: 0.6
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  manualCheckInterval: 0.12
-  direccion: 1

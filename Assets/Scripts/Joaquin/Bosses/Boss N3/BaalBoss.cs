@@ -843,7 +843,11 @@ public class BaalBoss : MonoBehaviour
         currentShieldReduction = 1f;
         enemyHealth?.SetDynamicVulnerability(currentShieldReduction);
 
-        if (phaseTransitionVFX != null) phaseTransitionVFX.Play();
+        if (phaseTransitionVFX != null)
+        {
+            phaseTransitionVFX.Play();
+            VFXHelper.StopAndDestroy(phaseTransitionVFX, phaseTransitionVFX.main.duration);
+        }
 
         // Spawn de hasta 3 Nodos Purulentos
         spawnedNodes.Clear();
@@ -1063,7 +1067,7 @@ public class BaalBoss : MonoBehaviour
             NavMeshHit hit;
             if (NavMesh.SamplePosition(next, out hit, 2f, NavMesh.AllAreas))
             {
-                agent.Warp(hit.position); 
+                agent.Warp(hit.position);
             }
             else transform.position = next;
 

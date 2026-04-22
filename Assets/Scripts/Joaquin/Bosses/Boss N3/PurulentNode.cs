@@ -131,6 +131,7 @@ public class PurulentNode : MonoBehaviour
     /// </summary>
     private IEnumerator FireRoutine()
     {
+        yield return isEmerged ? null : new WaitUntil(() => isEmerged); // Espera a que el nodo haya emergido antes de empezar a disparar
         // Pequeño offset inicial para que los nodos no disparen todos a la vez
         yield return new WaitForSeconds(Random.Range(0.2f, 1f));
 
@@ -150,6 +151,8 @@ public class PurulentNode : MonoBehaviour
     /// </summary>
     private IEnumerator LarvaRoutine()
     {
+        yield return isEmerged ? null : new WaitUntil(() => isEmerged); // Espera a que el nodo haya emergido antes de empezar a disparar
+
         yield return new WaitForSeconds(Random.Range(0.5f, 2f));
 
         while (isAlive)

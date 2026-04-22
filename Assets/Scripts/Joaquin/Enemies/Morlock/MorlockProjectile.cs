@@ -21,7 +21,7 @@ public class MorlockProjectile : MonoBehaviour
 
     [SerializeField] private LayerMask collisionLayers;
 
-    [SerializeField] private bool debugMode = false;
+    //[SerializeField] private bool debugMode = false;
 
     private Vector3 direction;
     private bool wasReflected = false;

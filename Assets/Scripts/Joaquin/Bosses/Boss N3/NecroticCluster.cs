@@ -164,9 +164,9 @@ public class NecroticCluster : MonoBehaviour
         if (idleVFX != null) idleVFX.Stop();
         if (collapseVFX != null)
         {
-            collapseVFX.transform.SetParent(null); // desvincula para que no desaparezca con el objeto
-            collapseVFX.Play();
-            Destroy(collapseVFX.gameObject, collapseVFX.main.duration + 0.5f);
+            // DetachStopAndDestroy: desvincula del padre, para el sistema limpiamente
+            // y destruye tras el duration para evitar el JobTempAlloc leak.
+            VFXHelper.DetachStopAndDestroy(collapseVFX, collapseVFX.main.duration + 0.5f);
         }
         if (audioSource != null && collapseSFX != null) audioSource.PlayOneShot(collapseSFX);
 

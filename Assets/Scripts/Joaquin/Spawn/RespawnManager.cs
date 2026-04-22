@@ -14,7 +14,7 @@ public class RespawnManager : MonoBehaviour
     [Header("Configuración")]
     [SerializeField] private float respawnDelay = 0.5f;
     [SerializeField] private float fadeDuration = 0.3f;
-    [SerializeField] private int damageOnFall = 10;
+    //[SerializeField] private int damageOnFall = 10;
 
     private SpawnPoint currentSpawnPoint;
     private SpawnPoint defaultSpawnPoint;

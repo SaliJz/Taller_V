@@ -7,33 +7,46 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Sistema de bloqueo para el jugador con múltiples tipos de límites configurables.
-/// - Bloquea ataques frontales
-/// - No bloquea: ataques desde abajo, costados, detrás, o AoE
-/// - Límites opcionales: temporal, durabilidad, ángulo, absorción, penalización, guard crush, dinámico
 /// </summary>
 public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 {
-    #region Serialized Fields
+    #region Inspector - References
 
     [Header("References")]
     [SerializeField] private PlayerAudioController playerAudioController;
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
+    [SerializeField] private Transform shieldForwardOverride = null;
+    [SerializeField] private GameObject counterProjectilePrefab;
+    [SerializeField] private Slider durabilitySlider;
+    [SerializeField] private Image durabilityFillImage;
+    [SerializeField] private TextMeshProUGUI durabilityPercentageText;
+    [SerializeField] private GameObject durabilityUIGroup;
+    [SerializeField] private ParticleSystem blockParticles;
+    [SerializeField] private GameObject blockVFX;
+    [SerializeField] private GameObject blockBreakVFX;
+
+    #endregion
+
+    #region Inspector - Core Settings
 
     [Header("Core Configuration")]
-    [SerializeField] private Transform shieldForwardOverride = null;
     [SerializeField] private bool blockingEnabled = true;
     [SerializeField, Range(0f, 360f)] private float frontBlockAngle = 170f;
+
+    #endregion
+
+    #region Inspector - Rotation Settings
 
     [Header("Rotation Mode")]
     [SerializeField] private bool useMouseRotation = true;
     [SerializeField] private float rotationSpeed = 10f;
-
-    [Header("Counter Attack Rotation")]
     [Tooltip("Tiempo en segundos que el personaje forzará la mirada al objetivo al disparar.")]
     [SerializeField] private float counterRotationDuration = 0.25f;
-    [Tooltip("Velocidad de interpolación para volver a la rotación original.")]
-    [SerializeField] private float counterRotationSmoothReturn = 15f;
+
+    #endregion
+
+    #region Inspector - Durability Settings
 
     [Header("Durability System")]
     [Tooltip("Vida del escudo (Base 30).")]
@@ -44,53 +57,52 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     [SerializeField, Range(0f, 1f)] private float minimumDurabilityToUse = 0.99f;
     [SerializeField] private float rechargeDelay = 2f;
     [SerializeField] private float drainDelay = 0.2f;
+    #endregion
+
+    #region Inspector - Counter Attack Settings
 
     [Header("Counter Attack System")]
-    [Tooltip("Prefab del proyectil que se dispara al soltar.")]
-    [SerializeField] private GameObject counterProjectilePrefab;
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private float autoAimRange = 20f;
     [SerializeField] private float multiplierYoung = 1.5f;
     [SerializeField] private float multiplierAdult = 2.0f;
     [SerializeField] private float multiplierElder = 2.5f;
 
+    #endregion
+
+    #region Inspector - Stun Settings
+
     [Header("Stun Settings")]
     [SerializeField] private float stunDurationYoung = 1.5f;
     [SerializeField] private float stunDurationAdult = 1.0f;
     [SerializeField] private float stunDurationElder = 0.5f;
 
-    [Header("UI References")]
-    [SerializeField] private Slider durabilitySlider;
-    [SerializeField] private Image durabilityFillImage;
-    [SerializeField] private TextMeshProUGUI durabilityPercentageText;
-    [SerializeField] private GameObject durabilityUIGroup;
-    [SerializeField] private float hideDelay = 2f;
+    #endregion
+
+    #region Inspector - UI Polish Settings
 
     [Header("UI Polish")]
+    [SerializeField] private float hideDelay = 2f;
     [SerializeField] private bool useSmoothing = true;
     [SerializeField] private float smoothSpeed = 5f;
     [SerializeField] private bool pulseWhenLow = true;
     [SerializeField] private float pulseSpeed = 2f;
     [SerializeField] private float pulseMinScale = 0.95f;
     [SerializeField] private float pulseMaxScale = 1.05f;
-
-    [Header("Visual Settings")]
     [SerializeField] private Color fullDurabilityColor = new Color(0.2f, 0.8f, 1f);
     [SerializeField] private Color midDurabilityColor = new Color(1f, 0.8f, 0f);
     [SerializeField] private Color lowDurabilityColor = new Color(1f, 0.2f, 0.2f);
     [SerializeField] private Color emptyDurabilityColor = new Color(0.5f, 0.5f, 0.5f);
 
-    [Header("VFX")]
-    [SerializeField] private ParticleSystem blockParticles;
-    [SerializeField] private GameObject blockVFX;
-    [SerializeField] private GameObject blockBreakVFX;
+    #endregion
+
+    #region Inspector - Debug Settings
 
     [Header("Debug")]
     [SerializeField] private bool debugMode = false;
-
     #endregion
 
-    #region State Variables
+    #region Internal State
 
     private PlayerControlls playerControls;
     private PlayerMovement playerMovement;
@@ -98,11 +110,8 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     private PlayerCombatActionManager combatActionManager;
     private Camera mainCamera;
 
-    public bool IsInputBlocked { get; set; } = false;
-    public bool IsBlocking { get; private set; }
     private bool isStunned = false;
     private bool isDurabilityRecharging = false;
-
     private float accumulatedDamage = 0f;
 
     private Coroutine hideDurabilityCoroutine;
@@ -117,7 +126,10 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
     #endregion
 
-    #region Events
+    #region Public Properties & Events
+
+    public bool IsInputBlocked { get; set; } = false;
+    public bool IsBlocking { get; private set; }
 
     public event Action OnBlockStart;
     public event Action OnBlockEnd;
@@ -249,7 +261,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
     #endregion
 
-    #region Blocking Logic
+    #region Blocking System
 
     private bool CanUseBlock()
     {
@@ -376,7 +388,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
     #endregion
 
-    #region Combat Logic
+    #region Combat & Damage System
 
     public bool CanBlockAttack(Vector3 attackerPosition)
     {
@@ -393,24 +405,6 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         float angle = Vector3.Angle(shieldDir, toAttacker);
 
         return angle <= (frontBlockAngle * 0.5f);
-    }
-
-    private Vector3 GetShieldPosition()
-    {
-        if (shieldForwardOverride != null)
-        {
-            return shieldForwardOverride.position;
-        }
-        return transform.position;
-    }
-
-    private Vector3 GetShieldForward()
-    {
-        if (shieldForwardOverride != null)
-        {
-            return shieldForwardOverride.forward;
-        }
-        return transform.forward;
     }
 
     public float ProcessBlockedAttack(float incomingDamage, GameObject attacker = null)
@@ -514,40 +508,6 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         accumulatedDamage = 0f;
     }
 
-    private IEnumerator HandleCounterRotation(Vector3 targetDirection, bool forceSnap)
-    {
-        playerMovement.IsRotationExternallyControlled = true;
-
-        if (forceSnap && targetDirection.sqrMagnitude > 0.001f)
-        {
-            playerMovement.LockFacingTo8Directions(targetDirection, true);
-            playerMovement.ForceApplyLockedRotation();
-        }
-
-        yield return new WaitForSeconds(counterRotationDuration);
-
-        playerMovement.IsRotationExternallyControlled = false;
-
-        playerMovement.UnlockFacing();
-
-        counterRotationCoroutine = null;
-    }
-
-    private void StopCounterRotation()
-    {
-        if (counterRotationCoroutine != null)
-        {
-            StopCoroutine(counterRotationCoroutine);
-            counterRotationCoroutine = null;
-        }
-
-        if (playerMovement != null)
-        {
-            playerMovement.IsRotationExternallyControlled = false;
-            playerMovement.UnlockFacing();
-        }
-    }
-
     private Transform FindNearestEnemy()
     {
         Collider[] hits = Physics.OverlapSphere(transform.position, autoAimRange, enemyLayer);
@@ -569,6 +529,24 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         return bestTarget;
     }
 
+    private Vector3 GetShieldPosition()
+    {
+        if (shieldForwardOverride != null)
+        {
+            return shieldForwardOverride.position;
+        }
+        return transform.position;
+    }
+
+    private Vector3 GetShieldForward()
+    {
+        if (shieldForwardOverride != null)
+        {
+            return shieldForwardOverride.forward;
+        }
+        return transform.forward;
+    }
+
     private Vector3 GetSpawnPosition()
     {
         return shieldForwardOverride != null ? shieldForwardOverride.position : transform.position + Vector3.up;
@@ -576,43 +554,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
     #endregion
 
-    #region Stun System
-
-    private void ApplyStunBasedOnAge()
-    {
-        if (playerHealth == null) return;
-
-        float stunDuration = stunDurationAdult;
-
-        switch (playerHealth.CurrentLifeStage)
-        {
-            case PlayerHealth.LifeStage.Young: stunDuration = stunDurationYoung; break; // 1.5s
-            case PlayerHealth.LifeStage.Adult: stunDuration = stunDurationAdult; break; // 1.0s
-            case PlayerHealth.LifeStage.Elder: stunDuration = stunDurationElder; break; // 0.5s
-        }
-
-        if (stunCoroutine != null) StopCoroutine(stunCoroutine);
-        stunCoroutine = StartCoroutine(StunRoutine(stunDuration));
-    }
-
-    private IEnumerator StunRoutine(float duration)
-    {
-        isStunned = true;
-        if (playerMovement != null) playerMovement.SetCanMove(false);
-
-        yield return new WaitForSeconds(duration);
-
-        isStunned = false;
-        if (playerMovement != null && !IsBlocking) playerMovement.SetCanMove(true);
-
-        if (durabilityRechargeCoroutine == null) durabilityRechargeCoroutine = StartCoroutine(RechargeDurability());
-
-        stunCoroutine = null;
-    }
-
-    #endregion
-
-    #region Rotation Logic
+    #region Rotation System
 
     private void HandleRotationWhileBlocking()
     {
@@ -665,9 +607,79 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         }
     }
 
+    private IEnumerator HandleCounterRotation(Vector3 targetDirection, bool forceSnap)
+    {
+        playerMovement.IsRotationExternallyControlled = true;
+
+        if (forceSnap && targetDirection.sqrMagnitude > 0.001f)
+        {
+            playerMovement.LockFacingTo8Directions(targetDirection, true);
+            playerMovement.ForceApplyLockedRotation();
+        }
+
+        yield return new WaitForSeconds(counterRotationDuration);
+
+        playerMovement.IsRotationExternallyControlled = false;
+
+        playerMovement.UnlockFacing();
+
+        counterRotationCoroutine = null;
+    }
+
+    private void StopCounterRotation()
+    {
+        if (counterRotationCoroutine != null)
+        {
+            StopCoroutine(counterRotationCoroutine);
+            counterRotationCoroutine = null;
+        }
+
+        if (playerMovement != null)
+        {
+            playerMovement.IsRotationExternallyControlled = false;
+            playerMovement.UnlockFacing();
+        }
+    }
+
     #endregion
 
-    #region Durability Logic & UI
+    #region Stun System
+
+    private void ApplyStunBasedOnAge()
+    {
+        if (playerHealth == null) return;
+
+        float stunDuration = stunDurationAdult;
+
+        switch (playerHealth.CurrentLifeStage)
+        {
+            case PlayerHealth.LifeStage.Young: stunDuration = stunDurationYoung; break; // 1.5s
+            case PlayerHealth.LifeStage.Adult: stunDuration = stunDurationAdult; break; // 1.0s
+            case PlayerHealth.LifeStage.Elder: stunDuration = stunDurationElder; break; // 0.5s
+        }
+
+        if (stunCoroutine != null) StopCoroutine(stunCoroutine);
+        stunCoroutine = StartCoroutine(StunRoutine(stunDuration));
+    }
+
+    private IEnumerator StunRoutine(float duration)
+    {
+        isStunned = true;
+        if (playerMovement != null) playerMovement.SetCanMove(false);
+
+        yield return new WaitForSeconds(duration);
+
+        isStunned = false;
+        if (playerMovement != null && !IsBlocking) playerMovement.SetCanMove(true);
+
+        if (durabilityRechargeCoroutine == null) durabilityRechargeCoroutine = StartCoroutine(RechargeDurability());
+
+        stunCoroutine = null;
+    }
+
+    #endregion
+
+    #region Durability System
 
     private IEnumerator DrainDurability()
     {
@@ -720,6 +732,10 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         }
     }
 
+    #endregion
+
+    #region Visual & UI Updates
+
     public void UpdateUI()
     {
         if (durabilitySlider == null) return;
@@ -768,10 +784,10 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     public float GetDurabilityPercentage() => (currentDurability / maxDurability) * 100f;
     public float GetCurrentDurability() => currentDurability;
     public float GetMaxDurability() => maxDurability;
-
+    
     #endregion
 
-    #region Gizmos
+    #region Debugging
 
     private void OnDrawGizmos()
     {
@@ -834,8 +850,6 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         }
     }
 
-    #endregion
-
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     private static void ReportDebug(string message, int reportPriorityLevel)
     {
@@ -852,4 +866,13 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
                 break;
         }
     }
+
+    #endregion
+
+    #region Legacy & Commented Code
+
+    //[Tooltip("Velocidad de interpolación para volver a la rotación original.")]
+    //[SerializeField] private float counterRotationSmoothReturn = 15f;
+
+    #endregion
 }
