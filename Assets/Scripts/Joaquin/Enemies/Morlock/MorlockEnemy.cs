@@ -10,7 +10,7 @@ public class MorlockEnemy : MonoBehaviour
     private MorlockState currentState;
 
     [Header("Referencias")]
-    [SerializeField] private Animator animator;
+    [SerializeField] private StaticAnimCtrl visualCtrl;
     [SerializeField] private MorlockStats stats;
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private Transform firePoint;
@@ -28,7 +28,7 @@ public class MorlockEnemy : MonoBehaviour
     [Header("Estadisticas (fallback si no hay MorlockStats)")]
     [Header("Vida")]
     [SerializeField] private float health = 15f;
-    
+
     [Header("Movimiento")]
     [SerializeField] private float moveSpeed = 4f;
 
@@ -123,25 +123,18 @@ public class MorlockEnemy : MonoBehaviour
     private float currentDetectionTimer;
     private float baseDetectionRadius;
 
-    private int animHashX;
-    private int animHashY;
-    private int animHashAttack;
     private Vector3 lastLookDirection = Vector3.forward;
 
     private void Awake()
     {
         if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
         if (agent == null) agent = GetComponent<NavMeshAgent>();
-        if (animator == null) animator = GetComponentInChildren<Animator>();
+        if (visualCtrl == null) visualCtrl = GetComponentInChildren<StaticAnimCtrl>();
         if (wordLibrary == null) wordLibrary = GetComponent<MorlockWordLibrary>();
-
-        animHashX = Animator.StringToHash("Xaxis");
-        animHashY = Animator.StringToHash("Yaxis");
-        animHashAttack = Animator.StringToHash("Attack");
 
         if (enemyHealth == null) ReportDebug("Componente EnemyHealth no encontrado en el enemigo.", 3);
         if (agent == null) ReportDebug("Componente NavMeshAgent no encontrado en el enemigo.", 3);
-        if (animator != null) ReportDebug("Componente Animator no encontrado en el enemigo.", 2);
+        if (visualCtrl == null) ReportDebug("Componente StaticAnimCtrl no encontrado en el enemigo.", 2);
     }
 
     private void Start()
@@ -261,7 +254,7 @@ public class MorlockEnemy : MonoBehaviour
 
         isDead = true;
 
-        if (animator != null) animator.SetBool(animHashAttack, false);
+        if (visualCtrl != null) visualCtrl.PlayDeath();
         if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
 
         ChangeState(MorlockState.Repositioning);
@@ -286,7 +279,7 @@ public class MorlockEnemy : MonoBehaviour
     private void Update()
     {
         if (isDead || playerTransform == null || !isReady) return;
-        
+
         UpdateAnimationAndRotation();
 
         if (enemyHealth != null && enemyHealth.IsStunned)
@@ -414,12 +407,6 @@ public class MorlockEnemy : MonoBehaviour
             float xInt = Mathf.Round(dirVector.x);
             float yInt = Mathf.Round(dirVector.z);
 
-            if (animator != null)
-            {
-                animator.SetFloat(animHashX, xInt);
-                animator.SetFloat(animHashY, yInt);
-            }
-
             lastLookDirection = new Vector3(xInt, 0, yInt);
         }
     }
@@ -444,12 +431,6 @@ public class MorlockEnemy : MonoBehaviour
             float yInt = Mathf.Round(dirVector.z);
 
             lastLookDirection = new Vector3(xInt, 0, yInt);
-
-            if (animator != null)
-            {
-                animator.SetFloat(animHashX, xInt);
-                animator.SetFloat(animHashY, yInt);
-            }
         }
     }
 
@@ -474,8 +455,6 @@ public class MorlockEnemy : MonoBehaviour
             StopCoroutine(shootCoroutine);
             shootCoroutine = null;
         }
-
-        if (animator != null) animator.SetBool(animHashAttack, false);
 
         currentState = newState;
 
@@ -561,21 +540,27 @@ public class MorlockEnemy : MonoBehaviour
             Vector3 stepTarget = Vector3.MoveTowards(transform.position, originPosition, teleportRange);
 
             NavMeshHit stepHit;
+            Vector3 finalPos = stepTarget;
             if (NavMesh.SamplePosition(stepTarget, out stepHit, 2.5f, NavMesh.AllAreas))
             {
-                transform.position = stepHit.position;
-                if (agent != null && agent.enabled) agent.Warp(stepHit.position);
-            }
-            else
-            {
-                transform.position = stepTarget;
-                if (agent != null && agent.enabled) agent.Warp(stepTarget);
+                finalPos = stepHit.position;
             }
 
-            if (animator != null) animator.SetTrigger("Teleport");
+            if (visualCtrl != null) visualCtrl.PlayTPout();
             if (audioSource != null && teleportSFX != null) audioSource.PlayOneShot(teleportSFX);
-
             SpawnTeleportVFX(transform.position);
+
+            yield return new WaitForSeconds(0.4f);
+
+            transform.position = finalPos;
+            if (agent != null && agent.enabled) agent.Warp(finalPos);
+
+            if (visualCtrl != null)
+            {
+                visualCtrl.restoreOriginalMaterials();
+                visualCtrl.PlayTPin();
+            }
+            SpawnTeleportVFX(finalPos);
 
             yield return new WaitForSeconds(repositionTeleportCooldown);
         }
@@ -672,28 +657,32 @@ public class MorlockEnemy : MonoBehaviour
 
         NavMeshHit hit;
         Vector3 finalDestination = targetPosition;
-        bool validDestination = false;
-
         if (NavMesh.SamplePosition(targetPosition, out hit, 10f, NavMesh.AllAreas))
         {
             finalDestination = hit.position;
-            validDestination = true;
         }
+        else yield break;
 
-        if (!validDestination) yield break;
-
+        // 1. Iniciar desaparición
+        if (visualCtrl != null) visualCtrl.PlayTPout();
         SpawnTeleportVFX(transform.position);
 
-        yield return new WaitForSeconds(teleportVFXDelay);
+        // Tiempo mínimo para que el material de TP se vea antes de moverlo
+        yield return new WaitForSeconds(0.35f);
 
         if (isDead || (enemyHealth != null && enemyHealth.IsStunned)) yield break;
 
         if (audioSource != null && teleportSFX != null) audioSource.PlayOneShot(teleportSFX);
 
+        // 2. Mover instantáneamente
         transform.position = finalDestination;
-        if (agent != null && agent.enabled)
+        if (agent != null && agent.enabled) agent.Warp(finalDestination);
+
+        // 3. Reaparecer de inmediato
+        if (visualCtrl != null)
         {
-            agent.Warp(finalDestination);
+            visualCtrl.restoreOriginalMaterials();
+            visualCtrl.PlayTPin();
         }
 
         SpawnTeleportVFX(finalDestination);
@@ -760,16 +749,9 @@ public class MorlockEnemy : MonoBehaviour
     private IEnumerator ShootAfterDelayRoutine()
     {
         if (useRandomFireRate)
-        {
-            fireRate = Random.Range(minFireRate, maxFireRate); // Actualiza la tasa de fuego aleatoriamente
-            ReportDebug($"Nueva tasa de fuego aleatoria: {fireRate:F2} segundos.", 1);
-        }
+            fireRate = Random.Range(minFireRate, maxFireRate);
 
         yield return new WaitForSeconds(fireRate);
-
-        animator.SetTrigger("HasAttack");
-
-        yield return new WaitForSeconds(animTeleportDelay);
 
         if (!isDead && currentState != MorlockState.Patrol && currentState != MorlockState.Repositioning)
         {
@@ -777,18 +759,49 @@ public class MorlockEnemy : MonoBehaviour
             if (distanceToPlayer <= attackRange)
             {
                 ForceFacePlayer();
-                Shoot();
+
+                // Ejecutar animación una sola vez
+                if (visualCtrl != null) visualCtrl.PlayShoot();
+
+                // Esperar al frame de la animación donde "suelta" el proyectil
+                // Ajusta 'animTeleportDelay' en el inspector (ej. 0.5s)
+                yield return new WaitForSeconds(animTeleportDelay);
+
+                ExecuteProjectileSpawn();
             }
         }
-
         shootCoroutine = null;
+    }
+
+    private void ExecuteProjectileSpawn()
+    {
+        if (enemyHealth != null && enemyHealth.IsStunned || isDead) return;
+
+        if (audioSource != null && shootSFX != null) audioSource.PlayOneShot(shootSFX);
+
+        Vector3 aimPoint = playerTransform.position;
+        // (Aquí va tu lógica de interceptación opcional)
+
+        Vector3 directionToAim = (aimPoint - firePoint.position).normalized;
+        firePoint.rotation = Quaternion.LookRotation(directionToAim);
+
+        GameObject projectileObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+        MorlockProjectile projectile = projectileObj.GetComponent<MorlockProjectile>();
+
+        if (projectile != null)
+        {
+            float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+            float calculatedDamage = CalculateDamageByDistance(distanceToPlayer);
+            string selectedWord = wordLibrary != null ? wordLibrary.GetRandomWord() : "MORLOCK";
+
+            // Inicializar con la palabra obtenida
+            projectile.Initialize(projectileSpeed, calculatedDamage, selectedWord);
+        }
     }
 
     public void Shoot()
     {
-        if (enemyHealth != null && enemyHealth.IsStunned) return;
-
-        animator.SetTrigger("HasAttack");
+        if (enemyHealth != null && enemyHealth.IsStunned || isDead) return;
 
         if (audioSource != null && shootSFX != null) audioSource.PlayOneShot(shootSFX);
 
@@ -798,7 +811,6 @@ public class MorlockEnemy : MonoBehaviour
         if (playerCharacterController != null && Random.value < interceptProb) // Disparo interceptivo
         {
             aimPoint = CalculateInterceptPoint(playerTransform.position, playerCharacterController.velocity);
-            ReportDebug($"Disparo interceptivo calculado de {interceptProb*100}% en {aimPoint}", 1);
         }
         else
         {
