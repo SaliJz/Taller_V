@@ -11,6 +11,7 @@ public class PetraShieldEffect : ItemEffectBase
     public float smallSpikeDuration = 4f;
     public float minDistanceBetweenSpikes = 1.5f;
     public float smallSpikeTiltAngle = 20f;
+    [SerializeField] private float spikeScale = 1f; 
 
     [Header("Rastro Visual en Suelo")]
     public Material trailMaterial;
@@ -67,37 +68,52 @@ public class PetraShieldEffect : ItemEffectBase
     private void HandleShieldMoved(Vector3 shieldPosition, float playerBaseDamage)
     {
         Vector3 groundPos = new Vector3(shieldPosition.x, 0.02f, shieldPosition.z);
-
         AddTrailPoint(groundPos);
 
-        bool tooClose = !float.IsPositiveInfinity(lastSpikePosition.x) &&
-                        Vector3.Distance(groundPos, lastSpikePosition) < minDistanceBetweenSpikes;
-        if (tooClose)
+        if (float.IsPositiveInfinity(lastSpikePosition.x))
         {
+            lastSpikePosition = groundPos;
             lastShieldPosition = shieldPosition;
+            SpawnSingleSpike(groundPos, Vector3.forward, playerBaseDamage);
             return;
         }
 
-        Vector3 travelDir;
-        if (float.IsPositiveInfinity(lastShieldPosition.x))
-            travelDir = Vector3.forward;
-        else
+        float distSinceLast = Vector3.Distance(groundPos, lastSpikePosition);
+
+        while (distSinceLast >= minDistanceBetweenSpikes)
         {
-            travelDir = (shieldPosition - lastShieldPosition).normalized;
+            Vector3 direction = (groundPos - lastSpikePosition).normalized;
+            Vector3 spawnPoint = lastSpikePosition + (direction * minDistanceBetweenSpikes);
+
+            lastSpikePosition = spawnPoint;
+
+            Vector3 travelDir = (shieldPosition - lastShieldPosition).normalized;
             if (travelDir == Vector3.zero) travelDir = Vector3.forward;
+
+            SpawnSingleSpike(spawnPoint, travelDir, playerBaseDamage);
+
+            distSinceLast = Vector3.Distance(groundPos, lastSpikePosition);
         }
 
         lastShieldPosition = shieldPosition;
-        lastSpikePosition = groundPos;
+    }
 
+    private void SpawnSingleSpike(Vector3 position, Vector3 travelDir, float playerBaseDamage)
+    {
         Vector3 flatDir = new Vector3(travelDir.x, 0f, travelDir.z).normalized;
         Quaternion rotation = Quaternion.LookRotation(flatDir) * Quaternion.Euler(-smallSpikeTiltAngle, 0f, 0f);
-
         float spikeDamage = playerBaseDamage * smallSpikeDamagePercent;
 
         if (ItemEffectPool.Instance != null)
         {
-            ItemEffectPool.Instance.SpawnSpike(groundPos, rotation, spikeDamage, smallSpikeDuration, enemyLayer, false);
+            ItemEffectPool.Instance.SpawnSpikeWithScale(
+                position,
+                rotation,
+                spikeDamage,
+                smallSpikeDuration,
+                enemyLayer,
+                isLargeSpike: false,
+                scale: spikeScale);
         }
     }
 

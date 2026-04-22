@@ -15,6 +15,10 @@ public class PetraMeleeEffect : ItemEffectBase
     [SerializeField] private float spikeRandomDelayMax = 0.12f;
     [SerializeField] private float largeSpikeAngle = 25f;
 
+    [Header("Ajustes de Posicionamiento")]
+    [SerializeField] private float spawnHeightOffset = -0.1f; 
+    [SerializeField] private float meleeSpikeScale = 1.2f;
+
     [Header("Compartido")]
     [SerializeField] private LayerMask enemyLayer;
 
@@ -55,24 +59,23 @@ public class PetraMeleeEffect : ItemEffectBase
 
             Vector3 dir = Quaternion.Euler(0f, angle, 0f) * playerForward;
             Vector3 spawnPos = new Vector3(
-                playerPosition.x + dir.x * spikeForwardDistance,
-                0.02f,
-                playerPosition.z + dir.z * spikeForwardDistance);
+                    playerPosition.x + dir.x * spikeForwardDistance,
+                    spawnHeightOffset,
+                    playerPosition.z + dir.z * spikeForwardDistance);
 
             Quaternion rotation = Quaternion.LookRotation(dir) * Quaternion.Euler(largeSpikeAngle, 0f, 0f);
 
-            SpawnSpikeDelayed(spawnPos, rotation, spikeDamage, delay);
+            SpawnSpikeDelayed(spawnPos, rotation, spikeDamage, delay, meleeSpikeScale);
         }
     }
 
-    private async void SpawnSpikeDelayed(Vector3 position, Quaternion rotation, float damage, float delay)
+    private async void SpawnSpikeDelayed(Vector3 position, Quaternion rotation, float damage, float delay, float scale)
     {
-        if (delay > 0f)
-            await Task.Delay(System.TimeSpan.FromSeconds(delay));
+        if (delay > 0f) await Task.Delay(System.TimeSpan.FromSeconds(delay));
 
         if (ItemEffectPool.Instance != null)
         {
-            ItemEffectPool.Instance.SpawnSpike(position, rotation, damage, largeSpikeDuration, enemyLayer, true);
+            ItemEffectPool.Instance.SpawnSpike(position, rotation, damage, largeSpikeDuration, enemyLayer, true, scale);
         }
     }
 

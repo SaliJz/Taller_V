@@ -157,39 +157,45 @@ public class ItemEffectPool : MonoBehaviour
 
     #region Petra Spike Methods
 
-    public void SpawnSpike(Vector3 position, Quaternion rotation, float damage, float lifetime, LayerMask enemyLayer, bool isLargeSpike)
+    private PetraSpike GetSpikeFromPool(bool isLargeSpike)
     {
         Queue<PetraSpike> targetQueue = isLargeSpike ? largeSpikeAvailable : smallSpikeAvailable;
         List<PetraSpike> targetList = isLargeSpike ? largeSpikeAll : smallSpikeAll;
-
-        PetraSpike spike;
+        GameObject prefab = isLargeSpike ? largeSpikePrefab : smallSpikePrefab;
 
         if (targetQueue.Count > 0)
         {
-            spike = targetQueue.Dequeue();
-        }
-        else
-        {
-            spike = targetList[0];
-            spike.StopAllCoroutines();
-            ReturnSpike(spike, isLargeSpike);
-            spike = targetQueue.Dequeue();
+            return targetQueue.Dequeue();
         }
 
-        Vector3 finalPos = position;
-        if (Physics.Raycast(position + Vector3.up * 1f, Vector3.down, out RaycastHit hit, 2f))
+        GameObject go = Instantiate(prefab, Vector3.zero, Quaternion.identity, transform);
+        PetraSpike newSpike = go.GetComponent<PetraSpike>();
+        targetList.Add(newSpike);
+        return newSpike;
+    }
+
+    public void SpawnSpike(Vector3 position, Quaternion rotation, float damage, float lifetime, LayerMask enemyLayer, bool isLargeSpike, float scale = 1f)
+    {
+        PetraSpike spike = GetSpikeFromPool(isLargeSpike);
+
+        float heightOffset = isLargeSpike ? -0.2f : 0.02f;
+        Vector3 finalPos = new Vector3(position.x, heightOffset, position.z);
+
+        if (Physics.Raycast(position + Vector3.up * 1f, Vector3.down, out RaycastHit hit, 3f, 1 << LayerMask.NameToLayer("Ground")))
         {
-            if (hit.collider.CompareTag("Ground"))
-            {
-                float sinkAmount = isLargeSpike ? 0.3f : 0.15f;
-                finalPos = hit.point - (Vector3.up * sinkAmount);
-            }
+            float sinkAmount = isLargeSpike ? 0.3f : 0.15f;
+            finalPos = hit.point - (Vector3.up * sinkAmount);
         }
 
         spike.transform.SetPositionAndRotation(finalPos, rotation);
+        spike.transform.localScale = Vector3.one * scale;
         spike.gameObject.SetActive(true);
 
-        spike.Initialize(damage, lifetime, enemyLayer, isLargeSpike, () => ReturnSpike(spike, isLargeSpike));
+        spike.Initialize(damage, lifetime, enemyLayer, isLargeSpike, () =>
+        {
+            spike.transform.localScale = Vector3.one;
+            ReturnSpike(spike, isLargeSpike);
+        });
     }
 
     public void ReturnSpike(PetraSpike spike, bool isLargeSpike)

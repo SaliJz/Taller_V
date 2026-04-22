@@ -673,8 +673,8 @@ public abstract class BaseEnemyRanged : MonoBehaviour
 
             if (animator != null)
             {
-                animator.SetFloat(animHashX, xInt);
-                animator.SetFloat(animHashY, yInt);
+                //animator.SetFloat(animHashX, xInt);
+                //animator.SetFloat(animHashY, yInt);
             }
 
             lastLookDirection = new Vector3(xInt, 0, yInt);

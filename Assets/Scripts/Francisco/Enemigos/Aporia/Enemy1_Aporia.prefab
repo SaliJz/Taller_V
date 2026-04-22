@@ -1759,7 +1759,7 @@ MonoBehaviour:
   nestPrefab: {fileID: 3022416804554668879, guid: 8581b67ab6a53c1428c997e77db2e35a, type: 3}
   wanderRadius: 8
   wanderWaitTime: 3
-  health: 35
+  health: 100
   moveSpeed: 6.5
   dashDuration: 0.5
   dashMaxDistance: 12
@@ -1797,8 +1797,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 25
-  currentHealth: 25
+  maxHealth: 100
+  currentHealth: 100
   canDieAfterCooldown: 1
   deathCooldown: 0.5
   canDestroy: 1
@@ -1847,9 +1847,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97ff11c46a6ff6c49a7d20c0038b005a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  damagePercent: 20
-  chargeDuration: 2
-  tickInterval: 0.2
 --- !u!114 &8629446803264125925
 MonoBehaviour:
   m_ObjectHideFlags: 0

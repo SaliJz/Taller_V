@@ -80,7 +80,7 @@ public class EntropyChargeUI : MonoBehaviour
 
         SetAllSlotsVisible(true);
 
-        float timePerCharge = chargeSystem.chargeDuration;
+        float timePerCharge = chargeSystem.GetChargeDuration();
 
         for (int i = 0; i < chargeSlots.Length; i++)
         {

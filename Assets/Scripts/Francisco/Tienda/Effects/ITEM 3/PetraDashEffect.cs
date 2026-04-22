@@ -5,8 +5,6 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "SedimentsOfPetraDashEffect", menuName = "Item Effects/Combat/SedimentsOfPetraDash")]
 public class PetraDashEffect : ItemEffectBase
 {
-    #region Inspector Fields
-
     [Header("Picos de Dash")]
     [Range(0.01f, 2f)]
     [SerializeField] private float dashSpikeDamagePercent = 0.40f;
@@ -15,6 +13,9 @@ public class PetraDashEffect : ItemEffectBase
     [SerializeField] private float spawnSpacingMin = 0.4f;
     [SerializeField] private float burstDelayMin = 0f;
     [SerializeField] private float burstDelayMax = 0.09f;
+
+    [Header("Ajustes de Delay")]
+    [SerializeField] private float initialDelay = 0.1f;
 
     [Header("Variacion Visual de Picos")]
     [SerializeField] private float tiltAngleCenter = 20f;
@@ -32,19 +33,11 @@ public class PetraDashEffect : ItemEffectBase
     [Header("Compartido")]
     [SerializeField] private LayerMask enemyLayer;
 
-    #endregion
-
-    #region Private Fields
-
     private PlayerStatsManager _statsManager;
     private Vector3 lastSpikeSpawnPos = Vector3.positiveInfinity;
     private GameObject activeTrailGO;
     private LineRenderer activeTrail;
     private List<Vector3> trailPoints = new List<Vector3>();
-
-    #endregion
-
-    #region ItemEffectBase
 
     private void OnEnable()
     {
@@ -66,10 +59,6 @@ public class PetraDashEffect : ItemEffectBase
         CloseCurrentTrail();
     }
 
-    #endregion
-
-    #region Dash Handler
-
     private void HandleDashStarted(Vector3 playerPosition, Vector3 dashDirection)
     {
         _statsManager.StartCoroutine(GenerateSpikesDuringDash(dashDirection));
@@ -77,52 +66,54 @@ public class PetraDashEffect : ItemEffectBase
 
     private System.Collections.IEnumerator GenerateSpikesDuringDash(Vector3 dashDirection)
     {
-        float elapsed = 0f;
-        float duration = 0.3f; 
-        lastSpikeSpawnPos = Vector3.positiveInfinity;
+        yield return new WaitForSeconds(initialDelay);
 
-        Vector3 startPos = new Vector3(_statsManager.transform.position.x, 0.02f, _statsManager.transform.position.z);
-        AddTrailPoint(startPos);
+        float elapsed = initialDelay;
+        float dashDuration = 0.3f;
 
-        while (elapsed < duration)
+        lastSpikeSpawnPos = _statsManager.transform.position;
+        Vector3 startPoint = new Vector3(lastSpikeSpawnPos.x, 0.02f, lastSpikeSpawnPos.z);
+
+        AddTrailPoint(startPoint);
+        SpawnBurst(startPoint, dashDirection);
+
+        while (elapsed < dashDuration)
         {
-            Vector3 currentPos = new Vector3(_statsManager.transform.position.x, 0.02f, _statsManager.transform.position.z);
+            Vector3 currentPos = _statsManager.transform.position;
+            float distSinceLast = Vector3.Distance(currentPos, lastSpikeSpawnPos);
 
-            float dist = float.IsPositiveInfinity(lastSpikeSpawnPos.x) ?
-                         float.MaxValue : Vector3.Distance(currentPos, lastSpikeSpawnPos);
-
-            if (dist >= spawnSpacingMin)
+            while (distSinceLast >= spawnSpacingMin)
             {
-                lastSpikeSpawnPos = currentPos;
-                AddTrailPoint(currentPos); 
+                Vector3 directionToCurrent = (currentPos - lastSpikeSpawnPos).normalized;
+                Vector3 spawnPoint = lastSpikeSpawnPos + (directionToCurrent * spawnSpacingMin);
 
-                float damage = 50f * dashSpikeDamagePercent;
+                lastSpikeSpawnPos = spawnPoint;
+                Vector3 groundPoint = new Vector3(spawnPoint.x, 0.02f, spawnPoint.z);
 
-                for (int i = 0; i < spikesPerBurst; i++)
-                {
-                    float delay = Random.Range(burstDelayMin, burstDelayMax);
-                    SpawnDashSpikeDelayed(currentPos, dashDirection, damage, delay, i, spikesPerBurst);
-                }
+                AddTrailPoint(groundPoint);
+                SpawnBurst(groundPoint, dashDirection);
+
+                distSinceLast = Vector3.Distance(currentPos, lastSpikeSpawnPos);
             }
 
             elapsed += Time.deltaTime;
             yield return null;
         }
 
-        CloseCurrentTrail();
+        CloseCurrentTrail(dashSpikeDuration);
     }
 
-    #endregion
+    private void SpawnBurst(Vector3 pos, Vector3 dir)
+    {
+        float damage = 50f * dashSpikeDamagePercent;
+        for (int i = 0; i < spikesPerBurst; i++)
+        {
+            float delay = Random.Range(burstDelayMin, burstDelayMax);
+            SpawnDashSpikeDelayed(pos, dir, damage, delay, i, spikesPerBurst);
+        }
+    }
 
-    #region Spike Spawning
-
-    private async void SpawnDashSpikeDelayed(
-        Vector3 position,
-        Vector3 dashDirection,
-        float damage,
-        float delay,
-        int spikeIndex,
-        int totalSpikes)
+    private async void SpawnDashSpikeDelayed(Vector3 position, Vector3 dashDirection, float damage, float delay, int spikeIndex, int totalSpikes)
     {
         if (delay > 0f)
             await Task.Delay(System.TimeSpan.FromSeconds(delay));
@@ -136,10 +127,8 @@ public class PetraDashEffect : ItemEffectBase
         {
             float t = (float)spikeIndex / (totalSpikes - 1);
             yaw = Mathf.Lerp(-maxSideYawAngle, maxSideYawAngle, t);
-
             float absT = Mathf.Abs(t - 0.5f) * 2f;
             tilt = Mathf.Lerp(tiltAngleCenter, tiltAngleSide, absT);
-
             float lateralSign = (spikeIndex % 2 == 0) ? 1f : -1f;
             tilt *= lateralSign;
         }
@@ -148,13 +137,8 @@ public class PetraDashEffect : ItemEffectBase
         Quaternion rotation = Quaternion.LookRotation(spikeDir) * Quaternion.Euler(tilt, 0f, 0f);
         float scale = Random.Range(scaleMin, scaleMax);
 
-        ItemEffectPool.Instance.SpawnSpikeWithScale(
-            position, rotation, damage, dashSpikeDuration, enemyLayer, isLargeSpike: true, scale: scale);
+        ItemEffectPool.Instance.SpawnSpikeWithScale(position, rotation, damage, dashSpikeDuration, enemyLayer, isLargeSpike: true, scale: scale);
     }
-
-    #endregion
-
-    #region Trail Visual
 
     private void AddTrailPoint(Vector3 point)
     {
@@ -184,19 +168,17 @@ public class PetraDashEffect : ItemEffectBase
         lr.endColor = new Color(trailColor.r, trailColor.g, trailColor.b, 0f);
     }
 
-    private void CloseCurrentTrail()
+    private void CloseCurrentTrail(float overrideDuration = -1f)
     {
         if (activeTrailGO == null) return;
         PetraTrailFader fader = activeTrailGO.AddComponent<PetraTrailFader>();
-        fader.Init(activeTrail, trailFadeDuration);
+        float finalFade = overrideDuration > 0 ? overrideDuration : trailFadeDuration;
+        fader.Init(activeTrail, finalFade);
+
         activeTrailGO = null;
         activeTrail = null;
         trailPoints.Clear();
     }
-
-    #endregion
-
-    #region Helpers
 
     private void ResetState()
     {
@@ -205,6 +187,4 @@ public class PetraDashEffect : ItemEffectBase
         activeTrail = null;
         trailPoints.Clear();
     }
-
-    #endregion
 }

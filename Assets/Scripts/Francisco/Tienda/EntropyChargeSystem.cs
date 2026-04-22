@@ -13,11 +13,11 @@ public class EntropyChargeSystem : MonoBehaviour
     #region Inspector Fields
 
     [Header("Daño")]
-    [Range(0f, 100f)] public float damagePercent = 20f;
+    [Range(0f, 100f)] private float damagePercent = 10f;
 
     [Header("Configuración de Cargas")]
-    public float chargeDuration = 2f;
-    public float tickInterval = 0.2f;
+    private float chargeDuration = 1f;
+    private float tickInterval = 0.2f;
 
     #endregion
 
@@ -26,6 +26,8 @@ public class EntropyChargeSystem : MonoBehaviour
     public event Action<int, float, float> OnChargesChanged;
 
     public event Action OnChargesExpired;
+
+    public float GetChargeDuration() => chargeDuration;
 
     #endregion
 
