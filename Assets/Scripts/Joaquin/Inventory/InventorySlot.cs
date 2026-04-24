@@ -1,16 +1,13 @@
 using System.Collections;
-using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
-/// Componente para cada slot de ítem en el inventario
+/// Slot individual del inventario.
 /// </summary>
 public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
-    #region Datos externos
-
     [Header("Referencias UI")]
     [SerializeField] private Image backgroundImage;
     [SerializeField] private Image iconImage;
@@ -21,38 +18,24 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     [Header("Efectos de Pulso")]
     [SerializeField] private float pulseSpeed = 2f;
     [SerializeField] private float pulseIntensity = 0.3f;
-    //[SerializeField] private bool enableDebugLogs = false;
-
-    #endregion
-
-    #region Datos internos
 
     private ShopItem itemData;
     private InventoryUIManager inventoryManager;
     private Color originalBackgroundColor;
     private Color originalBorderColor;
-    private bool isClicked;
     private bool hasItem;
     private bool isGoldenSlot;
-    private bool isCol1Slot; // Se detecta automáticamente por el padre
-
+    private bool isClicked;
     private Coroutine pulseCoroutine;
 
-    #endregion
-
-    #region Inicialización
+    /// <summary>Ítem actualmente asignado (puede ser null).</summary>
+    public ShopItem CurrentItem => itemData;
 
     public void Initialize(InventoryUIManager manager)
     {
         inventoryManager = manager;
-
         if (backgroundImage != null) originalBackgroundColor = backgroundImage.color;
-
         if (temporalEffectObject != null) temporalEffectObject.SetActive(false);
-
-        // Determina si pertenece a col1 comprobando el padre
-        isCol1Slot = transform.parent != null && transform.parent.name.Contains("1");
-
         ClearSlot();
     }
 
@@ -100,18 +83,13 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     {
         itemData = null;
         hasItem = false;
+        isClicked = false;
 
         if (iconImage != null) { iconImage.sprite = null; iconImage.enabled = false; }
-
-        if (!isGoldenSlot && rarityBorder != null)
-            rarityBorder.enabled = false;
+        if (!isGoldenSlot && rarityBorder != null) rarityBorder.enabled = false;
 
         HideTemporalEffect();
     }
-
-    #endregion
-
-    #region Efectos
 
     private void ShowTemporalEffect()
     {
@@ -129,75 +107,56 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
 
     private IEnumerator PulseEffect()
     {
-        Color baseColor = originalBorderColor;
+        Color base_ = originalBorderColor;
         while (hasItem && itemData != null && itemData.isTemporary)
         {
-            float pulse = (Mathf.Sin(Time.unscaledTime * pulseSpeed) + 1f) * 0.5f;
-            float alpha = Mathf.Lerp(1f - pulseIntensity, 1f, pulse);
-
+            float p = (Mathf.Sin(Time.unscaledTime * pulseSpeed) + 1f) * 0.5f;
+            float alpha = Mathf.Lerp(1f - pulseIntensity, 1f, p);
             if (rarityBorder != null)
             {
-                rarityBorder.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
+                rarityBorder.color = new Color(base_.r, base_.g, base_.b, alpha);
             }
-
             if (pulseGlowImage != null)
             {
-                pulseGlowImage.color = new Color(1f, 0.27f, 0f, Mathf.Lerp(0.2f, 0.6f, pulse));
+                pulseGlowImage.color = new Color(1f, 0.27f, 0f, Mathf.Lerp(0.2f, 0.6f, p));
             }
             yield return null;
         }
         pulseCoroutine = null;
     }
 
-    #endregion
-
-    #region Interacción
-
     private void OnEnable()
     {
-        if (hasItem && itemData != null && itemData.isTemporary)
-        {
-            ShowTemporalEffect();
-        }
+        if (hasItem && itemData != null && itemData.isTemporary) ShowTemporalEffect();
     }
 
     private void OnDisable()
     {
-        if (pulseCoroutine != null) 
-        { 
-            StopCoroutine(pulseCoroutine); pulseCoroutine = null; 
-        }
+        if (pulseCoroutine != null) { StopCoroutine(pulseCoroutine); pulseCoroutine = null; }
     }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (!hasItem) return;
 
-        // Highlight background
         if (backgroundImage != null && inventoryManager != null)
-        {
-            backgroundImage.color =
-                Color.Lerp(originalBackgroundColor, inventoryManager.GetHighlightColor(), 0.5f);
-        }
+            backgroundImage.color = Color.Lerp(originalBackgroundColor,
+                                                inventoryManager.GetHighlightColor(), 0.5f);
         transform.localScale = Vector3.one * 1.05f;
 
         InventoryTooltip.Instance?.Show(itemData);
-        InventoryAudioManager.Instance?.PlayHoverSound();
-        
-        if (isCol1Slot) inventoryManager?.SetInteractiveOpacity(true);
+
+        // Sonido diferenciado por tipo de slot
+        if (isGoldenSlot) InventoryAudioManager.Instance?.PlayGoldenSlotHoverSound();
+        else InventoryAudioManager.Instance?.PlayCommonSlotHoverSound();
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
         if (!hasItem) return;
-
         if (backgroundImage != null) backgroundImage.color = originalBackgroundColor;
-
         transform.localScale = Vector3.one;
-
         InventoryTooltip.Instance?.Hide();
-
-        if (isCol1Slot) inventoryManager?.SetInteractiveOpacity(false);
     }
 
     public void OnPointerClick(PointerEventData eventData)
@@ -205,19 +164,11 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         if (!hasItem) return;
         if (eventData.button != PointerEventData.InputButton.Left) return;
 
-        if (!isClicked)
-        {
-            isClicked = true;
-            inventoryManager?.ShowItemDetails(itemData);
-        }
-        else
-        {
-            isClicked = false;
-            inventoryManager?.HideItemDetails();
-        }
+        isClicked = !isClicked;
+        if (isClicked) inventoryManager?.ShowItemDetails(itemData);
+        else inventoryManager?.HideItemDetails();
+
         InventoryAudioManager.Instance?.PlayClickSound();
         InventoryAudioManager.Instance?.PlayRaritySound(itemData.rarity);
     }
-
-    #endregion
 }

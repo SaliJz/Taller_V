@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Tipo de ranura mecánica que puede ocupar un (ItemCategory que modifique mecánicas)
+/// Tipo de ranura mecánica que puede ocupar.
 /// </summary>
 public enum MechanicSlotType
 {
@@ -11,7 +11,7 @@ public enum MechanicSlotType
 }
 
 /// <summary>
-/// Asocia un ShopItem de tipo (ItemCategory que modifique mecánicas) con su ranura mecánica.
+/// Asocia un ShopItem de tipo con su ranura mecánica.
 /// </summary>
 [System.Serializable]
 public struct MechanicItemEntry

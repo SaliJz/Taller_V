@@ -1,47 +1,88 @@
 using UnityEngine;
 
 /// <summary>
-/// Gestor de audio para el sistema de inventario
+/// Gestor de audio del sistema de inventario.
 /// </summary>
 public class InventoryAudioManager : MonoBehaviour
 {
     public static InventoryAudioManager Instance { get; private set; }
 
-    [Header("Audio Source")]
-    [SerializeField] private AudioSource audioSource;
+    [Header("Audio Sources")]
+    [SerializeField] private AudioSource sfxSource;
+    [Tooltip("Source dedicada a la música de inventario (loop)")]
+    [SerializeField] private AudioSource musicSource;
 
-    [Header("Sonidos Generales")]
+    [Header("Apertura / Cierre")]
     [SerializeField] private AudioClip inventoryOpenSound;
     [SerializeField] private AudioClip inventoryCloseSound;
-    [SerializeField] private AudioClip itemHoverSound;
+
+    [Header("Hover de Slots")]
+    [SerializeField] private AudioClip goldenSlotHoverSound;
+    [SerializeField] private AudioClip commonSlotHoverSound;
+
+    [Header("Interacción")]
     [SerializeField] private AudioClip itemClickSound;
-    [SerializeField] private AudioClip categoryScrollSound;
+    [SerializeField] private AudioClip itemAddedSound;
+    [Tooltip("Sonido al cambiar selección entre slots dorados")]
+    [SerializeField] private AudioClip switchGoldenSlotSound;
 
     [Header("Sonidos por Rareza")]
     [SerializeField] private AudioClip normalSound;
     [SerializeField] private AudioClip rareSound;
     [SerializeField] private AudioClip superRareSound;
 
-    [Header("Volúmenes")]
-    [SerializeField] private float hoverVolume = 0.5f;
-    [SerializeField] private float clickVolume = 0.7f;
-    [SerializeField] private float rarityVolume = 0.8f;
+    [Header("Música de Inventario")]
+    [SerializeField] private AudioClip inventoryMusic;
+    [SerializeField][Range(0f, 1f)] private float musicVolume = 0.4f;
+
+    [Header("Volúmenes SFX")]
+    [SerializeField][Range(0f, 1f)] private float hoverVolume = 0.5f;
+    [SerializeField][Range(0f, 1f)] private float clickVolume = 0.7f;
+    [SerializeField][Range(0f, 1f)] private float rarityVolume = 0.8f;
+    [SerializeField][Range(0f, 1f)] private float addedVolume = 0.9f;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        if (Instance != null && Instance != this) 
+        { 
+            Destroy(gameObject); 
+            return; 
+        }
         Instance = this;
 
-        if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
-        audioSource.playOnAwake = false;
-        audioSource.loop = false;
+        if (sfxSource == null)
+        {
+            sfxSource = gameObject.AddComponent<AudioSource>();
+            sfxSource.playOnAwake = false;
+            sfxSource.loop = false;
+        }
+
+        if (musicSource == null)
+        {
+            musicSource = gameObject.AddComponent<AudioSource>();
+            musicSource.playOnAwake = false;
+            musicSource.loop = true;
+        }
     }
 
-    public void PlayOpenSound() => PlaySound(inventoryOpenSound, 1f);
-    public void PlayCloseSound() => PlaySound(inventoryCloseSound, 1f);
-    public void PlayHoverSound() => PlaySound(itemHoverSound, hoverVolume);
-    public void PlayClickSound() => PlaySound(itemClickSound, clickVolume);
-    public void PlayScrollSound() => PlaySound(categoryScrollSound, hoverVolume);
+    public void PlayOpenSound()
+    {
+        PlaySfx(inventoryOpenSound, 1f);
+        PlayMusic();
+    }
+
+    public void PlayCloseSound()
+    {
+        PlaySfx(inventoryCloseSound, 1f);
+        StopMusic();
+    }
+
+    public void PlayGoldenSlotHoverSound() => PlaySfx(goldenSlotHoverSound, hoverVolume);
+    public void PlayCommonSlotHoverSound() => PlaySfx(commonSlotHoverSound, hoverVolume);
+    public void PlaySwitchGoldenSlotSound() => PlaySfx(switchGoldenSlotSound, hoverVolume);
+
+    public void PlayClickSound() => PlaySfx(itemClickSound, clickVolume);
+    public void PlayItemAddedSound() => PlaySfx(itemAddedSound, addedVolume);
 
     public void PlayRaritySound(ItemRarity rarity)
     {
@@ -51,14 +92,27 @@ public class InventoryAudioManager : MonoBehaviour
             ItemRarity.SuperRaro => superRareSound,
             _ => normalSound
         };
-        PlaySound(clip, rarityVolume);
+        PlaySfx(clip, rarityVolume);
     }
 
-    private void PlaySound(AudioClip clip, float volume = 1f)
+    private void PlayMusic()
     {
-        if (audioSource != null && clip != null)
+        if (musicSource == null || inventoryMusic == null) return;
+        musicSource.clip = inventoryMusic;
+        musicSource.volume = musicVolume;
+        musicSource.Play();
+    }
+
+    private void StopMusic()
+    {
+        if (musicSource != null && musicSource.isPlaying) musicSource.Stop();
+    }
+
+    private void PlaySfx(AudioClip clip, float volume)
+    {
+        if (sfxSource != null && clip != null)
         {
-            audioSource.PlayOneShot(clip, volume);
+            sfxSource.PlayOneShot(clip, volume);
         }
     }
 }
