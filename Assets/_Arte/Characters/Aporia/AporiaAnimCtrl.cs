@@ -29,7 +29,7 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
     {
         string directionBeforeUpdate = currentDirection;
 
-        handleTESTimputs();
+        // handleTESTimputs();
         UpdateDirection(h,v);
 
         UpdateDashLogic();
