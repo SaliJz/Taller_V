@@ -23,16 +23,10 @@ public class AporiaAestheticsManager : MonoBehaviour
     private void Start()
     {
         InitializeEffect();
-        Invoke("AutomaticDestroy", 5f);
     }
     #endregion
 
     #region Logic
-
-    public void AutomaticDestroy()
-    {
-        Destroy(gameObject);
-    }
 
     public void InitializeEffect()
     {

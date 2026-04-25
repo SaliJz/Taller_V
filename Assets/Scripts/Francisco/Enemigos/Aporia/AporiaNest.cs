@@ -7,7 +7,6 @@ public class AporiaNest : MonoBehaviour
     [SerializeField] private GameObject larvaPrefab;
     [SerializeField] private float duration = 3f;
     [SerializeField] private float dps = 1f;
-    [SerializeField] private float slowMultiplier = 0.8f;
     #endregion
 
     #region Unity Events
