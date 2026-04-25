@@ -1,12 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class StaticEnemy : BaseEnemyRanged
 {
     #region Inspector Fields
-
     [Header("Static - Base Stats")]
     [SerializeField] private float staticHealth = 35f;
     [SerializeField] private float staticProjectileSpeed = 15f;
@@ -33,6 +33,8 @@ public class StaticEnemy : BaseEnemyRanged
     [SerializeField] private float staticP1_advanceDistance = 5f;
     [SerializeField] private float staticP1_lateralMin = 3f;
     [SerializeField] private float staticP1_lateralMax = 5f;
+
+    [Header("Static - Pursue Overrides Phase 2")]
     [SerializeField] private float staticP2_teleportCooldown = 2f;
     [SerializeField] private float staticP2_teleportRange = 7.5f;
 
@@ -49,17 +51,16 @@ public class StaticEnemy : BaseEnemyRanged
 
     [Header("Static - Animation")]
     [SerializeField] private StaticAnimCtrl animCtrl;
-
     #endregion
 
     #region Private State
-
     private bool evasionOnCooldown = false;
     private bool evasionReady = true;
     private bool isTeleporting = false;
     private Coroutine evasionCooldownRoutine;
     private Coroutine screenFeedbackRoutine;
     private List<GameObject> activeResidues = new List<GameObject>();
+    private Vector3 pendingTeleportPosition;
 
     private static readonly int ShaderBorderColorId = Shader.PropertyToID("_BorderColor");
     private static readonly int ShaderShowIconId = Shader.PropertyToID("_ShowIcon");
@@ -67,11 +68,9 @@ public class StaticEnemy : BaseEnemyRanged
 
     private const int ICON_EYE = 0;
     private const int ICON_NO_SIGNAL = 1;
-
     #endregion
 
     #region Init
-
     protected override void InitializeEnemy()
     {
         base.InitializeEnemy();
@@ -85,49 +84,131 @@ public class StaticEnemy : BaseEnemyRanged
         UpdateEvasionFeedback();
     }
 
+    public void FixedUpdate()
+    {
+        if (animCtrl != null) animCtrl.transform.localPosition = Vector3.zero;
+    }
+    #endregion
+
+    #region Animation Events
+    public void HandleAnimEvents(string eventName)
+    {
+        if (eventName == "AnimEvent_Shoot") ExecuteActualFire();
+        if (eventName == "AnimEvent_TPOutComplete") ExecuteActualTeleport();
+        if (eventName == "AnimEvent_TPInComplete") OnTeleportFinished();
+    }
+
+    private void ExecuteActualFire()
+    {
+        if (isDead || playerTransform == null) return;
+
+        if (AudioSource != null && swarmSFX != null) AudioSource.PlayOneShot(swarmSFX);
+
+        Vector3 dir = (playerTransform.position - FirePoint.position).normalized;
+        FirePoint.rotation = Quaternion.LookRotation(dir);
+
+        GameObject projObj = Instantiate(ProjectilePrefab, FirePoint.position, FirePoint.rotation);
+        StaticProjectile staticProjectile = projObj.GetComponent<StaticProjectile>();
+
+        if (staticProjectile != null)
+        {
+            string word = wordLibrary != null ? wordLibrary.GetRandomWord() : "STATIC";
+            staticProjectile.Initialize(staticProjectileSpeed, 5f, 30f, 20f, swarmDuration, swarmDPS, swarmRadius, swarmParticlePrefab, word);
+        }
+    }
+
+    private void ExecuteActualTeleport()
+    {
+        Vector3 targetPos = pendingTeleportPosition;
+
+        if (NavMesh.SamplePosition(targetPos, out NavMeshHit hit, 3f, NavMesh.AllAreas))
+            targetPos = hit.position;
+
+        TogglePresence(false);
+
+        if (agent != null) agent.enabled = false;
+
+        transform.position = targetPos;
+
+        if (animCtrl != null) animCtrl.transform.localPosition = Vector3.zero;
+
+        animCtrl?.PlayTPin();
+    }
+
+    private void OnTeleportFinished()
+    {
+        animCtrl?.restoreOriginalMaterials();
+
+        if (animCtrl != null) animCtrl.transform.localPosition = Vector3.zero;
+
+        if (agent != null)
+        {
+            agent.enabled = true;
+            agent.ResetPath();
+        }
+
+        TogglePresence(true);
+        StartCoroutine(FinalizeTeleportNextFrame());
+    }
+
+    private IEnumerator FinalizeTeleportNextFrame()
+    {
+        yield return null;
+        yield return null;
+        isTeleporting = false;
+    }
     #endregion
 
     #region Core Overrides
-
     protected override void Update()
     {
         if (isTeleporting || isDead) return;
         base.Update();
     }
 
-    protected virtual void UpdateAnimationAndRotation() { }
-
     protected override void OnBeforeTeleport(Vector3 fromPosition)
     {
+        if (isTeleporting) return;
         isTeleporting = true;
+
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = true;
+            agent.velocity = Vector3.zero;
+            agent.ResetPath();
+        }
+
         SpawnStressResidue(fromPosition);
         animCtrl?.PlayTPout();
-        TogglePresence(false);
     }
 
-    protected override void OnAfterTeleport(Vector3 toPosition)
-    {
-        animCtrl?.PlayTPin();
-        TogglePresence(true);
-        isTeleporting = false;
-    }
+    protected override void OnAfterTeleport(Vector3 toPosition) { }
 
     private void TogglePresence(bool active)
     {
         CapsuleCollider col = GetComponent<CapsuleCollider>();
         if (col != null) col.enabled = active;
 
-        if (agent != null && agent.enabled) agent.isStopped = !active;
-
         Transform vfxFolder = transform.Find("Enemy2_VisualEffects");
         if (vfxFolder != null) vfxFolder.gameObject.SetActive(active);
-
         if (screenRenderer != null) screenRenderer.enabled = active;
     }
-
     #endregion
 
     #region Pursue Routines
+    protected override IEnumerator TeleportToPositionRoutine(Vector3 targetPos)
+    {
+        while (isTeleporting) yield return null;
+
+        if (NavMesh.SamplePosition(targetPos, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+            pendingTeleportPosition = hit.position;
+        else
+            pendingTeleportPosition = targetPos;
+
+        OnBeforeTeleport(transform.position);
+
+        while (isTeleporting) yield return null;
+    }
 
     protected override IEnumerator Pursue1Routine()
     {
@@ -140,9 +221,7 @@ public class StaticEnemy : BaseEnemyRanged
             Vector3 targetPos = advancePos + lateral * lateralOffset;
 
             yield return StartCoroutine(TeleportToPositionRoutine(targetPos));
-
-            if (!isTeleporting) StartShootCoroutine();
-
+            if (!isDead) StartShootCoroutine();
             yield return new WaitForSeconds(staticP1_teleportCooldown);
         }
     }
@@ -161,38 +240,21 @@ public class StaticEnemy : BaseEnemyRanged
             if (NavMesh.SamplePosition(targetPos, out NavMeshHit hit, 3f, NavMesh.AllAreas))
             {
                 yield return StartCoroutine(TeleportToPositionRoutine(hit.position));
-                if (!isTeleporting) StartShootCoroutine();
+                if (!isDead) StartShootCoroutine();
             }
 
             currentPointIndex = (currentPointIndex + 1) % cardinals.Length;
             yield return new WaitForSeconds(staticP2_teleportCooldown);
         }
     }
-
     #endregion
 
     #region Combat & Evasion
-
     protected override void FireProjectile()
     {
         if (isTeleporting || isDead || (enemyHealth != null && enemyHealth.IsStunned)) return;
-
-        if (AudioSource != null && swarmSFX != null) AudioSource.PlayOneShot(swarmSFX);
-
         ForceFacePlayer();
         animCtrl?.PlayShoot();
-
-        Vector3 dir = (playerTransform.position - FirePoint.position).normalized;
-        FirePoint.rotation = Quaternion.LookRotation(dir);
-
-        GameObject projObj = Instantiate(ProjectilePrefab, FirePoint.position, FirePoint.rotation);
-        StaticProjectile staticProjectile = projObj.GetComponent<StaticProjectile>();
-
-        if (staticProjectile != null)
-        {
-            string word = wordLibrary != null ? wordLibrary.GetRandomWord() : "STATIC";
-            staticProjectile.Initialize(staticProjectileSpeed, 5f, 30f, 20f, swarmDuration, swarmDPS, swarmRadius, swarmParticlePrefab, word);
-        }
     }
 
     protected override void HandleDamageTaken()
@@ -206,7 +268,8 @@ public class StaticEnemy : BaseEnemyRanged
         evasionReady = false;
         evasionOnCooldown = true;
 
-        if (AudioSource != null && evasionSFX != null) AudioSource.PlayOneShot(evasionSFX);
+        if (AudioSource != null && evasionSFX != null)
+            AudioSource.PlayOneShot(evasionSFX);
 
         Vector3 awayFromPlayer = (transform.position - playerTransform.position).normalized;
         Vector3 evasionTarget = transform.position + awayFromPlayer * evasionTeleportDistance;
@@ -222,30 +285,15 @@ public class StaticEnemy : BaseEnemyRanged
 
     private void FireRetaliatory()
     {
-        if (isTeleporting || playerTransform == null || FirePoint == null || ProjectilePrefab == null) return;
-
+        if (isTeleporting || isDead || playerTransform == null) return;
         ForceFacePlayer();
-        if (AudioSource != null && retaliatoryShootSFX != null) AudioSource.PlayOneShot(retaliatoryShootSFX);
-
+        if (AudioSource != null && retaliatoryShootSFX != null)
+            AudioSource.PlayOneShot(retaliatoryShootSFX);
         animCtrl?.PlayShoot();
-
-        Vector3 dir = (playerTransform.position - FirePoint.position).normalized;
-        FirePoint.rotation = Quaternion.LookRotation(dir);
-
-        GameObject projObj = Instantiate(ProjectilePrefab, FirePoint.position, FirePoint.rotation);
-        StaticProjectile staticProjectile = projObj.GetComponent<StaticProjectile>();
-
-        if (staticProjectile != null)
-        {
-            string word = wordLibrary != null ? wordLibrary.GetRandomWord() : "STATIC";
-            staticProjectile.Initialize(staticProjectileSpeed, 5f, 30f, 20f, swarmDuration, swarmDPS, swarmRadius, swarmParticlePrefab, word);
-        }
     }
-
     #endregion
 
     #region VFX & Feedback
-
     private IEnumerator EvasionCooldownRoutine()
     {
         UpdateEvasionFeedback();
@@ -287,6 +335,7 @@ public class StaticEnemy : BaseEnemyRanged
     {
         if (screenRenderer == null) yield break;
         Material mat = screenRenderer.material;
+
         if (evasionReady && !evasionOnCooldown)
         {
             mat.SetColor(ShaderBorderColorId, evasionReadyBorderColor);
@@ -297,15 +346,14 @@ public class StaticEnemy : BaseEnemyRanged
             mat.SetColor(ShaderBorderColorId, evasionCooldownBorderColor);
             mat.SetFloat(ShaderIconTypeId, ICON_NO_SIGNAL);
         }
+
         mat.SetFloat(ShaderShowIconId, 1f);
         yield return null;
         screenFeedbackRoutine = null;
     }
-
     #endregion
 
     #region Death
-
     protected override void HandleEnemyDeath(GameObject enemy)
     {
         if (isDead || enemy != gameObject) return;
@@ -317,6 +365,5 @@ public class StaticEnemy : BaseEnemyRanged
         activeResidues.Clear();
         base.HandleEnemyDeath(enemy);
     }
-
     #endregion
 }
