@@ -45,7 +45,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     public static bool IsGamePaused => isPaused;
     public static PauseController Instance { get; private set; }
 
-    void Awake()
+    private void Awake()
     {
         if (Instance != null && Instance != this)
         {
@@ -71,7 +71,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         if (pausePanel != null) pausePanel.SetActive(false);
     }
 
-    void OnEnable()
+    private void OnEnable()
     {
         playerControls?.UI.Enable();
 
@@ -96,7 +96,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         }
     }
 
-    void OnDisable()
+    private void OnDisable()
     {
         playerControls?.UI.Disable();
 
@@ -108,7 +108,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         }
     }
 
-    void OnDestroy()
+    private void OnDestroy()
     {
         playerControls?.Dispose();
     }
@@ -125,7 +125,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
             {
                 ResumeGame();
             }
-            else
+            else if (InventoryUIManager.Instance == null || !InventoryUIManager.Instance.IsOpen)
             {
                 PauseGame();
             }
@@ -138,6 +138,8 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     public void PauseGame()
     {
         if (isPaused) return;
+        // No pausar si el inventario está abierto
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
 
         DisableOtherAudioSources();
 
@@ -149,8 +151,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
                 pauseMusicSource.loop = true;
             }
 
-            if (!pauseMusicSource.isPlaying)
-                pauseMusicSource.Play();
+            if (!pauseMusicSource.isPlaying) pauseMusicSource.Play();
         }
 
         if (playerControls != null)
@@ -178,9 +179,10 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
             pausePanel.SetActive(true);
 
             if (Gamepad.current != null)
-                SetFocus(firstSelectedButton, "PauseController");
-            else
-                EventSystem.current?.SetSelectedGameObject(null);
+            { 
+                SetFocus(firstSelectedButton, "PauseController"); 
+            }
+            else EventSystem.current?.SetSelectedGameObject(null);
         }
     }
 

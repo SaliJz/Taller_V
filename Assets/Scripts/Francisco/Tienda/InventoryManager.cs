@@ -7,9 +7,9 @@ using UnityEngine;
 public class InventoryManager : MonoBehaviour
 {
     public const int MaxInventorySize = 10;
-    private static readonly List<ShopItem> currentRunItems = new List<ShopItem>();
-    private readonly List<ItemEffectBase> activeAmuletEffects = new List<ItemEffectBase>();
-    private readonly List<ItemEffectBase> activeEffects = new List<ItemEffectBase>();
+    [SerializeField] private static readonly List<ShopItem> currentRunItems = new List<ShopItem>();
+    [SerializeField] private readonly List<ItemEffectBase> activeAmuletEffects = new List<ItemEffectBase>();
+    [SerializeField] private readonly List<ItemEffectBase> activeEffects = new List<ItemEffectBase>();
 
     private PlayerStatsManager playerStatsManager;
     private PlayerHealth playerHealth;
@@ -25,7 +25,7 @@ public class InventoryManager : MonoBehaviour
         playerHealth = FindAnyObjectByType<PlayerHealth>();
         if (playerHealth == null)
         {
-            Debug.LogWarning("PlayerHealth no encontrado. Funciones de curación/escudo podrían fallar.");
+            Debug.LogWarning("PlayerHealth no encontrado. Funciones de curacion/escudo podrian fallar.");
         }
     }
 
@@ -61,7 +61,7 @@ public class InventoryManager : MonoBehaviour
         {
             Debug.LogError("PlayerStatsManager no encontrado para remover efectos.");
             CurrentRunItems.Clear();
-            activeAmuletEffects.Clear(); 
+            activeAmuletEffects.Clear();
             return;
         }
 
@@ -71,7 +71,7 @@ public class InventoryManager : MonoBehaviour
         }
 
         CurrentRunItems.Clear();
-        activeAmuletEffects.Clear(); 
+        activeAmuletEffects.Clear();
 
         Debug.Log("[InventoryManager] Inventario y todos los efectos activos reiniciados.");
     }
@@ -85,7 +85,7 @@ public class InventoryManager : MonoBehaviour
     public string[] inventoryFullMessages = new string[]
     {
         "Inventario lleno.",
-        "No puedes llevar más."
+        "No puedes llevar mas."
     };
 
     public float messageDisplayTime = 2.0f;
@@ -93,7 +93,7 @@ public class InventoryManager : MonoBehaviour
     private int messageIndex = 0;
     private Coroutine hideMessageCoroutine;
 
-    [Header("Visualización del Inventario (UI)")]
+    [Header("Visualizacion del Inventario (UI)")]
     public TextMeshProUGUI[] itemDisplayTexts = new TextMeshProUGUI[MaxInventorySize];
 
     private void Start()
@@ -128,42 +128,29 @@ public class InventoryManager : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// Remueve el efecto conductual anterior del mismo tipo si existe.
+    /// NO aplica el nuevo efecto — eso lo hace ShopManager.CompletePurchase.
+    /// </summary>
     private void HandleEffectReplacement(ShopItem newItem)
     {
         foreach (var newEffect in newItem.behavioralEffects)
         {
             ItemEffectBase existingEffect = activeEffects.Find(e => e.typeEffect == newEffect.typeEffect);
-
             if (existingEffect != null)
             {
                 existingEffect.RemoveEffect(playerStatsManager);
                 activeEffects.Remove(existingEffect);
-
-                ShopItem itemToRemove = CurrentRunItems.Find(it =>
-                    it.behavioralEffects != null &&
-                    it.behavioralEffects.Contains(existingEffect));
-
-                if (itemToRemove != null)
-                {
-                    CurrentRunItems.Remove(itemToRemove);
-
-                    if (ShopManager.Instance != null)
-                    {
-                        ShopManager.Instance.ReturnItemToPool(itemToRemove);
-                    }
-
-                    Debug.Log($"[Inventory] Ítem '{itemToRemove.itemName}' reemplazado y devuelto a la tienda.");
-                }
             }
-
-            activeEffects.Add(newEffect);
-            newEffect.ApplyEffect(playerStatsManager);
+            // Registrar el nuevo en activeEffects para futuras búsquedas de reemplazo
+            if (!activeEffects.Contains(newEffect))
+                activeEffects.Add(newEffect);
         }
     }
 
     public int GetCurrentItemCount()
     {
-        return CurrentRunItems.Count; 
+        return CurrentRunItems.Count;
     }
 
     public void AddActiveAmuletEffect(ItemEffectBase effect)
@@ -177,7 +164,7 @@ public class InventoryManager : MonoBehaviour
 
     public void ClearInventory()
     {
-        ResetRunItems(); 
+        ResetRunItems();
         UpdateInventoryUI();
     }
 
@@ -190,7 +177,7 @@ public class InventoryManager : MonoBehaviour
             existingEffect.RemoveEffect(playerStatsManager);
             activeEffects.Remove(existingEffect);
 
-            Debug.Log($"[Inventory] Mecánica previa de tipo {existingEffect.typeEffect} eliminada.");
+            Debug.Log($"[Inventory] Mecanica previa de tipo {existingEffect.typeEffect} eliminada.");
         }
 
         activeEffects.Add(newEffect);
@@ -224,7 +211,7 @@ public class InventoryManager : MonoBehaviour
 
             if (relicToRemove.benefits.Exists(b => b.type == StatType.ShieldBlockUpgrade))
             {
-                playerHealth.DisableShieldBlockUpgrade(); 
+                playerHealth.DisableShieldBlockUpgrade();
             }
         }
 
@@ -237,7 +224,7 @@ public class InventoryManager : MonoBehaviour
     }
     private void UpdateInventoryUI()
     {
-        List<ShopItem> currentItems = CurrentRunItems; 
+        List<ShopItem> currentItems = CurrentRunItems;
 
         for (int i = 0; i < MaxInventorySize; i++)
         {

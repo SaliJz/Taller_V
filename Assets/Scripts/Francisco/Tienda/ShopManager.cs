@@ -89,6 +89,10 @@ public class ShopManager : MonoBehaviour
     private InventoryManager inventoryManager;
     private PlayerControlls playerControls;
 
+    private System.Action pendingPurchaseCallback;
+    private System.Action pendingCancelCallback;
+    public bool HasPendingReplacement => pendingPurchaseCallback != null;
+
     private float lastPurchaseTime;
     private bool forceGagans = false;
     private bool _amuletPurchasedInRun = false;
@@ -243,7 +247,7 @@ public class ShopManager : MonoBehaviour
             return rarityPool.Last();
         }
 
-        Debug.LogError("No se pudo obtener ningún efecto de Gachapon. Asegúrate de que allGachaponEffects tenga elementos.");
+        Debug.LogError("No se pudo obtener ningun efecto de Gachapon. Asegurate de que allGachaponEffects tenga elementos.");
         return null;
     }
 
@@ -264,7 +268,7 @@ public class ShopManager : MonoBehaviour
         availableGachaponEffects.Clear();
         availableGachaponEffects.AddRange(allGachaponEffects);
         usedGachaponEffects.Clear();
-        Debug.Log($"Pool de Gachapon reiniciado. Todos los efectos están disponibles nuevamente ({availableGachaponEffects.Count} efectos).");
+        Debug.Log($"Pool de Gachapon reiniciado. Todos los efectos estan disponibles nuevamente ({availableGachaponEffects.Count} efectos).");
     }
 
     public int GetAvailableGachaponEffectsCount()
@@ -520,6 +524,9 @@ public class ShopManager : MonoBehaviour
 
     public void DisplayItemUI(ShopItem itemData, float finalCost)
     {
+        if (PauseController.Instance != null && PauseController.IsGamePaused) return;
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
+
         if (shopUIPanel != null)
         {
             shopUIPanel.SetActive(true);
@@ -636,75 +643,74 @@ public class ShopManager : MonoBehaviour
 
         string currentSceneName = SceneManager.GetActiveScene().name;
         bool isRestrictedScene = restrictedPurchaseScenes.Contains(currentSceneName);
+        float finalCost = isRestrictedScene ? 0f : CalculateFinalCost(item.cost);
 
-        float finalCost = CalculateFinalCost(item.cost);
-        bool ignoreDrawbacks = false;
-
-        if (isRestrictedScene)
+        // Restriccion de escena / amuleto
+        if ((isRestrictedScene || item.isAmulet) && _amuletPurchasedInRun)
         {
-            finalCost = 0f;
-            ignoreDrawbacks = true;
-        }
-
-        bool isRestrictedItem = isRestrictedScene || item.isAmulet;
-
-        if (isRestrictedItem)
-        {
-            if (_amuletPurchasedInRun)
-            {
-                if (inventoryManager != null)
-                {
-                    string warningMessage = isRestrictedScene
-                        ? "Solo puedes comprar un ítem por visita en esta zona."
-                        : "Solo puedes comprar un amuleto por run.";
-
-                    inventoryManager.ShowWarningMessage(warningMessage);
-                }
-                return false;
-            }
-        }
-
-        float currentHealth = playerHealth.GetCurrentHealth();
-
-        if (finalCost > 0 && currentHealth <= finalCost)
-        {
-            if (inventoryManager != null) inventoryManager.ShowWarningMessage("Vida insuficiente para la compra. ¡Debes sobrevivir!");
+            string msg = isRestrictedScene
+                ? "Solo puedes comprar un item por visita en esta zona."
+                : "Solo puedes comprar un amuleto por run.";
+            inventoryManager.ShowWarningMessage(msg);
             return false;
         }
 
-        float healthAfterPurchase = currentHealth - finalCost;
+        // Vida suficiente
+        float currentHealth = playerHealth.GetCurrentHealth();
+        if (finalCost > 0 && currentHealth <= finalCost)
+        {
+            inventoryManager.ShowWarningMessage("Vida insuficiente para la compra. Debes sobrevivir!");
+            return false;
+        }
 
+        // Advertencia de poca vida
+        float healthAfterPurchase = currentHealth - finalCost;
         if (healthAfterPurchase <= lowHealthThreshold && !isRestrictedScene)
         {
             if (!_pendingPurchaseWarning.ContainsKey(item))
             {
-                if (inventoryManager != null) inventoryManager.ShowWarningMessage("¡Advertencia! Esta compra te dejará con muy poca vida. Pulsa de nuevo para confirmar.");
+                inventoryManager.ShowWarningMessage("Advertencia! Esta compra te dejara con muy poca vida. Pulsa de nuevo para confirmar.");
                 _pendingPurchaseWarning.Add(item, true);
                 return false;
             }
-            else
-            {
-                _pendingPurchaseWarning.Remove(item);
-            }
+            _pendingPurchaseWarning.Remove(item);
         }
         else
         {
-            if (_pendingPurchaseWarning.ContainsKey(item))
+            _pendingPurchaseWarning.Remove(item);
+        }
+
+        if (item.hasEffectCategory && InventoryUIManager.Instance != null)
+        {
+            int slotIndex = InventoryUIManager.Instance.GetMechanicSlotIndex(item);
+            if (slotIndex >= 0)
             {
-                _pendingPurchaseWarning.Remove(item);
+                bool canProceed = InventoryUIManager.Instance.RequestMechanicItemPurchase(item, slotIndex, this);
+                if (!canProceed) return false;
             }
         }
 
-        if (!inventoryManager.TryAddItem(item))
-        {
-            return false;
-        }
+        return CompletePurchase(item);
+    }
+
+    /// <summary>
+    /// Aplica la compra: inventario, stats, costo de vida.
+    /// </summary>
+    public bool CompletePurchase(ShopItem item)
+    {
+        string currentSceneName = SceneManager.GetActiveScene().name;
+        bool isRestrictedScene = restrictedPurchaseScenes.Contains(currentSceneName);
+        float finalCost = isRestrictedScene ? 0f : CalculateFinalCost(item.cost);
+        bool ignoreDrawbacks = isRestrictedScene;
+
+        if (!inventoryManager.TryAddItem(item)) return false;
 
         foreach (var benefit in item.benefits)
         {
-            playerStatsManager.ApplyModifier(benefit.type, benefit.amount, isPercentage: benefit.isPercentage,
-                                             isTemporary: item.isTemporary, item.temporaryDuration,
-                                             isByRooms: item.isByRooms, item.temporaryRooms);
+            playerStatsManager.ApplyModifier(benefit.type, benefit.amount,
+                isPercentage: benefit.isPercentage,
+                isTemporary: item.isTemporary, item.temporaryDuration,
+                isByRooms: item.isByRooms, item.temporaryRooms);
         }
 
         if (!ignoreDrawbacks)
@@ -712,17 +718,14 @@ public class ShopManager : MonoBehaviour
             foreach (var drawback in item.drawbacks)
             {
                 float amount = drawback.amount;
-
                 if (drawback.type != StatType.DamageTaken &&
                     drawback.type != StatType.KnockbackReceived &&
                     drawback.type != StatType.StaminaConsumption)
-                {
                     amount *= -1f;
-                }
-
-                playerStatsManager.ApplyModifier(drawback.type, amount, isPercentage: drawback.isPercentage,
-                                                 isTemporary: item.isTemporary, item.temporaryDuration,
-                                                 isByRooms: item.isByRooms, item.temporaryRooms);
+                playerStatsManager.ApplyModifier(drawback.type, amount,
+                    isPercentage: drawback.isPercentage,
+                    isTemporary: item.isTemporary, item.temporaryDuration,
+                    isByRooms: item.isByRooms, item.temporaryRooms);
             }
         }
 
@@ -734,36 +737,88 @@ public class ShopManager : MonoBehaviour
 
         if (!item.isAmulet)
         {
-            if (allShopItems.Contains(item))
-            {
-                allShopItems.Remove(item);
-                availableItems.Remove(item);
-            }
+            allShopItems.Remove(item);
+            availableItems.Remove(item);
         }
 
-        if (item.isAmulet || isRestrictedScene)
-        {
-            _amuletPurchasedInRun = true;
-        }
+        if (item.isAmulet || isRestrictedScene) _amuletPurchasedInRun = true;
 
-        if (finalCost > 0)
-        {
-            playerHealth.TakeDamage(Mathf.RoundToInt(finalCost), true);
-        }
+        if (finalCost > 0) playerHealth.TakeDamage(Mathf.RoundToInt(finalCost), true);
 
         lastPurchaseTime = Time.time;
 
-        if (isRestrictedScene)
-        {
-            DisableRemainingItems();
-        }
+        if (isRestrictedScene) DisableRemainingItems();
 
         if (item.benefits.Any(b => b.type == StatType.ShieldBlockUpgrade))
         {
             playerHealth.EnableShieldBlockUpgrade();
         }
 
+        InventoryUIManager.Instance?.NotifyItemAdded(item);
         return true;
+    }
+
+    public void RegisterPendingPurchaseCallback(System.Action callback)
+    {
+        pendingPurchaseCallback = callback;
+    }
+
+    public void RegisterPendingCancelCallback(System.Action callback)
+    {
+        pendingCancelCallback = callback;
+    }
+
+    /// <summary>
+    /// Llamado desde InventoryUIManager cuando el jugador cancela el reemplazo.
+    /// </summary>
+    public void FireCancelCallback()
+    {
+        pendingCancelCallback?.Invoke();
+        pendingCancelCallback = null;
+        pendingPurchaseCallback = null;
+    }
+
+    /// <summary>
+    /// Llamado desde InventoryUIManager cuando el jugador confirma el reemplazo.
+    /// Revierte stats del item anterior y completa la compra del nuevo.
+    /// </summary>
+    public void ExecuteReplacement(ShopItem oldItem, ShopItem newItem)
+    {
+        if (oldItem != null)
+        {
+            ReverseItemStats(oldItem);
+            InventoryManager.CurrentRunItems.Remove(oldItem);
+            ReturnItemToPool(oldItem);
+        }
+        CompletePurchase(newItem);
+
+        pendingPurchaseCallback?.Invoke();
+        pendingPurchaseCallback = null;
+        pendingCancelCallback = null; // limpiar también el cancel
+    }
+
+    /// <summary>
+    /// Invierte los modificadores de stats que un item aplica al comprarse.
+    /// </summary>
+    private void ReverseItemStats(ShopItem item)
+    {
+        foreach (var benefit in item.benefits)
+            playerStatsManager.ApplyModifier(benefit.type, -benefit.amount,
+                isPercentage: benefit.isPercentage, isTemporary: false);
+
+        foreach (var drawback in item.drawbacks)
+        {
+            float appliedAmount = drawback.amount;
+            if (drawback.type != StatType.DamageTaken &&
+                drawback.type != StatType.KnockbackReceived &&
+                drawback.type != StatType.StaminaConsumption)
+                appliedAmount *= -1f;
+            playerStatsManager.ApplyModifier(drawback.type, -appliedAmount,
+                isPercentage: drawback.isPercentage, isTemporary: false);
+        }
+
+        foreach (var effect in item.behavioralEffects)
+            effect.RemoveEffect(playerStatsManager);
     }
 
     public void DisableRemainingItems()

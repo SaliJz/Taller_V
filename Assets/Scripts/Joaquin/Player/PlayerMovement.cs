@@ -335,6 +335,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     private void HandleMovementInput()
     {
+        if (PauseController.Instance != null && PauseController.IsGamePaused) return;
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
+
         float moveX = currentInputVector.x;
         float moveY = currentInputVector.y;
 

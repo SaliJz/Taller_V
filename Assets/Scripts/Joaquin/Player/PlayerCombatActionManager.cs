@@ -86,7 +86,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     {
         if (isMeleeAttackBlocked) return;
 
-        if (PauseController.IsGamePaused) return;
+        if (PauseController.Instance != null && PauseController.IsGamePaused) return;
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
 
         if (!context.started) return;
 
@@ -97,7 +98,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     {
         if (isShieldThrowBlocked) return;
 
-        if (PauseController.IsGamePaused) return;
+        if (PauseController.Instance != null && PauseController.IsGamePaused) return;
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
 
         if (!context.started) return;
 
@@ -108,7 +110,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     {
         if (isDashBlocked) return;
 
-        if (PauseController.IsGamePaused) return;
+        if (PauseController.Instance != null && PauseController.IsGamePaused) return;
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
 
         if (!context.started) return;
 

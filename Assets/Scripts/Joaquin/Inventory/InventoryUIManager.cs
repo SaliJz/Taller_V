@@ -13,7 +13,7 @@ public class InventoryUIManager : MonoBehaviour
     public static InventoryUIManager Instance { get; private set; }
 
     // Estructura de columnas
-    // Col1: [Above×2] [Golden×3] [Below×2]
+    // Col1: [Abovex2] [Goldenx3] [Belowx2]
     //private const int COL1_ABOVE_COUNT = 2;
     //private const int COL1_BELOW_COUNT = 2;
     //private const int COL2_COUNT = 8;
@@ -21,10 +21,14 @@ public class InventoryUIManager : MonoBehaviour
 
     #region Inspector References
 
-    [Header("Raíces de visibilidad")]
-    [Tooltip("Contiene los 3 slots dorados — siempre visible")]
+    [Header("Referencias")]
+    [SerializeField] private GameObject itemUIPanel;
+    [SerializeField] private GameObject interactionButtonUIPanel;
+
+    [Header("Raices de visibilidad")]
+    [Tooltip("Contiene los 3 slots dorados siempre visible")]
     [SerializeField] private Transform goldenSlotsContainer;
-    [Tooltip("Contiene col1 pasivos + col2 + col3 — oculto cuando cerrado")]
+    [Tooltip("Contiene col1 pasivos + col2 + col3 oculto cuando cerrado")]
     [SerializeField] private GameObject inventoryExpandRoot;
 
     [Header("Contenedores de Columnas")]
@@ -35,7 +39,7 @@ public class InventoryUIManager : MonoBehaviour
 
     //[Header("Prefab de Slot")]
     //[SerializeField] private GameObject inventorySlotPrefab;
-    //[Tooltip("Tamaño de cada slot instanciado en runtime")]
+    //[Tooltip("Tamano de cada slot instanciado en runtime")]
     //[SerializeField] private float slotSize = 80f;
 
     [Header("Slots Dorados")]
@@ -47,7 +51,7 @@ public class InventoryUIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI detailDescription;
     [SerializeField] private Image detailIcon;
 
-    [Header("Panel de Confirmación de Reemplazo")]
+    [Header("Panel de Confirmacion de Reemplazo")]
     [SerializeField] private GameObject replaceConfirmPanel;
     [SerializeField] private TextMeshProUGUI replaceConfirmText;
     [SerializeField] private Button confirmReplaceButton;
@@ -56,19 +60,19 @@ public class InventoryUIManager : MonoBehaviour
     [Header("Hover Highlight")]
     [SerializeField] private Color highlightColor = new Color(0.6f, 0.1f, 0.1f);
 
-    [Header("Animación de Reveal")]
+    [Header("Animacion de Reveal")]
     [SerializeField] private float slotRevealDuration = 0.12f;
     [SerializeField] private float slotStagger = 0.04f;   // delay entre slots consecutivos
     [SerializeField] private float columnDelay = 0.08f;   // delay antes de cada columna
     [SerializeField] private float slideOffsetY = 35f;     // px col1 pasivos
     [SerializeField] private float slideOffsetX = 50f;     // px col2/col3
 
-    [Header("Feedback – Ítem Añadido")]
+    [Header("Feedback de item Anadido")]
     [SerializeField] private float bouncePeak = 1.2f;
     [SerializeField] private float bounceDuration = 0.25f;
 
-    [Header("Registro de Ítems Mecánicos")]
-    [SerializeField] private List<MechanicItemEntry> mechanicRegistry = new List<MechanicItemEntry>();
+    //[Header("Registro de items Mecanicos")]
+    //[SerializeField] private List<MechanicItemEntry> mechanicRegistry = new List<MechanicItemEntry>();
 
     #endregion
 
@@ -81,6 +85,8 @@ public class InventoryUIManager : MonoBehaviour
     private readonly List<InventorySlot> col3Slots = new List<InventorySlot>();
 
     private readonly ShopItem[] mechanicSlots = new ShopItem[3];
+    private float inventoryPreviousTimeScale = 1f;
+    private float confirmPreviousTimeScale = 1f;
 
     private readonly Dictionary<RectTransform, Vector2> restPositions = new Dictionary<RectTransform, Vector2>();
 
@@ -135,7 +141,7 @@ public class InventoryUIManager : MonoBehaviour
     #region Slots Setup
 
     /// <summary>
-    /// Recoge los InventorySlot ya existentes en cada contenedor de la jerarquía.
+    /// Recoge los InventorySlot ya existentes en cada contenedor de la jerarquia.
     /// Los slots deben estar colocados manualmente en el Editor.
     /// </summary>
     private void CollectSlots()
@@ -158,13 +164,13 @@ public class InventoryUIManager : MonoBehaviour
             var slot = child.GetComponent<InventorySlot>();
             if (slot == null) continue;
 
-            // Asegurar CanvasGroup para la animación de reveal
+            // Asegurar CanvasGroup para la animacion de reveal
             if (child.GetComponent<CanvasGroup>() == null)
             {
                 child.gameObject.AddComponent<CanvasGroup>();
             }
 
-            // Guardar posición rest una vez; nunca se sobreescribe
+            // Guardar posicion rest una vez; nunca se sobreescribe
             var rt = child.GetComponent<RectTransform>();
             if (rt != null && !restPositions.ContainsKey(rt))
             {
@@ -182,7 +188,7 @@ public class InventoryUIManager : MonoBehaviour
 
     public void ToggleInventory()
     {
-        // Evitar abrir/cerrar si el juego está pausado por el menú de pausa u otro motivo
+        // Evitar abrir/cerrar si el juego esta pausado por el menu de pausa u otro motivo
         if (PauseController.Instance != null && PauseController.IsGamePaused) return;
 
         if (isOpen) CloseInventory();
@@ -192,12 +198,29 @@ public class InventoryUIManager : MonoBehaviour
     public void OpenInventory()
     {
         isOpen = true;
+        inventoryPreviousTimeScale = Time.timeScale;
         Time.timeScale = 0f;
         //Cursor.visible = true;
         //Cursor.lockState = CursorLockMode.None;
 
         RefreshDisplay();
+
+        if (itemUIPanel != null && itemUIPanel.activeSelf) itemUIPanel.SetActive(false);
+        if (interactionButtonUIPanel != null && interactionButtonUIPanel.activeSelf)
+        {
+            interactionButtonUIPanel.SetActive(false);
+        }
+
         inventoryExpandRoot?.SetActive(true);
+
+        if (pendingReplaceItem != null)
+        {
+            pendingShopManager?.SetInteractionPromptActive(isOpen);
+            pendingShopManager?.ResetCostBar();
+            pendingShopManager?.LockAndDisplayItemDetails(null);
+            ReportDebug("Abriendo inventario con una compra pendiente de confirmacion. " +
+                "Mostrando el panel de confirmacion de reemplazo si no se mostro ya.", 1);
+        }
 
         if (revealCoroutine != null) StopCoroutine(revealCoroutine);
         revealCoroutine = StartCoroutine(RevealSequence(opening: true));
@@ -208,6 +231,8 @@ public class InventoryUIManager : MonoBehaviour
     public void CloseInventory()
     {
         isOpen = false;
+        Time.timeScale = inventoryPreviousTimeScale;
+
         //Cursor.visible = false;
         //Cursor.lockState = CursorLockMode.Locked;
 
@@ -228,7 +253,7 @@ public class InventoryUIManager : MonoBehaviour
     {
         if (opening)
         {
-            // Col1: pasivos arriba y abajo simultáneos, luego col2, luego col3
+            // Col1: pasivos arriba y abajo simultaneos, luego col2, luego col3
             var above = StartCoroutine(StaggerSlots(col1AboveSlots, new Vector2(0, -slideOffsetY), opening));
             var below = StartCoroutine(StaggerSlots(col1BelowSlots, new Vector2(0, slideOffsetY), opening));
             yield return above;
@@ -254,9 +279,7 @@ public class InventoryUIManager : MonoBehaviour
             yield return below;
 
             inventoryExpandRoot?.SetActive(false);
-            Time.timeScale = 1f;
         }
-
         revealCoroutine = null;
     }
 
@@ -280,7 +303,7 @@ public class InventoryUIManager : MonoBehaviour
         var cg = rt.GetComponent<CanvasGroup>();
         if (cg == null) cg = rt.gameObject.AddComponent<CanvasGroup>();
 
-        // Usar siempre la posición rest original, nunca la posición actual
+        // Usar siempre la posicion rest original, nunca la posicion actual
         if (!restPositions.TryGetValue(rt, out Vector2 restPos))
         {
             restPos = rt.anchoredPosition;  // fallback si no fue colectado
@@ -292,7 +315,7 @@ public class InventoryUIManager : MonoBehaviour
         float fromAlpha = opening ? 0f : 1f;
         float toAlpha = opening ? 1f : 0f;
 
-        // Fijar posición inicial antes del primer frame para evitar el leve salto
+        // Fijar posicion inicial antes del primer frame para evitar el leve salto
         rt.anchoredPosition = fromPos;
         cg.alpha = fromAlpha;
 
@@ -316,7 +339,7 @@ public class InventoryUIManager : MonoBehaviour
     #region Feedback - Item added
 
     /// <summary>
-    /// Llamar desde ShopManager cuando se añade un ítem al inventario.
+    /// Llamar desde ShopManager cuando se anade un item al inventario.
     /// </summary>
     public void NotifyItemAdded(ShopItem item)
     {
@@ -380,21 +403,21 @@ public class InventoryUIManager : MonoBehaviour
 
         var passives = CollectPassives();
         int p = 0;
-        foreach (var s in col1AboveSlots) 
-        { 
-            if (p >= passives.Count) break; s.SetItem(passives[p++]); 
+        foreach (var s in col1AboveSlots)
+        {
+            if (p >= passives.Count) break; s.SetItem(passives[p++]);
         }
-        foreach (var s in col1BelowSlots) 
-        { 
-            if (p >= passives.Count) break; s.SetItem(passives[p++]); 
+        foreach (var s in col1BelowSlots)
+        {
+            if (p >= passives.Count) break; s.SetItem(passives[p++]);
         }
-        foreach (var s in col2Slots) 
-        { 
-            if (p >= passives.Count) break; s.SetItem(passives[p++]); 
+        foreach (var s in col2Slots)
+        {
+            if (p >= passives.Count) break; s.SetItem(passives[p++]);
         }
-        foreach (var s in col3Slots) 
-        { 
-            if (p >= passives.Count) break; s.SetItem(passives[p++]); 
+        foreach (var s in col3Slots)
+        {
+            if (p >= passives.Count) break; s.SetItem(passives[p++]);
         }
     }
 
@@ -422,37 +445,68 @@ public class InventoryUIManager : MonoBehaviour
 
     #region Mechanic Slots replace logic
 
+    /// <summary>
+    /// Retorna el indice de ranura (0=Melee, 1=Ranged, 2=Dash) usando los datos del propio ShopItem.
+    /// </summary>
     public int GetMechanicSlotIndex(ShopItem item)
     {
-        if (item == null || item.category != ItemCategory.AttributeModifiers) return -1;
-        foreach (var entry in mechanicRegistry)
+        if (item == null || !item.hasEffectCategory) return -1;
+        return item.effectCategory switch
         {
-            if (entry.item == item) return (int)entry.slotType;
-        }
-        return -1;
+            TypeEffect.Melee => 0,
+            TypeEffect.Shield => 1,
+            TypeEffect.Dash => 2,
+            _ => -1
+        };
     }
 
+    /// <summary>
+    /// Llamado desde ShopManager antes de ejecutar la compra.
+    /// Si ya hay un item en esa ranura, muestra el panel de confirmacion y retorna false.
+    /// Si la ranura esta libre, retorna true para que la compra proceda.
+    /// </summary>
     public bool RequestMechanicItemPurchase(ShopItem newItem, int slotIndex, ShopManager caller)
     {
+        // Asegurar que mechanicSlots refleja el estado real del inventario
+        RebuildMechanicState();
+
         if (mechanicSlots[slotIndex] != null)
         {
             pendingReplaceItem = newItem;
             pendingReplaceSlotIndex = slotIndex;
-            pendingShopManager = caller;   // guardar referencia
+            pendingShopManager = caller;
             ShowReplaceConfirm(newItem, mechanicSlots[slotIndex]);
-            return false;
+            ReportDebug($"Solicitando compra de {newItem.itemName} para slot {slotIndex}, " +
+                $"pero ya hay {mechanicSlots[slotIndex].itemName}. Mostrando confirmacion de reemplazo.", 1);
+            return false; // bloquear compra hasta que el jugador confirme o cancele
         }
         return true;
     }
 
     private void ShowReplaceConfirm(ShopItem newItem, ShopItem current)
     {
-        if (replaceConfirmPanel == null) return;
+        if (replaceConfirmPanel == null)
+        {
+            ReportDebug("No se asigno el panel de confirmacion de reemplazo en el inspector.", 2);
+            return;
+        }
+
+        isOpen = true; // asegurar que el estado es consistente mientras se muestra el panel
+
+        if (itemUIPanel != null && itemUIPanel.activeSelf) itemUIPanel.SetActive(false);
+        if (interactionButtonUIPanel != null && interactionButtonUIPanel.activeSelf)
+        {
+            interactionButtonUIPanel.SetActive(false);
+        }
+
         replaceConfirmPanel.SetActive(true);
+        confirmPreviousTimeScale = Time.timeScale; // guardar antes de pausar
+        Time.timeScale = 0f; // pausar el juego mientras se muestra la confirmacion
         if (replaceConfirmText != null)
         {
-            replaceConfirmText.text = $"¿Reemplazar <b>{current.itemName}</b> con <b>{newItem.itemName}</b>?\n" +
-                                      "El ítem anterior será descartado.";
+            replaceConfirmText.text =
+                $"Reemplazar <b>{current.itemName}</b> con <b>{newItem.itemName}</b>?\n" +
+                "El item anterior sera descartado.";
         }
     }
 
@@ -460,19 +514,32 @@ public class InventoryUIManager : MonoBehaviour
     {
         if (pendingReplaceItem != null)
         {
-            var old = mechanicSlots[pendingReplaceSlotIndex];
-            if (old != null) InventoryManager.CurrentRunItems.Remove(old);
-            InventoryManager.CurrentRunItems.Add(pendingReplaceItem);
+            ShopItem oldItem = mechanicSlots[pendingReplaceSlotIndex];
+            // Delegar al ShopManager, el revierte stats del viejo y aplica los del nuevo
+            ReportDebug($"Jugador confirmo reemplazo: {oldItem.itemName} => {pendingReplaceItem.itemName} " +
+                $"en slot {pendingReplaceSlotIndex}. Ejecutando reemplazo.", 1);
+            pendingShopManager?.ExecuteReplacement(oldItem, pendingReplaceItem);
             pendingReplaceItem = null;
+            pendingShopManager = null;
             RefreshDisplay();
         }
+
+        isOpen = false;
         replaceConfirmPanel?.SetActive(false);
+        Time.timeScale = confirmPreviousTimeScale;
     }
 
     private void OnCancelReplace()
     {
-        pendingReplaceItem = null;
+        ReportDebug("Jugador cancela el reemplazo de item mecanico. No se realizara ningun cambio.", 1);
+
+        isOpen = false;
         replaceConfirmPanel?.SetActive(false);
+        pendingShopManager?.RegisterPendingPurchaseCallback(null);
+        pendingReplaceItem = null;
+        pendingShopManager = null;
+        Time.timeScale = confirmPreviousTimeScale;
+        pendingShopManager?.FireCancelCallback();
     }
 
     #endregion
@@ -498,4 +565,24 @@ public class InventoryUIManager : MonoBehaviour
     public bool IsOpen => isOpen;
 
     #endregion
+
+    [System.Diagnostics.Conditional("UNITY_EDITOR")]
+    private static void ReportDebug(string message, int reportPriorityLevel)
+    {
+        switch (reportPriorityLevel)
+        {
+            case 1:
+                Debug.Log($"[InventoryUIManager] {message}");
+                break;
+            case 2:
+                Debug.LogWarning($"[InventoryUIManager] {message}");
+                break;
+            case 3:
+                Debug.LogError($"[InventoryUIManager] {message}");
+                break;
+            default:
+                Debug.Log($"[InventoryUIManager] {message}");
+                break;
+        }
+    }
 }

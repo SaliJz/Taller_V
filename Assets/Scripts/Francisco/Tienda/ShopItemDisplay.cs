@@ -29,12 +29,12 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
         }
         else
         {
-            Debug.LogWarning("AudioSource no asignado en ShopItemDisplay. Se intentará obtenerlo del MerchantRoomManager.");
+            Debug.LogWarning("AudioSource no asignado en ShopItemDisplay. Se intentara obtenerlo del MerchantRoomManager.");
         }
 
         if (shopManager == null)
         {
-            Debug.LogError("ShopManager no encontrado. El item de la tienda no funcionará correctamente.");
+            Debug.LogError("ShopManager no encontrado. El item de la tienda no funcionara correctamente.");
         }
 
         playerControls = new PlayerControlls();
@@ -54,7 +54,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
         {
             shopManager.SetInteractionPromptActive(false);
             shopManager.LockAndDisplayItemDetails(null);
-            shopManager.ResetCostBar(); 
+            shopManager.ResetCostBar();
         }
 
         if (cachedBlockSystem != null)
@@ -127,6 +127,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
             float finalCost = shopManager.CalculateFinalCost(shopItemData.cost);
             shopManager.UpdateCostBar(finalCost);
             shopManager.LockAndDisplayItemDetails(shopItemData);
+
         }
     }
 
@@ -156,39 +157,48 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     private void AttemptPurchase()
     {
-        Debug.Log($"[ShopItemDisplay] Interacción detectada para: {shopItemData.itemName}.");
-        if (shopManager.CanAttemptPurchase())
+        Debug.Log($"[ShopItemDisplay] Interaccion detectada para: {shopItemData.itemName}.");
+        if (!shopManager.CanAttemptPurchase()) return;
+
+        bool purchaseSuccessful = shopManager.PurchaseItem(shopItemData);
+
+        if (purchaseSuccessful)
         {
-            bool purchaseSuccessful = shopManager.PurchaseItem(shopItemData);
+            OnPurchaseCompleted();
+        }
+        else if (shopManager.HasPendingReplacement)
+        {
+            isPlayerInProximity = false;
+            shopManager.RegisterPendingPurchaseCallback(OnPurchaseCompleted);
+            shopManager.RegisterPendingCancelCallback(OnPurchaseCancelled);
+        }
+    }
 
-            if (shopManager != null)
+    private void OnPurchaseCancelled()
+    {
+        // El jugador canceló el reemplazo: reactivar para que pueda reintentar
+        isPlayerInProximity = true;
+    }
+
+    private void OnPurchaseCompleted()
+    {
+        shopManager.ResetCostBar();
+
+        if (merchantRoomManager != null)
+        {
+            merchantRoomManager.OnItemPurchased();
+            if (audioSource != null && purchaseSound != null)
             {
-                if (purchaseSuccessful)
-                {
-                    shopManager.ResetCostBar(); 
-                }
-            }
-
-            if (purchaseSuccessful)
-            {
-                if (merchantRoomManager != null)
-                {
-                    merchantRoomManager.OnItemPurchased();
-                    if (audioSource != null && purchaseSound != null)
-                    {
-                        audioSource.PlayOneShot(purchaseSound);
-                        Debug.Log($"<color=yellow>[ShopItemDisplay] Reproduciendo sonido de compra.</color>");
-                    }
-                }
-
-                if (cachedBlockSystem != null)
-                {
-                    cachedBlockSystem.SetBlockingEnabled(true);
-                    cachedBlockSystem = null;
-                }
-
-                Destroy(gameObject);
+                audioSource.PlayOneShot(purchaseSound);
             }
         }
+
+        if (cachedBlockSystem != null)
+        {
+            cachedBlockSystem.SetBlockingEnabled(true);
+            cachedBlockSystem = null;
+        }
+
+        Destroy(gameObject);
     }
 }

@@ -60,6 +60,9 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
     {
         if (!_externalInputThisFrame)
         {
+            if (PauseController.Instance != null && PauseController.IsGamePaused) return;
+            if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
+
             H = Input.GetAxisRaw("Horizontal");
             V = Input.GetAxisRaw("Vertical");
         }
