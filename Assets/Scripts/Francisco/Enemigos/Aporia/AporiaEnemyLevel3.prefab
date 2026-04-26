@@ -1740,7 +1740,7 @@ GameObject:
   - component: {fileID: 2434199948421643928}
   - component: {fileID: 2297744095081889307}
   - component: {fileID: 9019894006238146060}
-  - component: {fileID: 3407609380615883513}
+  - component: {fileID: 5477974535051018732}
   - component: {fileID: 6263217996865602163}
   - component: {fileID: 1581452201337906434}
   - component: {fileID: 8629446803264125925}
@@ -1748,7 +1748,7 @@ GameObject:
   - component: {fileID: 9159611241233586929}
   - component: {fileID: 2400156836155920900}
   m_Layer: 7
-  m_Name: Enemy1_Aporia
+  m_Name: AporiaEnemyLevel3
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1843,7 +1843,7 @@ MonoBehaviour:
   useAwake: 1
   drawDetailedGizmos: 0
   gizmoScale: 1
---- !u!114 &3407609380615883513
+--- !u!114 &5477974535051018732
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1852,14 +1852,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 7000052904529192738}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b11b1f7efc6291b41bb56354ebc0c999, type: 3}
+  m_Script: {fileID: 11500000, guid: 08aa8650fd0c1ac40924ae067426c0af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   animCtrl: {fileID: 4800542297979225013}
   hitPoint: {fileID: 3936681017381428749}
   groundIndicator: {fileID: 1835801820994708527}
-  tongueVFXPrefab: {fileID: 0}
-  nestPrefab: {fileID: 3022416804554668879, guid: 8581b67ab6a53c1428c997e77db2e35a, type: 3}
   wanderRadius: 8
   wanderWaitTime: 3
   health: 100
@@ -1888,6 +1886,8 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  tongueVFXPrefab: {fileID: 0}
+  nestPrefab: {fileID: 3022416804554668879, guid: 8581b67ab6a53c1428c997e77db2e35a, type: 3}
 --- !u!114 &6263217996865602163
 MonoBehaviour:
   m_ObjectHideFlags: 0

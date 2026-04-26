@@ -3,84 +3,82 @@ using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshAgent), typeof(EnemyHealth))]
-public class AporiaEnemy : MonoBehaviour
+public abstract class AporiaEnemyBase : MonoBehaviour
 {
-    #region Headers
+    #region Headers Comunes
     [Header("Referencias")]
-    [SerializeField] private AporiaAnimCtrl animCtrl;
-    [SerializeField] private Transform hitPoint;
-    [SerializeField] private GameObject groundIndicator;
-    [SerializeField] private GameObject tongueVFXPrefab;
-    [SerializeField] private GameObject nestPrefab;
+    [SerializeField] protected AporiaAnimCtrl animCtrl;
+    [SerializeField] protected Transform hitPoint;
+    [SerializeField] protected GameObject groundIndicator;
 
     [Header("Patrullaje (Wander)")]
-    [SerializeField] private float wanderRadius = 8f;
-    [SerializeField] private float wanderWaitTime = 3f;
-    private float wanderTimer;
+    [SerializeField] protected float wanderRadius = 8f;
+    [SerializeField] protected float wanderWaitTime = 3f;
+    protected float wanderTimer;
 
-    [Header("Estadisticas Base")]
-    [SerializeField] private float health = 35f;
-    [SerializeField] private float moveSpeed = 6.5f;
+    [Header("Estadísticas Base")]
+    [SerializeField] protected float health = 35f;
+    [SerializeField] protected float moveSpeed = 6.5f;
 
-    [Header("Dash Erratico")]
-    [SerializeField] private float dashDuration = 0.4f;
-    [SerializeField] private float dashMaxDistance = 10f;
-    [SerializeField] private float preparationTime = 0.25f;
+    [Header("Dash Errático")]
+    [SerializeField] protected float dashDuration = 0.4f;
+    [SerializeField] protected float dashMaxDistance = 10f;
+    [SerializeField] protected float preparationTime = 0.25f;
+    [SerializeField] protected float attackTransitionDelay = 0.1f;
 
-    [Header("Ataque Lengua Putra")]
-    [SerializeField] private float attackDamage = 30f;
-    [SerializeField] private float attackRadius = 2.5f;
-    [SerializeField] private float hitDelay = 0.35f;
-    [SerializeField] private float recoveryTime = 1.2f;
-    [SerializeField] private float knockbackForce = 6f;
-    [SerializeField] private LayerMask playerLayer;
+    [Header("Ataque Base")]
+    [SerializeField] protected float attackDamage = 30f;
+    [SerializeField] protected float attackRadius = 2.5f;
+    [SerializeField] protected float hitDelay = 0.35f;
+    [SerializeField] protected float recoveryTime = 1.2f;
+    [SerializeField] protected float knockbackForce = 6f;
+    [SerializeField] protected LayerMask playerLayer;
 
-    [Header("Percepcion")]
-    [SerializeField] private float detectionRadius = 15f;
-    [SerializeField] private float dashActivationDistance = 10f;
+    [Header("Percepción")]
+    [SerializeField] protected float detectionRadius = 15f;
+    [SerializeField] protected float dashActivationDistance = 10f;
 
     [Header("Cooldowns")]
-    [SerializeField] private float cooldownShort = 1.0f;
-    [SerializeField] private float cooldownMedium = 1.5f;
-    [SerializeField] private float cooldownLong = 2.0f;
+    [SerializeField] protected float cooldownShort = 1.0f;
+    [SerializeField] protected float cooldownMedium = 1.5f;
+    [SerializeField] protected float cooldownLong = 2.0f;
 
     [Header("Sonido")]
-    [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip dashSFX;
-    [SerializeField] private AudioClip attackSFX;
-    [SerializeField] private AudioClip damageSFX;
-    [SerializeField] private AudioClip deathSFX;
+    [SerializeField] protected AudioSource audioSource;
+    [SerializeField] protected AudioClip dashSFX;
+    [SerializeField] protected AudioClip attackSFX;
+    [SerializeField] protected AudioClip damageSFX;
+    [SerializeField] protected AudioClip deathSFX;
 
     [Header("Capas")]
-    [SerializeField] private LayerMask groundLayer = ~0;
+    [SerializeField] protected LayerMask groundLayer = ~0;
     #endregion
 
-    #region Private Variables
-    private EnemyHealth enemyHealth;
-    private NavMeshAgent agent;
-    private Transform playerTransform;
-    private bool isAttacking = false;
-    private float attackTimer;
-    private float currentCooldown;
-
-    private GameObject pooledTongue;
-    private GameObject pooledNest;
+    #region Variables Protegidas
+    protected EnemyHealth enemyHealth;
+    protected NavMeshAgent agent;
+    protected Transform playerTransform;
+    protected bool isAttacking = false;
+    protected float attackTimer;
+    protected float currentCooldown;
     #endregion
 
     #region Unity Lifecycle
-    private void Awake()
+    protected virtual void Awake()
     {
         enemyHealth = GetComponent<EnemyHealth>();
         agent = GetComponent<NavMeshAgent>();
-        if (audioSource == null) audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
+
+        if (audioSource == null)
+            audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
 
         InitializeEnemy();
-        SetupPool();
+        SetupPools();
 
         if (groundIndicator) groundIndicator.SetActive(false);
     }
 
-    private void Start()
+    protected virtual void Start()
     {
         var pObj = GameObject.FindGameObjectWithTag("Player");
         if (pObj) playerTransform = pObj.transform;
@@ -92,7 +90,7 @@ public class AporiaEnemy : MonoBehaviour
         if (animator != null) animator.onAnimEvent += HandleAnimEvents;
     }
 
-    private void OnEnable()
+    protected virtual void OnEnable()
     {
         if (enemyHealth != null)
         {
@@ -101,7 +99,7 @@ public class AporiaEnemy : MonoBehaviour
         }
     }
 
-    private void OnDisable()
+    protected virtual void OnDisable()
     {
         if (enemyHealth != null)
         {
@@ -110,13 +108,15 @@ public class AporiaEnemy : MonoBehaviour
         }
     }
 
-    private void Update()
+    protected virtual void Update()
     {
         if (isAttacking || (enemyHealth != null && (enemyHealth.IsStunned || enemyHealth.IsDead))) return;
 
         HandleLocomotion();
 
-        float dist = playerTransform != null ? Vector3.Distance(transform.position, playerTransform.position) : float.MaxValue;
+        float dist = playerTransform != null
+            ? Vector3.Distance(transform.position, playerTransform.position)
+            : float.MaxValue;
 
         if (dist <= detectionRadius)
         {
@@ -126,13 +126,9 @@ public class AporiaEnemy : MonoBehaviour
             if (attackTimer >= currentCooldown)
             {
                 if (dist <= attackRadius)
-                {
                     StartCoroutine(ExecuteFullAttackSequence(false));
-                }
                 else if (dist <= dashActivationDistance)
-                {
                     StartCoroutine(ExecuteFullAttackSequence(true));
-                }
             }
         }
         else
@@ -142,8 +138,8 @@ public class AporiaEnemy : MonoBehaviour
     }
     #endregion
 
-    #region Combat Routines
-    private IEnumerator ExecuteFullAttackSequence(bool useDash)
+    #region Rutinas de Combate
+    protected virtual IEnumerator ExecuteFullAttackSequence(bool useDash)
     {
         isAttacking = true;
         attackTimer = 0f;
@@ -156,9 +152,7 @@ public class AporiaEnemy : MonoBehaviour
 
         Vector3 attackDirection = (playerTransform.position - transform.position).normalized;
         attackDirection.y = 0;
-
         if (attackDirection == Vector3.zero) attackDirection = transform.forward;
-
         transform.forward = attackDirection;
 
         if (useDash)
@@ -174,27 +168,17 @@ public class AporiaEnemy : MonoBehaviour
             if (NavMesh.Raycast(startPos, dashEnd, out NavMeshHit hit, NavMesh.AllAreas))
                 dashEnd = hit.position;
 
-            float elapsed = 0;
-            while (elapsed < dashDuration)
-            {
-                elapsed += Time.deltaTime;
-                Vector3 nextPos = Vector3.Lerp(startPos, dashEnd, elapsed / dashDuration);
+            yield return StartCoroutine(PerformDash(startPos, dashEnd, attackDirection));
 
-                if (Physics.Raycast(nextPos + Vector3.up, Vector3.down, 2f, groundLayer))
-                    transform.position = nextPos;
-
-                if (Vector3.Distance(transform.position, playerTransform.position) < 1.2f)
-                    break;
-
-                yield return null;
-            }
+            if (attackTransitionDelay > 0f)
+                yield return new WaitForSeconds(attackTransitionDelay);
         }
         else
         {
             yield return new WaitForSeconds(preparationTime);
         }
 
-        yield return StartCoroutine(PerformTongueAttack(attackDirection));
+        yield return StartCoroutine(PerformAttack(attackDirection));
 
         if (agent.enabled)
         {
@@ -207,9 +191,26 @@ public class AporiaEnemy : MonoBehaviour
         currentCooldown = GetRandomCooldown();
     }
 
-    private IEnumerator PerformTongueAttack(Vector3 frozenDirection)
+    protected virtual IEnumerator PerformDash(Vector3 startPos, Vector3 dashEnd, Vector3 attackDirection)
     {
+        float elapsed = 0;
+        while (elapsed < dashDuration)
+        {
+            elapsed += Time.deltaTime;
+            Vector3 nextPos = Vector3.Lerp(startPos, dashEnd, elapsed / dashDuration);
 
+            if (Physics.Raycast(nextPos + Vector3.up, Vector3.down, 2f, groundLayer))
+                transform.position = nextPos;
+
+            if (Vector3.Distance(transform.position, playerTransform.position) < 1.2f)
+                break;
+
+            yield return null;
+        }
+    }
+
+    protected virtual IEnumerator PerformAttack(Vector3 frozenDirection)
+    {
         if (groundIndicator)
         {
             groundIndicator.transform.position = hitPoint.position;
@@ -217,34 +218,25 @@ public class AporiaEnemy : MonoBehaviour
         }
 
         if (animCtrl)
-        {
             animCtrl.SendMessage("PlayAttack", SendMessageOptions.DontRequireReceiver);
-        }
 
+        animHitFired = false;
         yield return new WaitForSeconds(hitDelay);
 
         if (groundIndicator) groundIndicator.SetActive(false);
 
+        if (!animHitFired) OnAttackHit();
+
         yield return new WaitForSeconds(Mathf.Max(0, recoveryTime - hitDelay));
     }
 
+    private bool animHitFired = false;
 
-    public void OnAttackHit()
+    public virtual void OnAttackHit()
     {
         if (audioSource && attackSFX) audioSource.PlayOneShot(attackSFX);
 
-        Quaternion attackRotation = transform.rotation;
-        Vector3 spawnPosition = hitPoint.position;
-
-        if (pooledTongue)
-        {
-            pooledTongue.transform.position = spawnPosition;
-            pooledTongue.transform.rotation = attackRotation; 
-            pooledTongue.SetActive(true);
-            StartCoroutine(DeactivateAfterDelay(pooledTongue, 0.2f));
-        }
-
-        Collider[] targets = Physics.OverlapSphere(spawnPosition, attackRadius, playerLayer);
+        Collider[] targets = Physics.OverlapSphere(hitPoint.position, attackRadius, playerLayer);
         foreach (var t in targets)
         {
             if (t.TryGetComponent<PlayerHealth>(out var pHealth))
@@ -253,20 +245,23 @@ public class AporiaEnemy : MonoBehaviour
                 ApplyKnockback(t.transform);
             }
         }
-
-        if (pooledNest)
-        {
-            pooledNest.SetActive(false);
-            pooledNest.transform.position = spawnPosition;
-            pooledNest.SetActive(true);
-        }
     }
     #endregion
 
-    #region Utilities & Pools
-    private float GetRandomCooldown() => new float[] { cooldownShort, cooldownMedium, cooldownLong }[Random.Range(0, 3)];
+    #region Muerte
+    protected virtual void HandleDeath(GameObject e)
+    {
+        if (e != gameObject) return;
+        ResetDamageFlash();   
+        if (audioSource && deathSFX) audioSource.PlayOneShot(deathSFX);
+        animCtrl?.PlayDeath();
+        agent.enabled = false;
+        this.enabled = false;
+    }
+    #endregion
 
-    private void InitializeEnemy()
+    #region Inicialización y Pools
+    protected virtual void InitializeEnemy()
     {
         if (enemyHealth != null) enemyHealth.SetMaxHealth(health);
         if (agent != null)
@@ -276,27 +271,21 @@ public class AporiaEnemy : MonoBehaviour
         }
     }
 
-    private void SetupPool()
-    {
-        if (tongueVFXPrefab) { pooledTongue = Instantiate(tongueVFXPrefab); pooledTongue.SetActive(false); }
-        if (nestPrefab) { pooledNest = Instantiate(nestPrefab); pooledNest.SetActive(false); }
-    }
+    protected virtual void SetupPools() { }
+    #endregion
 
-    private IEnumerator DeactivateAfterDelay(GameObject obj, float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        if (obj != null) obj.SetActive(false);
-    }
+    #region Utilidades Comunes
+    protected float GetRandomCooldown()
+        => new float[] { cooldownShort, cooldownMedium, cooldownLong }[Random.Range(0, 3)];
 
-    private void HandleLocomotion()
+    protected void HandleLocomotion()
     {
         if (animCtrl == null || agent == null || !agent.enabled) return;
 
         Vector3 moveDir = isAttacking ? transform.forward : agent.velocity;
         if (moveDir.sqrMagnitude < 0.01f) { animCtrl.h = 0; animCtrl.v = 0; return; }
 
-        float angle = Mathf.Atan2(moveDir.x, moveDir.z) * Mathf.Rad2Deg;
-        angle -= 45f;
+        float angle = Mathf.Atan2(moveDir.x, moveDir.z) * Mathf.Rad2Deg - 45f;
         if (angle < 0) angle += 360f;
 
         if (angle < 22.5f || angle >= 337.5f) { animCtrl.h = 0; animCtrl.v = 1; }
@@ -309,7 +298,7 @@ public class AporiaEnemy : MonoBehaviour
         else { animCtrl.h = -1; animCtrl.v = 1; }
     }
 
-    private void HandlePatrol()
+    protected void HandlePatrol()
     {
         wanderTimer += Time.deltaTime;
         if (wanderTimer >= wanderWaitTime)
@@ -321,7 +310,7 @@ public class AporiaEnemy : MonoBehaviour
         }
     }
 
-    private void ApplyKnockback(Transform target)
+    protected void ApplyKnockback(Transform target)
     {
         Vector3 dir = (target.position - transform.position).normalized;
         dir.y = 0;
@@ -335,39 +324,56 @@ public class AporiaEnemy : MonoBehaviour
         while (t < 0.2f) { t += Time.deltaTime; cc?.Move(force * Time.deltaTime); yield return null; }
     }
 
-    private void PlayDamageSFX()
+    protected IEnumerator DeactivateAfterDelay(GameObject obj, float delay)
     {
-        if (audioSource && damageSFX) audioSource.PlayOneShot(damageSFX);
-        StartCoroutine(DamageAmountFlash());
+        yield return new WaitForSeconds(delay);
+        if (obj != null) obj.SetActive(false);
     }
 
-    private IEnumerator DamageAmountFlash()
+    protected void PlayDamageSFX()
     {
-        SpriteRenderer rend = animCtrl.GetComponent<SpriteRenderer>();
+        if (audioSource && damageSFX) audioSource.PlayOneShot(damageSFX);
+        if (flashCoroutine != null) StopCoroutine(flashCoroutine);
+        flashCoroutine = StartCoroutine(DamageFlash());
+    }
+
+    private Coroutine flashCoroutine;
+
+    private IEnumerator DamageFlash()
+    {
+        SpriteRenderer rend = animCtrl?.GetComponent<SpriteRenderer>();
         if (!rend) yield break;
+
         rend.material.SetFloat("_Amount", 1f);
         yield return new WaitForSeconds(0.15f);
         rend.material.SetFloat("_Amount", 0f);
+        flashCoroutine = null;
     }
 
-    private void HandleDeath(GameObject e)
+    private void ResetDamageFlash()
     {
-        if (e != gameObject) return;
-        if (audioSource && deathSFX) audioSource.PlayOneShot(deathSFX);
-        animCtrl?.PlayDeath();
-        agent.enabled = false;
-        this.enabled = false;
+        if (flashCoroutine != null)
+        {
+            StopCoroutine(flashCoroutine);
+            flashCoroutine = null;
+        }
+        SpriteRenderer rend = animCtrl?.GetComponent<SpriteRenderer>();
+        if (rend != null) rend.material.SetFloat("_Amount", 0f);
     }
 
-    private void HandleAnimEvents(string eventName)
+    protected virtual void HandleAnimEvents(string eventName)
     {
-        if (eventName == "OnAttackHit") OnAttackHit();
+        if (eventName == "OnAttackHit")
+        {
+            animHitFired = true;
+            OnAttackHit();
+        }
     }
     #endregion
 
     #region Gizmos
 #if UNITY_EDITOR
-    private void OnDrawGizmos()
+    protected virtual void OnDrawGizmos()
     {
         Vector3 center = transform.position + Vector3.up * 0.1f;
         float radius = 1.5f;
@@ -403,10 +409,9 @@ public class AporiaEnemy : MonoBehaviour
         }
     }
 
-    private void OnGUI()
+    protected virtual void OnGUI()
     {
         if (!Application.isPlaying) return;
-
         string dirLabel = GetDirectionLabel();
         if (string.IsNullOrEmpty(dirLabel)) return;
 
@@ -415,11 +420,12 @@ public class AporiaEnemy : MonoBehaviour
         if (screen.z <= 0) return;
 
         GUI.color = Color.yellow;
-        GUIStyle style = new GUIStyle(GUI.skin.label);
-        style.fontSize = 14;
-        style.fontStyle = FontStyle.Bold;
-        style.alignment = TextAnchor.MiddleCenter;
-
+        GUIStyle style = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 14,
+            fontStyle = FontStyle.Bold,
+            alignment = TextAnchor.MiddleCenter
+        };
         Vector2 size = new Vector2(80, 20);
         Rect rect = new Rect(screen.x - size.x * 0.5f, Screen.height - screen.y - size.y * 0.5f, size.x, size.y);
         GUI.Label(rect, dirLabel, style);
@@ -428,13 +434,10 @@ public class AporiaEnemy : MonoBehaviour
     private string GetDirectionLabel()
     {
         if (agent == null || !agent.enabled) return "";
-
         Vector3 vel = agent.velocity;
         if (vel.sqrMagnitude < 0.01f) return "IDLE";
 
-        float angle = Mathf.Atan2(vel.x, vel.z) * Mathf.Rad2Deg;
-        angle -= 45f;
-
+        float angle = Mathf.Atan2(vel.x, vel.z) * Mathf.Rad2Deg - 45f;
         if (angle < 0) angle += 360f;
 
         if (angle < 22.5f || angle >= 337.5f) return "UP";
