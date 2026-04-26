@@ -4,7 +4,7 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
 {
     public enum ActionState
     {
-        run, dash, attack, death
+        run, dash, attack, death, damage
     }
 
     [Header("State Flags")]
@@ -50,6 +50,7 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
         
     }
 
+#region Public Actions
     void PlayAttack()
     {
         PlayState(ActionState.attack, AnimPriority.attack);
@@ -76,15 +77,23 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
         PlayState(ActionState.death, AnimPriority.bind);
     }
 
+    public void PlayDamage()
+    {
+        PlayState(ActionState.damage, AnimPriority.damage);
+    }
+#endregion
+
     protected override string ResolveFullID(string baseID, string direction)
     {
         return baseID;
     }
 
+#region Event Void
     protected override void OnAnimationEvent(string ev)
     {
         //AQUI PONES LA LOGICA QUE NECESITES PARA LLAMAR EVENTOS POR NOMBRE
     }
+#endregion
 
     protected override void OnFinishedAnimation()
     {
@@ -108,6 +117,7 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
 
         if(Input.GetKeyDown(KeyCode.Space)) PlayDash();
         if(Input.GetKeyDown(KeyCode.G)) PlayAttack();
+        if(Input.GetKeyDown(KeyCode.L)) PlayDamage();
     }   
 
 

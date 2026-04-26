@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using UnityEngine;
 
 public class StaticAnimCtrl : MonoBehaviour
@@ -24,7 +25,7 @@ public class StaticAnimCtrl : MonoBehaviour
 
     void Update()
     {
-        TESTinputs();
+        // TESTinputs();
     }
 
     public void PlayShoot()
@@ -50,14 +51,19 @@ public class StaticAnimCtrl : MonoBehaviour
         anim.Play("TP out");
     }
 
-    public void restoreOriginalMaterials()
-    {
-        mesh.sharedMaterials = originalMaterials;
-    }
 
     public void PlayTPin()
     {
         anim.Play("TP in");
+    }
+    public void restoreOriginalMaterials() //EVENTO AL FINAL DE PLAY TP IN
+    {
+        mesh.sharedMaterials = originalMaterials;
+    }
+
+    public void PlayDamage()
+    {
+        anim.SetTrigger("Damage");
     }
 
     void TESTinputs()
@@ -66,6 +72,7 @@ public class StaticAnimCtrl : MonoBehaviour
         if(Input.GetKeyDown(KeyCode.Space)) PlayTPout();
         if(Input.GetKeyDown(KeyCode.M)) PlayTPin();
         if(Input.GetKeyDown(KeyCode.B)) PlayDeath();
+        if(Input.GetKeyDown(KeyCode.L)) PlayDamage();
      }
 
 
