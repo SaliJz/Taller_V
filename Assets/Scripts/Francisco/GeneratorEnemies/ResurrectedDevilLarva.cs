@@ -85,7 +85,6 @@ public class ResurrectedDevilLarva : MonoBehaviour
 
         if (agent) agent.enabled = false;
 
-        if (health) health.Die();
-        else Destroy(gameObject);
+        Destroy(gameObject);
     }
 }

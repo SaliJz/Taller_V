@@ -64,9 +64,9 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     [Header("Counter Attack System")]
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private float autoAimRange = 20f;
-    [SerializeField] private float multiplierYoung = 1.5f;
-    [SerializeField] private float multiplierAdult = 2.0f;
-    [SerializeField] private float multiplierElder = 2.5f;
+    //[SerializeField] private float multiplierYoung = 1.5f;
+    //[SerializeField] private float multiplierAdult = 2.0f;
+    //[SerializeField] private float multiplierElder = 2.5f;
 
     #endregion
 
