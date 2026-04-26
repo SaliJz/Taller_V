@@ -118,18 +118,29 @@ public class BishopPiece : BoardPiece
     #region Attack Flow
     private IEnumerator AttackWindup()
     {
-        ShowPathLine(currentCoord, committedTargetCoord);
+        ShowPathLine(currentCoord, committedTargetCoord); 
+
+        Vector3 targetWorldPos = boardManager.GetWorldPosFromCoord(committedTargetCoord);
+        targetWorldPos.y = transform.position.y;
+
         float elapsed = 0f;
         while (elapsed < attackWindupTime)
         {
             if (isStunned) { HideTrail(); yield break; }
+            LookAtTarget(targetWorldPos, rotationSpeed);
             elapsed += Time.deltaTime;
             yield return null;
         }
+
+        Vector3 attackDirection = (targetWorldPos - transform.position).normalized;
+
         currentState = AIState.Moving;
+        attackComponent.SetAttacking(true);
         yield return StartCoroutine(MoveRoutine(committedTargetCoord, attackMoveSpeed));
+        attackComponent.SetAttacking(false);
+
         HideTrail();
-        attackComponent.ForceHitCheck();
+        attackComponent.ForceHitCheck(attackDirection);
         currentState = AIState.Patrolling;
     }
     #endregion
@@ -137,11 +148,25 @@ public class BishopPiece : BoardPiece
     #region Movement
     private IEnumerator MoveRoutine(Vector2Int targetCoord, float speed)
     {
-        if (!boardManager.TileExists(targetCoord) || boardManager.IsTileOccupied(targetCoord)) yield break;
+        if (!boardManager.TileExists(targetCoord)) yield break;
+        if (boardManager.IsTileOccupied(targetCoord)) yield break;
+
+        Vector2Int diff = targetCoord - currentCoord;
+        Vector2Int dir = new Vector2Int(
+            diff.x == 0 ? 0 : (int)Mathf.Sign(diff.x),
+            diff.y == 0 ? 0 : (int)Mathf.Sign(diff.y));
+        Vector2Int check = currentCoord + dir;
+        while (check != targetCoord)
+        {
+            if (!boardManager.TileExists(check)) yield break;
+            check += dir;
+        }
+
         isMoving = true;
         currentTargetWorldPos = boardManager.GetWorldPosFromCoord(targetCoord);
         currentTargetWorldPos.y = transform.position.y;
         UpdateBoardPosition(targetCoord);
+
         while (Vector3.Distance(transform.position, currentTargetWorldPos) > 0.05f)
         {
             if (isStunned) { isMoving = false; yield break; }

@@ -163,7 +163,10 @@ public abstract class BoardPiece : MonoBehaviour
 
     private IEnumerator KnockbackRoutine()
     {
-        Vector2Int retreatDir = -lastMoveDir;
+        Vector2Int retreatDir = Vector2Int.zero;
+        if (lastMoveDir.x != 0) retreatDir.x = -(int)Mathf.Sign(lastMoveDir.x);
+        if (lastMoveDir.y != 0) retreatDir.y = -(int)Mathf.Sign(lastMoveDir.y);
+
         Vector2Int backCoord = currentCoord + retreatDir;
 
         if (!boardManager.TileExists(backCoord) || boardManager.IsTileOccupied(backCoord))
@@ -188,7 +191,6 @@ public abstract class BoardPiece : MonoBehaviour
 
             float elapsed = 0f;
             Vector3 startPos = transform.position;
-
             while (elapsed < 0.2f)
             {
                 transform.position = Vector3.Lerp(startPos, targetPos, elapsed / 0.2f);

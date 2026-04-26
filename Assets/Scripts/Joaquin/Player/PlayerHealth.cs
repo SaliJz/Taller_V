@@ -1125,14 +1125,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     #region Legacy & Experimental Features
 
-    /*
-    public float GetKnockbackResistance()
-    {
-        if (statsManager == null) return 1f;
+    //public float GetKnockbackResistance()
+    //{
+    //    if (statsManager == null) return 1f;
 
-        float resistance = statsManager.GetStat(StatType.KnockbackReceived);
-        return resistance > 0f ? resistance : 1f;
-    }
+    //    float resistance = statsManager.GetStat(StatType.KnockbackReceived);
+    //    return resistance > 0f ? resistance : 1f;
+    //}
 
     public void ApplyKnockback(Vector3 direction, float force, float duration)
     {
@@ -1161,7 +1160,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             combatActionManager.InterruptCombatActions();
         }
 
-        bool wasAbleToMove = true;
         playerMovement.SetCanMove(false);
 
         float elapsedTime = 0f;
@@ -1170,7 +1168,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         while (elapsedTime < duration)
         {
             float t = elapsedTime / duration;
-            float currentForce = Mathf.Lerp(force, 0f, t); 
+            float currentForce = Mathf.Lerp(force, 0f, t);
 
             Vector3 movement = direction.normalized * currentForce * Time.deltaTime;
 
@@ -1187,7 +1185,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         ReportDebug("Knockback finalizado.", 1);
     }
-    */
 
     /*
     /// <summary>

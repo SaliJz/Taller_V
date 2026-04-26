@@ -119,9 +119,10 @@ public class KnightPiece : BoardPiece
     {
         if (!boardManager.TileExists(targetCoord) || boardManager.IsTileOccupied(targetCoord)) yield break;
 
-        isMoving = true;
-
         Vector2Int intermediateCoord = GetIntermediateLPoint(currentCoord, targetCoord);
+        if (!boardManager.TileExists(intermediateCoord)) yield break; 
+
+        isMoving = true;
 
         Vector3 intermediatePos = boardManager.GetWorldPosFromCoord(intermediateCoord);
         Vector3 finalPos = boardManager.GetWorldPosFromCoord(targetCoord);
@@ -175,18 +176,29 @@ public class KnightPiece : BoardPiece
     #region Attack & Patrol
     private IEnumerator AttackWindup()
     {
-        ShowKnightLPath(currentCoord, committedTargetCoord);
+        ShowKnightLPath(currentCoord, committedTargetCoord); 
+
+        Vector3 targetWorldPos = boardManager.GetWorldPosFromCoord(committedTargetCoord);
+        targetWorldPos.y = transform.position.y;
+
         float elapsed = 0f;
         while (elapsed < attackWindupTime)
         {
             if (isStunned) { HideTrail(); yield break; }
+            LookAtTarget(targetWorldPos, rotationSpeed);
             elapsed += Time.deltaTime;
             yield return null;
         }
+
+        Vector3 attackDirection = (targetWorldPos - transform.position).normalized;
+
         currentState = AIState.Moving;
+        attackComponent.SetAttacking(true);
         yield return StartCoroutine(MoveRoutine(committedTargetCoord, attackMoveSpeed));
+        attackComponent.SetAttacking(false);
+
         HideTrail();
-        attackComponent.ForceHitCheck();
+        attackComponent.ForceHitCheck(attackDirection);
         currentState = AIState.Patrolling;
     }
 
@@ -207,18 +219,29 @@ public class KnightPiece : BoardPiece
     public override bool CanSeePlayer(Vector2Int playerCoord)
     {
         Vector2Int diff = playerCoord - currentCoord;
-        foreach (var m in knightMoves) if (m == diff) return true;
-        return false;
+        bool isKnightMove = false;
+        foreach (var m in knightMoves) if (m == diff) isKnightMove = true;
+
+        if (!isKnightMove) return false;
+
+        Vector2Int intermediate = GetIntermediateLPoint(currentCoord, playerCoord);
+        return boardManager.TileExists(intermediate);
     }
 
     private Vector2Int GetBestMoveTowards(Vector2Int target)
     {
         var best = new List<Vector2Int>();
         float minDist = float.MaxValue;
+
         foreach (var m in knightMoves)
         {
             Vector2Int test = currentCoord + m;
+
             if (!boardManager.TileExists(test) || boardManager.IsTileOccupied(test)) continue;
+
+            Vector2Int intermediate = GetIntermediateLPoint(currentCoord, test);
+            if (!boardManager.TileExists(intermediate)) continue;
+
             float dist = Vector2Int.Distance(test, target);
             if (dist < minDist) { minDist = dist; best.Clear(); best.Add(test); }
         }

@@ -7,8 +7,8 @@ public class ChessPieceAttack : MonoBehaviour
     #region Settings
 
     [Header("Damage")]
-    [SerializeField] private float damage = 10f;
-    [SerializeField] private float damageCooldown = 1f;
+    [SerializeField] private float pushForce = 10f;
+    [SerializeField] private float duration = 1f;
 
     [Header("Hitbox")]
     [SerializeField] private Vector3 hitboxOffset = new Vector3(0f, 0.1f, 0f);
@@ -26,6 +26,7 @@ public class ChessPieceAttack : MonoBehaviour
 
     #region State
 
+    private bool isAttacking = false;
     private float cooldownTimer = 0f;
     private bool hitThisFrame = false;
     private BoardPiece piece;
@@ -52,39 +53,47 @@ public class ChessPieceAttack : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!piece.IsMoving) return;
+        if (!isAttacking) return;
         if (cooldownTimer > 0f) return;
         if (!IsInLayerMask(other.gameObject, playerLayer)) return;
 
-        IDamageable damageable = other.GetComponent<IDamageable>()
-                              ?? other.GetComponentInParent<IDamageable>();
-        if (damageable == null) return;
+        PlayerHealth playerHealth = other.GetComponent<PlayerHealth>()
+                                 ?? other.GetComponentInParent<PlayerHealth>();
+        if (playerHealth == null) return;
+
+        Vector3 knockDir = (other.transform.position - transform.position).normalized;
+        knockDir.y = 0;
 
         hitThisFrame = true;
-        damageable.TakeDamage(damage);
-        cooldownTimer = damageCooldown;
+        playerHealth.ApplyKnockback(knockDir, pushForce, duration);
+        cooldownTimer = duration;
     }
 
     private void OnTriggerStay(Collider other)
     {
-        if (!piece.IsMoving) return;
+        if (!isAttacking) return;
         if (cooldownTimer > 0f) return;
         if (!IsInLayerMask(other.gameObject, playerLayer)) return;
 
-        IDamageable damageable = other.GetComponent<IDamageable>()
-                              ?? other.GetComponentInParent<IDamageable>();
-        if (damageable == null) return;
+        PlayerHealth playerHealth = other.GetComponent<PlayerHealth>()
+                                 ?? other.GetComponentInParent<PlayerHealth>();
+        if (playerHealth == null) return;
+
+        Vector3 knockDir = (other.transform.position - transform.position).normalized;
+        knockDir.y = 0;
 
         hitThisFrame = true;
-        damageable.TakeDamage(damage);
-        cooldownTimer = damageCooldown;
+        playerHealth.ApplyKnockback(knockDir, pushForce, duration);
+        cooldownTimer = duration;
     }
 
     #endregion
 
     #region Attack
 
-    public void ForceHitCheck()
+    public void SetAttacking(bool value) => isAttacking = value;
+
+    public void ForceHitCheck(Vector3 attackDirection)
     {
         Vector3 worldCenter = transform.TransformPoint(hitboxOffset);
         Vector3 worldHalfExtents = Vector3.Scale(hitboxSize * 0.5f, transform.lossyScale);
@@ -92,13 +101,15 @@ public class ChessPieceAttack : MonoBehaviour
 
         foreach (var col in hits)
         {
-            IDamageable damageable = col.GetComponent<IDamageable>()
-                                  ?? col.GetComponentInParent<IDamageable>();
-            if (damageable != null)
+            PlayerHealth playerHealth = col.GetComponent<PlayerHealth>()
+                                     ?? col.GetComponentInParent<PlayerHealth>();
+            if (playerHealth != null)
             {
+                Vector3 knockDir = attackDirection.normalized;
+                knockDir.y = 0;
+                playerHealth.ApplyKnockback(knockDir, pushForce, duration);
                 hitThisFrame = true;
-                damageable.TakeDamage(damage);
-                cooldownTimer = damageCooldown;
+                cooldownTimer = duration;
                 break;
             }
         }
