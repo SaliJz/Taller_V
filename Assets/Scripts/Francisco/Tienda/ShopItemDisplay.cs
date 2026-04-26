@@ -157,7 +157,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     private void AttemptPurchase()
     {
-        Debug.Log($"[ShopItemDisplay] Interaccion detectada para: {shopItemData.itemName}.");
+        Debug.Log($"[ShopItemDisplay] Interacción detectada para: {shopItemData.itemName}.");
         if (!shopManager.CanAttemptPurchase()) return;
 
         bool purchaseSuccessful = shopManager.PurchaseItem(shopItemData);
@@ -176,7 +176,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     private void OnPurchaseCancelled()
     {
-        // El jugador canceló el reemplazo: reactivar para que pueda reintentar
+        // En caso el jugador canceló el reemplazo, reactiva para que pueda reintentar
         isPlayerInProximity = true;
     }
 

@@ -91,7 +91,8 @@ public class ShopManager : MonoBehaviour
 
     private System.Action pendingPurchaseCallback;
     private System.Action pendingCancelCallback;
-    public bool HasPendingReplacement => pendingPurchaseCallback != null;
+    private bool hasPendingReplacement;
+    public bool HasPendingReplacement => hasPendingReplacement;
 
     private float lastPurchaseTime;
     private bool forceGagans = false;
@@ -686,7 +687,11 @@ public class ShopManager : MonoBehaviour
             if (slotIndex >= 0)
             {
                 bool canProceed = InventoryUIManager.Instance.RequestMechanicItemPurchase(item, slotIndex, this);
-                if (!canProceed) return false;
+                if (!canProceed) 
+                { 
+                    hasPendingReplacement = true; 
+                    return false; 
+                }
             }
         }
 
@@ -776,6 +781,7 @@ public class ShopManager : MonoBehaviour
         pendingCancelCallback?.Invoke();
         pendingCancelCallback = null;
         pendingPurchaseCallback = null;
+        hasPendingReplacement = false;
     }
 
     /// <summary>
@@ -794,7 +800,8 @@ public class ShopManager : MonoBehaviour
 
         pendingPurchaseCallback?.Invoke();
         pendingPurchaseCallback = null;
-        pendingCancelCallback = null; // limpiar también el cancel
+        pendingCancelCallback = null;
+        hasPendingReplacement = false;
     }
 
     /// <summary>

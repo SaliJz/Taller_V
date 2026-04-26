@@ -29,6 +29,41 @@ public static class VFXHelper
     // API pública
 
     /// <summary>
+    /// Reproduce un ParticleSystem de forma segura si el GameObject está activo.
+    /// </summary>
+    public static void SafePlay(ParticleSystem ps)
+    {
+        if (ps == null || !ps.gameObject.activeInHierarchy) return;
+        ps.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+        ps.Clear(false);
+        ps.Play();
+    }
+
+    /// <summary>
+    /// Detiene un ParticleSystem de forma segura.
+    /// </summary>
+    /// <param name="clear">Si true, limpia las partículas existentes.</param>
+    public static void SafeStop(ParticleSystem ps, bool clear = false)
+    {
+        if (ps == null) return;
+        var stopBehavior = clear
+            ? ParticleSystemStopBehavior.StopEmittingAndClear
+            : ParticleSystemStopBehavior.StopEmitting;
+        ps.Stop(false, stopBehavior);
+        if (clear) ps.Clear(false);
+    }
+
+    /// <summary>
+    /// Activa o desactiva la emisión de un TrailRenderer de forma segura.
+    /// </summary>
+    public static void SafeSetEmitting(TrailRenderer trail, bool emitting)
+    {
+        if (trail == null) return;
+        trail.emitting = emitting;
+        if (!emitting) trail.Clear();
+    }
+
+    /// <summary>
     /// Para el ParticleSystem de forma segura y destruye su GameObject.
     /// La corrutina corre en el runner persistente: nunca se invalida aunque
     /// el objeto padre del PS sea destruido entre frames.

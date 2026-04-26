@@ -7,6 +7,14 @@ using UnityEngine;
 /// </summary>
 public class Shield : MonoBehaviour
 {
+    #region Enums & Structs
+
+    private enum ShieldState { Inactive, Thrown, Returning, Rebounding }
+
+    #endregion
+
+    #region Inspector - Core Stats Settings
+
     [Header("Stats")]
     [SerializeField] private int attackDamage = 10;
     [SerializeField] private float baseSpeed = 25f;
@@ -16,9 +24,12 @@ public class Shield : MonoBehaviour
     [SerializeField] private LayerMask collisionLayers;
 
     [Header("Dynamic Stats")]
-    [SerializeField] private float baseReturnSpeedMultiplier = 1.2f; 
-    [SerializeField] private float currentReturnSpeedMultiplier = 1.2f; 
-    private PlayerStatsManager cachedStatsManager;
+    [SerializeField] private float baseReturnSpeedMultiplier = 1.2f;
+    [SerializeField] private float currentReturnSpeedMultiplier = 1.2f;
+
+    #endregion
+
+    #region Inspector - Combat & Ability Settings
 
     [Header("Rebound Settings")]
     [SerializeField] private bool canRebound = true;
@@ -26,6 +37,26 @@ public class Shield : MonoBehaviour
     [SerializeField] private int maxRebounds = 2;
     [SerializeField] private float reboundDetectionRadius = 15f;
     [SerializeField] private LayerMask enemyLayer;
+
+    [Header("Pierce Settings (Elder)")]
+    [SerializeField] private bool canPierce = false;
+    [SerializeField] private int maxPierceTargets = 5;
+    [SerializeField] private int currentPierceCount = 0;
+
+    [Header("Knockback Settings (Adult)")]
+    [SerializeField] private float knockbackForce = 0f;
+
+    #endregion
+
+    #region Inspector - Visuals, Audio & VFX Settings
+
+    [Header("Sandy Wall Settings")]
+    [SerializeField] private LayerMask sandyWallLayer;
+    [SerializeField] private Renderer sandyVisualRenderer;
+    [SerializeField] private string shaderAmountProperty = "_Amount";
+    [SerializeField] private ParticleSystem sandyAreaVFX;
+    [SerializeField] private float sandyBounceDuration = 0.13f;
+    [SerializeField] private float sandyBounceSpeed = 12f;
 
     [Header("Shield Trail VFX")]
     [SerializeField] private ParticleSystem shieldTrailVFX;
@@ -40,21 +71,18 @@ public class Shield : MonoBehaviour
     [SerializeField] private AudioClip shieldImpactBerserkerClip;
     [SerializeField] private AudioClip shieldTrailBerserkerClip;
 
-    [Header("Pierce Settings (Elder)")]
-    [SerializeField] private bool canPierce = false;
-    [SerializeField] private int maxPierceTargets = 5;
-    [SerializeField] private int currentPierceCount = 0;
+    #endregion
 
-    [Header("Knockback Settings (Adult)")]
-    [SerializeField] private float knockbackForce = 0f;
+    #region Inspector - Debug Settings
 
-    private PlayerHealth.LifeStage currentLifeStage;
-
+    [Header("Debug")]
     [SerializeField] private bool debugMode = false;
 
-    private enum ShieldState { Inactive, Thrown, Returning, Rebounding }
-    private ShieldState currentState = ShieldState.Inactive;
+    #endregion
 
+    #region Internal State
+
+    private ShieldState currentState = ShieldState.Inactive;
     private float currentSpeed;
     private Vector3 startPosition;
     private Vector3 lastPosition;
@@ -63,6 +91,15 @@ public class Shield : MonoBehaviour
     private List<Transform> hitTargets = new List<Transform>();
 
     private PlayerShieldController owner;
+    private PlayerStatsManager cachedStatsManager;
+    private PlayerHealth.LifeStage currentLifeStage;
+
+    private bool isSandy = false;
+    private float sandyBounceTimer = 0f;
+    private Vector3 sandyBounceDir = Vector3.zero;
+    private Vector3 currentMoveDir = Vector3.zero;
+    private Collider currentSandyWall = null;
+    private Material sandyVisualMat = null;
 
     private Coroutine deactivationCoroutine;
     private Material shieldTrailVFXMatInstance;
@@ -71,10 +108,129 @@ public class Shield : MonoBehaviour
     private bool isBerserkerMode = false;
     private float storedToughnessBonus = 0f;
 
+    #endregion
+
+    #region Unity Lifecycle
+
     private void Awake()
     {
         InitializeShieldVFX();
     }
+
+    /// <summary>
+    /// Función que maneja el movimiento y estado del escudo en cada frame.
+    /// </summary>
+    private void Update()
+    {
+        if (currentState == ShieldState.Inactive) return;
+
+        currentSpeed = Mathf.Min(currentSpeed + acceleration * Time.deltaTime, maxSpeed);
+
+        if (currentState == ShieldState.Thrown)
+        {
+            currentMoveDir = transform.forward;
+            transform.position += currentMoveDir * currentSpeed * Time.deltaTime;
+            PlayerCombatEvents.RaiseShieldMoved(transform.position, attackDamage);
+
+            if (Vector3.Distance(startPosition, transform.position) >= maxDistance)
+            {
+                StartReturning();
+            }
+        }
+        else if (currentState == ShieldState.Rebounding)
+        {
+            if (currentTarget == null)
+            {
+                StartReturning();
+                return;
+            }
+
+            Vector3 directionToTarget = (currentTarget.position - transform.position).normalized;
+            currentMoveDir = directionToTarget;
+            transform.forward = directionToTarget;
+            transform.position += currentMoveDir * currentSpeed * Time.deltaTime;
+            PlayerCombatEvents.RaiseShieldMoved(transform.position, attackDamage);
+        }
+        else if (currentState == ShieldState.Returning)
+        {
+            Vector3 directionToTarget = (returnTarget.position - transform.position).normalized;
+            currentMoveDir = directionToTarget;
+            float returnSpeed = currentSpeed * currentReturnSpeedMultiplier;
+            transform.position += currentMoveDir * returnSpeed * Time.deltaTime;
+            PlayerCombatEvents.RaiseShieldMoved(transform.position, attackDamage);
+
+            if (Vector3.Distance(transform.position, returnTarget.position) < 1.0f)
+            {
+                if (deactivationCoroutine == null)
+                {
+                    deactivationCoroutine = StartCoroutine(SafeDeactivateShieldCoroutine());
+                }
+            }
+        }
+
+        if (currentState != ShieldState.Inactive)
+        {
+            if (sandyBounceTimer > 0f)
+            {
+                sandyBounceTimer -= Time.deltaTime;
+                float t = Mathf.Clamp01(sandyBounceTimer / sandyBounceDuration);
+                transform.position += sandyBounceDir * (sandyBounceSpeed * t * Time.deltaTime);
+            }
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (shieldTrailVFXMatInstance != null)
+        {
+            Destroy(shieldTrailVFXMatInstance);
+            shieldTrailVFXMatInstance = null;
+        }
+
+        if (shieldTrailMatInstance != null)
+        {
+            Destroy(shieldTrailMatInstance);
+            shieldTrailMatInstance = null;
+        }
+
+        if (sandyVisualMat != null)
+        {
+            Destroy(sandyVisualMat);
+            sandyVisualMat = null;
+        }
+    }
+
+    #endregion
+
+    #region Initialization & Data Sync
+
+    private void UpdateDynamicStatsFromManager()
+    {
+        if (cachedStatsManager == null)
+        {
+            currentReturnSpeedMultiplier = baseReturnSpeedMultiplier;
+            return;
+        }
+
+        float returnSpeedMod = cachedStatsManager.GetStat(StatType.ShieldReturnSpeed);
+        if (returnSpeedMod <= 0f) returnSpeedMod = 1f;
+
+        currentReturnSpeedMultiplier = baseReturnSpeedMultiplier * returnSpeedMod;
+
+        float pushForceMod = cachedStatsManager.GetStat(StatType.ShieldPushForce);
+
+        if (knockbackForce > 0f)
+        {
+            knockbackForce += pushForceMod;
+            knockbackForce = Mathf.Max(0f, knockbackForce);
+        }
+
+        ReportDebug($"Stats dinámicos actualizados: ReturnSpeed={currentReturnSpeedMultiplier}x, KnockbackForce={knockbackForce} (+{pushForceMod})", 1);
+    }
+
+    #endregion
+
+    #region Public API
 
     /// <summary>
     /// Función que es llamada por el PlayerShieldController para lanzar el escudo.
@@ -82,9 +238,10 @@ public class Shield : MonoBehaviour
     /// <param name="owner"> Referencia al controlador del jugador </param>
     /// <param name="direction"> Orientación del escudo en la dirección del lanzamiento </param>
     /// <param name="canRebound"> Indica si el escudo puede rebotar entre enemigos </param>
-    public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds,
-   float reboundDetectionRadius, float damage, float speed, float distance,
-   bool canPierce, int maxPierceTargets, float knockbackForce, PlayerHealth.LifeStage lifeStage, bool isBerserker, float toughnessBonus)
+    public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds, 
+        float reboundDetectionRadius, float damage, float speed, float distance, 
+        bool canPierce, int maxPierceTargets, float knockbackForce, PlayerHealth.LifeStage lifeStage, 
+        bool isBerserker, float toughnessBonus)
     {
         if (deactivationCoroutine != null)
         {
@@ -143,83 +300,19 @@ public class Shield : MonoBehaviour
         ReportDebug($"Escudo lanzado en modo {lifeStage}: Daño={damage}, Pierce={canPierce}, Rebote={canRebound}, ReturnSpeed={currentReturnSpeedMultiplier}x", 1);
     }
 
-    private void UpdateDynamicStatsFromManager()
-    {
-        if (cachedStatsManager == null)
-        {
-            currentReturnSpeedMultiplier = baseReturnSpeedMultiplier;
-            return;
-        }
+    #endregion
 
-        float returnSpeedMod = cachedStatsManager.GetStat(StatType.ShieldReturnSpeed);
-        if (returnSpeedMod <= 0f) returnSpeedMod = 1f; 
-
-        currentReturnSpeedMultiplier = baseReturnSpeedMultiplier * returnSpeedMod;
-
-        float pushForceMod = cachedStatsManager.GetStat(StatType.ShieldPushForce);
-
-        if (knockbackForce > 0f)
-        {
-            knockbackForce += pushForceMod;
-            knockbackForce = Mathf.Max(0f, knockbackForce); 
-        }
-
-        ReportDebug($"Stats dinámicos actualizados: ReturnSpeed={currentReturnSpeedMultiplier}x, KnockbackForce={knockbackForce} (+{pushForceMod})", 1);
-    }
-
-    /// <summary>
-    /// Función que maneja el movimiento y estado del escudo en cada frame.
-    /// </summary>
-  private void Update()
-{
-    if (currentState == ShieldState.Inactive) return;
-
-    currentSpeed = Mathf.Min(currentSpeed + acceleration * Time.deltaTime, maxSpeed);
-
-    if (currentState == ShieldState.Thrown)
-    {
-        transform.position += transform.forward * currentSpeed * Time.deltaTime;
-        PlayerCombatEvents.RaiseShieldMoved(transform.position, attackDamage);
-
-        if (Vector3.Distance(startPosition, transform.position) >= maxDistance)
-        {
-            StartReturning();
-        }
-    }
-    else if (currentState == ShieldState.Rebounding)
-    {
-        if (currentTarget == null)
-        {
-            StartReturning();
-            return;
-        }
-
-        Vector3 directionToTarget = (currentTarget.position - transform.position).normalized;
-        transform.position += directionToTarget * currentSpeed * Time.deltaTime;
-        transform.forward = directionToTarget;
-        PlayerCombatEvents.RaiseShieldMoved(transform.position, attackDamage);
-    }
-    else if (currentState == ShieldState.Returning)
-    {
-        Vector3 directionToTarget = (returnTarget.position - transform.position).normalized;
-
-        float returnSpeed = currentSpeed * currentReturnSpeedMultiplier;
-        transform.position += directionToTarget * returnSpeed * Time.deltaTime;
-        PlayerCombatEvents.RaiseShieldMoved(transform.position, attackDamage);
-
-        if (Vector3.Distance(transform.position, returnTarget.position) < 1.0f)
-        {
-            if (deactivationCoroutine == null)
-            {
-                deactivationCoroutine = StartCoroutine(SafeDeactivateShieldCoroutine());
-            }
-        }
-    }
-}
+    #region Physics & Collision
 
     private void OnTriggerEnter(Collider other)
     {
         if (currentState == ShieldState.Inactive) return;
+
+        if (!isSandy && IsSandyWall(other))
+        {
+            EnterSandyState(other);
+            return; // no procesar como colisión normal
+        }
 
         if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
         {
@@ -230,7 +323,13 @@ public class Shield : MonoBehaviour
     private void OnTriggerExit(Collider other)
     {
         if (currentState == ShieldState.Inactive) return;
-     
+
+        if (isSandy && other == currentSandyWall)
+        {
+            ExitSandyState();
+            return;
+        }
+
         if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
         {
             if (hitTargets.Contains(other.transform))
@@ -239,6 +338,10 @@ public class Shield : MonoBehaviour
             }
         }
     }
+
+    #endregion
+
+    #region Combat & Hit Detection
 
     private void PerformHitDetection(Transform hitTransform)
     {
@@ -297,7 +400,7 @@ public class Shield : MonoBehaviour
                     {
                         tutorialDummy.TakeDamage(finalDamage, false, damageTypeForDummy);
                     }
-                    else if (iDamageable != null) 
+                    else if (iDamageable != null)
                     {
                         if (enemy.TryGetComponent<EnemyHealth>(out var eh) && storedToughnessBonus > 0)
                         {
@@ -405,6 +508,10 @@ public class Shield : MonoBehaviour
         }
     }
 
+    #endregion
+
+    #region Rebound System
+
     /// <summary>
     /// Función que encuentra el siguiente enemigo para rebotar.
     /// Solo busca en enemyLayer, no en collisionLayers general.
@@ -460,7 +567,51 @@ public class Shield : MonoBehaviour
         ReportDebug("Escudo retornando al jugador.", 1);
     }
 
-    #region VFX Methods
+    #endregion
+
+    #region Visual & Audio Effects
+
+    private void EnterSandyState(Collider wall)
+    {
+        isSandy = true;
+        currentSandyWall = wall;
+
+        SetSandyShaderAmount(1f);
+
+        sandyBounceDir = -currentMoveDir;
+        sandyBounceTimer = sandyBounceDuration;
+
+        VFXHelper.SafeStop(shieldTrailVFX, clear: true);
+        VFXHelper.SafeSetEmitting(shieldTrail, false);
+        VFXHelper.SafePlay(sandyAreaVFX);
+
+        ReportDebug("Sandy state ENTER: atravesando muro vertical.", 1);
+    }
+
+    private void ExitSandyState()
+    {
+        isSandy = false;
+        currentSandyWall = null;
+        sandyBounceTimer = 0f;
+        sandyBounceDir = Vector3.zero;
+
+        SetSandyShaderAmount(0f);
+
+        VFXHelper.SafeStop(sandyAreaVFX, clear: true);
+        VFXHelper.SafePlay(shieldTrailVFX);
+        VFXHelper.SafeSetEmitting(shieldTrail, true);
+
+        ReportDebug("Sandy state EXIT: escudo restaurado.", 1);
+    }
+
+    private void SetSandyShaderAmount(float value)
+    {
+        if (sandyVisualMat == null) return;
+        sandyVisualMat.SetFloat(shaderAmountProperty, value);
+    }
+
+    private bool IsSandyWall(Collider col)
+    => (sandyWallLayer.value & (1 << col.gameObject.layer)) > 0;
 
     /// <summary>
     /// Inicializa el sistema de VFX del escudo (partículas y trail renderer).
@@ -491,6 +642,15 @@ public class Shield : MonoBehaviour
 
         shieldTrail.emitting = false;
         shieldTrail.Clear();
+
+        if (sandyVisualRenderer != null && sandyVisualRenderer.sharedMaterial != null)
+        {
+            sandyVisualMat = new Material(sandyVisualRenderer.sharedMaterial);
+            sandyVisualRenderer.material = sandyVisualMat;
+            SetSandyShaderAmount(0f);
+        }
+
+        if (sandyAreaVFX != null) VFXHelper.SafeStop(sandyAreaVFX, clear: true);
     }
 
     /// <summary>
@@ -521,6 +681,8 @@ public class Shield : MonoBehaviour
 
     private IEnumerator SafeDeactivateShieldCoroutine()
     {
+        if (isSandy) ExitSandyState();
+
         owner.CatchShield();
         currentState = ShieldState.Inactive;
 
@@ -572,22 +734,9 @@ public class Shield : MonoBehaviour
         deactivationCoroutine = null;
     }
 
-    private void OnDestroy()
-    {
-        if (shieldTrailVFXMatInstance != null)
-        {
-            Destroy(shieldTrailVFXMatInstance);
-            shieldTrailVFXMatInstance = null;
-        }
-
-        if (shieldTrailMatInstance != null)
-        {
-            Destroy(shieldTrailMatInstance);
-            shieldTrailMatInstance = null;
-        }
-    }
-
     #endregion
+
+    #region Debugging
 
     private void OnDrawGizmos()
     {
@@ -638,4 +787,6 @@ public class Shield : MonoBehaviour
                 break;
         }
     }
+
+    #endregion
 }
