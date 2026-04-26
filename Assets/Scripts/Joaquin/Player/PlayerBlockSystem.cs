@@ -17,7 +17,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
     [SerializeField] private Transform shieldForwardOverride = null;
-    [SerializeField] private GameObject counterProjectilePrefab;
+    //[SerializeField] private GameObject counterProjectilePrefab;
     [SerializeField] private Slider durabilitySlider;
     [SerializeField] private Image durabilityFillImage;
     [SerializeField] private TextMeshProUGUI durabilityPercentageText;
@@ -342,7 +342,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
 
         if (willActuallyFire)
         {
-            FireCounterProjectile(isBroken: false);
+            //FireCounterProjectile(isBroken: false);
         }
         else
         {
@@ -369,7 +369,7 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
     {
         if (accumulatedDamage > 0)
         {
-            FireCounterProjectile(isBroken: true);
+            //FireCounterProjectile(isBroken: true);
         }
 
         StopBlocking(false);
@@ -443,70 +443,70 @@ public class PlayerBlockSystem : MonoBehaviour, PlayerControlls.IDefenseActions
         return 0f;
     }
 
-    private void FireCounterProjectile(bool isBroken)
-    {
-        if (counterProjectilePrefab == null)
-        {
-            if (debugMode) Debug.LogError("CounterProjectilePrefab no asignado en PlayerBlockSystem.");
-            return;
-        }
+    //private void FireCounterProjectile(bool isBroken)
+    //{
+    //    if (counterProjectilePrefab == null)
+    //    {
+    //        if (debugMode) Debug.LogError("CounterProjectilePrefab no asignado en PlayerBlockSystem.");
+    //        return;
+    //    }
 
-        if (playerHealth == null) return;
+    //    if (playerHealth == null) return;
 
-        float ageMultiplier = 1f;
-        switch (playerHealth.CurrentLifeStage)
-        {
-            case PlayerHealth.LifeStage.Young: ageMultiplier = multiplierYoung; break; // 150%
-            case PlayerHealth.LifeStage.Adult: ageMultiplier = multiplierAdult; break; // 200%
-            case PlayerHealth.LifeStage.Elder: ageMultiplier = multiplierElder; break; // 250%
-        }
+    //    float ageMultiplier = 1f;
+    //    switch (playerHealth.CurrentLifeStage)
+    //    {
+    //        case PlayerHealth.LifeStage.Young: ageMultiplier = multiplierYoung; break; // 150%
+    //        case PlayerHealth.LifeStage.Adult: ageMultiplier = multiplierAdult; break; // 200%
+    //        case PlayerHealth.LifeStage.Elder: ageMultiplier = multiplierElder; break; // 250%
+    //    }
 
-        float finalDamage = accumulatedDamage * ageMultiplier;
+    //    float finalDamage = accumulatedDamage * ageMultiplier;
 
-        if (isBroken)
-        {
-            finalDamage *= 1f;
-            //if (debugMode) Debug.Log("Escudo roto: Daño del proyectil reducido al 50%.");
-        }
+    //    if (isBroken)
+    //    {
+    //        finalDamage *= 1f;
+    //        //if (debugMode) Debug.Log("Escudo roto: Daño del proyectil reducido al 50%.");
+    //    }
 
-        Transform target = FindNearestEnemy();
-        Vector3 fireDirection;
-        bool hasTarget = false;
+    //    Transform target = FindNearestEnemy();
+    //    Vector3 fireDirection;
+    //    bool hasTarget = false;
 
-        if (target != null)
-        {
-            fireDirection = (target.position - GetSpawnPosition()).normalized;
-            fireDirection.y = 0;
-            if (fireDirection.sqrMagnitude < 0.001f) fireDirection = transform.forward;
-            else fireDirection.Normalize();
+    //    if (target != null)
+    //    {
+    //        fireDirection = (target.position - GetSpawnPosition()).normalized;
+    //        fireDirection.y = 0;
+    //        if (fireDirection.sqrMagnitude < 0.001f) fireDirection = transform.forward;
+    //        else fireDirection.Normalize();
 
-            hasTarget = true;
-        }
-        else
-        {
-            fireDirection = GetShieldForward();
-            fireDirection.y = 0;
-            fireDirection.Normalize();
-        }
+    //        hasTarget = true;
+    //    }
+    //    else
+    //    {
+    //        fireDirection = GetShieldForward();
+    //        fireDirection.y = 0;
+    //        fireDirection.Normalize();
+    //    }
 
-        if (playerMovement != null)
-        {
-            StopCounterRotation();
-            counterRotationCoroutine = StartCoroutine(HandleCounterRotation(fireDirection, hasTarget));
-        }
+    //    if (playerMovement != null)
+    //    {
+    //        StopCounterRotation();
+    //        counterRotationCoroutine = StartCoroutine(HandleCounterRotation(fireDirection, hasTarget));
+    //    }
 
-        var projObj = Instantiate(counterProjectilePrefab, GetSpawnPosition(), Quaternion.LookRotation(fireDirection));
-        var projScript = projObj.GetComponent<BlockCounterProjectile>();
+    //    var projObj = Instantiate(counterProjectilePrefab, GetSpawnPosition(), Quaternion.LookRotation(fireDirection));
+    //    var projScript = projObj.GetComponent<BlockCounterProjectile>();
 
-        if (projScript != null)
-        {
-            projScript.Initialize(finalDamage, fireDirection);
-        }
+    //    if (projScript != null)
+    //    {
+    //        projScript.Initialize(finalDamage, fireDirection);
+    //    }
 
-        if (debugMode) Debug.Log($"Contraataque disparado. Daño acumulado: {accumulatedDamage}, Final: {finalDamage}, Objetivo: {(target ? target.name : "Frente")}");
+    //    if (debugMode) Debug.Log($"Contraataque disparado. Daño acumulado: {accumulatedDamage}, Final: {finalDamage}, Objetivo: {(target ? target.name : "Frente")}");
 
-        accumulatedDamage = 0f;
-    }
+    //    accumulatedDamage = 0f;
+    //}
 
     private Transform FindNearestEnemy()
     {
