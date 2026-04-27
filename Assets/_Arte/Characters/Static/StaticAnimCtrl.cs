@@ -8,7 +8,6 @@ public class StaticAnimCtrl : MonoBehaviour
     [SerializeField] Material tpMaterial;
     [SerializeField] SkinnedMeshRenderer mesh;
 
-
     void Awake()
     {
         anim = gameObject.GetComponent<Animator>();
@@ -74,6 +73,4 @@ public class StaticAnimCtrl : MonoBehaviour
         if(Input.GetKeyDown(KeyCode.B)) PlayDeath();
         if(Input.GetKeyDown(KeyCode.L)) PlayDamage();
      }
-
-
 }

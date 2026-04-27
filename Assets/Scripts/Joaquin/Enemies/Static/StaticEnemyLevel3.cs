@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-public class StaticEnemyLevel3 : StaticEnemyBase
+public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
 {
     [Header("Static Level 3 - Reactive Evasion")]
     [SerializeField] private float evasionCooldown = 6f;
@@ -38,6 +38,30 @@ public class StaticEnemyLevel3 : StaticEnemyBase
     {
         base.InitializedEnemy();
         UpdateEvasionFeedback();
+    }
+
+    protected override IEnumerator ShootAfterDelayRoutine()
+    {
+        if (useRandomFireRate) fireRate = Random.Range(minFireRate, maxFireRate);
+
+        yield return new WaitForSeconds(fireRate);
+
+        if (!isDead && currentState != MorlockState.Patrol && currentState != MorlockState.Repositioning)
+        {
+            float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+            if (distanceToPlayer <= attackRange)
+            {
+                ForceFacePlayer();
+                if (visualCtrl != null) visualCtrl.PlayShoot(); // el evento de la anim dispara el proyectil
+            }
+        }
+
+        shootCoroutine = null;
+    }
+
+    public void HandleAnimEvents(string eventName)
+    {
+        if (eventName == "AnimEvent_Shoot") ExecuteProjectileSpawn();
     }
 
     protected override void OnBeforeTeleport(Vector3 fromPosition)

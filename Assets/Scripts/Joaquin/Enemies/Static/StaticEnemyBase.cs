@@ -675,6 +675,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         if (useRandomFireRate) fireRate = Random.Range(minFireRate, maxFireRate);
 
         yield return new WaitForSeconds(fireRate);
+        yield return new WaitForSeconds(animTeleportDelay);
 
         if (!isDead && currentState != MorlockState.Patrol && currentState != MorlockState.Repositioning)
         {
@@ -683,7 +684,6 @@ public abstract class StaticEnemyBase : MonoBehaviour
             {
                 ForceFacePlayer();
                 if (visualCtrl != null) visualCtrl.PlayShoot();
-                yield return new WaitForSeconds(animTeleportDelay);
                 ExecuteProjectileSpawn();
             }
         }

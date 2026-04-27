@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8844332338650799321}
   - component: {fileID: 2457936688128166585}
   - component: {fileID: 4134410627897049710}
+  - component: {fileID: 4975303043965799125}
   m_Layer: 0
   m_Name: S_LV3_Model
   m_TagString: Untagged
@@ -72,6 +73,19 @@ MonoBehaviour:
   originalMaterials: []
   tpMaterial: {fileID: 2100000, guid: 585e8d081252ed9438b72cede693b0b6, type: 2}
   mesh: {fileID: 5504885612706643710}
+--- !u!114 &4975303043965799125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 96676493688129304}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d302954649d0c624c8527aede8558203, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemy: {fileID: 0}
 --- !u!1 &386636513790962292
 GameObject:
   m_ObjectHideFlags: 0
@@ -2046,10 +2060,10 @@ MonoBehaviour:
   useRandomFireRate: 1
   minFireRate: 1.5
   maxFireRate: 3
-  projectileDamage: 5
+  minDamageIncrease: 1
   projectileSpeed: 12
   maxDamageIncrease: 15
-  maxRangeForDamageIncrease: 6
+  maxDistanceForDamageIncrease: 6
   maxDistanceForDamageStart: 15
   attackRange: 50
   canReturnToPatrol: 1
@@ -2078,7 +2092,7 @@ MonoBehaviour:
   teleportSFX: {fileID: 0}
   deathSFX: {fileID: 0}
   shootSFX: {fileID: 0}
-  animTeleportDelay: 1
+  animTeleportDelay: 0
   teleportVFX: {fileID: 0}
   teleportVFXHeightOffset: 1.5
   teleportVFXDurationToDestroy: 1.5
@@ -2089,6 +2103,11 @@ MonoBehaviour:
   residueDuration: 4
   residueDPS: 2
   residueRadius: 2
+  screenRenderer: {fileID: 0}
+  evasionReadyBorderColor: {r: 1, g: 0, b: 0, a: 1}
+  evasionCooldownBorderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  evasionSFX: {fileID: 0}
+  retaliatoryShootSFX: {fileID: 0}
 --- !u!114 &5838588693334080987
 MonoBehaviour:
   m_ObjectHideFlags: 0
