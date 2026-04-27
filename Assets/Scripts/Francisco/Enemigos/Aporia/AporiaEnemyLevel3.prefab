@@ -1744,7 +1744,6 @@ GameObject:
   - component: {fileID: 6263217996865602163}
   - component: {fileID: 1581452201337906434}
   - component: {fileID: 8629446803264125925}
-  - component: {fileID: 1840385813494748669}
   - component: {fileID: 9159611241233586929}
   - component: {fileID: 2400156836155920900}
   m_Layer: 7
@@ -1865,6 +1864,7 @@ MonoBehaviour:
   dashDuration: 0.5
   dashMaxDistance: 12
   preparationTime: 0.2
+  attackTransitionDelay: 0.1
   attackDamage: 15
   attackRadius: 2.5
   hitDelay: 0.35
@@ -1976,40 +1976,6 @@ MonoBehaviour:
   toughnessPercentageText: {fileID: 0}
   toughnessMultiplierText: {fileID: 0}
   toughnessUIGroup: {fileID: 1114294714380875708}
---- !u!114 &1840385813494748669
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7000052904529192738}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 120953a634ec616478c5722a12285e45, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  meshRenderers: []
-  spriteRenderers: []
-  useOriginalMaterials: 1
-  defaultMaterial: {fileID: 0}
-  blinkFlashMaterial: {fileID: 0}
-  blinkInterval: 0.03
-  blinkCount: 6
-  stunMaterial: {fileID: 2100000, guid: 9e980960b4627f14bb1ebfed5d685fec, type: 2}
-  stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  stunBlinkSpeed: 0.1
-  stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
-  stunVFXHeight: 2.5
-  stunSFX: {fileID: 0}
-  glowMaterial: {fileID: 2100000, guid: 76ef852df6134ca44b4c740b1d5ef9bd, type: 2}
-  glowIntensity: 2
-  damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
-  damageNumberParent: {fileID: 6356133736342314741}
-  normalColor: {r: 1, g: 0, b: 0, a: 1}
-  criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
-  audioSource: {fileID: 1208045150384965345}
-  normalHitSFX: {fileID: 0}
-  criticalHitSFX: {fileID: 0}
 --- !u!114 &9159611241233586929
 MonoBehaviour:
   m_ObjectHideFlags: 0

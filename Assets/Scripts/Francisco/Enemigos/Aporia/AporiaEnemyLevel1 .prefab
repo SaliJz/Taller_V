@@ -186,7 +186,6 @@ GameObject:
   - component: {fileID: 7811850655376459637}
   - component: {fileID: 1619879721751558932}
   - component: {fileID: 7436983276860157215}
-  - component: {fileID: 8124029636429142129}
   - component: {fileID: 2063845933142064047}
   - component: {fileID: 460031084482908728}
   m_Layer: 7
@@ -417,40 +416,6 @@ MonoBehaviour:
   toughnessPercentageText: {fileID: 0}
   toughnessMultiplierText: {fileID: 0}
   toughnessUIGroup: {fileID: 1761537986907358103}
---- !u!114 &8124029636429142129
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1476206699395584079}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 120953a634ec616478c5722a12285e45, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  meshRenderers: []
-  spriteRenderers: []
-  useOriginalMaterials: 1
-  defaultMaterial: {fileID: 0}
-  blinkFlashMaterial: {fileID: 0}
-  blinkInterval: 0.03
-  blinkCount: 6
-  stunMaterial: {fileID: 2100000, guid: 9e980960b4627f14bb1ebfed5d685fec, type: 2}
-  stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  stunBlinkSpeed: 0.1
-  stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
-  stunVFXHeight: 2.5
-  stunSFX: {fileID: 0}
-  glowMaterial: {fileID: 2100000, guid: 76ef852df6134ca44b4c740b1d5ef9bd, type: 2}
-  glowIntensity: 2
-  damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
-  damageNumberParent: {fileID: 3397889622662482923}
-  normalColor: {r: 1, g: 0, b: 0, a: 1}
-  criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
-  audioSource: {fileID: 4662593617215658811}
-  normalHitSFX: {fileID: 0}
-  criticalHitSFX: {fileID: 0}
 --- !u!114 &2063845933142064047
 MonoBehaviour:
   m_ObjectHideFlags: 0
