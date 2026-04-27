@@ -7,46 +7,95 @@ public class VerticalFloor : FloorBase
     [Header("Vertical Settings")]
     [SerializeField] private float expandedScaleMultiplier = 3f;
 
+    [Header("Layer Settings")]
+    [SerializeField] private string defaultLayerName = "Default";
+    [SerializeField] private string expandedLayerName = "Obstacle";
+
+    #endregion
+
+    #region State
+
+    private int defaultLayerIndex;
+    private int expandedLayerIndex;
+
+    #endregion
+
+    #region Unity Lifecycle
+
+    protected override void Awake()
+    {
+        base.Awake();
+
+        defaultLayerIndex = LayerMask.NameToLayer(defaultLayerName);
+        expandedLayerIndex = LayerMask.NameToLayer(expandedLayerName);
+
+        if (defaultLayerIndex < 0) Debug.LogWarning($"[VerticalFloor] Layer not found: {defaultLayerName}");
+        if (expandedLayerIndex < 0) Debug.LogWarning($"[VerticalFloor] Layer not found: {expandedLayerName}");
+    }
+
     #endregion
 
     #region FloorBase Overrides
 
-    protected override void SetTriggeredScale()
+    protected override void SetChildTriggeredScale()
     {
-        triggeredScale = new Vector3(
-            defaultScale.x,
-            defaultScale.y * expandedScaleMultiplier,
-            defaultScale.z);
+        childTriggeredScale = new Vector3(
+            childDefaultScale.x,
+            childDefaultScale.y * expandedScaleMultiplier,
+            childDefaultScale.z);
     }
 
     public override string GizmoAxisLabel => "Y (up)";
 
-    public override Vector3 GetTriggeredScale()
+    public override Vector3 GetTriggeredChildScale()
     {
+        Vector3 baseScale = Application.isPlaying
+            ? childDefaultScale
+            : (visualChild != null ? visualChild.transform.localScale : Vector3.one);
+
         return new Vector3(
-            defaultScale.x,
-            defaultScale.y * expandedScaleMultiplier,
-            defaultScale.z);
+            baseScale.x,
+            baseScale.y * expandedScaleMultiplier,
+            baseScale.z);
+    }
+
+    protected override void OnTransitionBegin(FloorState target)
+    {
+        if (target == FloorState.Triggered && expandedLayerIndex >= 0)
+            SetLayerRecursive(gameObject, expandedLayerIndex);
+    }
+
+    protected override void OnTransitionEnd(FloorState target)
+    {
+        if (target == FloorState.Default && defaultLayerIndex >= 0)
+            SetLayerRecursive(gameObject, defaultLayerIndex);
+    }
+
+    #endregion
+
+    #region Layer
+
+    private void SetLayerRecursive(GameObject go, int layer)
+    {
+        go.layer = layer;
+        foreach (Transform child in go.transform)
+            SetLayerRecursive(child.gameObject, layer);
     }
 
     #endregion
 
     #region Gizmos
 
-    protected override void OnDrawGizmosSelected()
+    protected override void DrawChildGizmos(BoxCollider col, bool selected, float alpha)
     {
-        base.OnDrawGizmosSelected();
+        Vector3 top = transform.position + transform.up * (col.size.y * 0.5f);
 
-        Vector3 top = transform.position + transform.up * (transform.localScale.y * 0.5f);
-
-        Gizmos.color = new Color(1f, 0.6f, 0f, 0.9f);
+        Gizmos.color = new Color(1f, 0.6f, 0f, alpha);
         Gizmos.DrawLine(top, top + transform.up * 0.5f);
         DrawArrowHead(top + transform.up * 0.5f, transform.up, 0.12f);
 
 #if UNITY_EDITOR
-        UnityEditor.Handles.Label(
-            transform.position + transform.up * (transform.localScale.y + 0.3f),
-            "Expands UP");
+        UnityEditor.Handles.Label(top + transform.up * 0.65f, "Expands UP");
 #endif
     }
 

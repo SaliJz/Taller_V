@@ -10,7 +10,7 @@ public class FloorBaseEditor : Editor
     private static readonly Color ColorDefault = new Color(0.30f, 0.85f, 0.40f);
     private static readonly Color ColorTriggered = new Color(0.95f, 0.28f, 0.28f);
     private static readonly Color ColorTransitioning = new Color(1.00f, 0.75f, 0.10f);
-    private static readonly Color ColorHeader = new Color(0.18f, 0.18f, 0.22f);
+    private static readonly Color ColorHeaderBg = new Color(0.13f, 0.13f, 0.17f);
 
     private GUIStyle bannerStyle;
     private GUIStyle headerStyle;
@@ -60,10 +60,10 @@ public class FloorBaseEditor : Editor
         bool isVertical = floor is VerticalFloor;
         string label = isVertical ? "VERTICAL FLOOR" : "HORIZONTAL FLOOR";
         string sub = isVertical
-            ? "Default: contracted   |   Triggered: expanded up"
-            : "Default: expanded   |   Triggered: contracted";
+            ? "Child scales on Y  |  Layer changes on trigger  |  Parent collider fixed"
+            : "Child scales to 0  |  Mesh hidden when triggered  |  Parent collider fixed";
 
-        EditorGUILayout.BeginVertical(GetColorBox(ColorHeader));
+        EditorGUILayout.BeginVertical(GetColorBox(ColorHeaderBg));
         GUILayout.Label(label, headerStyle);
         GUILayout.Label(sub, subHeaderStyle);
         EditorGUILayout.EndVertical();
@@ -108,6 +108,12 @@ public class FloorBaseEditor : Editor
     {
         DrawProp("moveMode", "Move Mode");
         DrawProp("moveSpeed", "Speed");
+        DrawProp("visualChild", "Visual Child");
+
+        EditorGUILayout.HelpBox(
+            "Visual Child is the only GameObject that moves or scales. " +
+            "The parent stays fixed so the BoxCollider and NavMeshObstacle never change.",
+            MessageType.Info);
 
         var modeP = serializedObject.FindProperty("moveMode");
         if (modeP != null && modeP.enumValueIndex == 1)
@@ -123,13 +129,16 @@ public class FloorBaseEditor : Editor
             EditorGUILayout.Space(4);
             EditorGUILayout.LabelField("Vertical Settings", EditorStyles.boldLabel);
             DrawProp("expandedScaleMultiplier", "Expand Multiplier (Y)");
+            EditorGUILayout.Space(4);
+            EditorGUILayout.LabelField("Layer Settings", EditorStyles.boldLabel);
+            DrawProp("defaultLayerName", "Default Layer");
+            DrawProp("expandedLayerName", "Expanded Layer");
         }
         else if (target is HorizontalFloor)
         {
             EditorGUILayout.Space(4);
             EditorGUILayout.LabelField("Horizontal Settings", EditorStyles.boldLabel);
             DrawProp("contractionAxis", "Contract Axis");
-            DrawProp("contractedScaleMultiplier", "Contract Multiplier");
             DrawProp("contractionDirection", "Contract Direction");
         }
     }
@@ -144,11 +153,10 @@ public class FloorBaseEditor : Editor
 
     private void DrawNavMeshSection()
     {
-        DrawProp("agentLayers", "Agent Layers");
         DrawProp("navMeshCarveDelay", "Carve Delay (s)");
         EditorGUILayout.HelpBox(
-            "NavMeshObstacle carves the baked mesh when triggered. " +
-            "Agents have 'Carve Delay' seconds to evacuate before carving begins.",
+            "The NavMeshObstacle on the parent is sized to the BoxCollider and never changes. " +
+            "It carves when triggered so AI cannot path through the space.",
             MessageType.Info);
     }
 
@@ -237,7 +245,7 @@ public class FloorBaseEditor : Editor
             fontSize = 10,
             alignment = TextAnchor.MiddleLeft
         };
-        subHeaderStyle.normal.textColor = new Color(0.8f, 0.8f, 0.8f);
+        subHeaderStyle.normal.textColor = new Color(0.75f, 0.75f, 0.75f);
     }
 
     #endregion

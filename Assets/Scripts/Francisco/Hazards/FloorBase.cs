@@ -20,6 +20,9 @@ public abstract class FloorBase : MonoBehaviour
     [SerializeField] protected MoveMode moveMode = MoveMode.Scale;
     [SerializeField] protected float moveSpeed = 5f;
 
+    [Header("Visual Child")]
+    [SerializeField] protected GameObject visualChild;
+
     [Header("Behavior")]
     [SerializeField] private float initialDelay = 1f;
     [SerializeField][Range(0f, 1f)] private float triggerProbability = 0.5f;
@@ -31,7 +34,6 @@ public abstract class FloorBase : MonoBehaviour
     [SerializeField] protected Transform triggeredPoint;
 
     [Header("NavMesh")]
-    [SerializeField] private LayerMask agentLayers;
     [SerializeField] private float navMeshCarveDelay = 0.4f;
 
     [Header("Emissive")]
@@ -47,8 +49,9 @@ public abstract class FloorBase : MonoBehaviour
     protected FloorState currentState = FloorState.Default;
     protected BoxCollider boxCollider;
     protected NavMeshObstacle navObstacle;
-    protected Vector3 defaultScale;
-    protected Vector3 triggeredScale;
+
+    protected Vector3 childDefaultScale;
+    protected Vector3 childTriggeredScale;
 
     private List<Material> emissiveMaterials = new List<Material>();
     private Coroutine rerollCoroutine;
@@ -65,10 +68,12 @@ public abstract class FloorBase : MonoBehaviour
 
         navObstacle.carving = false;
         navObstacle.shape = NavMeshObstacleShape.Box;
-        SyncObstacleToCollider();
 
-        defaultScale = transform.localScale;
-        SetTriggeredScale();
+        if (visualChild != null)
+            childDefaultScale = visualChild.transform.localScale;
+
+        SetChildTriggeredScale();
+        SetupNavObstacle();
 
         foreach (var r in emissiveRenderers)
             if (r) emissiveMaterials.Add(r.material);
@@ -84,9 +89,9 @@ public abstract class FloorBase : MonoBehaviour
 
     #region Abstract Interface
 
-    protected abstract void SetTriggeredScale();
+    protected abstract void SetChildTriggeredScale();
     public abstract string GizmoAxisLabel { get; }
-    public abstract Vector3 GetTriggeredScale();
+    public abstract Vector3 GetTriggeredChildScale();
 
     #endregion
 
@@ -124,18 +129,19 @@ public abstract class FloorBase : MonoBehaviour
     {
         currentState = FloorState.Transitioning;
         UpdateEmissive(colorTransitioning);
+        OnTransitionBegin(target);
 
         yield return new WaitForSeconds(navMeshCarveDelay);
 
         navObstacle.carving = true;
-        SyncObstacleToCollider();
 
         yield return StartCoroutine(MoveToState(target));
 
         currentState = target;
         navObstacle.carving = (target == FloorState.Triggered);
-        SyncObstacleToCollider();
+
         UpdateEmissive(target == FloorState.Default ? colorDefault : colorTriggered);
+        OnTransitionEnd(target);
 
         if (target == FloorState.Triggered)
         {
@@ -146,18 +152,23 @@ public abstract class FloorBase : MonoBehaviour
 
     private IEnumerator MoveToState(FloorState target)
     {
+        if (visualChild == null) yield break;
+
         if (moveMode == MoveMode.Scale)
         {
-            Vector3 targetScale = (target == FloorState.Triggered) ? triggeredScale : defaultScale;
+            Vector3 targetScale = (target == FloorState.Triggered)
+                ? childTriggeredScale
+                : childDefaultScale;
 
-            while (Vector3.Distance(transform.localScale, targetScale) > 0.005f)
+            while (Vector3.Distance(visualChild.transform.localScale, targetScale) > 0.005f)
             {
-                transform.localScale = Vector3.MoveTowards(
-                    transform.localScale, targetScale, moveSpeed * Time.deltaTime);
-                SyncObstacleToCollider();
+                visualChild.transform.localScale = Vector3.MoveTowards(
+                    visualChild.transform.localScale, targetScale, moveSpeed * Time.deltaTime);
+                OnChildScaleUpdated();
                 yield return null;
             }
-            transform.localScale = targetScale;
+            visualChild.transform.localScale = targetScale;
+            OnChildScaleUpdated();
         }
         else
         {
@@ -165,26 +176,32 @@ public abstract class FloorBase : MonoBehaviour
 
             Transform targetTransform = (target == FloorState.Triggered) ? triggeredPoint : defaultPoint;
 
-            while (Vector3.Distance(transform.position, targetTransform.position) > 0.01f)
+            while (Vector3.Distance(visualChild.transform.position, targetTransform.position) > 0.01f)
             {
-                transform.position = Vector3.MoveTowards(
-                    transform.position, targetTransform.position, moveSpeed * Time.deltaTime);
-                SyncObstacleToCollider();
+                visualChild.transform.position = Vector3.MoveTowards(
+                    visualChild.transform.position, targetTransform.position, moveSpeed * Time.deltaTime);
                 yield return null;
             }
-            transform.position = targetTransform.position;
+            visualChild.transform.position = targetTransform.position;
         }
     }
 
     #endregion
 
+    #region Virtual Hooks — Children Override
+
+    protected virtual void OnTransitionBegin(FloorState target) { }
+    protected virtual void OnTransitionEnd(FloorState target) { }
+    protected virtual void OnChildScaleUpdated() { }
+
+    #endregion
+
     #region NavMesh
 
-    private void SyncObstacleToCollider()
+    private void SetupNavObstacle()
     {
-        if (navObstacle == null || boxCollider == null) return;
         navObstacle.center = boxCollider.center;
-        navObstacle.size = Vector3.Scale(boxCollider.size, transform.localScale);
+        navObstacle.size = boxCollider.size;
     }
 
     #endregion
@@ -207,10 +224,14 @@ public abstract class FloorBase : MonoBehaviour
         };
         UpdateEmissive(c);
 
+        if (visualChild == null) return;
+
         if (moveMode == MoveMode.Scale)
         {
-            transform.localScale = (state == FloorState.Triggered) ? triggeredScale : defaultScale;
-            SyncObstacleToCollider();
+            visualChild.transform.localScale = (state == FloorState.Triggered)
+                ? childTriggeredScale
+                : childDefaultScale;
+            OnChildScaleUpdated();
         }
     }
 
@@ -236,39 +257,71 @@ public abstract class FloorBase : MonoBehaviour
 
     #region Gizmos
 
+    private void OnDrawGizmos()
+    {
+        DrawGizmosInternal(false);
+    }
+
     protected virtual void OnDrawGizmosSelected()
     {
-        if (boxCollider == null) boxCollider = GetComponent<BoxCollider>();
-        if (boxCollider == null) return;
+        DrawGizmosInternal(true);
+    }
+
+    private void DrawGizmosInternal(bool selected)
+    {
+        BoxCollider col = boxCollider != null ? boxCollider : GetComponent<BoxCollider>();
+        if (col == null) return;
+
+        float alpha = selected ? 1f : 0.4f;
+
+        bool isVertical = this is VerticalFloor;
+        Vector3 triggeredRatio = GetTriggeredChildRatioVsCollider();
+
+        Vector3 normalSize = col.size;
+        Vector3 triggeredSize = Vector3.Scale(col.size, triggeredRatio);
 
         Gizmos.matrix = transform.localToWorldMatrix;
 
-        Gizmos.color = new Color(0f, 1f, 0f, 0.25f);
-        Gizmos.DrawCube(boxCollider.center, boxCollider.size);
-        Gizmos.color = new Color(0f, 1f, 0f, 0.8f);
-        Gizmos.DrawWireCube(boxCollider.center, boxCollider.size);
+        Gizmos.color = new Color(0f, 1f, 0f, selected ? 0.20f : 0.08f);
+        Gizmos.DrawCube(col.center, normalSize);
+        Gizmos.color = new Color(0f, 1f, 0f, alpha);
+        Gizmos.DrawWireCube(col.center, normalSize);
 
-        Vector3 ts = GetTriggeredScale();
-        Vector3 ratio = new Vector3(
-            defaultScale.x > 0 ? ts.x / defaultScale.x : 1f,
-            defaultScale.y > 0 ? ts.y / defaultScale.y : 1f,
-            defaultScale.z > 0 ? ts.z / defaultScale.z : 1f);
-
-        Gizmos.color = new Color(1f, 0.2f, 0.2f, 0.18f);
-        Gizmos.DrawCube(boxCollider.center, Vector3.Scale(boxCollider.size, ratio));
-        Gizmos.color = new Color(1f, 0.2f, 0.2f, 0.8f);
-        Gizmos.DrawWireCube(boxCollider.center, Vector3.Scale(boxCollider.size, ratio));
+        Gizmos.color = new Color(1f, 0.2f, 0.2f, selected ? 0.15f : 0.05f);
+        Gizmos.DrawCube(col.center, triggeredSize);
+        Gizmos.color = new Color(1f, 0.2f, 0.2f, alpha);
+        Gizmos.DrawWireCube(col.center, triggeredSize);
 
         Gizmos.matrix = Matrix4x4.identity;
 
         if (moveMode == MoveMode.Translate && defaultPoint != null && triggeredPoint != null)
         {
-            Gizmos.color = Color.cyan;
+            Gizmos.color = new Color(0f, 1f, 1f, alpha);
             Gizmos.DrawLine(defaultPoint.position, triggeredPoint.position);
             Gizmos.DrawSphere(defaultPoint.position, 0.08f);
             Gizmos.DrawSphere(triggeredPoint.position, 0.08f);
         }
+
+        DrawChildGizmos(col, selected, alpha);
     }
+
+    private Vector3 GetTriggeredChildRatioVsCollider()
+    {
+        if (visualChild == null) return Vector3.one;
+
+        Vector3 defScale = Application.isPlaying
+            ? childDefaultScale
+            : visualChild.transform.localScale;
+
+        Vector3 trgScale = GetTriggeredChildScale();
+
+        return new Vector3(
+            defScale.x > 0 ? trgScale.x / defScale.x : 0f,
+            defScale.y > 0 ? trgScale.y / defScale.y : 1f,
+            defScale.z > 0 ? trgScale.z / defScale.z : 0f);
+    }
+
+    protected virtual void DrawChildGizmos(BoxCollider col, bool selected, float alpha) { }
 
     #endregion
 }

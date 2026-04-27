@@ -252,7 +252,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     protected virtual void HandleDeath(GameObject e)
     {
         if (e != gameObject) return;
-        ResetDamageFlash();   
+        ResetDamageFlash();
         if (audioSource && deathSFX) audioSource.PlayOneShot(deathSFX);
         animCtrl?.PlayDeath();
         agent.enabled = false;
@@ -333,20 +333,31 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     protected void PlayDamageSFX()
     {
         if (audioSource && damageSFX) audioSource.PlayOneShot(damageSFX);
-        if (flashCoroutine != null) StopCoroutine(flashCoroutine);
+        if (flashCoroutine != null)
+        {
+            StopCoroutine(flashCoroutine);
+            if (cachedSpriteRenderer) cachedSpriteRenderer.material.SetFloat("_Amount", 0f);
+        }
         flashCoroutine = StartCoroutine(DamageFlash());
     }
 
     private Coroutine flashCoroutine;
+    private SpriteRenderer cachedSpriteRenderer;
+
+    private void CacheSpriteRenderer()
+    {
+        if (cachedSpriteRenderer != null) return;
+        cachedSpriteRenderer = animCtrl?.GetComponent<SpriteRenderer>();
+    }
 
     private IEnumerator DamageFlash()
     {
-        SpriteRenderer rend = animCtrl?.GetComponent<SpriteRenderer>();
-        if (!rend) yield break;
+        CacheSpriteRenderer();
+        if (!cachedSpriteRenderer) yield break;
 
-        rend.material.SetFloat("_Amount", 1f);
+        cachedSpriteRenderer.material.SetFloat("_Amount", 1f);
         yield return new WaitForSeconds(0.15f);
-        rend.material.SetFloat("_Amount", 0f);
+        cachedSpriteRenderer.material.SetFloat("_Amount", 0f);
         flashCoroutine = null;
     }
 
@@ -357,8 +368,8 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             StopCoroutine(flashCoroutine);
             flashCoroutine = null;
         }
-        SpriteRenderer rend = animCtrl?.GetComponent<SpriteRenderer>();
-        if (rend != null) rend.material.SetFloat("_Amount", 0f);
+        CacheSpriteRenderer();
+        if (cachedSpriteRenderer) cachedSpriteRenderer.material.SetFloat("_Amount", 0f);
     }
 
     protected virtual void HandleAnimEvents(string eventName)
