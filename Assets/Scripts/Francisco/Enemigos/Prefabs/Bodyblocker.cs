@@ -11,8 +11,9 @@ public class Bodyblocker : MonoBehaviour
     [SerializeField] private LayerMask playerLayer;
 
     [Header("Push Force")]
-    [SerializeField] private float pushForce = 12f;
+    [SerializeField] private float pushForce = 8f;
     [SerializeField] private float upwardBias = 2f;
+    [SerializeField] private float pushDuration = 0.15f;
 
     #endregion
 
@@ -27,7 +28,6 @@ public class Bodyblocker : MonoBehaviour
     private void Awake()
     {
         enemyCollider = GetComponent<Collider>();
-
         if (enemyCollider == null)
             Log("No Collider found on enemy. checkHeightOffset will be used as absolute Y offset.", 2);
     }
@@ -37,28 +37,27 @@ public class Bodyblocker : MonoBehaviour
         if (playerLayer.value == 0) return;
 
         Vector3 checkCenter = GetCheckCenter();
-
         Collider[] hits = Physics.OverlapSphere(checkCenter, checkRadius, playerLayer, QueryTriggerInteraction.Ignore);
 
         foreach (Collider hit in hits)
         {
             if (hit == null) continue;
 
-            Rigidbody playerRb = hit.GetComponentInParent<Rigidbody>();
-            if (playerRb == null) continue;
+            PlayerHealth playerHealth = hit.GetComponentInParent<PlayerHealth>();
+            if (playerHealth == null) continue;
 
-            Vector3 pushDirection = hit.transform.position - transform.position;
-            pushDirection.y = 0f;
+            Vector3 pushDir = hit.transform.position - transform.position;
+            pushDir.y = 0f;
 
-            if (pushDirection.sqrMagnitude < 0.001f)
-                pushDirection = transform.right;
+            if (pushDir.sqrMagnitude < 0.001f)
+                pushDir = transform.right;
 
-            pushDirection.Normalize();
-            pushDirection.y = upwardBias;
+            pushDir.Normalize();
+            pushDir.y = upwardBias;
 
-            playerRb.AddForce(pushDirection * pushForce, ForceMode.VelocityChange);
+            playerHealth.ApplyKnockback(pushDir, pushForce, pushDuration);
 
-            Log($"Pushed player away from top. Direction: {pushDirection}", 1);
+            Log($"Pushed player. Direction: {pushDir}, Force: {pushForce}, Duration: {pushDuration}", 1);
         }
     }
 
@@ -93,9 +92,9 @@ public class Bodyblocker : MonoBehaviour
     {
         switch (level)
         {
-            case 1: Debug.Log($"[OveruseBodyBlocker] {message}"); break;
-            case 2: Debug.LogWarning($"[OveruseBodyBlocker] {message}"); break;
-            case 3: Debug.LogError($"[OveruseBodyBlocker] {message}"); break;
+            case 1: Debug.Log($"[Bodyblocker] {message}"); break;
+            case 2: Debug.LogWarning($"[Bodyblocker] {message}"); break;
+            case 3: Debug.LogError($"[Bodyblocker] {message}"); break;
         }
     }
 

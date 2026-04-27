@@ -8653,20 +8653,16 @@ MonoBehaviour:
   prefabList: []
   spawnKey: 114
   specificEntries:
-  - prefab: {fileID: 106869071380381363, guid: 32b74cadeb1c194429bf598dfbb82e96, type: 3}
-    key: 98
-  - prefab: {fileID: 8976851204628164144, guid: 17c3cc38c83d934448648f5f13534f72, type: 3}
-    key: 110
-  - prefab: {fileID: 6304192152690742770, guid: 97f213d552d212a44bf62cd22ec1e526, type: 3}
-    key: 109
-  - prefab: {fileID: 4341688338486564527, guid: 7c14fd4f4969a51488ebc53d4cad8166, type: 3}
-    key: 108
-  - prefab: {fileID: 7000052904529192738, guid: 7737618296baa204dbf36392249e084b, type: 3}
-    key: 111
-  - prefab: {fileID: 3837119024263144154, guid: 05f56586a38c92741809393681643a36, type: 3}
-    key: 48
   - prefab: {fileID: 9105253917218681239, guid: 23e725f00087afe40a42b0cf25ff3671, type: 3}
+    key: 109
+  - prefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
+    key: 55
+  - prefab: {fileID: 4238975053663158039, guid: d10532ab209a0c94392fa21ed4820f26, type: 3}
+    key: 56
+  - prefab: {fileID: 7000052904529192738, guid: 7737618296baa204dbf36392249e084b, type: 3}
     key: 57
+  - prefab: {fileID: 4341688338486564527, guid: 7c14fd4f4969a51488ebc53d4cad8166, type: 3}
+    key: 110
   - prefab: {fileID: 1927996590778350982, guid: 5702751f228ca784096055ec043e7893, type: 3}
     key: 111
   - prefab: {fileID: 7115765366938830384, guid: f45fba6cc7644274985eaf0735b667be, type: 3}
@@ -9842,21 +9838,22 @@ MonoBehaviour:
       m_Calls: []
   m_text: 'GENERAR ENEMGIOS
 
-    B: enemigo overuse
+    M: Boss 3
 
-    N: enemigo Jitter
+    7: Enemigo variante nivel 1 aporia
 
-    M:
-    enemigo lostdog
+    8:
+    Enemigo variante nivel 2 aporia
 
-    L: enemigo variante nivel 3 static
+    9: Enemigo variante nivel 3 aporia
 
-    O: enemigo variante
-    nivel 3 aporia
+    N:
+    Eemigo variante nivel 1 static
 
-    0: enemigo veynar
+    O: Eemigo variante nivel 2 static
 
-    9: Boss 3
+    P:
+    Eemigo variante nivel 3 static
 
 
     1:  Main Menu                       '
@@ -10534,9 +10531,10 @@ MonoBehaviour:
   colorDefault: {r: 0, g: 1, b: 0, a: 1}
   colorTriggered: {r: 1, g: 0, b: 0, a: 1}
   colorTransitioning: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  expandedScaleMultiplier: 3
+  expandedScaleMultiplier: 10
   defaultLayerName: Ground
   expandedLayerName: Opacity
+  objectToToggle: {fileID: 2035493812}
 --- !u!208 &2031220521
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -10602,6 +10600,7 @@ GameObject:
   - component: {fileID: 2035493810}
   - component: {fileID: 2035493809}
   - component: {fileID: 2035493808}
+  - component: {fileID: 2035493812}
   m_Layer: 3
   m_Name: Cube (1)
   m_TagString: Ground
@@ -10653,7 +10652,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 0085e86454eda6d429dadd4a31108800, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -10698,6 +10697,26 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2031220525}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2035493812
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2035493807}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f93f1efd8bef5984093b009d08dc6858, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  checkRadius: 0.6
+  checkHeightOffset: 0.8
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  pushForce: 12
+  upwardBias: 2
+  pushDuration: 0.15
 --- !u!1 &2064514306
 GameObject:
   m_ObjectHideFlags: 0

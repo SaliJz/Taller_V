@@ -133,6 +133,9 @@ public class FloorBaseEditor : Editor
             EditorGUILayout.LabelField("Layer Settings", EditorStyles.boldLabel);
             DrawProp("defaultLayerName", "Default Layer");
             DrawProp("expandedLayerName", "Expanded Layer");
+            EditorGUILayout.Space(4);
+            EditorGUILayout.LabelField("Activation", EditorStyles.boldLabel);  
+            DrawProp("objectToToggle", "Object To Toggle");                     
         }
         else if (target is HorizontalFloor)
         {

@@ -6,10 +6,11 @@ public class VerticalFloor : FloorBase
 
     [Header("Vertical Settings")]
     [SerializeField] private float expandedScaleMultiplier = 3f;
-
     [Header("Layer Settings")]
     [SerializeField] private string defaultLayerName = "Default";
     [SerializeField] private string expandedLayerName = "Obstacle";
+    [Header("Activation")]
+    [SerializeField] private Bodyblocker objectToToggle;
 
     #endregion
 
@@ -31,6 +32,9 @@ public class VerticalFloor : FloorBase
 
         if (defaultLayerIndex < 0) Debug.LogWarning($"[VerticalFloor] Layer not found: {defaultLayerName}");
         if (expandedLayerIndex < 0) Debug.LogWarning($"[VerticalFloor] Layer not found: {expandedLayerName}");
+
+        if (objectToToggle != null)
+            objectToToggle.enabled = false;
     }
 
     #endregion
@@ -61,14 +65,26 @@ public class VerticalFloor : FloorBase
 
     protected override void OnTransitionBegin(FloorState target)
     {
-        if (target == FloorState.Triggered && expandedLayerIndex >= 0)
-            SetLayerRecursive(gameObject, expandedLayerIndex);
+        if (target == FloorState.Triggered)
+        {
+            if (expandedLayerIndex >= 0)
+                SetLayerRecursive(gameObject, expandedLayerIndex);
+
+            if (objectToToggle != null)
+                objectToToggle.enabled = true;
+        }
     }
 
     protected override void OnTransitionEnd(FloorState target)
     {
-        if (target == FloorState.Default && defaultLayerIndex >= 0)
-            SetLayerRecursive(gameObject, defaultLayerIndex);
+        if (target == FloorState.Default)
+        {
+            if (defaultLayerIndex >= 0)
+                SetLayerRecursive(gameObject, defaultLayerIndex);
+
+            if (objectToToggle != null)
+                objectToToggle.enabled = false;
+        }
     }
 
     #endregion

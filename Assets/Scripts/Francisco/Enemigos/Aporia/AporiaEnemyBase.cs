@@ -338,6 +338,8 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             StopCoroutine(flashCoroutine);
             if (cachedSpriteRenderer) cachedSpriteRenderer.material.SetFloat("_Amount", 0f);
         }
+
+        if (animCtrl) animCtrl.PlayDamage();
         flashCoroutine = StartCoroutine(DamageFlash());
     }
 
