@@ -268,4 +268,9 @@ public class MorlockProjectileWordTrail : MonoBehaviour
         activeLetterIndices.Clear();
         activeLetterTrailOffsets.Clear();
     }
+
+    public string GetWord()
+    {
+        return currentWord;
+    }
 }

@@ -66,6 +66,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private Color originalColor;
     private Coroutine stunCoroutine;
     private Coroutine currentCriticalDamageCoroutine;
+    private AttackDamageType lastDamageType;
+    public AttackDamageType LastDamageType => lastDamageType;
 
     private int currentHealthBars;
     private int totalHealthBars;
@@ -304,10 +306,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         nextHitToughnessBonus = bonusAmount;
     }
 
-    /// <summary>
-    /// Toma daño (respetando la reducción local si existe).
-    /// Firma original respetada para compatibilidad.
-    /// </summary>
     public void TakeDamage(float damageAmount, bool isCritical = false, AttackDamageType damageType = AttackDamageType.Melee)
     {
         if (currentHealth <= 0) return;
@@ -353,6 +351,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         }
 
         currentHealth -= finalDamage;
+        lastDamageType = damageType;
         ReportDebug($"Dano recibido. Base: {damageAmount}. Reduccion total: {damageReductionTotal * 100}%. Dano Final: {finalDamage}. Vida Restante: {currentHealth}", 1);
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
