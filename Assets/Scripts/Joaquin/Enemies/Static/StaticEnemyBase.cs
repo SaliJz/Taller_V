@@ -713,13 +713,14 @@ public abstract class StaticEnemyBase : MonoBehaviour
     protected virtual void InstantiateAndInitializeProjectile()
     {
         GameObject projectileObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
-        MorlockProjectile projectile = projectileObj.GetComponent<MorlockProjectile>();
+        StaticProjectileBase projectile = projectileObj.GetComponent<StaticProjectileBase>();
 
         if (projectile != null)
         {
             float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
             float calculatedDamage = CalculateDamageByDistance(distanceToPlayer);
-            string selectedWord = wordLibrary != null ? wordLibrary.GetRandomWord() : "MORLOCK";
+            string selectedWord = wordLibrary != null ? wordLibrary.GetRandomWord() : "STATIC";
+
             projectile.Initialize(projectileSpeed, calculatedDamage, selectedWord);
         }
     }

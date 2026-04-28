@@ -164,13 +164,13 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
     {
         GameObject projectileObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
 
-        StaticProjectileLevel3 projectile = projectileObj.GetComponent<StaticProjectileLevel3>();
+        StaticProjectileBase projectile = projectileObj.GetComponent<StaticProjectileBase>();
 
         if (projectile != null)
         {
             float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
             float calculatedDamage = CalculateDamageByDistance(distanceToPlayer);
-            string selectedWord = wordLibrary != null ? wordLibrary.GetRandomWord() : "STATIC";
+            string selectedWord = wordLibrary != null ? wordLibrary.GetRandomWord() : "GLITCH";
 
             projectile.Initialize(projectileSpeed, calculatedDamage, selectedWord);
         }
