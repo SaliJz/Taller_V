@@ -32,7 +32,7 @@ public class JitterAnimCtrl : MonoBehaviour
         if(isOnFuryMode) ElectricPulse();
         else ElectricityReset();
 
-        testImputs();
+        // testImputs();
     }
 
     void HandleMovement()
