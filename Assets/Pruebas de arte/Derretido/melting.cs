@@ -16,11 +16,8 @@ public class melting : MonoBehaviour
         gota.transform.parent = null;
         
         Rigidbody2D rb = gota.GetComponent<Rigidbody2D>();
-        rb.linearVelocityY = Velocidad * Time.deltaTime *2;
+        rb.linearVelocity = new Vector2(Velocidad * 0.23f ,Velocidad);
         Destroy(gota,Tiempo);
     }
-    public void Destruir()
-    {
-        Destroy(gameObject);
-    }
+    
 }

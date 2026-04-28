@@ -51,7 +51,8 @@ public class SpawnerMelt : MonoBehaviour
         Vector3 posicion = new Vector3(transform.position.x + punto.x, transform.position.y, transform.position.z + punto.y
         );
 
-        GameObject obj = Instantiate(prefab, posicion, Quaternion.Euler(0f, -40f, 0f));
+        GameObject obj = Instantiate(prefab, posicion, Quaternion.identity);
+        obj.transform.rotation = Quaternion.Euler(30f, 45f, 0f);
 
         if (!infinito)
         {
