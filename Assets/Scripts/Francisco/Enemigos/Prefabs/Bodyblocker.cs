@@ -4,40 +4,44 @@ using UnityEngine;
 public class Bodyblocker : MonoBehaviour
 {
     #region Inspector Fields
-
     [Header("Block Zone")]
-    [SerializeField] private float checkRadius = 0.6f;
-    [SerializeField] private float checkHeightOffset = 0.8f;
+    [SerializeField] private Vector3 boxSize = new Vector3(0.5f, 0.5f, 2f);
+    [SerializeField] private Vector3 boxOffset = new Vector3(0f, 0.8f, 0f);
+    [SerializeField] private bool autoSizeFromCollider = true;            
+    [SerializeField] private float sizeMultiplier = 1.05f;                  
     [SerializeField] private LayerMask playerLayer;
 
     [Header("Push Force")]
     [SerializeField] private float pushForce = 8f;
     [SerializeField] private float upwardBias = 2f;
     [SerializeField] private float pushDuration = 0.15f;
-
     #endregion
 
     #region Private State
-
     private Collider enemyCollider;
-
     #endregion
 
     #region Unity Lifecycle
-
     private void Awake()
     {
         enemyCollider = GetComponent<Collider>();
         if (enemyCollider == null)
-            Log("No Collider found on enemy. checkHeightOffset will be used as absolute Y offset.", 2);
+            Log("No Collider found. Using manual boxSize/boxOffset.", 2);
     }
 
     private void FixedUpdate()
     {
         if (playerLayer.value == 0) return;
 
-        Vector3 checkCenter = GetCheckCenter();
-        Collider[] hits = Physics.OverlapSphere(checkCenter, checkRadius, playerLayer, QueryTriggerInteraction.Ignore);
+        GetBoxParams(out Vector3 center, out Vector3 halfExtents);
+
+        Collider[] hits = Physics.OverlapBox(
+            center,
+            halfExtents,
+            transform.rotation,  
+            playerLayer,
+            QueryTriggerInteraction.Ignore
+        );
 
         foreach (Collider hit in hits)
         {
@@ -48,45 +52,50 @@ public class Bodyblocker : MonoBehaviour
 
             Vector3 pushDir = hit.transform.position - transform.position;
             pushDir.y = 0f;
-
             if (pushDir.sqrMagnitude < 0.001f)
                 pushDir = transform.right;
-
             pushDir.Normalize();
             pushDir.y = upwardBias;
 
             playerHealth.ApplyKnockback(pushDir, pushForce, pushDuration);
-
-            Log($"Pushed player. Direction: {pushDir}, Force: {pushForce}, Duration: {pushDuration}", 1);
+            Log($"Pushed player. Dir: {pushDir}, Force: {pushForce}", 1);
         }
     }
-
     #endregion
 
     #region Helpers
-
-    private Vector3 GetCheckCenter()
+    private void GetBoxParams(out Vector3 center, out Vector3 halfExtents)
     {
-        if (enemyCollider != null)
-            return new Vector3(transform.position.x, enemyCollider.bounds.max.y, transform.position.z);
-
-        return transform.position + Vector3.up * checkHeightOffset;
+        if (autoSizeFromCollider && enemyCollider != null)
+        {
+            Bounds b = enemyCollider.bounds;
+            center = b.center;
+            halfExtents = b.extents * sizeMultiplier;
+        }
+        else
+        {
+            center = transform.TransformPoint(boxOffset);
+            halfExtents = boxSize * 0.5f;
+        }
     }
-
     #endregion
 
     #region Gizmos
-
     private void OnDrawGizmos()
     {
-        Gizmos.color = new Color(1f, 0.4f, 0f, 0.35f);
-        Gizmos.DrawWireSphere(GetCheckCenter(), checkRadius);
-    }
+        if (enemyCollider == null)
+            enemyCollider = GetComponent<Collider>();
 
+        GetBoxParams(out Vector3 center, out Vector3 halfExtents);
+
+        Gizmos.color = new Color(1f, 0.4f, 0f, 0.35f);
+        Gizmos.matrix = Matrix4x4.TRS(center, transform.rotation, Vector3.one);
+        Gizmos.DrawWireCube(Vector3.zero, halfExtents * 2f);
+        Gizmos.matrix = Matrix4x4.identity;
+    }
     #endregion
 
     #region Debug
-
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     private void Log(string message, int level)
     {
@@ -97,6 +106,5 @@ public class Bodyblocker : MonoBehaviour
             case 3: Debug.LogError($"[Bodyblocker] {message}"); break;
         }
     }
-
     #endregion
 }

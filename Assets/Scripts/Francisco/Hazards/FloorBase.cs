@@ -200,7 +200,6 @@ public abstract class FloorBase : MonoBehaviour
 
     private void SetupNavObstacle()
     {
-        navObstacle.center = boxCollider.center;
         navObstacle.size = boxCollider.size;
     }
 
