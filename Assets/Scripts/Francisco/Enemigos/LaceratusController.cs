@@ -16,9 +16,9 @@ public class LaceratusController : MonoBehaviour
     [SerializeField] private float patrolDirectionChangeInterval = 4f;
     [SerializeField] private float patrolDirectionChangeAngle = 30f;
 
-    [Header("Patrol - Stuck Check")] 
+    [Header("Patrol - Stuck Check")]
     [SerializeField] private float stuckCheckInterval = 2f;
-    [SerializeField] private float stuckDistanceThreshold = 0.1f; 
+    [SerializeField] private float stuckDistanceThreshold = 0.1f;
 
     [Header("Movement - Fury State")]
     [SerializeField] private float furySpeedMultiplier = 2f;
@@ -43,7 +43,7 @@ public class LaceratusController : MonoBehaviour
 
     [Header("Fury Mechanics")]
     [SerializeField] private float furyDecayTime = 3f;
-    [SerializeField] private float furyDecayNoDamageTime = 5f; 
+    [SerializeField] private float furyDecayNoDamageTime = 5f;
     [SerializeField] private float furyRegenerationPerSecond = 1f;
     [SerializeField] private float consecutiveHitPushDistance = 1f;
     [SerializeField] private float screamTransitionDuration = 1.2f;
@@ -60,7 +60,7 @@ public class LaceratusController : MonoBehaviour
     [SerializeField] private float hitboxDisplayDuration = 0.2f;
 
     [Header("Animation")]
-    [SerializeField] private Animator animator;
+    [SerializeField] private JitterAnimCtrl animCtrl;
     [Tooltip("Delay para sincronizar el daño con la animación de ataque normal")]
     [SerializeField] private float normalAttackImpactDelay = 1.2f;
     [Tooltip("Delay para sincronizar el daño con la animación de ataque furia")]
@@ -121,11 +121,6 @@ public class LaceratusController : MonoBehaviour
     private float idleAudioTimer;
     private float idleAudioInterval;
 
-    private static readonly int AnimID_Walk = Animator.StringToHash("Walk");
-    private static readonly int AnimID_Attack = Animator.StringToHash("Attack");
-    private static readonly int AnimID_Berserk = Animator.StringToHash("Berserk");
-    private static readonly int AnimID_ActiveBerserker = Animator.StringToHash("ActiveBerserker");
-
     #endregion
 
     #region Unity Lifecycle
@@ -133,7 +128,7 @@ public class LaceratusController : MonoBehaviour
     private void Awake()
     {
         if (agent == null) agent = GetComponent<NavMeshAgent>();
-        if (animator == null) animator = GetComponentInChildren<Animator>();
+        if (animCtrl == null) animCtrl = GetComponentInChildren<JitterAnimCtrl>();
         if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
         if (knockbackHandler == null) knockbackHandler = GetComponent<EnemyKnockbackHandler>();
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
@@ -213,13 +208,13 @@ public class LaceratusController : MonoBehaviour
                 agent.isStopped = true;
                 agent.ResetPath();
             }
-            if (animator != null) animator.SetBool(AnimID_Walk, false);
+            if (animCtrl != null) animCtrl.isWalking = false;
             return;
         }
 
         if (isTransitioningToFury || isPerformingJump || isAttacking)
         {
-            if (animator != null && !isTransitioningToFury) animator.SetBool(AnimID_Walk, false);
+            if (animCtrl != null && !isTransitioningToFury) animCtrl.isWalking = false;
             return;
         }
 
@@ -255,10 +250,10 @@ public class LaceratusController : MonoBehaviour
 
     private void UpdateAnimationState()
     {
-        if (animator == null || agent == null) return;
+        if (animCtrl == null || agent == null) return;
 
         bool isMoving = agent.velocity.sqrMagnitude > 0.1f && !agent.isStopped;
-        animator.SetBool(AnimID_Walk, isMoving);
+        animCtrl.isWalking = isMoving;
     }
 
     #endregion
@@ -332,6 +327,8 @@ public class LaceratusController : MonoBehaviour
             agent.enabled = false;
         }
 
+        if (animCtrl != null) animCtrl.PlayDeath();
+
         if (audioSource != null && deathSFX != null)
         {
             audioSource.PlayOneShot(deathSFX);
@@ -358,7 +355,7 @@ public class LaceratusController : MonoBehaviour
         if (angleToPlayer <= visionConeAngle)
         {
             playerDetected = true;
-            Debug.Log("Laceratus: Jugador detectado");
+            Debug.Log("Jitter: Jugador detectado");
         }
     }
 
@@ -379,7 +376,7 @@ public class LaceratusController : MonoBehaviour
 
             if (distanceMoved < stuckDistanceThreshold)
             {
-                Debug.Log("Laceratus: ¡Atascado detectado! Forzando nuevo rumbo aleatorio.");
+                Debug.Log("Jitter: ¡Atascado detectado! Forzando nuevo rumbo aleatorio.");
 
                 ChangePatrolDirection();
                 agent.ResetPath();
@@ -392,7 +389,7 @@ public class LaceratusController : MonoBehaviour
         if (patrolTimer >= patrolDirectionChangeInterval)
         {
             patrolTimer = 0f;
-            ChangePatrolDirection(); 
+            ChangePatrolDirection();
         }
 
         if (!agent.hasPath || agent.remainingDistance < 0.5f)
@@ -407,7 +404,7 @@ public class LaceratusController : MonoBehaviour
 
         int attempts = 0;
         int maxAttempts = 10;
-        float searchRadius = 6f; 
+        float searchRadius = 6f;
 
         while (attempts < maxAttempts)
         {
@@ -421,7 +418,7 @@ public class LaceratusController : MonoBehaviour
                 if (agent.CalculatePath(hit.position, path) && path.status == NavMeshPathStatus.PathComplete)
                 {
                     float straightDistance = Vector3.Distance(transform.position, hit.position);
-                    float pathLength = CalculatePathLength(path); 
+                    float pathLength = CalculatePathLength(path);
 
                     if (pathLength < straightDistance * 2.5f)
                     {
@@ -429,7 +426,7 @@ public class LaceratusController : MonoBehaviour
 
                         currentPatrolDirection = (hit.position - transform.position).normalized;
 
-                        Debug.Log($"Laceratus: Nuevo destino aleatorio fijado a {straightDistance:F1}m (camino: {pathLength:F1}m).");
+                        Debug.Log($"Jitter: Nuevo destino aleatorio fijado a {straightDistance:F1}m (camino: {pathLength:F1}m).");
                         return;
                     }
                 }
@@ -440,7 +437,7 @@ public class LaceratusController : MonoBehaviour
 
         ChangePatrolDirection();
         agent.ResetPath();
-        Debug.Log("Laceratus: Error al encontrar destino NavMesh válido, forzando nuevo rumbo.");
+        Debug.Log("Jitter: Error al encontrar destino NavMesh válido, forzando nuevo rumbo.");
     }
 
     private float CalculatePathLength(NavMeshPath path)
@@ -457,23 +454,23 @@ public class LaceratusController : MonoBehaviour
     {
         float decision = Random.value;
 
-        if (decision < 0.4f) 
+        if (decision < 0.4f)
         {
             float randomAngle = Random.Range(-patrolDirectionChangeAngle, patrolDirectionChangeAngle);
             currentPatrolDirection = Quaternion.Euler(0, randomAngle, 0) * currentPatrolDirection;
-            Debug.Log($"Laceratus: Cambio de dirección de patrulla (Suave: {randomAngle:F1}°) - Vector: {currentPatrolDirection}");
+            Debug.Log($"Jitter: Cambio de dirección de patrulla (Suave: {randomAngle:F1}°) - Vector: {currentPatrolDirection}");
         }
-        else if (decision < 0.8f) 
+        else if (decision < 0.8f)
         {
             float escapeAngle = Random.Range(90f, 180f) * (Random.value > 0.5f ? 1f : -1f);
             currentPatrolDirection = Quaternion.Euler(0, escapeAngle, 0) * transform.forward;
-            Debug.Log($"Laceratus: Cambio de dirección de patrulla (Brusco: {escapeAngle:F1}°) - Vector: {currentPatrolDirection}");
+            Debug.Log($"Jitter: Cambio de dirección de patrulla (Brusco: {escapeAngle:F1}°) - Vector: {currentPatrolDirection}");
         }
-        else 
+        else
         {
             float randomNewAngle = Random.Range(0f, 360f);
             currentPatrolDirection = Quaternion.Euler(0, randomNewAngle, 0) * Vector3.forward;
-            Debug.Log($"Laceratus: Cambio de dirección de patrulla (Totalmente Aleatorio: {randomNewAngle:F1}°) - Vector: {currentPatrolDirection}");
+            Debug.Log($"Jitter: Cambio de dirección de patrulla (Totalmente Aleatorio: {randomNewAngle:F1}°) - Vector: {currentPatrolDirection}");
         }
 
         currentPatrolDirection.Normalize();
@@ -494,7 +491,6 @@ public class LaceratusController : MonoBehaviour
 
         if (distanceToPlayer <= normalAttackRange && Time.time >= lastAttackTime + normalAttackInterval)
         {
-            //PerformNormalAttack();
             StartCoroutine(ExecuteNormalAttackSequence());
         }
     }
@@ -506,7 +502,7 @@ public class LaceratusController : MonoBehaviour
 
         if (agent != null && agent.enabled) agent.isStopped = true;
 
-        if (animator != null) animator.SetTrigger(AnimID_Attack);
+        if (animCtrl != null) animCtrl.PlayAttack();
         if (audioSource != null && normalAttackClip != null) audioSource.PlayOneShot(normalAttackClip);
 
         yield return new WaitForSeconds(normalAttackImpactDelay);
@@ -574,7 +570,7 @@ public class LaceratusController : MonoBehaviour
                         StartCoroutine(ApplyPlayerSlow(playerMovement));
                     }
 
-                    Debug.Log($"Laceratus: Ataque normal - Daño: {normalAttackDamage}");
+                    Debug.Log($"Laceratus: Ataque normal - Danio: {normalAttackDamage}");
                 }
                 break;
             }
@@ -611,7 +607,6 @@ public class LaceratusController : MonoBehaviour
 
             if (Time.time >= lastAttackTime + furyAttackInterval)
             {
-                //PerformFuryAttack();
                 StartCoroutine(ExecuteFuryAttackSequence());
             }
         }
@@ -635,7 +630,7 @@ public class LaceratusController : MonoBehaviour
 
         if (agent != null && agent.enabled) agent.isStopped = true;
 
-        if (animator != null) animator.SetTrigger(AnimID_Attack);
+        if (animCtrl != null) animCtrl.PlayAttack();
         if (audioSource != null && furyAttackClip != null) audioSource.PlayOneShot(furyAttackClip);
 
         yield return new WaitForSeconds(furyAttackImpactDelay);
@@ -691,7 +686,7 @@ public class LaceratusController : MonoBehaviour
                 if (damageable != null)
                 {
                     ExecuteAttack(hit.gameObject, furyAttackDamage);
-                    Debug.Log($"Laceratus: Ataque furia - Daño: {furyAttackDamage}");
+                    Debug.Log($"Laceratus: Ataque furia - Danio: {furyAttackDamage}");
                 }
                 break;
             }
@@ -705,7 +700,7 @@ public class LaceratusController : MonoBehaviour
 
         if (distanceToPlayer < furyJumpCancelDistance)
         {
-            Debug.Log("Laceratus: Salto cancelado - jugador demasiado cerca");
+            Debug.Log("Jitter: Salto cancelado - jugador demasiado cerca");
             return;
         }
 
@@ -764,7 +759,7 @@ public class LaceratusController : MonoBehaviour
 
         isPerformingJump = false;
 
-        Debug.Log($"Laceratus: Salto de furia completado - Distancia: {distance}");
+        Debug.Log($"Jitter: Salto de furia completado - Distancia: {distance}");
     }
 
     #endregion
@@ -778,7 +773,7 @@ public class LaceratusController : MonoBehaviour
         if (!playerDetected && playerTransform != null)
         {
             playerDetected = true;
-            Debug.Log("Laceratus: ¡Jugador detectado por daño recibido!");
+            Debug.Log("Jitter: ¡Jugador detectado por daño recibido!");
         }
 
         if (isInFury && knockbackHandler != null)
@@ -798,7 +793,7 @@ public class LaceratusController : MonoBehaviour
             {
                 furyLevel++;
                 UpdateFurySpeed();
-                Debug.Log($"Laceratus: Nivel de furia aumentado a {furyLevel}");
+                Debug.Log($"Jitter: Nivel de furia aumentado a {furyLevel}");
             }
 
             if (consecutiveHitsReceived >= 2)
@@ -844,15 +839,12 @@ public class LaceratusController : MonoBehaviour
 
         if (audioSource != null && furyTransitionSFX != null) audioSource.PlayOneShot(furyTransitionSFX);
 
-        if (animator != null)
-        {
-            animator.SetTrigger(AnimID_Berserk);
-            animator.SetBool(AnimID_ActiveBerserker, true);
-        }
+        // SetFuryMode(true) activa RageMode en el Animator y reproduce "Rage Transform"
+        if (animCtrl != null) animCtrl.SetFuryMode(true);
 
         ChangeMaterialToFury();
 
-        Debug.Log("Laceratus: Entrando en estado de furia");
+        Debug.Log("Jitter: Entrando en estado de furia");
 
         if (agent != null && agent.enabled)
         {
@@ -892,7 +884,7 @@ public class LaceratusController : MonoBehaviour
 
         agent.speed = normalSpeed * speedMultiplier;
 
-        Debug.Log($"Laceratus: Velocidad ajustada a {agent.speed} unidades/s (Nivel {furyLevel})");
+        Debug.Log($"Jitter: Velocidad ajustada a {agent.speed} unidades/s (Nivel {furyLevel})");
     }
 
     private void ExitFuryState()
@@ -903,7 +895,8 @@ public class LaceratusController : MonoBehaviour
 
         if (audioSource != null && calmTransitionSFX != null) audioSource.PlayOneShot(calmTransitionSFX);
 
-        if (animator != null) animator.SetBool(AnimID_ActiveBerserker, false);
+        // SetFuryMode(false) desactiva RageMode en el Animator
+        if (animCtrl != null) animCtrl.SetFuryMode(false);
 
         if (agent != null && agent.enabled) agent.speed = normalSpeed;
 
@@ -915,7 +908,7 @@ public class LaceratusController : MonoBehaviour
             furyRegenerationCoroutine = null;
         }
 
-        Debug.Log("Laceratus: Saliendo del estado de furia");
+        Debug.Log("Jitter: Saliendo del estado de furia");
     }
 
     private void CheckFuryDecay()
@@ -960,7 +953,7 @@ public class LaceratusController : MonoBehaviour
             if (enemyHealth != null && !enemyHealth.IsDead)
             {
                 enemyHealth.Heal(furyRegenerationPerSecond);
-                Debug.Log($"Laceratus: Regeneración +{furyRegenerationPerSecond} PV");
+                Debug.Log($"Jitter: Regeneración +{furyRegenerationPerSecond} PV");
             }
         }
     }
@@ -976,7 +969,7 @@ public class LaceratusController : MonoBehaviour
             audioSource.PlayOneShot(furyTransitionSFX);
         }
 
-        if (animator != null) animator.SetTrigger(AnimID_Berserk);
+        if (animCtrl != null) animCtrl.PlayAttack();
 
         if (screamHitbox != null)
         {
@@ -993,7 +986,7 @@ public class LaceratusController : MonoBehaviour
 
                 if (playerMove != null && playerMove.IsDashing)
                 {
-                    Debug.Log("Laceratus: Grito de empuje ignorado (Jugador en Dash).");
+                    Debug.Log("Jitter: Grito de empuje ignorado (Jugador en Dash).");
                     continue;
                 }
 
@@ -1022,7 +1015,7 @@ public class LaceratusController : MonoBehaviour
                     }
                 }
 
-                Debug.Log("Laceratus: Onda de empuje activada");
+                Debug.Log("Jitter: Onda de empuje activada");
                 break;
             }
         }
@@ -1054,7 +1047,6 @@ public class LaceratusController : MonoBehaviour
     {
         if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
         {
-            // Verificar si el ataque es bloqueado
             if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(transform.position))
             {
                 float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
@@ -1063,7 +1055,7 @@ public class LaceratusController : MonoBehaviour
                 {
                     health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
                 }
-                Debug.Log($"<color=red>[Laceratus] Ataque bloqueado por el jugador.</color>");
+                Debug.Log($"<color=red>[Jitter] Ataque bloqueado por el jugador.</color>");
                 return;
             }
 
@@ -1121,7 +1113,7 @@ public class LaceratusController : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        Gizmos.color = new Color(1f, 1f, 0f, 0.1f); 
+        Gizmos.color = new Color(1f, 1f, 0f, 0.1f);
         Gizmos.DrawSphere(transform.position, visionRange);
 
         Gizmos.color = Color.yellow;
@@ -1138,7 +1130,7 @@ public class LaceratusController : MonoBehaviour
         Gizmos.color = Color.green;
         Gizmos.DrawRay(transform.position, forward * visionRange);
 
-        Gizmos.color = new Color(1f, 0f, 0f, 0.3f); 
+        Gizmos.color = new Color(1f, 0f, 0f, 0.3f);
         int segments = 20;
         Vector3 previousPoint = transform.position + leftBoundary * visionRange;
 
