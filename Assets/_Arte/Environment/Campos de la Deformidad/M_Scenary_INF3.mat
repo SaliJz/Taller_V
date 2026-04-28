@@ -26,6 +26,7 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _USEDITHER
+  - _USEOBJECTPOSITION
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -63,8 +64,12 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _Extra_Texture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: cd4e6f092ce9e5d48bd5a8033c464ea2, type: 3}
+        m_Texture: {fileID: 2800000, guid: df8663ae269d2104b9dc59f3e43de94b, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -114,6 +119,7 @@ Material:
     - _AlphaToMask: 0
     - _Blend: 200
     - _BlendModePreserveSpecular: 1
+    - _BlendTriplanar: 200
     - _BumpScale: 1
     - _C_Tilling: 1
     - _CastShadows: 1
@@ -126,10 +132,11 @@ Material:
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnvironmentReflections: 1
+    - _Extra_Tilling: 1
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _Main_Tilling: 0.2
+    - _Main_Tilling: 0.5
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005
@@ -137,27 +144,31 @@ Material:
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _Secondary_Tilling: 0.1
-    - _Smoothness: 1
+    - _Smoothness: 0
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
     - _USEDITHER: 1
+    - _USEOBJECTPOSITION: 1
+    - _USE_EXTRA_TEXTURE: 0
     - _WorkflowMode: 1
     - _ZTest: 4
     - _ZWrite: 1
     - _ZWriteControl: 0
-    - _lower: 0.09
-    - _upper: 0.34
+    - _lower: 0.22
+    - _upper: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _Color_Multiplier_C: {r: 1, g: 1, b: 1, a: 0}
     - _Dither_Size: {r: 0.1, g: 0.1, b: 0, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _Main_Color_Multiplier: {r: 0.5663492, g: 0.6914861, b: 0.8396226, a: 0}
+    - _Extra_Color_Multiplier: {r: 1, g: 1, b: 1, a: 0}
+    - _Main_Color_Multiplier: {r: 0.6000801, g: 0.8295, b: 0.8773585, a: 0}
     - _Secondary_Color_Multiplier: {r: 0.2524016, g: 0.6320754, b: 0.14609292, a: 0}
+    - _Shade_Color: {r: 0.503916, g: 0.54998416, b: 0.7169812, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
