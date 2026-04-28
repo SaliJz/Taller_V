@@ -116,12 +116,13 @@ public class TutorialDummyCoordinator : MonoBehaviour
 
         Debug.Log($"[TutorialDummyCoordinator] Slime eliminado. Quedan {aliveSlimesCount} vivos.");
 
-        if (!firstSlimeKilled && !adultStageReached)
-        {
-            firstSlimeKilled = true;
-            StartCoroutine(HandleFirstSlimeKilled());
-        }
-        else if (aliveSlimesCount <= 0)
+        //if (!firstSlimeKilled && !adultStageReached)
+        //{
+        //    firstSlimeKilled = true;
+        //    StartCoroutine(HandleFirstSlimeKilled());
+        //}
+        //else
+        if (aliveSlimesCount <= 0)
         {
             OnAllSlimesDefeated?.Invoke();
         }

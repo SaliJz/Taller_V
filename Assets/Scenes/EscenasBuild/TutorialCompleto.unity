@@ -1801,7 +1801,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &102269318
 Transform:
   m_ObjectHideFlags: 0
@@ -2710,7 +2710,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &197162734
 Transform:
   m_ObjectHideFlags: 0
@@ -3049,7 +3049,8 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: "Mant\xE9n !DEFENSE para bloquear. Dirige con !LOOK"
+          m_StringArgument: '!RANGEDATTACK para atacar lanzando el escudo. Derrota
+            a los slimes.'
           m_BoolArgument: 1
         m_CallState: 2
       - m_Target: {fileID: 953363980}
@@ -3064,10 +3065,10 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 1
         m_CallState: 2
-      - m_Target: {fileID: 241621140}
-        m_TargetAssemblyTypeName: BlockDialogTrigger, Assembly-CSharp
-        m_MethodName: set_enabled
-        m_Mode: 6
+      - m_Target: {fileID: 1821268779}
+        m_TargetAssemblyTypeName: TutorialHUDAnimator, Assembly-CSharp
+        m_MethodName: UnblockShieldThrow
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -3076,10 +3077,10 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 1
         m_CallState: 2
-      - m_Target: {fileID: 1821268769}
-        m_TargetAssemblyTypeName: PlayerBlockSystem, Assembly-CSharp
-        m_MethodName: SetBlockingEnabled
-        m_Mode: 6
+      - m_Target: {fileID: 241621140}
+        m_TargetAssemblyTypeName: BlockDialogTrigger, Assembly-CSharp
+        m_MethodName: TriggerDialogOnBlock
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -3129,7 +3130,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 241621134}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 53e6b231a84e3be41b2a8c410e8a9e1d, type: 3}
   m_Name: 
@@ -4030,7 +4031,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 322115999}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8f4137a451a21da49a84530649aeb529, type: 3}
   m_Name: 
@@ -5815,7 +5816,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &469166254
 Transform:
   m_ObjectHideFlags: 0
@@ -5894,19 +5895,7 @@ MonoBehaviour:
     VoiceFrequency: 2
   OnFirstSlimeKilled:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 953363980}
-        m_TargetAssemblyTypeName: TutorialHUDAnimator, Assembly-CSharp
-        m_MethodName: CompleteInstruction
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   OnAdultStageReached:
     m_PersistentCalls:
       m_Calls:
@@ -11384,6 +11373,7 @@ GameObject:
   - component: {fileID: 921946733}
   - component: {fileID: 921946732}
   - component: {fileID: 921946731}
+  - component: {fileID: 921946736}
   m_Layer: 2
   m_Name: Interaction (1)
   m_TagString: Untagged
@@ -11589,6 +11579,33 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 921946729}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &921946736
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 921946729}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53e6b231a84e3be41b2a8c410e8a9e1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  blockStartDialog:
+  - CharacterName: Diablo
+    ProfileImage: {fileID: 0}
+    Text: "\u201DAtaca a esos seres inferiores , muajaja\u201D \r\n"
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  OnBlockDialogFinish:
+    m_PersistentCalls:
+      m_Calls: []
+  onComplete:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!64 &931366080
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -12486,7 +12503,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1008999836}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8f4137a451a21da49a84530649aeb529, type: 3}
   m_Name: 
@@ -15851,7 +15868,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1362440902
 Transform:
   m_ObjectHideFlags: 0
@@ -19951,7 +19968,7 @@ PrefabInstance:
       objectReference: {fileID: 1821268767}
     - target: {fileID: 3496064612389669479, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_Enabled
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_LocalPosition.x
@@ -20090,7 +20107,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 1821268766}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1820085299}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7afed240824c20d4396387fd63ed0d81, type: 3}
   m_Name: 
@@ -20811,7 +20828,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1854563764
 Transform:
   m_ObjectHideFlags: 0
