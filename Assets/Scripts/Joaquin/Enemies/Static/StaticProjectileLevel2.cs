@@ -8,7 +8,7 @@ public class StaticProjectileLevel2 : StaticProjectileBase
     protected override void OnPlayerHit(GameObject player)
     {
         hasImpacted = true;
-        //player.GetComponent<IDamageable>()?.TakeDamage(damage);
+        player.GetComponent<IDamageable>()?.TakeDamage(damage);
 
         if (minePrefab != null)
         {
