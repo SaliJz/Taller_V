@@ -1,36 +1,40 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class AporiaEnemyLevel2 : AporiaEnemyBase
 {
     #region Nivel 2 — Configuración Vidrio
     [Header("Fragmentos de Vidrio — Ataque")]
-    [SerializeField] private GameObject glassShardAttackPrefab;   
+    [SerializeField] private GameObject glassShardAttackPrefab;
     [SerializeField] private float shardAttackRadius = 1f;
     [SerializeField] private float shardAttackDamagePerSec = 4f;
     [SerializeField] private float shardAttackDuration = 3f;
 
     [Header("Estela de Vidrio — Dash")]
-    [SerializeField] private GameObject glassShardDashPrefab;     
+    [SerializeField] private GameObject glassShardDashPrefab;
     [SerializeField] private float shardDashDamagePerSec = 4f;
     [SerializeField] private float shardDashDuration = 1f;
-    [SerializeField] private float shardDashSpacing = 1f;         
+    [SerializeField] private float shardDashSpacing = 1f;
 
     [Header("Muerte — Explosión")]
-    [SerializeField] private float deathWarningDuration = 1.5f;   
+    [SerializeField] private float deathWarningDuration = 1.5f;
     [SerializeField] private float deathExplosionRadius = 3f;
     [SerializeField] private float deathExplosionDamage = 15f;
     [SerializeField] private float deathExplosionKnockback = 10f;
-    [SerializeField] private GameObject glassShardDeathPrefab;    
+    [SerializeField] private GameObject glassShardDeathPrefab;
     [SerializeField] private float shardDeathRadius = 1f;
     [SerializeField] private float shardDeathDamagePerSec = 4f;
     [SerializeField] private float shardDeathDuration = 2f;
     [SerializeField] private AudioClip explosionSFX;
     #endregion
 
-    #region OnAttackHit: daño + brotes de vidrio
+    #region Referencias Coroutines
+    private Coroutine _dashCoroutine;
+    private Coroutine _attackCoroutine;
+    private Coroutine _deathCoroutine;
+    #endregion
 
+    #region Ataque
     public override void OnAttackHit()
     {
         if (audioSource && attackSFX) audioSource.PlayOneShot(attackSFX);
@@ -42,15 +46,14 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
             {
                 pHealth.TakeDamage(attackDamage);
                 ApplyKnockback(t.transform);
+                SpawnGlassArea(glassShardAttackPrefab, t.transform.position, shardAttackRadius,
+                               shardAttackDamagePerSec, shardAttackDuration);
             }
         }
-
-        SpawnGlassArea(glassShardAttackPrefab, hitPoint.position, shardAttackRadius,
-                       shardAttackDamagePerSec, shardAttackDuration);
     }
     #endregion
 
-    #region Dash: estela de vidrio
+    #region Dash
     protected override IEnumerator PerformDash(Vector3 startPos, Vector3 dashEnd, Vector3 attackDirection)
     {
         float elapsed = 0;
@@ -82,32 +85,21 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
     }
     #endregion
 
-    #region Muerte con explosión
-
-    private void OnDestroy()
-    {
-        GameObject shard = Instantiate(glassShardDeathPrefab, transform.position, Quaternion.identity);
-        shard.transform.localScale = Vector3.one * (shardDeathRadius * 2f);
-
-        if (shard.TryGetComponent<GlassShardDamage>(out var dmg))
-        {
-            dmg.damagePerSecond = shardDeathDamagePerSec;
-            dmg.playerLayer = playerLayer;
-            dmg.shardDeathDuration = shardDeathDuration;
-        }
-    }
-
+    #region Muerte
     protected override void HandleDeath(GameObject e)
     {
         if (e != gameObject) return;
-        StartCoroutine(DeathSequence());
+        _deathCoroutine = StartCoroutine(DeathSequence());
     }
 
     private IEnumerator DeathSequence()
     {
+        if (_dashCoroutine != null) StopCoroutine(_dashCoroutine);
+        if (_attackCoroutine != null) StopCoroutine(_attackCoroutine);
+
         agent.isStopped = true;
         agent.enabled = false;
-        isAttacking = true; 
+        isAttacking = true;
 
         if (animCtrl) animCtrl.SendMessage("PlayDeathWarning", SendMessageOptions.DontRequireReceiver);
         yield return new WaitForSeconds(deathWarningDuration);
@@ -117,10 +109,18 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
 
         TriggerExplosion();
 
-        SpawnGlassArea(glassShardDeathPrefab, transform.position, shardDeathRadius,
-                       shardDeathDamagePerSec, shardDeathDuration);
-
         animCtrl?.PlayDeath();
+
+        GameObject shard = Instantiate(glassShardDeathPrefab, transform.position, Quaternion.identity);
+        shard.transform.localScale = Vector3.one * (shardDeathRadius * 2f);
+
+        if (shard.TryGetComponent<GlassShardDamage>(out var dmg))
+        {
+            dmg.damagePerSecond = shardDeathDamagePerSec;
+            dmg.playerLayer = playerLayer;
+            dmg.shardDeathDuration = shardDeathDuration;
+        }
+
         this.enabled = false;
     }
 
@@ -138,7 +138,7 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
     }
     #endregion
 
-    #region Helpers — Vidrio
+    #region Helpers
     private void SpawnGlassArea(GameObject prefab, Vector3 position, float radius,
                                  float damagePerSec, float duration)
     {

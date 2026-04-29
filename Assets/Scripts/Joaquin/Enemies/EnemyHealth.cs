@@ -315,6 +315,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         // Procesar dureza
         if (toughnessSystem != null && toughnessSystem.HasToughness)
         {
+            OnDamaged?.Invoke();
             finalDamage = toughnessSystem.ProcessDamage(damageAmount, damageType, nextHitToughnessBonus);
 
             nextHitToughnessBonus = 0f; // resetear el bonus tras usarlo
