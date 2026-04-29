@@ -770,6 +770,8 @@ public class LaceratusController : MonoBehaviour
     {
         lastDamageTime = Time.time;
 
+        if (animCtrl != null ) animCtrl.PlayDamage();
+
         if (!playerDetected && playerTransform != null)
         {
             playerDetected = true;

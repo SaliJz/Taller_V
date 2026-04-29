@@ -1143,13 +1143,13 @@ MonoBehaviour:
   normalStateMaterial: {fileID: -3113694911958652215, guid: 87b5c11cfcdd0c14ab4ec1ce7357cd8d, type: 3}
   furyStateMaterial: {fileID: 2100000, guid: 6512acb028f5ffe4dac0c63c2723253c, type: 2}
   enemyRenderer: {fileID: 0}
-  normalAttackHitbox: {fileID: 3344047050413250391}
-  furyAttackHitbox: {fileID: 739037990251726064}
-  screamHitbox: {fileID: 8132594032837959172}
+  normalAttackHitbox: {fileID: 0}
+  furyAttackHitbox: {fileID: 0}
+  screamHitbox: {fileID: 0}
   hitboxDisplayDuration: 0.2
-  animCtrl: {fileID: 0}
-  normalAttackImpactDelay: 1.2
-  furyAttackImpactDelay: 1.2
+  animCtrl: {fileID: 2645563989516676831}
+  normalAttackImpactDelay: 0.5
+  furyAttackImpactDelay: 0.5
   audioSource: {fileID: 4785209160859040218}
   presenceSFX: {fileID: 8300000, guid: 272f6f049913fa84383303f5ab52fc64, type: 3}
   normalMoveSFX: {fileID: 8300000, guid: 0571e6753fa06fd41b7c78c33818c63b, type: 3}
@@ -2378,6 +2378,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e2ec77b09f78ddd4592170f4bda26aae, type: 3}
+--- !u!114 &2645563989516676831 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8599253210685323657, guid: e2ec77b09f78ddd4592170f4bda26aae, type: 3}
+  m_PrefabInstance: {fileID: 6043902535360436054}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 118dd44faaae1274b9627fd501c9ea46, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &7321187298292852989 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3925542777271959467, guid: e2ec77b09f78ddd4592170f4bda26aae, type: 3}
