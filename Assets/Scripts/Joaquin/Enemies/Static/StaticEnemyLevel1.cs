@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-public class StaticEnemyLevel1 : StaticEnemyBase, IAnimEventHandler
+public class StaticEnemyLevel1 : StaticEnemyBase
 {
     protected override IEnumerator ShootAfterDelayRoutine()
     {
@@ -16,14 +16,15 @@ public class StaticEnemyLevel1 : StaticEnemyBase, IAnimEventHandler
             {
                 ForceFacePlayer();
                 if (visualCtrl != null) visualCtrl.PlayShoot();
+                ExecuteProjectileSpawn();
             }
         }
 
         shootCoroutine = null;
     }
 
-    public void HandleAnimEvents(string eventName)
-    {
-        if (eventName == "AnimEvent_Shoot") ExecuteProjectileSpawn();
-    }
+    //public void HandleAnimEvents(string eventName)
+    //{
+    //    if (eventName == "AnimEvent_Shoot") ExecuteProjectileSpawn();
+    //}
 }

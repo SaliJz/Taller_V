@@ -3,12 +3,12 @@ using UnityEngine;
 
 public class StaticAnimCtrl : MonoBehaviour
 {
-    Animator anim;
-    [SerializeField] Material[] originalMaterials;
-    [SerializeField] Material tpMaterial;
-    [SerializeField] SkinnedMeshRenderer mesh;
+    private Animator anim;
+    [SerializeField] private Material[] originalMaterials;
+    [SerializeField] private Material tpMaterial;
+    [SerializeField] private SkinnedMeshRenderer mesh;
 
-    void Awake()
+   private void Awake()
     {
         anim = gameObject.GetComponent<Animator>();
 
@@ -22,19 +22,19 @@ public class StaticAnimCtrl : MonoBehaviour
         }
     }
 
-    void Update()
+    private void Update()
     {
         // TESTinputs();
     }
 
     public void PlayShoot()
     {
-        anim.SetTrigger("Shoot");
+        if (anim != null) anim.SetTrigger("Shoot");
     }
 
     public void PlayDeath()
     {
-        anim.SetTrigger("Death");
+        if (anim != null) anim.SetTrigger("Death");
     }
 
     public void PlayTPout()
@@ -47,13 +47,12 @@ public class StaticAnimCtrl : MonoBehaviour
 
         mesh.materials = tpArray;
 
-        anim.Play("TP out");
+        if (anim != null) anim.Play("TP out");
     }
-
 
     public void PlayTPin()
     {
-        anim.Play("TP in");
+        if (anim != null) anim.Play("TP in");
     }
     public void restoreOriginalMaterials() //EVENTO AL FINAL DE PLAY TP IN
     {
@@ -62,10 +61,10 @@ public class StaticAnimCtrl : MonoBehaviour
 
     public void PlayDamage()
     {
-        anim.SetTrigger("Damage");
+        if (anim != null) anim.SetTrigger("Damage");
     }
 
-    void TESTinputs()
+    private void TESTinputs()
     {
         if(Input.GetKeyDown(KeyCode.Mouse0)) PlayShoot();
         if(Input.GetKeyDown(KeyCode.Space)) PlayTPout();
