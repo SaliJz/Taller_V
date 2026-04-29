@@ -85,7 +85,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d302954649d0c624c8527aede8558203, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemy: {fileID: 0}
 --- !u!1 &386636513790962292
 GameObject:
   m_ObjectHideFlags: 0
@@ -2055,16 +2054,16 @@ MonoBehaviour:
   interceptProbabilityNivel2: 0.5
   interceptProbabilityNivel3: 0.75
   health: 100
-  moveSpeed: 4
+  moveSpeed: 0
   fireRate: 1.5
   useRandomFireRate: 1
   minFireRate: 1.5
   maxFireRate: 3
   minDamageIncrease: 1
-  projectileSpeed: 12
+  projectileSpeed: 21
   maxDamageIncrease: 15
   maxDistanceForDamageIncrease: 6
-  maxDistanceForDamageStart: 15
+  maxDistanceForDamageStart: 20
   attackRange: 50
   canReturnToPatrol: 1
   detectionRadius: 50
@@ -2079,11 +2078,11 @@ MonoBehaviour:
   patrolIdleTime: 1.2
   canReposition: 0
   repositionTeleportCooldown: 0.75
-  p1_teleportCooldown: 6.5
-  p1_pursuitAdvanceDistance: 5
+  p1_teleportCooldown: 2.5
+  p1_pursuitAdvanceDistance: 4
   p1_pursuitLateralVariationMin: 3
   p1_pursuitLateralVariationMax: 5
-  p2_activationRadius: 5
+  p2_activationRadius: 7.5
   p2_teleportCooldown: 2
   p2_teleportRange: 7.5
   spawnDelay: 1
