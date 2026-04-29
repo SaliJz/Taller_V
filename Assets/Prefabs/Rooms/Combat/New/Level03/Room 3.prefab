@@ -133,7 +133,6 @@ GameObject:
   - component: {fileID: 7493419516761205097}
   - component: {fileID: 7051725464667496278}
   - component: {fileID: 5163940868584400353}
-  - component: {fileID: 4491491130375711825}
   - component: {fileID: 3658966918608964056}
   m_Layer: 3
   m_Name: pasted__pasted__pasted__pasted__pasted__pCube86
@@ -231,28 +230,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 0.99999994}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &4491491130375711825
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 171006304324171919}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f93f1efd8bef5984093b009d08dc6858, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  boxSize: {x: 2, y: 1, z: 6}
-  boxOffset: {x: 0, y: 0.5, z: 0}
-  autoSizeFromCollider: 0
-  sizeMultiplier: 1.05
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  pushForce: 8
-  upwardBias: 2
-  pushDuration: 0.15
 --- !u!210 &3658966918608964056
 SortingGroup:
   m_ObjectHideFlags: 0
@@ -341,7 +318,6 @@ GameObject:
   - component: {fileID: 4982212886097493637}
   - component: {fileID: 4533839015903914536}
   - component: {fileID: 3279164518779060002}
-  - component: {fileID: 7501202441750330337}
   - component: {fileID: 2096176136428162830}
   m_Layer: 3
   m_Name: pasted__pasted__pasted__pasted__pasted__pCube86
@@ -439,28 +415,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 0.99999994}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &7501202441750330337
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 311603652189398734}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f93f1efd8bef5984093b009d08dc6858, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  boxSize: {x: 2.5, y: 1, z: 5}
-  boxOffset: {x: 0, y: 0.5, z: 0}
-  autoSizeFromCollider: 0
-  sizeMultiplier: 1.05
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  pushForce: 8
-  upwardBias: 2
-  pushDuration: 0.15
 --- !u!210 &2096176136428162830
 SortingGroup:
   m_ObjectHideFlags: 0
@@ -485,7 +439,6 @@ GameObject:
   - component: {fileID: 4009388302077732057}
   - component: {fileID: 3671698649716278952}
   - component: {fileID: 8973345280494444376}
-  - component: {fileID: 8348075777021800933}
   - component: {fileID: 2711895037080420839}
   m_Layer: 3
   m_Name: pasted__pasted__pasted__pasted__pasted__pCube86
@@ -583,28 +536,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 0.99999994}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &8348075777021800933
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 999274195070664758}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f93f1efd8bef5984093b009d08dc6858, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  boxSize: {x: 2, y: 1, z: 6}
-  boxOffset: {x: 0, y: 0.5, z: 0}
-  autoSizeFromCollider: 0
-  sizeMultiplier: 1.05
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  pushForce: 8
-  upwardBias: 2
-  pushDuration: 0.15
 --- !u!210 &2711895037080420839
 SortingGroup:
   m_ObjectHideFlags: 0
@@ -749,7 +680,7 @@ MonoBehaviour:
   expandedScaleMultiplier: 10
   defaultLayerName: Ground
   expandedLayerName: Opacity
-  objectToToggle: {fileID: 4392859078821656818}
+  objectToToggle: {fileID: 0}
 --- !u!1 &1158379656042602915
 GameObject:
   m_ObjectHideFlags: 0
@@ -762,7 +693,6 @@ GameObject:
   - component: {fileID: 4638609682387545919}
   - component: {fileID: 8672258974748172635}
   - component: {fileID: 4313146220024955825}
-  - component: {fileID: 4392859078821656818}
   - component: {fileID: 4242633857376410172}
   m_Layer: 3
   m_Name: pasted__pasted__pasted__pasted__pasted__pCube86
@@ -860,28 +790,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 0.99999994}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &4392859078821656818
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1158379656042602915}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f93f1efd8bef5984093b009d08dc6858, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  boxSize: {x: 2, y: 1, z: 6}
-  boxOffset: {x: 0, y: 0.5, z: 0}
-  autoSizeFromCollider: 0
-  sizeMultiplier: 1.05
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  pushForce: 8
-  upwardBias: 2
-  pushDuration: 0.15
 --- !u!210 &4242633857376410172
 SortingGroup:
   m_ObjectHideFlags: 0
@@ -995,7 +903,7 @@ MonoBehaviour:
   expandedScaleMultiplier: 10
   defaultLayerName: Ground
   expandedLayerName: Opacity
-  objectToToggle: {fileID: 4491491130375711825}
+  objectToToggle: {fileID: 0}
 --- !u!1 &1722531208116588913
 GameObject:
   m_ObjectHideFlags: 0
@@ -1755,7 +1663,7 @@ MonoBehaviour:
   expandedScaleMultiplier: 10
   defaultLayerName: Ground
   expandedLayerName: Opacity
-  objectToToggle: {fileID: 7501202441750330337}
+  objectToToggle: {fileID: 0}
 --- !u!1 &3378937378316228991
 GameObject:
   m_ObjectHideFlags: 0
@@ -1857,7 +1765,7 @@ MonoBehaviour:
   expandedScaleMultiplier: 10
   defaultLayerName: Ground
   expandedLayerName: Opacity
-  objectToToggle: {fileID: 1250741799245345203}
+  objectToToggle: {fileID: 0}
 --- !u!1 &3516961614709467566
 GameObject:
   m_ObjectHideFlags: 0
@@ -1932,7 +1840,6 @@ GameObject:
   - component: {fileID: 97330055661484337}
   - component: {fileID: 4146974121802507092}
   - component: {fileID: 3537926288434341973}
-  - component: {fileID: 4534638526921809212}
   - component: {fileID: 3229010401861897821}
   m_Layer: 3
   m_Name: pasted__pasted__pasted__pasted__pasted__pCube86
@@ -2030,28 +1937,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 0.99999994}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &4534638526921809212
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3720819484762692211}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f93f1efd8bef5984093b009d08dc6858, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  boxSize: {x: 2.5, y: 1, z: 5}
-  boxOffset: {x: 0, y: 0.5, z: 0}
-  autoSizeFromCollider: 0
-  sizeMultiplier: 1.05
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  pushForce: 8
-  upwardBias: 2
-  pushDuration: 0.15
 --- !u!210 &3229010401861897821
 SortingGroup:
   m_ObjectHideFlags: 0
@@ -2076,7 +1961,6 @@ GameObject:
   - component: {fileID: 5410017210763190109}
   - component: {fileID: 1490072486512676943}
   - component: {fileID: 5384891604463432863}
-  - component: {fileID: 4375797731221762730}
   - component: {fileID: 1181203812160860015}
   m_Layer: 3
   m_Name: pasted__pasted__pasted__pasted__pasted__pCube86
@@ -2174,28 +2058,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 0.99999994}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &4375797731221762730
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3801107416277873200}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f93f1efd8bef5984093b009d08dc6858, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  boxSize: {x: 2, y: 1, z: 6}
-  boxOffset: {x: 0, y: 0.5, z: 0}
-  autoSizeFromCollider: 0
-  sizeMultiplier: 1.05
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  pushForce: 8
-  upwardBias: 2
-  pushDuration: 0.15
 --- !u!210 &1181203812160860015
 SortingGroup:
   m_ObjectHideFlags: 0
@@ -2309,7 +2171,7 @@ MonoBehaviour:
   expandedScaleMultiplier: 10
   defaultLayerName: Ground
   expandedLayerName: Opacity
-  objectToToggle: {fileID: 8348075777021800933}
+  objectToToggle: {fileID: 0}
 --- !u!1 &4124199871142632114
 GameObject:
   m_ObjectHideFlags: 0
@@ -2473,7 +2335,7 @@ MonoBehaviour:
   expandedScaleMultiplier: 10
   defaultLayerName: Ground
   expandedLayerName: Opacity
-  objectToToggle: {fileID: 4534638526921809212}
+  objectToToggle: {fileID: 0}
 --- !u!1 &5155730372762960017
 GameObject:
   m_ObjectHideFlags: 0
@@ -3019,7 +2881,6 @@ GameObject:
   - component: {fileID: 8010048528526480678}
   - component: {fileID: 5555609298567727652}
   - component: {fileID: 8913755686345892068}
-  - component: {fileID: 6176043717286406705}
   - component: {fileID: 6817049017594255062}
   m_Layer: 3
   m_Name: pasted__pasted__pasted__pasted__pasted__pCube86
@@ -3117,28 +2978,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 0.99999994}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &6176043717286406705
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6219275396407201961}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f93f1efd8bef5984093b009d08dc6858, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  boxSize: {x: 2.5, y: 1, z: 5}
-  boxOffset: {x: 0, y: 0.5, z: 0}
-  autoSizeFromCollider: 0
-  sizeMultiplier: 1.05
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  pushForce: 8
-  upwardBias: 2
-  pushDuration: 0.15
 --- !u!210 &6817049017594255062
 SortingGroup:
   m_ObjectHideFlags: 0
@@ -3284,7 +3123,6 @@ GameObject:
   - component: {fileID: 1307650305240404235}
   - component: {fileID: 6443063749184946117}
   - component: {fileID: 7849612718160541938}
-  - component: {fileID: 1250741799245345203}
   - component: {fileID: 531636472641315218}
   m_Layer: 3
   m_Name: pasted__pasted__pasted__pasted__pasted__pCube86
@@ -3382,28 +3220,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 0.99999994}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &1250741799245345203
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6483207041882365615}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f93f1efd8bef5984093b009d08dc6858, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  boxSize: {x: 2.5, y: 1, z: 5}
-  boxOffset: {x: 0, y: 0.5, z: 0}
-  autoSizeFromCollider: 0
-  sizeMultiplier: 1.05
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  pushForce: 8
-  upwardBias: 2
-  pushDuration: 0.15
 --- !u!210 &531636472641315218
 SortingGroup:
   m_ObjectHideFlags: 0
@@ -3741,7 +3557,7 @@ MonoBehaviour:
   expandedScaleMultiplier: 10
   defaultLayerName: Ground
   expandedLayerName: Opacity
-  objectToToggle: {fileID: 6176043717286406705}
+  objectToToggle: {fileID: 0}
 --- !u!1 &7062312693313165896
 GameObject:
   m_ObjectHideFlags: 0
@@ -4195,7 +4011,7 @@ MonoBehaviour:
   expandedScaleMultiplier: 10
   defaultLayerName: Ground
   expandedLayerName: Opacity
-  objectToToggle: {fileID: 4375797731221762730}
+  objectToToggle: {fileID: 0}
 --- !u!1 &7955169700473341005
 GameObject:
   m_ObjectHideFlags: 0
