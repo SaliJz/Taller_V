@@ -1301,6 +1301,11 @@ MonoBehaviour:
   blinkFlashMaterial: {fileID: 2100000, guid: f252e05afbca4b14da60e54eabddf22d, type: 2}
   blinkInterval: 0.03
   blinkCount: 6
+  useAmountFlash: 1
+  amountFlashRenderer: {fileID: 8955495561997107440}
+  amountFlashProperty: _Amount
+  amountFlashPeakValue: 1
+  amountFlashRestValue: 0
   stunMaterial: {fileID: 2100000, guid: 9e980960b4627f14bb1ebfed5d685fec, type: 2}
   stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
@@ -2394,3 +2399,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 118dd44faaae1274b9627fd501c9ea46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!137 &8955495561997107440 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6824184933714624797, guid: e2ec77b09f78ddd4592170f4bda26aae, type: 3}
+  m_PrefabInstance: {fileID: 2520942433765605869}
+  m_PrefabAsset: {fileID: 0}

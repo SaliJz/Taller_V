@@ -8,11 +8,14 @@ public class StaticAnimCtrl : MonoBehaviour
     [SerializeField] private Material tpMaterial;
     [SerializeField] private SkinnedMeshRenderer mesh;
 
-   private void Awake()
+    private EnemyVisualEffects visualEffects;
+
+    private void Awake()
     {
         anim = gameObject.GetComponent<Animator>();
+        visualEffects = GetComponentInParent<EnemyVisualEffects>();
 
-        if(mesh != null)
+        if (mesh != null)
         {
             originalMaterials = mesh.sharedMaterials;
         }
@@ -40,7 +43,7 @@ public class StaticAnimCtrl : MonoBehaviour
     public void PlayTPout()
     {
         Material[] tpArray = new Material[originalMaterials.Length];
-        for(int i = 0; i <tpArray.Length; i++)
+        for (int i = 0; i < tpArray.Length; i++)
         {
             tpArray[i] = tpMaterial;
         }
@@ -54,9 +57,12 @@ public class StaticAnimCtrl : MonoBehaviour
     {
         if (anim != null) anim.Play("TP in");
     }
-    public void restoreOriginalMaterials() //EVENTO AL FINAL DE PLAY TP IN
+
+    public void restoreOriginalMaterials()
     {
         mesh.sharedMaterials = originalMaterials;
+
+        visualEffects?.ReapplyAmountFlashMaterial();
     }
 
     public void PlayDamage()
@@ -66,10 +72,10 @@ public class StaticAnimCtrl : MonoBehaviour
 
     private void TESTinputs()
     {
-        if(Input.GetKeyDown(KeyCode.Mouse0)) PlayShoot();
-        if(Input.GetKeyDown(KeyCode.Space)) PlayTPout();
-        if(Input.GetKeyDown(KeyCode.M)) PlayTPin();
-        if(Input.GetKeyDown(KeyCode.B)) PlayDeath();
-        if(Input.GetKeyDown(KeyCode.L)) PlayDamage();
-     }
+        if (Input.GetKeyDown(KeyCode.Mouse0)) PlayShoot();
+        if (Input.GetKeyDown(KeyCode.Space)) PlayTPout();
+        if (Input.GetKeyDown(KeyCode.M)) PlayTPin();
+        if (Input.GetKeyDown(KeyCode.B)) PlayDeath();
+        if (Input.GetKeyDown(KeyCode.L)) PlayDamage();
+    }
 }

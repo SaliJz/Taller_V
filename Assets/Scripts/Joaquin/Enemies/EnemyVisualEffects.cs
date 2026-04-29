@@ -7,13 +7,26 @@ using System.Collections.Generic;
 /// </summary>
 public class EnemyVisualEffects : MonoBehaviour
 {
+    #region Inspector - References
+
     [Header("Renderers Configuration")]
-    [Tooltip("Si se deja vacío, buscará MeshRenderers en los hijos.")]
+    [Tooltip("Si se deja vacio, buscara MeshRenderers en los hijos.")]
     [SerializeField] private Renderer[] meshRenderers;
-    [Tooltip("Si se deja vacío, buscará SpriteRenderers en los hijos.")]
+    [Tooltip("Si se deja vacio, buscara SpriteRenderers en los hijos.")]
     [SerializeField] private SpriteRenderer[] spriteRenderers;
 
-    [Header("Configuración de Materiales")]
+    [Header("Damage Numbers")]
+    [SerializeField] private GameObject damageNumberPrefab;
+    [SerializeField] private Transform damageNumberParent;
+
+    [Header("Audio Feedback")]
+    [SerializeField] private AudioSource audioSource;
+
+    #endregion
+
+    #region Inspector - Material & Flash Settings
+
+    [Header("Configuracion de Materiales")]
     [Tooltip("Si es true, se ignora 'defaultMaterial' y se usa el material que tenga el renderer al inicio.")]
     [SerializeField] private bool useOriginalMaterials = true;
     [Tooltip("Solo se usa si useOriginalMaterials es false.")]
@@ -23,6 +36,22 @@ public class EnemyVisualEffects : MonoBehaviour
     [SerializeField] private Material blinkFlashMaterial;
     [SerializeField] private float blinkInterval = 0.06f;
     [SerializeField] private int blinkCount = 6;
+
+    [Header("Flash / Blink - Amount Override")]
+    [Tooltip("Si es true, en lugar de cambiar el material durante el flash, se anima el valor '_Amount' en el renderer referenciado. Ese renderer queda excluido del swap de material normal.")]
+    [SerializeField] private bool useAmountFlash = false;
+    [Tooltip("Renderer cuyo material recibira el cambio de _Amount en lugar del swap de material.")]
+    [SerializeField] private Renderer amountFlashRenderer;
+    [Tooltip("Nombre de la propiedad float del shader que se animara.")]
+    [SerializeField] private string amountFlashProperty = "_Amount";
+    [Tooltip("Valor del _Amount durante el pico del flash.")]
+    [SerializeField] private float amountFlashPeakValue = 1f;
+    [Tooltip("Valor del _Amount en reposo (antes y despues del flash).")]
+    [SerializeField] private float amountFlashRestValue = 0f;
+
+    #endregion
+
+    #region Inspector - Effect Settings
 
     [Header("Stun Effect")]
     [SerializeField] private Material stunMaterial;
@@ -36,21 +65,23 @@ public class EnemyVisualEffects : MonoBehaviour
     [SerializeField] private Material glowMaterial;
     [SerializeField] private float glowIntensity = 2f;
 
-    [Header("Damage Numbers")]
-    [SerializeField] private GameObject damageNumberPrefab;
-    [SerializeField] private Transform damageNumberParent;
+    [Header("Damage Visual Settings")]
     [SerializeField] private Color normalColor = Color.red;
     [SerializeField] private Color criticalColor = new Color(0.5f, 0f, 0f);
-
-    [Header("Audio Feedback")]
-    [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip normalHitSFX;
     [SerializeField] private AudioClip criticalHitSFX;
+
+    #endregion
+
+    #region Internal State
 
     private bool isStunned = false;
     private Coroutine stunEffectCoroutine = null;
     private GameObject activeStunVFX;
     private Coroutine glowCoroutine;
+
+    private Material amountFlashMatInstance = null;
+    private Coroutine amountBlinkCoroutine = null;
 
     private Dictionary<Component, Coroutine> activeBlinkRoutines = new Dictionary<Component, Coroutine>();
 
@@ -59,12 +90,15 @@ public class EnemyVisualEffects : MonoBehaviour
 
     private List<GameObject> activePersistentEffects = new List<GameObject>();
 
+    #endregion
+
     #region Unity Lifecycle
 
     private void Awake()
     {
         ValidateRenderers();
         CacheOriginalMaterials();
+        CacheAmountFlashMaterial();
     }
 
     private void OnEnable()
@@ -80,11 +114,17 @@ public class EnemyVisualEffects : MonoBehaviour
     private void OnDestroy()
     {
         CleanupAllEffects(true);
+
+        if (amountFlashMatInstance != null)
+        {
+            Destroy(amountFlashMatInstance);
+            amountFlashMatInstance = null;
+        }
     }
 
     #endregion
 
-    #region Initialization
+    #region Initialization & Data Sync
 
     private void ValidateRenderers()
     {
@@ -112,7 +152,6 @@ public class EnemyVisualEffects : MonoBehaviour
                 if (r != null)
                 {
                     originalMeshMats[r] = useOriginalMaterials ? r.sharedMaterial : defaultMaterial;
-
                     r.material = originalMeshMats[r];
                 }
             }
@@ -131,9 +170,26 @@ public class EnemyVisualEffects : MonoBehaviour
         }
     }
 
+    private void CacheAmountFlashMaterial()
+    {
+        if (!useAmountFlash || amountFlashRenderer == null) return;
+
+        if (amountFlashRenderer.sharedMaterial != null)
+        {
+            amountFlashMatInstance = new Material(amountFlashRenderer.sharedMaterial);
+            amountFlashRenderer.material = amountFlashMatInstance;
+            SetAmountFlashValue(amountFlashRestValue);
+        }
+        else
+        {
+            Debug.LogWarning($"[EnemyVisualEffects] amountFlashRenderer '{amountFlashRenderer.name}' no tiene sharedMaterial. Amount flash desactivado.");
+            useAmountFlash = false;
+        }
+    }
+
     #endregion
 
-    #region Core Cleanup
+    #region Core Effect Management
 
     private void CleanupAllEffects(bool forceImmediate = false)
     {
@@ -141,7 +197,10 @@ public class EnemyVisualEffects : MonoBehaviour
 
         stunEffectCoroutine = null;
         glowCoroutine = null;
+        amountBlinkCoroutine = null;
         activeBlinkRoutines.Clear();
+
+        ResetAmountFlashValue();
 
         if (activeStunVFX != null)
         {
@@ -186,17 +245,23 @@ public class EnemyVisualEffects : MonoBehaviour
             }
         }
 
+        if (useAmountFlash && amountFlashRenderer != null && amountFlashMatInstance != null)
+        {
+            amountFlashRenderer.material = amountFlashMatInstance;
+            ResetAmountFlashValue();
+        }
+
         SetRenderersActive(true);
     }
 
     #endregion
 
+    #region Damage & Hit Feedback
+
     public void PlayToughnessHitFeedback(Vector3 position)
     {
         ShowDamageNumber(position, 0, false);
     }
-
-    #region Damage Feedback
 
     public void PlayDamageFeedback(Vector3 damagePosition, float damage, bool isCritical)
     {
@@ -205,18 +270,39 @@ public class EnemyVisualEffects : MonoBehaviour
 
         if (isStunned) return;
 
-        if (blinkFlashMaterial != null)
+        if (useAmountFlash)
         {
-            if (meshRenderers != null)
+            if (amountFlashRenderer != null && amountFlashMatInstance != null)
             {
-                foreach (var r in meshRenderers)
-                    if (r != null) StartBlinkRoutine(r, blinkFlashMaterial, blinkInterval, blinkCount);
+                if (amountBlinkCoroutine != null)
+                {
+                    StopCoroutine(amountBlinkCoroutine);
+                    amountBlinkCoroutine = null;
+                }
+                amountBlinkCoroutine = StartCoroutine(BlinkAmountCoroutine());
             }
-
-            if (spriteRenderers != null)
+        }
+        else
+        {
+            if (blinkFlashMaterial != null)
             {
-                foreach (var s in spriteRenderers)
-                    if (s != null) StartBlinkRoutine(s, blinkFlashMaterial, blinkInterval, blinkCount);
+                if (meshRenderers != null)
+                {
+                    foreach (var r in meshRenderers)
+                    {
+                        if (r == null) continue;
+                        StartBlinkRoutine(r, blinkFlashMaterial, blinkInterval, blinkCount);
+                    }
+                }
+
+                if (spriteRenderers != null)
+                {
+                    foreach (var s in spriteRenderers)
+                    {
+                        if (s == null) continue;
+                        if (s != null) StartBlinkRoutine(s, blinkFlashMaterial, blinkInterval, blinkCount);
+                    }
+                }
             }
         }
     }
@@ -228,39 +314,49 @@ public class EnemyVisualEffects : MonoBehaviour
         if (clip != null) audioSource.PlayOneShot(clip);
     }
 
-    #endregion
-
-    #region External Material Control
-
-    /// <summary>
-    /// Permite a scripts externos cambiar el material base
-    /// sin que el sistema de VFX lo sobrescriba con el cacheado en Awake.
-    /// </summary>
-    public void UpdateBaseMaterial(Renderer targetRenderer, Material newMaterial)
+    public void ShowDamageNumber(Vector3 position, float damage, bool isCritical = false)
     {
-        if (targetRenderer == null || newMaterial == null) return;
-
-        if (originalMeshMats.ContainsKey(targetRenderer))
+        if (damageNumberPrefab != null)
         {
-            originalMeshMats[targetRenderer] = newMaterial;
-        }
-        else
-        {
-            originalMeshMats.Add(targetRenderer, newMaterial);
-        }
-
-        if (!isStunned && glowCoroutine == null)
-        {
-            if (!activeBlinkRoutines.ContainsKey(targetRenderer))
+            GameObject damageNumber = Instantiate(damageNumberPrefab, position, Quaternion.identity, damageNumberParent);
+            DamageNumber script = damageNumber.GetComponent<DamageNumber>();
+            if (script != null)
             {
-                targetRenderer.material = newMaterial;
+                script.SetColor(normalColor, criticalColor);
+                script.Initialize(damage, isCritical);
             }
         }
     }
 
     #endregion
 
-    #region Generic Blink System
+    #region Blink System (Material Swap & Amount)
+
+    private IEnumerator BlinkAmountCoroutine()
+    {
+        bool isPeak = false;
+
+        for (int i = 0; i < blinkCount; i++)
+        {
+            isPeak = !isPeak;
+            SetAmountFlashValue(isPeak ? amountFlashPeakValue : amountFlashRestValue);
+            yield return new WaitForSeconds(blinkInterval);
+        }
+
+        ResetAmountFlashValue();
+        amountBlinkCoroutine = null;
+    }
+
+    private void SetAmountFlashValue(float value)
+    {
+        if (amountFlashMatInstance == null) return;
+        amountFlashMatInstance.SetFloat(amountFlashProperty, value);
+    }
+
+    private void ResetAmountFlashValue()
+    {
+        SetAmountFlashValue(amountFlashRestValue);
+    }
 
     private void StartBlinkRoutine(Component target, Material flashMat, float interval, int count)
     {
@@ -321,94 +417,9 @@ public class EnemyVisualEffects : MonoBehaviour
         activeBlinkRoutines.Remove(target);
     }
 
-    private Material GetOriginalMaterial(Component target)
-    {
-        if (target is Renderer r && originalMeshMats.ContainsKey(r)) return originalMeshMats[r];
-        if (target is SpriteRenderer s && originalSpriteMats.ContainsKey(s)) return originalSpriteMats[s];
-        return null;
-    }
-
-    private void RestoreMaterialSingle(Component target)
-    {
-        if (target == null) return;
-        Material original = GetOriginalMaterial(target);
-        if (original == null) return;
-
-        if (target is Renderer r) r.material = original;
-        else if (target is SpriteRenderer s) s.material = original;
-    }
-
     #endregion
 
-    #region Armor Glow
-
-    public void StartArmorGlow()
-    {
-        if (glowMaterial == null) return;
-        if (glowCoroutine != null) StopCoroutine(glowCoroutine);
-
-        ApplyMaterialToAll(glowMaterial);
-
-        glowCoroutine = StartCoroutine(AnimateGlowCoroutine());
-    }
-
-    public void StopArmorGlow()
-    {
-        if (glowCoroutine != null)
-        {
-            StopCoroutine(glowCoroutine);
-            glowCoroutine = null;
-        }
-        RestoreAllOriginalMaterials();
-    }
-
-    private IEnumerator AnimateGlowCoroutine()
-    {
-        float baseIntensity = 1f;
-        while (true)
-        {
-            float intensity = baseIntensity + Mathf.Sin(Time.time * 3f) * glowIntensity;
-
-            UpdateGlowIntensity(meshRenderers, intensity);
-            UpdateGlowIntensity(spriteRenderers, intensity);
-
-            yield return null;
-        }
-    }
-
-    private void UpdateGlowIntensity<T>(T[] renderers, float intensity) where T : Renderer
-    {
-        if (renderers == null) return;
-        foreach (var r in renderers)
-        {
-            if (r != null && r.material.HasProperty("_EmissionIntensity"))
-            {
-                r.material.SetFloat("_EmissionIntensity", intensity);
-            }
-        }
-    }
-
-    #endregion
-
-    #region Damage Numbers
-
-    public void ShowDamageNumber(Vector3 position, float damage, bool isCritical = false)
-    {
-        if (damageNumberPrefab != null)
-        {
-            GameObject damageNumber = Instantiate(damageNumberPrefab, position, Quaternion.identity, damageNumberParent);
-            DamageNumber script = damageNumber.GetComponent<DamageNumber>();
-            if (script != null)
-            {
-                script.SetColor(normalColor, criticalColor);
-                script.Initialize(damage, isCritical);
-            }
-        }
-    }
-
-    #endregion
-
-    #region Stun Effect Management
+    #region Stun & Armor Effects
 
     public void StartStunEffect(float duration)
     {
@@ -502,9 +513,75 @@ public class EnemyVisualEffects : MonoBehaviour
         }
     }
 
+    public void StartArmorGlow()
+    {
+        if (glowMaterial == null) return;
+        if (glowCoroutine != null) StopCoroutine(glowCoroutine);
+
+        ApplyMaterialToAll(glowMaterial);
+
+        glowCoroutine = StartCoroutine(AnimateGlowCoroutine());
+    }
+
+    public void StopArmorGlow()
+    {
+        if (glowCoroutine != null)
+        {
+            StopCoroutine(glowCoroutine);
+            glowCoroutine = null;
+        }
+        RestoreAllOriginalMaterials();
+    }
+
+    private IEnumerator AnimateGlowCoroutine()
+    {
+        float baseIntensity = 1f;
+        while (true)
+        {
+            float intensity = baseIntensity + Mathf.Sin(Time.time * 3f) * glowIntensity;
+
+            UpdateGlowIntensity(meshRenderers, intensity);
+            UpdateGlowIntensity(spriteRenderers, intensity);
+
+            yield return null;
+        }
+    }
+
     #endregion
 
-    #region Helpers
+    #region External Material Control
+
+    public void ReapplyAmountFlashMaterial()
+    {
+        if (!useAmountFlash || amountFlashRenderer == null || amountFlashMatInstance == null) return;
+        amountFlashRenderer.material = amountFlashMatInstance;
+    }
+
+    public void UpdateBaseMaterial(Renderer targetRenderer, Material newMaterial)
+    {
+        if (targetRenderer == null || newMaterial == null) return;
+
+        if (originalMeshMats.ContainsKey(targetRenderer))
+        {
+            originalMeshMats[targetRenderer] = newMaterial;
+        }
+        else
+        {
+            originalMeshMats.Add(targetRenderer, newMaterial);
+        }
+
+        if (!isStunned && glowCoroutine == null)
+        {
+            if (!activeBlinkRoutines.ContainsKey(targetRenderer))
+            {
+                targetRenderer.material = newMaterial;
+            }
+        }
+    }
+
+    #endregion
+
+    #region Helper Methods
 
     private void ApplyMaterialToAll(Material mat)
     {
@@ -562,11 +639,44 @@ public class EnemyVisualEffects : MonoBehaviour
         }
     }
 
+    private Material GetOriginalMaterial(Component target)
+    {
+        if (target is Renderer r && originalMeshMats.ContainsKey(r)) return originalMeshMats[r];
+        if (target is SpriteRenderer s && originalSpriteMats.ContainsKey(s)) return originalSpriteMats[s];
+        return null;
+    }
+
+    private void RestoreMaterialSingle(Component target)
+    {
+        if (target == null) return;
+        Material original = GetOriginalMaterial(target);
+        if (original == null) return;
+
+        if (target is Renderer r) r.material = original;
+        else if (target is SpriteRenderer s) s.material = original;
+    }
+
+    private void UpdateGlowIntensity<T>(T[] renderers, float intensity) where T : Renderer
+    {
+        if (renderers == null) return;
+        foreach (var r in renderers)
+        {
+            if (r != null && r.material.HasProperty("_EmissionIntensity"))
+            {
+                r.material.SetFloat("_EmissionIntensity", intensity);
+            }
+        }
+    }
+
     #endregion
+
+    #region Debugging
 
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.magenta;
         Gizmos.DrawLine(transform.position, transform.position + (Vector3.up * stunVFXHeight));
     }
+
+    #endregion
 }
