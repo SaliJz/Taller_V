@@ -1,5 +1,4 @@
 using System.Collections;
-using JetBrains.Annotations;
 using UnityEngine;
 
 public class GachaAnimCtrl : MonoBehaviour
@@ -54,7 +53,7 @@ public class GachaAnimCtrl : MonoBehaviour
         if(Input.GetKeyDown(KeyCode.P)) {ActivateGacha();}
     }
 
-    void ActivateGacha()
+    public void ActivateGacha()
     {
         StartCoroutine(GachaSecuence());
     }
@@ -94,9 +93,8 @@ public class GachaAnimCtrl : MonoBehaviour
         shakeTarget.localPosition = originalPos;
     }
 
-    public void LaunchEyeEvent()
+    void LaunchEyeEvent()
     {
         eyeScript.LaunchEye();
     }
-
 }
