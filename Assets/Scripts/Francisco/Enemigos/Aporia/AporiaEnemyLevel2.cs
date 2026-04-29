@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class AporiaEnemyLevel2 : AporiaEnemyBase
 {
@@ -82,6 +83,20 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
     #endregion
 
     #region Muerte con explosión
+
+    private void OnDestroy()
+    {
+        GameObject shard = Instantiate(glassShardDeathPrefab, transform.position, Quaternion.identity);
+        shard.transform.localScale = Vector3.one * (shardDeathRadius * 2f);
+
+        if (shard.TryGetComponent<GlassShardDamage>(out var dmg))
+        {
+            dmg.damagePerSecond = shardDeathDamagePerSec;
+            dmg.playerLayer = playerLayer;
+            dmg.shardDeathDuration = shardDeathDuration;
+        }
+    }
+
     protected override void HandleDeath(GameObject e)
     {
         if (e != gameObject) return;
@@ -150,9 +165,8 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
         {
             dmg.damagePerSecond = damagePerSec;
             dmg.playerLayer = playerLayer;
+            dmg.shardDeathDuration = duration;
         }
-
-        Destroy(shard, duration);
     }
 
     private void ApplyKnockbackWithForce(Transform target, float force)
