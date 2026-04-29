@@ -6,6 +6,8 @@ public class StaticTrapMine : MonoBehaviour
     [SerializeField] private float duration = 5f;
     [SerializeField] private float explosionRadius = 1.8f;
     [SerializeField] private float damage = 15f;
+    [SerializeField] private float slowDuration = 0.5f;
+    [SerializeField] private float slowFraction = 0.1f;
 
     [Header("Collision Layers")]
     [SerializeField] private LayerMask playerLayer;
@@ -65,6 +67,13 @@ public class StaticTrapMine : MonoBehaviour
         foreach (var hit in hits)
         {
             hit.GetComponent<IDamageable>()?.TakeDamage(damage);
+
+            PlayerStatsManager statsManager = hit.GetComponent<PlayerStatsManager>();
+            if (statsManager != null)
+            {
+                string slowKey = "MineSlow_" + GetInstanceID();
+                statsManager.ApplyTimedModifier(slowKey, StatType.MoveSpeed, -slowFraction, slowDuration, isPercentage: true);
+            }
         }
 
         Destroy(gameObject);

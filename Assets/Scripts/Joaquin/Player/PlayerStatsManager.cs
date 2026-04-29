@@ -638,15 +638,16 @@ public partial class PlayerStatsManager : MonoBehaviour
     /// <param name="type">El stat a modificar.</param>
     /// <param name="amount">La cantidad a añadir (negativa para un debuff).</param>
     /// <param name="duration">La duración del efecto en segundos.</param>
-    public void ApplyTimedModifier(string key, StatType type, float amount, float duration)
+    /// <param name="isPercentage">La cantidad es un porcentaje del valor base (true) o un valor absoluto (false).</param>
+    public void ApplyTimedModifier(string key, StatType type, float amount, float duration, bool isPercentage = false)
     {
-        StartCoroutine(TimedModifierCoroutine(key, type, amount, duration));
+        StartCoroutine(TimedModifierCoroutine(key, type, amount, duration, isPercentage));
     }
 
-    private IEnumerator TimedModifierCoroutine(string key, StatType type, float amount, float duration)
+    private IEnumerator TimedModifierCoroutine(string key, StatType type, float amount, float duration, bool isPercentage)
     {
         Debug.Log($"[PlayerStatsManager] Aplicando efecto temporal '{key}' a {type} ({amount}) por {duration}s.");
-        ApplyNamedModifier(key, type, amount);
+        ApplyNamedModifier(key, type, amount, isPercentage);
 
         yield return new WaitForSeconds(duration);
 
