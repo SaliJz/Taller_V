@@ -6,10 +6,10 @@ public class ResurrectedDevilLarva : MonoBehaviour
 {
     #region Headers
     [Header("Configuración")]
-    public float moveSpeed = 5f;
-    public float lifetime = 5f;
-    public float baseDamage = 10f;
-    public float explosionRadius = 1.2f;
+    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float lifetime = 5f;
+    [SerializeField] private float baseDamage = 10f;
+    [SerializeField] private float explosionRadius = 1.2f;
     [SerializeField] private Renderer larvaRenderer;
     #endregion
 

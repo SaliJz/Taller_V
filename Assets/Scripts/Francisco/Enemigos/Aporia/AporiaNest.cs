@@ -7,6 +7,8 @@ public class AporiaNest : MonoBehaviour
     [SerializeField] private GameObject larvaPrefab;
     [SerializeField] private float duration = 3f;
     [SerializeField] private float dps = 1f;
+    [SerializeField] private float slowDuration = 1f;
+    [SerializeField] private float slowFraction = 0.2f;
     #endregion
 
     #region Unity Events
@@ -22,6 +24,13 @@ public class AporiaNest : MonoBehaviour
             if (other.TryGetComponent<PlayerHealth>(out var health))
             {
                 health.TakeDamage(dps * Time.deltaTime);
+            }
+
+            PlayerStatsManager statsManager = other.GetComponent<PlayerStatsManager>();
+            if (statsManager != null)
+            {
+                string slowKey = "NestSlow_" + GetInstanceID();
+                statsManager.ApplyTimedModifier(slowKey, StatType.MoveSpeed, -slowFraction, slowDuration, isPercentage: true);
             }
         }
     }
