@@ -485,7 +485,6 @@ GameObject:
   - component: {fileID: 3067020490461023902}
   - component: {fileID: 1239604569369188609}
   - component: {fileID: 7565986538934864340}
-  - component: {fileID: 3605903581903766242}
   - component: {fileID: 8899945658029769953}
   - component: {fileID: 7798502344753917479}
   - component: {fileID: 1972044736101290427}
@@ -560,29 +559,6 @@ NavMeshAgent:
   m_BaseOffset: 0.375
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
---- !u!114 &3605903581903766242
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2070855010256960706}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fa9c23e57cc55574da2e6741861d1762, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 8
-  characterRadius: 0.5
-  sphereCastStartHeight: 1.1
-  castDistance: 5
-  navSampleDistance: 0.5
-  disableOnFail: 1
-  useAwake: 1
-  drawDetailedGizmos: 0
-  gizmoScale: 1
 --- !u!114 &8899945658029769953
 MonoBehaviour:
   m_ObjectHideFlags: 0

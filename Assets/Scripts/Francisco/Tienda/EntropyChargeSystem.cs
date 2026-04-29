@@ -13,7 +13,7 @@ public class EntropyChargeSystem : MonoBehaviour
     #region Inspector Fields
 
     [Header("Daño")]
-    [Range(0f, 100f)] private float damagePercent = 10f;
+    [Range(0f, 100f)] private float damagePercent = 5f;
 
     [Header("Configuración de Cargas")]
     private float chargeDuration = 1f;
