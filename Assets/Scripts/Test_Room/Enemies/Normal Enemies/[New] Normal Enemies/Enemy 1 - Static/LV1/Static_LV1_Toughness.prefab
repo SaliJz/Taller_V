@@ -890,23 +890,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d1acde7986d0744c9376265886dc9ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  visualCtrl: {fileID: 1511385850728671940}
+  visualCtrl: {fileID: 1511385850728671940, guid: 7c14fd4f4969a51488ebc53d4cad8166, type: 3}
   stats: {fileID: 0}
   projectilePrefab: {fileID: 5103744887001019260, guid: d6225ed5c3427704fbb5c1fb5cbf5883, type: 3}
-  firePoint: {fileID: 6690160978938110782}
+  firePoint: {fileID: 6690160978938110782, guid: 7c14fd4f4969a51488ebc53d4cad8166, type: 3}
   currentLevel: 0
   interceptProbabilityNivel1: 0.25
   interceptProbabilityNivel2: 0.5
   interceptProbabilityNivel3: 0.75
-  health: 20
-  moveSpeed: 4
+  health: 15
+  moveSpeed: 0
   fireRate: 1.5
   useRandomFireRate: 1
-  minFireRate: 1.5
-  maxFireRate: 3
-  minDamageIncrease: 1
-  projectileSpeed: 12
-  maxDamageIncrease: 2
+  minFireRate: 1
+  maxFireRate: 1.5
+  minDamageIncrease: 3.5
+  projectileSpeed: 15
+  maxDamageIncrease: 7.5
   maxDistanceForDamageIncrease: 6
   maxDistanceForDamageStart: 20
   attackRange: 50
@@ -914,7 +914,7 @@ MonoBehaviour:
   detectionRadius: 50
   detectionGrowthInterval: 2.5
   detectionGrowthAmount: 10
-  teleportRange: 5
+  teleportRange: 7.5
   patrolWaypoints: []
   loopWaypoints: 1
   freePatrolIterations: 10
@@ -924,14 +924,14 @@ MonoBehaviour:
   canReposition: 0
   repositionTeleportCooldown: 0.75
   p1_teleportCooldown: 2.5
-  p1_pursuitAdvanceDistance: 3
+  p1_pursuitAdvanceDistance: 4
   p1_pursuitLateralVariationMin: 3
   p1_pursuitLateralVariationMax: 5
   p2_activationRadius: 7.5
   p2_teleportCooldown: 2.5
   p2_teleportRange: 7.5
   spawnDelay: 1
-  audioSource: {fileID: 2727148953591348775}
+  audioSource: {fileID: 2727148953591348775, guid: 7c14fd4f4969a51488ebc53d4cad8166, type: 3}
   idleSFX: {fileID: 0}
   teleportSFX: {fileID: 0}
   deathSFX: {fileID: 0}
@@ -1009,7 +1009,7 @@ MonoBehaviour:
   meleeToughnessDamageMultiplier: 1
   rangedToughnessDamageMultiplier: 1
   useDynamicBars: 0
-  toughnessPerBar: 45
+  toughnessPerBar: 30
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
   toughnessSlider: {fileID: 7858769018974897066}

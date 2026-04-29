@@ -296,31 +296,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc3cc84a8b9d50841910cc51fe991db1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animCtrl: {fileID: 6791240592043421687}
-  hitPoint: {fileID: 7896858996999191465}
-  groundIndicator: {fileID: 1633902712170988133}
+  animCtrl: {fileID: 6791240592043421687, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
+  hitPoint: {fileID: 7896858996999191465, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
+  groundIndicator: {fileID: 1633902712170988133, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
   wanderRadius: 8
   wanderWaitTime: 3
-  health: 35
+  health: 25
   moveSpeed: 6.5
-  dashDuration: 0.4
+  dashDuration: 1
   dashMaxDistance: 10
   preparationTime: 0.25
   attackTransitionDelay: 0.1
-  attackDamage: 30
-  attackRadius: 2.5
-  hitDelay: 0.35
+  attackDamage: 20
+  attackRadius: 2
+  hitDelay: 0.5
   recoveryTime: 1.2
-  knockbackForce: 6
+  knockbackForce: 5
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
-  detectionRadius: 15
-  dashActivationDistance: 10
+  detectionRadius: 25
+  dashActivationDistance: 20
   cooldownShort: 1
-  cooldownMedium: 1.5
-  cooldownLong: 2
-  audioSource: {fileID: 4662593617215658811}
+  cooldownMedium: 1.6
+  cooldownLong: 2.2
+  audioSource: {fileID: 4662593617215658811, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
   dashSFX: {fileID: 8300000, guid: e0bb04f2504e09a41814942127e10c64, type: 3}
   attackSFX: {fileID: 0}
   damageSFX: {fileID: 0}

@@ -1786,7 +1786,7 @@ MonoBehaviour:
   groundIndicator: {fileID: 3885539838815225628}
   wanderRadius: 8
   wanderWaitTime: 3
-  health: 35
+  health: 30
   moveSpeed: 6.5
   dashDuration: 0.4
   dashMaxDistance: 10
@@ -1800,11 +1800,11 @@ MonoBehaviour:
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
-  detectionRadius: 15
-  dashActivationDistance: 10
-  cooldownShort: 1
-  cooldownMedium: 1.5
-  cooldownLong: 2
+  detectionRadius: 25
+  dashActivationDistance: 20
+  cooldownShort: 1.1
+  cooldownMedium: 1.6
+  cooldownLong: 2.1
   audioSource: {fileID: 7650769403353327420}
   dashSFX: {fileID: 8300000, guid: e0bb04f2504e09a41814942127e10c64, type: 3}
   attackSFX: {fileID: 0}
@@ -1863,8 +1863,8 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeathByMelee: 4
-  lifestealAmountOnDeathByDistance: 3
+  lifestealAmountOnDeathByMelee: 5.5
+  lifestealAmountOnDeathByDistance: 3.5
   toughnessSystem: {fileID: 2651890742595099392}
   deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   deathVFXOffset: {x: 0, y: 1, z: 0}
@@ -1905,7 +1905,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   useToughness: 0
-  maxToughness: 40
+  maxToughness: 45
   currentToughness: 0
   meleeToughnessDamageMultiplier: 1
   rangedToughnessDamageMultiplier: 1

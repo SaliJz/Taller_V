@@ -301,15 +301,15 @@ MonoBehaviour:
   interceptProbabilityNivel1: 0.25
   interceptProbabilityNivel2: 0.5
   interceptProbabilityNivel3: 0.75
-  health: 15
-  moveSpeed: 4
+  health: 50
+  moveSpeed: 0
   fireRate: 1.5
   useRandomFireRate: 1
-  minFireRate: 1.2
-  maxFireRate: 2
-  minDamageIncrease: 0
-  projectileSpeed: 15
-  maxDamageIncrease: 0
+  minFireRate: 1
+  maxFireRate: 1.5
+  minDamageIncrease: 5
+  projectileSpeed: 18
+  maxDamageIncrease: 9
   maxDistanceForDamageIncrease: 6
   maxDistanceForDamageStart: 20
   attackRange: 50
@@ -317,7 +317,7 @@ MonoBehaviour:
   detectionRadius: 50
   detectionGrowthInterval: 2.5
   detectionGrowthAmount: 10
-  teleportRange: 5
+  teleportRange: 9.5
   patrolWaypoints: []
   loopWaypoints: 1
   freePatrolIterations: 10
@@ -330,9 +330,9 @@ MonoBehaviour:
   p1_pursuitAdvanceDistance: 4
   p1_pursuitLateralVariationMin: 3
   p1_pursuitLateralVariationMax: 5
-  p2_activationRadius: 5
+  p2_activationRadius: 7.5
   p2_teleportCooldown: 2.5
-  p2_teleportRange: 5
+  p2_teleportRange: 7.5
   spawnDelay: 1
   audioSource: {fileID: 8739655723809894776}
   idleSFX: {fileID: 0}
@@ -378,8 +378,8 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeathByMelee: 5
-  lifestealAmountOnDeathByDistance: 3.5
+  lifestealAmountOnDeathByMelee: 6
+  lifestealAmountOnDeathByDistance: 4
   toughnessSystem: {fileID: 6487511539592826233}
   deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   deathVFXOffset: {x: 0, y: 1, z: 0}
@@ -413,7 +413,7 @@ MonoBehaviour:
   meleeToughnessDamageMultiplier: 1
   rangedToughnessDamageMultiplier: 1
   useDynamicBars: 0
-  toughnessPerBar: 45
+  toughnessPerBar: 35
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
   toughnessSlider: {fileID: 5433475043399830961}
