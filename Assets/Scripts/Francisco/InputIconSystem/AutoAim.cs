@@ -3,7 +3,15 @@ using UnityEngine.InputSystem;
 
 public class AutoAim : MonoBehaviour
 {
-    [Header("Auto-Aim Settings")]
+    #region Enums
+
+    public enum FXMode { Arrows3D, FIFA }
+
+    #endregion
+
+    #region Serialized Fields
+
+    [Header("Auto-Aim")]
     [SerializeField] private bool enableAutoAim = true;
     [SerializeField] private bool onlyForGamepad = true;
     [SerializeField] private float autoAimRange = 25f;
@@ -11,30 +19,72 @@ public class AutoAim : MonoBehaviour
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private bool debugMode = false;
 
-    [Header("Sticky Aim Settings")]
+    [Header("Sticky Aim")]
     [SerializeField] private bool enableStickyTarget = true;
     [SerializeField] private float stickyTargetDuration = 0.5f;
 
-    [Header("Target FX Settings")]
+    [Header("FX - General")]
     [SerializeField] private bool showTargetFX = true;
-    [SerializeField] private GameObject arrowPrefab;
+    [SerializeField] private bool forceShowWithoutGamepad = false;
+    [SerializeField] private FXMode targetFXMode = FXMode.Arrows3D;
+
+    [Header("FX - Mode 1: Arrows3D")]
+    [SerializeField] private Color arrowColor = new Color(1f, 0.1f, 0.1f, 0.9f);
+    [SerializeField] private float arrowSize = 0.2f;
     [SerializeField] private float arrowDistance = 1.0f;
     [SerializeField] private float arrowOffset = 1.0f;
-    [SerializeField] private Color arrowColor = new Color(1f, 0f, 0f, 0.8f);
-    [SerializeField] private float arrowSize = 0.2f;
     [SerializeField] private bool animateFX = true;
     [SerializeField] private float pulseSpeed = 3f;
     [SerializeField] private float pulseScale = 1.2f;
     [SerializeField] private float rotationSpeed = 90f;
-    [SerializeField] private bool billboardToCamera = true;
+
+    [Header("FX - Mode 2: FIFA Position")]
+    [SerializeField] private float fifaHeightAboveEnemy = 2.2f;
+    [SerializeField] private float fifaArrowSize = 0.35f;
+
+    [Header("FX - Mode 2: FIFA Bob")]
+    [SerializeField] private bool fifaBobEnabled = true;
+    [SerializeField] private float fifaBobSpeed = 2.5f;
+    [SerializeField] private float fifaBobAmount = 0.18f;
+    [SerializeField] private AnimationCurve fifaBobCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+    [Header("FX - Mode 2: FIFA Color")]
+    [SerializeField] private bool fifaColorCycleEnabled = true;
+    [SerializeField] private float fifaColorCycleSpeed = 1.2f;
+    [SerializeField] private Gradient fifaColorGradient;
+    [SerializeField] private Color fifaStaticColor = new Color(1f, 0.85f, 0f, 1f);
+
+    [Header("FX - Mode 2: FIFA Opacity")]
+    [SerializeField] private bool fifaOpacityPulseEnabled = true;
+    [SerializeField] private float fifaOpacityPulseSpeed = 3f;
+    [SerializeField] private float fifaOpacityMin = 0.4f;
+    [SerializeField] private float fifaOpacityMax = 1.0f;
+
+    [Header("FX - Mode 2: FIFA Transform")]
+    [SerializeField] private float fifaSelfRotationSpeed = 0f;
+    [SerializeField] private bool fifaBillboardToCamera = true;
+
+    #endregion
+
+    #region Private Fields
 
     private Transform currentTarget;
     private float lastTargetTime;
-    private GameObject[] targetArrows = new GameObject[4];
     private bool fxInitialized = false;
     private Camera mainCamera;
     private GamepadPointer gamepadPointer;
     private bool originalShowTargetFX;
+    private FXMode lastBuiltMode;
+
+    private GameObject[] arrows3D = new GameObject[4];
+
+    private GameObject fifaArrowObj;
+    private Material fifaMaterial;
+    private float fifaColorTime = 0f;
+
+    #endregion
+
+    #region Properties
 
     public bool EnableAutoAim
     {
@@ -48,16 +98,33 @@ public class AutoAim : MonoBehaviour
         set => onlyForGamepad = value;
     }
 
+    public bool ForceShowWithoutGamepad
+    {
+        get => forceShowWithoutGamepad;
+        set => forceShowWithoutGamepad = value;
+    }
+
+    public FXMode TargetFXMode
+    {
+        get => targetFXMode;
+        set { targetFXMode = value; RebuildFX(); }
+    }
+
+    #endregion
+
+    #region Unity Lifecycle
+
     private void Start()
     {
         mainCamera = Camera.main;
         gamepadPointer = GamepadPointer.Instance;
         originalShowTargetFX = showTargetFX;
 
+        if (fifaColorGradient == null)
+            fifaColorGradient = BuildDefaultGradient();
+
         if (showTargetFX)
-        {
-            InitializeTargetFX();
-        }
+            InitializeFX();
     }
 
     private void Update()
@@ -68,397 +135,451 @@ public class AutoAim : MonoBehaviour
             if (mainCamera == null) return;
         }
 
-        bool isGamepadActive = IsGamepadActiveDevice();
+        if (targetFXMode != lastBuiltMode && fxInitialized)
+            RebuildFX();
 
-        bool shouldShowFX = originalShowTargetFX && enableAutoAim && (!onlyForGamepad || isGamepadActive);
+        bool isGamepadActive = IsGamepadActiveDevice();
+        bool shouldShowFX = originalShowTargetFX && enableAutoAim
+                            && (!onlyForGamepad || isGamepadActive || forceShowWithoutGamepad);
 
         SetFXEnabled(shouldShowFX);
 
         Vector3 referenceForward = transform.forward;
         Vector3? gamepadAim = GetGamepadAimDirection();
-
         if (gamepadAim.HasValue)
-        {
             referenceForward = gamepadAim.Value;
-        }
 
         if (enableAutoAim)
-        {
             FindBestTarget(transform.position, referenceForward, null);
-        }
 
         if (showTargetFX && fxInitialized)
-        {
-            UpdateTargetFX();
-        }
+            UpdateFX();
     }
+
+    private void OnDestroy()
+    {
+        DestroyAllFX();
+    }
+
+    #endregion
+
+    #region Device Helpers
 
     private bool IsGamepadActiveDevice()
     {
         if (gamepadPointer == null) return false;
-
         InputDevice activeDevice = gamepadPointer.GetCurrentActiveDevice();
         Gamepad gamepad = gamepadPointer.GetCurrentGamepad();
-
         return activeDevice != null && activeDevice == gamepad;
     }
 
     private Vector3? GetGamepadAimDirection()
     {
         if (gamepadPointer == null) return null;
-
         if (!onlyForGamepad || IsGamepadActiveDevice())
         {
-            Vector2 aimValue2D = gamepadPointer.GetAimDirectionValue();
-
-            if (aimValue2D.magnitude > 0)
-            {
-                Vector3 aimDirection = new Vector3(aimValue2D.x, 0f, aimValue2D.y).normalized;
-                return aimDirection;
-            }
+            Vector2 v = gamepadPointer.GetAimDirectionValue();
+            if (v.magnitude > 0)
+                return new Vector3(v.x, 0f, v.y).normalized;
         }
         return null;
     }
+
+    #endregion
+
+    #region Target Finding
 
     public Transform FindBestTarget(Vector3 playerPosition, Vector3 playerForward, Vector3? aimDirection = null)
     {
         if (!enableAutoAim) return null;
 
-        Collider[] potentialTargets = Physics.OverlapSphere(playerPosition, autoAimRange, enemyLayer);
+        Collider[] cols = Physics.OverlapSphere(playerPosition, autoAimRange, enemyLayer);
+        if (cols.Length == 0) { currentTarget = null; return null; }
 
-        if (potentialTargets.Length == 0)
-        {
-            currentTarget = null;
-            return null;
-        }
-
-        Transform bestTarget = null;
+        Transform best = null;
         float bestScore = float.MaxValue;
+        Vector3 refDir = GetGamepadAimDirection() ?? (aimDirection ?? playerForward);
 
-        Vector3 referenceDirection = GetGamepadAimDirection() ?? (aimDirection ?? playerForward);
-
-        foreach (Collider targetCollider in potentialTargets)
+        foreach (Collider col in cols)
         {
-            if (targetCollider == null || !targetCollider.gameObject.activeInHierarchy)
-                continue;
+            if (col == null || !col.gameObject.activeInHierarchy) continue;
 
-            Vector3 directionToTarget = (targetCollider.transform.position - playerPosition).normalized;
-            directionToTarget.y = 0f;
+            Vector3 toTarget = (col.transform.position - playerPosition).normalized;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude < 0.0001f) continue;
 
-            if (directionToTarget.sqrMagnitude < 0.0001f)
-                continue;
+            float angle = Vector3.Angle(refDir, toTarget);
+            if (angle > autoAimAngle) continue;
+            if (!IsEnemyValid(col)) continue;
 
-            float angleToTarget = Vector3.Angle(referenceDirection, directionToTarget);
-
-            if (angleToTarget > autoAimAngle)
-            {
-                continue;
-            }
-
-            if (!IsEnemyValid(targetCollider))
-            {
-                continue;
-            }
-
-            float distance = Vector3.Distance(playerPosition, targetCollider.transform.position);
-            float normalizedDistance = distance / autoAimRange;
-            float normalizedAngle = angleToTarget / autoAimAngle;
-            float score = (normalizedDistance * 0.6f) + (normalizedAngle * 0.4f);
+            float dist = Vector3.Distance(playerPosition, col.transform.position);
+            float score = (dist / autoAimRange) * 0.6f + (angle / autoAimAngle) * 0.4f;
 
             if (score < bestScore)
             {
                 bestScore = score;
-                bestTarget = targetCollider.transform;
+                best = col.transform;
             }
         }
 
-        if (bestTarget != null)
-        {
-            currentTarget = bestTarget;
-            lastTargetTime = Time.time;
-        }
-        else
-        {
-            currentTarget = null;
-        }
+        if (best != null) { currentTarget = best; lastTargetTime = Time.time; }
+        else currentTarget = null;
 
-        return bestTarget;
+        return best;
     }
 
     private bool IsTargetValid(Transform target, Vector3 playerPosition, Vector3 playerForward, Vector3? aimDirection)
     {
-        if (target == null || !target.gameObject.activeInHierarchy)
-            return false;
+        if (target == null || !target.gameObject.activeInHierarchy) return false;
+        if (!IsEnemyValid(target.GetComponent<Collider>())) return false;
 
-        if (!IsEnemyValid(target.GetComponent<Collider>()))
-            return false;
+        float dist = Vector3.Distance(playerPosition, target.position);
+        if (dist > autoAimRange * 1.2f) return false;
 
-        float distance = Vector3.Distance(playerPosition, target.position);
-        if (distance > autoAimRange * 1.2f)
-            return false;
-
-        Vector3 directionToTarget = (target.position - playerPosition).normalized;
-        directionToTarget.y = 0f;
-
-        Vector3 referenceDirection = GetGamepadAimDirection() ?? (aimDirection ?? playerForward);
-        float angleToTarget = Vector3.Angle(referenceDirection, directionToTarget);
-
-        return angleToTarget <= autoAimAngle * 1.5f;
+        Vector3 toTarget = (target.position - playerPosition).normalized;
+        toTarget.y = 0f;
+        Vector3 refDir = GetGamepadAimDirection() ?? (aimDirection ?? playerForward);
+        return Vector3.Angle(refDir, toTarget) <= autoAimAngle * 1.5f;
     }
 
-    private bool IsEnemyValid(Collider enemyCollider)
+    private bool IsEnemyValid(Collider col)
     {
-        if (enemyCollider == null) return false;
-
-        IDamageable damageable = enemyCollider.GetComponent<IDamageable>();
+        if (col == null) return false;
+        IDamageable damageable = col.GetComponent<IDamageable>();
         if (damageable == null) return false;
-
-        EnemyHealth enemyHealth = enemyCollider.GetComponent<EnemyHealth>();
-        if (enemyHealth != null && enemyHealth.IsDead)
-        {
-            return false;
-        }
-
+        EnemyHealth health = col.GetComponent<EnemyHealth>();
+        if (health != null && health.IsDead) return false;
         return true;
     }
 
     public Vector3 GetAimDirection(Vector3 playerPosition, Vector3 playerForward, Vector3? manualAimDirection, out bool foundTarget)
     {
         Transform target = currentTarget;
-
         Vector3? gamepadAim = GetGamepadAimDirection();
-        Vector3 effectiveAimDirection = gamepadAim ?? (manualAimDirection ?? playerForward);
+        Vector3 effectiveAim = gamepadAim ?? (manualAimDirection ?? playerForward);
 
         if (enableStickyTarget && target != null && Time.time - lastTargetTime < stickyTargetDuration)
         {
-            if (IsTargetValid(target, playerPosition, playerForward, effectiveAimDirection))
+            if (IsTargetValid(target, playerPosition, playerForward, effectiveAim))
             {
-                Vector3 directionToTarget = (target.position - playerPosition).normalized;
-                directionToTarget.y = 0f;
+                Vector3 dir = (target.position - playerPosition).normalized;
+                dir.y = 0f;
                 foundTarget = true;
-                ReportDebug($"Usando sticky target para disparo: {target.name}", 1);
-                return directionToTarget;
+                return dir;
             }
         }
 
-        target = FindBestTarget(playerPosition, playerForward, effectiveAimDirection);
+        target = FindBestTarget(playerPosition, playerForward, effectiveAim);
 
         if (target != null)
         {
-            Vector3 directionToTarget = (target.position - playerPosition).normalized;
-            directionToTarget.y = 0f;
+            Vector3 dir = (target.position - playerPosition).normalized;
+            dir.y = 0f;
             foundTarget = true;
-            return directionToTarget;
+            return dir;
         }
 
         foundTarget = false;
-        return effectiveAimDirection;
+        return effectiveAim;
     }
 
     public void ClearTarget()
     {
         currentTarget = null;
-        HideTargetFX();
-        ReportDebug("Objetivo limpiado", 1);
+        HideAllFX();
     }
 
     public Transform GetCurrentTarget()
     {
-        if (currentTarget != null && currentTarget.gameObject.activeInHierarchy)
-        {
-            return currentTarget;
-        }
-        return null;
+        return (currentTarget != null && currentTarget.gameObject.activeInHierarchy) ? currentTarget : null;
     }
 
-    #region Target FX Methods
+    #endregion
 
-    private void InitializeTargetFX()
+    #region FX - Init & Rebuild
+
+    private void InitializeFX()
     {
         if (fxInitialized) return;
 
+        if (targetFXMode == FXMode.Arrows3D) InitArrows3D();
+        else InitFIFA();
+
+        lastBuiltMode = targetFXMode;
+        fxInitialized = true;
+    }
+
+    private void RebuildFX()
+    {
+        DestroyAllFX();
+        fxInitialized = false;
+        InitializeFX();
+    }
+
+    private void DestroyAllFX()
+    {
+        for (int i = 0; i < arrows3D.Length; i++)
+        {
+            if (arrows3D[i] != null) { Destroy(arrows3D[i]); arrows3D[i] = null; }
+        }
+
+        if (fifaArrowObj != null) { Destroy(fifaArrowObj); fifaArrowObj = null; }
+    }
+
+    private void HideAllFX()
+    {
+        foreach (var a in arrows3D) if (a != null) a.SetActive(false);
+        if (fifaArrowObj != null) fifaArrowObj.SetActive(false);
+    }
+
+    #endregion
+
+    #region FX - Mode 1: Arrows3D
+
+    private void InitArrows3D()
+    {
         for (int i = 0; i < 4; i++)
         {
-            GameObject arrow = CreateArrow(i);
-            targetArrows[i] = arrow;
-            arrow.SetActive(false);
+            arrows3D[i] = BuildArrow3D(i);
+            arrows3D[i].SetActive(false);
         }
-
-        fxInitialized = true;
-        ReportDebug("Sistema de FX de objetivo inicializado", 1);
     }
 
-    private GameObject CreateArrow(int index)
+    private GameObject BuildArrow3D(int index)
     {
-        GameObject arrow;
+        GameObject obj = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        Destroy(obj.GetComponent<Collider>());
+        obj.name = $"TargetArrow3D_{index}";
+        obj.transform.SetParent(transform);
+        obj.transform.localScale = Vector3.one * arrowSize;
 
-        if (arrowPrefab != null)
-        {
-            arrow = Instantiate(arrowPrefab);
-        }
-        else
-        {
-            arrow = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            Destroy(arrow.GetComponent<Collider>());
+        Material mat = new Material(Shader.Find("Sprites/Default"));
+        mat.color = arrowColor;
+        mat.mainTexture = BuildArrowTexture(arrowColor);
+        obj.GetComponent<Renderer>().material = mat;
 
-            Material mat = new Material(Shader.Find("Sprites/Default"));
-            mat.color = arrowColor;
-            arrow.GetComponent<Renderer>().material = mat;
-
-            Texture2D arrowTex = CreateArrowTexture();
-            mat.mainTexture = arrowTex;
-        }
-
-        arrow.name = $"TargetArrow_{index}";
-        arrow.transform.SetParent(transform);
-        arrow.transform.localScale = Vector3.one * arrowSize;
-
-        return arrow;
+        return obj;
     }
 
-    private Texture2D CreateArrowTexture()
+    private Texture2D BuildArrowTexture(Color col)
     {
         int size = 64;
-        Texture2D texture = new Texture2D(size, size);
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
         Color[] pixels = new Color[size * size];
-
-        for (int i = 0; i < pixels.Length; i++)
-        {
-            pixels[i] = Color.clear;
-        }
+        for (int i = 0; i < pixels.Length; i++) pixels[i] = Color.clear;
 
         for (int y = 0; y < size; y++)
         {
             for (int x = 0; x < size; x++)
             {
-                float centerX = size / 2f;
-                float normalizedY = y / (float)size;
-                float width = (1f - normalizedY) * centerX * 0.8f;
-
-                if (Mathf.Abs(x - centerX) <= width)
+                float cx = size / 2f;
+                float ny = y / (float)size;
+                float half = (1f - ny) * cx * 0.8f;
+                if (Mathf.Abs(x - cx) <= half)
                 {
-                    bool isEdge = Mathf.Abs(x - centerX) > width - 2f || y < 2 || y > size - 3;
-                    pixels[y * size + x] = isEdge ? new Color(0.5f, 0f, 0f, 1f) : arrowColor;
+                    bool edge = Mathf.Abs(x - cx) > half - 2f || y < 2 || y > size - 3;
+                    pixels[y * size + x] = edge ? new Color(col.r * 0.5f, col.g * 0.5f, col.b * 0.5f, 1f) : col;
                 }
             }
         }
 
-        texture.SetPixels(pixels);
-        texture.Apply();
-        texture.filterMode = FilterMode.Point;
-
-        return texture;
+        tex.SetPixels(pixels);
+        tex.Apply();
+        tex.filterMode = FilterMode.Point;
+        return tex;
     }
 
-    private void UpdateTargetFX()
+    private void UpdateArrows3D()
     {
         Transform target = GetCurrentTarget();
-        bool shouldShow = target != null && showTargetFX;
+        bool show = target != null && showTargetFX;
+        for (int i = 0; i < arrows3D.Length; i++)
+            if (arrows3D[i] != null) arrows3D[i].SetActive(show);
 
-        for (int i = 0; i < targetArrows.Length; i++)
+        if (!show || mainCamera == null) return;
+
+        Vector3 center = target.position + Vector3.up * arrowOffset;
+        float distToCam = Vector3.Distance(mainCamera.transform.position, center);
+        float screenScale = distToCam * 0.05f;
+        float effectiveDist = arrowDistance * screenScale;
+
+        Vector3 cr = mainCamera.transform.right.normalized;
+        Vector3 cu = mainCamera.transform.up.normalized;
+
+        Vector3[] offsets = { cu * effectiveDist, cr * effectiveDist, -cu * effectiveDist, -cr * effectiveDist };
+
+        float pulse = animateFX ? 1f + Mathf.Sin(Time.time * pulseSpeed) * (pulseScale - 1f) : 1f;
+
+        for (int i = 0; i < arrows3D.Length; i++)
         {
-            if (targetArrows[i] != null)
-            {
-                targetArrows[i].SetActive(shouldShow);
-            }
-        }
+            if (arrows3D[i] == null) continue;
 
-        if (!shouldShow || mainCamera == null) return;
-
-        Vector3 targetPos = target.position + Vector3.up * arrowOffset;
-        Vector3 toTarget = targetPos - mainCamera.transform.position;
-        float distanceToTarget = toTarget.magnitude;
-
-        Vector3 camRight = mainCamera.transform.right;
-        Vector3 camUp = mainCamera.transform.up;
-
-        camRight.Normalize();
-        camUp.Normalize();
-
-        float screenScale = distanceToTarget * 0.05f;
-        float effectiveDistance = arrowDistance * screenScale;
-
-        Vector3[] offsets = new Vector3[]
-        {
-            camUp * effectiveDistance,
-            camRight * effectiveDistance,
-            -camUp * effectiveDistance,
-            -camRight * effectiveDistance
-        };
-
-        float pulseValue = 1f;
-        if (animateFX)
-        {
-            pulseValue = 1f + Mathf.Sin(Time.time * pulseSpeed) * (pulseScale - 1f);
-        }
-
-        for (int i = 0; i < targetArrows.Length; i++)
-        {
-            if (targetArrows[i] == null) continue;
-
-            Vector3 arrowPos = targetPos + (offsets[i] * pulseValue);
-            targetArrows[i].transform.position = arrowPos;
-
-            Vector3 toCam = mainCamera.transform.position - arrowPos;
-            targetArrows[i].transform.rotation = Quaternion.LookRotation(-toCam);
+            Vector3 pos = center + offsets[i] * pulse;
+            arrows3D[i].transform.position = pos;
+            arrows3D[i].transform.rotation = Quaternion.LookRotation(-(mainCamera.transform.position - pos));
 
             if (animateFX)
-            {
-                float spinAngle = Time.time * rotationSpeed;
-                targetArrows[i].transform.Rotate(0f, 0f, spinAngle, Space.Self);
-            }
+                arrows3D[i].transform.Rotate(0f, 0f, Time.time * rotationSpeed, Space.Self);
 
-            float finalScale = arrowSize * pulseValue * screenScale;
-            targetArrows[i].transform.localScale = Vector3.one * finalScale;
+            arrows3D[i].transform.localScale = Vector3.one * (arrowSize * pulse * screenScale);
         }
     }
 
-    private void HideTargetFX()
-    {
-        if (!fxInitialized) return;
-
-        for (int i = 0; i < targetArrows.Length; i++)
-        {
-            if (targetArrows[i] != null)
-            {
-                targetArrows[i].SetActive(false);
-            }
-        }
-    }
-
-    public void SetArrowColor(Color color)
+    public void SetArrow3DColor(Color color)
     {
         arrowColor = color;
-
         if (!fxInitialized) return;
-
-        for (int i = 0; i < targetArrows.Length; i++)
+        foreach (var a in arrows3D)
         {
-            if (targetArrows[i] != null)
+            if (a == null) continue;
+            Renderer r = a.GetComponent<Renderer>();
+            if (r != null && r.material != null) r.material.color = color;
+        }
+    }
+
+    #endregion
+
+    #region FX - Mode 2: FIFA
+
+    private void InitFIFA()
+    {
+        fifaArrowObj = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        Destroy(fifaArrowObj.GetComponent<Collider>());
+        fifaArrowObj.name = "TargetArrow_FIFA";
+        fifaArrowObj.transform.SetParent(null);
+
+        fifaMaterial = new Material(Shader.Find("Sprites/Default"));
+        fifaMaterial.color = fifaStaticColor;
+        fifaMaterial.mainTexture = BuildFIFATexture();
+        fifaArrowObj.GetComponent<Renderer>().material = fifaMaterial;
+
+        fifaArrowObj.SetActive(false);
+        fifaColorTime = 0f;
+    }
+
+    private Texture2D BuildFIFATexture()
+    {
+        int size = 64;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        Color[] pixels = new Color[size * size];
+        for (int i = 0; i < pixels.Length; i++) pixels[i] = Color.clear;
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
             {
-                Renderer renderer = targetArrows[i].GetComponent<Renderer>();
-                if (renderer != null && renderer.material != null)
+                float cx = size / 2f;
+                float ny = 1f - (y / (float)size);
+                float half = ny * (size * 0.45f);
+
+                if (Mathf.Abs(x - cx) <= half)
                 {
-                    renderer.material.color = color;
+                    bool edge = Mathf.Abs(x - cx) > half - 2.5f || y < 2 || y > size - 3;
+                    pixels[y * size + x] = edge ? new Color(0f, 0f, 0f, 0.85f) : Color.white;
                 }
             }
+        }
+
+        tex.SetPixels(pixels);
+        tex.Apply();
+        tex.filterMode = FilterMode.Bilinear;
+        return tex;
+    }
+
+    private void UpdateFIFA()
+    {
+        Transform target = GetCurrentTarget();
+        bool show = target != null && showTargetFX;
+        if (fifaArrowObj == null) return;
+        fifaArrowObj.SetActive(show);
+        if (!show || mainCamera == null) return;
+
+        float bob = 0f;
+        if (fifaBobEnabled)
+        {
+            float t = (Mathf.Sin(Time.time * fifaBobSpeed) + 1f) * 0.5f;
+            bob = fifaBobCurve.Evaluate(t) * fifaBobAmount;
+        }
+
+        Vector3 worldPos = target.position + Vector3.up * (fifaHeightAboveEnemy + bob);
+        fifaArrowObj.transform.position = worldPos;
+
+        if (fifaBillboardToCamera)
+            fifaArrowObj.transform.rotation = Quaternion.LookRotation(-(mainCamera.transform.position - worldPos));
+
+        if (Mathf.Abs(fifaSelfRotationSpeed) > 0.001f)
+            fifaArrowObj.transform.Rotate(0f, 0f, fifaSelfRotationSpeed * Time.deltaTime, Space.Self);
+
+        fifaColorTime += Time.deltaTime * fifaColorCycleSpeed;
+        if (fifaColorTime > 1f) fifaColorTime -= 1f;
+
+        Color baseColor = fifaColorCycleEnabled ? fifaColorGradient.Evaluate(fifaColorTime) : fifaStaticColor;
+
+        float alpha = baseColor.a;
+        if (fifaOpacityPulseEnabled)
+        {
+            float t = (Mathf.Sin(Time.time * fifaOpacityPulseSpeed) + 1f) * 0.5f;
+            alpha = Mathf.Lerp(fifaOpacityMin, fifaOpacityMax, t);
+        }
+
+        fifaMaterial.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
+
+        float distToCam = Vector3.Distance(mainCamera.transform.position, worldPos);
+        fifaArrowObj.transform.localScale = Vector3.one * (fifaArrowSize * distToCam * 0.04f);
+    }
+
+    #endregion
+
+    #region FX - Dispatcher
+
+    private void UpdateFX()
+    {
+        if (targetFXMode == FXMode.Arrows3D)
+        {
+            if (fifaArrowObj != null) fifaArrowObj.SetActive(false);
+            UpdateArrows3D();
+        }
+        else
+        {
+            foreach (var a in arrows3D) if (a != null) a.SetActive(false);
+            UpdateFIFA();
         }
     }
 
     public void SetFXEnabled(bool enabled)
     {
-        if (enabled != showTargetFX)
-        {
-            showTargetFX = enabled;
-        }
-
-        if (!enabled)
-        {
-            HideTargetFX();
-        }
+        if (enabled != showTargetFX) showTargetFX = enabled;
+        if (!enabled) HideAllFX();
     }
 
     #endregion
+
+    #region Gradient Helper
+
+    private Gradient BuildDefaultGradient()
+    {
+        Gradient g = new Gradient();
+        g.SetKeys(
+            new GradientColorKey[]
+            {
+                new GradientColorKey(Color.yellow,  0.00f),
+                new GradientColorKey(Color.red,     0.25f),
+                new GradientColorKey(Color.magenta, 0.50f),
+                new GradientColorKey(Color.cyan,    0.75f),
+                new GradientColorKey(Color.yellow,  1.00f)
+            },
+            new GradientAlphaKey[]
+            {
+                new GradientAlphaKey(1f, 0f),
+                new GradientAlphaKey(1f, 1f)
+            }
+        );
+        return g;
+    }
+
+    #endregion
+
+    #region Gizmos
 
     private void OnDrawGizmosSelected()
     {
@@ -467,60 +588,52 @@ public class AutoAim : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, autoAimRange);
 
-        Vector3 forward = transform.forward;
-        Vector3 rightBoundary = Quaternion.Euler(0, autoAimAngle, 0) * forward * autoAimRange;
-        Vector3 leftBoundary = Quaternion.Euler(0, -autoAimAngle, 0) * forward * autoAimRange;
-
+        Vector3 fwd = transform.forward;
         Gizmos.color = Color.cyan;
-        Gizmos.DrawLine(transform.position, transform.position + rightBoundary);
-        Gizmos.DrawLine(transform.position, transform.position + leftBoundary);
+        Gizmos.DrawLine(transform.position, transform.position + Quaternion.Euler(0, autoAimAngle, 0) * fwd * autoAimRange);
+        Gizmos.DrawLine(transform.position, transform.position + Quaternion.Euler(0, -autoAimAngle, 0) * fwd * autoAimRange);
 
-        if (currentTarget != null)
+        if (currentTarget == null) return;
+
+        Gizmos.color = Color.green;
+        Gizmos.DrawLine(transform.position, currentTarget.position);
+        Gizmos.DrawWireSphere(currentTarget.position, 0.5f);
+
+        if (!showTargetFX) return;
+
+        if (targetFXMode == FXMode.FIFA)
         {
-            Gizmos.color = Color.green;
-            Gizmos.DrawLine(transform.position, currentTarget.position);
-            Gizmos.DrawWireSphere(currentTarget.position, 1f);
+            Gizmos.color = Color.yellow;
+            Vector3 fifaPos = currentTarget.position + Vector3.up * fifaHeightAboveEnemy;
+            Gizmos.DrawWireSphere(fifaPos, 0.15f);
+            Gizmos.DrawLine(currentTarget.position, fifaPos);
+        }
 
-            if (showTargetFX)
-            {
-                Gizmos.color = Color.red;
-                Vector3 targetPos = currentTarget.position + Vector3.up * arrowOffset;
-                Gizmos.DrawWireSphere(targetPos + Vector3.forward * arrowDistance, 0.2f);
-                Gizmos.DrawWireSphere(targetPos + Vector3.right * arrowDistance, 0.2f);
-                Gizmos.DrawWireSphere(targetPos + Vector3.back * arrowDistance, 0.2f);
-                Gizmos.DrawWireSphere(targetPos + Vector3.left * arrowDistance, 0.2f);
-            }
+        if (targetFXMode == FXMode.Arrows3D)
+        {
+            Gizmos.color = Color.red;
+            Vector3 c = currentTarget.position + Vector3.up * arrowOffset;
+            Gizmos.DrawWireSphere(c + Vector3.forward * arrowDistance, 0.1f);
+            Gizmos.DrawWireSphere(c + Vector3.right * arrowDistance, 0.1f);
+            Gizmos.DrawWireSphere(c + Vector3.back * arrowDistance, 0.1f);
+            Gizmos.DrawWireSphere(c + Vector3.left * arrowDistance, 0.1f);
         }
     }
 
-    private void OnDestroy()
-    {
-        if (fxInitialized)
-        {
-            for (int i = 0; i < targetArrows.Length; i++)
-            {
-                if (targetArrows[i] != null)
-                {
-                    Destroy(targetArrows[i]);
-                }
-            }
-        }
-    }
+    #endregion
+
+    #region Debug Logging
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
-    private static void ReportDebug(string message, int reportPriorityLevel)
+    private static void ReportDebug(string message, int priority)
     {
-        switch (reportPriorityLevel)
+        switch (priority)
         {
-            case 1:
-                Debug.Log($"[ShieldAutoAim] {message}");
-                break;
-            case 2:
-                Debug.LogWarning($"[ShieldAutoAim] {message}");
-                break;
-            case 3:
-                Debug.LogError($"[ShieldAutoAim] {message}");
-                break;
+            case 1: Debug.Log($"[AutoAim] {message}"); break;
+            case 2: Debug.LogWarning($"[AutoAim] {message}"); break;
+            case 3: Debug.LogError($"[AutoAim] {message}"); break;
         }
     }
+
+    #endregion
 }
