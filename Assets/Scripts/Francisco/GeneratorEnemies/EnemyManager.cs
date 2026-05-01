@@ -19,6 +19,7 @@ public class EnemyManager : MonoBehaviour
     private ResurrectionLevel activeResurrectionLevel = ResurrectionLevel.None;
     private float auraCoveragePercent = 0f;
     private float initialHealthMultiplier = 1f;
+    public event System.Action onWavesStart;
 
     public int ExtraWavesCount { get; private set; } = 0;
 
@@ -117,6 +118,8 @@ public class EnemyManager : MonoBehaviour
         for (int i = 0; i < combatConfig.waves.Count; i++)
         {
             EnemyWave wave = combatConfig.waves[i];
+
+            onWavesStart?.Invoke();
 
             ReportDebug($"--- Spawn de la Oleada {i + 1} de {combatConfig.waves.Count} ---", 1);
 

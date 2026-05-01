@@ -40,6 +40,8 @@ public class HorizontalFloor : FloorBase
 
     #region FloorBase Overrides
 
+    protected override bool ShouldEnableObstacle(FloorState target) => target == FloorState.Triggered;
+
     protected override void SetChildTriggeredScale()
     {
         childTriggeredScale = contractionAxis == ContractionAxis.X

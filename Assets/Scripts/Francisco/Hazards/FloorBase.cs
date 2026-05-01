@@ -54,8 +54,8 @@ public abstract class FloorBase : MonoBehaviour
     protected Vector3 childTriggeredScale;
 
     private List<Material> emissiveMaterials = new List<Material>();
-    private Coroutine rerollCoroutine;
     private Coroutine transitionCoroutine;
+    private EnemyManager _enemyManager;
 
     #endregion
 
@@ -66,7 +66,7 @@ public abstract class FloorBase : MonoBehaviour
         boxCollider = GetComponent<BoxCollider>();
         navObstacle = GetComponent<NavMeshObstacle>();
 
-        navObstacle.carving = false;
+        navObstacle.enabled = false;
         navObstacle.shape = NavMeshObstacleShape.Box;
 
         if (visualChild != null)
@@ -81,8 +81,28 @@ public abstract class FloorBase : MonoBehaviour
 
     protected virtual void Start()
     {
+        _enemyManager = GetComponentInParent<EnemyManager>();
+
+        if (_enemyManager != null)
+            _enemyManager.onWavesStart += HandleWaveStart;
+        else
+            Debug.LogWarning($"[FloorBase] {gameObject.name} — No encontró EnemyManager en el padre");
+
         ApplyStateInstant(FloorState.Default);
-        rerollCoroutine = StartCoroutine(RerollLoop());
+    }
+
+    private void OnEnable()
+    {
+        if (_enemyManager != null)
+        {
+            _enemyManager.onWavesStart += HandleWaveStart;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (_enemyManager != null)
+            _enemyManager.onWavesStart -= HandleWaveStart;
     }
 
     #endregion
@@ -92,31 +112,21 @@ public abstract class FloorBase : MonoBehaviour
     protected abstract void SetChildTriggeredScale();
     public abstract string GizmoAxisLabel { get; }
     public abstract Vector3 GetTriggeredChildScale();
+    protected virtual bool ShouldEnableObstacle(FloorState target) => false;
 
     #endregion
 
     #region State Machine
-
-    private IEnumerator RerollLoop()
-    {
-        yield return new WaitForSeconds(initialDelay);
-        while (true)
-        {
-            RollTrigger();
-            yield return new WaitForSeconds(rerollInterval);
-        }
-    }
 
     private void RollTrigger()
     {
         if (currentState == FloorState.Transitioning) return;
 
         bool shouldTrigger = Random.value < triggerProbability;
+        FloorState target = shouldTrigger ? FloorState.Triggered : FloorState.Default;
 
-        if (shouldTrigger && currentState == FloorState.Default)
-            StartTransition(FloorState.Triggered);
-        else if (!shouldTrigger && currentState == FloorState.Triggered)
-            StartTransition(FloorState.Default);
+        if (currentState != target)
+            StartTransition(target);
     }
 
     private void StartTransition(FloorState target)
@@ -133,21 +143,16 @@ public abstract class FloorBase : MonoBehaviour
 
         yield return new WaitForSeconds(navMeshCarveDelay);
 
-        navObstacle.carving = true;
+        navObstacle.enabled = true;
 
         yield return StartCoroutine(MoveToState(target));
 
         currentState = target;
-        navObstacle.carving = (target == FloorState.Triggered);
+
+        navObstacle.enabled = ShouldEnableObstacle(target);
 
         UpdateEmissive(target == FloorState.Default ? colorDefault : colorTriggered);
         OnTransitionEnd(target);
-
-        if (target == FloorState.Triggered)
-        {
-            yield return new WaitForSeconds(triggerDuration);
-            StartTransition(FloorState.Default);
-        }
     }
 
     private IEnumerator MoveToState(FloorState target)
@@ -237,6 +242,11 @@ public abstract class FloorBase : MonoBehaviour
     #endregion
 
     #region Public API
+
+    public void HandleWaveStart()
+    {
+        RollTrigger();
+    }
 
     public void ForceTrigger()
     {

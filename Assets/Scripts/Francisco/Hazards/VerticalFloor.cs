@@ -41,6 +41,8 @@ public class VerticalFloor : FloorBase
 
     #region FloorBase Overrides
 
+    protected override bool ShouldEnableObstacle(FloorState target) => target == FloorState.Triggered;
+
     protected override void SetChildTriggeredScale()
     {
         childTriggeredScale = new Vector3(
@@ -67,8 +69,8 @@ public class VerticalFloor : FloorBase
     {
         if (target == FloorState.Triggered)
         {
-            if (expandedLayerIndex >= 0)
-                SetLayerRecursive(gameObject, expandedLayerIndex);
+            if (expandedLayerIndex >= 0 && visualChild != null)
+                visualChild.layer = expandedLayerIndex; 
 
             if (objectToToggle != null)
                 objectToToggle.enabled = true;
@@ -79,8 +81,8 @@ public class VerticalFloor : FloorBase
     {
         if (target == FloorState.Default)
         {
-            if (defaultLayerIndex >= 0)
-                SetLayerRecursive(gameObject, defaultLayerIndex);
+            if (defaultLayerIndex >= 0 && visualChild != null)
+                visualChild.layer = defaultLayerIndex; 
 
             if (objectToToggle != null)
                 objectToToggle.enabled = false;

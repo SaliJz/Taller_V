@@ -4738,6 +4738,7 @@ GameObject:
   - component: {fileID: 1755437149}
   - component: {fileID: 1755437150}
   - component: {fileID: 1755437151}
+  - component: {fileID: 1755437152}
   m_Layer: 0
   m_Name: DungeonGenerator
   m_TagString: Untagged
@@ -4778,7 +4779,9 @@ MonoBehaviour:
   endRoomPrefabs:
   - {fileID: -2013639086596557405, guid: 6a75b5273c1cd50479d6d530a2bf9b9b, type: 3}
   - {fileID: -2013639086596557405, guid: 7e00ddfae97635049a921d2b246a62df, type: 3}
-  roomGenerationRules: []
+  roomGenerationRules:
+  - currentRoomType: 4
+    allowedNextRoomTypes: 01000000
   roomTypeProbabilities:
   - roomType: 1
     probability: 100
@@ -4923,6 +4926,26 @@ MonoBehaviour:
   manipulationIndicatorText: {fileID: 688669205}
   roomStatusText: {fileID: 1745342096}
   roomTimerText: {fileID: 1703495581}
+--- !u!114 &1755437152
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1755437148}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0200af2b481a4d40a7b5cd3c9dcb35c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  slowTimeScale: 0.2
+  slowDuration: 1
+  enterSmoothness: 0.1
+  exitSmoothness: 0.3
+  killSoundClip: {fileID: 0}
+  audioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
+  volume: 1
+  pitch: 1
 --- !u!1 &1807065323
 GameObject:
   m_ObjectHideFlags: 0
@@ -5045,6 +5068,63 @@ SortingGroup:
   m_SortingLayer: -1
   m_SortingOrder: 0
   m_SortAtRoot: 0
+--- !u!1001 &1818856209
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2336295991675207033, guid: 116224f39a50b7041b31079261f1234d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 241.96498
+      objectReference: {fileID: 0}
+    - target: {fileID: 2336295991675207033, guid: 116224f39a50b7041b31079261f1234d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 5.4419947
+      objectReference: {fileID: 0}
+    - target: {fileID: 2336295991675207033, guid: 116224f39a50b7041b31079261f1234d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 268.1248
+      objectReference: {fileID: 0}
+    - target: {fileID: 2336295991675207033, guid: 116224f39a50b7041b31079261f1234d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2336295991675207033, guid: 116224f39a50b7041b31079261f1234d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2336295991675207033, guid: 116224f39a50b7041b31079261f1234d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2336295991675207033, guid: 116224f39a50b7041b31079261f1234d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2336295991675207033, guid: 116224f39a50b7041b31079261f1234d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2336295991675207033, guid: 116224f39a50b7041b31079261f1234d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2336295991675207033, guid: 116224f39a50b7041b31079261f1234d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9196824554222932689, guid: 116224f39a50b7041b31079261f1234d, type: 3}
+      propertyPath: m_Name
+      value: ItemEffectsPool
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 116224f39a50b7041b31079261f1234d, type: 3}
 --- !u!1 &1842552303
 GameObject:
   m_ObjectHideFlags: 0
@@ -5706,5 +5786,6 @@ SceneRoots:
   - {fileID: 548066270}
   - {fileID: 961770970}
   - {fileID: 994196388}
+  - {fileID: 1818856209}
   - {fileID: 1807065327}
   - {fileID: 633668273}
