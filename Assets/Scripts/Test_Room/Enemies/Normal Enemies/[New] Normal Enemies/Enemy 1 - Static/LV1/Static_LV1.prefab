@@ -898,7 +898,7 @@ MonoBehaviour:
   interceptProbabilityNivel1: 0.25
   interceptProbabilityNivel2: 0.5
   interceptProbabilityNivel3: 0.75
-  health: 10
+  health: 8
   moveSpeed: 0
   fireRate: 1.5
   useRandomFireRate: 1
@@ -1004,7 +1004,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   useToughness: 0
-  maxToughness: 30
+  maxToughness: 20
   currentToughness: 0
   meleeToughnessDamageMultiplier: 1
   rangedToughnessDamageMultiplier: 1
@@ -1032,6 +1032,9 @@ MonoBehaviour:
   meshRenderers: []
   spriteRenderers:
   - {fileID: 0}
+  damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
+  damageNumberParent: {fileID: 9110564368525744121}
+  audioSource: {fileID: 2727148953591348775}
   useOriginalMaterials: 1
   defaultMaterial: {fileID: 2100000, guid: c43b9a5ed71685148afe57f9db447550, type: 2}
   blinkFlashMaterial: {fileID: 2100000, guid: f252e05afbca4b14da60e54eabddf22d, type: 2}
@@ -1050,11 +1053,8 @@ MonoBehaviour:
   stunSFX: {fileID: 0}
   glowMaterial: {fileID: 2100000, guid: 5da8ab1f06f51c047a99ed21c3104c56, type: 2}
   glowIntensity: 2
-  damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
-  damageNumberParent: {fileID: 9110564368525744121}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
-  audioSource: {fileID: 2727148953591348775}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
 --- !u!114 &8294369732220974234
