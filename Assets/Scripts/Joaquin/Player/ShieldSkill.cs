@@ -25,9 +25,9 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     [SerializeField] private float minStaminaToActivate = 10f;
 
     [Header("Buffs por Etapa de Vida")]
-    [SerializeField] private BuffSettings youngBuffs;
-    [SerializeField] private BuffSettings adultBuffs;
-    [SerializeField] private BuffSettings elderBuffs;
+    [SerializeField] private BuffSettings youngBuffs = new BuffSettings(1.1f, 1.12f, 1.1f, 1f, 1f);
+    [SerializeField] private BuffSettings adultBuffs = new BuffSettings(1.1f, 1.12f, 1.1f, 1f, 1f);
+    [SerializeField] private BuffSettings elderBuffs = new BuffSettings(1.1f, 1.12f, 1.1f, 1f, 1f);
 
     [Header("VFX")]
     [Tooltip("El objeto hijo que contiene el Renderer del personaje.")]
