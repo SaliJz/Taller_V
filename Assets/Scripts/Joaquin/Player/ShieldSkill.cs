@@ -25,9 +25,9 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     [SerializeField] private float minStaminaToActivate = 10f;
 
     [Header("Buffs por Etapa de Vida")]
-    [SerializeField] private BuffSettings youngBuffs = new BuffSettings(1.2f, 1.1f, 1.2f, 1f, 2f);
-    [SerializeField] private BuffSettings adultBuffs = new BuffSettings(1.1f, 1.2f, 1.1f, 1f, 2f);
-    [SerializeField] private BuffSettings elderBuffs = new BuffSettings(1.1f, 1.12f, 1.1f, 1f, 1f);
+    [SerializeField] private BuffSettings youngBuffs;
+    [SerializeField] private BuffSettings adultBuffs;
+    [SerializeField] private BuffSettings elderBuffs;
 
     [Header("VFX")]
     [Tooltip("El objeto hijo que contiene el Renderer del personaje.")]
@@ -125,9 +125,14 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
 
     private void Start()
     {
-        OnStaminaChanged?.Invoke(currentStamina, maxStamina);
+        // Esto obliga a imprimir en consola qué es lo que realmente tiene la variable 
+        // apenas empieza el juego.
+        Debug.Log($"[ShieldSkill] Datos cargados en Start - Young Move Mult: {youngBuffs.MoveMultiplier}");
 
-        UpdateStaminaConsumptionFromStats();
+        if (youngBuffs.MoveMultiplier == 0)
+        {
+            Debug.LogError("¡ERROR! El Inspector está entregando 0 al script. Revisa los Overrides del Prefab.");
+        }
     }
 
     private void UpdateStaminaConsumptionFromStats()
@@ -718,10 +723,10 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     [System.Serializable]
     public struct BuffSettings
     {
-        [Range(0f, 3f)] public float MoveMultiplier;
-        [Range(0f, 3f)] public float AttackDamageMultiplier;
-        [Range(0f, 3f)] public float AttackSpeedMultiplier;
-        [Range(0f, 5f)] public float ToughnessDamageMultiplier;
+        [Range(0f, 10f)] public float MoveMultiplier;
+        [Range(0f, 10f)] public float AttackDamageMultiplier;
+        [Range(0f, 10f)] public float AttackSpeedMultiplier;
+        [Range(0f, 10f)] public float ToughnessDamageMultiplier;
         [Range(0f, 10f)] public float HealthDrainAmount;
         public bool DisableShieldThrow;
 

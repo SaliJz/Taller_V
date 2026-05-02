@@ -9629,12 +9629,12 @@ MonoBehaviour:
   requireFullStaminaToActivate: 0
   minStaminaToActivate: 10
   youngBuffs:
-    MoveMultiplier: 1.2
-    AttackDamageMultiplier: 1.1
-    AttackSpeedMultiplier: 1.2
-    ToughnessDamageMultiplier: 2
-    HealthDrainAmount: 1
-    DisableShieldThrow: 1
+    MoveMultiplier: 0
+    AttackDamageMultiplier: 0
+    AttackSpeedMultiplier: 0
+    ToughnessDamageMultiplier: 0
+    HealthDrainAmount: 0
+    DisableShieldThrow: 0
   adultBuffs:
     MoveMultiplier: 1.1
     AttackDamageMultiplier: 1.2
@@ -11971,6 +11971,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 595312439969399503, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: dashDistance
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 2778524271159870706, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: MainCamera
       value: 
@@ -12025,6 +12029,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6679960082821164706, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8984845218185550205, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: youngBuffs.MoveMultiplier
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9211243997880812482, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: baseSpeedReference
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
