@@ -1496,6 +1496,14 @@ PrefabInstance:
       value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 9211243997880812482, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: comboResetTime
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 9211243997880812482, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: attack1Duration
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9211243997880812482, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: 'comboStunDurations.Array.data[0]'
       value: 0.5
       objectReference: {fileID: 0}
@@ -2564,23 +2572,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 604050751032971375, guid: afc2859e8a95b3d4abd04921c3c73242, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 604050751032971375, guid: afc2859e8a95b3d4abd04921c3c73242, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3690192448758089589, guid: afc2859e8a95b3d4abd04921c3c73242, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3690192448758089589, guid: afc2859e8a95b3d4abd04921c3c73242, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4238975053663158039, guid: afc2859e8a95b3d4abd04921c3c73242, type: 3}
       propertyPath: m_Name
       value: AporiaEnemyLevel2_SA
+      objectReference: {fileID: 0}
+    - target: {fileID: 4238975053663158039, guid: afc2859e8a95b3d4abd04921c3c73242, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9137907807618677906, guid: afc2859e8a95b3d4abd04921c3c73242, type: 3}
       propertyPath: m_LocalPosition.x
