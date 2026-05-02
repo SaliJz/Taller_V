@@ -328,6 +328,7 @@ public class InventoryUIManager : MonoBehaviour
     {
         if (opening)
         {
+            InventoryAudioManager.Instance?.PlayBarsExpandSound();
             // Col1: pasivos arriba y abajo simultaneos, luego col2, luego col3
             var above = StartCoroutine(StaggerSlots(col1AboveSlots, new Vector2(0, -slideOffsetY), opening));
             var below = StartCoroutine(StaggerSlots(col1BelowSlots, new Vector2(0, slideOffsetY), opening));
@@ -342,6 +343,7 @@ public class InventoryUIManager : MonoBehaviour
         }
         else
         {
+            InventoryAudioManager.Instance?.PlayBarsRetractSound();
             // Inverso
             yield return StartCoroutine(StaggerSlots(col3Slots, new Vector2(slideOffsetX, 0), opening));
             yield return new WaitForSecondsRealtime(columnDelay);
