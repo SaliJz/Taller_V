@@ -5,12 +5,22 @@ using UnityEngine;
 /// </summary>
 public class InventoryAudioManager : MonoBehaviour
 {
+    #region Public Properties & Events
+
     public static InventoryAudioManager Instance { get; private set; }
+
+    #endregion
+
+    #region Inspector - References
 
     [Header("Audio Sources")]
     [SerializeField] private AudioSource sfxSource;
-    [Tooltip("Source dedicada a la música de inventario (loop)")]
+    [Tooltip("Source dedicada a la musica de inventario (loop)")]
     [SerializeField] private AudioSource musicSource;
+
+    #endregion
+
+    #region Inspector - Sound Effects (Clips)
 
     [Header("Apertura / Cierre")]
     [SerializeField] private AudioClip inventoryOpenSound;
@@ -20,10 +30,10 @@ public class InventoryAudioManager : MonoBehaviour
     [SerializeField] private AudioClip goldenSlotHoverSound;
     [SerializeField] private AudioClip commonSlotHoverSound;
 
-    [Header("Interacción")]
+    [Header("Interaccion")]
     [SerializeField] private AudioClip itemClickSound;
     [SerializeField] private AudioClip itemAddedSound;
-    [Tooltip("Sonido al cambiar selección entre slots dorados")]
+    [Tooltip("Sonido al cambiar seleccion entre slots dorados")]
     [SerializeField] private AudioClip switchGoldenSlotSound;
 
     [Header("Sonidos por Rareza")]
@@ -31,22 +41,34 @@ public class InventoryAudioManager : MonoBehaviour
     [SerializeField] private AudioClip rareSound;
     [SerializeField] private AudioClip superRareSound;
 
-    [Header("Música de Inventario")]
+    #endregion
+
+    #region Inspector - Music Settings
+
+    [Header("Musica de Inventario")]
     [SerializeField] private AudioClip inventoryMusic;
     [SerializeField][Range(0f, 1f)] private float musicVolume = 0.4f;
 
-    [Header("Volúmenes SFX")]
+    #endregion
+
+    #region Inspector - Volume Settings
+
+    [Header("Volumenes SFX")]
     [SerializeField][Range(0f, 1f)] private float hoverVolume = 0.5f;
     [SerializeField][Range(0f, 1f)] private float clickVolume = 0.7f;
     [SerializeField][Range(0f, 1f)] private float rarityVolume = 0.8f;
     [SerializeField][Range(0f, 1f)] private float addedVolume = 0.9f;
 
+    #endregion
+
+    #region Unity Lifecycle
+
     private void Awake()
     {
-        if (Instance != null && Instance != this) 
-        { 
-            Destroy(gameObject); 
-            return; 
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
         }
         Instance = this;
 
@@ -64,6 +86,10 @@ public class InventoryAudioManager : MonoBehaviour
             musicSource.loop = true;
         }
     }
+
+    #endregion
+
+    #region Audio Playback API
 
     public void PlayOpenSound()
     {
@@ -95,6 +121,10 @@ public class InventoryAudioManager : MonoBehaviour
         PlaySfx(clip, rarityVolume);
     }
 
+    #endregion
+
+    #region Internal Audio Logic
+
     private void PlayMusic()
     {
         if (musicSource == null || inventoryMusic == null) return;
@@ -115,4 +145,6 @@ public class InventoryAudioManager : MonoBehaviour
             sfxSource.PlayOneShot(clip, volume);
         }
     }
+
+    #endregion
 }

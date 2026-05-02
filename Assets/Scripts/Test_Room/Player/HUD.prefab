@@ -5723,7 +5723,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 240, y: 240}
+  m_SizeDelta: {x: 480, y: 240}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &4609789147796037076
 CanvasRenderer:
@@ -7748,13 +7748,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemUIPanel: {fileID: 4853790811511156568}
   interactionButtonUIPanel: {fileID: 5941995844965826013}
+  inventoryCanvas: {fileID: 4521548078028560500}
   goldenSlotsContainer: {fileID: 6958513816111679323}
   inventoryExpandRoot: {fileID: 3696864403080078129}
   col1AboveContainer: {fileID: 4775258121172633086}
   col1BelowContainer: {fileID: 6868606608700769734}
   column2Container: {fileID: 8074202735102631789}
   column3Container: {fileID: 8187818809088162170}
-  goldenSlotColor: {r: 1, g: 0.84, b: 0, a: 1}
   detailPanel: {fileID: 7658273821632151984}
   detailName: {fileID: 8503221404707833228}
   detailDescription: {fileID: 8793331129640307307}
@@ -7763,6 +7763,7 @@ MonoBehaviour:
   replaceConfirmText: {fileID: 6836559592921347955}
   confirmReplaceButton: {fileID: 5177367957977053478}
   cancelReplaceButton: {fileID: 5550959501064241931}
+  goldenSlotColor: {r: 1, g: 0.84, b: 0, a: 1}
   highlightColor: {r: 0.6, g: 0.1, b: 0.1, a: 1}
   slotRevealDuration: 0.12
   slotStagger: 0.04
@@ -7771,6 +7772,7 @@ MonoBehaviour:
   slideOffsetX: 50
   bouncePeak: 1.2
   bounceDuration: 0.25
+  joystickRepeatCooldown: 0.2
 --- !u!114 &5951348544436639104
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19913,11 +19915,11 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1185713138578291043}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0}
-  m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 200, y: 50}
-  m_Pivot: {x: 0.5, y: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: -25}
+  m_SizeDelta: {x: 0, y: -50}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8501705340697476629
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -19973,8 +19975,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -21064,10 +21066,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1185713138578291043}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 1}
-  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 0, y: 50}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &542895066980285654
 CanvasRenderer:
@@ -21106,8 +21108,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4278190335
+  m_fontColor: {r: 1, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -21124,15 +21126,15 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 28
+  m_fontSizeBase: 28
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
   m_HorizontalAlignment: 2
-  m_VerticalAlignment: 512
+  m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
@@ -23271,7 +23273,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1812276095880352668
 RectTransform:
   m_ObjectHideFlags: 0
@@ -23289,7 +23291,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 960.00024, y: 540}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2237862811198977562
@@ -23307,8 +23309,9 @@ MonoBehaviour:
   tooltipPanel: {fileID: 1721162715943403661}
   tooltipTitle: {fileID: 8790262484276443135}
   tooltipDescription: {fileID: 6627755194187267111}
-  tooltipRectTransform: {fileID: 8036813668974284705}
-  offset: {x: 12, y: -12}
+  tooltipRectTransform: {fileID: 1185713138578291043}
+  mouseOffset: {x: 250, y: 100}
+  gamepadOffset: {x: 250, y: 100}
   showDelay: 0.25
 --- !u!1 &7256020273474612397
 GameObject:
