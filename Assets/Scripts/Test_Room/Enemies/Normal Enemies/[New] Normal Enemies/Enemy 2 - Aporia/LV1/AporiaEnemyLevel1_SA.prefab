@@ -296,9 +296,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc3cc84a8b9d50841910cc51fe991db1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animCtrl: {fileID: 6791240592043421687, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
-  hitPoint: {fileID: 7896858996999191465, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
-  groundIndicator: {fileID: 1633902712170988133, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
+  animCtrl: {fileID: 6791240592043421687}
+  hitPoint: {fileID: 7896858996999191465}
+  groundIndicator: {fileID: 1633902712170988133}
   wanderRadius: 8
   wanderWaitTime: 3
   health: 16
@@ -320,7 +320,7 @@ MonoBehaviour:
   cooldownShort: 1
   cooldownMedium: 1.6
   cooldownLong: 2.2
-  audioSource: {fileID: 4662593617215658811, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
+  audioSource: {fileID: 4662593617215658811}
   dashSFX: {fileID: 8300000, guid: e0bb04f2504e09a41814942127e10c64, type: 3}
   attackSFX: {fileID: 0}
   damageSFX: {fileID: 0}
@@ -405,8 +405,8 @@ MonoBehaviour:
   useToughness: 1
   maxToughness: 20
   currentToughness: 0
-  meleeToughnessDamageMultiplier: 1
-  rangedToughnessDamageMultiplier: 1
+  meleeToughnessDamageMultiplier: 0
+  rangedToughnessDamageMultiplier: 0
   useDynamicBars: 0
   toughnessPerBar: 40
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
