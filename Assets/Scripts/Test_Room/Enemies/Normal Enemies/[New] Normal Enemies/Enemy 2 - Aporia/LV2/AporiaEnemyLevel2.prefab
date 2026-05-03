@@ -1786,22 +1786,22 @@ MonoBehaviour:
   groundIndicator: {fileID: 3885539838815225628}
   wanderRadius: 8
   wanderWaitTime: 3
-  health: 25
-  moveSpeed: 6.5
-  dashDuration: 0.4
-  dashMaxDistance: 10
-  preparationTime: 0.25
-  attackTransitionDelay: 0.1
-  attackDamage: 30
+  health: 20
+  moveSpeed: 10
+  dashDuration: 0.5
+  dashMaxDistance: 16.5
+  preparationTime: 0.15
+  attackTransitionDelay: 0
+  attackDamage: 20
   attackRadius: 2.5
-  hitDelay: 0.35
+  hitDelay: 0.25
   recoveryTime: 1.2
   knockbackForce: 6
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
   detectionRadius: 25
-  dashActivationDistance: 20
+  dashActivationDistance: 16.5
   cooldownShort: 0.9
   cooldownMedium: 1.6
   cooldownLong: 2.1
@@ -1814,12 +1814,12 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   glassShardAttackPrefab: {fileID: 5211547546469293962, guid: 4bf82bb6cacd4bc429ac27bc797488ec, type: 3}
-  shardAttackRadius: 1
+  shardAttackRadius: 2
   shardAttackDamagePerSec: 4
-  shardAttackDuration: 3
+  shardAttackDuration: 10
   glassShardDashPrefab: {fileID: 6545885080743499958, guid: 331be1eed6567524e91b37fb53401d59, type: 3}
   shardDashDamagePerSec: 4
-  shardDashDuration: 1
+  shardDashDuration: 10
   shardDashSpacing: 1
   deathWarningDuration: 1.5
   deathExplosionRadius: 3
@@ -1905,12 +1905,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   useToughness: 0
-  maxToughness: 45
+  maxToughness: 24
   currentToughness: 0
   meleeToughnessDamageMultiplier: 1
   rangedToughnessDamageMultiplier: 1
   useDynamicBars: 0
-  toughnessPerBar: 40
+  toughnessPerBar: 24
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
   toughnessSlider: {fileID: 1229795293101802961}
