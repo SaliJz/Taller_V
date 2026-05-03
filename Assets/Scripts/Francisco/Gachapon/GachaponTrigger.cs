@@ -89,9 +89,9 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         if (cubeRenderer == null)
             cubeRenderer = GetComponent<MeshRenderer>();
 
-        if (gachaponSystem == null || cubeRenderer == null)
+        if (gachaponSystem == null)
         {
-            Debug.LogError("GachaponSystem o MeshRenderer no encontrado. Desactivando GachaponTrigger.");
+            Debug.LogError("GachaponSystem no encontrado. Desactivando GachaponTrigger.");
             enabled = false;
             return;
         }
