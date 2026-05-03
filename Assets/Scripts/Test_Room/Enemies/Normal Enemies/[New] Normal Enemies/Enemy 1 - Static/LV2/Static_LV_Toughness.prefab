@@ -436,6 +436,9 @@ MonoBehaviour:
   meshRenderers: []
   spriteRenderers:
   - {fileID: 0}
+  damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
+  damageNumberParent: {fileID: 7685242483913204962}
+  audioSource: {fileID: 8739655723809894776}
   useOriginalMaterials: 1
   defaultMaterial: {fileID: 2100000, guid: c43b9a5ed71685148afe57f9db447550, type: 2}
   blinkFlashMaterial: {fileID: 2100000, guid: f252e05afbca4b14da60e54eabddf22d, type: 2}
@@ -454,11 +457,8 @@ MonoBehaviour:
   stunSFX: {fileID: 0}
   glowMaterial: {fileID: 2100000, guid: 5da8ab1f06f51c047a99ed21c3104c56, type: 2}
   glowIntensity: 2
-  damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
-  damageNumberParent: {fileID: 7685242483913204962}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
-  audioSource: {fileID: 8739655723809894776}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
 --- !u!114 &1763979548001139262
@@ -1407,7 +1407,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e3b68ff965f66bc4badc9b01b4574bf2, type: 2}
+  - {fileID: 2100000, guid: 21bd0fdde5ad0bb4f96a57d992eb44d9, type: 2}
   - {fileID: 7440624693633049613, guid: 6e9e5e189cfab7e4aac402aa4f4bd248, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
