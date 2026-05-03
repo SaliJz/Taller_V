@@ -1859,22 +1859,22 @@ MonoBehaviour:
   groundIndicator: {fileID: 1835801820994708527}
   wanderRadius: 8
   wanderWaitTime: 3
-  health: 30
-  moveSpeed: 6.5
+  health: 24
+  moveSpeed: 10
   dashDuration: 0.5
-  dashMaxDistance: 10
-  preparationTime: 0.25
-  attackTransitionDelay: 0.1
+  dashMaxDistance: 16.5
+  preparationTime: 0.15
+  attackTransitionDelay: 0
   attackDamage: 20
-  attackRadius: 2
+  attackRadius: 3
   hitDelay: 0.5
-  recoveryTime: 1.5
+  recoveryTime: 1.2
   knockbackForce: 7
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
-  detectionRadius: 15
-  dashActivationDistance: 10
+  detectionRadius: 25
+  dashActivationDistance: 16.5
   cooldownShort: 0.8
   cooldownMedium: 1.6
   cooldownLong: 2
@@ -1963,7 +1963,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   useToughness: 1
-  maxToughness: 40
+  maxToughness: 28
   currentToughness: 0
   meleeToughnessDamageMultiplier: 1
   rangedToughnessDamageMultiplier: 1
