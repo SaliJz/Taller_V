@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using System;
 
 public class GachaEyeDrop : MonoBehaviour
 {
@@ -9,9 +10,12 @@ public class GachaEyeDrop : MonoBehaviour
     float arcHeight = 0.5f;
     bool hasLanded = false;
 
+    public Action OnEyeCollected;
+
     public void LaunchEye()
     {
         gameObject.SetActive(true);
+        hasLanded = false;
         StartCoroutine(ThrowRoutine());
     }
 
@@ -40,14 +44,16 @@ public class GachaEyeDrop : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") && hasLanded)
         {
             //Effect
             PlayerShaderCtrl shader = other.GetComponent<PlayerShaderCtrl>();
-            shader.ShineTrigger();
+            shader?.ShineTrigger();
+
+            OnEyeCollected?.Invoke();
 
             //REFERENCIA O LLAMADA EXTERNA PARA DAR EL BOOST, QUIZA LUEGO HACER QUE EL OJO VAYA DIRECTO AL JUGADOR
-            gameObject.SetActive(false);
+            gameObject?.SetActive(false);
         }
     }
 }
