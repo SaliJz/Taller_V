@@ -887,7 +887,7 @@ NavMeshAgent:
   m_Speed: 3.5
   m_Acceleration: 8
   avoidancePriority: 50
-  m_AngularSpeed: 120
+  m_AngularSpeed: 20
   m_StoppingDistance: 0
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
@@ -1042,7 +1042,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   useToughness: 0
-  maxToughness: 50
+  maxToughness: 40
   currentToughness: 0
   meleeToughnessDamageMultiplier: 1
   rangedToughnessDamageMultiplier: 0.25
@@ -1083,11 +1083,19 @@ MonoBehaviour:
   - {fileID: 5018877036625212880}
   - {fileID: 5104700048272079721}
   spriteRenderers: []
+  damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
+  damageNumberParent: {fileID: 5949244684512075398}
+  audioSource: {fileID: 0}
   useOriginalMaterials: 1
   defaultMaterial: {fileID: 2100000, guid: 6ef35a70b0a3f724992fbf3c361cde64, type: 2}
   blinkFlashMaterial: {fileID: 2100000, guid: f252e05afbca4b14da60e54eabddf22d, type: 2}
   blinkInterval: 0.06
   blinkCount: 6
+  useAmountFlash: 0
+  amountFlashRenderer: {fileID: 0}
+  amountFlashProperty: _Amount
+  amountFlashPeakValue: 1
+  amountFlashRestValue: 0
   stunMaterial: {fileID: 2100000, guid: 9e980960b4627f14bb1ebfed5d685fec, type: 2}
   stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
@@ -1096,11 +1104,8 @@ MonoBehaviour:
   stunSFX: {fileID: 0}
   glowMaterial: {fileID: 2100000, guid: 360701bb7ba71e14d98354eae000cd99, type: 2}
   glowIntensity: 2
-  damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
-  damageNumberParent: {fileID: 5949244684512075398}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
-  audioSource: {fileID: 0}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
 --- !u!54 &394815230552174114
@@ -1142,9 +1147,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97ff11c46a6ff6c49a7d20c0038b005a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  damagePercent: 20
-  chargeDuration: 2
-  tickInterval: 0.2
 --- !u!1 &3280151716456255676
 GameObject:
   m_ObjectHideFlags: 0

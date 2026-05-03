@@ -965,6 +965,7 @@ MonoBehaviour:
   canDieAfterCooldown: 1
   deathCooldown: 1.67
   canDestroy: 1
+  canDisable: 0
   canBeStunned: 0
   onDeathEvent:
     m_PersistentCalls:
@@ -1013,11 +1014,19 @@ MonoBehaviour:
   - {fileID: 7147808424542078799}
   - {fileID: 3795486772564834834}
   spriteRenderers: []
+  damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
+  damageNumberParent: {fileID: 2073389336253277069}
+  audioSource: {fileID: 3118501603687521992}
   useOriginalMaterials: 1
   defaultMaterial: {fileID: 2100000, guid: d86e7347337312a41ad9711f4e131bea, type: 2}
   blinkFlashMaterial: {fileID: 2100000, guid: f252e05afbca4b14da60e54eabddf22d, type: 2}
   blinkInterval: 0.06
   blinkCount: 6
+  useAmountFlash: 0
+  amountFlashRenderer: {fileID: 0}
+  amountFlashProperty: _Amount
+  amountFlashPeakValue: 1
+  amountFlashRestValue: 0
   stunMaterial: {fileID: 2100000, guid: 9e980960b4627f14bb1ebfed5d685fec, type: 2}
   stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
@@ -1026,11 +1035,8 @@ MonoBehaviour:
   stunSFX: {fileID: 0}
   glowMaterial: {fileID: 2100000, guid: b4e58dcad18308f42af5b40ebb3e5dae, type: 2}
   glowIntensity: 2
-  damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
-  damageNumberParent: {fileID: 2073389336253277069}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
-  audioSource: {fileID: 3118501603687521992}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
 --- !u!1 &6326434912819668621
