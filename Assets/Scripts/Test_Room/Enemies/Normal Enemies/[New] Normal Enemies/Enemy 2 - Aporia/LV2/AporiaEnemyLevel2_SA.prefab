@@ -1781,9 +1781,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9757b0d985ca9743884704c14666882, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animCtrl: {fileID: 9008806969325551985}
-  hitPoint: {fileID: 6790722256505240741}
-  groundIndicator: {fileID: 3885539838815225628}
+  animCtrl: {fileID: 9008806969325551985, guid: d10532ab209a0c94392fa21ed4820f26, type: 3}
+  hitPoint: {fileID: 6790722256505240741, guid: d10532ab209a0c94392fa21ed4820f26, type: 3}
+  groundIndicator: {fileID: 3885539838815225628, guid: d10532ab209a0c94392fa21ed4820f26, type: 3}
   wanderRadius: 8
   wanderWaitTime: 3
   health: 20
@@ -1805,7 +1805,7 @@ MonoBehaviour:
   cooldownShort: 0.9
   cooldownMedium: 1.6
   cooldownLong: 2.1
-  audioSource: {fileID: 0}
+  audioSource: {fileID: 7650769403353327420, guid: d10532ab209a0c94392fa21ed4820f26, type: 3}
   dashSFX: {fileID: 8300000, guid: e0bb04f2504e09a41814942127e10c64, type: 3}
   attackSFX: {fileID: 0}
   damageSFX: {fileID: 0}
@@ -1814,12 +1814,12 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   glassShardAttackPrefab: {fileID: 5211547546469293962, guid: 4bf82bb6cacd4bc429ac27bc797488ec, type: 3}
-  shardAttackRadius: 1
+  shardAttackRadius: 2
   shardAttackDamagePerSec: 4
-  shardAttackDuration: 3
+  shardAttackDuration: 10
   glassShardDashPrefab: {fileID: 6545885080743499958, guid: 331be1eed6567524e91b37fb53401d59, type: 3}
   shardDashDamagePerSec: 4
-  shardDashDuration: 1
+  shardDashDuration: 10
   shardDashSpacing: 1
   deathWarningDuration: 1.5
   deathExplosionRadius: 3
