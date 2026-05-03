@@ -150,7 +150,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8032d907d9a1474784ad7f2a49fa5cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  wordText: {fileID: 0}
   currentDamage: 0
   maxDamageLimit: 0
   damageGainPerSecond: 0
@@ -167,11 +166,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   letterPrefab: {fileID: 110001, guid: 312b2d08098d483f9f91fc59bf3cd7cc, type: 3}
-  letterScaleMultiplier: 0.6
-  letterRevealDelay: 0.03
+  letterScaleMultiplier: 1
+  letterRevealDelay: 0.001
   firstLetterOffset: {x: -0.06, y: 0.13, z: 0.03}
-  baseLetterSpacing: 0.08
-  widthSpacingMultiplier: 1.2
-  minimumLetterWidth: 36
+  baseLetterSpacing: 0.001
+  widthSpacingMultiplier: 0.8
+  minimumLetterWidth: 20
   letterOffsetStep: {x: 0.16, y: -0.015, z: 0.08}
   alwaysFaceMainCamera: 1

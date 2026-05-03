@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 8971163230287256480}
   - component: {fileID: 5518926067119778488}
   - component: {fileID: 9216124944438237385}
+  - component: {fileID: 9124806074267203797}
   m_Layer: 13
   m_Name: Static_LV3_Projectile
   m_TagString: Untagged
@@ -176,11 +177,30 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   letterPrefab: {fileID: 110001, guid: 312b2d08098d483f9f91fc59bf3cd7cc, type: 3}
-  letterScaleMultiplier: 0.6
-  letterRevealDelay: 0.03
+  letterScaleMultiplier: 0.7
+  letterRevealDelay: 0.005
   firstLetterOffset: {x: -0.06, y: 0.13, z: 0.03}
-  baseLetterSpacing: 0.08
-  widthSpacingMultiplier: 1.2
-  minimumLetterWidth: 36
-  letterOffsetStep: {x: 0.16, y: -0.015, z: 0.08}
+  baseLetterSpacing: 0.001
+  widthSpacingMultiplier: 0.8
+  minimumLetterWidth: 30
+  letterOffsetStep: {x: 0.16, y: -0.0001, z: 0.08}
   alwaysFaceMainCamera: 1
+--- !u!114 &9124806074267203797
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1347947785867715368}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0aac80912e5b0246b0c4161d40e77a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowPrefab: {fileID: 4558005614469577162, guid: 5486048298c515f41913b1617b0f5cc5, type: 3}
+  GroundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  startYoffset: 5
+  spawnYoffset: 0.1
+  shadowScale: 0.2

@@ -2801,11 +2801,19 @@ MonoBehaviour:
   meshRenderers: []
   spriteRenderers:
   - {fileID: 7806571065469526024}
+  damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
+  damageNumberParent: {fileID: 8876118705413862711}
+  audioSource: {fileID: 5658383102756497136}
   useOriginalMaterials: 1
   defaultMaterial: {fileID: 2100000, guid: c43b9a5ed71685148afe57f9db447550, type: 2}
   blinkFlashMaterial: {fileID: 2100000, guid: f252e05afbca4b14da60e54eabddf22d, type: 2}
   blinkInterval: 0.06
   blinkCount: 6
+  useAmountFlash: 0
+  amountFlashRenderer: {fileID: 0}
+  amountFlashProperty: _Amount
+  amountFlashPeakValue: 1
+  amountFlashRestValue: 0
   stunMaterial: {fileID: 2100000, guid: 9e980960b4627f14bb1ebfed5d685fec, type: 2}
   stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
@@ -2814,11 +2822,8 @@ MonoBehaviour:
   stunSFX: {fileID: 0}
   glowMaterial: {fileID: 2100000, guid: 5da8ab1f06f51c047a99ed21c3104c56, type: 2}
   glowIntensity: 2
-  damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
-  damageNumberParent: {fileID: 8876118705413862711}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
-  audioSource: {fileID: 5658383102756497136}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
 --- !u!114 &260696180492938386
@@ -2878,11 +2883,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   words:
-  - STATIC
-  - GLITCH
-  - ERROR
-  - SIGNAL
-  - VECTOR
+  - DUMB
+  - SUCK
+  - ASSHOLE
+  - SHIT
+  - FUCK
   fallbackWord: STATIC
 --- !u!114 &4922207899906693846
 MonoBehaviour:
@@ -3159,7 +3164,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d302954649d0c624c8527aede8558203, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemy: {fileID: 1520302972753054133}
 --- !u!4 &4047963452383857155 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4612891347244080603, guid: 8309e74361be10246adee682a6096a85, type: 3}
