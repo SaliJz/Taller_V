@@ -19,6 +19,7 @@ public struct RarityColorMapping
 public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActions
 {
     [Header("Dependencies")]
+    [SerializeField] private GachaAnimCtrl animController;
     [SerializeField] private GachaponSystem gachaponSystem;
     [SerializeField] private MeshRenderer cubeRenderer;
     [SerializeField] private Material activatedMaterial;
@@ -81,6 +82,9 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
         if (gachaponSystem == null)
             gachaponSystem = FindAnyObjectByType<GachaponSystem>();
+
+        if (animController == null)
+            animController = GetComponentInChildren<GachaAnimCtrl>();
 
         if (cubeRenderer == null)
             cubeRenderer = GetComponent<MeshRenderer>();
@@ -217,10 +221,25 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             HUDManager.Instance.SetInteractionPrompt(false, "Interact", "TIRAR");
         }
 
-        Coroutine animationCoroutine = StartCoroutine(AnimateGachaponLight(animationDuration));
-        yield return animationCoroutine;
+        if (animController != null)
+        {
+            animController.ActivateGacha();
+            yield return new WaitUntil(() => animController.IsAnimating == false);
+        }
+
+        //Coroutine animationCoroutine = StartCoroutine(AnimateGachaponLight(animationDuration));
+        //yield return animationCoroutine;
 
         GachaponResult result = gachaponSystem.PullGachapon();
+
+        bool isEyeCollected = false;
+        System.Action onCollectedCallback = () => isEyeCollected = true;
+
+        animController.EyeScript.OnEyeCollected += onCollectedCallback;
+
+        yield return new WaitUntil(() => isEyeCollected);
+
+        animController.EyeScript.OnEyeCollected -= onCollectedCallback;
 
         onFinish?.Invoke();
         Debug.Log("Evento activando");
@@ -238,24 +257,25 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
                 ShowResultUI(true, "¡Error en la tirada!", "No se pudo obtener un efecto válido.");
             }
 
-            yield return StartCoroutine(SetFinalRarityColor(result.rarity));
+            //yield return StartCoroutine(SetFinalRarityColor(result.rarity));
 
-            if (rarityColorsMap.TryGetValue(result.rarity, out Color baseColor))
-            {
-                yield return StartCoroutine(PulseFinalRarityColorWithDuration(baseColor, pulseDuration));
-            }
+            //if (rarityColorsMap.TryGetValue(result.rarity, out Color baseColor))
+            //{
+            //    yield return StartCoroutine(PulseFinalRarityColorWithDuration(baseColor, pulseDuration));
+            //}
         }
         else
         {
-            cubeRenderer.material.SetColor(EmissionColor, Color.black);
+            //cubeRenderer.material.SetColor(EmissionColor, Color.black);
             Debug.LogWarning("La gachapon no devolvió una rareza válida. Sistema bloqueado y apagado.");
         }
 
+        yield return new WaitForSeconds(3f);
         ShowResultUI(false, "", "");
 
         if (allowMultiplePulls)
         {
-            cubeRenderer.material = originalMaterialInstance;
+            //cubeRenderer.material = originalMaterialInstance;
             isActivated = false;
             isAnimating = false;
             if (playerIsNear && HUDManager.Instance != null)

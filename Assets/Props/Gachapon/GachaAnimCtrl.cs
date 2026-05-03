@@ -11,12 +11,15 @@ public class GachaAnimCtrl : MonoBehaviour
     // [SerializeField] Transform Eye;
     [SerializeField] GachaEyeDrop eyeScript;
 
-[Header("SHAKE")]
+    [Header("SHAKE")]
     public float shakeDuration = 1f;
     [SerializeField] float shakeStrength = 0.2f;
     [SerializeField] float shakeFrecuency = 25f;
     
-    
+    private bool isAnimating = false;
+    public bool IsAnimating { get { return isAnimating; } }
+    public GachaEyeDrop EyeScript => eyeScript;
+
     struct HandAnims
     {
         public string idle;
@@ -50,7 +53,7 @@ public class GachaAnimCtrl : MonoBehaviour
 
     void Update()
     {
-        if(Input.GetKeyDown(KeyCode.P)) {ActivateGacha();}
+        //if(Input.GetKeyDown(KeyCode.P)) {ActivateGacha();}
     }
 
     public void ActivateGacha()
@@ -60,6 +63,8 @@ public class GachaAnimCtrl : MonoBehaviour
 
     IEnumerator GachaSecuence()
     {
+        isAnimating = true;
+        
         handAnimator.Play(handAnims.look, 0, 0);
         machineAnimator.Play(machineAnims.active, 0, 0);
 
@@ -72,6 +77,8 @@ public class GachaAnimCtrl : MonoBehaviour
         //SpawnEye
         yield return new WaitForSeconds(0.8f);
         LaunchEyeEvent();
+
+        isAnimating = false;
     }
 
     IEnumerator Shake(float duration)
