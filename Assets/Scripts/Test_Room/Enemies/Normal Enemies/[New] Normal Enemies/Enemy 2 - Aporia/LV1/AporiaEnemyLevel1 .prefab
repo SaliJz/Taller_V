@@ -302,21 +302,21 @@ MonoBehaviour:
   wanderRadius: 8
   wanderWaitTime: 3
   health: 16
-  moveSpeed: 6.5
-  dashDuration: 1
-  dashMaxDistance: 10
-  preparationTime: 0.25
-  attackTransitionDelay: 0.1
+  moveSpeed: 10
+  dashDuration: 0.5
+  dashMaxDistance: 16.5
+  preparationTime: 0.15
+  attackTransitionDelay: 0
   attackDamage: 20
   attackRadius: 2
-  hitDelay: 0.5
+  hitDelay: 0.25
   recoveryTime: 1.2
   knockbackForce: 5
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
   detectionRadius: 25
-  dashActivationDistance: 20
+  dashActivationDistance: 16.5
   cooldownShort: 1
   cooldownMedium: 1.6
   cooldownLong: 2.2
@@ -1343,7 +1343,7 @@ MonoBehaviour:
   dashDuration: 0.5
   AttackVFX: {fileID: 0}
   h: 0
-  v: -1
+  v: 0
 --- !u!1 &4545017819492514827
 GameObject:
   m_ObjectHideFlags: 0
