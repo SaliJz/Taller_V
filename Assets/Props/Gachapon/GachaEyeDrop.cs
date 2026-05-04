@@ -48,6 +48,16 @@ public class GachaEyeDrop : MonoBehaviour
         {
             //Effect
             PlayerShaderCtrl shader = other.GetComponent<PlayerShaderCtrl>();
+
+            if (shader == null)
+            {
+                shader = other.GetComponentInChildren<PlayerShaderCtrl>();
+            }
+            if (shader == null)
+            {
+                shader = other.GetComponentInParent<PlayerShaderCtrl>();
+            }
+
             shader?.ShineTrigger();
 
             OnEyeCollected?.Invoke();

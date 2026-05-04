@@ -22,8 +22,16 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     #region Inspector - Effect Settings
 
     [Header("Efectos de Pulso")]
+    [Tooltip("Velocidad del pulso para items temporales.")]
     [SerializeField] private float pulseSpeed = 2f;
+    [Tooltip("Intensidad del pulso (0.3 = 30% de variacion en alpha)")]
     [SerializeField] private float pulseIntensity = 0.3f;
+
+    [Header("Efecto de Seleccion")]
+    [Tooltip("Escala del icono cuando el slot esta seleccionado (ej: 1.25)")]
+    [SerializeField] private float selectedIconScale = 1.25f;
+    [Tooltip("Duracion del tween de escala en segundos")]
+    [SerializeField] private float selectedScaleDuration = 0.15f;
 
     #endregion
 
@@ -36,18 +44,26 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     private bool hasItem;
     private bool isGoldenSlot;
     private Coroutine pulseCoroutine;
+    private bool isSelected;
+    private Coroutine selectScaleCoroutine;
 
     #endregion
 
     #region Public Properties & Events
 
-    /// <summary>Item actualmente asignado (puede ser null).</summary>
+    /// <summary>
+    /// Item actualmente asignado (puede ser null).
+    /// </summary>
     public ShopItem CurrentItem => itemData;
 
-    /// <summary>True si el slot tiene un item.</summary>
+    /// <summary>
+    /// True si el slot tiene un item.
+    /// </summary>
     public bool HasItem => hasItem;
 
-    /// <summary>RectTransform de este slot.</summary>
+    /// <summary>
+    /// RectTransform de este slot.
+    /// </summary>
     public RectTransform SlotRect => GetComponent<RectTransform>();
 
     #endregion
@@ -141,11 +157,56 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         }
 
         HideTemporalEffect();
+
+        isSelected = false;
+        if (iconImage != null) iconImage.transform.localScale = Vector3.one;
+        if (selectScaleCoroutine != null)
+        {
+            StopCoroutine(selectScaleCoroutine);
+            selectScaleCoroutine = null;
+        }
     }
 
     #endregion
 
     #region Visual & Audio Effects
+
+    public void SetSelected(bool selected)
+    {
+        if (isSelected == selected) return;
+        isSelected = selected;
+
+        if (selectScaleCoroutine != null)
+        {
+            StopCoroutine(selectScaleCoroutine);
+            selectScaleCoroutine = null;
+        }
+
+        if (iconImage == null) return;
+
+        float targetScale = selected ? selectedIconScale : 1f;
+        selectScaleCoroutine = StartCoroutine(TweenIconScale(targetScale));
+    }
+
+    private IEnumerator TweenIconScale(float targetScale)
+    {
+        if (iconImage == null) yield break;
+
+        Vector3 fromScale = iconImage.transform.localScale;
+        Vector3 toScale = Vector3.one * targetScale;
+        float elapsed = 0f;
+
+        while (elapsed < selectedScaleDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / selectedScaleDuration);
+            iconImage.transform.localScale = Vector3.Lerp(fromScale, toScale, t);
+            yield return null;
+        }
+
+        iconImage.transform.localScale = toScale;
+        selectScaleCoroutine = null;
+    }
 
     private void ShowTemporalEffect()
     {
@@ -220,7 +281,9 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         else InventoryAudioManager.Instance?.PlayCommonSlotHoverSound();
     }
 
-    /// <summary>Aplica el estado visual de "hover exit" y oculta el tooltip.</summary>
+    /// <summary>
+    /// Aplica el estado visual de "hover exit" y oculta el tooltip.
+    /// </summary>
     private void ApplyHoverExit()
     {
         if (backgroundImage != null) backgroundImage.color = originalBackgroundColor;
@@ -228,16 +291,22 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         InventoryTooltip.Instance?.Hide();
     }
 
-    /// <summary>Simula que el cursor del mando entra en este slot.</summary>
+    /// <summary>
+    /// Simula que el cursor del mando entra en este slot.
+    /// </summary>
     public void SimulatePointerEnter(bool gamepadMode = true) => ApplyHoverEnter(gamepadMode);
 
-    /// <summary>Simula que el cursor del mando sale de este slot.</summary>
+    /// <summary>
+    /// Simula que el cursor del mando sale de este slot.
+    /// </summary>
     public void SimulatePointerExit()
     {
         ApplyHoverExit();
     }
 
-    /// <summary>Simula un clic del mando sobre este slot (Button North).</summary>
+    /// <summary>
+    /// Simula un clic del mando sobre este slot (Button North).
+    /// </summary>
     public void SimulateClick()
     {
         if (!hasItem) return;

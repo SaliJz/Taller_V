@@ -287,6 +287,8 @@ public class InventoryUIManager : MonoBehaviour
             focusedSlot.SimulatePointerExit();
             focusedSlot = null;
         }
+
+        selectedSlot?.SetSelected(false);
         selectedSlot = null;
 
         detailPanel?.SetActive(false);
@@ -639,23 +641,23 @@ public class InventoryUIManager : MonoBehaviour
 
         if (selectedSlot == slot)
         {
-            // Toggle: cierra el panel del slot ya seleccionado
+            selectedSlot.SetSelected(false);
             selectedSlot = null;
             HideItemDetails();
         }
         else
         {
-            // Cambia inmediatamente al nuevo slot, sin importar cual estaba seleccionado antes
+            selectedSlot?.SetSelected(false);
             selectedSlot = slot;
-            //RectTransform slotRect = isGamepad ? slot.SlotRect : null;
+            selectedSlot.SetSelected(true);
             ShowItemDetails(slot.CurrentItem, slotRect: null);
         }
     }
 
     /// <summary>
     /// Muestra el panel descriptivo del item.
-    /// <paramref name="slotRect"/> si no es null, posiciona el panel centrado sobre ese slot (modo mando).
     /// </summary>
+    /// <paramref name="slotRect"/> si no es null, posiciona el panel centrado sobre ese slot (modo mando).
     public void ShowItemDetails(ShopItem item, RectTransform slotRect = null)
     {
         if (detailPanel == null || item == null) return;

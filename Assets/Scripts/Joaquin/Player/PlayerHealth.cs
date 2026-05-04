@@ -28,7 +28,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private PlayerCombatActionManager combatActionManager;
     [SerializeField] private PlayerBlockSystem blockSystem;
     [SerializeField] private PlayerAudioController audioController;
-    [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
+    [SerializeField] private PlayerAnimCtrl animCtrl;
+    [SerializeField] private PlayerShaderCtrl shaderCtrl;
 
     #endregion
 
@@ -203,8 +204,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         blockSystem = GetComponent<PlayerBlockSystem>();
         combatActionManager = GetComponent<PlayerCombatActionManager>();
 
-        playerAnimCtrl = GetComponentInChildren<PlayerAnimCtrl>();
-        if (playerAnimCtrl == null) ReportDebug("PlayerAnimCtrl no encontrado en PlayerHealth.", 2);
+        shaderCtrl = GetComponentInChildren<PlayerShaderCtrl>();
+        if (shaderCtrl == null) ReportDebug("PlayerShaderCtrl no encontrado en PlayerHealth.", 2);
+
+        animCtrl = GetComponentInChildren<PlayerAnimCtrl>();
+        if (animCtrl == null) ReportDebug("PlayerAnimCtrl no encontrado en PlayerHealth.", 2);
 
         audioController = GetComponentInChildren<PlayerAudioController>();
         if (audioController == null) ReportDebug("PlayerAudioController no encontrado en PlayerHealth.", 2);
@@ -420,8 +424,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         {
             OnDamageReceived?.Invoke(damageToApply);
 
-            playerAnimCtrl?.PlayDamage();
+            animCtrl?.PlayDamage();
             audioController?.PlayDamageSound();
+            shaderCtrl?.DamageTrigger();
 
             currentHealth -= damageToApply;
             currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
@@ -610,7 +615,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
                     break;
             }
 
-            playerAnimCtrl?.SetAgeStage(ageStageValue);
+            animCtrl?.SetAgeStage(ageStageValue);
             ReportDebug($"Etapa de vida cambiada a {CurrentLifeStage}. Animator AgeStage seteado a {ageStageValue}.", 1);
 
             if (lifeStageText != null)

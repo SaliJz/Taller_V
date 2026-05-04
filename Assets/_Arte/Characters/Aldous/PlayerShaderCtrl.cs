@@ -3,43 +3,47 @@ using UnityEngine;
 
 public class PlayerShaderCtrl : MonoBehaviour
 {
-    //------------------------------------------------------------------
     #region Variables
+
     [Header("Referencias")]
-    [SerializeField] Renderer targetRenderer;
-    [SerializeField] SpriteRenderer spriteRend;
+    [SerializeField] private Renderer targetRenderer; // Renderer del material que queremos controlar
+    [SerializeField] private SpriteRenderer spriteRend; // Renderer del sprite para el flash de daño
 
     [Header("Berserker Settings")]
-    [SerializeField] float outlineActive = 0.001f;
-    [SerializeField] float outlineMax = 0.002f;
-    [SerializeField] GameObject BrokenVFX;
-    [SerializeField] Material BrokenMat;
-    
+    [Tooltip("Valor del grosor del outline cuando está activo (en estado de berserker)")]
+    [SerializeField] private float outlineActive = 0.001f;
+    [Tooltip("Valor máximo del grosor del outline durante la transición (en estado de berserker)")]
+    [SerializeField] private float outlineMax = 0.002f;
+    [SerializeField] private GameObject BrokenVFX; // Prefab del VFX de ruptura del outline
+    [SerializeField] private Material BrokenMat; // Material para el VFX de ruptura, que cambiará de color según el estado de stamina
 
     [Header("Shine Settings")]
-    [SerializeField] float shinePeak = 0.5f;
-    [SerializeField] float damagePeak = 0.5f;
+    [Tooltip("Valor máximo del brillo durante el efecto de shine")]
+    [SerializeField] private float shinePeak = 0.5f;
+    [Tooltip("Valor máximo del brillo durante el efecto de shine")]
+    [SerializeField] private float damagePeak = 0.5f;
 
     [Header("Damage Settings")]
-    [SerializeField] float damageFlashDuration = 0.15f;
+    [Tooltip("Duración total del flash de daño (ida y vuelta)")]
+    [SerializeField] private float damageFlashDuration = 0.15f;
 
-    MaterialPropertyBlock mpb;
-    Coroutine shineRoutine;
-    Coroutine outlineRoutine;
-    Coroutine damageRoutine;
+    private MaterialPropertyBlock mpb;
+    private Coroutine shineRoutine;
+    private Coroutine outlineRoutine;
+    private Coroutine damageRoutine;
 
-    static readonly int GrossorID = Shader.PropertyToID("_Grossor");
-    static readonly int ShineID = Shader.PropertyToID("_ShineAmount");
-    static readonly int HasStaminaID = Shader.PropertyToID("_HasStamina");
+    private static readonly int GrossorID = Shader.PropertyToID("_Grossor");
+    private static readonly int ShineID = Shader.PropertyToID("_ShineAmount");
+    private static readonly int HasStaminaID = Shader.PropertyToID("_HasStamina");
 
-
-    bool testBerserActive = false;
-    bool testStamina = true;
+    //private bool testBerserActive = false;
+    //private bool testStamina = true;
 
     #endregion
-    //------------------------------------------------------------------
+
     #region Unity Lifecycle
-    void Start()
+
+    private void Start()
     {
         mpb = new MaterialPropertyBlock();
         targetRenderer.GetPropertyBlock(mpb);
@@ -52,12 +56,12 @@ public class PlayerShaderCtrl : MonoBehaviour
         targetRenderer.SetPropertyBlock(mpb);
     }
 
-    void Update()
+    private void Update()
     {
-        TEST_IMPUTS();
+        //TEST_IMPUTS();
     }
 
-    void LateUpdate()
+    private void LateUpdate()
     {
         if (targetRenderer == null) return;
 
@@ -66,11 +70,12 @@ public class PlayerShaderCtrl : MonoBehaviour
 
         targetRenderer.bounds = b;
     }
-    #endregion
-    //------------------------------------------------------------------
-    #region Testing
 
-    void TEST_IMPUTS()
+    #endregion
+
+    #region Testing
+    /*
+    private void TEST_IMPUTS()
     {
         if (Input.GetKeyDown(KeyCode.Keypad9))
         {
@@ -92,9 +97,11 @@ public class PlayerShaderCtrl : MonoBehaviour
             DamageTrigger();
         }
     }
+    */
     #endregion
-    //-----------------------------------------------
+
     #region Shine Functions
+
     public void ShineTrigger(float duration = 0.22f)
     {
         if(shineRoutine != null) StopCoroutine(shineRoutine);
@@ -102,7 +109,7 @@ public class PlayerShaderCtrl : MonoBehaviour
         shineRoutine = StartCoroutine(ShineRoutine(duration));
     }
 
-    IEnumerator ShineRoutine(float duration)
+    private IEnumerator ShineRoutine(float duration)
     {
         float half = duration * 0.5f;
         float t = 0f;
@@ -110,7 +117,7 @@ public class PlayerShaderCtrl : MonoBehaviour
         while (t < half)
         {
             t += Time.deltaTime;
-            setShine(Mathf.Lerp(0f, shinePeak, t / half));
+            SetShine(Mathf.Lerp(0f, shinePeak, t / half));
             yield return null;
         }
 
@@ -118,32 +125,34 @@ public class PlayerShaderCtrl : MonoBehaviour
         while (t < half)
         {
             t += Time.deltaTime;
-            setShine(Mathf.Lerp(shinePeak, 0f, t / half));
+            SetShine(Mathf.Lerp(shinePeak, 0f, t / half));
             yield return null;
         }
 
-        setShine(0f);
+        SetShine(0f);
         shineRoutine = null;
     }
 
-    void setShine(float value)
+    private void SetShine(float value)
     {
         targetRenderer.GetPropertyBlock(mpb);
         mpb.SetFloat(ShineID, value);
 
         targetRenderer.SetPropertyBlock(mpb);
     }
+
     #endregion
-    //------------------------------------------------------------------
+
     #region Berserker Functions
+
     public void BersekerOutline(bool Active)
     {
         if (outlineRoutine != null) StopCoroutine(outlineRoutine);
 
-        outlineRoutine = StartCoroutine(Active? berserkerOn():berserkerOff());
+        outlineRoutine = StartCoroutine(Active? BerserkerOn():BerserkerOff());
     }
 
-    IEnumerator berserkerOn()
+    private IEnumerator BerserkerOn()
     {
         ShineTrigger(0.5f);
         float t = 0f;
@@ -152,7 +161,7 @@ public class PlayerShaderCtrl : MonoBehaviour
         while (t < time)
         {
             t += Time.deltaTime;
-            setOutline(Mathf.Lerp(0f, outlineMax, t / time));
+            SetOutline(Mathf.Lerp(0f, outlineMax, t / time));
             yield return null;
         }
 
@@ -160,15 +169,15 @@ public class PlayerShaderCtrl : MonoBehaviour
         while (t < time)
         {
             t += Time.deltaTime;
-            setOutline(Mathf.Lerp(outlineMax, outlineActive, t / time));
+            SetOutline(Mathf.Lerp(outlineMax, outlineActive, t / time));
             yield return null;
         }
 
-        setOutline(outlineActive);
+        SetOutline(outlineActive);
         outlineRoutine = null;
     }
 
-    IEnumerator berserkerOff()
+    private IEnumerator BerserkerOff()
     {
         float t = 0f;
         float time = 0.15f;
@@ -179,7 +188,7 @@ public class PlayerShaderCtrl : MonoBehaviour
         while (t < time)
         {
             t += Time.deltaTime;
-            setOutline(Mathf.Lerp(start, 0f, t / time));
+            SetOutline(Mathf.Lerp(start, 0f, t / time));
             yield return null;
         }
 
@@ -188,11 +197,11 @@ public class PlayerShaderCtrl : MonoBehaviour
 
         OutlineBrokeColor(obj);
         
-        setOutline(0f);
+        SetOutline(0f);
         outlineRoutine = null;
     }
 
-    void setOutline(float value)
+    private void SetOutline(float value)
     {
         targetRenderer.GetPropertyBlock(mpb);
         mpb.SetFloat(GrossorID, value);
@@ -200,7 +209,7 @@ public class PlayerShaderCtrl : MonoBehaviour
         targetRenderer.SetPropertyBlock(mpb);
     }
 
-    float GetCurrentOutline()
+    private float GetCurrentOutline()
     {
         targetRenderer.GetPropertyBlock(mpb);
         return mpb.GetFloat(GrossorID);
@@ -214,7 +223,7 @@ public class PlayerShaderCtrl : MonoBehaviour
         targetRenderer.SetPropertyBlock(mpb);
     }
 
-    void OutlineBrokeColor(GameObject RefVFX)
+    private void OutlineBrokeColor(GameObject RefVFX)
     {
         Material copy = Instantiate(BrokenMat);
         ParticleSystem party = RefVFX.GetComponent<ParticleSystem>();
@@ -227,10 +236,11 @@ public class PlayerShaderCtrl : MonoBehaviour
         ParticleSystemRenderer psRender = RefVFX.GetComponent<ParticleSystemRenderer>();
         psRender.material = copy;
     }
+
     #endregion
 
-    //------------------------------------------------------------------
     #region Damage Functions
+
     public void DamageTrigger()
     {
         if(damageRoutine != null) StopCoroutine(damageRoutine);
@@ -238,7 +248,7 @@ public class PlayerShaderCtrl : MonoBehaviour
         damageRoutine = StartCoroutine(DamageRoutine());
     }
 
-    IEnumerator DamageRoutine()
+    private IEnumerator DamageRoutine()
     {
         float t = 0;
 
@@ -260,5 +270,6 @@ public class PlayerShaderCtrl : MonoBehaviour
 
         spriteRend.color = Color.white;
     }
+
     #endregion
 }

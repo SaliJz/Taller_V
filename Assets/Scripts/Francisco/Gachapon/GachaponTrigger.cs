@@ -23,6 +23,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
     [SerializeField] private GachaponSystem gachaponSystem;
     [SerializeField] private MeshRenderer cubeRenderer;
     [SerializeField] private Material activatedMaterial;
+    [SerializeField] private GachaponPlayerDetector playerDetector;
 
     [Header("UI Dependencies")]
     [SerializeField] private GameObject resultUIPanel;
@@ -75,6 +76,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     private PlayerControlls playerControls;
     private PlayerBlockSystem cachedBlockSystem;
+    private CharacterController playerCharacterController;
 
     private void Awake()
     {
@@ -82,6 +84,9 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
         if (gachaponSystem == null)
             gachaponSystem = FindAnyObjectByType<GachaponSystem>();
+
+        if (playerDetector == null)
+            playerDetector = GetComponentInChildren<GachaponPlayerDetector>();
 
         if (animController == null)
             animController = GetComponentInChildren<GachaAnimCtrl>();
@@ -125,7 +130,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             return;
         }
 
-        originalMaterialInstance = cubeRenderer.material;
+        if (cubeRenderer != null) originalMaterialInstance = cubeRenderer.material;
         initialPosition = transform.position;
 
         foreach (var mapping in rarityColorMappings)
@@ -414,6 +419,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
     private IEnumerator RiseGachapon()
     {
         isAnimating = true;
+
         GetComponent<Collider>().enabled = false;
 
         if (audioSource != null && riseSFX != null)
@@ -426,12 +432,31 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         Vector3 endPos = riseTargetTransform.position;
         float elapsedTime = 0f;
 
+        float pushOutSpeed = 3.5f;
+
         while (elapsedTime < sinkDuration)
         {
             elapsedTime += Time.deltaTime;
             float t = elapsedTime / sinkDuration;
             t = sinkCurve.Evaluate(t);
             transform.position = Vector3.Lerp(startPos, endPos, t);
+
+            if (playerDetector != null && playerDetector.PlayerInZone != null)
+            {
+                CharacterController cc = playerDetector.PlayerInZone;
+
+                Vector3 pushDirection = cc.transform.position - transform.position;
+                pushDirection.y = 0;
+
+                if (pushDirection.sqrMagnitude < 0.01f)
+                {
+                    pushDirection = Vector3.forward;
+                }
+
+                cc.Move(pushDirection.normalized * (pushOutSpeed * Time.deltaTime));
+                Debug.Log("<color=cyan>Empujando al jugador</color>");
+            }
+
             yield return null;
         }
 

@@ -1,54 +1,97 @@
 using System.Collections;
-using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Gestiona una habilidad que potencia las estadísticas del jugador mientras está activa.
+/// Gestiona una habilidad que potencia las estadisticas del jugador mientras esta activa.
 /// La habilidad se activa y desactiva, pidiendo al PlayerStatsManager que aplique los modificadores.
 /// </summary>
 public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPlayerSpecialAbility
 {
-    #region Settings
+    #region Enums & Structs
 
-    [Header("Configuration")]
+    [System.Serializable]
+    public struct BuffSettings
+    {
+        [Range(0f, 10f)] public float MoveMultiplier;
+        [Range(0f, 10f)] public float AttackDamageMultiplier;
+        [Range(0f, 10f)] public float AttackSpeedMultiplier;
+        [Range(0f, 10f)] public float ToughnessDamageMultiplier;
+        [Range(0f, 10f)] public float HealthDrainAmount;
+        public bool DisableShieldThrow;
+
+        public BuffSettings(float move, float dmg, float speed, float drain, float toughnessMult = 1f, bool disableThrow = true)
+        {
+            MoveMultiplier = move;
+            AttackDamageMultiplier = dmg;
+            AttackSpeedMultiplier = speed;
+            HealthDrainAmount = drain;
+            ToughnessDamageMultiplier = toughnessMult;
+            DisableShieldThrow = disableThrow;
+        }
+    }
+
+    #endregion
+
+    #region Inspector - References
+
+    [Header("References")]
     [SerializeField] private PlayerStatsManager statsManager;
-    [SerializeField] private PlayerMeleeAttack playerMeleeAttack;
-    [SerializeField] private PlayerShieldController playerShieldController;
-    [SerializeField] private PlayerAudioController playerAudioController;
+    [SerializeField] private PlayerAudioController audioController;
+    [SerializeField] private PlayerShaderCtrl shaderCtrl;
+    [SerializeField] private GameObject visualModelObject;
+    [SerializeField] private GameObject warningMessagePrefab;
+
+    #endregion
+
+    #region Inspector - Stamina Settings
 
     [Header("Stamina System")]
+    [Tooltip("Cantidad maxima de estamina que la habilidad puede consumir. " +
+        "Cuando se agota, la habilidad seguira activa pero consumira vida en su lugar.")]
     [SerializeField] private float maxStamina = 100f;
-    [SerializeField] private float baseStaminaDrainRate = 10f; 
+    [Tooltip("Cantidad de estamina que se consume por segundo mientras la habilidad esta activa.")]
+    [SerializeField] private float baseStaminaDrainRate = 10f;
+    [Tooltip("Cantidad de estamina que se recarga por segundo cuando la habilidad esta inactiva.")]
     [SerializeField] private float staminaRechargeRate = 20f;
+    [Tooltip("Si esta activado, la habilidad solo se puede activar si la estamina esta completamente llena. " +
+        "Si esta desactivado, la habilidad se puede activar con estamina parcial, pero requerira recarga total si la estamina llega a 0.")]
     [SerializeField] private bool requireFullStaminaToActivate = false;
+    [Tooltip("Si requireFullStaminaToActivate esta desactivado, esta variable define cuanta estamina minima se necesita para activar la habilidad. " +
+        "Si la estamina llega a 0 durante el uso, se requerira recarga total para volver a activar.")]
     [SerializeField] private float minStaminaToActivate = 10f;
+
+    #endregion
+
+    #region Inspector - Buff Settings
 
     [Header("Buffs por Etapa de Vida")]
     [SerializeField] private BuffSettings youngBuffs = new BuffSettings(1.1f, 1.12f, 1.1f, 1f, 1f);
     [SerializeField] private BuffSettings adultBuffs = new BuffSettings(1.1f, 1.12f, 1.1f, 1f, 1f);
     [SerializeField] private BuffSettings elderBuffs = new BuffSettings(1.1f, 1.12f, 1.1f, 1f, 1f);
 
+    #endregion
+
+    #region Inspector - VFX & Feedback Settings
+
     [Header("VFX")]
-    [Tooltip("El objeto hijo que contiene el Renderer del personaje.")]
-    [SerializeField] private GameObject visualModelObject;
-    [Tooltip("Material cuando la habilidad está activa y tiene estamina.")]
+    [Tooltip("Activa o desactiva el manejo automatico del Outline (VFX) desde esta habilidad.")]
+    [SerializeField] private bool manageOutlineVFX = true;
+    [Tooltip("Material cuando la habilidad esta activa y tiene estamina.")]
     [SerializeField] private Material skillActiveMaterial;
     [Tooltip("Material cuando la habilidad sigue activa pero consume vida (sin estamina).")]
     [SerializeField] private Material skillExhaustedMaterial;
 
     [Header("Low Health Feedback")]
-    [SerializeField] private GameObject warningMessagePrefab;
-    [SerializeField] private string warningMessageText = "*Tos* *Tos*\n¡No puedo más!";
+    [SerializeField] private string warningMessageText = "*Tos* *Tos*\n!No puedo mas!";
     [SerializeField] private Color warningMessageColor = Color.red;
     [SerializeField] private float warningMessageOffset = 2.5f;
     [SerializeField] private float warningMessageDuration = 2f;
 
     #endregion
 
-    #region State
+    #region Internal State
 
-    public bool isSkillActive { get; private set; }
     private float currentStamina;
     private float healthDrainTimer;
     private bool isStaminaConsumptionPrevented = false;
@@ -63,21 +106,24 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     private Renderer modelRenderer;
     private Material storedBaseMaterial;
 
-    public event System.Action OnAbilityActivated;
-    public event System.Action OnAbilityDeactivated;
-
-    public bool IsActive => isSkillActive;
-
-    private bool inputBlocked = false; 
+    private bool inputBlocked = false;
     private bool isForcedActive = false;
     private GameObject currentWarningMessage;
 
     private bool wasHealthTooLow = false;
-
     private bool hasStaminaBeenFullyDepleted = false;
-    public static event System.Action<float, float> OnStaminaChanged;
-    
+
+    #endregion
+
+    #region Public Properties & Events
+
+    public bool isSkillActive { get; private set; }
+    public bool IsActive => isSkillActive;
     public float CurrentToughnessMultiplier { get; private set; } = 1.0f;
+
+    public event System.Action OnAbilityActivated;
+    public event System.Action OnAbilityDeactivated;
+    public static event System.Action<float, float> OnStaminaChanged;
 
     #endregion
 
@@ -87,17 +133,14 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     {
         playerHealth = GetComponent<PlayerHealth>();
         statsManager = GetComponent<PlayerStatsManager>();
-        playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
-        playerShieldController = GetComponent<PlayerShieldController>();
-        if (playerAudioController == null) playerAudioController = GetComponent<PlayerAudioController>();
-
-        if (playerAudioController == null) Debug.Log("PlayerAudioController no se encuentra en el objeto.");
+        audioController = GetComponent<PlayerAudioController>();
+        shaderCtrl = GetComponentInChildren<PlayerShaderCtrl>();
 
         currentStamina = maxStamina;
 
         if (statsManager == null)
         {
-            Debug.LogError("PlayerStatsManager no está asignado en ShieldSkill. La habilidad no funcionará.", this);
+            Debug.LogError("PlayerStatsManager no esta asignado en ShieldSkill. La habilidad no funcionara.", this);
             enabled = false;
             return;
         }
@@ -116,7 +159,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         }
         else
         {
-            Debug.LogWarning("visualModelObject no asignado en ShieldSkill. No habrá feedback visual de materiales.", this);
+            Debug.LogWarning("visualModelObject no asignado en ShieldSkill. No habra feedback visual de materiales.", this);
         }
 
         playerControls = new PlayerControlls();
@@ -125,29 +168,14 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
 
     private void Start()
     {
-        // Esto obliga a imprimir en consola qué es lo que realmente tiene la variable 
+        // Esto obliga a imprimir en consola que es lo que realmente tiene la variable 
         // apenas empieza el juego.
         Debug.Log($"[ShieldSkill] Datos cargados en Start - Young Move Mult: {youngBuffs.MoveMultiplier}");
 
         if (youngBuffs.MoveMultiplier == 0)
         {
-            Debug.LogError("¡ERROR! El Inspector está entregando 0 al script. Revisa los Overrides del Prefab.");
+            Debug.LogError("!ERROR! El Inspector esta entregando 0 al script. Revisa los Overrides del Prefab.");
         }
-    }
-
-    private void UpdateStaminaConsumptionFromStats()
-    {
-        if (statsManager == null)
-        {
-            currentStaminaDrainRate = baseStaminaDrainRate;
-            return;
-        }
-
-        float staminaConsumptionMod = statsManager.GetStat(StatType.StaminaConsumption);
-
-        if (staminaConsumptionMod <= 0f) staminaConsumptionMod = 1f;
-
-        currentStaminaDrainRate = baseStaminaDrainRate * staminaConsumptionMod;
     }
 
     private void OnEnable()
@@ -159,60 +187,6 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         {
             PlayerStatsManager.OnStatChanged += HandleStaminaStatChanged;
         }
-    }
-
-    private void OnDisable()
-    {
-        PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
-        playerControls?.Abilities.Disable();
-        RestoreOriginalMaterial();
-
-        if (isSkillActive) DeactivateSkill();
-
-        if (statsManager != null)
-        {
-            PlayerStatsManager.OnStatChanged -= HandleStaminaStatChanged;
-        }
-    }
-
-    private void HandleStaminaStatChanged(StatType statType, float newValue)
-    {
-        if (statType == StatType.StaminaConsumption)
-        {
-            UpdateStaminaConsumptionFromStats();
-        }
-    }
-
-    private void OnDestroy()
-    {
-        PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
-        playerControls?.Dispose();
-        RestoreOriginalMaterial();
-
-        if (isSkillActive) DeactivateSkill();
-
-        if (currentWarningMessage != null)
-        {
-            Destroy(currentWarningMessage);
-        }
-    }
-
-    /// <summary>
-    /// Maneja el cambio de etapa de vida mientras la habilidad está activa.
-    /// </summary>
-    private void HandleLifeStageChanged(PlayerHealth.LifeStage newStage)
-    {
-        if (!isSkillActive)
-        {
-            lastKnownLifeStage = newStage;
-            return;
-        }
-
-        Debug.Log($"[ShieldSkill] Cambio de etapa detectado durante habilidad: {lastKnownLifeStage} -> {newStage}");
-
-        lastKnownLifeStage = newStage;
-
-        StartCoroutine(ReapplySkillModifiersNextFrame());
     }
 
     private void Update()
@@ -250,9 +224,82 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         }
     }
 
+    private void OnDisable()
+    {
+        PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
+        playerControls?.Abilities.Disable();
+        RestoreOriginalMaterial();
+
+        if (isSkillActive) DeactivateSkill();
+
+        if (statsManager != null)
+        {
+            PlayerStatsManager.OnStatChanged -= HandleStaminaStatChanged;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        PlayerHealth.OnLifeStageChanged -= HandleLifeStageChanged;
+        playerControls?.Dispose();
+        RestoreOriginalMaterial();
+
+        if (isSkillActive) DeactivateSkill();
+
+        if (currentWarningMessage != null)
+        {
+            Destroy(currentWarningMessage);
+        }
+    }
+
     #endregion
 
-    #region Core Logic
+    #region Initialization & Data Sync
+
+    private void UpdateStaminaConsumptionFromStats()
+    {
+        if (statsManager == null)
+        {
+            currentStaminaDrainRate = baseStaminaDrainRate;
+            return;
+        }
+
+        float staminaConsumptionMod = statsManager.GetStat(StatType.StaminaConsumption);
+
+        if (staminaConsumptionMod <= 0f) staminaConsumptionMod = 1f;
+
+        currentStaminaDrainRate = baseStaminaDrainRate * staminaConsumptionMod;
+    }
+
+    private void HandleStaminaStatChanged(StatType statType, float newValue)
+    {
+        if (statType == StatType.StaminaConsumption)
+        {
+            UpdateStaminaConsumptionFromStats();
+        }
+    }
+
+    /// <summary>
+    /// Maneja el cambio de etapa de vida mientras la habilidad esta activa.
+    /// </summary>
+    private void HandleLifeStageChanged(PlayerHealth.LifeStage newStage)
+    {
+        if (!isSkillActive)
+        {
+            lastKnownLifeStage = newStage;
+            return;
+        }
+
+        Debug.Log($"[ShieldSkill] Cambio de etapa detectado durante habilidad: {lastKnownLifeStage} -> {newStage}");
+
+        lastKnownLifeStage = newStage;
+
+        StartCoroutine(ReapplySkillModifiersNextFrame());
+    }
+
+    #endregion
+
+    #region Core Skill Logic
 
     public void OnActivateSkill(InputAction.CallbackContext context)
     {
@@ -310,7 +357,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     {
         if (isForcedActive)
         {
-            Debug.Log("[ShieldSkill] No se puede desactivar - está forzada activa");
+            Debug.Log("[ShieldSkill] No se puede desactivar - esta forzada activa");
             return;
         }
 
@@ -321,7 +368,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     {
         if (isForcedActive && isSkillActive)
         {
-            Debug.Log("[ShieldSkill] No se puede desactivar - está forzada activa");
+            Debug.Log("[ShieldSkill] No se puede desactivar - esta forzada activa");
             return;
         }
 
@@ -342,9 +389,14 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     {
         isSkillActive = true;
 
-        if (playerAudioController != null)
+        if (manageOutlineVFX)
         {
-            playerAudioController.PlayBerserkerAbility(true);
+            shaderCtrl?.BersekerOutline(true);
+        }
+
+        if (audioController != null)
+        {
+            audioController.PlayBerserkerAbility(true);
         }
 
         healthDrainTimer = 0f;
@@ -372,9 +424,14 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     {
         isSkillActive = false;
 
-        if (playerAudioController != null)
+        if (manageOutlineVFX)
         {
-            playerAudioController.PlayBerserkerAbility(false);
+            shaderCtrl?.BersekerOutline(false);
+        }
+
+        if (audioController != null)
+        {
+            audioController.PlayBerserkerAbility(false);
         }
 
         float beforeMoveValue = statsManager.GetStat(StatType.MoveSpeed);
@@ -441,15 +498,15 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         {
             float currentHealthDrain = statsManager.GetStat(StatType.HealthDrainAmount);
 
-        if (currentHealthDrain > 0)
-        {
-            healthDrainTimer += Time.deltaTime;
-            if (healthDrainTimer >= 1f)
+            if (currentHealthDrain > 0)
             {
-                playerHealth.TakeDamage(currentHealthDrain, true);
-                healthDrainTimer %= 1f;
+                healthDrainTimer += Time.deltaTime;
+                if (healthDrainTimer >= 1f)
+                {
+                    playerHealth.TakeDamage(currentHealthDrain, true);
+                    healthDrainTimer %= 1f;
+                }
             }
-        }
         }
     }
 
@@ -465,12 +522,23 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         Debug.Log($"[ShieldSkill] HealthDrainAmount removido: {beforeValue} -> {afterValue}");
     }
 
+    private BuffSettings GetCurrentBuffs()
+    {
+        switch (playerHealth.CurrentLifeStage)
+        {
+            case PlayerHealth.LifeStage.Young: return youngBuffs;
+            case PlayerHealth.LifeStage.Adult: return adultBuffs;
+            case PlayerHealth.LifeStage.Elder: return elderBuffs;
+            default: return new BuffSettings(1f, 1f, 1f, 1f);
+        }
+    }
+
     #endregion
 
     #region Stamina System
 
     /// <summary>
-    /// Verifica si la habilidad puede activarse según las reglas de estamina.
+    /// Verifica si la habilidad puede activarse segun las reglas de estamina.
     /// </summary>
     private bool CanActivateSkill()
     {
@@ -492,7 +560,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     }
 
     /// <summary>
-    /// Consume estamina mientras la habilidad está activa.
+    /// Consume estamina mientras la habilidad esta activa.
     /// </summary>
     private void ConsumeStamina()
     {
@@ -508,14 +576,14 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         if (previousStamina > 0f && currentStamina <= 0f)
         {
             hasStaminaBeenFullyDepleted = true;
-            Debug.Log("[ShieldSkill] ¡Estamina completamente agotada! Requerirá recarga total para reactivar.");
+            Debug.Log("[ShieldSkill] !Estamina completamente agotada! Requerira recarga total para reactivar.");
         }
 
         OnStaminaChanged?.Invoke(currentStamina, maxStamina);
     }
 
     /// <summary>
-    /// Recarga la estamina cuando la habilidad está inactiva.
+    /// Recarga la estamina cuando la habilidad esta inactiva.
     /// </summary>
     private void RechargeStamina()
     {
@@ -553,7 +621,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     }
 
     /// <summary>
-    /// Obtiene la estamina máxima.
+    /// Obtiene la estamina maxima.
     /// </summary>
     public float GetMaxStamina()
     {
@@ -561,18 +629,14 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     }
 
     /// <summary>
-    /// Recarga instantáneamente la estamina (útil para power-ups o eventos especiales).
+    /// Recarga instantaneamente la estamina (util para power-ups o eventos especiales).
     /// </summary>
     public void RechargeStaminaInstantly(float amount)
     {
         currentStamina = Mathf.Min(maxStamina, currentStamina + amount);
         OnStaminaChanged?.Invoke(currentStamina, maxStamina);
-        Debug.Log($"[ShieldSkill] Estamina recargada instantáneamente: +{amount}");
+        Debug.Log($"[ShieldSkill] Estamina recargada instantaneamente: +{amount}");
     }
-
-    #endregion
-
-    #region PUBLIC_METHODS
 
     public void PreventStaminaConsumption()
     {
@@ -586,7 +650,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
 
     #endregion
 
-    #region VFX Management
+    #region Visual & Audio Effects
 
     /// <summary>
     /// Actualiza el material del modelo visual basado en el estado de la habilidad y la estamina.
@@ -595,11 +659,19 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     {
         if (modelRenderer == null) return;
 
+        bool hasStamina = currentStamina > 0;
+
+        if (manageOutlineVFX)
+        {
+            shaderCtrl?.SetHasStamina(hasStamina);
+            return;
+        }
+
         Material targetMaterial;
 
         if (isSkillActive)
         {
-            if (currentStamina > 0)
+            if (hasStamina)
             {
                 targetMaterial = skillActiveMaterial;
             }
@@ -624,13 +696,13 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     /// </summary>
     private void RestoreOriginalMaterial()
     {
+        if (manageOutlineVFX) return;
+
         if (modelRenderer != null && storedBaseMaterial != null)
         {
             modelRenderer.material = storedBaseMaterial;
         }
     }
-
-    #endregion
 
     private void ShowNoStaminaWarning()
     {
@@ -643,7 +715,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
             {
                 floater.SetLifetime(warningMessageDuration);
                 floater.SetColor(warningMessageColor);
-                floater.SetText("¡No tengo suficiente energía!");
+                floater.SetText("!No tengo suficiente energia!");
             }
 
             StartCoroutine(DestroyWarningMessageAfterDelay());
@@ -652,17 +724,15 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         Debug.Log("[ShieldSkill] No hay suficiente estamina para activar la habilidad.");
     }
 
-    #region Low Health Feedback
-
     /// <summary>
     /// Muestra el mensaje de advertencia cuando el jugador intenta usar la habilidad con salud baja.
     /// </summary>
     private void ShowLowHealthWarning()
     {
         // Reproducir sonido de advertencia
-        if (playerAudioController != null)
+        if (audioController != null)
         {
-            playerAudioController.PlayBerserkerLowWarningAbility();
+            audioController.PlayBerserkerLowWarningAbility();
         }
 
         // Crear mensaje visual si no existe uno activo
@@ -680,7 +750,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
                 floater.SetText(warningMessageText);
             }
 
-            // Destruir el mensaje después de la duración especificada
+            // Destruir el mensaje despues de la duracion especificada
             StartCoroutine(DestroyWarningMessageAfterDelay());
         }
 
@@ -688,7 +758,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     }
 
     /// <summary>
-    /// Destruye el mensaje de advertencia después del tiempo especificado.
+    /// Destruye el mensaje de advertencia despues del tiempo especificado.
     /// </summary>
     private IEnumerator DestroyWarningMessageAfterDelay()
     {
@@ -702,42 +772,6 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         else
         {
             yield return null;
-        }
-    }
-
-    #endregion
-
-    #region Helpers
-
-    private BuffSettings GetCurrentBuffs()
-    {
-        switch (playerHealth.CurrentLifeStage)
-        {
-            case PlayerHealth.LifeStage.Young: return youngBuffs;
-            case PlayerHealth.LifeStage.Adult: return adultBuffs;
-            case PlayerHealth.LifeStage.Elder: return elderBuffs;
-            default: return new BuffSettings(1f, 1f, 1f, 1f);
-        }
-    }
-
-    [System.Serializable]
-    public struct BuffSettings
-    {
-        [Range(0f, 10f)] public float MoveMultiplier;
-        [Range(0f, 10f)] public float AttackDamageMultiplier;
-        [Range(0f, 10f)] public float AttackSpeedMultiplier;
-        [Range(0f, 10f)] public float ToughnessDamageMultiplier;
-        [Range(0f, 10f)] public float HealthDrainAmount;
-        public bool DisableShieldThrow;
-
-        public BuffSettings(float move, float dmg, float speed, float drain, float toughnessMult = 1f, bool disableThrow = true)
-        {
-            MoveMultiplier = move;
-            AttackDamageMultiplier = dmg;
-            AttackSpeedMultiplier = speed;
-            HealthDrainAmount = drain;
-            ToughnessDamageMultiplier = toughnessMult;
-            DisableShieldThrow = disableThrow;
         }
     }
 

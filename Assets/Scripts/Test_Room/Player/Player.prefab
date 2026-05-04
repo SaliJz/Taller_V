@@ -7650,7 +7650,8 @@ MonoBehaviour:
   combatActionManager: {fileID: 0}
   blockSystem: {fileID: 3496064612389669479}
   audioController: {fileID: 0}
-  playerAnimCtrl: {fileID: 0}
+  animCtrl: {fileID: 0}
+  shaderCtrl: {fileID: 0}
   fallbackMaxHealth: 100
   damageInvulnerabilityTime: 0
   sceneToLoadOnDeath: TransitionDead
@@ -7856,9 +7857,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   statsManager: {fileID: 7736777102245202428}
-  playerMeleeAttack: {fileID: 9211243997880812482}
-  playerShieldController: {fileID: 3158206734398763717}
-  playerAudioController: {fileID: 2888951513960009550}
+  audioController: {fileID: 2888951513960009550}
+  shaderCtrl: {fileID: 1469489433089181258}
+  visualModelObject: {fileID: 6991594973495407509}
+  warningMessagePrefab: {fileID: 4527440678079064410, guid: 4c049e7f575a8d24c9eaa25634824a0d, type: 3}
   maxStamina: 100
   baseStaminaDrainRate: 20
   staminaRechargeRate: 10
@@ -7885,10 +7887,9 @@ MonoBehaviour:
     ToughnessDamageMultiplier: 1.25
     HealthDrainAmount: 2
     DisableShieldThrow: 0
-  visualModelObject: {fileID: 6991594973495407509}
+  manageOutlineVFX: 1
   skillActiveMaterial: {fileID: 2100000, guid: 4e1e7aeead7ca8c48bbaeb80796aec7b, type: 2}
   skillExhaustedMaterial: {fileID: 2100000, guid: 285f8d33a76ed314aa4086069202a296, type: 2}
-  warningMessagePrefab: {fileID: 4527440678079064410, guid: 4c049e7f575a8d24c9eaa25634824a0d, type: 3}
   warningMessageText: "*Tos* *Tos*\n\xA1No puedo m\xE1s!"
   warningMessageColor: {r: 0, g: 0, b: 0, a: 1}
   warningMessageOffset: 2.5
@@ -8252,7 +8253,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1528701471942381910
 Transform:
   m_ObjectHideFlags: 0
@@ -8403,7 +8404,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  - {fileID: 2100000, guid: 6f1f9e035044422498b90c0a4e68d921, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8531,13 +8532,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6991594973495407509}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3b97abf31096a6344ac8086c01d3e181, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetRenderer: {fileID: 0}
-  spriteRend: {fileID: 0}
+  targetRenderer: {fileID: 853946800129297378}
+  spriteRend: {fileID: 853946800129297378}
   outlineActive: 0.001
   outlineMax: 0.002
   BrokenVFX: {fileID: 3191284374403391635, guid: fe106a95aa4e26543be336f8d5b112d1, type: 3}
