@@ -66,6 +66,9 @@ public class PlayerShaderCtrl : MonoBehaviour
         if (targetRenderer == null) return;
 
         Bounds b = targetRenderer.bounds;
+        
+        b.center = transform.position;
+        
         b.Expand(0.1f);
 
         targetRenderer.bounds = b;
