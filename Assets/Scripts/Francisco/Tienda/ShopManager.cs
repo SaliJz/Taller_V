@@ -63,7 +63,7 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private LayerMask shopItemLayer;
 
     [Header("Scene Restrictions")]
-    public string[] restrictedPurchaseScenes = { "HUB", "TutorialCompleto", "TransitionLevel01" };
+    public string[] restrictedPurchaseScenes = { "HUB", "TutorialCompleto", "TransitionLevel01", "TransitionLevel02" };
 
     [Header("Reroll Settings")]
     public int baseRerollCost = 10;

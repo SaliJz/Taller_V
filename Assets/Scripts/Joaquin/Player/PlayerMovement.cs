@@ -578,6 +578,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     #region Dash Mechanics
 
+    public float DashDistanceReturn() => GetMaxSafeDistance(moveDirection.magnitude > 0.1f ? moveDirection : transform.forward, currentDashDistance);
+
     public IEnumerator ExecuteDashFromManager()
     {
         yield return StartCoroutine(DashRoutine());

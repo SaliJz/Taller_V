@@ -22,7 +22,7 @@ MonoBehaviour:
   spawnSpacingMin: 0.4
   burstDelayMin: 0
   burstDelayMax: 0.09
-  initialDelay: 0.1
+  initialDelay: 0.25
   tiltAngleCenter: 20
   tiltAngleSide: 35
   maxSideYawAngle: 18
@@ -35,3 +35,9 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 128
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  groundRayOriginHeight: 10
+  groundRayMaxDistance: 30
+  groundSurfaceOffset: 0.02

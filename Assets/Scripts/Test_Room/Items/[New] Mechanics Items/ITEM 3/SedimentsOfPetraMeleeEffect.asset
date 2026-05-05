@@ -16,7 +16,7 @@ MonoBehaviour:
   effectDescription: 
   typeEffect: 2
   category: 0
-  largeSpikeDamagePercent: 1.5
+  largeSpikeDamagePercent: 0.5
   largeSpikeDuration: 0.3
   largeSpikeCount: 3
   spikeSpreadAngle: 30
@@ -24,8 +24,13 @@ MonoBehaviour:
   spikeRandomDelayMin: 0
   spikeRandomDelayMax: 0.12
   largeSpikeAngle: 25
-  spawnHeightOffset: 1.0000001
   meleeSpikeScale: 2
   enemyLayer:
     serializedVersion: 2
     m_Bits: 128
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  groundRayOriginHeight: 10
+  groundRayMaxDistance: 30
+  groundSurfaceOffset: 0.02

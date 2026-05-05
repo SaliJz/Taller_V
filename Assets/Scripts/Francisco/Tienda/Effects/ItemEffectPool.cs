@@ -356,10 +356,16 @@ public class ItemEffectPool : MonoBehaviour
         }
         else
         {
-            spike = targetList[0];
-            spike.StopAllCoroutines();
-            ReturnSpike(spike, isLargeSpike);
-            spike = targetQueue.Dequeue();
+            GameObject prefab = isLargeSpike
+                ? largeSpikePrefab
+                : smallSpikePrefab;
+
+            GameObject go =
+                Instantiate(prefab, Vector3.zero, Quaternion.identity, transform);
+
+            spike = go.GetComponent<PetraSpike>();
+
+            targetList.Add(spike);
         }
 
         Vector3 finalPos = position;
