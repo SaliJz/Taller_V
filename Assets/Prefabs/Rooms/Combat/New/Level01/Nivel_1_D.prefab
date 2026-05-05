@@ -11,10 +11,10 @@ GameObject:
   - component: {fileID: 8748926575672749718}
   - component: {fileID: 9013559759484389904}
   - component: {fileID: 4890937719008905541}
-  - component: {fileID: 8722425498408571132}
   - component: {fileID: 5124935928214640725}
   - component: {fileID: 6708186307289626357}
   - component: {fileID: 258773176880257716}
+  - component: {fileID: 369462031169933906}
   m_Layer: 16
   m_Name: Cube (9)
   m_TagString: Wall
@@ -92,27 +92,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &8722425498408571132
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 896960894465447}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!208 &5124935928214640725
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -180,6 +159,29 @@ SortingGroup:
   m_SortingLayer: 0
   m_SortingOrder: -1
   m_SortAtRoot: 0
+--- !u!136 &369462031169933906
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 896960894465447}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 5.8131666
+  m_Direction: 1
+  m_Center: {x: -0.00000013245477, y: 2.0065613, z: 0.00000023179585}
 --- !u!1 &7556124352180886
 GameObject:
   m_ObjectHideFlags: 0
@@ -2840,6 +2842,7 @@ MonoBehaviour:
   gachaponSystem: {fileID: 5417972378115452164}
   cubeRenderer: {fileID: 3962893485183704371}
   activatedMaterial: {fileID: 0}
+  playerDetector: {fileID: 0}
   resultUIPanel: {fileID: 8869193423343477154}
   nameTMP: {fileID: 4530947697490459803}
   effectsTMP: {fileID: 3632982817849328350}
@@ -4677,10 +4680,10 @@ GameObject:
   - component: {fileID: 3849279922396336449}
   - component: {fileID: 355499168563749522}
   - component: {fileID: 5956283525071571779}
-  - component: {fileID: 2206201346901005788}
   - component: {fileID: 3817402369941048309}
   - component: {fileID: 5018074207321038989}
   - component: {fileID: 7142881692486013343}
+  - component: {fileID: 3444059623768471376}
   m_Layer: 16
   m_Name: Cube (12)
   m_TagString: Wall
@@ -4758,27 +4761,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &2206201346901005788
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6685284948504817787}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!208 &3817402369941048309
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -4846,6 +4828,29 @@ SortingGroup:
   m_SortingLayer: 0
   m_SortingOrder: -1
   m_SortAtRoot: 0
+--- !u!136 &3444059623768471376
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6685284948504817787}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 5.8131666
+  m_Direction: 1
+  m_Center: {x: -0.00000013245477, y: 2.0065613, z: 0.00000023179585}
 --- !u!1 &7081594636383109482
 GameObject:
   m_ObjectHideFlags: 0
@@ -7038,7 +7043,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f8c56724447934d49bd0141ecb049aa2, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 6919622219923320139}
+      addedObject: {fileID: 5342954042082454956}
   m_SourcePrefab: {fileID: 100100000, guid: f8c56724447934d49bd0141ecb049aa2, type: 3}
 --- !u!4 &4850592393236516558 stripped
 Transform:
@@ -7050,8 +7055,8 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: f8c56724447934d49bd0141ecb049aa2, type: 3}
   m_PrefabInstance: {fileID: 4961415827207121189}
   m_PrefabAsset: {fileID: 0}
---- !u!65 &6919622219923320139
-BoxCollider:
+--- !u!136 &5342954042082454956
+CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -7068,8 +7073,10 @@ BoxCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 4.2236423, y: 10.635077, z: 3.3073773}
+  serializedVersion: 2
+  m_Radius: 2.1118212
+  m_Height: 10.635077
+  m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &6829878603867712027
 PrefabInstance:
@@ -7263,15 +7270,15 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f8c56724447934d49bd0141ecb049aa2, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1108433891909529029}
+      addedObject: {fileID: 504807833426440767}
   m_SourcePrefab: {fileID: 100100000, guid: f8c56724447934d49bd0141ecb049aa2, type: 3}
 --- !u!1 &5919812097066498062 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: f8c56724447934d49bd0141ecb049aa2, type: 3}
   m_PrefabInstance: {fileID: 6838166747484800351}
   m_PrefabAsset: {fileID: 0}
---- !u!65 &1108433891909529029
-BoxCollider:
+--- !u!136 &504807833426440767
+CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -7288,9 +7295,11 @@ BoxCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 4.2236423, y: 10.635077, z: 3.3073773}
-  m_Center: {x: 0, y: -0.00000047683716, z: 0}
+  serializedVersion: 2
+  m_Radius: 2.1118212
+  m_Height: 10.635077
+  m_Direction: 1
+  m_Center: {x: 0.0000009536743, y: -0.00000047683716, z: -0.0000009536743}
 --- !u!4 &6443724248325628596 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f8c56724447934d49bd0141ecb049aa2, type: 3}

@@ -123,9 +123,9 @@ GameObject:
   - component: {fileID: 5046313141341978903}
   - component: {fileID: 6137189146006067792}
   - component: {fileID: 1280521174652154799}
-  m_Layer: 7
+  m_Layer: 9
   m_Name: Torre
-  m_TagString: Enemy
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -237,8 +237,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19a597a42b59392498799846d891c130, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  damage: 10
-  damageCooldown: 1
+  pushForce: 10
+  duration: 1
   hitboxOffset: {x: 0, y: 0.1, z: 0}
   hitboxSize: {x: 0.8, y: 0.1, z: 0.8}
   playerLayer:
