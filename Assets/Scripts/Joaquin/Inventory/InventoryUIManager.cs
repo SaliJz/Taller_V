@@ -64,6 +64,14 @@ public class InventoryUIManager : MonoBehaviour
     [Header("Hover Highlight")]
     [SerializeField] private Color highlightColor = new Color(0.6f, 0.1f, 0.1f);
 
+    [Header("Panel de Confirmacion - Mando")]
+    [Tooltip("Imagen de fondo del boton Confirmar (para aplicar highlight con mando)")]
+    [SerializeField] private Image confirmButtonImage;
+    [Tooltip("Imagen de fondo del boton Cancelar (para aplicar highlight con mando)")]
+    [SerializeField] private Image cancelButtonImage;
+    [Tooltip("Color de fondo normal de los botones del panel de confirmacion")]
+    [SerializeField] private Color confirmButtonDefaultColor = new Color(0.2f, 0.2f, 0.2f, 1f);
+
     [Header("Animacion de Reveal")]
     [SerializeField] private float slotRevealDuration = 0.12f;
     [SerializeField] private float slotStagger = 0.04f; // delay entre slots consecutivos
@@ -107,12 +115,15 @@ public class InventoryUIManager : MonoBehaviour
 
     private bool isOpen;
     private bool ltWasHeld;
+    private bool isConfirmPanelOpen;
+    private int confirmNavIndex; // 0 = Confirmar, 1 = Cancelar
+    private bool confirmPanelJustOpened; // true durante 1 frame para ignorar el input que abrió el panel
     private ShopItem pendingReplaceItem;
     private ShopManager pendingShopManager;
     private int pendingReplaceSlotIndex;
     private Coroutine revealCoroutine;
 
-    /// <summary>Slot cuyo panel descriptivo esta actualmente visible.</summary>
+    // Slot cuyo panel descriptivo esta actualmente visible
     private InventorySlot selectedSlot;
 
     /// <summary>
@@ -167,8 +178,12 @@ public class InventoryUIManager : MonoBehaviour
             ltWasHeld = ltHeld;
         }
 
-        // Gamepad: navegacion entre slots (solo cuando el inventario esta abierto)
-        if (isOpen) UpdateGamepadNavigation();
+        // Gamepad: navegacion (redirige al panel de confirmacion si esta visible)
+        if (isOpen)
+        {
+            if (isConfirmPanelOpen) UpdateGamepadConfirmNavigation();
+            else UpdateGamepadNavigation();
+        }
     }
 
     #endregion
@@ -416,6 +431,8 @@ public class InventoryUIManager : MonoBehaviour
     /// </summary>
     public void NotifyItemAdded(ShopItem item)
     {
+        RefreshDisplay();
+
         if (isOpen)
         {
             var slot = FindSlotWithItem(item);
@@ -423,7 +440,9 @@ public class InventoryUIManager : MonoBehaviour
         }
         else
         {
-            foreach (var gs in goldenSlots) StartCoroutine(BounceTransform(gs.transform));
+            // Bounce solo en el slot dorado que recibio el item
+            var goldenSlot = goldenSlots.Find(gs => gs.CurrentItem == item);
+            if (goldenSlot != null) StartCoroutine(BounceTransform(goldenSlot.transform));
         }
         InventoryAudioManager.Instance?.PlayItemAddedSound();
     }
@@ -585,6 +604,11 @@ public class InventoryUIManager : MonoBehaviour
         replaceConfirmPanel.SetActive(true);
         confirmPreviousTimeScale = Time.timeScale;
         Time.timeScale = 0f;
+
+        isConfirmPanelOpen = true;
+        confirmNavIndex = 0;
+        confirmPanelJustOpened = true;
+        ResetConfirmButtonHighlights();
         if (replaceConfirmText != null)
         {
             replaceConfirmText.text =
@@ -607,6 +631,7 @@ public class InventoryUIManager : MonoBehaviour
         }
 
         isOpen = false;
+        isConfirmPanelOpen = false;
         replaceConfirmPanel?.SetActive(false);
         Time.timeScale = confirmPreviousTimeScale;
     }
@@ -616,12 +641,16 @@ public class InventoryUIManager : MonoBehaviour
         ReportDebug("Jugador cancela el reemplazo de item mecanico. No se realizara ningun cambio.", 1);
 
         isOpen = false;
+        isConfirmPanelOpen = false;
         replaceConfirmPanel?.SetActive(false);
-        pendingShopManager?.RegisterPendingPurchaseCallback(null);
+        Time.timeScale = confirmPreviousTimeScale;
+
+        // Guardar referencia antes de nullear para que FireCancelCallback llegue a ShopItemDisplay
+        var shopRef = pendingShopManager;
         pendingReplaceItem = null;
         pendingShopManager = null;
-        Time.timeScale = confirmPreviousTimeScale;
-        pendingShopManager?.FireCancelCallback();
+        shopRef?.RegisterPendingPurchaseCallback(null);
+        shopRef?.FireCancelCallback();
     }
 
     #endregion
@@ -629,7 +658,6 @@ public class InventoryUIManager : MonoBehaviour
     #region Detail Panel Logic
 
     /// <summary>
-    /// FIX (bug de 3 clics): la seleccion ahora la gestiona el manager.
     /// Si se hace clic en el slot ya seleccionado => cierra el panel.
     /// Si se hace clic en un slot diferente => cambia al nuevo en UN solo clic.
     /// </summary>
@@ -738,9 +766,9 @@ public class InventoryUIManager : MonoBehaviour
     /// <summary>
     /// Construye la grilla de navegacion con mando organizando los slots por columna,
     /// de arriba a abajo:
-    ///   columna 0 => col1Above + goldenSlots + col1Below
-    ///   columna 1 => col2Slots
-    ///   columna 2 => col3Slots
+    /// columna 0 => col1Above + goldenSlots + col1Below
+    /// columna 1 => col2Slots
+    /// columna 2 => col3Slots
     /// </summary>
     private void BuildNavGrid()
     {
@@ -865,7 +893,9 @@ public class InventoryUIManager : MonoBehaviour
         return -1;
     }
 
-    /// <summary>Busca el siguiente slot con item desde 'fromRow' en la direccion 'dir' (+1 o -1).</summary>
+    /// <summary>
+    /// Busca el siguiente slot con item desde 'fromRow' en la direccion 'dir' (+1 o -1).
+    /// </summary>
     private int FindNextOccupiedRow(List<InventorySlot> column, int fromRow, int dir)
     {
         for (int i = fromRow + dir; i >= 0 && i < column.Count; i += dir)
@@ -873,6 +903,79 @@ public class InventoryUIManager : MonoBehaviour
             if (column[i].HasItem) return i;
         }
         return -1; // no encontro slot con item en esa direccion
+    }
+
+    /// <summary>
+    /// Navegacion con mando dentro del panel de confirmacion de reemplazo.
+    /// Izquierda/Derecha (D-pad o joystick) alterna entre Confirmar y Cancelar.
+    /// Button South (A/Cruz) o Button North (Y/Triangulo) ejecutan la opcion enfocada.
+    /// </summary>
+    private void UpdateGamepadConfirmNavigation()
+    {
+        if (Gamepad.current == null) return;
+
+        // Ignorar todo input durante el frame en que se abrió el panel,
+        // para que el botón que desencadenó la compra no confirme inmediatamente.
+        if (confirmPanelJustOpened)
+        {
+            confirmPanelJustOpened = false;
+            return;
+        }
+
+        joystickCooldownTimer -= Time.unscaledDeltaTime;
+
+        int delta = 0;
+
+        if (Gamepad.current.dpad.left.wasPressedThisFrame || Gamepad.current.dpad.right.wasPressedThisFrame)
+        {
+            delta = 1;
+        }
+        else if (joystickCooldownTimer <= 0f)
+        {
+            float x = Gamepad.current.leftStick.ReadValue().x;
+            if (Mathf.Abs(x) > 0.5f)
+            {
+                delta = 1;
+                joystickCooldownTimer = joystickRepeatCooldown;
+            }
+        }
+
+        if (delta != 0)
+        {
+            confirmNavIndex = 1 - confirmNavIndex;
+            ApplyConfirmButtonHighlight(confirmNavIndex);
+        }
+
+        // Al navegar por primera vez también aplicamos highlight si aún no se ha hecho
+        // (primera pulsación después del frame de gracia)
+        bool pressed = Gamepad.current.buttonSouth.wasPressedThisFrame
+                    || Gamepad.current.buttonNorth.wasPressedThisFrame;
+        if (pressed)
+        {
+            if (confirmNavIndex == 0) OnConfirmReplace();
+            else OnCancelReplace();
+        }
+    }
+
+    /// <summary>
+    /// Aplica el color de highlight al boton enfocado y restaura el color normal al otro.
+    /// </summary>
+    private void ApplyConfirmButtonHighlight(int focusIndex)
+    {
+        if (confirmButtonImage != null)
+        {
+            confirmButtonImage.color = (focusIndex == 0) ? highlightColor : confirmButtonDefaultColor;
+        }
+        if (cancelButtonImage != null)
+        {
+            cancelButtonImage.color = (focusIndex == 1) ? highlightColor : confirmButtonDefaultColor;
+        }
+    }
+
+    private void ResetConfirmButtonHighlights()
+    {
+        if (confirmButtonImage != null) confirmButtonImage.color = confirmButtonDefaultColor;
+        if (cancelButtonImage != null) cancelButtonImage.color = confirmButtonDefaultColor;
     }
 
     #endregion
