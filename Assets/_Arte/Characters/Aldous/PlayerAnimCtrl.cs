@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
@@ -226,17 +227,6 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
 
     protected override string ResolveFullID(string baseID, string direction)
     {
-        string id = baseID;
-
-        if(baseID == "idle")
-        {
-            id = (direction.Contains("down") || direction == "left") ? "idle1" : "idle2";
-        }
-        if(baseID == "melee")
-        {
-            id = $"melee{meleeStep}";
-        }
-
         //Contruccion de Prefix de edad
         string prefix = currentAge switch
         {
@@ -245,14 +235,30 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
             _ => "mid:"
         };
 
-        string resolved = prefix + id;
+        string id = prefix + baseID;
 
-        if(!HasShield && provider.AnimExist(resolved + "_ns"))
+        if(baseID == "melee")
         {
-            resolved += "_ns";
+            id = $"{prefix}melee{meleeStep}";
+        }
+        else if (!provider.AnimExist(id))
+        {
+            bool isGroup1 = direction == "down" ||
+                            direction == "downleft" ||
+                            direction == "downright" ||
+                            direction == "left";
+
+            id += isGroup1? "1":"2";
+                                
         }
 
-        return resolved;
+        if(!HasShield && provider.AnimExist(id + "_ns"))
+        {
+            id += "_ns";
+        }
+
+        Debug.Log(id);
+        return id;
     }
 
     protected override void OnAnimationEvent(string ev)
