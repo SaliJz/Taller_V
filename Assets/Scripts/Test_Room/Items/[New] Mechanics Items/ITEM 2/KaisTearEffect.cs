@@ -16,6 +16,7 @@ public class KaisTearEffect : ItemEffectBase
     [Header("Ola de Melee")]
     [SerializeField] private float waveMeleeMaxWidth = 2f;
     [SerializeField] private float waveMeleeDuration = 0.3f;
+    [SerializeField] private float waveMeleeSpeed = 3f;
 
     [Range(0.01f, 2f)]
     [SerializeField] private float waveMeleeDamagePercent = 0.30f;
@@ -69,6 +70,7 @@ public class KaisTearEffect : ItemEffectBase
                 spawnPos,
                 backDir,
                 waveDamage,
+                waveMeleeSpeed, 
                 waveMeleeMaxWidth,
                 waveMeleeDuration,
                 enemyLayer

@@ -260,12 +260,13 @@ public class ItemEffectPool : MonoBehaviour
     }
 
     public void SpawnKaiMeleeWave(
-        Vector3 originPosition,
-        Vector3 backDirection,
-        float damage,
-        float maxWidth,
-        float duration,
-        LayerMask enemyLayer)
+      Vector3 originPosition,
+      Vector3 backDirection,
+      float damage,
+      float speed,      
+      float maxWidth,
+      float duration,
+      LayerMask enemyLayer)
     {
         KaiWave wave = GetKaiWaveFromPool();
         if (wave == null) return;
@@ -274,10 +275,10 @@ public class ItemEffectPool : MonoBehaviour
             originPosition,
             backDirection,
             damage,
-            0f,          
+            speed,       
             maxWidth,
-            duration,   
-            duration,   
+            duration,    
+            duration,    
             enemyLayer,
             () => ReturnKaiWave(wave)
         );
