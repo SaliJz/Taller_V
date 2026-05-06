@@ -188,6 +188,7 @@ GameObject:
   - component: {fileID: 7436983276860157215}
   - component: {fileID: 2063845933142064047}
   - component: {fileID: 460031084482908728}
+  - component: {fileID: -9076071291550004061}
   m_Layer: 7
   m_Name: AporiaEnemyLevel1_SA
   m_TagString: Enemy
@@ -460,6 +461,25 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &-9076071291550004061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1476206699395584079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0aac80912e5b0246b0c4161d40e77a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowPrefab: {fileID: 4558005614469577162, guid: 5486048298c515f41913b1617b0f5cc5, type: 3}
+  GroundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  startYoffset: 5
+  spawnYoffset: 0.1
+  shadowScale: 0.12
 --- !u!1 &1633902712170988133
 GameObject:
   m_ObjectHideFlags: 0
