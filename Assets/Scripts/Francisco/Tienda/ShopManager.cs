@@ -8,15 +8,20 @@ using UnityEngine.SceneManagement;
 
 public class ShopManager : MonoBehaviour
 {
+    #region Enums
+
     public enum ShopInteractionMode
     {
         MouseHover,
         TriggerProximity
     }
 
+    #endregion
+
+    #region Serialized Fields
+
     [Header("Interaction Mode")]
     [SerializeField] private ShopInteractionMode interactionMode = ShopInteractionMode.MouseHover;
-    public ShopInteractionMode InteractionMode => interactionMode;
 
     [Header("Item Pools")]
     public List<ShopItem> allShopItems;
@@ -26,8 +31,6 @@ public class ShopManager : MonoBehaviour
 
     [Header("Gachapon Effect Pools")]
     public List<GachaponEffectData> allGachaponEffects = new List<GachaponEffectData>();
-    private List<GachaponEffectData> availableGachaponEffects = new List<GachaponEffectData>();
-    private List<GachaponEffectData> usedGachaponEffects = new List<GachaponEffectData>();
 
     [Header("Shop Generation Settings")]
     [Range(0f, 1f)] public float normalRarityWeight = 0.65f;
@@ -38,9 +41,6 @@ public class ShopManager : MonoBehaviour
     public List<GameObject> shopItemPrefabs;
     public GameObject itemAppearanceEffectPrefab;
 
-    [Header("Cost Bar Positioning")]
-    [SerializeField] private RectTransform costBarRectTransform;
-
     [Header("UI References")]
     [SerializeField] private GameObject shopUIPanel;
     [SerializeField] private RectTransform uiPanelTransform;
@@ -49,14 +49,15 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI itemDescriptionText;
     [SerializeField] private Image costBar;
 
+    [Header("Cost Bar Positioning")]
+    [SerializeField] private RectTransform costBarRectTransform;
+
     [Header("Cost Bar Colors")]
     [SerializeField] private Color affordableColor = Color.green;
     [SerializeField] private Color unaffordableColor = Color.red;
 
     [Header("Purchase Risk Settings")]
     [SerializeField] private float lowHealthThreshold = 10f;
-    [SerializeField] private Color lowHealthWarningColor = Color.yellow;
-    private bool lowHealthWarningActive = false;
 
     [Header("Raycast Settings")]
     [SerializeField] private float raycastDistance = 5f;
@@ -74,6 +75,13 @@ public class ShopManager : MonoBehaviour
     [Header("Purchase Cooldown")]
     [SerializeField] private float purchaseCooldown = 0.5f;
 
+    #endregion
+
+    #region Private Fields
+
+    private List<GachaponEffectData> availableGachaponEffects = new List<GachaponEffectData>();
+    private List<GachaponEffectData> usedGachaponEffects = new List<GachaponEffectData>();
+
     private readonly List<ShopItem> availableItems = new List<ShopItem>();
     private readonly List<ShopItem> spawnedItems = new List<ShopItem>();
     private readonly List<GameObject> _spawnedItemObjects = new List<GameObject>();
@@ -81,8 +89,6 @@ public class ShopManager : MonoBehaviour
     private List<Transform> _shopSpawnLocations;
 
     private readonly Dictionary<ShopItem, bool> _pendingPurchaseWarning = new Dictionary<ShopItem, bool>();
-
-    public static ShopManager Instance { get; private set; }
 
     private PlayerHealth playerHealth;
     private PlayerStatsManager playerStatsManager;
@@ -92,12 +98,23 @@ public class ShopManager : MonoBehaviour
     private System.Action pendingPurchaseCallback;
     private System.Action pendingCancelCallback;
     private bool hasPendingReplacement;
-    public bool HasPendingReplacement => hasPendingReplacement;
-
+    private bool lowHealthWarningActive = false;
     private float lastPurchaseTime;
     private bool forceGagans = false;
     private bool _amuletPurchasedInRun = false;
     private float merchantPriceModifier = 1.0f;
+
+    #endregion
+
+    #region Properties
+
+    public static ShopManager Instance { get; private set; }
+    public ShopInteractionMode InteractionMode => interactionMode;
+    public bool HasPendingReplacement => hasPendingReplacement;
+
+    #endregion
+
+    #region Unity Callbacks
 
     private void Awake()
     {
@@ -112,7 +129,6 @@ public class ShopManager : MonoBehaviour
         }
 
         playerControls = new PlayerControlls();
-
         InitializeShopItemPools();
         InitializeGachaponEffectPool();
     }
@@ -126,7 +142,6 @@ public class ShopManager : MonoBehaviour
         if (shopUIPanel != null) shopUIPanel.SetActive(false);
         ResetCostBar();
     }
-
 
     private void OnEnable()
     {
@@ -146,6 +161,10 @@ public class ShopManager : MonoBehaviour
         }
     }
 
+    #endregion
+
+    #region Initialization
+
     public void InitializeShopItemPools()
     {
         availableItems.Clear();
@@ -164,13 +183,17 @@ public class ShopManager : MonoBehaviour
         if (allGachaponEffects != null && allGachaponEffects.Count > 0)
         {
             availableGachaponEffects.AddRange(allGachaponEffects);
-            Debug.Log($"Pool de Gachapon inicializado con {availableGachaponEffects.Count} efectos disponibles.");
+            Debug.Log($"[ShopManager] Gachapon pool initialized with {availableGachaponEffects.Count} effects.");
         }
         else
         {
-            Debug.LogWarning("No hay efectos de Gachapon asignados en ShopManager.");
+            Debug.LogWarning("[ShopManager] No Gachapon effects assigned in ShopManager.");
         }
     }
+
+    #endregion
+
+    #region Item Pool Management
 
     public void ReturnItemToPool(ShopItem item)
     {
@@ -183,8 +206,38 @@ public class ShopManager : MonoBehaviour
             allAmulets.Add(item);
         }
 
-        Debug.Log($"[Shop] {item.itemName} ha vuelto a la reserva de objetos disponibles.");
+        Debug.Log($"[ShopManager] {item.itemName} returned to the available item pool.");
     }
+
+    public void ResetMerchantRunState()
+    {
+        _amuletPurchasedInRun = false;
+        merchantPriceModifier = 1.0f;
+    }
+
+    public void SetMerchantPriceModifier(float modifier)
+    {
+        merchantPriceModifier = modifier;
+    }
+
+    public ShopItem GetRandomRewardItem()
+    {
+        if (allShopItems != null && allShopItems.Count > 0)
+        {
+            return allShopItems[Random.Range(0, allShopItems.Count)];
+        }
+
+        if (allAmulets != null && allAmulets.Count > 0)
+        {
+            return allAmulets[Random.Range(0, allAmulets.Count)];
+        }
+
+        return null;
+    }
+
+    #endregion
+
+    #region Gachapon Effect Pool
 
     public GachaponEffectData GetAvailableGachaponEffect(EffectRarity targetRarity)
     {
@@ -211,7 +264,7 @@ public class ShopManager : MonoBehaviour
 
                 if (rarityPool.Count > 0)
                 {
-                    Debug.LogWarning($"No hay efectos disponibles para rareza {targetRarity}. Usando rareza {fallbackRarity} como fallback.");
+                    Debug.LogWarning($"[ShopManager] No effects for rarity {targetRarity}. Using {fallbackRarity} as fallback.");
                     break;
                 }
             }
@@ -248,7 +301,7 @@ public class ShopManager : MonoBehaviour
             return rarityPool.Last();
         }
 
-        Debug.LogError("No se pudo obtener ningun efecto de Gachapon. Asegurate de que allGachaponEffects tenga elementos.");
+        Debug.LogError("[ShopManager] Could not retrieve any Gachapon effect. Make sure allGachaponEffects has entries.");
         return null;
     }
 
@@ -260,7 +313,7 @@ public class ShopManager : MonoBehaviour
         {
             availableGachaponEffects.Remove(effect);
             usedGachaponEffects.Add(effect);
-            Debug.Log($"Efecto '{effect.effectName}' marcado como usado. Disponibles: {availableGachaponEffects.Count}, Usados: {usedGachaponEffects.Count}");
+            Debug.Log($"[ShopManager] Effect '{effect.effectName}' marked as used. Available: {availableGachaponEffects.Count}, Used: {usedGachaponEffects.Count}");
         }
     }
 
@@ -269,7 +322,7 @@ public class ShopManager : MonoBehaviour
         availableGachaponEffects.Clear();
         availableGachaponEffects.AddRange(allGachaponEffects);
         usedGachaponEffects.Clear();
-        Debug.Log($"Pool de Gachapon reiniciado. Todos los efectos estan disponibles nuevamente ({availableGachaponEffects.Count} efectos).");
+        Debug.Log($"[ShopManager] Gachapon pool reset. All effects available again ({availableGachaponEffects.Count} effects).");
     }
 
     public int GetAvailableGachaponEffectsCount()
@@ -282,67 +335,9 @@ public class ShopManager : MonoBehaviour
         return usedGachaponEffects.Count;
     }
 
-    public void ResetMerchantRunState()
-    {
-        _amuletPurchasedInRun = false;
-        merchantPriceModifier = 1.0f;
-    }
+    #endregion
 
-    public void DisableRemainingAmulets()
-    {
-        if (_spawnedItemObjects != null)
-        {
-            foreach (var obj in _spawnedItemObjects)
-            {
-                if (obj != null)
-                {
-                    ShopItemDisplay display = obj.GetComponent<ShopItemDisplay>();
-                    if (display != null && display.shopItemData != null && display.shopItemData.isAmulet)
-                    {
-                        obj.SetActive(false);
-                    }
-                }
-            }
-        }
-    }
-
-    public void SetMerchantPriceModifier(float modifier)
-    {
-        merchantPriceModifier = modifier;
-    }
-
-    public void SpawnItemWithEffect(ShopItem item, Transform location, Transform parent)
-    {
-        GameObject itemPrefab = FindPrefabForItemData(item);
-        if (itemPrefab != null)
-        {
-            StartCoroutine(SpawnItemSequence(itemPrefab, item, location, parent));
-        }
-    }
-
-    private IEnumerator SpawnItemSequence(GameObject itemPrefab, ShopItem itemData, Transform location, Transform parent)
-    {
-        if (itemAppearanceEffectPrefab != null)
-        {
-            Instantiate(itemAppearanceEffectPrefab, location.position, Quaternion.identity, parent);
-            yield return new WaitForSeconds(0.5f);
-        }
-        else
-        {
-            yield return new WaitForSeconds(0.1f);
-        }
-
-        GameObject spawnedItem = Instantiate(itemPrefab, location.position, Quaternion.identity, parent);
-        _spawnedItemObjects.Add(spawnedItem);
-
-        ShopItemDisplay display = spawnedItem.GetComponent<ShopItemDisplay>();
-        if (display != null)
-        {
-            display.shopItemData = itemData;
-        }
-
-        spawnedItems.Add(itemData);
-    }
+    #region Shop Generation & Spawning
 
     public void GenerateShopItems(List<Transform> spawnLocations, Transform parent)
     {
@@ -371,17 +366,11 @@ public class ShopManager : MonoBehaviour
             ItemRarity selectedRarity = ItemRarity.Normal;
 
             if (roll <= normalRarityWeight)
-            {
                 selectedRarity = ItemRarity.Normal;
-            }
             else if (roll <= normalRarityWeight + rareRarityWeight)
-            {
                 selectedRarity = ItemRarity.Raro;
-            }
             else
-            {
                 selectedRarity = ItemRarity.SuperRaro;
-            }
 
             if (itemsByRarity[selectedRarity].Count == 0)
             {
@@ -417,7 +406,6 @@ public class ShopManager : MonoBehaviour
                 if (itemData != null)
                 {
                     itemsToSpawn.Add(itemData);
-
                     rarityPool.Remove(itemData);
                     availableItems.Remove(itemData);
                 }
@@ -433,27 +421,56 @@ public class ShopManager : MonoBehaviour
             {
                 GameObject spawnedItem = Instantiate(itemPrefab, spawnLocations[i].position, Quaternion.identity, parent);
                 _spawnedItemObjects.Add(spawnedItem);
-
-                ShopItemDisplay display = spawnedItem.GetComponent<ShopItemDisplay>();
-                if (display != null)
-                {
-                    display.shopItemData = itemData;
-                }
-
                 spawnedItems.Add(itemData);
                 currentShopItems.Add(itemData);
             }
         }
     }
 
+    public void SpawnItemWithEffect(ShopItem item, Transform location, Transform parent)
+    {
+        GameObject itemPrefab = FindPrefabForItemData(item);
+        if (itemPrefab != null)
+        {
+            StartCoroutine(SpawnItemSequence(itemPrefab, item, location, parent));
+        }
+    }
+
+    private IEnumerator SpawnItemSequence(GameObject itemPrefab, ShopItem itemData, Transform location, Transform parent)
+    {
+        if (itemAppearanceEffectPrefab != null)
+        {
+            Instantiate(itemAppearanceEffectPrefab, location.position, Quaternion.identity, parent);
+            yield return new WaitForSeconds(0.5f);
+        }
+        else
+        {
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        GameObject spawnedItem = Instantiate(itemPrefab, location.position, Quaternion.identity, parent);
+        _spawnedItemObjects.Add(spawnedItem);
+        spawnedItems.Add(itemData);
+    }
+
+    private GameObject FindPrefabForItemData(ShopItem itemData)
+    {
+        foreach (GameObject prefab in shopItemPrefabs)
+        {
+            if (prefab == null) continue;
+            ShopItemDisplay display = prefab.GetComponent<ShopItemDisplay>();
+            if (display != null && display.shopItemData == itemData)
+                return prefab;
+        }
+        Debug.LogWarning($"[ShopManager] No prefab found for item '{itemData?.itemName}'. Make sure the prefab has ShopItemDisplay with its ShopItem assigned.");
+        return null;
+    }
+
     public void DestroyCurrentItems()
     {
         foreach (GameObject obj in _spawnedItemObjects)
         {
-            if (obj != null)
-            {
-                Destroy(obj);
-            }
+            if (obj != null) Destroy(obj);
         }
         _spawnedItemObjects.Clear();
         spawnedItems.Clear();
@@ -466,176 +483,48 @@ public class ShopManager : MonoBehaviour
         float currentHealth = playerHealth.GetCurrentHealth();
         if (currentHealth < baseRerollCost)
         {
-            if (inventoryManager != null) inventoryManager?.ShowWarningMessage("Vida insuficiente para hacer un 'Reroll'.");
+            inventoryManager?.ShowWarningMessage("Not enough health to Reroll.");
             return;
         }
 
         playerHealth.TakeDamage(baseRerollCost, true);
-
         availableItems.AddRange(spawnedItems);
-
         DestroyCurrentItems();
         InitializeShopItemPools();
         GenerateShopItems(spawnLocations, parent);
     }
 
-    private GameObject FindPrefabForItemData(ShopItem itemData)
+    public void DisableRemainingItems()
     {
-        if (shopItemPrefabs.Count > 0)
+        if (_spawnedItemObjects == null) return;
+
+        foreach (var obj in _spawnedItemObjects)
         {
-            return shopItemPrefabs[Random.Range(0, shopItemPrefabs.Count)];
+            if (obj != null && obj.activeSelf)
+                obj.SetActive(false);
         }
-        return null;
     }
 
-    public void HandleMouseInteraction(ShopItem itemData)
+    public void DisableRemainingAmulets()
     {
-        LockAndDisplayItemDetails(itemData);
+        if (_spawnedItemObjects == null) return;
+
+        foreach (var obj in _spawnedItemObjects)
+        {
+            if (obj == null) continue;
+            ShopItemDisplay display = obj.GetComponent<ShopItemDisplay>();
+            if (display != null && display.shopItemData != null && display.shopItemData.isAmulet)
+                obj.SetActive(false);
+        }
     }
+
+    #endregion
+
+    #region Purchase Flow
 
     public bool CanAttemptPurchase()
     {
         return Time.time > lastPurchaseTime + purchaseCooldown;
-    }
-
-    public float CalculateFinalCost(float baseCost)
-    {
-        string currentSceneName = SceneManager.GetActiveScene().name;
-        bool isRestrictedScene = restrictedPurchaseScenes.Contains(currentSceneName);
-        if (isRestrictedScene)
-        {
-            return 0f;
-        }
-
-        float finalCost = baseCost * merchantPriceModifier;
-
-        if (playerStatsManager != null)
-        {
-            float priceReduction = playerStatsManager.GetStat(StatType.ShopPriceReduction);
-
-            if (priceReduction > 0f)
-            {
-                float discount = priceReduction / 100f;
-                finalCost *= (1f - discount);
-            }
-        }
-
-        return Mathf.Max(0f, finalCost);
-    }
-
-    public void DisplayItemUI(ShopItem itemData, float finalCost)
-    {
-        if (PauseController.Instance != null && PauseController.IsGamePaused) return;
-        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
-
-        if (shopUIPanel != null)
-        {
-            shopUIPanel.SetActive(true);
-
-            string nameWithColor = $"<color=#{ColorUtility.ToHtmlStringRGB(itemData.GetRarityColor())}>{itemData.itemName.ToUpper()}</color>";
-
-            float baseCost = itemData.cost * merchantPriceModifier;
-            string costText;
-
-            if (playerStatsManager != null)
-            {
-                float priceReduction = playerStatsManager.GetStat(StatType.ShopPriceReduction);
-
-                if (priceReduction > 0f && finalCost < baseCost)
-                {
-                    costText = $"<s>{Mathf.RoundToInt(baseCost)} HP</s> -> <color=#00FF00>{Mathf.RoundToInt(finalCost)} HP</color> (-{priceReduction:F0}%)";
-                }
-                else
-                {
-                    costText = (finalCost > 0) ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: GRATIS";
-                }
-            }
-            else
-            {
-                costText = (finalCost > 0) ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: GRATIS";
-            }
-
-            itemNameText.text = nameWithColor;
-            itemCostText.text = costText;
-            itemDescriptionText.text = itemData.GetFormattedDescriptionAndStats();
-        }
-    }
-
-    public void UpdateCostBar(float cost)
-    {
-        if (playerHealth == null || costBar == null || itemNameText == null || itemCostText == null) return;
-
-        float currentHealth = playerHealth.GetCurrentHealth();
-        float maxHealth = playerHealth.GetMaxHealth();
-        float finalCost = CalculateFinalCost(cost);
-
-        float healthPercentage = Mathf.Clamp01(currentHealth / maxHealth);
-        float costPercentage = finalCost / maxHealth;
-
-        if (costBarRectTransform != null)
-        {
-            Vector2 currentAnchorMin = costBarRectTransform.anchorMin;
-            Vector2 currentAnchorMax = costBarRectTransform.anchorMax;
-
-            if (finalCost <= currentHealth)
-            {
-                float startPosition = healthPercentage - costPercentage;
-                float endPosition = healthPercentage;
-
-                costBarRectTransform.anchorMin = new Vector2(startPosition, currentAnchorMin.y);
-                costBarRectTransform.anchorMax = new Vector2(endPosition, currentAnchorMax.y);
-
-                costBar.fillOrigin = (int)Image.Origin180.Right;
-                costBar.fillAmount = 1f;
-            }
-            else
-            {
-                costBarRectTransform.anchorMin = new Vector2(0f, currentAnchorMin.y);
-                costBarRectTransform.anchorMax = new Vector2(healthPercentage, currentAnchorMax.y);
-
-                costBar.fillOrigin = (int)Image.Origin180.Left;
-                costBar.fillAmount = 1f;
-            }
-        }
-
-        Color barColor = (currentHealth >= finalCost) ? affordableColor : unaffordableColor;
-        barColor.a = 1f;
-        costBar.color = barColor;
-
-        if (currentHealth >= finalCost)
-        {
-            float healthAfterPurchase = currentHealth - finalCost;
-
-            if (healthAfterPurchase <= lowHealthThreshold && finalCost > 0)
-            {
-                if (!lowHealthWarningActive)
-                {
-                    itemNameText.color = Color.white;
-                    itemCostText.color = Color.white;
-                    lowHealthWarningActive = true;
-                }
-            }
-            else if (lowHealthWarningActive)
-            {
-                itemNameText.color = Color.white;
-                itemCostText.color = Color.white;
-                lowHealthWarningActive = false;
-            }
-        }
-        else
-        {
-            itemNameText.color = Color.white;
-            itemCostText.color = Color.white;
-            lowHealthWarningActive = false;
-        }
-    }
-
-    public void HideItemUI()
-    {
-        if (shopUIPanel != null)
-        {
-            shopUIPanel.SetActive(false);
-        }
     }
 
     public bool PurchaseItem(ShopItem item)
@@ -646,31 +535,28 @@ public class ShopManager : MonoBehaviour
         bool isRestrictedScene = restrictedPurchaseScenes.Contains(currentSceneName);
         float finalCost = isRestrictedScene ? 0f : CalculateFinalCost(item.cost);
 
-        // Restriccion de escena / amuleto
         if ((isRestrictedScene || item.isAmulet) && _amuletPurchasedInRun)
         {
             string msg = isRestrictedScene
-                ? "Solo puedes comprar un item por visita en esta zona."
-                : "Solo puedes comprar un amuleto por run.";
+                ? "You can only buy one item per visit in this zone."
+                : "You can only buy one amulet per run.";
             inventoryManager.ShowWarningMessage(msg);
             return false;
         }
 
-        // Vida suficiente
         float currentHealth = playerHealth.GetCurrentHealth();
         if (finalCost > 0 && currentHealth <= finalCost)
         {
-            inventoryManager.ShowWarningMessage("Vida insuficiente para la compra. Debes sobrevivir!");
+            inventoryManager.ShowWarningMessage("Not enough health to purchase. You must survive!");
             return false;
         }
 
-        // Advertencia de poca vida
         float healthAfterPurchase = currentHealth - finalCost;
         if (healthAfterPurchase <= lowHealthThreshold && !isRestrictedScene)
         {
             if (!_pendingPurchaseWarning.ContainsKey(item))
             {
-                inventoryManager.ShowWarningMessage("Advertencia! Esta compra te dejara con muy poca vida. Pulsa de nuevo para confirmar.");
+                inventoryManager.ShowWarningMessage("Warning! This purchase will leave you with very low health. Press again to confirm.");
                 _pendingPurchaseWarning.Add(item, true);
                 return false;
             }
@@ -687,10 +573,10 @@ public class ShopManager : MonoBehaviour
             if (slotIndex >= 0)
             {
                 bool canProceed = InventoryUIManager.Instance.RequestMechanicItemPurchase(item, slotIndex, this);
-                if (!canProceed) 
-                { 
-                    hasPendingReplacement = true; 
-                    return false; 
+                if (!canProceed)
+                {
+                    hasPendingReplacement = true;
+                    return false;
                 }
             }
         }
@@ -698,9 +584,6 @@ public class ShopManager : MonoBehaviour
         return CompletePurchase(item);
     }
 
-    /// <summary>
-    /// Aplica la compra: inventario, stats, costo de vida.
-    /// </summary>
     public bool CompletePurchase(ShopItem item)
     {
         string currentSceneName = SceneManager.GetActiveScene().name;
@@ -763,6 +646,31 @@ public class ShopManager : MonoBehaviour
         return true;
     }
 
+    public float CalculateFinalCost(float baseCost)
+    {
+        string currentSceneName = SceneManager.GetActiveScene().name;
+        bool isRestrictedScene = restrictedPurchaseScenes.Contains(currentSceneName);
+        if (isRestrictedScene) return 0f;
+
+        float finalCost = baseCost * merchantPriceModifier;
+
+        if (playerStatsManager != null)
+        {
+            float priceReduction = playerStatsManager.GetStat(StatType.ShopPriceReduction);
+            if (priceReduction > 0f)
+            {
+                float discount = priceReduction / 100f;
+                finalCost *= (1f - discount);
+            }
+        }
+
+        return Mathf.Max(0f, finalCost);
+    }
+
+    #endregion
+
+    #region Item Replacement
+
     public void RegisterPendingPurchaseCallback(System.Action callback)
     {
         pendingPurchaseCallback = callback;
@@ -773,9 +681,6 @@ public class ShopManager : MonoBehaviour
         pendingCancelCallback = callback;
     }
 
-    /// <summary>
-    /// Llamado desde InventoryUIManager cuando el jugador cancela el reemplazo.
-    /// </summary>
     public void FireCancelCallback()
     {
         pendingCancelCallback?.Invoke();
@@ -784,10 +689,6 @@ public class ShopManager : MonoBehaviour
         hasPendingReplacement = false;
     }
 
-    /// <summary>
-    /// Llamado desde InventoryUIManager cuando el jugador confirma el reemplazo.
-    /// Revierte stats del item anterior y completa la compra del nuevo.
-    /// </summary>
     public void ExecuteReplacement(ShopItem oldItem, ShopItem newItem)
     {
         if (oldItem != null)
@@ -804,9 +705,6 @@ public class ShopManager : MonoBehaviour
         hasPendingReplacement = false;
     }
 
-    /// <summary>
-    /// Invierte los modificadores de stats que un item aplica al comprarse.
-    /// </summary>
     private void ReverseItemStats(ShopItem item)
     {
         foreach (var benefit in item.benefits)
@@ -828,20 +726,128 @@ public class ShopManager : MonoBehaviour
             effect.RemoveEffect(playerStatsManager);
     }
 
-    public void DisableRemainingItems()
+    #endregion
+
+    #region UI
+
+    public void HandleMouseInteraction(ShopItem itemData)
     {
-        if (_spawnedItemObjects != null)
+        LockAndDisplayItemDetails(itemData);
+    }
+
+    public void LockAndDisplayItemDetails(ShopItem itemData)
+    {
+        if (itemData == null)
         {
-            foreach (var obj in _spawnedItemObjects)
+            if (shopUIPanel != null) shopUIPanel.SetActive(false);
+            return;
+        }
+
+        float finalCost = CalculateFinalCost(itemData.cost);
+        DisplayItemUI(itemData, finalCost);
+        UpdateCostBar(itemData.cost);
+    }
+
+    public void DisplayItemUI(ShopItem itemData, float finalCost)
+    {
+        if (PauseController.Instance != null && PauseController.IsGamePaused) return;
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
+        if (shopUIPanel == null) return;
+
+        shopUIPanel.SetActive(true);
+
+        string nameWithColor = $"<color=#{ColorUtility.ToHtmlStringRGB(itemData.GetRarityColor())}>{itemData.itemName.ToUpper()}</color>";
+        float baseCost = itemData.cost * merchantPriceModifier;
+        string costText;
+
+        if (playerStatsManager != null)
+        {
+            float priceReduction = playerStatsManager.GetStat(StatType.ShopPriceReduction);
+            if (priceReduction > 0f && finalCost < baseCost)
+                costText = $"<s>{Mathf.RoundToInt(baseCost)} HP</s> -> <color=#00FF00>{Mathf.RoundToInt(finalCost)} HP</color> (-{priceReduction:F0}%)";
+            else
+                costText = finalCost > 0 ? $"Cost: {Mathf.RoundToInt(finalCost)} HP" : "Cost: FREE";
+        }
+        else
+        {
+            costText = finalCost > 0 ? $"Cost: {Mathf.RoundToInt(finalCost)} HP" : "Cost: FREE";
+        }
+
+        itemNameText.text = nameWithColor;
+        itemCostText.text = costText;
+        itemDescriptionText.text = itemData.GetFormattedDescriptionAndStats();
+    }
+
+    public void HideItemUI()
+    {
+        if (shopUIPanel != null) shopUIPanel.SetActive(false);
+    }
+
+    public void SetInteractionPromptActive(bool active)
+    {
+        HUDManager.Instance.SetInteractionPrompt(active, "Interact", "BUY");
+    }
+
+    public void UpdateCostBar(float cost)
+    {
+        if (playerHealth == null || costBar == null || itemNameText == null || itemCostText == null) return;
+
+        float currentHealth = playerHealth.GetCurrentHealth();
+        float maxHealth = playerHealth.GetMaxHealth();
+        float finalCost = CalculateFinalCost(cost);
+
+        float healthPercentage = Mathf.Clamp01(currentHealth / maxHealth);
+        float costPercentage = finalCost / maxHealth;
+
+        if (costBarRectTransform != null)
+        {
+            Vector2 currentAnchorMin = costBarRectTransform.anchorMin;
+            Vector2 currentAnchorMax = costBarRectTransform.anchorMax;
+
+            if (finalCost <= currentHealth)
             {
-                if (obj != null)
+                costBarRectTransform.anchorMin = new Vector2(healthPercentage - costPercentage, currentAnchorMin.y);
+                costBarRectTransform.anchorMax = new Vector2(healthPercentage, currentAnchorMax.y);
+                costBar.fillOrigin = (int)Image.Origin180.Right;
+                costBar.fillAmount = 1f;
+            }
+            else
+            {
+                costBarRectTransform.anchorMin = new Vector2(0f, currentAnchorMin.y);
+                costBarRectTransform.anchorMax = new Vector2(healthPercentage, currentAnchorMax.y);
+                costBar.fillOrigin = (int)Image.Origin180.Left;
+                costBar.fillAmount = 1f;
+            }
+        }
+
+        Color barColor = currentHealth >= finalCost ? affordableColor : unaffordableColor;
+        barColor.a = 1f;
+        costBar.color = barColor;
+
+        if (currentHealth >= finalCost)
+        {
+            float healthAfterPurchase = currentHealth - finalCost;
+            if (healthAfterPurchase <= lowHealthThreshold && finalCost > 0)
+            {
+                if (!lowHealthWarningActive)
                 {
-                    if (obj.activeSelf)
-                    {
-                        obj.SetActive(false);
-                    }
+                    itemNameText.color = Color.white;
+                    itemCostText.color = Color.white;
+                    lowHealthWarningActive = true;
                 }
             }
+            else if (lowHealthWarningActive)
+            {
+                itemNameText.color = Color.white;
+                itemCostText.color = Color.white;
+                lowHealthWarningActive = false;
+            }
+        }
+        else
+        {
+            itemNameText.color = Color.white;
+            itemCostText.color = Color.white;
+            lowHealthWarningActive = false;
         }
     }
 
@@ -859,7 +865,6 @@ public class ShopManager : MonoBehaviour
         {
             Vector2 currentAnchorMin = costBarRectTransform.anchorMin;
             Vector2 currentAnchorMax = costBarRectTransform.anchorMax;
-
             costBarRectTransform.anchorMin = new Vector2(0f, currentAnchorMin.y);
             costBarRectTransform.anchorMax = new Vector2(0f, currentAnchorMax.y);
         }
@@ -872,6 +877,25 @@ public class ShopManager : MonoBehaviour
         }
     }
 
+    private void PositionUIPanel()
+    {
+        if (uiPanelTransform == null || uiPanelTransform.parent == null) return;
+
+        Vector2 mousePosition = playerControls.UI.Point.ReadValue<Vector2>();
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            uiPanelTransform.parent.GetComponent<RectTransform>(),
+            mousePosition,
+            null,
+            out Vector2 localPoint))
+        {
+            uiPanelTransform.anchoredPosition = localPoint;
+        }
+    }
+
+    #endregion
+
+    #region Distortion
+
     public void SetDistortionActive(DevilDistortionType distortion, bool isCase)
     {
         if (distortion == DevilDistortionType.SealedLuck)
@@ -880,58 +904,5 @@ public class ShopManager : MonoBehaviour
         }
     }
 
-    private void PositionUIPanel()
-    {
-        if (uiPanelTransform == null || uiPanelTransform.parent == null) return;
-
-        Vector2 mousePosition = playerControls.UI.Point.ReadValue<Vector2>();
-        Vector2 localPoint;
-        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            uiPanelTransform.parent.GetComponent<RectTransform>(),
-            mousePosition,
-            null,
-            out localPoint))
-        {
-            uiPanelTransform.anchoredPosition = localPoint;
-        }
-    }
-
-    public void LockAndDisplayItemDetails(ShopItem itemData)
-    {
-        if (itemData == null)
-        {
-            if (shopUIPanel != null)
-            {
-                shopUIPanel.SetActive(false);
-            }
-            return;
-        }
-
-        float finalCost = CalculateFinalCost(itemData.cost);
-        DisplayItemUI(itemData, finalCost);
-        UpdateCostBar(itemData.cost);
-    }
-
-    public void SetInteractionPromptActive(bool active)
-    {
-        HUDManager.Instance.SetInteractionPrompt(active, "Interact", "COMPRAR");
-    }
-
-    public ShopItem GetRandomRewardItem()
-    {
-        if (allShopItems != null && allShopItems.Count > 0)
-        {
-            int index = Random.Range(0, allShopItems.Count);
-            ShopItem selectedItem = allShopItems[index];
-
-            return selectedItem;
-        }
-
-        if (allAmulets != null && allAmulets.Count > 0)
-        {
-            return allAmulets[Random.Range(0, allAmulets.Count)];
-        }
-
-        return null;
-    }
+    #endregion
 }

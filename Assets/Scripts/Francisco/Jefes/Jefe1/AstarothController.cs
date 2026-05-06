@@ -514,7 +514,9 @@ public class AstarothController : MonoBehaviour
         if (_animator != null)
         {
             _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
+            _animator.SetBool(AnimID_InsAttacking, false);
             _animator.SetBool(AnimID_IsRunning, false);
+
             _animator.SetTrigger(AnimID_IsDeath);
         }
 

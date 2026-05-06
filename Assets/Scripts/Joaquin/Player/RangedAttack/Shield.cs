@@ -62,6 +62,9 @@ public class Shield : MonoBehaviour
     [SerializeField] private ParticleSystem shieldTrailVFX;
     [SerializeField] private TrailRenderer shieldTrail;
 
+    [Header("Shield Impact VFX")]
+    [SerializeField] private GameObject shieldImpactVFX;
+
     [Header("SFX")]
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip shieldImpactClip;
@@ -381,6 +384,8 @@ public class Shield : MonoBehaviour
             }
 
             CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, false);
+
+            PlayImpactVFX(enemy.transform.position);
 
             bool isCritical;
             float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
@@ -732,6 +737,13 @@ public class Shield : MonoBehaviour
         gameObject.SetActive(false);
 
         deactivationCoroutine = null;
+    }
+
+    private void PlayImpactVFX(Vector3 position)
+    {
+        if (shieldImpactVFX == null) return;
+
+        Instantiate(shieldImpactVFX, position, Quaternion.identity);
     }
 
     #endregion
