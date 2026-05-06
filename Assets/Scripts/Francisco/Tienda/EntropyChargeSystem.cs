@@ -12,19 +12,21 @@ public class EntropyChargeSystem : MonoBehaviour
 
     #region Inspector Fields
 
-    [Header("Daño")]
+    [Header("Damage")]
     [Range(0f, 100f)] private float damagePercent = 5f;
 
-    [Header("Configuración de Cargas")]
+    [Header("Charge Settings")]
     private float chargeDuration = 1f;
     private float tickInterval = 0.2f;
+
+    [Header("VFX")]
+    [SerializeField] private GameObject chargeVFX;
 
     #endregion
 
     #region Events
 
     public event Action<int, float, float> OnChargesChanged;
-
     public event Action OnChargesExpired;
 
     public float GetChargeDuration() => chargeDuration;
@@ -55,12 +57,14 @@ public class EntropyChargeSystem : MonoBehaviour
 
     #endregion
 
-    #region Unity
+    #region Unity Callbacks
 
     private void Awake()
     {
         enemyHealth = GetComponent<EnemyHealth>();
         cachedStats = FindAnyObjectByType<PlayerStatsManager>();
+
+        SetVFX(false);
     }
 
     private void Update()
@@ -100,20 +104,18 @@ public class EntropyChargeSystem : MonoBehaviour
             ? cachedStats.GetStat(StatType.AttackDamage) * cachedStats.GetStat(StatType.MeleeAttackDamage)
             : 10f;
 
-        float tickDamage = baseDamage * (damagePercent / 100f);
-        pendingDamagePerTick = tickDamage;
+        pendingDamagePerTick = baseDamage * (damagePercent / 100f);
 
         if (currentCharges < MaxCharges)
-        {
             currentCharges++;
-        }
 
         float maxTotalTime = MaxCharges * chargeDuration;
         timeRemaining = Mathf.Min(timeRemaining + chargeDuration, maxTotalTime);
 
         isActive = true;
-        tickTimer = tickInterval; 
+        tickTimer = tickInterval;
 
+        SetVFX(true);
         NotifyChanged();
     }
 
@@ -124,13 +126,15 @@ public class EntropyChargeSystem : MonoBehaviour
         totalTime = 0f;
         tickTimer = 0f;
         isActive = false;
+
+        SetVFX(false);
         OnChargesExpired?.Invoke();
         NotifyChanged();
     }
 
     #endregion
 
-    #region Private
+    #region Private Methods
 
     private void ExpireCharges()
     {
@@ -139,8 +143,16 @@ public class EntropyChargeSystem : MonoBehaviour
         totalTime = 0f;
         tickTimer = 0f;
         isActive = false;
+
+        SetVFX(false);
         OnChargesExpired?.Invoke();
         NotifyChanged();
+    }
+
+    private void SetVFX(bool active)
+    {
+        if (chargeVFX != null)
+            chargeVFX.SetActive(active);
     }
 
     private void NotifyChanged()
