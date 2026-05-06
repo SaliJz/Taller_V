@@ -21,16 +21,15 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: M_Chess
-  m_Shader: {fileID: -6465566751694194690, guid: 632742b9db646ff4b8958e557218b7b5, type: 3}
+  m_Shader: {fileID: 4800000, guid: 650dd9526735d5b46b79224bc6e94025, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _USEOBJECTPOSITION
+  m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 2000
+  m_CustomRenderQueue: -1
   stringTagMap:
     RenderType: Opaque
   disabledShaderPasses:
@@ -40,7 +39,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: cd4e6f092ce9e5d48bd5a8033c464ea2, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
@@ -114,6 +113,7 @@ Material:
     - _AlphaToMask: 0
     - _Blend: 200
     - _BlendModePreserveSpecular: 1
+    - _BlendOp: 0
     - _BlendTriplanar: 200
     - _BumpScale: 1
     - _CastShadows: 1
@@ -131,6 +131,7 @@ Material:
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _Influence: 1
+    - _Main_Offset: 0
     - _Main_Tilling: 0.2
     - _Metallic: 0
     - _OcclusionStrength: 1
@@ -138,6 +139,7 @@ Material:
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _SampleGI: 0
     - _Secondary_Tilling: 1
     - _Shadow_Max: 1
     - _Shadow_Min: 0
@@ -160,8 +162,8 @@ Material:
     - _lower: 0.45
     - _upper: 0.55
     m_Colors:
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _BaseColor: {r: 0.8018868, g: 0.8018868, b: 0.8018868, a: 1}
+    - _Color: {r: 0.8018868, g: 0.8018868, b: 0.8018868, a: 1}
     - _Dither_Size: {r: 1, g: 1, b: 0, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _Extra_Color_Multiplier: {r: 1, g: 1, b: 1, a: 0}
