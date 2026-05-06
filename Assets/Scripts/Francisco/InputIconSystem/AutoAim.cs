@@ -6,6 +6,7 @@ public class AutoAim : MonoBehaviour
     #region Enums
 
     public enum FXMode { Arrows3D, FIFA }
+    public enum FIFAMarkerMode { Actual, Sprite }
 
     #endregion
 
@@ -37,6 +38,11 @@ public class AutoAim : MonoBehaviour
     [SerializeField] private float pulseSpeed = 3f;
     [SerializeField] private float pulseScale = 1.2f;
     [SerializeField] private float rotationSpeed = 90f;
+
+    [Header("FX - Mode 2: FIFA")]
+    [SerializeField] private FIFAMarkerMode fifaMarkerMode = FIFAMarkerMode.Actual;
+    [SerializeField] private Sprite fifaCustomSprite = null;
+    [SerializeField] private bool fifaSpriteApplyColor = true;
 
     [Header("FX - Mode 2: FIFA Position")]
     [SerializeField] private float fifaHeightAboveEnemy = 2.2f;
@@ -75,6 +81,7 @@ public class AutoAim : MonoBehaviour
     private GamepadPointer gamepadPointer;
     private bool originalShowTargetFX;
     private FXMode lastBuiltMode;
+    private FIFAMarkerMode lastBuiltFIFAMode;
 
     private GameObject[] arrows3D = new GameObject[4];
 
@@ -110,6 +117,12 @@ public class AutoAim : MonoBehaviour
         set { targetFXMode = value; RebuildFX(); }
     }
 
+    public FIFAMarkerMode FifaMarkerMode
+    {
+        get => fifaMarkerMode;
+        set { fifaMarkerMode = value; RebuildFX(); }
+    }
+
     #endregion
 
     #region Unity Lifecycle
@@ -135,7 +148,10 @@ public class AutoAim : MonoBehaviour
             if (mainCamera == null) return;
         }
 
-        if (targetFXMode != lastBuiltMode && fxInitialized)
+        bool modeChanged = targetFXMode != lastBuiltMode;
+        bool fifaSubModeChanged = targetFXMode == FXMode.FIFA && fifaMarkerMode != lastBuiltFIFAMode;
+
+        if ((modeChanged || fifaSubModeChanged) && fxInitialized)
             RebuildFX();
 
         bool isGamepadActive = IsGamepadActiveDevice();
@@ -302,10 +318,13 @@ public class AutoAim : MonoBehaviour
     {
         if (fxInitialized) return;
 
-        if (targetFXMode == FXMode.Arrows3D) InitArrows3D();
-        else InitFIFA();
+        if (targetFXMode == FXMode.Arrows3D)
+            InitArrows3D();
+        else
+            InitFIFA();
 
         lastBuiltMode = targetFXMode;
+        lastBuiltFIFAMode = fifaMarkerMode;
         fxInitialized = true;
     }
 
@@ -449,10 +468,19 @@ public class AutoAim : MonoBehaviour
         fifaArrowObj.transform.SetParent(null);
 
         fifaMaterial = new Material(Shader.Find("Sprites/Default"));
-        fifaMaterial.color = fifaStaticColor;
-        fifaMaterial.mainTexture = BuildFIFATexture();
-        fifaArrowObj.GetComponent<Renderer>().material = fifaMaterial;
 
+        if (fifaMarkerMode == FIFAMarkerMode.Sprite && fifaCustomSprite != null)
+        {
+            fifaMaterial.mainTexture = fifaCustomSprite.texture;
+            fifaMaterial.color = fifaSpriteApplyColor ? fifaStaticColor : Color.white;
+        }
+        else
+        {
+            fifaMaterial.color = fifaStaticColor;
+            fifaMaterial.mainTexture = BuildFIFATexture();
+        }
+
+        fifaArrowObj.GetComponent<Renderer>().material = fifaMaterial;
         fifaArrowObj.SetActive(false);
         fifaColorTime = 0f;
     }
@@ -510,19 +538,31 @@ public class AutoAim : MonoBehaviour
         if (Mathf.Abs(fifaSelfRotationSpeed) > 0.001f)
             fifaArrowObj.transform.Rotate(0f, 0f, fifaSelfRotationSpeed * Time.deltaTime, Space.Self);
 
-        fifaColorTime += Time.deltaTime * fifaColorCycleSpeed;
-        if (fifaColorTime > 1f) fifaColorTime -= 1f;
+        bool applyColor = fifaMarkerMode == FIFAMarkerMode.Actual || fifaSpriteApplyColor;
 
-        Color baseColor = fifaColorCycleEnabled ? fifaColorGradient.Evaluate(fifaColorTime) : fifaStaticColor;
+        if (applyColor)
+        {
+            fifaColorTime += Time.deltaTime * fifaColorCycleSpeed;
+            if (fifaColorTime > 1f) fifaColorTime -= 1f;
 
-        float alpha = baseColor.a;
-        if (fifaOpacityPulseEnabled)
+            Color baseColor = fifaColorCycleEnabled ? fifaColorGradient.Evaluate(fifaColorTime) : fifaStaticColor;
+
+            float alpha = baseColor.a;
+            if (fifaOpacityPulseEnabled)
+            {
+                float t = (Mathf.Sin(Time.time * fifaOpacityPulseSpeed) + 1f) * 0.5f;
+                alpha = Mathf.Lerp(fifaOpacityMin, fifaOpacityMax, t);
+            }
+
+            fifaMaterial.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
+        }
+        else if (fifaOpacityPulseEnabled)
         {
             float t = (Mathf.Sin(Time.time * fifaOpacityPulseSpeed) + 1f) * 0.5f;
-            alpha = Mathf.Lerp(fifaOpacityMin, fifaOpacityMax, t);
+            float alpha = Mathf.Lerp(fifaOpacityMin, fifaOpacityMax, t);
+            Color c = fifaMaterial.color;
+            fifaMaterial.color = new Color(c.r, c.g, c.b, alpha);
         }
-
-        fifaMaterial.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
 
         float distToCam = Vector3.Distance(mainCamera.transform.position, worldPos);
         fifaArrowObj.transform.localScale = Vector3.one * (fifaArrowSize * distToCam * 0.04f);
@@ -617,21 +657,6 @@ public class AutoAim : MonoBehaviour
             Gizmos.DrawWireSphere(c + Vector3.right * arrowDistance, 0.1f);
             Gizmos.DrawWireSphere(c + Vector3.back * arrowDistance, 0.1f);
             Gizmos.DrawWireSphere(c + Vector3.left * arrowDistance, 0.1f);
-        }
-    }
-
-    #endregion
-
-    #region Debug Logging
-
-    [System.Diagnostics.Conditional("UNITY_EDITOR")]
-    private static void ReportDebug(string message, int priority)
-    {
-        switch (priority)
-        {
-            case 1: Debug.Log($"[AutoAim] {message}"); break;
-            case 2: Debug.LogWarning($"[AutoAim] {message}"); break;
-            case 3: Debug.LogError($"[AutoAim] {message}"); break;
         }
     }
 

@@ -46,6 +46,9 @@ public class AutoAimEditor : Editor
 
     #region Serialized Properties - FIFA
 
+    SerializedProperty fifaMarkerMode;
+    SerializedProperty fifaCustomSprite;
+    SerializedProperty fifaSpriteApplyColor;
     SerializedProperty fifaHeightAboveEnemy;
     SerializedProperty fifaArrowSize;
     SerializedProperty fifaBobEnabled;
@@ -118,6 +121,9 @@ public class AutoAimEditor : Editor
         pulseScale = serializedObject.FindProperty("pulseScale");
         rotationSpeed = serializedObject.FindProperty("rotationSpeed");
 
+        fifaMarkerMode = serializedObject.FindProperty("fifaMarkerMode");
+        fifaCustomSprite = serializedObject.FindProperty("fifaCustomSprite");
+        fifaSpriteApplyColor = serializedObject.FindProperty("fifaSpriteApplyColor");
         fifaHeightAboveEnemy = serializedObject.FindProperty("fifaHeightAboveEnemy");
         fifaArrowSize = serializedObject.FindProperty("fifaArrowSize");
         fifaBobEnabled = serializedObject.FindProperty("fifaBobEnabled");
@@ -275,7 +281,7 @@ public class AutoAimEditor : Editor
 
     private void DrawFXGeneralSection()
     {
-        foldFXGen = DrawSectionHeader("Target FX — General", foldFXGen, HeaderColorFX);
+        foldFXGen = DrawSectionHeader("Target FX \x97 General", foldFXGen, HeaderColorFX);
         if (!foldFXGen) return;
 
         using (new EditorGUILayout.VerticalScope(sectionBoxStyle))
@@ -286,9 +292,7 @@ public class AutoAimEditor : Editor
             EditorGUILayout.PropertyField(forceShowWithoutGamepad, new GUIContent("Force Show (No Gamepad)", "Shows FX even without a connected gamepad. Useful for editor preview or KB+M."));
 
             if (gamepadOnly && forceShowWithoutGamepad.boolValue)
-            {
                 EditorGUILayout.HelpBox("FX will be visible even without a gamepad because Force Show is enabled.", MessageType.Info);
-            }
 
             EditorGUILayout.Space(4);
             EditorGUILayout.PropertyField(targetFXMode, new GUIContent("FX Mode"));
@@ -301,7 +305,7 @@ public class AutoAimEditor : Editor
 
     private void DrawArrows3DSection()
     {
-        foldArrows = DrawSectionHeader("Mode 1 — Arrows 3D", foldArrows, HeaderColorArrows);
+        foldArrows = DrawSectionHeader("Mode 1 \x97 Arrows 3D", foldArrows, HeaderColorArrows);
         if (!foldArrows) return;
 
         using (new EditorGUILayout.VerticalScope(sectionBoxStyle))
@@ -331,14 +335,30 @@ public class AutoAimEditor : Editor
 
     private void DrawFIFASection()
     {
-        foldFIFA = DrawSectionHeader("Mode 2 — FIFA Style", foldFIFA, HeaderColorFIFA);
+        foldFIFA = DrawSectionHeader("Mode 2 \x97 FIFA Style", foldFIFA, HeaderColorFIFA);
         if (!foldFIFA) return;
+
+        AutoAim.FIFAMarkerMode markerMode = (AutoAim.FIFAMarkerMode)fifaMarkerMode.enumValueIndex;
 
         using (new EditorGUILayout.VerticalScope(sectionBoxStyle))
         {
+            EditorGUILayout.LabelField("Marker", subHeaderStyle);
+            EditorGUILayout.PropertyField(fifaMarkerMode, new GUIContent("Marker Mode"));
+
+            if (markerMode == AutoAim.FIFAMarkerMode.Sprite)
+            {
+                EditorGUILayout.PropertyField(fifaCustomSprite, new GUIContent("Custom Sprite"));
+
+                if (fifaCustomSprite.objectReferenceValue == null)
+                    EditorGUILayout.HelpBox("Assign a Sprite to use as the marker.", MessageType.Warning);
+
+                EditorGUILayout.PropertyField(fifaSpriteApplyColor, new GUIContent("Apply Color Tint", "If enabled, color cycle and opacity pulse will be applied on top of the sprite."));
+            }
+
+            EditorGUILayout.Space(6);
             EditorGUILayout.LabelField("Position & Size", subHeaderStyle);
             EditorGUILayout.PropertyField(fifaHeightAboveEnemy, new GUIContent("Height Above Enemy"));
-            EditorGUILayout.PropertyField(fifaArrowSize, new GUIContent("Arrow Size"));
+            EditorGUILayout.PropertyField(fifaArrowSize, new GUIContent("Marker Size"));
 
             EditorGUILayout.Space(6);
             EditorGUILayout.LabelField("Billboard & Rotation", subHeaderStyle);
@@ -356,39 +376,47 @@ public class AutoAimEditor : Editor
                 EditorGUILayout.PropertyField(fifaBobCurve, new GUIContent("Bob Curve"));
             }
 
-            EditorGUILayout.Space(6);
-            EditorGUILayout.LabelField("Color", subHeaderStyle);
-            EditorGUILayout.PropertyField(fifaColorCycleEnabled, new GUIContent("Enable Color Cycle"));
+            bool showColorOptions = markerMode == AutoAim.FIFAMarkerMode.Actual || fifaSpriteApplyColor.boolValue;
 
-            if (fifaColorCycleEnabled.boolValue)
+            if (showColorOptions)
             {
-                EditorGUILayout.PropertyField(fifaColorCycleSpeed, new GUIContent("Cycle Speed"));
-                EditorGUILayout.PropertyField(fifaColorGradient, new GUIContent("Color Gradient"));
+                EditorGUILayout.Space(6);
+                EditorGUILayout.LabelField("Color", subHeaderStyle);
+                EditorGUILayout.PropertyField(fifaColorCycleEnabled, new GUIContent("Enable Color Cycle"));
+
+                if (fifaColorCycleEnabled.boolValue)
+                {
+                    EditorGUILayout.PropertyField(fifaColorCycleSpeed, new GUIContent("Cycle Speed"));
+                    EditorGUILayout.PropertyField(fifaColorGradient, new GUIContent("Color Gradient"));
+                }
+                else
+                {
+                    EditorGUILayout.PropertyField(fifaStaticColor, new GUIContent("Static Color"));
+                }
             }
-            else
+
+            bool showOpacityOptions = markerMode == AutoAim.FIFAMarkerMode.Actual || fifaSpriteApplyColor.boolValue;
+
+            if (showOpacityOptions)
             {
-                EditorGUILayout.PropertyField(fifaStaticColor, new GUIContent("Static Color"));
-            }
+                EditorGUILayout.Space(6);
+                EditorGUILayout.LabelField("Opacity Pulse", subHeaderStyle);
+                EditorGUILayout.PropertyField(fifaOpacityPulseEnabled, new GUIContent("Enable Opacity Pulse"));
 
-            EditorGUILayout.Space(6);
-            EditorGUILayout.LabelField("Opacity Pulse", subHeaderStyle);
-            EditorGUILayout.PropertyField(fifaOpacityPulseEnabled, new GUIContent("Enable Opacity Pulse"));
+                using (new EditorGUI.DisabledGroupScope(!fifaOpacityPulseEnabled.boolValue))
+                {
+                    EditorGUILayout.PropertyField(fifaOpacityPulseSpeed, new GUIContent("Pulse Speed"));
 
-            using (new EditorGUI.DisabledGroupScope(!fifaOpacityPulseEnabled.boolValue))
-            {
-                EditorGUILayout.PropertyField(fifaOpacityPulseSpeed, new GUIContent("Pulse Speed"));
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.PrefixLabel("Opacity Range");
+                    EditorGUILayout.PropertyField(fifaOpacityMin, GUIContent.none, GUILayout.Width(50));
+                    EditorGUILayout.LabelField("-", GUILayout.Width(18));
+                    EditorGUILayout.PropertyField(fifaOpacityMax, GUIContent.none, GUILayout.Width(50));
+                    EditorGUILayout.EndHorizontal();
 
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.PrefixLabel("Opacity Range");
-                EditorGUILayout.PropertyField(fifaOpacityMin, GUIContent.none, GUILayout.Width(50));
-                EditorGUILayout.LabelField("-", GUILayout.Width(18));
-                EditorGUILayout.PropertyField(fifaOpacityMax, GUIContent.none, GUILayout.Width(50));
-                EditorGUILayout.EndHorizontal();
-
-                float minVal = fifaOpacityMin.floatValue;
-                float maxVal = fifaOpacityMax.floatValue;
-                if (minVal > maxVal)
-                    EditorGUILayout.HelpBox("Opacity Min is greater than Opacity Max.", MessageType.Warning);
+                    if (fifaOpacityMin.floatValue > fifaOpacityMax.floatValue)
+                        EditorGUILayout.HelpBox("Opacity Min is greater than Opacity Max.", MessageType.Warning);
+                }
             }
         }
     }
