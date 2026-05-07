@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class InventoryManager : MonoBehaviour
 {
-    public const int MaxInventorySize = 21;
+    public const int MaxInventorySize = 10;
     [SerializeField] private static readonly List<ShopItem> currentRunItems = new List<ShopItem>();
     [SerializeField] private readonly List<ItemEffectBase> activeAmuletEffects = new List<ItemEffectBase>();
     [SerializeField] private readonly List<ItemEffectBase> activeEffects = new List<ItemEffectBase>();
