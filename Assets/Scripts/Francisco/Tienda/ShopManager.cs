@@ -766,11 +766,11 @@ public class ShopManager : MonoBehaviour
             if (priceReduction > 0f && finalCost < baseCost)
                 costText = $"<s>{Mathf.RoundToInt(baseCost)} HP</s> -> <color=#00FF00>{Mathf.RoundToInt(finalCost)} HP</color> (-{priceReduction:F0}%)";
             else
-                costText = finalCost > 0 ? $"Cost: {Mathf.RoundToInt(finalCost)} HP" : "Cost: FREE";
+                costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: GRATIS";
         }
         else
         {
-            costText = finalCost > 0 ? $"Cost: {Mathf.RoundToInt(finalCost)} HP" : "Cost: FREE";
+            costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: GRATIS";
         }
 
         itemNameText.text = nameWithColor;
@@ -785,7 +785,7 @@ public class ShopManager : MonoBehaviour
 
     public void SetInteractionPromptActive(bool active)
     {
-        HUDManager.Instance.SetInteractionPrompt(active, "Interact", "BUY");
+        HUDManager.Instance.SetInteractionPrompt(active, "Interactuar", "Comprar");
     }
 
     public void UpdateCostBar(float cost)

@@ -1,4 +1,47 @@
+using UnityEngine;
+
 public class AporiaEnemyLevel1 : AporiaEnemyBase
 {
-    // Nota: Yo francisco creó este codigo para heredar todo el aporiaenemybase. No eliminar
+    // Nota : Siempre supe que serviria de algo hacer script hijo para cada variante, tomala Señor J
+
+    [Header("QuickSheet Balance")]
+    [SerializeField] private Enemies enemiesSheet;
+    [SerializeField] private int ENEMY_ID = 3; 
+
+    protected override void Awake()
+    {
+        LoadStatsFromSheet();
+        base.Awake(); 
+    }
+
+    private void LoadStatsFromSheet()
+    {
+        if (enemiesSheet == null)
+        {
+            Debug.LogWarning($"[AporiaEnemyLevel1] No hay Enemies asset asignado en {name}. Usando valores del Inspector.");
+            return;
+        }
+
+        foreach (var row in enemiesSheet.dataArray)
+        {
+            if (row.ID != ENEMY_ID) continue;
+
+            health = row.Health;
+            moveSpeed = row.Movespeed;
+            attackDamage = row.Regulardamage;
+
+            if (row.Attackfrequency > 0f)
+            {
+                float interval = 1f / row.Attackfrequency;
+                cooldownShort = interval * 0.75f;
+                cooldownMedium = interval;
+                cooldownLong = interval * 1.5f;
+            }
+
+            Debug.Log($"[AporiaEnemyLevel1] Stats cargados desde sheet: HP={health} Speed={moveSpeed} Dmg={attackDamage}");
+            return;
+        }
+
+        Debug.LogWarning($"[AporiaEnemyLevel1] ID {ENEMY_ID} no encontrado en el sheet.");
+    }
 }
