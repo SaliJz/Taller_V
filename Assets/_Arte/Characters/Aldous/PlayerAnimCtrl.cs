@@ -33,6 +33,9 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
     public float dashDuration = 0.5f;
     [SerializeField] GameObject[] VFX_melee;
 
+    [Header("Debug")]
+    [SerializeField] private bool debug = false;
+
     private float H, V;
     private bool IsWalking() => H != 0 || V != 0;
 
@@ -257,7 +260,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
             id += "_ns";
         }
 
-        Debug.Log(id);
+        if (debug) Debug.Log(id);
         return id;
     }
 
@@ -293,7 +296,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         GameObject prefab = VFX_melee[index];
         prefab.SetActive(true);
 
-        Debug.LogWarning($"SLASH: {index + 1} INSTATIATED");
+        if (debug) Debug.LogWarning($"SLASH: {index + 1} INSTATIATED");
 
         //melee1 = 0
         //melee2 = 1

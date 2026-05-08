@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-public class StaticEnemyLevel2 : StaticEnemyBase
+public class StaticEnemyLevel2 : StaticEnemyBase, IAnimEventHandler
 {
     [Header("Static Level 2 - Fixed Damage")]
     [SerializeField] private float fixedDamage = 15f;
@@ -19,17 +19,17 @@ public class StaticEnemyLevel2 : StaticEnemyBase
             {
                 ForceFacePlayer();
                 if (visualCtrl != null) visualCtrl.PlayShoot();
-                ExecuteProjectileSpawn();
+                //ExecuteProjectileSpawn();
             }
         }
 
         shootCoroutine = null;
     }
 
-    //public void HandleAnimEvents(string eventName)
-    //{
-    //    if (eventName == "AnimEvent_Shoot") ExecuteProjectileSpawn();
-    //}
+    public void HandleAnimEvents(string eventName)
+    {
+        if (eventName == "AnimEvent_Shoot") ExecuteProjectileSpawn();
+    }
 
     protected override void InstantiateAndInitializeProjectile()
     {

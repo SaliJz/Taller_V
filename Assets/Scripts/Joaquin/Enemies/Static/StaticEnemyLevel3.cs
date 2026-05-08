@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-public class StaticEnemyLevel3 : StaticEnemyBase
+public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
 {
     [Header("Static Level 3 - Reactive Evasion")]
     [SerializeField] private float evasionCooldown = 6f;
@@ -52,18 +52,18 @@ public class StaticEnemyLevel3 : StaticEnemyBase
             if (distanceToPlayer <= attackRange)
             {
                 ForceFacePlayer();
-                if (visualCtrl != null) visualCtrl.PlayShoot(); // el evento de la anim dispara el proyectil
-                ExecuteProjectileSpawn();
+                if (visualCtrl != null) visualCtrl.PlayShoot();
+                //ExecuteProjectileSpawn();
             }
         }
 
         shootCoroutine = null;
     }
 
-    //public void HandleAnimEvents(string eventName)
-    //{
-    //    if (eventName == "AnimEvent_Shoot") ExecuteProjectileSpawn();
-    //}
+    public void HandleAnimEvents(string eventName)
+    {
+        if (eventName == "AnimEvent_Shoot") ExecuteProjectileSpawn();
+    }
 
     protected override void OnBeforeTeleport(Vector3 fromPosition)
     {

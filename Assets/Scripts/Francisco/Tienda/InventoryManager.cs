@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class InventoryManager : MonoBehaviour
 {
-    public const int MaxInventorySize = 10;
+    public const int MaxInventorySize = 21;
     [SerializeField] private static readonly List<ShopItem> currentRunItems = new List<ShopItem>();
     [SerializeField] private readonly List<ItemEffectBase> activeAmuletEffects = new List<ItemEffectBase>();
     [SerializeField] private readonly List<ItemEffectBase> activeEffects = new List<ItemEffectBase>();
@@ -222,6 +222,7 @@ public class InventoryManager : MonoBehaviour
         ShowWarningMessage($"Pacto cumplido: Se ha quitado la reliquia '{relicToRemove.itemName}'.");
         return true;
     }
+
     private void UpdateInventoryUI()
     {
         List<ShopItem> currentItems = CurrentRunItems;
