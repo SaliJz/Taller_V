@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
 
-public class LaceratusController : MonoBehaviour
+public class LaceratusController : MonoBehaviour, IAnimEventHandler
 {
     #region Serialized Fields
 
@@ -61,10 +61,6 @@ public class LaceratusController : MonoBehaviour
 
     [Header("Animation")]
     [SerializeField] private JitterAnimCtrl animCtrl;
-    [Tooltip("Delay para sincronizar el daño con la animación de ataque normal")]
-    [SerializeField] private float normalAttackImpactDelay = 1.2f;
-    [Tooltip("Delay para sincronizar el daño con la animación de ataque furia")]
-    [SerializeField] private float furyAttackImpactDelay = 1.2f;
 
     [Header("Sound")]
     [SerializeField] private AudioSource audioSource;
@@ -120,6 +116,9 @@ public class LaceratusController : MonoBehaviour
     private float audioStepTimer;
     private float idleAudioTimer;
     private float idleAudioInterval;
+
+    private bool waitingForImpactEvent;
+    private bool waitingForAttackEndEvent;
 
     #endregion
 
@@ -376,7 +375,7 @@ public class LaceratusController : MonoBehaviour
 
             if (distanceMoved < stuckDistanceThreshold)
             {
-                Debug.Log("Jitter: ¡Atascado detectado! Forzando nuevo rumbo aleatorio.");
+                Debug.Log("Jitter: Atasco detectado! Forzando nuevo rumbo aleatorio.");
 
                 ChangePatrolDirection();
                 agent.ResetPath();
@@ -437,7 +436,7 @@ public class LaceratusController : MonoBehaviour
 
         ChangePatrolDirection();
         agent.ResetPath();
-        Debug.Log("Jitter: Error al encontrar destino NavMesh válido, forzando nuevo rumbo.");
+        Debug.Log("Jitter: Error al encontrar destino NavMesh valido, forzando nuevo rumbo.");
     }
 
     private float CalculatePathLength(NavMeshPath path)
@@ -458,19 +457,19 @@ public class LaceratusController : MonoBehaviour
         {
             float randomAngle = Random.Range(-patrolDirectionChangeAngle, patrolDirectionChangeAngle);
             currentPatrolDirection = Quaternion.Euler(0, randomAngle, 0) * currentPatrolDirection;
-            Debug.Log($"Jitter: Cambio de dirección de patrulla (Suave: {randomAngle:F1}°) - Vector: {currentPatrolDirection}");
+            Debug.Log($"Jitter: Cambio de direccion de patrulla (Suave: {randomAngle:F1} grados) - Vector: {currentPatrolDirection}");
         }
         else if (decision < 0.8f)
         {
             float escapeAngle = Random.Range(90f, 180f) * (Random.value > 0.5f ? 1f : -1f);
             currentPatrolDirection = Quaternion.Euler(0, escapeAngle, 0) * transform.forward;
-            Debug.Log($"Jitter: Cambio de dirección de patrulla (Brusco: {escapeAngle:F1}°) - Vector: {currentPatrolDirection}");
+            Debug.Log($"Jitter: Cambio de direccion de patrulla (Brusco: {escapeAngle:F1} grados) - Vector: {currentPatrolDirection}");
         }
         else
         {
             float randomNewAngle = Random.Range(0f, 360f);
             currentPatrolDirection = Quaternion.Euler(0, randomNewAngle, 0) * Vector3.forward;
-            Debug.Log($"Jitter: Cambio de dirección de patrulla (Totalmente Aleatorio: {randomNewAngle:F1}°) - Vector: {currentPatrolDirection}");
+            Debug.Log($"Jitter: Cambio de direccion de patrulla (Totalmente Aleatorio: {randomNewAngle:F1} grados) - Vector: {currentPatrolDirection}");
         }
 
         currentPatrolDirection.Normalize();
@@ -505,7 +504,8 @@ public class LaceratusController : MonoBehaviour
         if (animCtrl != null) animCtrl.PlayAttack();
         if (audioSource != null && normalAttackClip != null) audioSource.PlayOneShot(normalAttackClip);
 
-        yield return new WaitForSeconds(normalAttackImpactDelay);
+        waitingForImpactEvent = true;
+        yield return new WaitUntil(() => !waitingForImpactEvent);
 
         lastDamageInflictedTime = Time.time;
         if (normalAttackHitbox != null) StartCoroutine(ShowHitbox(normalAttackHitbox));
@@ -526,7 +526,8 @@ public class LaceratusController : MonoBehaviour
             }
         }
 
-        yield return new WaitForSeconds(1.1f);
+        waitingForAttackEndEvent = true;
+        yield return new WaitUntil(() => !waitingForAttackEndEvent);
 
         isAttacking = false;
         if (agent != null && agent.enabled) agent.isStopped = false;
@@ -633,7 +634,8 @@ public class LaceratusController : MonoBehaviour
         if (animCtrl != null) animCtrl.PlayAttack();
         if (audioSource != null && furyAttackClip != null) audioSource.PlayOneShot(furyAttackClip);
 
-        yield return new WaitForSeconds(furyAttackImpactDelay);
+        waitingForImpactEvent = true;
+        yield return new WaitUntil(() => !waitingForImpactEvent);
 
         lastDamageInflictedTime = Time.time;
         if (furyAttackHitbox != null) StartCoroutine(ShowHitbox(furyAttackHitbox));
@@ -649,7 +651,8 @@ public class LaceratusController : MonoBehaviour
             }
         }
 
-        yield return new WaitForSeconds(1.1f);
+        waitingForAttackEndEvent = true;
+        yield return new WaitUntil(() => !waitingForAttackEndEvent);
 
         isAttacking = false;
         if (agent != null && agent.enabled) agent.isStopped = false;
@@ -770,12 +773,12 @@ public class LaceratusController : MonoBehaviour
     {
         lastDamageTime = Time.time;
 
-        if (animCtrl != null ) animCtrl.PlayDamage();
+        if (animCtrl != null) animCtrl.PlayDamage();
 
         if (!playerDetected && playerTransform != null)
         {
             playerDetected = true;
-            Debug.Log("Jitter: ¡Jugador detectado por daño recibido!");
+            Debug.Log("Jitter: Jugador detectado por danio recibido!");
         }
 
         if (isInFury && knockbackHandler != null)
@@ -955,7 +958,7 @@ public class LaceratusController : MonoBehaviour
             if (enemyHealth != null && !enemyHealth.IsDead)
             {
                 enemyHealth.Heal(furyRegenerationPerSecond);
-                Debug.Log($"Jitter: Regeneración +{furyRegenerationPerSecond} PV");
+                Debug.Log($"Jitter: Regeneracion +{furyRegenerationPerSecond} PV");
             }
         }
     }
@@ -1038,6 +1041,23 @@ public class LaceratusController : MonoBehaviour
 
             elapsed += Time.deltaTime;
             yield return null;
+        }
+    }
+
+    #endregion
+
+    #region Anim Event Handler
+
+    public void HandleAnimEvents(string eventName)
+    {
+        switch (eventName)
+        {
+            case "AttackImpact":
+                waitingForImpactEvent = false;
+                break;
+            case "AttackEnd":
+                waitingForAttackEndEvent = false;
+                break;
         }
     }
 
