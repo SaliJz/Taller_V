@@ -72,4 +72,14 @@ public class CameraOcclusionFade : MonoBehaviour
         mpb.SetFloat("_Opacity", value);
         renderer.SetPropertyBlock(mpb);
     }
+
+    public void AddTarget(Transform t) //Al inicar un enemigo
+    {
+        targets.Add(t);
+    }
+
+    public void RemoveTarget (Transform t) //Al Morir el enemigo
+    {
+        targets.Remove(t);
+    }
 }
