@@ -3,8 +3,45 @@ using System.Collections;
 
 public class StaticEnemyLevel2 : StaticEnemyBase, IAnimEventHandler
 {
-    [Header("Static Level 2 - Fixed Damage")]
-    [SerializeField] private float fixedDamage = 15f;
+    [Header("QuickSheet Balance")]
+    [SerializeField] private Enemies enemiesSheet;
+    [SerializeField] private int ENEMY_ID = 5;
+    private float projectileDamage;
+    private float mineDamage;
+
+    protected override void Awake()
+    {
+        LoadStatsFromSheet();
+        base.Awake();
+    }
+
+    private void LoadStatsFromSheet()
+    {
+        if (enemiesSheet == null) return;
+
+        foreach (var row in enemiesSheet.dataArray)
+        {
+            if (row.ID != ENEMY_ID) continue;
+
+            health = row.Health;
+            moveSpeed = row.Movespeed;
+            projectileDamage = row.Regulardamage;
+            mineDamage = row.Minedamage;
+
+            EnemyToughness toughnessComp = GetComponent<EnemyToughness>();
+            if (toughnessComp != null)
+            {
+                if (row.Superarmor > 0)
+                {
+                    toughnessComp.SetUseToughness(true);
+                    toughnessComp.SetMaxToughness(row.Superarmor);
+                }
+                else toughnessComp.SetUseToughness(false);
+            }
+
+            if (row.Attackfrequency > 0) fireRate = 1f / row.Attackfrequency;
+        }
+    }
 
     protected override IEnumerator ShootAfterDelayRoutine()
     {
@@ -35,12 +72,12 @@ public class StaticEnemyLevel2 : StaticEnemyBase, IAnimEventHandler
     {
         GameObject projectileObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
 
-        StaticProjectileBase projectile = projectileObj.GetComponent<StaticProjectileBase>();
+        StaticProjectileLevel2 projectile = projectileObj.GetComponent<StaticProjectileLevel2>();
 
         if (projectile != null)
         {
             string selectedWord = wordLibrary != null ? wordLibrary.GetRandomWord() : "TRAP";
-            projectile.Initialize(projectileSpeed, fixedDamage, selectedWord);
+            projectile.InitializeLevel2(projectileSpeed, projectileDamage, selectedWord, mineDamage);
         }
     }
 }

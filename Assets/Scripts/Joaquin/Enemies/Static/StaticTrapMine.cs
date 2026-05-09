@@ -25,10 +25,12 @@ public class StaticTrapMine : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    public void InitializeTrap(string wordToDisplay)
+    public void InitializeTrap(string wordToDisplay, float dmg)
     {
         rb.useGravity = true;
         rb.isKinematic = false;
+
+        damage = dmg;
 
         Vector3 randomBounce = new Vector3(Random.Range(-2f, 2f), 3f, Random.Range(-2f, 2f));
         rb.AddForce(randomBounce, ForceMode.Impulse);

@@ -22,6 +22,13 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
     [SerializeField] private AudioClip evasionSFX;
     [SerializeField] private AudioClip retaliatoryShootSFX;
 
+    [Header("QuickSheet Balance")]
+    [SerializeField] private Enemies enemiesSheet;
+    [SerializeField] private int ENEMY_ID = 9;
+
+    private float projectileDamage;
+    // private float swarmDPS;
+
     private static readonly int ShaderBorderColorId = Shader.PropertyToID("_BorderColor");
     private static readonly int ShaderShowIconId = Shader.PropertyToID("_ShowIcon");
     private static readonly int ShaderIconTypeId = Shader.PropertyToID("_IconType");
@@ -38,6 +45,46 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
     {
         base.InitializedEnemy();
         UpdateEvasionFeedback();
+    }
+
+    protected override void Awake()
+    {
+        LoadStatsFromSheet();
+        base.Awake();
+    }
+
+    private void LoadStatsFromSheet()
+    {
+        if (enemiesSheet == null) return;
+
+        foreach (var row in enemiesSheet.dataArray)
+        {
+            if (row.ID != ENEMY_ID) continue;
+
+            health = row.Health;
+            moveSpeed = row.Movespeed;
+            projectileDamage = row.Regulardamage;
+            // swarmDPS = row.Explosionareadamage; // No hay valor en la tabla, Jamil
+
+
+            EnemyToughness toughnessComp = GetComponent<EnemyToughness>();
+            if (toughnessComp != null)
+            {
+                if (row.Superarmor > 0)
+                {
+                    toughnessComp.SetUseToughness(true);
+                    toughnessComp.SetMaxToughness(row.Superarmor);
+                }
+                else toughnessComp.SetUseToughness(false);
+            }
+
+            if (row.Attackfrequency > 0) fireRate = 1f / row.Attackfrequency;
+
+            // residueDPS = row.Explosionareadamage; // No hay valor en la tabla, Jamil
+
+            Debug.Log($"[StaticLevel3] Cargado ID {ENEMY_ID}. SA: {row.Superarmor}");
+            return;
+        }
     }
 
     protected override IEnumerator ShootAfterDelayRoutine()
@@ -161,6 +208,18 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
         screenFeedbackRoutine = null;
     }
 
+    protected override float CalculateDamageByDistance(float distance)
+    {
+        maxDistanceForDamageIncrease = projectileDamage;
+        maxDistanceForDamageStart = projectileDamage - 7; 
+
+        if (distance <= maxDistanceForDamageIncrease) return maxDamageIncrease;
+        if (distance >= maxDistanceForDamageStart) return minDamageIncrease;
+
+        float t = (distance - maxDistanceForDamageIncrease) / (maxDistanceForDamageStart - maxDistanceForDamageIncrease);
+        return Mathf.Lerp(maxDamageIncrease, minDamageIncrease, t);
+    }
+
     protected override void InstantiateAndInitializeProjectile()
     {
         GameObject projectileObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
@@ -173,7 +232,7 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
             float calculatedDamage = CalculateDamageByDistance(distanceToPlayer);
             string selectedWord = wordLibrary != null ? wordLibrary.GetRandomWord() : "GLITCH";
 
-            projectile.Initialize(projectileSpeed, calculatedDamage, selectedWord);
+            projectile.Initialize(projectileSpeed, calculatedDamage, selectedWord); // Faltaria agregar una variable para pasarle dato de daño del prefab de explosion
         }
     }
 }
