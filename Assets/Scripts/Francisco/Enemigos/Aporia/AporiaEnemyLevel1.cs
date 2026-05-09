@@ -30,6 +30,22 @@ public class AporiaEnemyLevel1 : AporiaEnemyBase
             moveSpeed = row.Movespeed;
             attackDamage = row.Regulardamage;
 
+            EnemyToughness toughnessComp = GetComponent<EnemyToughness>();
+            if (toughnessComp != null)
+            {
+                if (row.Superarmor > 0)
+                {
+                    toughnessComp.SetUseToughness(true);
+                    toughnessComp.SetMaxToughness(row.Superarmor);
+                    Debug.Log($"[AporiaEnemyLevel1] SuperArmor activado: {row.Superarmor}");
+                }
+                else
+                {
+                    toughnessComp.SetUseToughness(false);
+                    Debug.Log($"[AporiaEnemyLevel1] SuperArmor desactivado (valor era 0).");
+                }
+            }
+
             if (row.Attackfrequency > 0f)
             {
                 float interval = 1f / row.Attackfrequency;

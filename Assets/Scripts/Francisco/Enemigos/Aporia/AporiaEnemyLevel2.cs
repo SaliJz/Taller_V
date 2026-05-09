@@ -26,12 +26,74 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
     [SerializeField] private float shardDeathDamagePerSec = 4f;
     [SerializeField] private float shardDeathDuration = 2f;
     [SerializeField] private AudioClip explosionSFX;
+
+    [Header("QuickSheet Balance")]
+    [SerializeField] private Enemies enemiesSheet;
+    [SerializeField] private int ENEMY_ID = 7;
+
     #endregion
 
     #region Referencias Coroutines
     private Coroutine _dashCoroutine;
     private Coroutine _attackCoroutine;
     private Coroutine _deathCoroutine;
+    #endregion
+
+    #region
+    protected override void Awake()
+    {
+        LoadStatsFromSheet();
+        base.Awake();
+    }
+
+    private void LoadStatsFromSheet()
+    {
+        if (enemiesSheet == null)
+        {
+            Debug.LogWarning($"[AporiaEnemyLevel1] No hay Enemies asset asignado en {name}. Usando valores del Inspector.");
+            return;
+        }
+
+        foreach (var row in enemiesSheet.dataArray)
+        {
+            if (row.ID != ENEMY_ID) continue;
+
+            health = row.Health;
+            moveSpeed = row.Movespeed;
+            attackDamage = row.Regulardamage;
+
+            EnemyToughness toughnessComp = GetComponent<EnemyToughness>();
+            if (toughnessComp != null)
+            {
+                if (row.Superarmor > 0)
+                {
+                    toughnessComp.SetUseToughness(true);
+                    toughnessComp.SetMaxToughness(row.Superarmor);
+                }
+                else
+                {
+                    toughnessComp.SetUseToughness(false);
+                }
+            }
+
+            shardAttackDamagePerSec = row.Minedamage;
+            shardDashDamagePerSec = row.Dashtraildamage;
+            deathExplosionDamage = row.Explosionareadamage;
+
+            if (row.Attackfrequency > 0f)
+            {
+                float interval = 1f / row.Attackfrequency;
+                cooldownShort = interval * 0.75f;
+                cooldownMedium = interval;
+                cooldownLong = interval * 1.5f;
+            }
+
+            Debug.Log($"[AporiaEnemyLevel2] ID {ENEMY_ID} cargado. SA: {row.Superarmor}, Mina: {row.Minedamage}");
+            return;
+        }
+
+        Debug.LogWarning($"[AporiaEnemyLevel1] ID {ENEMY_ID} no encontrado en el sheet.");
+    }
     #endregion
 
     #region Ataque

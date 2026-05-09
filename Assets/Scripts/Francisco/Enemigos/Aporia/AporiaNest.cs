@@ -9,6 +9,7 @@ public class AporiaNest : MonoBehaviour
     [SerializeField] private float dps = 1f;
     [SerializeField] private float slowDuration = 1f;
     [SerializeField] private float slowFraction = 0.2f;
+    [SerializeField] private float currentLarvaSpawnRate = 2;
     #endregion
 
     #region Unity Events
@@ -37,11 +38,13 @@ public class AporiaNest : MonoBehaviour
     #endregion
 
     #region Logic
+    public void SetRateSpawn(float rate) => currentLarvaSpawnRate = rate;
+
     private IEnumerator LifeCycle()
     {
         yield return new WaitForSeconds(duration);
 
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < currentLarvaSpawnRate; i++)
         {
             if (larvaPrefab != null)
             {

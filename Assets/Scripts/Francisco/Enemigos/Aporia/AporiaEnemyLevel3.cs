@@ -7,15 +7,66 @@ public class AporiaEnemyLevel3 : AporiaEnemyBase
     [SerializeField] private GameObject tongueVFXPrefab;
     [SerializeField] private GameObject nestPrefab;
 
+    [Header("QuickSheet Balance")]
+    [SerializeField] private Enemies enemiesSheet;
+    [SerializeField] private int ENEMY_ID = 11;
+
+   private float currentLarvaSpawnRate;
+
     private GameObject pooledTongue;
     private GameObject pooledNest;
+    #endregion
+
+    #region Unity Methods
+    protected override void Awake()
+    {
+        LoadStatsFromSheet();
+        base.Awake();
+    }
+
+    private void LoadStatsFromSheet()
+    {
+        if (enemiesSheet == null) return;
+
+        foreach (var row in enemiesSheet.dataArray)
+        {
+            if (row.ID != ENEMY_ID) continue;
+
+            health = row.Health;
+            moveSpeed = row.Movespeed;
+            attackDamage = row.Regulardamage;
+
+            EnemyToughness toughnessComp = GetComponent<EnemyToughness>();
+            if (toughnessComp != null)
+            {
+                if (row.Superarmor > 0)
+                {
+                    toughnessComp.SetUseToughness(true);
+                    toughnessComp.SetMaxToughness(row.Superarmor);
+                }
+                else
+                {
+                    toughnessComp.SetUseToughness(false);
+                }
+            }
+
+            currentLarvaSpawnRate = row.Larvaspawnrate;
+
+            Debug.Log($"[AporiaLevel3] Cargado ID {ENEMY_ID}. SpawnRate: {currentLarvaSpawnRate}");
+            return;
+        }
+    }
     #endregion
 
     #region Pools
     protected override void SetupPools()
     {
         if (tongueVFXPrefab) { pooledTongue = Instantiate(tongueVFXPrefab); pooledTongue.SetActive(false); }
-        if (nestPrefab) { pooledNest = Instantiate(nestPrefab); pooledNest.SetActive(false); }
+        if (nestPrefab) 
+        { 
+            pooledNest = Instantiate(nestPrefab); pooledNest.SetActive(false);
+            pooledNest.GetComponent<AporiaNest>()?.SetRateSpawn(currentLarvaSpawnRate);
+        }
     }
     #endregion
 
