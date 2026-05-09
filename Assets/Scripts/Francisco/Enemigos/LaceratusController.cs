@@ -79,6 +79,10 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
     [SerializeField] private AudioClip pushbackSFX;
     [SerializeField] private AudioClip deathSFX;
 
+    [Header("QuickSheet Balance")]
+    [SerializeField] private Enemies enemiesSheet;
+    [SerializeField] private int ENEMY_ID = 13;
+
     #endregion
 
     #region Private Fields
@@ -133,10 +137,7 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
         if (visualEffects == null) visualEffects = GetComponent<EnemyVisualEffects>();
 
-        if (agent != null)
-        {
-            agent.speed = normalSpeed;
-        }
+        LoadStatsFromSheet();
 
         if (enemyRenderer != null)
         {
@@ -150,6 +151,42 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         if (knockbackHandler != null)
         {
             // knockbackHandler.knockbackResistance = knockbackResistance;
+        }
+    }
+
+    private void LoadStatsFromSheet()
+    {
+        if (enemiesSheet == null) return;
+
+        foreach (var row in enemiesSheet.dataArray)
+        {
+            if (row.ID != ENEMY_ID) continue;
+
+            if (enemyHealth != null)
+            {
+                enemyHealth.SetMaxHealth(row.Health); 
+            }
+
+            EnemyToughness toughnessComp = GetComponent<EnemyToughness>();
+            if (toughnessComp != null)
+            {
+                if (row.Superarmor > 0)
+                {
+                    toughnessComp.SetUseToughness(true);
+                    toughnessComp.SetMaxToughness(row.Superarmor);
+                }
+                else toughnessComp.SetUseToughness(false);
+            }
+
+            normalSpeed = row.Movespeed;
+            if (agent != null) agent.speed = normalSpeed;
+
+            normalAttackDamage = row.Regulardamage;
+
+            furyAttackDamage = normalAttackDamage * 2;
+
+            Debug.Log($"[Laceratus] ID {ENEMY_ID} cargado. Speed: {normalSpeed}, Melee Dmg: {normalAttackDamage}");
+            return;
         }
     }
 

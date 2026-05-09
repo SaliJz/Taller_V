@@ -109,6 +109,10 @@ public class DrogathEnemy : MonoBehaviour
     [Header("Debugging")]
     [SerializeField] private bool canDebug = false;
 
+    [Header("QuickSheet Balance")]
+    [SerializeField] private Enemies enemiesSheet;
+    [SerializeField] private int ENEMY_ID = 19;
+
     #endregion
 
     #region Private State
@@ -152,6 +156,8 @@ public class DrogathEnemy : MonoBehaviour
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
         if (animator == null) animator = GetComponentInChildren<Animator>();
 
+        LoadStatsFromSheet();
+
         if (enemyHealth == null)
         {
             ReportDebug("EnemyHealth no encontrado. Drogath requiere este componente.", 3);
@@ -162,10 +168,46 @@ public class DrogathEnemy : MonoBehaviour
             ReportDebug("NavMeshAgent no encontrado. Drogath requiere este componente.", 3);
         }
 
-        navAgent.speed = moveSpeed;
         navAgent.stoppingDistance = stoppingDistance;
         navAgent.acceleration = 8f;
         navAgent.angularSpeed = 120f;
+    }
+
+    private void LoadStatsFromSheet()
+    {
+        if (enemiesSheet == null) return;
+
+        foreach (var row in enemiesSheet.dataArray)
+        {
+            if (row.ID != ENEMY_ID) continue;
+
+            if (enemyHealth != null)
+            {
+                enemyHealth.SetMaxHealth(row.Health);
+            }
+
+            if (enemyToughness != null)
+            {
+                if (row.Superarmor > 0)
+                {
+                    enemyToughness.SetUseToughness(true);
+                    enemyToughness.SetMaxToughness(row.Superarmor);
+                }
+                else enemyToughness.SetUseToughness(false);
+            }
+
+            moveSpeed = row.Movespeed;
+
+            if (navAgent != null)
+            {
+                navAgent.speed = moveSpeed;
+            }
+
+            toughnessRegenPerSecond = row.Superarmorregen;
+
+            Debug.Log($"[Drogath] ID {ENEMY_ID} cargado. Regen: {toughnessRegenPerSecond}");
+            return;
+        }
     }
 
     private void Start()
