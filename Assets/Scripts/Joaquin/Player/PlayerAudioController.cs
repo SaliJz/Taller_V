@@ -2,9 +2,15 @@ using UnityEngine;
 
 public class PlayerAudioController : MonoBehaviour
 {
+    #region Inspector - References
+
     [Header("References")]
     [SerializeField] private AudioSource mainAudioSource;
     [SerializeField] private AudioSource footstepsAudioSource;
+
+    #endregion
+
+    #region Inspector - Damage SFX Configuration
 
     [Header("Damage SFX Configuration")]
     [SerializeField] private AudioClip damageClip;
@@ -14,6 +20,10 @@ public class PlayerAudioController : MonoBehaviour
     [SerializeField] private bool useDamagePitchVariance = true;
     [Range(0f, 0.5f)][SerializeField] private float damagePitchVariance = 0.1f;
 
+    #endregion
+
+    #region Inspector - Death SFX Configuration
+
     [Header("Death SFX Configuration")]
     [SerializeField] private AudioClip deathClip;
     [Range(0f, 1f)][SerializeField] private float deathVolume = 1.0f;
@@ -21,6 +31,10 @@ public class PlayerAudioController : MonoBehaviour
     [Header("Variance")]
     [SerializeField] private bool useDeathPitchVariance = true;
     [Range(0f, 0.5f)][SerializeField] private float deathPitchVariance = 0.1f;
+
+    #endregion
+
+    #region Inspector - Step SFX Configuration
 
     [Header("Step SFX Configuration")]
     [SerializeField] private AudioClip footstepGenericClip;
@@ -33,6 +47,10 @@ public class PlayerAudioController : MonoBehaviour
     [SerializeField] private bool useStepPitchVariance = true;
     [Range(0f, 0.5f)][SerializeField] private float stepPitchVariance = 0.1f;
 
+    #endregion
+
+    #region Inspector - Dash SFX Configuration
+
     [Header("Dash SFX Configuration")]
     [SerializeField] private AudioClip dashClip;
     [Range(0f, 1f)][SerializeField] private float dashVolume = 1.0f;
@@ -40,6 +58,10 @@ public class PlayerAudioController : MonoBehaviour
     [Header("Variance")]
     [SerializeField] private bool usePitchVariance = true;
     [Range(0f, 0.5f)][SerializeField] private float pitchVariance = 0.1f;
+
+    #endregion
+
+    #region Inspector - Melee SFX Configuration
 
     [Header("Melee SFX Configuration")]
     [SerializeField] private AudioClip basicSlashClip;
@@ -51,6 +73,10 @@ public class PlayerAudioController : MonoBehaviour
     [SerializeField] private bool useMeleePitchVariance = true;
     [Range(0f, 0.5f)][SerializeField] private float meleePitchVariance = 0.1f;
 
+    #endregion
+
+    #region Inspector - Hit SFX Configuration
+
     [Header("Hit SFX Configuration")]
     [SerializeField] private AudioClip hitClip;
     [Range(0f, 1f)][SerializeField] private float hitVolume = 0.85f;
@@ -58,6 +84,10 @@ public class PlayerAudioController : MonoBehaviour
     [Header("Hit Variance")]
     [SerializeField] private bool useHitPitchVariance = true;
     [Range(0f, 0.5f)][SerializeField] private float hitPitchVariance = 0.1f;
+
+    #endregion
+
+    #region Inspector - Range SFX Configuration
 
     [Header("Range SFX Configuration")]
     [SerializeField] private AudioClip throwShieldClip;
@@ -70,6 +100,10 @@ public class PlayerAudioController : MonoBehaviour
     [SerializeField] private bool useRangePitchVariance = true;
     [Range(0f, 0.5f)][SerializeField] private float rangePitchVariance = 0.1f;
 
+    #endregion
+
+    #region Inspector - Block SFX Configuration
+
     [Header("Block SFX Configuration")]
     [SerializeField] private AudioClip activeBlockClip;
     [SerializeField] private AudioClip blockHitClip;
@@ -79,6 +113,10 @@ public class PlayerAudioController : MonoBehaviour
     [Header("Variance")]
     [SerializeField] private bool useblockPitchVariance = true;
     [Range(0f, 0.5f)][SerializeField] private float blockPitchVariance = 0.1f;
+
+    #endregion
+
+    #region Inspector - Berserker SFX Configuration
 
     [Header("Berserker SFX Configuration")]
     [SerializeField] private AudioClip activeAbilityClip;
@@ -91,22 +129,28 @@ public class PlayerAudioController : MonoBehaviour
     [SerializeField] private bool useabilityPitchVariance = true;
     [Range(0f, 0.5f)][SerializeField] private float abilityPitchVariance = 0.1f;
 
+    #endregion
+
+    #region Unity Lifecycle
 
     private void Awake()
     {
         if (mainAudioSource == null)
         {
             mainAudioSource = GetComponentInChildren<AudioSource>();
-            if (mainAudioSource == null) Debug.LogError($"{name}: No se encontró AudioSource hijo.");
+            if (mainAudioSource == null) Debug.LogError($"{name}: No se encontro AudioSource hijo.");
         }
 
         if (footstepsAudioSource == null)
         {
             footstepsAudioSource = GetComponentInChildren<AudioSource>();
-            if (footstepsAudioSource == null) Debug.LogError($"{name}: No se encontró AudioSource hijo.");
+            if (footstepsAudioSource == null) Debug.LogError($"{name}: No se encontro AudioSource hijo.");
         }
-
     }
+
+    #endregion
+
+    #region Status & Combat Audio Methods
 
     public void PlayDamageSound()
     {
@@ -117,6 +161,15 @@ public class PlayerAudioController : MonoBehaviour
     {
         PlayOneShotInternal(deathClip, deathVolume, deathPitch, useDeathPitchVariance, deathPitchVariance);
     }
+
+    public void PlayHitSound()
+    {
+        PlayOneShotInternal(hitClip, hitVolume, hitPitch, useHitPitchVariance, hitPitchVariance);
+    }
+
+    #endregion
+
+    #region Movement Audio Methods
 
     public void PlayStepSound(int nivel)
     {
@@ -136,7 +189,7 @@ public class PlayerAudioController : MonoBehaviour
                 clipToPlay = footstepNivel3Clip;
                 break;
             default:
-                Debug.LogWarning($"{name}: Nivel de paso '{nivel}' no válido para sonido de paso.");
+                Debug.LogWarning($"{name}: Nivel de paso '{nivel}' no valido para sonido de paso.");
                 return;
         }
 
@@ -162,6 +215,10 @@ public class PlayerAudioController : MonoBehaviour
         PlayOneShotInternal(dashClip, dashVolume, dashPitch, usePitchVariance, pitchVariance);
     }
 
+    #endregion
+
+    #region Offense & Defense Audio Methods
+
     public void PlayMeleeSound(string attackType)
     {
         AudioClip clipToPlay = null;
@@ -184,11 +241,6 @@ public class PlayerAudioController : MonoBehaviour
         PlayOneShotInternal(clipToPlay, meleeVolume, meleePitch, useMeleePitchVariance, meleePitchVariance);
     }
 
-    public void PlayHitSound()
-    {
-        PlayOneShotInternal(hitClip, hitVolume, hitPitch, useHitPitchVariance, hitPitchVariance);
-    }
-
     public void PlayThrowShieldSound(bool isBerserker)
     {
         AudioClip clip = isBerserker ? throwShieldBerserkerClip : throwShieldClip;
@@ -200,6 +252,25 @@ public class PlayerAudioController : MonoBehaviour
         AudioClip clip = isBerserker ? catchShieldBerserkerClip : catchShieldClip;
         PlayOneShotInternal(clip, rangeVolume, rangePitch, useRangePitchVariance, rangePitchVariance);
     }
+
+    public void PlayActiveBlockSound()
+    {
+        PlayOneShotInternal(activeBlockClip, blockVolume, blockPitch, useblockPitchVariance, blockPitchVariance);
+    }
+
+    public void PlayBlockHitSound()
+    {
+        PlayOneShotInternal(blockHitClip, blockVolume, blockPitch, useblockPitchVariance, blockPitchVariance);
+    }
+
+    public void PlayBlockBreakSound()
+    {
+        PlayOneShotInternal(blockBreakClip, blockVolume, blockPitch, useblockPitchVariance, blockPitchVariance);
+    }
+
+    #endregion
+
+    #region Berserker Specific Audio Methods
 
     public void PlayBerserkerAbility(bool isActive)
     {
@@ -218,27 +289,16 @@ public class PlayerAudioController : MonoBehaviour
         PlayOneShotInternal(lowHealthWarningSound, abilityVolume, abilityPitch, useabilityPitchVariance, abilityPitchVariance);
     }
 
-    public void PlayActiveBlockSound()
-    {
-        PlayOneShotInternal(activeBlockClip, blockVolume, blockPitch, useblockPitchVariance, blockPitchVariance);
-    }
-
-    public void PlayBlockHitSound()
-    {
-        PlayOneShotInternal(blockHitClip, blockVolume, blockPitch, useblockPitchVariance, blockPitchVariance);
-    }
-
-    public void PlayBlockBreakSound()
-    {
-        PlayOneShotInternal(blockBreakClip, blockVolume, blockPitch, useblockPitchVariance, blockPitchVariance);
-    }
-
     public void PlayLifeAbsorbSound()
     {
         PlayOneShotInternal(lifeAbsorbClip, abilityVolume, abilityPitch, useabilityPitchVariance, abilityPitchVariance);
     }
 
-    // Un método genérico privado para reutilizar la lógica de varianza
+    #endregion
+
+    #region Internal Helper Methods
+
+    // Un metodo generico privado para reutilizar la logica de varianza
     private void PlayOneShotInternal(AudioClip clip, float volume, float basePitch, bool useVariance, float varianceAmount)
     {
         if (clip == null || mainAudioSource == null) return;
@@ -254,4 +314,6 @@ public class PlayerAudioController : MonoBehaviour
 
         mainAudioSource.PlayOneShot(clip, volume);
     }
+
+    #endregion
 }

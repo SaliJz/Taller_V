@@ -3,104 +3,136 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Script para la mano de almas del ataque Necio Pecador.
+/// Mano que emerge del suelo para el ataque "Manos de los Ahogados".
 /// </summary>
 public class SoulHand : MonoBehaviour
 {
-    [SerializeField] private GameObject explosionVFXPrefab;
-    [SerializeField] private float damage;
-    [SerializeField] private float radius;
-    [SerializeField] private bool hasExploded = false;
+    #region Inspector - References
 
-    private List<GameObject> instantiatedEffects = new List<GameObject>();
+    [Header("VFX")]
+    [SerializeField] private GameObject explosionVFXPrefab;
+
+    #endregion
+
+    #region Inspector - Dano
+
+    [Header("Dano")]
+    [SerializeField] private float damage = 15f;
+    [SerializeField] private float radius = 1.5f;
+
+    #endregion
+
+    #region Inspector - Tiempos de Animacion
+
+    [Header("Tiempos de animacion")]
+    [SerializeField] private float emergeDuration = 0.5f; // Sube del suelo
+    [SerializeField] private float activeWindow = 0.6f; // Ventana de impacto
+    [SerializeField] private float retreatDuration = 0.3f; // Baja si no conecta
+
+    #endregion
+
+    #region Internal State
+
+    private bool hasExploded;
+
+    private readonly List<GameObject> vfxInstances = new();
+
+    #endregion
+
+    #region Unity Lifecycle
 
     private void OnDestroy()
     {
         StopAllCoroutines();
-        DestroyAllInstantiatedEffects();
-    }
-
-    private void DestroyAllInstantiatedEffects()
-    {
-        foreach (GameObject effect in instantiatedEffects)
+        foreach (var vfx in vfxInstances)
         {
-            if (effect != null)
-            {
-                Destroy(effect);
-            }
+            if (vfx != null) Destroy(vfx);
         }
-
-        instantiatedEffects.Clear();
+        vfxInstances.Clear();
     }
 
+    #endregion
+
+    #region Initialization
+
+    /// <summary>
+    /// Inicializa la mano con dano y radio, luego inicia la secuencia de emergencia.
+    /// </summary>
     public void Initialize(float damageAmount, float grabRadius)
     {
         damage = damageAmount;
         radius = grabRadius;
-
         StartCoroutine(EmergenceRoutine());
     }
 
+    #endregion
+
+    #region Core Logic
+
     private IEnumerator EmergenceRoutine()
     {
-        // Animación de emergencia (0.5 segundos)
+        // 1. Emerge desde el suelo
         float elapsed = 0f;
-        Vector3 startScale = Vector3.zero;
-        Vector3 endScale = Vector3.one * radius;
-
-        while (elapsed < 0.5f)
+        while (elapsed < emergeDuration)
         {
-            transform.localScale = Vector3.Lerp(startScale, endScale, elapsed / 0.5f);
+            transform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * radius, elapsed / emergeDuration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        transform.localScale = Vector3.one * radius;
+
+        // 2. Ventana de impacto activa
+        float activeTimer = 0f;
+        while (activeTimer < activeWindow)
+        {
+            Collider[] hits = Physics.OverlapSphere(transform.position, radius);
+            foreach (var hit in hits)
+            {
+                if (!hit.CompareTag("Player")) continue;
+                TriggerExplosion(hit.gameObject);
+                yield break;
+            }
+            activeTimer += Time.deltaTime;
+            yield return null;
+        }
+
+        // 3. Retrocede si no conecto
+        elapsed = 0f;
+        Vector3 currentScale = transform.localScale;
+        while (elapsed < retreatDuration)
+        {
+            transform.localScale = Vector3.Lerp(currentScale, Vector3.zero, elapsed / retreatDuration);
             elapsed += Time.deltaTime;
             yield return null;
         }
 
-        transform.localScale = endScale;
-
-        // Intentar agarrar al jugador
-        Collider[] hits = Physics.OverlapSphere(transform.position, radius);
-        foreach (Collider hit in hits)
-        {
-            if (hit.CompareTag("Player"))
-            {
-                GrabPlayer(hit.gameObject);
-                yield break;
-            }
-        }
-
-        // Si no agarró a nadie, desaparecer
-        yield return new WaitForSeconds(1f);
         Destroy(gameObject);
     }
 
-    private void GrabPlayer(GameObject player)
+    private void TriggerExplosion(GameObject player)
     {
         if (hasExploded) return;
         hasExploded = true;
 
-        PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
-        if (playerHealth != null)
-        {
-            playerHealth.TakeDamage(damage);
-        }
+        player.GetComponent<PlayerHealth>()?.TakeDamage(damage);
 
-        // Explosión de fuego verde
-        SpawnExplosion();
-
+        SpawnExplosionVFX();
         Destroy(gameObject, 0.5f);
     }
 
-    private void SpawnExplosion()
+    #endregion
+
+    #region Visual Effects
+
+    private void SpawnExplosionVFX()
     {
-        if (explosionVFXPrefab != null)
-        {
-            GameObject explosion = Instantiate(explosionVFXPrefab, transform.position, Quaternion.identity);
-            instantiatedEffects.Add(explosion);
+        if (explosionVFXPrefab == null) return;
 
-            explosion.transform.position = transform.position;
-            explosion.transform.localScale = Vector3.one * radius * 2f;
-
-            Destroy(explosion, 0.5f);
-        }
+        GameObject vfx = Instantiate(explosionVFXPrefab, transform.position, Quaternion.identity);
+        vfx.transform.localScale = Vector3.one * radius * 2f;
+        vfxInstances.Add(vfx);
+        Destroy(vfx, 1f);
     }
+
+    #endregion
 }

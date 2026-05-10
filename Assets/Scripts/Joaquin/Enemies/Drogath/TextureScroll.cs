@@ -6,13 +6,13 @@ public class TextureScroll : MonoBehaviour
     private LineRenderer lr;
     private Material mat;
 
-    void Start()
+    private void Start()
     {
         lr = GetComponent<LineRenderer>();
         if (lr != null) mat = lr.material;
     }
 
-    void Update()
+    private void Update()
     {
         if (mat != null)
         {

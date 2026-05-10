@@ -1,41 +1,29 @@
 using UnityEngine;
 
-public class StaticTrapMine : MonoBehaviour
+/// <summary>
+/// Mina rebotante del enemigo Static.
+/// Extiende BaseTrapMine añadiendo física de rebote con Rigidbody.
+/// </summary>
+public class StaticTrapMine : BaseTrapMine
 {
-    [Header("Mine Stats")]
-    [SerializeField] private float duration = 5f;
-    [SerializeField] private float explosionRadius = 1.8f;
-    [SerializeField] private float damage = 15f;
-    [SerializeField] private float slowDuration = 0.5f;
-    [SerializeField] private float slowFraction = 0.1f;
+    #region Inspector
 
-    [Header("Collision Layers")]
-    [SerializeField] private LayerMask playerLayer;
+    [Header("Física de rebote")]
     [SerializeField] private LayerMask environmentLayer;
 
-    [Header("VFX")]
-    [SerializeField] private ParticleSystem explosionVFXPrefab;
-    [SerializeField] private GameObject explosionSpherePrefab;
+    #endregion
 
-    private bool hasExploded = false;
+    #region Referencias internas
+
     private Rigidbody rb;
+
+    #endregion
+
+    #region Unity Lifecycle
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-    }
-
-    public void InitializeTrap(string wordToDisplay, float dmg)
-    {
-        rb.useGravity = true;
-        rb.isKinematic = false;
-
-        damage = dmg;
-
-        Vector3 randomBounce = new Vector3(Random.Range(-2f, 2f), 3f, Random.Range(-2f, 2f));
-        rb.AddForce(randomBounce, ForceMode.Impulse);
-
-        Invoke(nameof(Explode), duration);
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -47,37 +35,30 @@ public class StaticTrapMine : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (hasExploded) return;
+    #endregion
 
-        if ((playerLayer.value & (1 << other.gameObject.layer)) != 0)
-        {
-            Explode();
-        }
+    #region Inicialización pública
+
+    /// <summary>
+    /// Inicializa la mina con impulso de lanzamiento.
+    /// </summary>
+    /// <param name="wordToDisplay">Texto decorativo (heredado de la versión original).</param>
+    /// <param name="dmg">Daño de la explosión.</param>
+    public void InitializeTrap(string wordToDisplay, float dmg)
+    {
+        rb.useGravity = true;
+        rb.isKinematic = false;
+
+        damage = dmg;
+
+        Vector3 randomBounce = new Vector3(Random.Range(-2f, 2f), 3f, Random.Range(-2f, 2f));
+        rb.AddForce(randomBounce, ForceMode.Impulse);
+
+        Invoke(nameof(ExplodePublic), duration);
     }
 
-    private void Explode()
-    {
-        hasExploded = true;
-        CancelInvoke(nameof(Explode));
+    // Wrapper para que Invoke pueda llamar a Explode (que es protected en la base)
+    private void ExplodePublic() => Explode();
 
-        if (explosionVFXPrefab != null) Instantiate(explosionVFXPrefab, transform.position, Quaternion.identity);
-        if (explosionSpherePrefab != null) Instantiate(explosionSpherePrefab, transform.position, Quaternion.identity);
-
-        Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, playerLayer);
-        foreach (var hit in hits)
-        {
-            hit.GetComponent<IDamageable>()?.TakeDamage(damage);
-
-            PlayerStatsManager statsManager = hit.GetComponent<PlayerStatsManager>();
-            if (statsManager != null)
-            {
-                string slowKey = "MineSlow_" + GetInstanceID();
-                statsManager.ApplyTimedModifier(slowKey, StatType.MoveSpeed, -slowFraction, slowDuration, isPercentage: true);
-            }
-        }
-
-        Destroy(gameObject);
-    }
+    #endregion
 }
