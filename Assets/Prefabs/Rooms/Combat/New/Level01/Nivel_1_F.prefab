@@ -3613,6 +3613,7 @@ MonoBehaviour:
   gachaponSystem: {fileID: 855780113772926863}
   cubeRenderer: {fileID: 7885961161803979579}
   activatedMaterial: {fileID: 0}
+  playerDetector: {fileID: 0}
   resultUIPanel: {fileID: 6884885411315039084}
   nameTMP: {fileID: 4101500846554270106}
   effectsTMP: {fileID: 6885598823003861361}
@@ -5620,7 +5621,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: 90ca870f580344041a7d3b7789d0f216, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: a5ef3bc6246379142a448490c7ee1612, type: 2}
   m_BuildHeightMesh: 0
 --- !u!1001 &102697162562502546
 PrefabInstance:
@@ -5633,6 +5634,10 @@ PrefabInstance:
     - target: {fileID: 4988881062650978434, guid: 32fe6959ed4ed3142a74240b71cf6e93, type: 3}
       propertyPath: m_Name
       value: Hazard3_ExplosiveHead (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4988881062650978434, guid: 32fe6959ed4ed3142a74240b71cf6e93, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7984995673513485293, guid: 32fe6959ed4ed3142a74240b71cf6e93, type: 3}
       propertyPath: m_LocalPosition.x
@@ -7753,6 +7758,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Hazard3_ExplosiveHead (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 4988881062650978434, guid: 32fe6959ed4ed3142a74240b71cf6e93, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7984995673513485293, guid: 32fe6959ed4ed3142a74240b71cf6e93, type: 3}
       propertyPath: m_LocalPosition.x
       value: 15.350084
@@ -7835,6 +7844,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Hazard3_ExplosiveHead (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 4988881062650978434, guid: 32fe6959ed4ed3142a74240b71cf6e93, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7984995673513485293, guid: 32fe6959ed4ed3142a74240b71cf6e93, type: 3}
       propertyPath: m_LocalPosition.x
       value: 2.1000838
@@ -7916,6 +7929,10 @@ PrefabInstance:
     - target: {fileID: 4988881062650978434, guid: 32fe6959ed4ed3142a74240b71cf6e93, type: 3}
       propertyPath: m_Name
       value: Hazard3_ExplosiveHead
+      objectReference: {fileID: 0}
+    - target: {fileID: 4988881062650978434, guid: 32fe6959ed4ed3142a74240b71cf6e93, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7984995673513485293, guid: 32fe6959ed4ed3142a74240b71cf6e93, type: 3}
       propertyPath: m_LocalPosition.x

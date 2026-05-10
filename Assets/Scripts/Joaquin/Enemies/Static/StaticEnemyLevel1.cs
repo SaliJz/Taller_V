@@ -60,7 +60,8 @@ public class StaticEnemyLevel1 : StaticEnemyBase, IAnimEventHandler
 
         if (projectile != null)
         {
-            projectile.Initialize(projectileSpeed, projectileDamage, "");
+            string selectedWord = wordLibrary != null ? wordLibrary.GetRandomWord() : "STATIC";
+            projectile.Initialize(projectileSpeed, projectileDamage, selectedWord);
         }
     }
 

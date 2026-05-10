@@ -491,6 +491,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
     protected virtual IEnumerator Pursuit2Routine()
     {
         Vector3 lastTargetPos = Vector3.zero;
+        int mask = GetWalkableMask();
 
         while (currentState == MorlockState.Pursue2)
         {
@@ -503,7 +504,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
                 Vector3 potentialPos = playerTransform.position + offset;
 
                 NavMeshHit hit;
-                if (NavMesh.SamplePosition(potentialPos, out hit, 2.0f, NavMesh.AllAreas))
+                if (NavMesh.SamplePosition(potentialPos, out hit, 2.0f, mask))
                 {
                     validCandidates.Add(hit.position);
                 }
@@ -539,6 +540,16 @@ public abstract class StaticEnemyBase : MonoBehaviour
     #endregion
 
     #region Movement & Navigation
+
+    protected virtual int GetWalkableMask()
+    {
+        int trapsAreaIndex = NavMesh.GetAreaFromName("Traps");
+        if (trapsAreaIndex != -1)
+        {
+            return ~(1 << trapsAreaIndex);
+        }
+        return NavMesh.AllAreas; 
+    }
 
     protected virtual void HandleDetectionGrowth()
     {
@@ -608,7 +619,9 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
         NavMeshHit hit;
         Vector3 finalDestination = targetPosition;
-        if (NavMesh.SamplePosition(targetPosition, out hit, 10f, NavMesh.AllAreas))
+        int mask = GetWalkableMask();
+
+        if (NavMesh.SamplePosition(targetPosition, out hit, 10f, mask))
         {
             finalDestination = hit.position;
         }
@@ -646,11 +659,13 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     protected virtual bool TryGetRandomPoint(Vector3 center, float radius, out Vector3 result)
     {
+        int mask = GetWalkableMask();
+
         for (int i = 0; i < 8; i++)
         {
             Vector3 rand = center + Random.insideUnitSphere * radius;
             NavMeshHit hit;
-            if (NavMesh.SamplePosition(rand, out hit, 2.0f, NavMesh.AllAreas))
+            if (NavMesh.SamplePosition(rand, out hit, 2.0f, mask))
             {
                 result = hit.position;
                 return true;
