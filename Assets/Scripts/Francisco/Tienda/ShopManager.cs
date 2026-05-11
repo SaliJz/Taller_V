@@ -24,7 +24,6 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private ShopInteractionMode interactionMode = ShopInteractionMode.MouseHover;
 
     [Header("Item Pools")]
-    public List<ShopItem> allShopItems;
     public List<ShopItem> safeRelics;
     public List<Pact> allPacts = new List<Pact>();
     public List<ShopItem> allAmulets;
@@ -40,6 +39,9 @@ public class ShopManager : MonoBehaviour
     [Header("Shop Prefabs")]
     public List<GameObject> shopItemPrefabs;
     public GameObject itemAppearanceEffectPrefab;
+
+    [Header("Mechanic Item Guarantee")]
+    [SerializeField, Range(0, 3)] private int minimumMechanicItems = 1;
 
     [Header("UI References")]
     [SerializeField] private GameObject shopUIPanel;
@@ -82,8 +84,8 @@ public class ShopManager : MonoBehaviour
     private List<GachaponEffectData> availableGachaponEffects = new List<GachaponEffectData>();
     private List<GachaponEffectData> usedGachaponEffects = new List<GachaponEffectData>();
 
-    private readonly List<ShopItem> availableItems = new List<ShopItem>();
-    private readonly List<ShopItem> spawnedItems = new List<ShopItem>();
+    private readonly List<GameObject> availablePrefabs = new List<GameObject>();
+    private readonly List<GameObject> spawnedPrefabs = new List<GameObject>();
     private readonly List<GameObject> _spawnedItemObjects = new List<GameObject>();
     private List<ShopItem> currentShopItems;
     private List<Transform> _shopSpawnLocations;
@@ -167,11 +169,19 @@ public class ShopManager : MonoBehaviour
 
     public void InitializeShopItemPools()
     {
-        availableItems.Clear();
-        spawnedItems.Clear();
-        if (allShopItems != null)
+        availablePrefabs.Clear();
+        spawnedPrefabs.Clear();
+
+        if (shopItemPrefabs == null) return;
+
+        foreach (GameObject prefab in shopItemPrefabs)
         {
-            availableItems.AddRange(new List<ShopItem>(allShopItems));
+            if (prefab == null) continue;
+            ShopItemDisplay display = prefab.GetComponent<ShopItemDisplay>();
+            if (display != null && display.shopItemData != null && !display.shopItemData.isAmulet)
+            {
+                availablePrefabs.Add(prefab);
+            }
         }
     }
 
@@ -197,16 +207,24 @@ public class ShopManager : MonoBehaviour
 
     public void ReturnItemToPool(ShopItem item)
     {
-        if (!item.isAmulet && !allShopItems.Contains(item))
+        if (item.isAmulet)
         {
-            allShopItems.Add(item);
+            if (!allAmulets.Contains(item))
+                allAmulets.Add(item);
         }
-        else if (item.isAmulet && !allAmulets.Contains(item))
+        else
         {
-            allAmulets.Add(item);
+            GameObject prefab = shopItemPrefabs?.FirstOrDefault(p =>
+            {
+                if (p == null) return false;
+                ShopItemDisplay d = p.GetComponent<ShopItemDisplay>();
+                return d != null && d.shopItemData == item;
+            });
+            if (prefab != null && !availablePrefabs.Contains(prefab))
+                availablePrefabs.Add(prefab);
         }
 
-        Debug.Log($"[ShopManager] {item.itemName} returned to the available item pool.");
+        Debug.Log($"[ShopManager] {item.itemName} returned to the available pool.");
     }
 
     public void ResetMerchantRunState()
@@ -222,9 +240,10 @@ public class ShopManager : MonoBehaviour
 
     public ShopItem GetRandomRewardItem()
     {
-        if (allShopItems != null && allShopItems.Count > 0)
+        if (availablePrefabs != null && availablePrefabs.Count > 0)
         {
-            return allShopItems[Random.Range(0, allShopItems.Count)];
+            GameObject prefab = availablePrefabs[Random.Range(0, availablePrefabs.Count)];
+            return prefab.GetComponent<ShopItemDisplay>()?.shopItemData;
         }
 
         if (allAmulets != null && allAmulets.Count > 0)
@@ -344,99 +363,150 @@ public class ShopManager : MonoBehaviour
         _shopSpawnLocations = spawnLocations;
         currentShopItems = new List<ShopItem>();
 
-        if (spawnLocations == null || spawnLocations.Count == 0 || availableItems.Count == 0)
+        if (spawnLocations == null || spawnLocations.Count == 0 || availablePrefabs.Count == 0)
         {
+            Debug.LogWarning("[ShopManager] No spawn locations or no prefabs available.");
             return;
         }
 
-        List<ShopItem> itemsToSpawn = new List<ShopItem>();
+        List<GameObject> prefabsToSpawn = new List<GameObject>();
 
-        Dictionary<ItemRarity, List<ShopItem>> itemsByRarity = new Dictionary<ItemRarity, List<ShopItem>>();
-        foreach (ItemRarity rarity in System.Enum.GetValues(typeof(ItemRarity)))
+        int itemsToSelectCount = Mathf.Min(spawnLocations.Count, availablePrefabs.Count);
+        int guaranteedMechanicCount = minimumMechanicItems <= 0
+            ? 0
+            : Mathf.Min(minimumMechanicItems, itemsToSelectCount);
+
+        List<GameObject> mechanicPool = availablePrefabs
+            .Where(p => p != null && p.GetComponent<ShopItemDisplay>()?.shopItemData?.IsEffectItem == true)
+            .ToList();
+
+        for (int i = 0; i < guaranteedMechanicCount && mechanicPool.Count > 0; i++)
         {
-            itemsByRarity[rarity] = availableItems.Where(item => item.rarity == rarity).ToList();
+            GameObject picked = SelectWeightedPrefab(mechanicPool);
+            if (picked == null) break;
+
+            prefabsToSpawn.Add(picked);
+            availablePrefabs.Remove(picked);
+            mechanicPool.Remove(picked);
         }
 
+        List<GameObject> remainingPool = availablePrefabs
+            .Where(p => !prefabsToSpawn.Contains(p))
+            .ToList();
+
+        while (prefabsToSpawn.Count < itemsToSelectCount && remainingPool.Count > 0)
+        {
+            GameObject picked = SelectWeightedPrefab(remainingPool);
+            if (picked == null) break;
+
+            prefabsToSpawn.Add(picked);
+            availablePrefabs.Remove(picked);
+            remainingPool.Remove(picked);
+        }
+
+        for (int i = 0; i < prefabsToSpawn.Count; i++)
+        {
+            GameObject prefab = prefabsToSpawn[i];
+            GameObject spawnedObj = Instantiate(prefab, spawnLocations[i].position, Quaternion.identity, parent);
+            _spawnedItemObjects.Add(spawnedObj);
+            spawnedPrefabs.Add(prefab);
+
+            ShopItem data = prefab.GetComponent<ShopItemDisplay>()?.shopItemData;
+            if (data != null) currentShopItems.Add(data);
+        }
+    }
+
+    private GameObject SelectWeightedPrefab(List<GameObject> sourcePool)
+    {
+        if (sourcePool == null || sourcePool.Count == 0) return null;
+
+        ItemRarity selectedRarity = RollItemRarity();
+
+        List<GameObject> rarityPool = sourcePool
+            .Where(p => p != null && p.GetComponent<ShopItemDisplay>()?.shopItemData?.rarity == selectedRarity)
+            .ToList();
+
+        if (rarityPool.Count == 0)
+            rarityPool = GetFallbackRarityPool(sourcePool);
+
+        if (rarityPool.Count == 0) return null;
+
+        return SelectByIndividualWeight(rarityPool);
+    }
+
+    private ItemRarity RollItemRarity()
+    {
         float totalWeight = normalRarityWeight + rareRarityWeight + superRareRarityWeight;
-        int itemsToSelectCount = Mathf.Min(spawnLocations.Count, availableItems.Count);
+        float roll = Random.Range(0f, totalWeight);
 
-        for (int i = 0; i < itemsToSelectCount; i++)
+        if (roll <= normalRarityWeight)
+            return ItemRarity.Normal;
+
+        if (roll <= normalRarityWeight + rareRarityWeight)
+            return ItemRarity.Raro;
+
+        return ItemRarity.SuperRaro;
+    }
+
+    private List<GameObject> GetFallbackRarityPool(List<GameObject> sourcePool)
+    {
+        List<GameObject> normal = sourcePool
+            .Where(p => p?.GetComponent<ShopItemDisplay>()?.shopItemData?.rarity == ItemRarity.Normal).ToList();
+        if (normal.Count > 0) return normal;
+
+        List<GameObject> rare = sourcePool
+            .Where(p => p?.GetComponent<ShopItemDisplay>()?.shopItemData?.rarity == ItemRarity.Raro).ToList();
+        if (rare.Count > 0) return rare;
+
+        List<GameObject> superRare = sourcePool
+            .Where(p => p?.GetComponent<ShopItemDisplay>()?.shopItemData?.rarity == ItemRarity.SuperRaro).ToList();
+        if (superRare.Count > 0) return superRare;
+
+        return sourcePool.Where(p => p != null).ToList();
+    }
+
+    private GameObject SelectByIndividualWeight(List<GameObject> pool)
+    {
+        if (pool == null || pool.Count == 0) return null;
+
+        float totalWeight = pool.Sum(p =>
         {
-            float roll = Random.Range(0f, totalWeight);
-            ItemRarity selectedRarity = ItemRarity.Normal;
+            ShopItem data = p?.GetComponent<ShopItemDisplay>()?.shopItemData;
+            return data != null ? Mathf.Max(0f, data.individualRarityWeight) : 0f;
+        });
 
-            if (roll <= normalRarityWeight)
-                selectedRarity = ItemRarity.Normal;
-            else if (roll <= normalRarityWeight + rareRarityWeight)
-                selectedRarity = ItemRarity.Raro;
-            else
-                selectedRarity = ItemRarity.SuperRaro;
+        if (totalWeight <= 0f)
+            return pool[Random.Range(0, pool.Count)];
 
-            if (itemsByRarity[selectedRarity].Count == 0)
-            {
-                if (itemsByRarity[ItemRarity.Normal].Count > 0)
-                    selectedRarity = ItemRarity.Normal;
-                else if (itemsByRarity[ItemRarity.Raro].Count > 0)
-                    selectedRarity = ItemRarity.Raro;
-                else if (itemsByRarity[ItemRarity.SuperRaro].Count > 0)
-                    selectedRarity = ItemRarity.SuperRaro;
-                else
-                    break;
-            }
+        float roll = Random.Range(0f, totalWeight);
+        float current = 0f;
 
-            List<ShopItem> rarityPool = itemsByRarity[selectedRarity];
-            if (rarityPool.Count > 0)
-            {
-                float itemTotalWeight = rarityPool.Sum(item => item.individualRarityWeight);
-                float itemRoll = Random.Range(0f, itemTotalWeight);
-
-                ShopItem itemData = null;
-                float currentWeight = 0f;
-
-                foreach (var item in rarityPool)
-                {
-                    currentWeight += item.individualRarityWeight;
-                    if (itemRoll <= currentWeight)
-                    {
-                        itemData = item;
-                        break;
-                    }
-                }
-
-                if (itemData != null)
-                {
-                    itemsToSpawn.Add(itemData);
-                    rarityPool.Remove(itemData);
-                    availableItems.Remove(itemData);
-                }
-            }
+        foreach (GameObject prefab in pool)
+        {
+            ShopItem data = prefab?.GetComponent<ShopItemDisplay>()?.shopItemData;
+            current += data != null ? Mathf.Max(0f, data.individualRarityWeight) : 0f;
+            if (roll <= current) return prefab;
         }
 
-        for (int i = 0; i < itemsToSpawn.Count; i++)
-        {
-            ShopItem itemData = itemsToSpawn[i];
-            GameObject itemPrefab = FindPrefabForItemData(itemData);
-
-            if (itemPrefab != null)
-            {
-                GameObject spawnedItem = Instantiate(itemPrefab, spawnLocations[i].position, Quaternion.identity, parent);
-                _spawnedItemObjects.Add(spawnedItem);
-                spawnedItems.Add(itemData);
-                currentShopItems.Add(itemData);
-            }
-        }
+        return pool.Last();
     }
 
     public void SpawnItemWithEffect(ShopItem item, Transform location, Transform parent)
     {
-        GameObject itemPrefab = FindPrefabForItemData(item);
-        if (itemPrefab != null)
+        GameObject prefab = shopItemPrefabs?.FirstOrDefault(p =>
         {
-            StartCoroutine(SpawnItemSequence(itemPrefab, item, location, parent));
-        }
+            if (p == null) return false;
+            ShopItemDisplay d = p.GetComponent<ShopItemDisplay>();
+            return d != null && d.shopItemData == item;
+        });
+
+        if (prefab != null)
+            StartCoroutine(SpawnItemSequence(prefab, location, parent));
+        else
+            Debug.LogWarning($"[ShopManager] No prefab found for item '{item?.itemName}'.");
     }
 
-    private IEnumerator SpawnItemSequence(GameObject itemPrefab, ShopItem itemData, Transform location, Transform parent)
+    private IEnumerator SpawnItemSequence(GameObject prefab, Transform location, Transform parent)
     {
         if (itemAppearanceEffectPrefab != null)
         {
@@ -448,22 +518,9 @@ public class ShopManager : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
         }
 
-        GameObject spawnedItem = Instantiate(itemPrefab, location.position, Quaternion.identity, parent);
-        _spawnedItemObjects.Add(spawnedItem);
-        spawnedItems.Add(itemData);
-    }
-
-    private GameObject FindPrefabForItemData(ShopItem itemData)
-    {
-        foreach (GameObject prefab in shopItemPrefabs)
-        {
-            if (prefab == null) continue;
-            ShopItemDisplay display = prefab.GetComponent<ShopItemDisplay>();
-            if (display != null && display.shopItemData == itemData)
-                return prefab;
-        }
-        Debug.LogWarning($"[ShopManager] No prefab found for item '{itemData?.itemName}'. Make sure the prefab has ShopItemDisplay with its ShopItem assigned.");
-        return null;
+        GameObject spawnedObj = Instantiate(prefab, location.position, Quaternion.identity, parent);
+        _spawnedItemObjects.Add(spawnedObj);
+        spawnedPrefabs.Add(prefab);
     }
 
     public void DestroyCurrentItems()
@@ -473,7 +530,7 @@ public class ShopManager : MonoBehaviour
             if (obj != null) Destroy(obj);
         }
         _spawnedItemObjects.Clear();
-        spawnedItems.Clear();
+        spawnedPrefabs.Clear();
     }
 
     public void RerollShop(List<Transform> spawnLocations, Transform parent)
@@ -488,9 +545,8 @@ public class ShopManager : MonoBehaviour
         }
 
         playerHealth.TakeDamage(baseRerollCost, true);
-        availableItems.AddRange(spawnedItems);
+        availablePrefabs.AddRange(spawnedPrefabs);
         DestroyCurrentItems();
-        InitializeShopItemPools();
         GenerateShopItems(spawnLocations, parent);
     }
 
@@ -625,8 +681,10 @@ public class ShopManager : MonoBehaviour
 
         if (!item.isAmulet)
         {
-            allShopItems.Remove(item);
-            availableItems.Remove(item);
+            GameObject purchasedPrefab = availablePrefabs.FirstOrDefault(p =>
+                p?.GetComponent<ShopItemDisplay>()?.shopItemData == item);
+            if (purchasedPrefab != null)
+                availablePrefabs.Remove(purchasedPrefab);
         }
 
         if (item.isAmulet || isRestrictedScene) _amuletPurchasedInRun = true;
