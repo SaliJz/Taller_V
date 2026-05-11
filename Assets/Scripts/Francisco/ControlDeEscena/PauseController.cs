@@ -479,6 +479,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     public void OnRightClick(InputAction.CallbackContext context) { }
     public void OnTrackedDevicePosition(InputAction.CallbackContext context) { }
     public void OnTrackedDeviceOrientation(InputAction.CallbackContext context) { }
+    public void OnToggleInventory(InputAction.CallbackContext context) { }
 }
 
 //using UnityEngine;

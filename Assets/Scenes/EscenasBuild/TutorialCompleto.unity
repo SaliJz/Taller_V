@@ -15013,15 +15013,15 @@ GameObject:
   - component: {fileID: 1247425542}
   - component: {fileID: 1247425546}
   - component: {fileID: 1247425545}
-  - component: {fileID: 1247425544}
   - component: {fileID: 1247425543}
+  - component: {fileID: 1247425547}
   m_Layer: 2
   m_Name: Interaction (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1247425542
 Transform:
   m_ObjectHideFlags: 0
@@ -15082,26 +15082,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &1247425544
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1247425541}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 93b924680b2e24a4d984c9589488380c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  OnObjectEntered:
-    m_PersistentCalls:
-      m_Calls: []
-  OnObjectExited:
-    m_PersistentCalls:
-      m_Calls: []
-  tagName: Player
-  oneShotTrigger: 0
 --- !u!65 &1247425545
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -15131,6 +15111,103 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1247425541}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1247425547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1247425541}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e71a9c41f0029d4a83e3514cee2e31e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playOnStart: 1
+  startDialogue:
+  - CharacterName: "M\xC4LGOR"
+    ProfileImage: {fileID: 1377115843, guid: 94c59e48af6c6c34b8816f0e130ddbbc, type: 3}
+    Text: "Ah, casi lo olvido. Tu mente es fr\xE1gil en este lugar. Si alguna vez
+      olvidas qu\xE9 cargas contigo o qu\xE9 hace cada baratija que adquieras, detente
+      un momento y mira en tu interior."
+    WaitForInput: 1
+    AutoAdvanceDelay: 0.03
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  OnStartDialogueBegin:
+    m_PersistentCalls:
+      m_Calls: []
+  OnStartDialogueEnd:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 953363980}
+        m_TargetAssemblyTypeName: TutorialHUDAnimator, Assembly-CSharp
+        m_MethodName: SetAndShowInstruction
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Para abrir y cerrar el inventario, usa !INVENTORY
+          m_BoolArgument: 1
+        m_CallState: 2
+  actionToContinue: {fileID: -4506918939124190800, guid: ccc6e38482735884387854943591007c, type: 3}
+  requiredPresses: 2
+  maxTimeBetweenPresses: 0
+  OnStartWaitingForInput:
+    m_PersistentCalls:
+      m_Calls: []
+  OnInputPressed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnRequiredInputsCompleted:
+    m_PersistentCalls:
+      m_Calls: []
+  endDialogue:
+  - CharacterName: "M\xC4LGOR"
+    ProfileImage: {fileID: 1377115843, guid: 94c59e48af6c6c34b8816f0e130ddbbc, type: 3}
+    Text: "Ahora l\xE1nzate al abismo y entra al Primer Infierno."
+    WaitForInput: 1
+    AutoAdvanceDelay: 0.03
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  OnEndDialogueBegin:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 953363980}
+        m_TargetAssemblyTypeName: TutorialHUDAnimator, Assembly-CSharp
+        m_MethodName: CompleteInstruction
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  OnEndDialogueEnd:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1935897365}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  playOnlyOnce: 1
+  isRunning: 0
+  hasPlayed: 0
+  currentPresses: 0
 --- !u!1 &1262398233
 GameObject:
   m_ObjectHideFlags: 0
@@ -22340,8 +22417,8 @@ Transform:
   m_GameObject: {fileID: 1983805414}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0.0000029504295}
-  m_LocalPosition: {x: 38.249992, y: 0.5, z: 0.9996228}
-  m_LocalScale: {x: 3.1499999, y: 1, z: 36.001358}
+  m_LocalPosition: {x: 37.500053, y: 0.49999934, z: -9.500381}
+  m_LocalScale: {x: 4.150125, y: 1, z: 57.00095}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1248781697802073110}
@@ -22361,7 +22438,7 @@ MonoBehaviour:
   Sala1_IntroDialog:
   - CharacterName: "M\xC4LGOR"
     ProfileImage: {fileID: 1377115843, guid: 94c59e48af6c6c34b8816f0e130ddbbc, type: 3}
-    Text: "Jo jo jo, venid ac\xE9rcate."
+    Text: "Jo jo jo, venid ac\xE9rcate"
     WaitForInput: 1
     AutoAdvanceDelay: 0.03
     VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
@@ -22844,6 +22921,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 31585037869059384, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 78920072235261051, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
@@ -23416,7 +23497,7 @@ PrefabInstance:
       insertIndex: 3
       addedObject: {fileID: 1999398776}
     - targetCorrespondingSourceObject: {fileID: 4771108026129879708, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
-      insertIndex: 4
+      insertIndex: 6
       addedObject: {fileID: 704793251}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 2049424538277915923, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
@@ -25701,7 +25782,7 @@ MonoBehaviour:
   onPortalDialogueComplete:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1935897365}
+      - m_Target: {fileID: 1247425541}
         m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
         m_MethodName: SetActive
         m_Mode: 6
@@ -25711,7 +25792,19 @@ MonoBehaviour:
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
-          m_BoolArgument: 0
+          m_BoolArgument: 1
+        m_CallState: 2
+      - m_Target: {fileID: 1247425541}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
         m_CallState: 2
   malgorApproachLines:
   - CharacterName: "M\xC4LGOR"
