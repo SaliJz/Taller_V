@@ -24,7 +24,7 @@ public class HUDManager : MonoBehaviour
     [SerializeField] private Image lifeStageIconImage;
     [SerializeField] private List<LifeStageIcon> lifeStageIcons;
 
-    [Header("Prompt de Interacción")]
+    [Header("Prompt de Interacciï¿½n")]
     [SerializeField] private GameObject interactionPromptPanel;
     [SerializeField] private TextMeshProUGUI interactionPromptText;
 
@@ -55,6 +55,9 @@ public class HUDManager : MonoBehaviour
     private Color originalHealthBarColor;
     private float lowHealthTimer;
 
+    [Header("VFX Cambio de Etapa - Secuencia Mano")]
+    [SerializeField] HUDHandAnimCtrl handAnim;
+
     private void Awake()
     {
         if (Instance != null && Instance != this) Destroy(gameObject);
@@ -69,7 +72,7 @@ public class HUDManager : MonoBehaviour
         // Inicializar overlay de pantalla
         if (screenFlashOverlay != null)
         {
-            // Asegurarse de que el overlay esté invisible al inicio
+            // Asegurarse de que el overlay estï¿½ invisible al inicio
             Color transparent = lowHealthScreenFlashColor;
             transparent.a = 0f;
             screenFlashOverlay.color = transparent;
@@ -126,17 +129,17 @@ public class HUDManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Función que actualiza la barra de salud en el HUD.
+    /// Funciï¿½n que actualiza la barra de salud en el HUD.
     /// </summary>
     /// <param name="currentHealth"> Vida actual del jugador </param>
-    /// <param name="maxHealth"> Vida máxima del jugador </param>
+    /// <param name="maxHealth"> Vida mï¿½xima del jugador </param>
     private void UpdateHealthBar(float currentHealth, float maxHealth)
     {
         if (healthBar == null) return;
 
         if (maxHealth <= 0f)
         {
-            Debug.LogWarning("[HUDManager] maxHealth inválido en UpdateHealthBar: " + maxHealth);
+            Debug.LogWarning("[HUDManager] maxHealth invï¿½lido en UpdateHealthBar: " + maxHealth);
             healthBar.fillAmount = 0f;
             return;
         }
@@ -144,7 +147,7 @@ public class HUDManager : MonoBehaviour
         float healthPercentage = Mathf.Clamp01(currentHealth / maxHealth);
         healthBar.fillAmount = healthPercentage;
 
-        // Verificar si está en vida baja
+        // Verificar si estï¿½ en vida baja
         bool shouldShowLowHealthEffects = healthPercentage < lowHealthThreshold;
 
         if (shouldShowLowHealthEffects && !isLowHealth)
@@ -155,7 +158,7 @@ public class HUDManager : MonoBehaviour
         }
         else if (shouldShowLowHealthEffects && isLowHealth)
         {
-            // Reiniciar efectos si aún está en vida baja
+            // Reiniciar efectos si aï¿½n estï¿½ en vida baja
             ResetLowHealthEffects();
         }
         else if (!shouldShowLowHealthEffects && isLowHealth)
@@ -204,7 +207,7 @@ public class HUDManager : MonoBehaviour
         if (screenFlashCoroutine != null) StopCoroutine(screenFlashCoroutine);
         screenFlashCoroutine = StartCoroutine(ScreenFlashRoutine());
 
-        // Iniciar corrutina de duración del efecto
+        // Iniciar corrutina de duraciï¿½n del efecto
         if (lowHealthEffectCoroutine != null) StopCoroutine(lowHealthEffectCoroutine);
         lowHealthEffectCoroutine = StartCoroutine(LowHealthEffectDurationRoutine());
 
@@ -261,14 +264,14 @@ public class HUDManager : MonoBehaviour
             screenFlashCoroutine = null;
         }
 
-        // Detener corrutina de duración
+        // Detener corrutina de duraciï¿½n
         if (lowHealthEffectCoroutine != null)
         {
             StopCoroutine(lowHealthEffectCoroutine);
             lowHealthEffectCoroutine = null;
         }
 
-        // Asegurarse de que el overlay esté invisible
+        // Asegurarse de que el overlay estï¿½ invisible
         if (screenFlashOverlay != null)
         {
             Color transparent = lowHealthScreenFlashColor;
@@ -280,7 +283,7 @@ public class HUDManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Rutina que controla la duración total del efecto de vida baja
+    /// Rutina que controla la duraciï¿½n total del efecto de vida baja
     /// </summary>
     private IEnumerator LowHealthEffectDurationRoutine()
     {
@@ -376,7 +379,7 @@ public class HUDManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Función que actualiza el icono de la etapa de vida en el HUD.
+    /// Funciï¿½n que actualiza el icono de la etapa de vida en el HUD.
     /// </summary>
     /// <param name="newStage"> Nueva etapa de vida del jugador </param>
     private void UpdateLifeStageIcon(PlayerHealth.LifeStage newStage)
@@ -403,11 +406,13 @@ public class HUDManager : MonoBehaviour
             if (adultRootStage != null) adultRootStage.SetActive(false);
             if (elderRootStage != null) elderRootStage.SetActive(false);
         }
+
+        handAnim.PlaySmashSecuence();
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     /// <summary> 
-    /// Función de depuración para reportar mensajes en la consola de Unity. 
+    /// Funciï¿½n de depuraciï¿½n para reportar mensajes en la consola de Unity. 
     /// </summary> 
     /// <<param name="message">Mensaje a reportar.</param> >
     /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
