@@ -236,6 +236,7 @@ public partial class AstarothController : MonoBehaviour
     [SerializeField] private bool _enableAdaptiveDifficulty = true;
     [SerializeField] private float _difficultyAdjustmentInterval = 15f;
 
+    private bool _isDead = false;
     private int _totalAttemptsLanded = 0;
     private int _totalAttemptsExecuted = 0;
     private int _hitsReceivedFromPlayer = 0;
@@ -376,6 +377,7 @@ public partial class AstarothController : MonoBehaviour
 
     private void Update()
     {
+        if (_isDead) return;
         if (_player == null) return;
 
         if (_enemyHealth != null && _enemyHealth.IsStunned)
@@ -431,10 +433,14 @@ public partial class AstarothController : MonoBehaviour
             !_isStomping &&
             !_isDefensiveBlocking &&
             !_isMudWaving &&
-            _currentState != BossState.SpecialAbility)
+            !_isAttackingWithWhip &&
+            !_isSmashing &&
+            !_isUsingSpecialAbility &&
+            _currentState == BossState.Moving)
         {
             StartCombatLoop();
         }
+
 
         _stompTimer -= Time.deltaTime;
     }
@@ -445,6 +451,7 @@ public partial class AstarothController : MonoBehaviour
 
     private void StartCombatLoop()
     {
+        if (_isDead) return;
         if (_isCombatLoopActive) return;
 
         ResetAttackState();
@@ -532,6 +539,7 @@ public partial class AstarothController : MonoBehaviour
 
     private void ResetAttackState()
     {
+        if (_isDead) return;
         if (_animator != null)
         {
             _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
@@ -623,6 +631,9 @@ public partial class AstarothController : MonoBehaviour
     private void HandleEnemyDeath(GameObject enemy)
     {
         if (enemy != gameObject) return;
+        if (_isDead) return;
+
+        _isDead = true;
 
         StopCombatLoop();
         StopAllCoroutines();
@@ -646,9 +657,14 @@ public partial class AstarothController : MonoBehaviour
 
         if (_animator != null)
         {
+            _animator.speed = 1f;
+
             _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
             _animator.SetBool(AnimID_InsAttacking, false);
             _animator.SetBool(AnimID_IsRunning, false);
+            _animator.SetBool(AnimID_ExitSA, false);
+
+            _animator.ResetTrigger(AnimID_IsDeath);
             _animator.SetTrigger(AnimID_IsDeath);
         }
 
@@ -659,6 +675,7 @@ public partial class AstarothController : MonoBehaviour
 
     private void CheckHealthThresholds()
     {
+        if (_isDead) return;
         if (_isUsingSpecialAbility || _isSpecialAbilityPending) return;
 
         float healthPercentage = _currentHealth / _maxHealth;

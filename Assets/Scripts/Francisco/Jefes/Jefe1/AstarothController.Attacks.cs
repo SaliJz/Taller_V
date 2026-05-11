@@ -8,6 +8,8 @@ public partial class AstarothController
 
     private IEnumerator WhipAttackSequence()
     {
+        if (_isDead) yield break;
+
         _isAttackingWithWhip = true;
 
         if (_navMeshAgent != null)
@@ -89,6 +91,8 @@ public partial class AstarothController
 
     private IEnumerator SmashAttackSequence()
     {
+        if (_isDead) yield break;
+
         _isSmashing = true;
         _showSmashOverlapGizmo = false;
 
@@ -329,6 +333,8 @@ public partial class AstarothController
 
     private IEnumerator PulsoCarnal()
     {
+        if (_isDead) yield break;
+
         _isUsingSpecialAbility = true;
 
         if (_animator != null)
@@ -402,6 +408,7 @@ public partial class AstarothController
         _isUsingSpecialAbility = false;
         _currentState = BossState.Moving;
 
+        if (_isDead) yield break;
         StartCombatLoop();
     }
 
@@ -511,6 +518,8 @@ public partial class AstarothController
 
     private IEnumerator DefensiveStompSequence()
     {
+        if (_isDead) yield break;
+
         LookAtPlayer();
         SpawnGroundTelegraph(_stompWarningPrefab, transform.position, _stompRadius, _stompTelegraphTime);
 

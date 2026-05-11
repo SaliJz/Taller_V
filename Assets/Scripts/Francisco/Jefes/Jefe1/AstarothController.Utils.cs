@@ -163,6 +163,7 @@ public partial class AstarothController
 
     private void SpawnGroundTelegraph(GameObject prefab, Vector3 centerPosition, float radius, float duration)
     {
+        if (_isDead) return;
         if (prefab == null) return;
 
         Vector3 groundPos = GetGroundPosition(centerPosition);
@@ -174,6 +175,7 @@ public partial class AstarothController
 
     private void ShowDodgeIndicator()
     {
+        if (_isDead) return;
         if (_dodgeIndicatorPrefab == null || _player == null) return;
 
         GameObject indicator = Instantiate(_dodgeIndicatorPrefab, _player.position + Vector3.up * 2f, Quaternion.identity);
@@ -182,6 +184,7 @@ public partial class AstarothController
 
     public void ShakeCamera(float duration, float amplitude, float frequency)
     {
+        if (_isDead) return;
         if (_noise == null) return;
         StartCoroutine(ShakeRoutine(duration, amplitude, frequency));
     }

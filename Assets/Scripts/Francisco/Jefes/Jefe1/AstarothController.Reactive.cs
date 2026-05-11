@@ -29,6 +29,7 @@ public partial class AstarothController
 
     private void InterruptAndPerformDefensiveBlock()
     {
+        if (_isDead) return;
         if (_isDefensiveBlocking) return;
 
         PrepareCombatInterrupt();
@@ -43,6 +44,8 @@ public partial class AstarothController
 
     private IEnumerator DefensiveBlockSequence()
     {
+        if (_isDead) yield break;
+
         _isDefensiveBlocking = true;
         _currentState = BossState.DefensiveBlock;
 
@@ -116,6 +119,8 @@ public partial class AstarothController
         _currentState = BossState.Moving;
 
         _combatPatternStep = _resumeCombatStep;
+        if (_isDead) yield break;
+
         StartCombatLoop();
     }
 
@@ -158,6 +163,8 @@ public partial class AstarothController
 
     private void UpdateMudWaveTrigger(float distanceToPlayer)
     {
+        if (_isDead) return;
+
         if (!_enableMudWave ||
             _isMudWaving ||
             _isDefensiveBlocking ||
@@ -190,6 +197,7 @@ public partial class AstarothController
 
     private void InterruptAndPerformMudWave()
     {
+        if (_isDead) return;
         if (_isMudWaving) return;
 
         PrepareCombatInterrupt();
@@ -204,6 +212,8 @@ public partial class AstarothController
 
     private IEnumerator MudWaveSequence()
     {
+        if (_isDead) yield break;
+
         _isMudWaving = true;
         _currentState = BossState.MudWave;
 
@@ -300,7 +310,9 @@ public partial class AstarothController
         _isMudWaving = false;
         _currentState = BossState.Moving;
 
-        _combatPatternStep = _resumeCombatStep;
+        _combatPatternStep = _resumeCombatStep; 
+        if (_isDead) yield break;
+
         StartCombatLoop();
     }
 
