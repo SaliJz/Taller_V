@@ -23,13 +23,13 @@ public class HUDHandAnimCtrl : MonoBehaviour
 
     Coroutine activeSecuence;
 
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Y))
-        {
-            PlaySmashSecuence();
-        }
-    }
+    // void Update()
+    // {
+    //     if (Input.GetKeyDown(KeyCode.Y))
+    //     {
+    //         PlaySmashSecuence();
+    //     }
+    // }
 
     public void PlaySmashSecuence()
     {

@@ -2082,6 +2082,7 @@ MonoBehaviour:
   gachaponSystem: {fileID: 1770515564534299007}
   cubeRenderer: {fileID: 0}
   activatedMaterial: {fileID: 0}
+  playerDetector: {fileID: 0}
   resultUIPanel: {fileID: 3409109770288190314}
   nameTMP: {fileID: 1898969392483440664}
   effectsTMP: {fileID: 6186486505571813258}
@@ -6115,7 +6116,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8958531820868916137}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 1.7767692, y: -0.28227568, z: 2.4641445}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -6139,8 +6140,9 @@ Transform:
   - {fileID: 3604258492100227222}
   - {fileID: 6209963099825219899}
   - {fileID: 6258059955268400660}
+  - {fileID: 8571573682266234763}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!114 &6730149805877275145
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6369,6 +6371,10 @@ PrefabInstance:
     - target: {fileID: 6105641251403584832, guid: 4ed436f5a38efff4ba2bfd129ac559ea, type: 3}
       propertyPath: m_Name
       value: Nivel2_A1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6105641251403584832, guid: 4ed436f5a38efff4ba2bfd129ac559ea, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6132894804540978351, guid: 4ed436f5a38efff4ba2bfd129ac559ea, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -8156,6 +8162,76 @@ SortingGroup:
   m_SortingLayer: 0
   m_SortingOrder: -1
   m_SortAtRoot: 0
+--- !u!1001 &1640939418328185498
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1348148258309410631}
+    m_Modifications:
+    - target: {fileID: 2676238406565662697, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4467785871486836258, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6931481200564626705, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -13.116593
+      objectReference: {fileID: 0}
+    - target: {fileID: 6931481200564626705, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.839922
+      objectReference: {fileID: 0}
+    - target: {fileID: 6931481200564626705, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 5.0044494
+      objectReference: {fileID: 0}
+    - target: {fileID: 6931481200564626705, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6931481200564626705, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6931481200564626705, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6931481200564626705, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6931481200564626705, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6931481200564626705, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 6931481200564626705, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7744574810633781163, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+      propertyPath: m_Name
+      value: Dressed N2_A1_Test
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+--- !u!4 &8571573682266234763 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6931481200564626705, guid: 573385814d2a31a40858bc925e716d3a, type: 3}
+  m_PrefabInstance: {fileID: 1640939418328185498}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3694932822626434544
 PrefabInstance:
   m_ObjectHideFlags: 0
