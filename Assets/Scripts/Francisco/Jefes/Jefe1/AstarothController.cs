@@ -4,7 +4,6 @@ using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.AI;
 
-// DATA STRUCTURES
 [System.Serializable]
 public struct SmashKeyframe
 {
@@ -14,7 +13,7 @@ public struct SmashKeyframe
     public bool IsTargetable;
 }
 
-public class AstarothController : MonoBehaviour
+public partial class AstarothController : MonoBehaviour
 {
     #region Enums
 
@@ -37,7 +36,6 @@ public class AstarothController : MonoBehaviour
 
     #endregion
 
-    // CONFIGURATION & VARIABLES
     #region State & General Settings
 
     [Header("Boss State")]
@@ -94,13 +92,12 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private int _defensiveBlockHitLimit = 3;
     [SerializeField] private float _defensiveBlockHitWindow = 3f;
     [SerializeField] private float _defensiveBlockInvulnerableDuration = 1.5f;
+    [SerializeField] private float _defensiveBlockExplosionExpandDuration = 0.35f;
     [SerializeField] private float _defensiveBlockExplosionDamage = 15f;
     [SerializeField] private float _defensiveBlockExplosionRadius = 6f;
     [SerializeField] private float _defensiveBlockKnockbackForce = 10f;
-    [SerializeField] private Color _defensiveBlockTint = new Color(0.25f, 0.9f, 1f, 1f);
     [SerializeField] private GameObject _defensiveBlockWarningPrefab;
     [SerializeField] private GameObject _defensiveBlockExplosionPrefab;
-    [SerializeField] private float _defensiveBlockExplosionExpandDuration = 0.35f;
 
     private bool _isDefensiveBlocking;
     private bool _defensiveBlockWindowActive;
@@ -124,12 +121,10 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private float _mudWaveHitRadius = 3f;
     [SerializeField] private float _mudWaveKnockbackForce = 10f;
     [SerializeField] private float _mudWaveAnimatorSpeedMultiplier = 1.8f;
-    [SerializeField] private Color _mudWaveTint = new Color(0.45f, 0.22f, 0.08f, 1f);
     [SerializeField] private GameObject _mudWaveWarningPrefab;
 
     [Header("Ola de Lodo - Wind VFX")]
     [SerializeField] private GameObject _mudWaveWindVFXRoot;
-
 
     private bool _isMudWaving;
     private float _farDistanceTimer;
@@ -144,7 +139,6 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private float _whipHitRadius = 3.5f;
     [SerializeField] private float _Attack1Damage = 9f;
     [SerializeField] private float _attack1Cooldown = 7f;
-    //[SerializeField] private float _whipRange = 25f;
 
     [Header("Attack 1 Timings")]
     [Tooltip("Tiempo de espera antes del 1er golpe")]
@@ -162,7 +156,6 @@ public class AstarothController : MonoBehaviour
     #region Ability: Attack 2 (Smash)
 
     [Header("Attack 2: Latigazo Demoledor")]
-    //[SerializeField] private GameObject _objectToHideDuringSmash;
     [SerializeField] private Transform _smashVisualTransform;
     [SerializeField] private SmashKeyframe[] _smashAnimationKeyframes;
     [SerializeField] private float _Attack2Damage = 25f;
@@ -208,7 +201,7 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private float _pulseDelay = 1.05f;
 
     [Header("Evolución Pulso Carnal")]
-    [SerializeField] private float _speedBuffPerPulse = 0.20f; // 20%
+    [SerializeField] private float _speedBuffPerPulse = 0.20f;
     private float _currentEvolutionMultiplier = 1.0f;
 
     private bool _isUsingSpecialAbility;
@@ -234,9 +227,6 @@ public class AstarothController : MonoBehaviour
     [Header("Dodge Feedback")]
     [SerializeField] private GameObject _dodgeIndicatorPrefab;
     [SerializeField] private float _dodgeIndicatorDuration = 1.5f;
-
-    private Renderer[] _bossRenderers;
-    private Color[] _bossOriginalColors;
 
     #endregion
 
@@ -314,7 +304,6 @@ public class AstarothController : MonoBehaviour
 
     #endregion
 
-    // UNITY LIFECYCLE
     #region Unity Lifecycle
 
     private void Awake()
@@ -323,8 +312,6 @@ public class AstarothController : MonoBehaviour
         if (_navMeshAgent == null) _navMeshAgent = GetComponent<NavMeshAgent>();
         if (_animator == null) _animator = GetComponentInChildren<Animator>();
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
-
-        CacheBossRenderers();
 
         if (_vcam == null)
         {
@@ -349,7 +336,6 @@ public class AstarothController : MonoBehaviour
         else _roomCenter = new Vector3(transform.position.x, 0f, transform.position.z);
 
         if (_trailRenderer != null) _trailRenderer.enabled = false;
-
         if (_mudWaveWindVFXRoot != null) _mudWaveWindVFXRoot.SetActive(false);
 
         if (_player == null)
@@ -394,12 +380,12 @@ public class AstarothController : MonoBehaviour
 
         if (_enemyHealth != null && _enemyHealth.IsStunned)
         {
-            Debug.Log("<color=yellow>[Astaroth] Stunned - Halting actions.</color>");
             if (_navMeshAgent != null && _navMeshAgent.enabled)
             {
                 _navMeshAgent.isStopped = true;
                 _navMeshAgent.velocity = Vector3.zero;
             }
+
             return;
         }
 
@@ -455,7 +441,6 @@ public class AstarothController : MonoBehaviour
 
     #endregion
 
-    // CORE LOGIC
     #region Deterministic Combat Loop
 
     private void StartCombatLoop()
@@ -600,7 +585,6 @@ public class AstarothController : MonoBehaviour
 
     #endregion
 
-    // HEALTH & PHASE MANAGEMENT
     #region Health & Phases
 
     private void HandleDamageReceived()
@@ -650,10 +634,10 @@ public class AstarothController : MonoBehaviour
         _isDefensiveBlocking = false;
         _isMudWaving = false;
 
-        if (_enemyHealth != null) _enemyHealth.enabled = false;
+        if (_enemyHealth != null) _enemyHealth.SetDynamicVulnerability(0f);
+
         StopMudWaveWindVFX();
         DestroyAllInstantiatedEffects();
-        RestoreBossTint();
 
         if (_navMeshAgent != null)
         {
@@ -669,6 +653,8 @@ public class AstarothController : MonoBehaviour
         }
 
         if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
+
+        this.enabled = false;
     }
 
     private void CheckHealthThresholds()
@@ -692,7 +678,6 @@ public class AstarothController : MonoBehaviour
                 _isMudWaving = false;
 
                 StopMudWaveWindVFX();
-                RestoreBossTint();
 
                 if (_enemyHealth != null) _enemyHealth.SetDynamicVulnerability(0f);
 
@@ -714,8 +699,6 @@ public class AstarothController : MonoBehaviour
                 _currentState = BossState.SpecialAbility;
                 StartCoroutine(PulsoCarnal());
                 _specialAbilityUsedCount++;
-
-                Debug.Log($"<color=magenta>[Astaroth] Starting Pulso Carnal!</color>");
             }
         }
 
@@ -729,7 +712,6 @@ public class AstarothController : MonoBehaviour
     {
         _isEnraged = true;
         if (phase2RageSFX != null) AudioSource.PlayClipAtPoint(phase2RageSFX, transform.position);
-        Debug.Log("Astaroth entered ENRAGED phase!");
     }
 
     private void AdjustDifficultyBasedOnPerformance()
@@ -737,1224 +719,6 @@ public class AstarothController : MonoBehaviour
         if (_totalAttemptsExecuted == 0) return;
         _totalAttemptsLanded = 0;
         _totalAttemptsExecuted = 0;
-    }
-
-    #endregion
-
-    // COMBAT LOGIC
-    #region Attack 1 Logic
-
-    private IEnumerator WhipAttackSequence()
-    {
-        _isAttackingWithWhip = true;
-
-        if (_navMeshAgent != null)
-        {
-            _navMeshAgent.isStopped = true;
-            _navMeshAgent.velocity = Vector3.zero;
-        }
-
-        LookAtPlayer();
-
-        if (_animator != null)
-        {
-            _animator.SetBool(AnimID_IsRunning, false);
-            _animator.SetBool(AnimID_InsAttacking, true);
-            _animator.SetInteger(AnimID_Attack, ATTACK_WHIP);
-        }
-
-        if (_whipTelegraphPrefab != null && _whipDamageOrigin != null)
-        {
-            SpawnGroundTelegraph(_whipTelegraphPrefab, _whipDamageOrigin.position, _whipHitRadius, _whipDelay1);
-        }
-
-        yield return new WaitForSeconds(_whipDelay1);
-        PlayWhipSoundCrisp();
-        CheckWhipHitbox("Golpe 1");
-
-        yield return new WaitForSeconds(_whipDelay2);
-        PlayWhipSoundCrisp();
-        CheckWhipHitbox("Golpe 2");
-
-        yield return new WaitForSeconds(_whipDelay3);
-        PlayWhipSoundCrisp();
-        CheckWhipHitbox("Golpe 3");
-
-        yield return new WaitForSeconds(0.6f);
-
-        if (_animator != null)
-        {
-            _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
-            _animator.SetBool(AnimID_InsAttacking, false);
-        }
-
-        _isAttackingWithWhip = false;
-    }
-
-    private void PlayWhipSoundCrisp()
-    {
-        if (audioSource != null && whipAttackSFX != null)
-        {
-            audioSource.Stop();
-            audioSource.pitch = Random.Range(0.95f, 1.05f);
-            audioSource.PlayOneShot(whipAttackSFX);
-        }
-    }
-
-    private void CheckWhipHitbox(string debugHitName)
-    {
-        if (_whipDamageOrigin == null) return;
-
-        Collider[] hits = Physics.OverlapSphere(_whipDamageOrigin.position, _whipHitRadius, LayerMask.GetMask("Player"));
-
-        bool playerHit = false;
-        foreach (var hit in hits)
-        {
-            ExecuteAttack(hit.gameObject, _whipDamageOrigin.position, _Attack1Damage);
-            playerHit = true;
-            _lastWhipHitPlayer = true;
-        }
-
-        if (playerHit)
-        {
-            _totalAttemptsLanded++;
-            Debug.Log($"<color=red>[Astaroth] {debugHitName} CONECTADO.</color>");
-        }
-    }
-
-    #endregion
-
-    #region Attack 2 Logic
-
-    private IEnumerator SmashAttackSequence()
-    {
-        _isSmashing = true;
-        _showSmashOverlapGizmo = false;
-
-        if (_smashVisualTransform != null) _smashVisualTransform.gameObject.SetActive(true);
-        //if (_objectToHideDuringSmash != null) _objectToHideDuringSmash.SetActive(false);
-
-        if (_animator != null)
-        {
-            _animator.SetBool(AnimID_IsRunning, false);
-            _animator.SetBool(AnimID_InsAttacking, true);
-            _animator.SetInteger(AnimID_Attack, ATTACK_SMASH);
-        }
-
-        if (_navMeshAgent != null)
-        {
-            _navMeshAgent.isStopped = true;
-            _navMeshAgent.velocity = Vector3.zero;
-        }
-
-        LookAtPlayer();
-
-        _smashTargetPoint = _player.position;
-        yield return StartCoroutine(TrackSmashGroundIndicator());
-
-        if (audioSource != null && smashAttackSFX != null) audioSource.PlayOneShot(smashAttackSFX);
-
-        HashSet<GameObject> hitByDirectImpact = new HashSet<GameObject>();
-
-        for (int k = 0; k < _smashAnimationKeyframes.Length - 1; k++)
-        {
-            SmashKeyframe startKeyframe = _smashAnimationKeyframes[k];
-            SmashKeyframe endKeyframe = _smashAnimationKeyframes[k + 1];
-
-            if (endKeyframe.IsTargetable)
-            {
-                endKeyframe.Position = transform.InverseTransformPoint(_smashTargetPoint);
-            }
-
-            float segmentDuration = endKeyframe.Time - startKeyframe.Time;
-            if (segmentDuration > 0)
-            {
-                float startTime = Time.time;
-                while (Time.time < startTime + segmentDuration)
-                {
-                    float t = (Time.time - startTime) / segmentDuration;
-                    _smashVisualTransform.localPosition = Vector3.Lerp(startKeyframe.Position, endKeyframe.Position, t);
-                    _smashVisualTransform.localScale = Vector3.Lerp(startKeyframe.Scale, endKeyframe.Scale, t);
-                    CheckDirectRockImpact(hitByDirectImpact);
-                    yield return null;
-                }
-            }
-
-            _smashVisualTransform.localPosition = endKeyframe.Position;
-            _smashVisualTransform.localScale = endKeyframe.Scale;
-
-            if (endKeyframe.IsTargetable) PerformSmashDamage(_smashTargetPoint, hitByDirectImpact);
-        }
-
-        if (_animator != null)
-        {
-            _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
-            _animator.SetBool(AnimID_InsAttacking, false);
-        }
-
-        _isSmashing = false;
-        ResetSmashVisuals();
-    }
-
-    private IEnumerator TrackSmashGroundIndicator()
-    {
-        Transform indicator = _smashGroundIndicator;
-        GameObject createdIndicator = null;
-
-        if (indicator == null && _smashGroundIndicatorPrefab != null)
-        {
-            Vector3 startPosition = GetGroundPosition(_smashTargetPoint);
-            startPosition.y += _smashIndicatorGroundOffset;
-
-            createdIndicator = Instantiate(_smashGroundIndicatorPrefab, startPosition, Quaternion.identity);
-            _instantiatedEffects.Add(createdIndicator);
-            indicator = createdIndicator.transform;
-        }
-
-        if (indicator != null)
-        {
-            indicator.gameObject.SetActive(true);
-            indicator.localScale = new Vector3(_smashRadius * 2f, 0.1f, _smashRadius * 2f);
-        }
-        else
-        {
-            SpawnGroundTelegraph(_smashWarningPrefab, _smashTargetPoint, _smashRadius, _smashDelay);
-            yield return new WaitForSeconds(_smashDelay);
-            yield break;
-        }
-
-        float elapsed = 0f;
-        float lockTime = Mathf.Max(0f, _smashDelay - _smashTargetLockBeforeImpact);
-
-        while (elapsed < _smashDelay)
-        {
-            if (_player != null && elapsed < lockTime)
-            {
-                _smashTargetPoint = _player.position;
-            }
-
-            Vector3 ground = GetGroundPosition(_smashTargetPoint);
-            ground.y += _smashIndicatorGroundOffset;
-            indicator.position = ground;
-
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        if (createdIndicator != null)
-        {
-            Destroy(createdIndicator);
-        }
-        else if (indicator != null)
-        {
-            indicator.gameObject.SetActive(false);
-        }
-    }
-
-    private void ResetSmashVisuals()
-    {
-        if (_smashVisualTransform != null)
-        {
-            _smashVisualTransform.gameObject.SetActive(false);
-            if (_smashAnimationKeyframes != null && _smashAnimationKeyframes.Length > 0)
-            {
-                _smashVisualTransform.localPosition = _smashAnimationKeyframes[0].Position;
-                _smashVisualTransform.localScale = _smashAnimationKeyframes[0].Scale;
-            }
-        }
-
-        if (_smashGroundIndicator != null) _smashGroundIndicator.gameObject.SetActive(false);
-
-        //if (_objectToHideDuringSmash != null) _objectToHideDuringSmash.SetActive(true);
-        _showSmashOverlapGizmo = false;
-    }
-
-    private void CheckDirectRockImpact(HashSet<GameObject> alreadyHit)
-    {
-        Vector3 rockWorldPosition = _smashVisualTransform.position;
-        float rockRadius = _smashVisualTransform.localScale.x * 0.5f;
-        Collider[] nearbyColliders = Physics.OverlapSphere(rockWorldPosition, rockRadius);
-
-        foreach (var col in nearbyColliders)
-        {
-            GameObject entity = col.gameObject;
-            if (entity.CompareTag("Player"))
-            {
-                GameObject playerRoot = entity.transform.root.gameObject;
-                if (alreadyHit.Contains(playerRoot)) continue;
-
-                alreadyHit.Add(playerRoot);
-                if (playerRoot.TryGetComponent<PlayerHealth>(out var health) || entity.TryGetComponent<PlayerHealth>(out health))
-                {
-                    ExecuteAttack(playerRoot, rockWorldPosition, _Attack2Damage);
-                }
-            }
-        }
-    }
-
-    private void PerformSmashDamage(Vector3 damageCenter, HashSet<GameObject> alreadyHitByRock)
-    {
-        _totalAttemptsExecuted++;
-        _lastSmashHitPlayer = false;
-        _lastSmashOverlapCenter = damageCenter;
-        _lastSmashOverlapRadius = _smashRadius;
-        _showSmashOverlapGizmo = true;
-
-        Vector3 smashGroundPosition = GetGroundPosition(damageCenter);
-        smashGroundPosition.y += 0.1f;
-
-        if (_smashRadiusPrefab != null)
-        {
-            GameObject visualEffect = Instantiate(_smashRadiusPrefab, smashGroundPosition, Quaternion.identity);
-            _instantiatedEffects.Add(visualEffect);
-            Destroy(visualEffect, 0.6f);
-            StartCoroutine(ExpandSmashRadiusWithDamage(visualEffect.transform, _smashRadius, smashGroundPosition, alreadyHitByRock));
-        }
-
-        if (!_lastSmashHitPlayer) ShowDodgeIndicator();
-        Invoke("DisableSmashOverlapGizmo", 1f);
-    }
-
-    private void DisableSmashOverlapGizmo() => _showSmashOverlapGizmo = false;
-
-    private IEnumerator ExpandSmashRadiusWithDamage(Transform effectTransform, float targetRadius, Vector3 groundPosition, HashSet<GameObject> alreadyHitByRock)
-    {
-        float duration = 0.5f;
-        float elapsedTime = 0f;
-        Vector3 initialScale = Vector3.zero;
-        Vector3 targetScale = new Vector3(targetRadius * 2, 0.5f, targetRadius * 2);
-
-        HashSet<GameObject> hitByShockwaveEntity = new HashSet<GameObject>();
-
-        while (elapsedTime < duration && effectTransform != null)
-        {
-            elapsedTime += Time.deltaTime;
-            float t = elapsedTime / duration;
-            effectTransform.localScale = Vector3.Lerp(initialScale, targetScale, t);
-
-            float currentRadius = Mathf.Lerp(0f, targetRadius, t);
-            Collider[] hitColliders = Physics.OverlapSphere(groundPosition, currentRadius * 1.2f);
-
-            foreach (var hitCollider in hitColliders)
-            {
-                GameObject entity = hitCollider.transform.root.gameObject;
-                if (alreadyHitByRock.Contains(entity) || hitByShockwaveEntity.Contains(entity)) continue;
-
-                if (entity.CompareTag("Player"))
-                {
-                    float heightDifference = Mathf.Abs(entity.transform.position.y - groundPosition.y);
-                    if (heightDifference < 2f)
-                    {
-                        if (Vector3.Distance(entity.transform.position, groundPosition) <= currentRadius)
-                        {
-                            hitByShockwaveEntity.Add(entity);
-                            ExecuteAttack(entity, groundPosition, _Attack2Damage);
-                            ApplySafeKnockback(entity, groundPosition, 10f);
-                            _lastSmashHitPlayer = true;
-                            _totalAttemptsLanded++;
-                        }
-                    }
-                }
-            }
-
-            yield return null;
-        }
-
-        effectTransform.localScale = targetScale;
-        Destroy(effectTransform.gameObject, 0.5f);
-    }
-
-    #endregion
-
-    #region Special Ability
-
-    private IEnumerator PulsoCarnal()
-    {
-        _isUsingSpecialAbility = true;
-
-        if (_animator != null)
-        {
-            _animator.SetBool(AnimID_IsRunning, true);
-        }
-
-        yield return StartCoroutine(MoveToCenter(_roomCenter));
-
-        if (_navMeshAgent != null)
-        {
-            _navMeshAgent.isStopped = true;
-            _navMeshAgent.velocity = Vector3.zero;
-        }
-
-        if (_animator != null)
-        {
-            _animator.SetBool(AnimID_IsRunning, false);
-            _animator.SetBool(AnimID_ExitSA, false);
-            _animator.SetBool(AnimID_InsAttacking, true);
-            _animator.SetInteger(AnimID_Attack, ATTACK_SPECIAL);
-        }
-
-        yield return new WaitForSeconds(_pulseDelay);
-
-        Vector3 groundPos = GetGroundPosition(transform.position);
-
-        if (_headsTransform != null) yield return StartCoroutine(AnimateHeadDown());
-
-        if (_nervesVisualizationPrefab != null)
-        {
-            GameObject pulseObj = Instantiate(_nervesVisualizationPrefab, groundPos, Quaternion.identity);
-            FleshPulseController pulseController = pulseObj.GetComponent<FleshPulseController>();
-            if (pulseController != null)
-            {
-                pulseController.Initialize(_roomMaxRadius, _pulseExpansionDuration, _pulseDamage, _pulseSlowPercentage, _pulseSlowDuration);
-            }
-
-            _instantiatedEffects.Add(pulseObj);
-        }
-
-        yield return new WaitForSeconds(_pulseExpansionDuration + _pulseWaitDuration);
-
-        if (_headsTransform != null) StartCoroutine(AnimateHeadUp());
-
-        ShakeCamera(_shakeDuration, _amplitude, _frequency);
-
-        if (pulseAttackSFX != null) AudioSource.PlayClipAtPoint(pulseAttackSFX, transform.position);
-
-        if (_crackEffectPrefab != null)
-        {
-            GameObject crackEffect = Instantiate(_crackEffectPrefab, groundPos, Quaternion.identity, null);
-            _instantiatedEffects.Add(crackEffect);
-            Destroy(crackEffect, 2f);
-        }
-
-        ApplyEvolutionBuff();
-        StartCoroutine(BlockAttacksAfterPulse());
-
-        if (_animator != null)
-        {
-            _animator.SetBool(AnimID_ExitSA, true);
-            _animator.SetBool(AnimID_InsAttacking, false);
-            _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
-        }
-
-        yield return new WaitForSeconds(1f);
-
-        if (_animator != null) _animator.SetBool(AnimID_ExitSA, false);
-
-        _isUsingSpecialAbility = false;
-        _currentState = BossState.Moving;
-
-        StartCombatLoop();
-    }
-
-    private void ApplyEvolutionBuff()
-    {
-        _currentEvolutionMultiplier += _speedBuffPerPulse;
-        if (_navMeshAgent != null) _navMeshAgent.speed *= (1f + _speedBuffPerPulse);
-        if (_animator != null) _animator.speed = _currentEvolutionMultiplier;
-        Debug.Log($"<color=purple>[Astaroth] EVOLUCIÓN: Velocidad aumentada. Total: {_currentEvolutionMultiplier}x</color>");
-    }
-
-    private IEnumerator MoveToCenter(Vector3 targetCenter)
-    {
-        if (_navMeshAgent == null || !_navMeshAgent.isOnNavMesh) yield break;
-
-        _navMeshAgent.isStopped = false;
-        _navMeshAgent.speed = _movementSpeedForPulse;
-        _navMeshAgent.SetDestination(targetCenter);
-
-        float safetyTimer = 0f;
-        while (_navMeshAgent.pathPending || _navMeshAgent.remainingDistance > _navMeshAgent.stoppingDistance)
-        {
-            if (_navMeshAgent.remainingDistance == float.PositiveInfinity) break;
-            safetyTimer += Time.deltaTime;
-            if (safetyTimer >= 5f) break;
-            yield return null;
-        }
-
-        _navMeshAgent.speed = _originalSpeed;
-    }
-
-    private IEnumerator AnimateHeadDown()
-    {
-        if (_headsTransform == null) yield break;
-
-        Quaternion start = _headsTransform.localRotation;
-        Quaternion target = start * Quaternion.Euler(_headDownRotationAngle, 0, 0);
-        float elapsed = 0f;
-
-        while (elapsed < _headAnimationDuration)
-        {
-            elapsed += Time.deltaTime;
-            _headsTransform.localRotation = Quaternion.Slerp(start, target, elapsed / _headAnimationDuration);
-            yield return null;
-        }
-
-        _headsTransform.localRotation = target;
-    }
-
-    private IEnumerator AnimateHeadUp()
-    {
-        if (_headsTransform == null) yield break;
-
-        Quaternion start = _headsTransform.localRotation;
-        Quaternion target = Quaternion.identity;
-        float elapsed = 0f;
-
-        while (elapsed < _headAnimationDuration)
-        {
-            elapsed += Time.deltaTime;
-            _headsTransform.localRotation = Quaternion.Slerp(start, target, elapsed / _headAnimationDuration);
-            yield return null;
-        }
-
-        _headsTransform.localRotation = target;
-    }
-
-    private IEnumerator BlockAttacksAfterPulse()
-    {
-        _isPulseAttackBlocked = true;
-        yield return new WaitForSeconds(_postPulseAttackDelay);
-        _isPulseAttackBlocked = false;
-    }
-
-    private void CalculateRoomRadius()
-    {
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position + Vector3.up, Vector3.down, out hit, 10f, LayerMask.GetMask("Ground")))
-        {
-            _roomCenter = hit.collider.bounds.center;
-            _roomCenter.y = transform.position.y;
-            float calculatedRadius = Mathf.Max(hit.collider.bounds.extents.x, hit.collider.bounds.extents.z);
-            if (_calculateRoomRadiusOnStart) _roomMaxRadius = Mathf.Max(5f, calculatedRadius - 2f);
-        }
-        else
-        {
-            _roomCenter = transform.position;
-            if (_calculateRoomRadiusOnStart) _roomMaxRadius = 25f;
-        }
-    }
-
-    #endregion
-
-    #region Defensive Stomp
-
-    private void InterruptAndPerformStomp()
-    {
-        Debug.Log($"<color=red>[Astaroth] INTERRUPCIÓN INMEDIATA: Pisotón.</color>");
-
-        PrepareCombatInterrupt();
-        DestroyAllInstantiatedEffects();
-        ResetSmashVisuals();
-
-        _currentState = BossState.Attacking;
-        _isStomping = true;
-        _stompTimer = _stompCooldown;
-
-        StartCoroutine(DefensiveStompSequence());
-    }
-
-    private IEnumerator DefensiveStompSequence()
-    {
-        LookAtPlayer();
-        SpawnGroundTelegraph(_stompWarningPrefab, transform.position, _stompRadius, _stompTelegraphTime);
-
-        yield return new WaitForSeconds(_stompTelegraphTime);
-
-        PerformStompImpact();
-        OpenDefensiveBlockWindow();
-
-        yield return new WaitForSeconds(0.5f);
-
-        _isStomping = false;
-
-        _currentState = BossState.Moving;
-        if (_navMeshAgent != null && _navMeshAgent.enabled) _navMeshAgent.isStopped = false;
-
-        _combatPatternStep = _resumeCombatStep;
-        StartCombatLoop();
-    }
-
-    private void PerformStompImpact()
-    {
-        if (audioSource != null && stompSFX != null) audioSource.PlayOneShot(stompSFX);
-        if (_stompVFXPrefab != null) Instantiate(_stompVFXPrefab, transform.position, Quaternion.identity);
-
-        ShakeCamera(0.3f, 2f, 2f);
-
-        Collider[] colliders = Physics.OverlapSphere(transform.position, _stompRadius, LayerMask.GetMask("Player"));
-        foreach (var col in colliders)
-        {
-            GameObject target = col.gameObject;
-            if (_enableStompDamage) ExecuteAttack(target, transform.position, _stompDamage);
-            ApplySafeKnockback(target, transform.position, 10f);
-        }
-    }
-
-    #endregion
-
-    #region Defensive Block
-
-    private void OpenDefensiveBlockWindow()
-    {
-        if (!_enableDefensiveBlock) return;
-
-        _defensiveBlockWindowActive = true;
-        _hitsAfterStomp = 0;
-        _defensiveBlockWindowStart = Time.time;
-    }
-
-    private void UpdateDefensiveBlockWindow()
-    {
-        if (!_defensiveBlockWindowActive) return;
-
-        if (Time.time - _defensiveBlockWindowStart > _defensiveBlockHitWindow)
-        {
-            _defensiveBlockWindowActive = false;
-            _hitsAfterStomp = 0;
-        }
-    }
-
-    private void InterruptAndPerformDefensiveBlock()
-    {
-        if (_isDefensiveBlocking) return;
-
-        PrepareCombatInterrupt();
-        DestroyAllInstantiatedEffects();
-        ResetSmashVisuals();
-
-        _defensiveBlockWindowActive = false;
-        _hitsAfterStomp = 0;
-
-        StartCoroutine(DefensiveBlockSequence());
-    }
-
-    private IEnumerator DefensiveBlockSequence()
-    {
-        _isDefensiveBlocking = true;
-        _currentState = BossState.DefensiveBlock;
-
-        Vector3 blockCenter = transform.position;
-        Vector3 warningCenter = GetGroundPosition(blockCenter);
-
-        if (_navMeshAgent != null && _navMeshAgent.enabled)
-        {
-            _navMeshAgent.isStopped = true;
-            _navMeshAgent.velocity = Vector3.zero;
-            _navMeshAgent.ResetPath();
-        }
-
-        if (_enemyHealth != null) _enemyHealth.SetDynamicVulnerability(1f);
-
-        GameObject warning = null;
-        if (_defensiveBlockWarningPrefab != null)
-        {
-            warning = Instantiate(_defensiveBlockWarningPrefab, warningCenter, Quaternion.identity);
-            warning.transform.localScale = new Vector3(
-                _defensiveBlockExplosionRadius * 2f,
-                0.1f,
-                _defensiveBlockExplosionRadius * 2f
-            );
-            _instantiatedEffects.Add(warning);
-        }
-
-        float waitTimer = 0f;
-        while (waitTimer < _defensiveBlockInvulnerableDuration)
-        {
-            if (_navMeshAgent != null && _navMeshAgent.enabled)
-            {
-                _navMeshAgent.isStopped = true;
-                _navMeshAgent.velocity = Vector3.zero;
-            }
-
-            transform.position = blockCenter;
-
-            waitTimer += Time.deltaTime;
-            yield return null;
-        }
-
-        if (warning != null)
-        {
-            _instantiatedEffects.Remove(warning);
-            Destroy(warning);
-        }
-
-        GameObject explosion = null;
-        if (_defensiveBlockExplosionPrefab != null)
-        {
-            explosion = Instantiate(_defensiveBlockExplosionPrefab, blockCenter, Quaternion.identity);
-            explosion.transform.localScale = Vector3.zero;
-            _instantiatedEffects.Add(explosion);
-        }
-
-        ShakeCamera(0.3f, 2.5f, 2f);
-
-        yield return StartCoroutine(ExpandDefensiveBlockExplosion(explosion, blockCenter));
-
-        if (explosion != null)
-        {
-            _instantiatedEffects.Remove(explosion);
-            Destroy(explosion, 0.2f);
-        }
-
-        if (_enemyHealth != null) _enemyHealth.SetDynamicVulnerability(0f);
-
-        if (_navMeshAgent != null && _navMeshAgent.enabled)
-        {
-            _navMeshAgent.Warp(blockCenter);
-            _navMeshAgent.isStopped = false;
-        }
-
-        _isDefensiveBlocking = false;
-        _currentState = BossState.Moving;
-
-        _combatPatternStep = _resumeCombatStep;
-        StartCombatLoop();
-    }
-
-    private IEnumerator ExpandDefensiveBlockExplosion(GameObject explosion, Vector3 blockCenter)
-    {
-        float elapsed = 0f;
-        HashSet<GameObject> damagedTargets = new HashSet<GameObject>();
-
-        while (elapsed < _defensiveBlockExplosionExpandDuration)
-        {
-            if (_navMeshAgent != null && _navMeshAgent.enabled)
-            {
-                _navMeshAgent.isStopped = true;
-                _navMeshAgent.velocity = Vector3.zero;
-            }
-
-            transform.position = blockCenter;
-
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / _defensiveBlockExplosionExpandDuration);
-            float currentRadius = Mathf.Lerp(0f, _defensiveBlockExplosionRadius, t);
-
-            if (explosion != null)
-            {
-                explosion.transform.position = blockCenter;
-                explosion.transform.localScale = Vector3.one * (currentRadius * 2f);
-            }
-
-            DealAreaDamageOnce(blockCenter, currentRadius, _defensiveBlockExplosionDamage, _defensiveBlockKnockbackForce, damagedTargets);
-
-            yield return null;
-        }
-
-        DealAreaDamageOnce(blockCenter, _defensiveBlockExplosionRadius, _defensiveBlockExplosionDamage, _defensiveBlockKnockbackForce, damagedTargets);
-    }
-
-    #endregion
-
-    #region Mud Wave
-
-    private void UpdateMudWaveTrigger(float distanceToPlayer)
-    {
-        if (!_enableMudWave ||
-            _isMudWaving ||
-            _isDefensiveBlocking ||
-            _isStomping ||
-            _isAttackingWithWhip ||
-            _isSmashing ||
-            _currentState == BossState.Attacking ||
-            _currentState == BossState.SpecialAbility)
-        {
-            _farDistanceTimer = 0f;
-            return;
-        }
-
-        if (_mudWaveCooldownTimer > 0f) _mudWaveCooldownTimer -= Time.deltaTime;
-
-        if (distanceToPlayer > _mudWaveTriggerDistance)
-        {
-            _farDistanceTimer += Time.deltaTime;
-
-            if (_farDistanceTimer >= _mudWaveFleeDuration && _mudWaveCooldownTimer <= 0f)
-            {
-                InterruptAndPerformMudWave();
-            }
-        }
-        else
-        {
-            _farDistanceTimer = 0f;
-        }
-    }
-
-    private void InterruptAndPerformMudWave()
-    {
-        if (_isMudWaving) return;
-
-        PrepareCombatInterrupt();
-        DestroyAllInstantiatedEffects();
-        ResetSmashVisuals();
-
-        _farDistanceTimer = 0f;
-        _mudWaveCooldownTimer = _mudWaveCooldown;
-
-        StartCoroutine(MudWaveSequence());
-    }
-
-    private IEnumerator MudWaveSequence()
-    {
-        _isMudWaving = true;
-        _currentState = BossState.MudWave;
-
-        if (_player == null || _navMeshAgent == null || !_navMeshAgent.enabled || !_navMeshAgent.isOnNavMesh)
-        {
-            _isMudWaving = false;
-            StartCombatLoop();
-            yield break;
-        }
-
-        Vector3 chargeDirection = _player.position - transform.position;
-        chargeDirection.y = 0f;
-        chargeDirection = chargeDirection.sqrMagnitude > 0.01f ? chargeDirection.normalized : transform.forward;
-
-        Vector3 chargeTarget = GetMudWaveChargeTarget(transform.position, _player.position, chargeDirection);
-        float chargeDistance = Vector3.Distance(transform.position, chargeTarget);
-
-        transform.rotation = Quaternion.LookRotation(chargeDirection);
-        SetBossTint(_mudWaveTint);
-
-        if (_mudWaveWarningPrefab != null)
-        {
-            Vector3 warningPosition = GetGroundPosition(transform.position + chargeDirection * (chargeDistance * 0.5f));
-            GameObject warning = Instantiate(_mudWaveWarningPrefab, warningPosition, Quaternion.LookRotation(chargeDirection));
-            warning.transform.localScale = new Vector3(_mudWaveHitRadius * 2f, 0.1f, chargeDistance);
-            _instantiatedEffects.Add(warning);
-            Destroy(warning, _mudWaveWarningTime);
-        }
-
-        yield return new WaitForSeconds(_mudWaveWarningTime);
-
-        float previousAnimatorSpeed = 1f;
-        if (_animator != null)
-        {
-            previousAnimatorSpeed = _animator.speed;
-            _animator.speed = previousAnimatorSpeed * _mudWaveAnimatorSpeedMultiplier;
-            _animator.SetBool(AnimID_IsRunning, true);
-        }
-
-        PlayMudWaveWindVFX();
-
-        _navMeshAgent.ResetPath();
-        _navMeshAgent.updateRotation = false;
-        _navMeshAgent.isStopped = true;
-        _navMeshAgent.velocity = Vector3.zero;
-
-        HashSet<GameObject> hitPlayers = new HashSet<GameObject>();
-        float safetyTimer = 0f;
-        float maxChargeTime = Mathf.Max(0.35f, chargeDistance / Mathf.Max(1f, _mudWaveChargeSpeed) + 0.1f);
-
-        Vector3 startPosition = transform.position;
-        Vector3 finalTarget = chargeTarget;
-
-        while (safetyTimer < maxChargeTime)
-        {
-            float step = _mudWaveChargeSpeed * Time.deltaTime;
-            Vector3 nextPosition = Vector3.MoveTowards(transform.position, finalTarget, step);
-
-            if (NavMesh.SamplePosition(nextPosition, out NavMeshHit sampleHit, 1f, NavMesh.AllAreas))
-            {
-                transform.position = sampleHit.position;
-            }
-            else
-            {
-                break;
-            }
-
-            transform.rotation = Quaternion.LookRotation(chargeDirection);
-
-            CheckMudWaveHit(hitPlayers);
-
-            if (Vector3.Distance(transform.position, finalTarget) <= 0.2f)
-            {
-                break;
-            }
-
-            safetyTimer += Time.deltaTime;
-            yield return null;
-        }
-
-        CheckMudWaveHit(hitPlayers);
-
-        StopMudWaveWindVFX();
-
-        if (_animator != null)
-        {
-            _animator.speed = previousAnimatorSpeed;
-            _animator.SetBool(AnimID_IsRunning, false);
-        }
-
-        _navMeshAgent.Warp(transform.position);
-        _navMeshAgent.speed = _originalSpeed;
-        _navMeshAgent.updateRotation = true;
-        _navMeshAgent.isStopped = false;
-
-        RestoreBossTint();
-
-        _isMudWaving = false;
-        _currentState = BossState.Moving;
-
-        _combatPatternStep = _resumeCombatStep;
-        StartCombatLoop();
-    }
-
-    private Vector3 GetMudWaveChargeTarget(Vector3 origin, Vector3 playerPosition, Vector3 direction)
-    {
-        Vector3 flatPlayerPosition = new Vector3(playerPosition.x, origin.y, playerPosition.z);
-        float distanceToPlayer = Vector3.Distance(origin, flatPlayerPosition);
-        float desiredDistance = Mathf.Max(_mudWaveMinChargeDistance, distanceToPlayer + _mudWaveOvershootDistance);
-
-        return GetSafeNavMeshChargeTarget(origin, direction, desiredDistance);
-    }
-
-    private Vector3 GetSafeNavMeshChargeTarget(Vector3 origin, Vector3 direction, float distance)
-    {
-        Vector3 desiredTarget = origin + direction * distance;
-
-        if (NavMesh.Raycast(origin, desiredTarget, out NavMeshHit navHit, NavMesh.AllAreas))
-        {
-            desiredTarget = navHit.position - direction * 0.5f;
-        }
-
-        if (NavMesh.SamplePosition(desiredTarget, out NavMeshHit sampleHit, 2f, NavMesh.AllAreas))
-        {
-            return sampleHit.position;
-        }
-
-        return origin;
-    }
-
-    private void CheckMudWaveHit(HashSet<GameObject> hitPlayers)
-    {
-        Collider[] hits = Physics.OverlapSphere(transform.position, _mudWaveHitRadius, LayerMask.GetMask("Player"));
-
-        foreach (var hit in hits)
-        {
-            GameObject target = hit.transform.root != null ? hit.transform.root.gameObject : hit.gameObject;
-            if (hitPlayers.Contains(target)) continue;
-
-            hitPlayers.Add(target);
-            ExecuteAttack(target, transform.position, _mudWaveDamage);
-            ApplySafeKnockback(target, transform.position, _mudWaveKnockbackForce);
-        }
-    }
-
-    private void PlayMudWaveWindVFX()
-    {
-        if (_mudWaveWindVFXRoot == null) return;
-
-        _mudWaveWindVFXRoot.SetActive(true);
-
-        ParticleSystem[] particles = _mudWaveWindVFXRoot.GetComponentsInChildren<ParticleSystem>(true);
-        foreach (ParticleSystem ps in particles)
-        {
-            if (ps == null) continue;
-            ps.Clear(true);
-            ps.Play(true);
-        }
-    }
-
-    private void StopMudWaveWindVFX()
-    {
-        if (_mudWaveWindVFXRoot == null) return;
-
-        ParticleSystem[] particles = _mudWaveWindVFXRoot.GetComponentsInChildren<ParticleSystem>(true);
-        foreach (ParticleSystem ps in particles)
-        {
-            if (ps == null) continue;
-            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        }
-
-        _mudWaveWindVFXRoot.SetActive(false);
-    }
-
-    #endregion
-
-    // SYSTEMS & HELPERS
-    #region Audio System
-
-    private void HandleAudioLoop()
-    {
-        if (_navMeshAgent == null || !_navMeshAgent.enabled) return;
-
-        bool isMoving = !_navMeshAgent.isStopped && _navMeshAgent.velocity.sqrMagnitude > 0.5f;
-
-        if (isMoving)
-        {
-            _audioStepTimer += Time.deltaTime;
-            if (_audioStepTimer >= 1f)
-            {
-                if (audioSource != null && walkSFX != null) audioSource.PlayOneShot(walkSFX, 0.5f);
-                _audioStepTimer = 0f;
-            }
-
-            _audioIdleTimer = 0f;
-        }
-        else
-        {
-            _audioIdleTimer += Time.deltaTime;
-            if (_audioIdleTimer >= _audioIdleInterval)
-            {
-                if (audioSource != null && presenceSFX != null) audioSource.PlayOneShot(presenceSFX);
-                _audioIdleTimer = 0f;
-                _audioIdleInterval = Random.Range(5f, 9f);
-            }
-        }
-    }
-
-    #endregion
-
-    #region Movement & Orientation Helpers
-
-    private void LookAtPlayer()
-    {
-        if (_player == null || _navMeshAgent == null) return;
-
-        Vector3 direction = (_player.position - transform.position).normalized;
-        direction.y = 0;
-
-        if (direction != Vector3.zero)
-        {
-            Quaternion lookRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * _navMeshAgent.angularSpeed);
-        }
-    }
-
-    private Vector3 GetGroundPosition(Vector3 rayOrigin)
-    {
-        RaycastHit hit;
-        if (Physics.Raycast(rayOrigin + Vector3.up * 2f, Vector3.down, out hit, 30f, LayerMask.GetMask("Ground")))
-        {
-            return hit.point + Vector3.up * 0.01f;
-        }
-
-        return new Vector3(rayOrigin.x, 0.01f, rayOrigin.z);
-    }
-
-    #endregion
-
-    #region Combat Systems
-
-    private void DealAreaDamageOnce(Vector3 center, float radius, float damage, float knockbackForce, HashSet<GameObject> damagedTargets)
-    {
-        Collider[] hits = Physics.OverlapSphere(center, radius, LayerMask.GetMask("Player"));
-
-        foreach (var hit in hits)
-        {
-            GameObject target = hit.transform.root != null ? hit.transform.root.gameObject : hit.gameObject;
-            if (damagedTargets.Contains(target)) continue;
-
-            damagedTargets.Add(target);
-            ExecuteAttack(target, center, damage);
-            ApplySafeKnockback(target, center, knockbackForce);
-        }
-    }
-
-
-    private void ExecuteAttack(GameObject target, Vector3 position, float damageAmount)
-    {
-        if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
-        {
-            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(position))
-            {
-                float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
-                if (remainingDamage > 0f) health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
-                return;
-            }
-
-            health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
-        }
-        else if (target.TryGetComponent<PlayerHealth>(out var healthOnly))
-        {
-            healthOnly.TakeDamage(damageAmount, false, AttackDamageType.Melee);
-        }
-    }
-
-    private void DealAreaDamage(Vector3 center, float radius, float damage, float knockbackForce)
-    {
-        Collider[] hits = Physics.OverlapSphere(center, radius, LayerMask.GetMask("Player"));
-
-        HashSet<GameObject> damagedTargets = new HashSet<GameObject>();
-        foreach (var hit in hits)
-        {
-            GameObject target = hit.transform.root != null ? hit.transform.root.gameObject : hit.gameObject;
-            if (damagedTargets.Contains(target)) continue;
-
-            damagedTargets.Add(target);
-            ExecuteAttack(target, center, damage);
-            ApplySafeKnockback(target, center, knockbackForce);
-        }
-    }
-
-    private void ApplySafeKnockback(GameObject target, Vector3 explosionCenter, float force)
-    {
-        PlayerMovement playerMove = target.GetComponent<PlayerMovement>();
-        if (playerMove != null && playerMove.IsDashing) return;
-
-        Vector3 direction = (target.transform.position - explosionCenter).normalized;
-        direction.y = 0f;
-
-        CharacterController cc = target.GetComponent<CharacterController>();
-        if (cc != null)
-        {
-            StartCoroutine(KnockbackCCRoutine(cc, direction, force, 0.5f, playerMove));
-            return;
-        }
-
-        Rigidbody rb = target.GetComponent<Rigidbody>();
-        if (rb != null && !rb.isKinematic)
-        {
-            rb.linearVelocity = Vector3.zero;
-            rb.AddForce(direction * force, ForceMode.Impulse);
-        }
-    }
-
-    private IEnumerator KnockbackCCRoutine(CharacterController cc, Vector3 direction, float force, float duration, PlayerMovement playerMove = null)
-    {
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            if (cc == null) yield break;
-            if (playerMove != null && playerMove.IsDashing) yield break;
-
-            if (cc.enabled) cc.SimpleMove(direction * force);
-
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-    }
-
-    #endregion
-
-    #region Visuals & Feedback Helpers
-
-    private void SpawnGroundTelegraph(GameObject prefab, Vector3 centerPosition, float radius, float duration)
-    {
-        if (prefab == null) return;
-
-        Vector3 groundPos = GetGroundPosition(centerPosition);
-        GameObject instance = Instantiate(prefab, groundPos, Quaternion.identity);
-        _instantiatedEffects.Add(instance);
-        instance.transform.localScale = new Vector3(radius * 2f, 0.1f, radius * 2f);
-        Destroy(instance, duration);
-    }
-
-    private void ShowDodgeIndicator()
-    {
-        if (_dodgeIndicatorPrefab == null || _player == null) return;
-
-        GameObject indicator = Instantiate(_dodgeIndicatorPrefab, _player.position + Vector3.up * 2f, Quaternion.identity);
-        Destroy(indicator, _dodgeIndicatorDuration);
-    }
-
-    public void ShakeCamera(float duration, float amplitude, float frequency)
-    {
-        if (_noise == null) return;
-        StartCoroutine(ShakeRoutine(duration, amplitude, frequency));
-    }
-
-    private IEnumerator ShakeRoutine(float duration, float amplitude, float frequency)
-    {
-        _noise.AmplitudeGain = amplitude;
-        _noise.FrequencyGain = frequency;
-        yield return new WaitForSeconds(duration);
-        _noise.AmplitudeGain = 0f;
-        _noise.FrequencyGain = 0f;
-    }
-
-    private void DestroyAllInstantiatedEffects()
-    {
-        foreach (GameObject effect in _instantiatedEffects)
-        {
-            if (effect != null) Destroy(effect);
-        }
-
-        _instantiatedEffects.Clear();
-    }
-
-    private void CacheBossRenderers()
-    {
-        _bossRenderers = GetComponentsInChildren<Renderer>();
-        _bossOriginalColors = new Color[_bossRenderers.Length];
-
-        for (int i = 0; i < _bossRenderers.Length; i++)
-        {
-            Material mat = _bossRenderers[i].material;
-            _bossOriginalColors[i] = mat.HasProperty("_Color") ? mat.color : Color.white;
-        }
-    }
-
-    private void SetBossTint(Color tint)
-    {
-        if (_bossRenderers == null) return;
-
-        for (int i = 0; i < _bossRenderers.Length; i++)
-        {
-            if (_bossRenderers[i] == null) continue;
-
-            Material mat = _bossRenderers[i].material;
-            if (mat.HasProperty("_Color")) mat.color = tint;
-        }
-    }
-
-    private void RestoreBossTint()
-    {
-        if (_bossRenderers == null || _bossOriginalColors == null) return;
-
-        for (int i = 0; i < _bossRenderers.Length; i++)
-        {
-            if (_bossRenderers[i] == null) continue;
-
-            Material mat = _bossRenderers[i].material;
-            if (mat.HasProperty("_Color")) mat.color = _bossOriginalColors[i];
-        }
-    }
-
-    #endregion
-
-    #region Gizmos
-
-    private void OnDrawGizmos()
-    {
-        if (_whipDamageOrigin != null)
-        {
-            Gizmos.color = new Color(1f, 0f, 0f, 0.4f);
-            Gizmos.DrawWireSphere(_whipDamageOrigin.position, _whipHitRadius);
-        }
-
-        if (_showSmashOverlapGizmo)
-        {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(_lastSmashOverlapCenter, _lastSmashOverlapRadius);
-        }
-
-        if (_showRoomGizmos)
-        {
-            Gizmos.color = new Color(1, 0, 1, 0.3f);
-            Gizmos.DrawSphere(_roomCenter, 0.5f);
-            Gizmos.DrawWireSphere(_roomCenter, _roomMaxRadius);
-        }
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        if (Application.isPlaying)
-        {
-            Gizmos.color = Color.blue;
-            Gizmos.DrawWireSphere(transform.position, _smashDetectionRadius);
-
-            Gizmos.color = new Color(0.45f, 0.22f, 0.08f, 0.5f);
-            Gizmos.DrawWireSphere(transform.position, _mudWaveTriggerDistance);
-
-            Gizmos.color = new Color(0.8f, 0.55f, 0.2f, 0.5f);
-            Gizmos.DrawRay(transform.position, transform.forward * _mudWaveMinChargeDistance);
-
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawWireSphere(transform.position, _defensiveBlockExplosionRadius);
-        }
     }
 
     #endregion
