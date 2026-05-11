@@ -370,38 +370,56 @@ public class ShopManager : MonoBehaviour
         }
 
         List<GameObject> prefabsToSpawn = new List<GameObject>();
-
-        int itemsToSelectCount = Mathf.Min(spawnLocations.Count, availablePrefabs.Count);
-        int guaranteedMechanicCount = minimumMechanicItems <= 0
-            ? 0
-            : Mathf.Min(minimumMechanicItems, itemsToSelectCount);
+        int itemsToSelectCount = Mathf.Min(spawnLocations.Count, availablePrefabs.Count); 
 
         List<GameObject> mechanicPool = availablePrefabs
             .Where(p => p != null && p.GetComponent<ShopItemDisplay>()?.shopItemData?.IsEffectItem == true)
             .ToList();
 
-        for (int i = 0; i < guaranteedMechanicCount && mechanicPool.Count > 0; i++)
-        {
-            GameObject picked = SelectWeightedPrefab(mechanicPool);
-            if (picked == null) break;
-
-            prefabsToSpawn.Add(picked);
-            availablePrefabs.Remove(picked);
-            mechanicPool.Remove(picked);
-        }
-
-        List<GameObject> remainingPool = availablePrefabs
-            .Where(p => !prefabsToSpawn.Contains(p))
+        List<GameObject> passivePool = availablePrefabs
+            .Where(p => p != null && p.GetComponent<ShopItemDisplay>()?.shopItemData?.IsEffectItem == false)
             .ToList();
 
-        while (prefabsToSpawn.Count < itemsToSelectCount && remainingPool.Count > 0)
-        {
-            GameObject picked = SelectWeightedPrefab(remainingPool);
-            if (picked == null) break;
+        int mechanicItemsGenerated = 0;
 
-            prefabsToSpawn.Add(picked);
-            availablePrefabs.Remove(picked);
-            remainingPool.Remove(picked);
+        for (int i = 0; i < itemsToSelectCount; i++)
+        {
+            bool spawnMechanic = false;
+
+            if (mechanicItemsGenerated >= 2)
+            {
+                spawnMechanic = false;
+            }
+            else
+            {
+                float categoryRoll = Random.Range(0f, 100f);
+                if (categoryRoll <= 40f && mechanicPool.Count > 0)
+                {
+                    spawnMechanic = true;
+                }
+            }
+
+            List<GameObject> targetPool = spawnMechanic ? mechanicPool : passivePool;
+
+            if (targetPool.Count == 0)
+            {
+                targetPool = spawnMechanic ? passivePool : mechanicPool;
+                spawnMechanic = !spawnMechanic;
+            }
+
+            GameObject picked = SelectWeightedPrefab(targetPool);
+
+            if (picked != null)
+            {
+                prefabsToSpawn.Add(picked);
+                availablePrefabs.Remove(picked); 
+                targetPool.Remove(picked);      
+
+                if (spawnMechanic)
+                {
+                    mechanicItemsGenerated++;
+                }
+            }
         }
 
         for (int i = 0; i < prefabsToSpawn.Count; i++)
