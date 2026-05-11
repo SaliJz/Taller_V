@@ -8653,7 +8653,7 @@ MonoBehaviour:
   prefabList: []
   spawnKey: 114
   specificEntries:
-  - prefab: {fileID: 9105253917218681239, guid: 23e725f00087afe40a42b0cf25ff3671, type: 3}
+  - prefab: {fileID: 5831055655091660515, guid: db61f8b233d91b04ab5cdafa8b9b0a29, type: 3}
     key: 109
   - prefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
     key: 55
@@ -9620,9 +9620,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   statsManager: {fileID: 1871913946}
-  playerMeleeAttack: {fileID: 0}
-  playerShieldController: {fileID: 0}
-  playerAudioController: {fileID: 0}
+  audioController: {fileID: 0}
+  shaderCtrl: {fileID: 0}
+  visualModelObject: {fileID: 0}
+  warningMessagePrefab: {fileID: 0}
   maxStamina: 100
   baseStaminaDrainRate: 10
   staminaRechargeRate: 20
@@ -9649,10 +9650,9 @@ MonoBehaviour:
     ToughnessDamageMultiplier: 1
     HealthDrainAmount: 1
     DisableShieldThrow: 1
-  visualModelObject: {fileID: 0}
+  manageOutlineVFX: 1
   skillActiveMaterial: {fileID: 0}
   skillExhaustedMaterial: {fileID: 0}
-  warningMessagePrefab: {fileID: 0}
   warningMessageText: "*Tos* *Tos*\n\xA1No puedo m\xE1s!"
   warningMessageColor: {r: 1, g: 0, b: 0, a: 1}
   warningMessageOffset: 2.5
@@ -12030,10 +12030,6 @@ PrefabInstance:
     - target: {fileID: 6679960082821164706, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_IsActive
       value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8984845218185550205, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
-      propertyPath: youngBuffs.MoveMultiplier
-      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 9211243997880812482, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: baseSpeedReference

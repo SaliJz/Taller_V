@@ -17,12 +17,24 @@ public struct SmashKeyframe
 public class AstarothController : MonoBehaviour
 {
     #region Enums
+
     public enum BossState
     {
         Moving,
         Attacking,
-        SpecialAbility
+        SpecialAbility,
+        DefensiveBlock,
+        MudWave
     }
+
+    private enum CombatPatternStep
+    {
+        Whip,
+        ShortMove,
+        Smash,
+        LongMove
+    }
+
     #endregion
 
     // CONFIGURATION & VARIABLES
@@ -33,6 +45,8 @@ public class AstarothController : MonoBehaviour
 
     private Coroutine _combatLoopCoroutine;
     private bool _isCombatLoopActive = false;
+    private CombatPatternStep _combatPatternStep = CombatPatternStep.Whip;
+    private CombatPatternStep _resumeCombatStep = CombatPatternStep.Whip;
 
     [Header("Player Settings")]
     [SerializeField] private Transform _player;
@@ -67,8 +81,59 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private float _stompRadius = 5f;
     [SerializeField] private float _stompTelegraphTime = 0.6f;
     [SerializeField] private GameObject _stompVFXPrefab;
+
     private float _stompTimer = 0f;
     private bool _isStomping = false;
+
+    #endregion
+
+    #region Ability: Defensive Block
+
+    [Header("Ability: Bloqueo Defensivo")]
+    [SerializeField] private bool _enableDefensiveBlock = true;
+    [SerializeField] private int _defensiveBlockHitLimit = 3;
+    [SerializeField] private float _defensiveBlockHitWindow = 3f;
+    [SerializeField] private float _defensiveBlockInvulnerableDuration = 1.5f;
+    [SerializeField] private float _defensiveBlockExplosionDamage = 15f;
+    [SerializeField] private float _defensiveBlockExplosionRadius = 6f;
+    [SerializeField] private float _defensiveBlockKnockbackForce = 10f;
+    [SerializeField] private Color _defensiveBlockTint = new Color(0.25f, 0.9f, 1f, 1f);
+    [SerializeField] private GameObject _defensiveBlockWarningPrefab;
+    [SerializeField] private GameObject _defensiveBlockExplosionPrefab;
+    [SerializeField] private float _defensiveBlockExplosionExpandDuration = 0.35f;
+
+    private bool _isDefensiveBlocking;
+    private bool _defensiveBlockWindowActive;
+    private int _hitsAfterStomp;
+    private float _defensiveBlockWindowStart;
+
+    #endregion
+
+    #region Ability: Mud Wave
+
+    [Header("Ability: Ola de Lodo")]
+    [SerializeField] private bool _enableMudWave = true;
+    [SerializeField] private float _mudWaveTriggerDistance = 12f;
+    [SerializeField] private float _mudWaveFleeDuration = 1.2f;
+    [SerializeField] private float _mudWaveChargeSpeed = 34f;
+    [SerializeField] private float _mudWaveMinChargeDistance = 24f;
+    [SerializeField] private float _mudWaveOvershootDistance = 10f;
+    [SerializeField] private float _mudWaveCooldown = 7f;
+    [SerializeField] private float _mudWaveWarningTime = 0.25f;
+    [SerializeField] private float _mudWaveDamage = 15f;
+    [SerializeField] private float _mudWaveHitRadius = 3f;
+    [SerializeField] private float _mudWaveKnockbackForce = 10f;
+    [SerializeField] private float _mudWaveAnimatorSpeedMultiplier = 1.8f;
+    [SerializeField] private Color _mudWaveTint = new Color(0.45f, 0.22f, 0.08f, 1f);
+    [SerializeField] private GameObject _mudWaveWarningPrefab;
+
+    [Header("Ola de Lodo - Wind VFX")]
+    [SerializeField] private GameObject _mudWaveWindVFXRoot;
+
+
+    private bool _isMudWaving;
+    private float _farDistanceTimer;
+    private float _mudWaveCooldownTimer;
 
     #endregion
 
@@ -106,6 +171,12 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private float _smashDetectionRadius = 10f;
     [SerializeField] private GameObject _smashRadiusPrefab;
     [SerializeField] private float _smashDelay = 1.5f;
+
+    [Header("Attack 2 Ground Indicator")]
+    [SerializeField] private Transform _smashGroundIndicator;
+    [SerializeField] private GameObject _smashGroundIndicatorPrefab;
+    [SerializeField] private float _smashTargetLockBeforeImpact = 0.5f;
+    [SerializeField] private float _smashIndicatorGroundOffset = 0.05f;
 
     private bool _isSmashing;
     private Vector3 _smashTargetPoint;
@@ -164,6 +235,9 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private GameObject _dodgeIndicatorPrefab;
     [SerializeField] private float _dodgeIndicatorDuration = 1.5f;
 
+    private Renderer[] _bossRenderers;
+    private Color[] _bossOriginalColors;
+
     #endregion
 
     #region Combat Analytics
@@ -205,7 +279,6 @@ public class AstarothController : MonoBehaviour
     [SerializeField] private AudioClip damageReceivedSFX;
     [SerializeField] private AudioClip deathSFX;
 
-    // Audio Interno
     private float _audioIdleTimer;
     private float _audioIdleInterval;
     private float _audioStepTimer;
@@ -251,6 +324,8 @@ public class AstarothController : MonoBehaviour
         if (_animator == null) _animator = GetComponentInChildren<Animator>();
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
 
+        CacheBossRenderers();
+
         if (_vcam == null)
         {
             CinemachineCamera vcam = Object.FindFirstObjectByType<CinemachineCamera>();
@@ -275,6 +350,8 @@ public class AstarothController : MonoBehaviour
 
         if (_trailRenderer != null) _trailRenderer.enabled = false;
 
+        if (_mudWaveWindVFXRoot != null) _mudWaveWindVFXRoot.SetActive(false);
+
         if (_player == null)
         {
             GameObject playerGO = GameObject.FindWithTag("Player");
@@ -288,7 +365,6 @@ public class AstarothController : MonoBehaviour
 
         if (_vcam != null) _noise = _vcam.GetCinemachineComponent(CinemachineCore.Stage.Noise) as CinemachineBasicMultiChannelPerlin;
 
-        // INICIA EL CICLO DE COMBATE
         StartCombatLoop();
     }
 
@@ -348,13 +424,28 @@ public class AstarothController : MonoBehaviour
 
         float distanceToPlayer = Vector3.Distance(transform.position, _player.position);
 
-        if (distanceToPlayer < _stompTriggerDistance && _stompTimer <= 0f && !_isStomping)
+        UpdateDefensiveBlockWindow();
+        UpdateMudWaveTrigger(distanceToPlayer);
+
+        if (_isDefensiveBlocking || _isMudWaving) return;
+
+        if (distanceToPlayer < _stompTriggerDistance &&
+            _stompTimer <= 0f &&
+            !_isStomping &&
+            !_isAttackingWithWhip &&
+            !_isSmashing &&
+            !_isDefensiveBlocking &&
+            !_isMudWaving)
         {
             InterruptAndPerformStomp();
             return;
         }
 
-        if (!_isCombatLoopActive && !_isStomping && _currentState != BossState.SpecialAbility)
+        if (!_isCombatLoopActive &&
+            !_isStomping &&
+            !_isDefensiveBlocking &&
+            !_isMudWaving &&
+            _currentState != BossState.SpecialAbility)
         {
             StartCombatLoop();
         }
@@ -390,49 +481,68 @@ public class AstarothController : MonoBehaviour
 
         while (true)
         {
-            _currentState = BossState.Attacking;
-            yield return StartCoroutine(WhipAttackSequence());
-
-            ResetAttackState();
-
-            _currentState = BossState.Moving;
-            if (_navMeshAgent != null)
+            if (_player != null && _currentState == BossState.Moving)
             {
-                _navMeshAgent.isStopped = false;
-                _navMeshAgent.speed = _originalSpeed;
+                float distanceToPlayer = Vector3.Distance(transform.position, _player.position);
+
+                if (distanceToPlayer > _mudWaveTriggerDistance)
+                {
+                    _combatPatternStep = CombatPatternStep.Smash;
+                }
+                else if (distanceToPlayer >= _stompTriggerDistance && distanceToPlayer <= _mudWaveTriggerDistance)
+                {
+                    _combatPatternStep = CombatPatternStep.Whip;
+                }
             }
 
-            float pauseTimer = 0f;
-            while (pauseTimer < 3f)
+            switch (_combatPatternStep)
             {
-                SimpleMoveBehavior();
-                pauseTimer += Time.deltaTime;
-                yield return null;
+                case CombatPatternStep.Whip:
+                    _currentState = BossState.Attacking;
+                    yield return StartCoroutine(WhipAttackSequence());
+                    ResetAttackState();
+                    _combatPatternStep = CombatPatternStep.ShortMove;
+                    break;
+
+                case CombatPatternStep.ShortMove:
+                    yield return StartCoroutine(MoveForDuration(3f, _originalSpeed));
+                    _combatPatternStep = CombatPatternStep.Smash;
+                    break;
+
+                case CombatPatternStep.Smash:
+                    _currentState = BossState.Attacking;
+                    yield return StartCoroutine(SmashAttackSequence());
+                    ResetAttackState();
+                    _combatPatternStep = CombatPatternStep.LongMove;
+                    break;
+
+                case CombatPatternStep.LongMove:
+                    yield return StartCoroutine(MoveForDuration(5f, _originalSpeed * 0.4f));
+                    _combatPatternStep = CombatPatternStep.Whip;
+                    break;
             }
-
-            _currentState = BossState.Attacking;
-            yield return StartCoroutine(SmashAttackSequence());
-
-            ResetAttackState();
-
-            _currentState = BossState.Moving;
-            if (_navMeshAgent != null)
-            {
-                _navMeshAgent.isStopped = false;
-                _navMeshAgent.speed = _originalSpeed * 0.4f; // 40% de velocidad
-            }
-
-            float longPauseTimer = 0f;
-            while (longPauseTimer < 5f)
-            {
-                SimpleMoveBehavior();
-                longPauseTimer += Time.deltaTime;
-                yield return null;
-            }
-
-            // Restaurar velocidad para reiniciar el ciclo
-            if (_navMeshAgent != null) _navMeshAgent.speed = _originalSpeed;
         }
+    }
+
+    private IEnumerator MoveForDuration(float duration, float speed)
+    {
+        _currentState = BossState.Moving;
+
+        if (_navMeshAgent != null)
+        {
+            _navMeshAgent.isStopped = false;
+            _navMeshAgent.speed = speed;
+        }
+
+        float timer = 0f;
+        while (timer < duration)
+        {
+            SimpleMoveBehavior();
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        if (_navMeshAgent != null) _navMeshAgent.speed = _originalSpeed;
     }
 
     private void ResetAttackState()
@@ -471,6 +581,23 @@ public class AstarothController : MonoBehaviour
         }
     }
 
+    private void PrepareCombatInterrupt()
+    {
+        _resumeCombatStep = _combatPatternStep;
+
+        StopCombatLoop();
+        ResetAttackState();
+
+        if (_trailRenderer != null) _trailRenderer.enabled = false;
+
+        if (_navMeshAgent != null && _navMeshAgent.enabled)
+        {
+            _navMeshAgent.isStopped = true;
+            _navMeshAgent.velocity = Vector3.zero;
+            _navMeshAgent.ResetPath();
+        }
+    }
+
     #endregion
 
     // HEALTH & PHASE MANAGEMENT
@@ -484,6 +611,23 @@ public class AstarothController : MonoBehaviour
         }
 
         _hitsReceivedFromPlayer++;
+
+        if (_enableDefensiveBlock && _defensiveBlockWindowActive && !_isDefensiveBlocking)
+        {
+            if (Time.time - _defensiveBlockWindowStart > _defensiveBlockHitWindow)
+            {
+                _defensiveBlockWindowActive = false;
+                _hitsAfterStomp = 0;
+                return;
+            }
+
+            _hitsAfterStomp++;
+
+            if (_hitsAfterStomp > _defensiveBlockHitLimit)
+            {
+                InterruptAndPerformDefensiveBlock();
+            }
+        }
     }
 
     private void HandleEnemyHealthChange(float newCurrentHealth, float newMaxHealth)
@@ -503,8 +647,13 @@ public class AstarothController : MonoBehaviour
         _isSmashing = false;
         _isUsingSpecialAbility = false;
         _isEnraged = false;
+        _isDefensiveBlocking = false;
+        _isMudWaving = false;
 
+        if (_enemyHealth != null) _enemyHealth.enabled = false;
+        StopMudWaveWindVFX();
         DestroyAllInstantiatedEffects();
+        RestoreBossTint();
 
         if (_navMeshAgent != null)
         {
@@ -516,13 +665,10 @@ public class AstarothController : MonoBehaviour
             _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
             _animator.SetBool(AnimID_InsAttacking, false);
             _animator.SetBool(AnimID_IsRunning, false);
-
             _animator.SetTrigger(AnimID_IsDeath);
         }
 
         if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
-
-        this.enabled = false;
     }
 
     private void CheckHealthThresholds()
@@ -542,6 +688,13 @@ public class AstarothController : MonoBehaviour
 
                 _isAttackingWithWhip = false;
                 _isSmashing = false;
+                _isDefensiveBlocking = false;
+                _isMudWaving = false;
+
+                StopMudWaveWindVFX();
+                RestoreBossTint();
+
+                if (_enemyHealth != null) _enemyHealth.SetDynamicVulnerability(0f);
 
                 if (_navMeshAgent != null && _navMeshAgent.enabled)
                 {
@@ -589,7 +742,7 @@ public class AstarothController : MonoBehaviour
     #endregion
 
     // COMBAT LOGIC
-    #region Attack 1 Logic 
+    #region Attack 1 Logic
 
     private IEnumerator WhipAttackSequence()
     {
@@ -671,7 +824,7 @@ public class AstarothController : MonoBehaviour
 
     #endregion
 
-    #region Attack 2 Logic 
+    #region Attack 2 Logic
 
     private IEnumerator SmashAttackSequence()
     {
@@ -697,10 +850,7 @@ public class AstarothController : MonoBehaviour
         LookAtPlayer();
 
         _smashTargetPoint = _player.position;
-
-        SpawnGroundTelegraph(_smashWarningPrefab, _smashTargetPoint, _smashRadius, _smashDelay);
-
-        yield return new WaitForSeconds(_smashDelay);
+        yield return StartCoroutine(TrackSmashGroundIndicator());
 
         if (audioSource != null && smashAttackSFX != null) audioSource.PlayOneShot(smashAttackSFX);
 
@@ -729,6 +879,7 @@ public class AstarothController : MonoBehaviour
                     yield return null;
                 }
             }
+
             _smashVisualTransform.localPosition = endKeyframe.Position;
             _smashVisualTransform.localScale = endKeyframe.Scale;
 
@@ -745,6 +896,61 @@ public class AstarothController : MonoBehaviour
         ResetSmashVisuals();
     }
 
+    private IEnumerator TrackSmashGroundIndicator()
+    {
+        Transform indicator = _smashGroundIndicator;
+        GameObject createdIndicator = null;
+
+        if (indicator == null && _smashGroundIndicatorPrefab != null)
+        {
+            Vector3 startPosition = GetGroundPosition(_smashTargetPoint);
+            startPosition.y += _smashIndicatorGroundOffset;
+
+            createdIndicator = Instantiate(_smashGroundIndicatorPrefab, startPosition, Quaternion.identity);
+            _instantiatedEffects.Add(createdIndicator);
+            indicator = createdIndicator.transform;
+        }
+
+        if (indicator != null)
+        {
+            indicator.gameObject.SetActive(true);
+            indicator.localScale = new Vector3(_smashRadius * 2f, 0.1f, _smashRadius * 2f);
+        }
+        else
+        {
+            SpawnGroundTelegraph(_smashWarningPrefab, _smashTargetPoint, _smashRadius, _smashDelay);
+            yield return new WaitForSeconds(_smashDelay);
+            yield break;
+        }
+
+        float elapsed = 0f;
+        float lockTime = Mathf.Max(0f, _smashDelay - _smashTargetLockBeforeImpact);
+
+        while (elapsed < _smashDelay)
+        {
+            if (_player != null && elapsed < lockTime)
+            {
+                _smashTargetPoint = _player.position;
+            }
+
+            Vector3 ground = GetGroundPosition(_smashTargetPoint);
+            ground.y += _smashIndicatorGroundOffset;
+            indicator.position = ground;
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (createdIndicator != null)
+        {
+            Destroy(createdIndicator);
+        }
+        else if (indicator != null)
+        {
+            indicator.gameObject.SetActive(false);
+        }
+    }
+
     private void ResetSmashVisuals()
     {
         if (_smashVisualTransform != null)
@@ -756,6 +962,8 @@ public class AstarothController : MonoBehaviour
                 _smashVisualTransform.localScale = _smashAnimationKeyframes[0].Scale;
             }
         }
+
+        if (_smashGroundIndicator != null) _smashGroundIndicator.gameObject.SetActive(false);
 
         //if (_objectToHideDuringSmash != null) _objectToHideDuringSmash.SetActive(true);
         _showSmashOverlapGizmo = false;
@@ -848,8 +1056,10 @@ public class AstarothController : MonoBehaviour
                     }
                 }
             }
+
             yield return null;
         }
+
         effectTransform.localScale = targetScale;
         Destroy(effectTransform.gameObject, 0.5f);
     }
@@ -867,7 +1077,6 @@ public class AstarothController : MonoBehaviour
             _animator.SetBool(AnimID_IsRunning, true);
         }
 
-        // Moverse al centro
         yield return StartCoroutine(MoveToCenter(_roomCenter));
 
         if (_navMeshAgent != null)
@@ -898,6 +1107,7 @@ public class AstarothController : MonoBehaviour
             {
                 pulseController.Initialize(_roomMaxRadius, _pulseExpansionDuration, _pulseDamage, _pulseSlowPercentage, _pulseSlowDuration);
             }
+
             _instantiatedEffects.Add(pulseObj);
         }
 
@@ -931,8 +1141,9 @@ public class AstarothController : MonoBehaviour
         if (_animator != null) _animator.SetBool(AnimID_ExitSA, false);
 
         _isUsingSpecialAbility = false;
-
         _currentState = BossState.Moving;
+
+        StartCombatLoop();
     }
 
     private void ApplyEvolutionBuff()
@@ -959,36 +1170,43 @@ public class AstarothController : MonoBehaviour
             if (safetyTimer >= 5f) break;
             yield return null;
         }
-        _navMeshAgent.speed = 3.5f;
+
+        _navMeshAgent.speed = _originalSpeed;
     }
 
     private IEnumerator AnimateHeadDown()
     {
         if (_headsTransform == null) yield break;
+
         Quaternion start = _headsTransform.localRotation;
         Quaternion target = start * Quaternion.Euler(_headDownRotationAngle, 0, 0);
         float elapsed = 0f;
+
         while (elapsed < _headAnimationDuration)
         {
             elapsed += Time.deltaTime;
             _headsTransform.localRotation = Quaternion.Slerp(start, target, elapsed / _headAnimationDuration);
             yield return null;
         }
+
         _headsTransform.localRotation = target;
     }
 
     private IEnumerator AnimateHeadUp()
     {
         if (_headsTransform == null) yield break;
+
         Quaternion start = _headsTransform.localRotation;
         Quaternion target = Quaternion.identity;
         float elapsed = 0f;
+
         while (elapsed < _headAnimationDuration)
         {
             elapsed += Time.deltaTime;
             _headsTransform.localRotation = Quaternion.Slerp(start, target, elapsed / _headAnimationDuration);
             yield return null;
         }
+
         _headsTransform.localRotation = target;
     }
 
@@ -1024,22 +1242,9 @@ public class AstarothController : MonoBehaviour
     {
         Debug.Log($"<color=red>[Astaroth] INTERRUPCIÓN INMEDIATA: Pisotón.</color>");
 
-        StopCombatLoop();
-        StopAllCoroutines();
+        PrepareCombatInterrupt();
         DestroyAllInstantiatedEffects();
         ResetSmashVisuals();
-
-        if (_navMeshAgent.enabled)
-        {
-            _navMeshAgent.isStopped = true;
-            _navMeshAgent.velocity = Vector3.zero;
-        }
-
-        _isAttackingWithWhip = false;
-        _isSmashing = false;
-
-        if (_trailRenderer != null) _trailRenderer.enabled = false;
-        _showSmashOverlapGizmo = false;
 
         _currentState = BossState.Attacking;
         _isStomping = true;
@@ -1056,13 +1261,17 @@ public class AstarothController : MonoBehaviour
         yield return new WaitForSeconds(_stompTelegraphTime);
 
         PerformStompImpact();
+        OpenDefensiveBlockWindow();
 
         yield return new WaitForSeconds(0.5f);
 
         _isStomping = false;
 
         _currentState = BossState.Moving;
-        if (_navMeshAgent.enabled) _navMeshAgent.isStopped = false;
+        if (_navMeshAgent != null && _navMeshAgent.enabled) _navMeshAgent.isStopped = false;
+
+        _combatPatternStep = _resumeCombatStep;
+        StartCombatLoop();
     }
 
     private void PerformStompImpact()
@@ -1083,12 +1292,393 @@ public class AstarothController : MonoBehaviour
 
     #endregion
 
+    #region Defensive Block
+
+    private void OpenDefensiveBlockWindow()
+    {
+        if (!_enableDefensiveBlock) return;
+
+        _defensiveBlockWindowActive = true;
+        _hitsAfterStomp = 0;
+        _defensiveBlockWindowStart = Time.time;
+    }
+
+    private void UpdateDefensiveBlockWindow()
+    {
+        if (!_defensiveBlockWindowActive) return;
+
+        if (Time.time - _defensiveBlockWindowStart > _defensiveBlockHitWindow)
+        {
+            _defensiveBlockWindowActive = false;
+            _hitsAfterStomp = 0;
+        }
+    }
+
+    private void InterruptAndPerformDefensiveBlock()
+    {
+        if (_isDefensiveBlocking) return;
+
+        PrepareCombatInterrupt();
+        DestroyAllInstantiatedEffects();
+        ResetSmashVisuals();
+
+        _defensiveBlockWindowActive = false;
+        _hitsAfterStomp = 0;
+
+        StartCoroutine(DefensiveBlockSequence());
+    }
+
+    private IEnumerator DefensiveBlockSequence()
+    {
+        _isDefensiveBlocking = true;
+        _currentState = BossState.DefensiveBlock;
+
+        Vector3 blockCenter = transform.position;
+        Vector3 warningCenter = GetGroundPosition(blockCenter);
+
+        if (_navMeshAgent != null && _navMeshAgent.enabled)
+        {
+            _navMeshAgent.isStopped = true;
+            _navMeshAgent.velocity = Vector3.zero;
+            _navMeshAgent.ResetPath();
+        }
+
+        if (_enemyHealth != null) _enemyHealth.SetDynamicVulnerability(1f);
+
+        GameObject warning = null;
+        if (_defensiveBlockWarningPrefab != null)
+        {
+            warning = Instantiate(_defensiveBlockWarningPrefab, warningCenter, Quaternion.identity);
+            warning.transform.localScale = new Vector3(
+                _defensiveBlockExplosionRadius * 2f,
+                0.1f,
+                _defensiveBlockExplosionRadius * 2f
+            );
+            _instantiatedEffects.Add(warning);
+        }
+
+        float waitTimer = 0f;
+        while (waitTimer < _defensiveBlockInvulnerableDuration)
+        {
+            if (_navMeshAgent != null && _navMeshAgent.enabled)
+            {
+                _navMeshAgent.isStopped = true;
+                _navMeshAgent.velocity = Vector3.zero;
+            }
+
+            transform.position = blockCenter;
+
+            waitTimer += Time.deltaTime;
+            yield return null;
+        }
+
+        if (warning != null)
+        {
+            _instantiatedEffects.Remove(warning);
+            Destroy(warning);
+        }
+
+        GameObject explosion = null;
+        if (_defensiveBlockExplosionPrefab != null)
+        {
+            explosion = Instantiate(_defensiveBlockExplosionPrefab, blockCenter, Quaternion.identity);
+            explosion.transform.localScale = Vector3.zero;
+            _instantiatedEffects.Add(explosion);
+        }
+
+        ShakeCamera(0.3f, 2.5f, 2f);
+
+        yield return StartCoroutine(ExpandDefensiveBlockExplosion(explosion, blockCenter));
+
+        if (explosion != null)
+        {
+            _instantiatedEffects.Remove(explosion);
+            Destroy(explosion, 0.2f);
+        }
+
+        if (_enemyHealth != null) _enemyHealth.SetDynamicVulnerability(0f);
+
+        if (_navMeshAgent != null && _navMeshAgent.enabled)
+        {
+            _navMeshAgent.Warp(blockCenter);
+            _navMeshAgent.isStopped = false;
+        }
+
+        _isDefensiveBlocking = false;
+        _currentState = BossState.Moving;
+
+        _combatPatternStep = _resumeCombatStep;
+        StartCombatLoop();
+    }
+
+    private IEnumerator ExpandDefensiveBlockExplosion(GameObject explosion, Vector3 blockCenter)
+    {
+        float elapsed = 0f;
+        HashSet<GameObject> damagedTargets = new HashSet<GameObject>();
+
+        while (elapsed < _defensiveBlockExplosionExpandDuration)
+        {
+            if (_navMeshAgent != null && _navMeshAgent.enabled)
+            {
+                _navMeshAgent.isStopped = true;
+                _navMeshAgent.velocity = Vector3.zero;
+            }
+
+            transform.position = blockCenter;
+
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / _defensiveBlockExplosionExpandDuration);
+            float currentRadius = Mathf.Lerp(0f, _defensiveBlockExplosionRadius, t);
+
+            if (explosion != null)
+            {
+                explosion.transform.position = blockCenter;
+                explosion.transform.localScale = Vector3.one * (currentRadius * 2f);
+            }
+
+            DealAreaDamageOnce(blockCenter, currentRadius, _defensiveBlockExplosionDamage, _defensiveBlockKnockbackForce, damagedTargets);
+
+            yield return null;
+        }
+
+        DealAreaDamageOnce(blockCenter, _defensiveBlockExplosionRadius, _defensiveBlockExplosionDamage, _defensiveBlockKnockbackForce, damagedTargets);
+    }
+
+    #endregion
+
+    #region Mud Wave
+
+    private void UpdateMudWaveTrigger(float distanceToPlayer)
+    {
+        if (!_enableMudWave ||
+            _isMudWaving ||
+            _isDefensiveBlocking ||
+            _isStomping ||
+            _isAttackingWithWhip ||
+            _isSmashing ||
+            _currentState == BossState.Attacking ||
+            _currentState == BossState.SpecialAbility)
+        {
+            _farDistanceTimer = 0f;
+            return;
+        }
+
+        if (_mudWaveCooldownTimer > 0f) _mudWaveCooldownTimer -= Time.deltaTime;
+
+        if (distanceToPlayer > _mudWaveTriggerDistance)
+        {
+            _farDistanceTimer += Time.deltaTime;
+
+            if (_farDistanceTimer >= _mudWaveFleeDuration && _mudWaveCooldownTimer <= 0f)
+            {
+                InterruptAndPerformMudWave();
+            }
+        }
+        else
+        {
+            _farDistanceTimer = 0f;
+        }
+    }
+
+    private void InterruptAndPerformMudWave()
+    {
+        if (_isMudWaving) return;
+
+        PrepareCombatInterrupt();
+        DestroyAllInstantiatedEffects();
+        ResetSmashVisuals();
+
+        _farDistanceTimer = 0f;
+        _mudWaveCooldownTimer = _mudWaveCooldown;
+
+        StartCoroutine(MudWaveSequence());
+    }
+
+    private IEnumerator MudWaveSequence()
+    {
+        _isMudWaving = true;
+        _currentState = BossState.MudWave;
+
+        if (_player == null || _navMeshAgent == null || !_navMeshAgent.enabled || !_navMeshAgent.isOnNavMesh)
+        {
+            _isMudWaving = false;
+            StartCombatLoop();
+            yield break;
+        }
+
+        Vector3 chargeDirection = _player.position - transform.position;
+        chargeDirection.y = 0f;
+        chargeDirection = chargeDirection.sqrMagnitude > 0.01f ? chargeDirection.normalized : transform.forward;
+
+        Vector3 chargeTarget = GetMudWaveChargeTarget(transform.position, _player.position, chargeDirection);
+        float chargeDistance = Vector3.Distance(transform.position, chargeTarget);
+
+        transform.rotation = Quaternion.LookRotation(chargeDirection);
+        SetBossTint(_mudWaveTint);
+
+        if (_mudWaveWarningPrefab != null)
+        {
+            Vector3 warningPosition = GetGroundPosition(transform.position + chargeDirection * (chargeDistance * 0.5f));
+            GameObject warning = Instantiate(_mudWaveWarningPrefab, warningPosition, Quaternion.LookRotation(chargeDirection));
+            warning.transform.localScale = new Vector3(_mudWaveHitRadius * 2f, 0.1f, chargeDistance);
+            _instantiatedEffects.Add(warning);
+            Destroy(warning, _mudWaveWarningTime);
+        }
+
+        yield return new WaitForSeconds(_mudWaveWarningTime);
+
+        float previousAnimatorSpeed = 1f;
+        if (_animator != null)
+        {
+            previousAnimatorSpeed = _animator.speed;
+            _animator.speed = previousAnimatorSpeed * _mudWaveAnimatorSpeedMultiplier;
+            _animator.SetBool(AnimID_IsRunning, true);
+        }
+
+        PlayMudWaveWindVFX();
+
+        _navMeshAgent.ResetPath();
+        _navMeshAgent.updateRotation = false;
+        _navMeshAgent.isStopped = true;
+        _navMeshAgent.velocity = Vector3.zero;
+
+        HashSet<GameObject> hitPlayers = new HashSet<GameObject>();
+        float safetyTimer = 0f;
+        float maxChargeTime = Mathf.Max(0.35f, chargeDistance / Mathf.Max(1f, _mudWaveChargeSpeed) + 0.1f);
+
+        Vector3 startPosition = transform.position;
+        Vector3 finalTarget = chargeTarget;
+
+        while (safetyTimer < maxChargeTime)
+        {
+            float step = _mudWaveChargeSpeed * Time.deltaTime;
+            Vector3 nextPosition = Vector3.MoveTowards(transform.position, finalTarget, step);
+
+            if (NavMesh.SamplePosition(nextPosition, out NavMeshHit sampleHit, 1f, NavMesh.AllAreas))
+            {
+                transform.position = sampleHit.position;
+            }
+            else
+            {
+                break;
+            }
+
+            transform.rotation = Quaternion.LookRotation(chargeDirection);
+
+            CheckMudWaveHit(hitPlayers);
+
+            if (Vector3.Distance(transform.position, finalTarget) <= 0.2f)
+            {
+                break;
+            }
+
+            safetyTimer += Time.deltaTime;
+            yield return null;
+        }
+
+        CheckMudWaveHit(hitPlayers);
+
+        StopMudWaveWindVFX();
+
+        if (_animator != null)
+        {
+            _animator.speed = previousAnimatorSpeed;
+            _animator.SetBool(AnimID_IsRunning, false);
+        }
+
+        _navMeshAgent.Warp(transform.position);
+        _navMeshAgent.speed = _originalSpeed;
+        _navMeshAgent.updateRotation = true;
+        _navMeshAgent.isStopped = false;
+
+        RestoreBossTint();
+
+        _isMudWaving = false;
+        _currentState = BossState.Moving;
+
+        _combatPatternStep = _resumeCombatStep;
+        StartCombatLoop();
+    }
+
+    private Vector3 GetMudWaveChargeTarget(Vector3 origin, Vector3 playerPosition, Vector3 direction)
+    {
+        Vector3 flatPlayerPosition = new Vector3(playerPosition.x, origin.y, playerPosition.z);
+        float distanceToPlayer = Vector3.Distance(origin, flatPlayerPosition);
+        float desiredDistance = Mathf.Max(_mudWaveMinChargeDistance, distanceToPlayer + _mudWaveOvershootDistance);
+
+        return GetSafeNavMeshChargeTarget(origin, direction, desiredDistance);
+    }
+
+    private Vector3 GetSafeNavMeshChargeTarget(Vector3 origin, Vector3 direction, float distance)
+    {
+        Vector3 desiredTarget = origin + direction * distance;
+
+        if (NavMesh.Raycast(origin, desiredTarget, out NavMeshHit navHit, NavMesh.AllAreas))
+        {
+            desiredTarget = navHit.position - direction * 0.5f;
+        }
+
+        if (NavMesh.SamplePosition(desiredTarget, out NavMeshHit sampleHit, 2f, NavMesh.AllAreas))
+        {
+            return sampleHit.position;
+        }
+
+        return origin;
+    }
+
+    private void CheckMudWaveHit(HashSet<GameObject> hitPlayers)
+    {
+        Collider[] hits = Physics.OverlapSphere(transform.position, _mudWaveHitRadius, LayerMask.GetMask("Player"));
+
+        foreach (var hit in hits)
+        {
+            GameObject target = hit.transform.root != null ? hit.transform.root.gameObject : hit.gameObject;
+            if (hitPlayers.Contains(target)) continue;
+
+            hitPlayers.Add(target);
+            ExecuteAttack(target, transform.position, _mudWaveDamage);
+            ApplySafeKnockback(target, transform.position, _mudWaveKnockbackForce);
+        }
+    }
+
+    private void PlayMudWaveWindVFX()
+    {
+        if (_mudWaveWindVFXRoot == null) return;
+
+        _mudWaveWindVFXRoot.SetActive(true);
+
+        ParticleSystem[] particles = _mudWaveWindVFXRoot.GetComponentsInChildren<ParticleSystem>(true);
+        foreach (ParticleSystem ps in particles)
+        {
+            if (ps == null) continue;
+            ps.Clear(true);
+            ps.Play(true);
+        }
+    }
+
+    private void StopMudWaveWindVFX()
+    {
+        if (_mudWaveWindVFXRoot == null) return;
+
+        ParticleSystem[] particles = _mudWaveWindVFXRoot.GetComponentsInChildren<ParticleSystem>(true);
+        foreach (ParticleSystem ps in particles)
+        {
+            if (ps == null) continue;
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+
+        _mudWaveWindVFXRoot.SetActive(false);
+    }
+
+    #endregion
+
     // SYSTEMS & HELPERS
     #region Audio System
 
     private void HandleAudioLoop()
     {
         if (_navMeshAgent == null || !_navMeshAgent.enabled) return;
+
         bool isMoving = !_navMeshAgent.isStopped && _navMeshAgent.velocity.sqrMagnitude > 0.5f;
 
         if (isMoving)
@@ -1099,6 +1689,7 @@ public class AstarothController : MonoBehaviour
                 if (audioSource != null && walkSFX != null) audioSource.PlayOneShot(walkSFX, 0.5f);
                 _audioStepTimer = 0f;
             }
+
             _audioIdleTimer = 0f;
         }
         else
@@ -1119,8 +1710,11 @@ public class AstarothController : MonoBehaviour
 
     private void LookAtPlayer()
     {
+        if (_player == null || _navMeshAgent == null) return;
+
         Vector3 direction = (_player.position - transform.position).normalized;
         direction.y = 0;
+
         if (direction != Vector3.zero)
         {
             Quaternion lookRotation = Quaternion.LookRotation(direction);
@@ -1131,16 +1725,33 @@ public class AstarothController : MonoBehaviour
     private Vector3 GetGroundPosition(Vector3 rayOrigin)
     {
         RaycastHit hit;
-        if (Physics.Raycast(rayOrigin, Vector3.down, out hit, 20f, LayerMask.GetMask("Ground")))
+        if (Physics.Raycast(rayOrigin + Vector3.up * 2f, Vector3.down, out hit, 30f, LayerMask.GetMask("Ground")))
         {
             return hit.point + Vector3.up * 0.01f;
         }
-        return new Vector3(transform.position.x, 0.01f, transform.position.z);
+
+        return new Vector3(rayOrigin.x, 0.01f, rayOrigin.z);
     }
 
     #endregion
 
     #region Combat Systems
+
+    private void DealAreaDamageOnce(Vector3 center, float radius, float damage, float knockbackForce, HashSet<GameObject> damagedTargets)
+    {
+        Collider[] hits = Physics.OverlapSphere(center, radius, LayerMask.GetMask("Player"));
+
+        foreach (var hit in hits)
+        {
+            GameObject target = hit.transform.root != null ? hit.transform.root.gameObject : hit.gameObject;
+            if (damagedTargets.Contains(target)) continue;
+
+            damagedTargets.Add(target);
+            ExecuteAttack(target, center, damage);
+            ApplySafeKnockback(target, center, knockbackForce);
+        }
+    }
+
 
     private void ExecuteAttack(GameObject target, Vector3 position, float damageAmount)
     {
@@ -1152,11 +1763,28 @@ public class AstarothController : MonoBehaviour
                 if (remainingDamage > 0f) health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
                 return;
             }
+
             health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
         }
         else if (target.TryGetComponent<PlayerHealth>(out var healthOnly))
         {
             healthOnly.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+        }
+    }
+
+    private void DealAreaDamage(Vector3 center, float radius, float damage, float knockbackForce)
+    {
+        Collider[] hits = Physics.OverlapSphere(center, radius, LayerMask.GetMask("Player"));
+
+        HashSet<GameObject> damagedTargets = new HashSet<GameObject>();
+        foreach (var hit in hits)
+        {
+            GameObject target = hit.transform.root != null ? hit.transform.root.gameObject : hit.gameObject;
+            if (damagedTargets.Contains(target)) continue;
+
+            damagedTargets.Add(target);
+            ExecuteAttack(target, center, damage);
+            ApplySafeKnockback(target, center, knockbackForce);
         }
     }
 
@@ -1190,7 +1818,6 @@ public class AstarothController : MonoBehaviour
         while (elapsed < duration)
         {
             if (cc == null) yield break;
-
             if (playerMove != null && playerMove.IsDashing) yield break;
 
             if (cc.enabled) cc.SimpleMove(direction * force);
@@ -1207,6 +1834,7 @@ public class AstarothController : MonoBehaviour
     private void SpawnGroundTelegraph(GameObject prefab, Vector3 centerPosition, float radius, float duration)
     {
         if (prefab == null) return;
+
         Vector3 groundPos = GetGroundPosition(centerPosition);
         GameObject instance = Instantiate(prefab, groundPos, Quaternion.identity);
         _instantiatedEffects.Add(instance);
@@ -1217,6 +1845,7 @@ public class AstarothController : MonoBehaviour
     private void ShowDodgeIndicator()
     {
         if (_dodgeIndicatorPrefab == null || _player == null) return;
+
         GameObject indicator = Instantiate(_dodgeIndicatorPrefab, _player.position + Vector3.up * 2f, Quaternion.identity);
         Destroy(indicator, _dodgeIndicatorDuration);
     }
@@ -1242,7 +1871,46 @@ public class AstarothController : MonoBehaviour
         {
             if (effect != null) Destroy(effect);
         }
+
         _instantiatedEffects.Clear();
+    }
+
+    private void CacheBossRenderers()
+    {
+        _bossRenderers = GetComponentsInChildren<Renderer>();
+        _bossOriginalColors = new Color[_bossRenderers.Length];
+
+        for (int i = 0; i < _bossRenderers.Length; i++)
+        {
+            Material mat = _bossRenderers[i].material;
+            _bossOriginalColors[i] = mat.HasProperty("_Color") ? mat.color : Color.white;
+        }
+    }
+
+    private void SetBossTint(Color tint)
+    {
+        if (_bossRenderers == null) return;
+
+        for (int i = 0; i < _bossRenderers.Length; i++)
+        {
+            if (_bossRenderers[i] == null) continue;
+
+            Material mat = _bossRenderers[i].material;
+            if (mat.HasProperty("_Color")) mat.color = tint;
+        }
+    }
+
+    private void RestoreBossTint()
+    {
+        if (_bossRenderers == null || _bossOriginalColors == null) return;
+
+        for (int i = 0; i < _bossRenderers.Length; i++)
+        {
+            if (_bossRenderers[i] == null) continue;
+
+            Material mat = _bossRenderers[i].material;
+            if (mat.HasProperty("_Color")) mat.color = _bossOriginalColors[i];
+        }
     }
 
     #endregion
@@ -1256,11 +1924,13 @@ public class AstarothController : MonoBehaviour
             Gizmos.color = new Color(1f, 0f, 0f, 0.4f);
             Gizmos.DrawWireSphere(_whipDamageOrigin.position, _whipHitRadius);
         }
+
         if (_showSmashOverlapGizmo)
         {
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireSphere(_lastSmashOverlapCenter, _lastSmashOverlapRadius);
         }
+
         if (_showRoomGizmos)
         {
             Gizmos.color = new Color(1, 0, 1, 0.3f);
@@ -1275,6 +1945,15 @@ public class AstarothController : MonoBehaviour
         {
             Gizmos.color = Color.blue;
             Gizmos.DrawWireSphere(transform.position, _smashDetectionRadius);
+
+            Gizmos.color = new Color(0.45f, 0.22f, 0.08f, 0.5f);
+            Gizmos.DrawWireSphere(transform.position, _mudWaveTriggerDistance);
+
+            Gizmos.color = new Color(0.8f, 0.55f, 0.2f, 0.5f);
+            Gizmos.DrawRay(transform.position, transform.forward * _mudWaveMinChargeDistance);
+
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(transform.position, _defensiveBlockExplosionRadius);
         }
     }
 
