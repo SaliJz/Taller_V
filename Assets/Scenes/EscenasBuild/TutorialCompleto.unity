@@ -15153,6 +15153,18 @@ MonoBehaviour:
           m_StringArgument: Para abrir y cerrar el inventario, usa !INVENTORY
           m_BoolArgument: 1
         m_CallState: 2
+      - m_Target: {fileID: 1557189678}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Para abrir y cerrar el inventario, usa !INVENTORY
+          m_BoolArgument: 1
+        m_CallState: 2
   actionToContinue: {fileID: -4506918939124190800, guid: ccc6e38482735884387854943591007c, type: 3}
   requiredPresses: 2
   maxTimeBetweenPresses: 0
@@ -17348,6 +17360,11 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 405490465143147260, guid: dd44567361fbecc4195d79c0613a2463, type: 3}
+--- !u!1 &1557189678 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 78920072235261051, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+  m_PrefabInstance: {fileID: 1998683779}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1557200944
 GameObject:
   m_ObjectHideFlags: 0
@@ -23497,7 +23514,7 @@ PrefabInstance:
       insertIndex: 3
       addedObject: {fileID: 1999398776}
     - targetCorrespondingSourceObject: {fileID: 4771108026129879708, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
-      insertIndex: 6
+      insertIndex: 7
       addedObject: {fileID: 704793251}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 2049424538277915923, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
