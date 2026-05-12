@@ -7,17 +7,46 @@ public class BossExplosiveMine : BaseTrapMine
 {
     #region Inspector
 
-    [Header("Alineación al suelo")]
+    [Header("Alineacion al suelo")]
     [SerializeField] private float groundOffset = 0.05f;
+
+    [Header("Física de rebote")]
+    [SerializeField] private LayerMask environmentLayer;
+
+    #endregion
+
+    #region Referencias internas
+
+    private Rigidbody rb;
 
     #endregion
 
     #region Unity Lifecycle
 
+    private void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+    }
+
     private void Start()
     {
-        AlignToGround();
+        rb.useGravity = true;
+        rb.isKinematic = false;
+
+        Vector3 randomBounce = new Vector3(Random.Range(-2f, 2f), 3f, Random.Range(-2f, 2f));
+        rb.AddForce(randomBounce, ForceMode.Impulse);
+
+        Invoke(nameof(AlignToGround), duration/2);
         Invoke(nameof(ExplodePublic), duration);
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if ((environmentLayer.value & (1 << collision.gameObject.layer)) != 0)
+        {
+            rb.linearDamping = 3f;
+            rb.angularDamping = 3f;
+        }
     }
 
     #endregion

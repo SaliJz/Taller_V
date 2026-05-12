@@ -78,7 +78,7 @@ public abstract class BaseTrapMine : MonoBehaviour
         if (hasExploded) return;
         hasExploded = true;
 
-        CancelInvoke(nameof(Explode));
+        CancelInvoke();
 
         SpawnExplosionVFX();
         ApplyExplosionEffects();
@@ -112,7 +112,11 @@ public abstract class BaseTrapMine : MonoBehaviour
     {
         if (explosionVFXPrefab != null)
         {
-            Instantiate(explosionVFXPrefab, transform.position, Quaternion.identity);
+            ParticleSystem vfxInstance = Instantiate(explosionVFXPrefab, 
+                transform.position, Quaternion.identity);
+
+            vfxInstance.transform.SetParent(null);
+            vfxInstance.Play();
         }
 
         if (explosionSpherePrefab != null)

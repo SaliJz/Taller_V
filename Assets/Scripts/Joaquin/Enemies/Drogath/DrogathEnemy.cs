@@ -11,7 +11,7 @@ using UnityEngine.InputSystem;
 /// otorgandoles regeneracion de superarmor mientras esten en rango.
 /// Al morir libera una onda que otorga superarmor temporal.
 /// </summary>
-public class DrogathEnemy : MonoBehaviour
+public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 {
     #region Enums & Structs
 

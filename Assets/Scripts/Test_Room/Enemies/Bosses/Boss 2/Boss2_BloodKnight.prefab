@@ -373,7 +373,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8250834327438604192}
   m_Layer: 0
-  m_Name: Boss2_AttackPoint
+  m_Name: Boss2_AttackOriginPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -411,7 +411,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1192280443633831679
 Transform:
   m_ObjectHideFlags: 0
@@ -5410,6 +5410,37 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MainCamera: {fileID: 0}
+--- !u!1 &5697239024055666033
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9194010085429894218}
+  m_Layer: 0
+  m_Name: Boss2_MinaDropPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9194010085429894218
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5697239024055666033}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 2.5, z: -2.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3906577018013161435}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7420206152437532032
 GameObject:
   m_ObjectHideFlags: 0
@@ -5656,10 +5687,10 @@ GameObject:
   - component: {fileID: 3906577018013161435}
   - component: {fileID: 9178307502293098773}
   - component: {fileID: 7517696455211299846}
+  - component: {fileID: -7767162178183960678}
   - component: {fileID: 8467342248943344500}
   - component: {fileID: 8537394917465235362}
   - component: {fileID: 822155508931773051}
-  - component: {fileID: -7767162178183960678}
   m_Layer: 7
   m_Name: Boss2_BloodKnight
   m_TagString: Enemy
@@ -5682,6 +5713,7 @@ Transform:
   m_Children:
   - {fileID: 7470948446071516051}
   - {fileID: 8250834327438604192}
+  - {fileID: 9194010085429894218}
   - {fileID: 1089530199773434117}
   - {fileID: 8663587399157563583}
   - {fileID: 4010180717905474146}
@@ -5732,6 +5764,33 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!54 &-7767162178183960678
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9147642797784961567}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!114 &8467342248943344500
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5744,68 +5803,89 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7751e8d5b0ac981448b751d4be955285, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemyHealth: {fileID: 0}
-  agent: {fileID: 0}
-  maxHealth: 500
-  currentHealth: 0
-  moveSpeed: 8
-  lowHPSpeedMultiplier: 1.3
-  apocalipsisDuration: 10
-  apocalipsisDamage: 7
-  apocalipsisTargetDashes: 10
-  apocalipsisRange: 4
-  apocalipsisDashDuration: 0.55
-  apocalipsisImpactDelay: 0.25
-  apocalipsisRecoveryTime: 0.4
-  positioningDuration: 2
-  sodomaDamage: 35
-  sodomaCutRange: 8
-  fireTrailDamagePerSecond: 5
-  fireTrailLifeTime: 2.5
-  sodomaChargeTime: 1.5
-  sodomaBackwardDistance: 3
-  sodomaDashDuration: 1.4
-  sodomaImpactDelay: 0.75
-  attackEndDuration: 1
-  necioAttackWindow: 12
-  necioVulnerableWindow: 3
-  necioPecadorDamage: 15
-  necioPecadorRadius: 1.5
-  necioPecadorWarningTime: 2.5
-  chargeProbability: 0.25
-  chargeAbilitySpeed: 15
-  playerStunDuration: 2.5
-  chargeObstacleLayers:
-    serializedVersion: 2
-    m_Bits: 393728
+  enemyHealth: {fileID: 8537394917465235362}
+  agent: {fileID: 7517696455211299846}
   player: {fileID: 0}
   animator: {fileID: 5883165677478660824}
-  swordTransform: {fileID: 8250834327438604192}
-  greenFireTrailPrefab: {fileID: 1018580927016024537, guid: feee1a3ef3e900245bd662be4dcbd6ba, type: 3}
-  soulHandPrefab: {fileID: 3043229836960575198, guid: 32bf7cc09667f4f4f886fdce3104ca5b, type: 3}
-  necioPecadorWarningPrefab: {fileID: 2010781431489356441, guid: e149f03e6510455409ab8644b28c7ec0, type: 3}
-  armorGlowVFX: {fileID: 8081810031924133735}
-  greenFireVFX: {fileID: 1959994607445859112, guid: 08af2cd21f3e1b4439fac7c951e6456c, type: 3}
-  darkWindTrailPrefab: {fileID: 795299524216115620, guid: 32e91a948baeea24faf4460eb5ee675b, type: 3}
-  stunEffectPrefab: {fileID: 0}
-  audioSource: {fileID: 2898185117464482595}
-  damageReceivedSFX: {fileID: 8300000, guid: 1381f92a34dfbff4a9f99f1818aca5ab, type: 3}
-  sodomaChargeSFX: {fileID: 8300000, guid: 672e245966e99a14094d75be214a968c, type: 3}
-  sodomaAttackSFX: {fileID: 8300000, guid: 392404bfc967aea4da3e8bcda449e403, type: 3}
-  apocalipsisSlashSFX: {fileID: 8300000, guid: 2ede211400017b64ea2552fa6e79f0d4, type: 3}
-  necioPecadorSummonSFX: {fileID: 8300000, guid: 37cb209388de4784e8075b847592004e, type: 3}
-  necioPecadorExplosionSFX: {fileID: 0}
-  chargeAbilitySFX: {fileID: 8300000, guid: f0df9ab22ea0628489b422949c6e2cf8, type: 3}
-  stunSFX: {fileID: 0}
-  deathSFX: {fileID: 8300000, guid: 9733373eb1b2b8a4b84ae205c708ba30, type: 3}
-  ambientAudioSource: {fileID: 2252013248653417843}
-  idleClip: {fileID: 8300000, guid: 2d09dd0fea048a44ca6a408fbd293b94, type: 3}
-  idleInterval: 3
-  idleIntervalVariance: 0.5
-  movementClip: {fileID: 8300000, guid: 439248dd4cc71c841ae316fe2e970e63, type: 3}
-  movementInterval: 0.45
-  showDebugGUI: 0
+  attackOrigin: {fileID: 8250834327438604192}
+  mineDropPoint: {fileID: 9194010085429894218}
   vcam: {fileID: 0}
+  audioSource: {fileID: 2898185117464482595}
+  ambientAudioSource: {fileID: 2252013248653417843}
+  maxHealth: 500
+  baseMoveSpeed: 7
+  aggroRange: 20
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  obstacleLayers:
+    serializedVersion: 2
+    m_Bits: 512
+  staticFailureDamage: 35
+  staticFailureWindup: 2
+  staticFailureCooldown: 27
+  staticFailureAoERadius: 4.5
+  shieldAngle: 150
+  backHitsToInterrupt: 5
+  interruptStunDuration: 1.5
+  brokenChargeDuration: 10
+  brokenChargeDashCount: 10
+  brokenChargeDashSpeed: 13.5
+  brokenChargeHitDamage: 7
+  brokenChargeCooldown: 19
+  zigzagSideOffset: 3.5
+  dashHitRadius: 1.35
+  scrapRamSpeed: 14
+  scrapRamMaxTurnRate: 20
+  scrapRamDuration: 2.2
+  scrapRamBossStun: 2
+  scrapRamPlayerStun: 3
+  scrapRamMineBurst: 5
+  scrapRamActiveDist: 15
+  scrapRamNoDamageWindow: 10
+  divisoryCooldown: 13
+  divisoryTriggerDist: 15
+  divisoryWallDuration: 5
+  divisoryContactDmg: 2.5
+  divisoryInstantDmg: 12.5
+  divisoryCastTime: 0.8
+  divisoryWallThickness: 1.2
+  divisoryWallHeight: 3.5
+  divisoryRayMaxLength: 40
+  drownedDamage: 15
+  drownedRange: 15
+  drownedHitCount: 3
+  drownedInterval: 0.9
+  drownedCooldown: 14
+  predictiveChance: 0.75
+  predictiveDashThreshold: 15
+  predictiveLeadDist: 2.75
+  collapseThreshold: 0.25
+  collapseSpeedMult: 1.3
+  scrapAuraRadius: 3
+  scrapAuraDps: 0.5
+  phaseTransitionTime: 1
+  bossMinePrefab: {fileID: 1499410541512446075, guid: b4460703b64e8494c87bf3e47abe263e, type: 3}
+  crystalTrailPrefab: {fileID: 7248282808997564011, guid: 611a1ebc06313f844a1b352020280947, type: 3}
+  solidLightWallPrefab: {fileID: 5310154479908718985, guid: 8a59d431ecddcef499e564f15af8d17a, type: 3}
+  soulHandPrefab: {fileID: 4734671933522651327, guid: 32bf7cc09667f4f4f886fdce3104ca5b, type: 3}
+  staticFailureWarningPrefab: {fileID: 4975376767033560840, guid: a982d5c75bea16248b26ebb1b1a3ad21, type: 3}
+  frontBlockVFXPrefab: {fileID: 0}
+  impactStunVFXPrefab: {fileID: 0}
+  phaseCollapseVFXPrefab: {fileID: 0}
+  scrapRainVFXPrefab: {fileID: 0}
+  scrapAuraVFXPrefab: {fileID: 0}
+  staticChargeSFX: {fileID: 8300000, guid: f0df9ab22ea0628489b422949c6e2cf8, type: 3}
+  staticImpactSFX: {fileID: 8300000, guid: 392404bfc967aea4da3e8bcda449e403, type: 3}
+  shieldBlockSFX: {fileID: 8300000, guid: 1381f92a34dfbff4a9f99f1818aca5ab, type: 3}
+  dashSFX: {fileID: 8300000, guid: 2ede211400017b64ea2552fa6e79f0d4, type: 3}
+  divisorySFX: {fileID: 0}
+  drownedHandsSFX: {fileID: 8300000, guid: 37cb209388de4784e8075b847592004e, type: 3}
+  scrapRamSFX: {fileID: 8300000, guid: f0df9ab22ea0628489b422949c6e2cf8, type: 3}
+  collapseSFX: {fileID: 8300000, guid: 84acfbe8c99cbe642976ddd3d0f9636b, type: 3}
+  stunSFX: {fileID: 8300000, guid: 05445bdd6d7d0784d8670bd59c86bef2, type: 3}
+  deathSFX: {fileID: 8300000, guid: 9733373eb1b2b8a4b84ae205c708ba30, type: 3}
+  showDebugGUI: 1
 --- !u!114 &8537394917465235362
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5818,7 +5898,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
+  maxHealth: 500
   currentHealth: 0
   canDieAfterCooldown: 1
   deathCooldown: 1.75
@@ -5903,33 +5983,6 @@ MonoBehaviour:
   criticalColor: {r: 0.6075471, g: 0, b: 0, a: 1}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
---- !u!54 &-7767162178183960678
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9147642797784961567}
-  serializedVersion: 4
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 1
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
 --- !u!1001 &6927835274548612216
 PrefabInstance:
   m_ObjectHideFlags: 0

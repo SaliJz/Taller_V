@@ -7,13 +7,19 @@ using UnityEngine;
 /// </summary>
 public class Shield : MonoBehaviour
 {
-    #region Enums & Structs
+    #region Enums
 
-    private enum ShieldState { Inactive, Thrown, Returning, Rebounding }
+    private enum ShieldState 
+    { 
+        Inactive, 
+        Thrown, 
+        Returning, 
+        Rebounding 
+    }
 
     #endregion
 
-    #region Inspector - Core Stats Settings
+    #region Inspector - Stats
 
     [Header("Stats")]
     [SerializeField] private int attackDamage = 10;
@@ -23,13 +29,17 @@ public class Shield : MonoBehaviour
     [SerializeField] private float maxDistance = 30f;
     [SerializeField] private LayerMask collisionLayers;
 
+    #endregion
+
+    #region Inspector - Dynamic Stats
+
     [Header("Dynamic Stats")]
     [SerializeField] private float baseReturnSpeedMultiplier = 1.2f;
     [SerializeField] private float currentReturnSpeedMultiplier = 1.2f;
 
     #endregion
 
-    #region Inspector - Combat & Ability Settings
+    #region Inspector - Rebound Settings
 
     [Header("Rebound Settings")]
     [SerializeField] private bool canRebound = true;
@@ -38,17 +48,25 @@ public class Shield : MonoBehaviour
     [SerializeField] private float reboundDetectionRadius = 15f;
     [SerializeField] private LayerMask enemyLayer;
 
+    #endregion
+
+    #region Inspector - Pierce Settings
+
     [Header("Pierce Settings (Elder)")]
     [SerializeField] private bool canPierce = false;
     [SerializeField] private int maxPierceTargets = 5;
     [SerializeField] private int currentPierceCount = 0;
+
+    #endregion
+
+    #region Inspector - Knockback Settings
 
     [Header("Knockback Settings (Adult)")]
     [SerializeField] private float knockbackForce = 0f;
 
     #endregion
 
-    #region Inspector - Visuals, Audio & VFX Settings
+    #region Inspector - Sandy Wall Settings
 
     [Header("Sandy Wall Settings")]
     [SerializeField] private LayerMask sandyWallLayer;
@@ -58,17 +76,33 @@ public class Shield : MonoBehaviour
     [SerializeField] private float sandyBounceDuration = 0.13f;
     [SerializeField] private float sandyBounceSpeed = 12f;
 
+    #endregion
+
+    #region Inspector - Shield Trail VFX
+
     [Header("Shield Trail VFX")]
     [SerializeField] private ParticleSystem shieldTrailVFX;
     [SerializeField] private TrailRenderer shieldTrail;
 
+    #endregion
+
+    #region Inspector - Shield Impact VFX
+
     [Header("Shield Impact VFX")]
     [SerializeField] private GameObject shieldImpactVFX;
+
+    #endregion
+
+    #region Inspector - SFX
 
     [Header("SFX")]
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip shieldImpactClip;
     [SerializeField] private AudioClip shieldTrailClip;
+
+    #endregion
+
+    #region Inspector - Berserker SFX
 
     [Header("Berserker SFX")]
     [SerializeField] private AudioClip shieldImpactBerserkerClip;
@@ -76,7 +110,7 @@ public class Shield : MonoBehaviour
 
     #endregion
 
-    #region Inspector - Debug Settings
+    #region Inspector - Debug
 
     [Header("Debug")]
     [SerializeField] private bool debugMode = false;
@@ -86,9 +120,11 @@ public class Shield : MonoBehaviour
     #region Internal State
 
     private ShieldState currentState = ShieldState.Inactive;
+
     private float currentSpeed;
     private Vector3 startPosition;
     private Vector3 lastPosition;
+
     private Transform returnTarget;
     private Transform currentTarget;
     private List<Transform> hitTargets = new List<Transform>();
@@ -101,6 +137,7 @@ public class Shield : MonoBehaviour
     private float sandyBounceTimer = 0f;
     private Vector3 sandyBounceDir = Vector3.zero;
     private Vector3 currentMoveDir = Vector3.zero;
+
     private Collider currentSandyWall = null;
     private Material sandyVisualMat = null;
 
@@ -109,6 +146,7 @@ public class Shield : MonoBehaviour
     private Material shieldTrailMatInstance;
 
     private bool isBerserkerMode = false;
+
     private float storedToughnessBonus = 0f;
 
     #endregion
@@ -121,7 +159,7 @@ public class Shield : MonoBehaviour
     }
 
     /// <summary>
-    /// Función que maneja el movimiento y estado del escudo en cada frame.
+    /// Funcion que maneja el movimiento y estado del escudo en cada frame.
     /// </summary>
     private void Update()
     {
@@ -182,6 +220,41 @@ public class Shield : MonoBehaviour
         }
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (currentState == ShieldState.Inactive) return;
+
+        if (!isSandy && IsSandyWall(other))
+        {
+            EnterSandyState(other);
+            return; // no procesar como colision normal
+        }
+
+        if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
+        {
+            PerformHitDetection(other.transform);
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (currentState == ShieldState.Inactive) return;
+
+        if (isSandy && other == currentSandyWall)
+        {
+            ExitSandyState();
+            return;
+        }
+
+        if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
+        {
+            if (hitTargets.Contains(other.transform))
+            {
+                hitTargets.Remove(other.transform);
+            }
+        }
+    }
+
     private void OnDestroy()
     {
         if (shieldTrailVFXMatInstance != null)
@@ -228,7 +301,7 @@ public class Shield : MonoBehaviour
             knockbackForce = Mathf.Max(0f, knockbackForce);
         }
 
-        ReportDebug($"Stats dinámicos actualizados: ReturnSpeed={currentReturnSpeedMultiplier}x, KnockbackForce={knockbackForce} (+{pushForceMod})", 1);
+        ReportDebug($"Stats dinamicos actualizados: ReturnSpeed={currentReturnSpeedMultiplier}x, KnockbackForce={knockbackForce} (+{pushForceMod})", 1);
     }
 
     #endregion
@@ -236,14 +309,14 @@ public class Shield : MonoBehaviour
     #region Public API
 
     /// <summary>
-    /// Función que es llamada por el PlayerShieldController para lanzar el escudo.
+    /// Funcion que es llamada por el PlayerShieldController para lanzar el escudo.
     /// </summary>
     /// <param name="owner"> Referencia al controlador del jugador </param>
-    /// <param name="direction"> Orientación del escudo en la dirección del lanzamiento </param>
+    /// <param name="direction"> Orientacion del escudo en la direccion del lanzamiento </param>
     /// <param name="canRebound"> Indica si el escudo puede rebotar entre enemigos </param>
-    public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds, 
-        float reboundDetectionRadius, float damage, float speed, float distance, 
-        bool canPierce, int maxPierceTargets, float knockbackForce, PlayerHealth.LifeStage lifeStage, 
+    public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds,
+        float reboundDetectionRadius, float damage, float speed, float distance,
+        bool canPierce, int maxPierceTargets, float knockbackForce, PlayerHealth.LifeStage lifeStage,
         bool isBerserker, float toughnessBonus)
     {
         if (deactivationCoroutine != null)
@@ -300,46 +373,7 @@ public class Shield : MonoBehaviour
 
         PlayTrailVFX(true);
 
-        ReportDebug($"Escudo lanzado en modo {lifeStage}: Daño={damage}, Pierce={canPierce}, Rebote={canRebound}, ReturnSpeed={currentReturnSpeedMultiplier}x", 1);
-    }
-
-    #endregion
-
-    #region Physics & Collision
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (currentState == ShieldState.Inactive) return;
-
-        if (!isSandy && IsSandyWall(other))
-        {
-            EnterSandyState(other);
-            return; // no procesar como colisión normal
-        }
-
-        if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
-        {
-            PerformHitDetection(other.transform);
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (currentState == ShieldState.Inactive) return;
-
-        if (isSandy && other == currentSandyWall)
-        {
-            ExitSandyState();
-            return;
-        }
-
-        if ((collisionLayers.value & (1 << other.gameObject.layer)) > 0)
-        {
-            if (hitTargets.Contains(other.transform))
-            {
-                hitTargets.Remove(other.transform);
-            }
-        }
+        ReportDebug($"Escudo lanzado en modo {lifeStage}: Dano={damage}, Pierce={canPierce}, Rebote={canRebound}, ReturnSpeed={currentReturnSpeedMultiplier}x", 1);
     }
 
     #endregion
@@ -361,7 +395,7 @@ public class Shield : MonoBehaviour
             {
                 if (currentPierceCount >= maxPierceTargets)
                 {
-                    ReportDebug($"Máximo de atravesamientos alcanzado ({maxPierceTargets}).", 1);
+                    ReportDebug($"Maximo de atravesamientos alcanzado ({maxPierceTargets}).", 1);
                     StartReturning();
                     return;
                 }
@@ -412,13 +446,13 @@ public class Shield : MonoBehaviour
                             eh.PrepareToughnessBonus(storedToughnessBonus);
                         }
                         damageable.TakeDamage(Mathf.RoundToInt(finalDamage), isCritical, shieldDamageType);
-                        ReportDebug($"Golpe a {enemy.name}: DUMMY DE TUTORIAL DETECTADO (Tag). Enviando {finalDamage:F2} de daño de {damageTypeForDummy}", 1);
+                        ReportDebug($"Golpe a {enemy.name}: DUMMY DE TUTORIAL DETECTADO (Tag). Enviando {finalDamage:F2} de dano de {damageTypeForDummy}", 1);
                     }
                 }
                 else
                 {
                     ExecuteAttack(enemy.gameObject, attackDamage);
-                    ReportDebug($"Golpe a {enemy.name}: Enviando {attackDamage:F2} de daño de tipo {shieldDamageType}", 1);
+                    ReportDebug($"Golpe a {enemy.name}: Enviando {attackDamage:F2} de dano de tipo {shieldDamageType}", 1);
                 }
             }
 
@@ -491,7 +525,8 @@ public class Shield : MonoBehaviour
 
     private void ExecuteAttack(GameObject target, float damageAmount)
     {
-        if (target.TryGetComponent<DrogathEnemy>(out var blockSystem) && target.TryGetComponent<EnemyHealth>(out var health))
+        if (target.TryGetComponent<IDamageBlocker>(out var blockSystem)
+            && target.TryGetComponent<EnemyHealth>(out var healthB))
         {
             // Verificar si el ataque es bloqueado
             if (blockSystem.ShouldBlockDamage(transform.position))
@@ -500,8 +535,8 @@ public class Shield : MonoBehaviour
                 return;
             }
 
-            if (storedToughnessBonus > 0) health.PrepareToughnessBonus(storedToughnessBonus);
-            health.TakeDamage(damageAmount, false, AttackDamageType.Ranged);
+            if (storedToughnessBonus > 0) healthB.PrepareToughnessBonus(storedToughnessBonus);
+            healthB.TakeDamage(damageAmount, false, AttackDamageType.Ranged);
         }
         else if (target.TryGetComponent<IDamageable>(out var damageable))
         {
@@ -518,14 +553,14 @@ public class Shield : MonoBehaviour
     #region Rebound System
 
     /// <summary>
-    /// Función que encuentra el siguiente enemigo para rebotar.
+    /// Funcion que encuentra el siguiente enemigo para rebotar.
     /// Solo busca en enemyLayer, no en collisionLayers general.
     /// </summary>
     private Transform FindNextReboundTarget()
     {
         if (!canRebound || reboundCount >= maxRebounds)
         {
-            ReportDebug("Máximo de rebotes alcanzado o rebotes desactivados.", 1);
+            ReportDebug("Maximo de rebotes alcanzado o rebotes desactivados.", 1);
             return null;
         }
 
@@ -547,7 +582,7 @@ public class Shield : MonoBehaviour
             float distanceToTarget = Vector3.Distance(transform.position, targetCollider.transform.position);
             float distanceToPlayer = Vector3.Distance(transform.position, returnTarget.position);
 
-            // El rebote es válido solo si el enemigo está más cerca que el jugador
+            // El rebote es valido solo si el enemigo esta mas cerca que el jugador
             if (distanceToTarget < distanceToPlayer)
             {
                 if (distanceToTarget < closestDistance)
@@ -559,7 +594,7 @@ public class Shield : MonoBehaviour
             }
             else
             {
-                ReportDebug("Enemigo " + targetCollider.name + " omitido (más lejos que el jugador).", 1);
+                ReportDebug("Enemigo " + targetCollider.name + " omitido (mas lejos que el jugador).", 1);
             }
         }
 
@@ -616,10 +651,12 @@ public class Shield : MonoBehaviour
     }
 
     private bool IsSandyWall(Collider col)
-    => (sandyWallLayer.value & (1 << col.gameObject.layer)) > 0;
+    {
+        return (sandyWallLayer.value & (1 << col.gameObject.layer)) > 0;
+    }
 
     /// <summary>
-    /// Inicializa el sistema de VFX del escudo (partículas y trail renderer).
+    /// Inicializa el sistema de VFX del escudo (particulas y trail renderer).
     /// </summary>
     private void InitializeShieldVFX()
     {
@@ -642,8 +679,7 @@ public class Shield : MonoBehaviour
             trailRenderer.material = shieldTrailMatInstance;
         }
 
-        shieldTrailVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        shieldTrailVFX.Clear(true);
+        VFXHelper.SafeStop(shieldTrailVFX, clear: true);
 
         shieldTrail.emitting = false;
         shieldTrail.Clear();
@@ -655,7 +691,7 @@ public class Shield : MonoBehaviour
             SetSandyShaderAmount(0f);
         }
 
-        if (sandyAreaVFX != null) VFXHelper.SafeStop(sandyAreaVFX, clear: true);
+        VFXHelper.SafeStop(sandyAreaVFX, clear: true);
     }
 
     /// <summary>
@@ -670,17 +706,15 @@ public class Shield : MonoBehaviour
 
         if (active)
         {
-            if (!shieldTrailVFX.isPlaying) shieldTrailVFX.Play();
+            VFXHelper.SafePlay(shieldTrailVFX);
 
             shieldTrail.Clear();
             shieldTrail.emitting = true;
         }
         else
         {
-            shieldTrailVFX.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
-            shieldTrailVFX.Clear(false);
-
-            shieldTrail.emitting = false;
+            VFXHelper.SafeStop(shieldTrailVFX, clear: true);
+            VFXHelper.SafeSetEmitting(shieldTrail, false);
         }
     }
 
@@ -693,47 +727,21 @@ public class Shield : MonoBehaviour
 
         PlayerCombatEvents.RaiseShieldLanded();
 
-        // Detener VFX antes de desactivar el GameObject
-        if (shieldTrailVFX != null && shieldTrail != null)
-        {
-            try
-            {
-                var emission = shieldTrailVFX.emission;
-                emission.enabled = false;
+        VFXHelper.SafeStop(shieldTrailVFX, clear: true);
+        VFXHelper.SafeSetEmitting(shieldTrail, false);
 
-                if (shieldTrailVFX.isPlaying)
-                {
-                    shieldTrailVFX.Stop(false, ParticleSystemStopBehavior.StopEmitting);
-                }
-
-                shieldTrail.emitting = false;
-            }
-            catch (System.Exception ex)
-            {
-                ReportDebug($"Excepción al detener VFX: {ex.Message}", 2);
-            }
-        }
-
-        // Esperar un frame para que se procesen los cambios de VFX
+        yield return null;
         yield return null;
 
-        // Limpiar VFX después de que se detengan
-        if (shieldTrailVFX != null && shieldTrail != null && gameObject.activeInHierarchy)
+        if (shieldTrailVFX != null && gameObject.activeInHierarchy)
         {
-            try
-            {
-                shieldTrailVFX.Clear(false);
-                shieldTrail.Clear();
-            }
-            catch (System.Exception ex)
-            {
-                ReportDebug($"Excepción al limpiar VFX: {ex.Message}", 2);
-            }
+            shieldTrailVFX.Clear(true);
         }
 
-        // Esperar otro frame antes de desactivar
-        yield return null;
-
+        if (shieldTrail != null)
+        {
+            shieldTrail.Clear();
+        }
         gameObject.SetActive(false);
 
         deactivationCoroutine = null;
@@ -748,7 +756,7 @@ public class Shield : MonoBehaviour
 
     #endregion
 
-    #region Debugging
+    #region Logging
 
     private void OnDrawGizmos()
     {
@@ -770,14 +778,14 @@ public class Shield : MonoBehaviour
                 break;
         }
 
-        // Radio de búsqueda de rebote (solo para enemigos)
+        // Radio de busqueda de rebote (solo para enemigos)
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, reboundDetectionRadius);
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     /// <summary> 
-    /// Función de depuración para reportar mensajes en la consola de Unity. 
+    /// Funcion de depuracion para reportar mensajes en la consola de Unity. 
     /// </summary> 
     /// <<param name="message">Mensaje a reportar.</param> >
     /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>

@@ -230,7 +230,10 @@ public class PlayerMeleeAttack : MonoBehaviour
             cleanupCoroutine = null;
         }
 
-        //CleanupVFXImmediate();
+        VFXHelper.SafeStop(vfxAttack1Slash, clear: true);
+        VFXHelper.SafeStop(vfxAttack2Slash, clear: true);
+        VFXHelper.SafeStop(vfxAttack3Slash, clear: true);
+
         StopAllCoroutines();
     }
 
@@ -735,7 +738,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     public void ActiveAttack1Slash()
     {
-        if (vfxAttack1Slash != null) vfxAttack1Slash.Play();
+        VFXHelper.SafePlay(vfxAttack1Slash);
+
         if (playerAudioController != null)
         {
             playerAudioController.PlayMeleeSound("BasicSlash");
@@ -888,7 +892,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     public void ActiveAttack2Slash()
     {
-        if (vfxAttack2Slash != null) vfxAttack2Slash.Play();
+        VFXHelper.SafePlay(vfxAttack2Slash);
+
         if (playerAudioController != null)
         {
             playerAudioController.PlayMeleeSound("SpinSlash");
@@ -986,7 +991,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     public void ActiveAttack3Slash()
     {
-        if (vfxAttack3Slash != null) vfxAttack3Slash.Play();
+        VFXHelper.SafePlay(vfxAttack3Slash);
+
         if (playerAudioController != null)
         {
             playerAudioController.PlayMeleeSound("HeavySlash");
@@ -1151,17 +1157,17 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     private bool ExecuteAttack(GameObject target, float damageAmount, float toughnessBonus)
     {
-        if (target.TryGetComponent<DrogathEnemy>(out var blockSystem) && target.TryGetComponent<EnemyHealth>(out var health))
+        if (target.TryGetComponent<IDamageBlocker>(out var blocker) 
+            && target.TryGetComponent<EnemyHealth>(out var healthB))
         {
-            // Verificar si el ataque es bloqueado
-            if (blockSystem.ShouldBlockDamage(transform.position))
+            if (blocker.ShouldBlockDamage(transform.position))
             {
-                ReportDebug("Ataque bloqueado por DrogathEnemy.", 1);
+                ReportDebug("Ataque bloqueado por escudo frontal.", 1);
                 return false;
             }
 
-            if (toughnessBonus > 0) health.PrepareToughnessBonus(toughnessBonus);
-            health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+            if (toughnessBonus > 0) healthB.PrepareToughnessBonus(toughnessBonus);
+            healthB.TakeDamage(damageAmount, false, AttackDamageType.Melee);
             return true;
         }
         else if (target.TryGetComponent<EnemyHealth>(out var enemyHealth))

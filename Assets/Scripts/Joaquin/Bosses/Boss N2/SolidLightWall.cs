@@ -6,49 +6,60 @@ using UnityEngine;
 /// </summary>
 public class SolidLightWall : MonoBehaviour
 {
-    #region Inspector - Dano
+    #region Inspector - Daño
 
-    [Header("Dano de contacto")]
+    [Header("Daño de contacto")]
     [SerializeField] private float contactDamagePerSecond = 2.5f;
 
-    [Header("Dano instantaneo al crear encima del jugador")]
+    [Header("Daño instantáneo al crear encima del jugador")]
     [SerializeField] private float instantDamageOnSpawn = 12.5f;
 
     #endregion
 
-    #region Inspector - Configuracion
+    #region Inspector - Configuración
 
     [Header("Tiempo de vida")]
     [SerializeField] private float wallLifetime = 5f;
 
-    [Header("Deteccion")]
+    [Header("Detección")]
     [SerializeField] private LayerMask playerLayer;
 
+    [Header("Empuje de contacto")]
+    [Tooltip("Velocidad del empuje que aparta al jugador al tocar la pared.")]
+    [SerializeField] private float pushSpeed = 4f;
+    [Tooltip("Duración del empuje en segundos.")]
+    [SerializeField] private float pushDuration = 0.2f;
+    [Tooltip("Intervalo mínimo entre zaps (daño + empuje) en segundos.")]
+    [SerializeField] private float zapInterval = 0.65f;
+
     #endregion
 
-    #region Internal State
+    #region Public Properties
 
-    private float contactTimer;
+    public float ContactDamagePerSecond
+    {
+        get => contactDamagePerSecond;
+        set => contactDamagePerSecond = value;
+    }
+
+    public float InstantDamageOnSpawn
+    {
+        get => instantDamageOnSpawn;
+        set => instantDamageOnSpawn = value;
+    }
+
+    public float WallLifetime
+    {
+        get => wallLifetime;
+        set => wallLifetime = value;
+    }
 
     #endregion
 
-    #region Public Properties & Events
+    #region Estado interno
 
-    public float ContactDamagePerSecond 
-    { 
-        get => contactDamagePerSecond; 
-        set => contactDamagePerSecond = value; 
-    }
-    public float InstantDamageOnSpawn   
-    { 
-        get => instantDamageOnSpawn;   
-        set => instantDamageOnSpawn = value; 
-    }
-    public float WallLifetime           
-    { 
-        get => wallLifetime;           
-        set => wallLifetime = value; 
-    }
+    private float zapTimer;
+    private bool zapOnCooldown;
 
     #endregion
 
@@ -56,26 +67,84 @@ public class SolidLightWall : MonoBehaviour
 
     private void Start()
     {
-        if (CheckSpawnOverlapPlayer()) return; // Si se creo encima, se destruye ya
+        if (CheckSpawnOverlapPlayer()) return;
         StartCoroutine(LifetimeRoutine());
     }
 
-    private void OnTriggerStay(Collider other)
+    private void OnCollisionEnter(Collision collision)
     {
-        if (!other.CompareTag("Player")) return;
+        if (!collision.collider.CompareTag("Player")) return;
+        TryZap(collision.collider);
+    }
 
-        contactTimer += Time.deltaTime;
-        if (contactTimer < 1f) return;
+    private void OnCollisionStay(Collision collision)
+    {
+        if (!collision.collider.CompareTag("Player") || zapOnCooldown) return;
 
-        other.GetComponent<PlayerHealth>()?.TakeDamage(contactDamagePerSecond);
-        contactTimer = 0f;
+        zapTimer += Time.deltaTime;
+        if (zapTimer < zapInterval) return;
+
+        zapTimer = 0f;
+        TryZap(collision.collider);
     }
 
     #endregion
 
     #region Core Logic
 
-    /// <returns>true si habia jugador encima y la pared se destruyo sin mantenerse.</returns>
+    private void TryZap(Collider playerCollider)
+    {
+        if (zapOnCooldown) return;
+
+        playerCollider.GetComponent<PlayerHealth>()?.TakeDamage(contactDamagePerSecond);
+
+        Vector3 pushDir = playerCollider.transform.position - transform.position;
+        pushDir.y = 0f;
+        if (pushDir.sqrMagnitude < 0.001f)
+            pushDir = -transform.forward;
+        pushDir.Normalize();
+
+        CharacterController cc = playerCollider.GetComponent<CharacterController>();
+        if (cc != null && cc.enabled)
+        {
+            StartCoroutine(PushRoutine(cc, pushDir));
+        }
+        else
+        {
+            Rigidbody rb = playerCollider.GetComponent<Rigidbody>();
+            rb?.AddForce(pushDir * pushSpeed, ForceMode.VelocityChange);
+        }
+
+        StartCoroutine(ZapCooldownRoutine());
+    }
+
+    /// <summary>
+    /// Desplaza el CharacterController del jugador durante pushDuration segundos
+    /// para simular el empuje sin necesitar Rigidbody.
+    /// </summary>
+    private IEnumerator PushRoutine(CharacterController cc, Vector3 dir)
+    {
+        float elapsed = 0f;
+        while (elapsed < pushDuration)
+        {
+            if (cc == null || !cc.enabled) yield break;
+            cc.Move(dir * pushSpeed * Time.deltaTime);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+    }
+
+    private IEnumerator ZapCooldownRoutine()
+    {
+        zapOnCooldown = true;
+        zapTimer = 0f;
+        yield return new WaitForSeconds(zapInterval);
+        zapOnCooldown = false;
+    }
+
+    /// <returns>
+    /// true si había jugador encima y la pared se destruyó sin mantenerse.
+    /// </returns>
     private bool CheckSpawnOverlapPlayer()
     {
         Collider[] hits = Physics.OverlapBox(
@@ -104,7 +173,7 @@ public class SolidLightWall : MonoBehaviour
 
     #endregion
 
-    #region Logging
+    #region Debug
 
     private void OnDrawGizmos()
     {

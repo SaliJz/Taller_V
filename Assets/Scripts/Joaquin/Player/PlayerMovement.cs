@@ -158,6 +158,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     public bool IsRotationExternallyControlled { get; set; } = false;
 
+    public static event System.Action OnDashPerformed;
+
     #endregion
 
     #region Unity Lifecycle
@@ -614,6 +616,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         IsDashing = true;
         PlayerCombatEvents.RaiseDashStarted(transform.position, dashDirection);
+        OnDashPerformed?.Invoke();
         yVelocity = 0f;
         moveDirection = Vector3.zero;
         if (playerHealth != null) playerHealth.IsInvulnerable = true;
