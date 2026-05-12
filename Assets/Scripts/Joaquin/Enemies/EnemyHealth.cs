@@ -6,10 +6,29 @@ using UnityEngine.Events;
 using UnityEngine.UI;
 
 /// <summary>
-/// Clase que gestiona la salud de un enemigo,
+/// Clase que gestiona la salud de un enemigo.
 /// </summary>
 public class EnemyHealth : MonoBehaviour, IDamageable
 {
+    #region Inspector - References
+
+    [Header("UI - Sliders")]
+    [SerializeField] private Slider healthSlider;
+    [SerializeField] private Image healthFillImage;
+    [SerializeField] private TextMeshProUGUI healthPercentageText;
+    [SerializeField] private TextMeshProUGUI healthMultiplierText;
+
+    [Header("Toughness System")]
+    [SerializeField] private EnemyToughness toughnessSystem;
+
+    [Header("Death Feedback")]
+    [Tooltip("Prefab que se instanciara al morir.")]
+    [SerializeField] private GameObject deathVFXPrefab;
+
+    #endregion
+
+    #region Inspector - Health Settings
+
     [Header("Health statistics")]
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float currentHealth;
@@ -19,14 +38,15 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private bool canDisable = false;
     [SerializeField] private bool canBeStunned = true;
     [SerializeField] private UnityEvent onDeathEvent;
+    [SerializeField] private Vector3 deathVFXOffset = new Vector3(0, 1f, 0); // Ajuste para que salga del centro del cuerpo
 
-    [Header("UI - Sliders")]
-    [SerializeField] private Slider healthSlider;
-    [SerializeField] private Image healthFillImage;
+    #endregion
+
+    #region Inspector - UI Settings
+
+    [Header("UI Offsets & Delays")]
     [SerializeField] private float offsetAboveEnemy = 2f; // altura del slider sobre el enemigo
-    [SerializeField] private float glowDelayAfterCritical = 2f; // tiempo que el brillo dura tras daño crítico
-    [SerializeField] private TextMeshProUGUI healthPercentageText;
-    [SerializeField] private TextMeshProUGUI healthMultiplierText;
+    [SerializeField] private float glowDelayAfterCritical = 2f; // tiempo que el brillo dura tras dano critico
 
     [Header("Dynamic Bar Configuration")]
     [SerializeField] private bool useDynamicHealthBars = false;
@@ -34,43 +54,80 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private Color healthBaseColor = Color.red;
     [SerializeField, Range(0f, 1f)] private float colorGradientIntensity = 0.3f;
 
+    #endregion
+
+    #region Inspector - Lifesteal Settings
+
     [Header("Lifesteal Control")]
     [SerializeField] private bool canGrantLifestealOnDeath = true; // deshabilitar para tutoriales u otros casos
-    [Tooltip("Cantidad base de lifesteal otorgada al jugador al morir este enemigo por daño cuerpo a cuerpo.")]
+    [Tooltip("Cantidad base de lifesteal otorgada al jugador al morir este enemigo por dano cuerpo a cuerpo.")]
     [SerializeField] private float lifestealAmountOnDeathByMelee = 10f;
-    [Tooltip("Cantidad base de lifesteal otorgada al jugador al morir este enemigo por daño a distancia.")]
+    [Tooltip("Cantidad base de lifesteal otorgada al jugador al morir este enemigo por dano a distancia.")]
     [SerializeField] private float lifestealAmountOnDeathByDistance = 10f;
 
-    [Header("Toughness System")]
-    [SerializeField] private EnemyToughness toughnessSystem;
+    #endregion
 
-    [Header("Death Feedback")]
-    [Tooltip("Prefab que se instanciará al morir.")]
-    [SerializeField] private GameObject deathVFXPrefab;
-    [SerializeField] private Vector3 deathVFXOffset = new Vector3(0, 1f, 0); // Ajuste para que salga del centro del cuerpo
+    #region Inspector - Area Armor Settings
 
-    public int invulnerableLayerIndex;
-    private int vulnerableLayerIndex;
-    private float dynamicDamageReduction = 0.0f;
+    [Header("Armadura Demonica (Auto)")]
+    [Tooltip("Si true, este componente intentara activar la armadura de area cuando la vida <= areaTriggerPercent.")]
+    [SerializeField] private bool enableAutoArea = false;
+    [SerializeField, Range(0f, 1f)] private float areaTriggerPercent = 0.25f; // 25%
+    [SerializeField, Range(0f, 1f)] private float areaReductionPercent = 0.25f; // 25% reduccion
+    [SerializeField] private float areaDuration = 10f;
+    [SerializeField] private float areaCooldown = 4.5f;
+    [SerializeField] private float areaRadius = 8f;
+    [SerializeField] private LayerMask areaLayers = ~0;
+    [SerializeField] private float flattenHeightThreshold = 1.2f;
+    [SerializeField] private float areaCheckInterval = 0.25f;
+
+    #endregion
+
+    #region Internal State
 
     private PlayerStatsManager playerStatsManager;
-    private EnemyAuraManager _auraManager;
+    private EnemyAuraManager auraManager;
+    private PlayerHealth playerHealth;
+    private EnemyVisualEffects enemyVisualEffects;
+    private Transform playerTransform;
+    private Renderer enemyRenderer;
 
-    private float _initialHealthMultiplier = 1.0f;
+    private Color originalColor;
+    private AttackDamageType lastDamageType;
+
+    private Coroutine stunCoroutine;
+    private Coroutine currentCriticalDamageCoroutine;
+    private Coroutine areaCoroutine;
+    private Coroutine reduccionLocalRoutine;
+
+    private int vulnerableLayerIndex;
+    private int currentHealthBars;
+    private int totalHealthBars;
+
+    private float dynamicDamageReduction = 0.0f;
+    private float initialHealthMultiplier = 1.0f;
     private float auraDamageReduction = 0.0f;
+    private float localReduction = 0f;
+    private float nextHitToughnessBonus = 0f;
 
     private bool canHealPlayer = true;
     private bool isDead = false;
     private bool isStunned = false;
-    private Renderer enemyRenderer;
-    private Color originalColor;
-    private Coroutine stunCoroutine;
-    private Coroutine currentCriticalDamageCoroutine;
-    private AttackDamageType lastDamageType;
-    public AttackDamageType LastDamageType => lastDamageType;
+    private bool areaActive = false;
+    private bool areaOnCooldown = false;
 
-    private int currentHealthBars;
-    private int totalHealthBars;
+    #endregion
+
+    #region Public Properties & Events
+
+    public int invulnerableLayerIndex;
+
+    public bool ItemEffectHandledDeath { get; set; } = false;
+
+    public static event Action<float, float> OnEnemyHealthChanged;
+    public Action<GameObject> OnDeath;
+    public event Action OnDamaged;
+    public event Action<float, float> OnHealthChanged;
 
     public bool CanBeStunned
     {
@@ -127,41 +184,12 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     }
 
     public float MaxHealth => maxHealth;
-    public bool ItemEffectHandledDeath { get; set; } = false;
-    public static event Action<float, float> OnEnemyHealthChanged;
-    public Action<GameObject> OnDeath;
-    public event Action OnDamaged;
-    public event Action<float, float> OnHealthChanged;
-    private EnemyVisualEffects enemyVisualEffects;
-    private Transform playerTransform;
-    private PlayerHealth playerHealth;
 
-    private float nextHitToughnessBonus = 0f;
+    public AttackDamageType LastDamageType => lastDamageType;
 
-    #region --- Armadura de área (configurable) ---
-    [Header("Armadura Demoníaca (Auto)")]
-    [Tooltip("Si true, este componente intentará activar la armadura de área cuando la vida <= areaTriggerPercent.")]
-    [SerializeField] private bool enableAutoArea = false;
-    [SerializeField, Range(0f, 1f)] private float areaTriggerPercent = 0.25f; // 25%
-    [SerializeField, Range(0f, 1f)] private float areaReductionPercent = 0.25f; // 25% reducción
-    [SerializeField] private float areaDuration = 10f;
-    [SerializeField] private float areaCooldown = 4.5f;
-    [SerializeField] private float areaRadius = 8f;
-    [SerializeField] private LayerMask areaLayers = ~0;
-    [SerializeField] private float flattenHeightThreshold = 1.2f;
-    [SerializeField] private float areaCheckInterval = 0.25f;
-
-    // runtime
-    private bool areaActive = false;
-    private bool areaOnCooldown = false;
-    private Coroutine areaCoroutine;
     #endregion
 
-    #region --- Reducción local (aplicable por armadura propia) ---
-    // campo interno que afecta TakeDamage
-    private float localReduction = 0f;
-    private Coroutine _reduccionLocalRoutine;
-    #endregion
+    #region Unity Lifecycle
 
     private void Awake()
     {
@@ -173,29 +201,91 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         }
 
         toughnessSystem = GetComponent<EnemyToughness>();
+
         if (toughnessSystem != null)
         {
             ReportDebug("Sistema de dureza detectado.", 1);
         }
 
         enemyRenderer = GetComponentInChildren<Renderer>();
+
         if (enemyRenderer != null && enemyRenderer.material.HasProperty("_Color"))
         {
             originalColor = enemyRenderer.material.color;
         }
 
         vulnerableLayerIndex = gameObject.layer;
-
         currentHealth = maxHealth;
-
-        _auraManager = GetComponent<EnemyAuraManager>();
+        auraManager = GetComponent<EnemyAuraManager>();
 
         ApplyInitialHealth();
 
-        // asegurar inicialización de currentHealth (si no se configuró)
+        // asegurar inicializacion de currentHealth (si no se configuro)
         currentHealth = Mathf.Clamp(currentHealth > 0f ? currentHealth : maxHealth, 0f, maxHealth);
 
         InitializeHealthUI();
+    }
+
+    private void Start()
+    {
+        var playerGameObject = GameObject.FindGameObjectWithTag("Player");
+        playerTransform = playerGameObject ? playerGameObject.transform : null;
+
+        if (playerTransform == null)
+        {
+            ReportDebug("Jugador no encontrado en la escena.", 3);
+        }
+        else
+        {
+            playerTransform.TryGetComponent(out playerHealth);
+            playerTransform.TryGetComponent(out playerStatsManager);
+        }
+
+        // arrancar monitor de vida si esta activado
+        if (enableAutoArea)
+        {
+            StartCoroutine(HealthMonitorForArea());
+        }
+
+        // emitir estado inicial
+        OnEnemyHealthChanged?.Invoke(currentHealth, maxHealth);
+        UpdateHealthUI();
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.B))
+        {
+            DebugKill();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (isDead) StopAllCoroutines();
+    }
+
+    #endregion
+
+    #region Initialization & Data Sync
+
+    public void SetInitialHealthMultiplier(float multiplier)
+    {
+        initialHealthMultiplier = multiplier;
+    }
+
+    private void ApplyInitialHealth()
+    {
+        currentHealth = maxHealth * initialHealthMultiplier;
+        maxHealth *= initialHealthMultiplier;
+    }
+
+    public void SetMaxHealth(float health)
+    {
+        maxHealth = health;
+        currentHealth = maxHealth;
+        InitializeHealthUI();
+        UpdateHealthUI();
     }
 
     public void SubscribeToDeath(UnityAction action)
@@ -208,79 +298,13 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         onDeathEvent.RemoveListener(action);
     }
 
-    private void ApplyInitialHealth()
+    #endregion
+
+    #region Core Health & Combat
+
+    public void PrepareToughnessBonus(float bonusAmount)
     {
-        currentHealth = maxHealth * _initialHealthMultiplier;
-        maxHealth *= _initialHealthMultiplier;
-    }
-
-    public void SetInitialHealthMultiplier(float multiplier)
-    {
-        _initialHealthMultiplier = multiplier;
-    }
-
-    private void Start()
-    {
-        var playerGameObject = GameObject.FindGameObjectWithTag("Player");
-        playerTransform = playerGameObject ? playerGameObject.transform : null;
-        if (playerTransform == null) ReportDebug("Jugador no encontrado en la escena.", 3);
-        else
-        {
-            playerTransform.TryGetComponent(out playerHealth);
-            playerTransform.TryGetComponent(out playerStatsManager);
-        }
-
-        // arrancar monitor de vida si está activado
-        if (enableAutoArea)
-        {
-            StartCoroutine(HealthMonitorForArea());
-        }
-
-        // emitir estado inicial
-        OnEnemyHealthChanged?.Invoke(currentHealth, maxHealth);
-        UpdateHealthUI();
-    }
-
-    private void OnDestroy()
-    {
-        if (isDead) StopAllCoroutines();
-    }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.B))
-        {
-            DebugKill();
-        }
-    }
-
-    public void DebugKill()
-    {
-        if (currentHealth > 0 && gameObject.name.Contains("Boss", StringComparison.OrdinalIgnoreCase))
-        {
-            Debug.Log("<color=red>[DEBUG] Boss eliminado instantáneamente con la tecla 'B'.</color>");
-            TakeDamage(9999f);
-        }
-    }
-
-    public void SetMaxHealth(float health)
-    {
-        maxHealth = health;
-        currentHealth = maxHealth;
-        InitializeHealthUI();
-        UpdateHealthUI();
-    }
-
-    public void SetInvulnerable(bool invulnerable)
-    {
-        if (invulnerable)
-        {
-            healthSlider.gameObject.SetActive(false);
-        }
-        else
-        {
-            healthSlider.gameObject.SetActive(true);
-        }
+        nextHitToughnessBonus = bonusAmount;
     }
 
     public void TakeDamage(float damageAmount, AttackDamageType damageType, Vector3 damageSourcePosition)
@@ -292,18 +316,13 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
             if (drogathBlocker.ShouldBlockDamage(damageDirection))
             {
-                // Daño bloqueado por el escudo frontal.
-                ReportDebug($"Daño {damageAmount} bloqueado por escudo de {gameObject.name}.", 1);
+                // Dano bloqueado por el escudo frontal.
+                ReportDebug($"Dano {damageAmount} bloqueado por escudo de {gameObject.name}.", 1);
                 return;
             }
         }
 
         TakeDamage(damageAmount: damageAmount, damageType: damageType);
-    }
-
-    public void PrepareToughnessBonus(float bonusAmount)
-    {
-        nextHitToughnessBonus = bonusAmount;
     }
 
     public void TakeDamage(float damageAmount, bool isCritical = false, AttackDamageType damageType = AttackDamageType.Melee)
@@ -322,8 +341,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
             if (finalDamage <= 0)
             {
-                // Todo el daño fue absorbido por la dureza
-                ReportDebug($"Daño completamente absorbido por dureza. Tipo: {damageType}", 1);
+                // Todo el dano fue absorbido por la dureza
+                ReportDebug($"Dano completamente absorbido por dureza. Tipo: {damageType}", 1);
 
                 if (enemyVisualEffects != null)
                 {
@@ -334,7 +353,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             }
             else if (finalDamage < damageAmount)
             {
-                ReportDebug($"Daño reducido por dureza: {damageAmount} -> {finalDamage}", 1);
+                ReportDebug($"Dano reducido por dureza: {damageAmount} -> {finalDamage}", 1);
             }
         }
         else
@@ -347,8 +366,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         if (finalDamage <= 0 && damageAmount > 0)
         {
-            ReportDebug($"Daño {damageAmount} completamente bloqueado por reducción dinámica.", 1);
-            return; // Daño inmune
+            ReportDebug($"Dano {damageAmount} completamente bloqueado por reduccion dinamica.", 1);
+            return; // Dano inmune
         }
 
         currentHealth -= finalDamage;
@@ -363,16 +382,16 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         OnDamaged?.Invoke();
         UpdateHealthUI();
 
-        if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El enemigo ha recibido {finalDamage} de daño. Vida actual: {currentHealth}/{maxHealth}", 1);
+        if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El enemigo ha recibido {finalDamage} de dano. Vida actual: {currentHealth}/{maxHealth}", 1);
 
-        // Feedback visual/sonoro/numérico centralizado en EnemyVisualEffects
+        // Feedback visual/sonoro/numerico centralizado en EnemyVisualEffects
         if (enemyVisualEffects != null)
         {
             enemyVisualEffects.PlayDamageFeedback(transform.position + Vector3.up * offsetAboveEnemy, finalDamage, isCritical);
 
             if (isCritical)
             {
-                ReportDebug("El enemigo ha recibido daño crítico.", 1);
+                ReportDebug("El enemigo ha recibido dano critico.", 1);
 
                 enemyVisualEffects.StartArmorGlow();
 
@@ -385,22 +404,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         {
             CurrentHealth = 0;
             Die(deathByDamageType: damageType);
-        }
-    }
-
-    public void ApplyDamageReduction_Aura(float reductionPercent)
-    {
-        auraDamageReduction = reductionPercent;
-        ReportDebug($"Reduccion de dano por Aura Endurecimiento: {reductionPercent * 100}%.", 1);
-    }
-
-    private IEnumerator StopGlowAfterDelay(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-
-        if (enemyVisualEffects != null)
-        {
-            enemyVisualEffects.StopArmorGlow();
         }
     }
 
@@ -451,9 +454,9 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         onDeathEvent?.Invoke();
 
         OnDeath?.Invoke(gameObject);
-        if (_auraManager != null)
+        if (auraManager != null)
         {
-            _auraManager.HandleDeathEffect(transform, maxHealth);
+            auraManager.HandleDeathEffect(transform, maxHealth);
         }
 
         ReportDebug($"{gameObject.name} ha muerto.", 1);
@@ -481,7 +484,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
                         playerHealth.Heal(totalLifesteal);
                         ReportDebug($"El jugador ha robado {totalLifesteal} de vida al matar a {gameObject.name} (LifestealOnKill) por ataque a distancia.", 1);
                     }
-
                 }
             }
         }
@@ -536,8 +538,151 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         Destroy(gameObject);
     }
 
+    #endregion
+
+    #region UI Management
+
+    private void InitializeHealthUI()
+    {
+        if (useDynamicHealthBars)
+        {
+            totalHealthBars = Mathf.Max(1, Mathf.CeilToInt(maxHealth / healthPerBar));
+            currentHealthBars = Mathf.Max(1, Mathf.CeilToInt(currentHealth / healthPerBar));
+        }
+        else
+        {
+            totalHealthBars = 1;
+            currentHealthBars = 1;
+        }
+
+        if (healthSlider != null)
+        {
+            if (useDynamicHealthBars)
+            {
+                healthSlider.maxValue = healthPerBar;
+                healthSlider.value = GetCurrentBarValue(currentHealth, healthPerBar);
+            }
+            else
+            {
+                healthSlider.maxValue = Mathf.Max(1, maxHealth);
+                healthSlider.value = currentHealth;
+            }
+        }
+        UpdateHealthUI(); // Llamar para actualizar colores y texto
+    }
+
+    private void UpdateHealthUI()
+    {
+        if (healthSlider != null)
+        {
+            if (useDynamicHealthBars)
+            {
+                // Actualizar contador de barras
+                int newBars = Mathf.CeilToInt(currentHealth / healthPerBar);
+                if (newBars != currentHealthBars)
+                {
+                    currentHealthBars = newBars;
+                }
+                healthSlider.value = GetCurrentBarValue(currentHealth, healthPerBar);
+                healthSlider.maxValue = healthPerBar;
+            }
+            else
+            {
+                healthSlider.value = currentHealth;
+                healthSlider.maxValue = Mathf.Max(1, maxHealth);
+            }
+            if (!healthSlider.gameObject.activeSelf) healthSlider.gameObject.SetActive(true);
+        }
+
+        if (healthFillImage != null)
+        {
+            // Usar color base o degradado segun la configuracion
+            Color barColor = useDynamicHealthBars ?
+                GetGradientColor(healthBaseColor, currentHealthBars, totalHealthBars) :
+                healthBaseColor;
+
+            healthFillImage.color = barColor;
+
+            if (!healthFillImage.gameObject.activeSelf) healthFillImage.gameObject.SetActive(true);
+        }
+
+        if (healthPercentageText != null)
+        {
+            float percentage = (maxHealth > 0) ? (currentHealth / maxHealth) * 100f : 0f;
+            healthPercentageText.text = $"{percentage:F0}%";
+        }
+
+        if (healthMultiplierText != null)
+        {
+            if (useDynamicHealthBars && currentHealthBars > 1)
+            {
+                healthMultiplierText.text = $"x{currentHealthBars}";
+                healthMultiplierText.gameObject.SetActive(true);
+            }
+            else
+            {
+                healthMultiplierText.gameObject.SetActive(false);
+            }
+        }
+    }
+
+    public void SetInvulnerable(bool invulnerable)
+    {
+        if (invulnerable)
+        {
+            healthSlider.gameObject.SetActive(false);
+        }
+        else
+        {
+            healthSlider.gameObject.SetActive(true);
+        }
+    }
+
+    private Color GetGradientColor(Color baseColor, int currentBar, int totalBars)
+    {
+        if (totalBars <= 1) return baseColor;
+        if (currentBar <= 0) return baseColor;
+        if (currentBar >= totalBars) return baseColor;
+
+        float t = (float)(currentBar - 1) / (totalBars - 1);
+        t = Mathf.Lerp(1f, t, colorGradientIntensity);
+        Color lighterColor = Color.Lerp(Color.white, baseColor, 0.6f);
+        return Color.Lerp(lighterColor, baseColor, t);
+    }
+
+    private float GetCurrentBarValue(float currentValue, float valuePerBar)
+    {
+        if (currentValue <= 0) return 0;
+        float remainder = currentValue % valuePerBar;
+        if (Mathf.Approximately(remainder, 0f) && currentValue > 0)
+        {
+            return valuePerBar;
+        }
+        return remainder;
+    }
+
+    #endregion
+
+    #region Status Effects & Debuffs
+
+    public void ApplyDamageReduction_Aura(float reductionPercent)
+    {
+        auraDamageReduction = reductionPercent;
+        ReportDebug($"Reduccion de dano por Aura Endurecimiento: {reductionPercent * 100}%.", 1);
+    }
+
+    private IEnumerator StopGlowAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (enemyVisualEffects != null)
+        {
+            enemyVisualEffects.StopArmorGlow();
+        }
+    }
+
     /// <summary>
-    /// Establece una reducción de daño dinámica y cambia la capa del objeto
+    /// Establece una reduccion de dano dinamica y cambia la capa del objeto
     /// para evitar ser detectado por ataques (ej. rebotes de escudo).
     /// </summary>
     public void SetDynamicVulnerability(float damageReductionPercent)
@@ -617,125 +762,17 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         ReportDebug("Aturdimiento finalizado.", 1);
     }
 
-    private void InitializeHealthUI()
-    {
-        if (useDynamicHealthBars)
-        {
-            totalHealthBars = Mathf.Max(1, Mathf.CeilToInt(maxHealth / healthPerBar));
-            currentHealthBars = Mathf.Max(1, Mathf.CeilToInt(currentHealth / healthPerBar));
-        }
-        else
-        {
-            totalHealthBars = 1;
-            currentHealthBars = 1;
-        }
-
-        if (healthSlider != null)
-        {
-            if (useDynamicHealthBars)
-            {
-                healthSlider.maxValue = healthPerBar;
-                healthSlider.value = GetCurrentBarValue(currentHealth, healthPerBar);
-            }
-            else
-            {
-                healthSlider.maxValue = Mathf.Max(1, maxHealth);
-                healthSlider.value = currentHealth;
-            }
-        }
-        UpdateHealthUI(); // Llamar para actualizar colores y texto
-    }
-
-    private void UpdateHealthUI()
-    {
-        if (healthSlider != null)
-        {
-            if (useDynamicHealthBars)
-            {
-                // Actualizar contador de barras
-                int newBars = Mathf.CeilToInt(currentHealth / healthPerBar);
-                if (newBars != currentHealthBars)
-                {
-                    currentHealthBars = newBars;
-                }
-                healthSlider.value = GetCurrentBarValue(currentHealth, healthPerBar);
-                healthSlider.maxValue = healthPerBar;
-            }
-            else
-            {
-                healthSlider.value = currentHealth;
-                healthSlider.maxValue = Mathf.Max(1, maxHealth);
-            }
-            if (!healthSlider.gameObject.activeSelf) healthSlider.gameObject.SetActive(true);
-        }
-
-        if (healthFillImage != null)
-        {
-            // Usar color base o degradado según la configuración
-            Color barColor = useDynamicHealthBars ?
-                GetGradientColor(healthBaseColor, currentHealthBars, totalHealthBars) :
-                healthBaseColor;
-
-            healthFillImage.color = barColor;
-
-            if (!healthFillImage.gameObject.activeSelf) healthFillImage.gameObject.SetActive(true);
-        }
-
-        if (healthPercentageText != null)
-        {
-            float percentage = (maxHealth > 0) ? (currentHealth / maxHealth) * 100f : 0f;
-            healthPercentageText.text = $"{percentage:F0}%";
-        }
-
-        if (healthMultiplierText != null)
-        {
-            if (useDynamicHealthBars && currentHealthBars > 1)
-            {
-                healthMultiplierText.text = $"x{currentHealthBars}";
-                healthMultiplierText.gameObject.SetActive(true);
-            }
-            else
-            {
-                healthMultiplierText.gameObject.SetActive(false);
-            }
-        }
-    }
-
-    private Color GetGradientColor(Color baseColor, int currentBar, int totalBars)
-    {
-        if (totalBars <= 1) return baseColor;
-        if (currentBar <= 0) return baseColor;
-        if (currentBar >= totalBars) return baseColor;
-
-        float t = (float)(currentBar - 1) / (totalBars - 1);
-        t = Mathf.Lerp(1f, t, colorGradientIntensity);
-        Color lighterColor = Color.Lerp(Color.white, baseColor, 0.6f);
-        return Color.Lerp(lighterColor, baseColor, t);
-    }
-
-    private float GetCurrentBarValue(float currentValue, float valuePerBar)
-    {
-        if (currentValue <= 0) return 0;
-        float remainder = currentValue % valuePerBar;
-        if (Mathf.Approximately(remainder, 0f) && currentValue > 0)
-        {
-            return valuePerBar;
-        }
-        return remainder;
-    }
-
-    #region --- Reducción local pública (compatible con VidaEnemigoEscudo) ---
     /// <summary>
-    /// Aplica una reducción de daño local durante 'duration' segundos.
-    /// Firma pública añadida para compatibilidad con otros scripts (ArmaduraDemonicaArea, prefabs, etc.).
+    /// Aplica una reduccion de dano local durante 'duration' segundos.
+    /// Firma publica anadida para compatibilidad con otros scripts (ArmaduraDemonicaArea, prefabs, etc.).
     /// </summary>
     public void ApplyDamageReduction(float percent, float duration)
     {
         if (percent <= 0f || duration <= 0f) return;
 
         // si ya hay rutina, reiniciar
-        if (_reduccionLocalRoutine != null) StopCoroutine(_reduccionLocalRoutine);
-        _reduccionLocalRoutine = StartCoroutine(RutinaReduccionLocal(percent, duration));
+        if (reduccionLocalRoutine != null) StopCoroutine(reduccionLocalRoutine);
+        reduccionLocalRoutine = StartCoroutine(RutinaReduccionLocal(percent, duration));
     }
 
     private IEnumerator RutinaReduccionLocal(float percent, float duration)
@@ -743,11 +780,13 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         localReduction = percent;
         yield return new WaitForSeconds(duration);
         localReduction = 0f;
-        _reduccionLocalRoutine = null;
+        reduccionLocalRoutine = null;
     }
+
     #endregion
 
-    #region --- Monitor y activación de armadura de área ---
+    #region Area Armor System
+
     private IEnumerator HealthMonitorForArea()
     {
         // esperar a que MaxHealth tenga sentido.
@@ -769,7 +808,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     }
 
     /// <summary>
-    /// Fuerza la activación del efecto de área (pública para pruebas).
+    /// Fuerza la activacion del efecto de area (publica para pruebas).
     /// </summary>
     public void ForceActivateArea()
     {
@@ -794,10 +833,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             GameObject root = c.transform.root != null ? c.transform.root.gameObject : c.gameObject;
             if (root == this.gameObject) continue;
 
-            // comprobación de "chancado" por diferencia Y
+            // comprobacion de "chancado" por diferencia Y
             if (Mathf.Abs(root.transform.position.y - transform.position.y) > flattenHeightThreshold) continue;
 
-            // 1) intentar VidaEnemigoEscudo (tu script español)
+            // 1) intentar VidaEnemigoEscudo
             var vidaEscudo = root.GetComponent<VidaEnemigoEscudo>();
             if (vidaEscudo != null)
             {
@@ -824,13 +863,14 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         }
 
         areaCoroutine = StartCoroutine(AreaDurationAndCooldownRoutine());
-        Debug.Log($"[{name}] Armadura de área ACTIVADA. Radio={areaRadius} Reducción={(areaReductionPercent * 100f)}%");
+        Debug.Log($"[{name}] Armadura de area ACTIVADA. Radio={areaRadius} Reduccion={(areaReductionPercent * 100f)}%");
     }
 
     private IEnumerator AreaDurationAndCooldownRoutine()
     {
         yield return new WaitForSeconds(areaDuration);
-        // finalizar efecto local en este objeto (si aún activo)
+
+        // finalizar efecto local en este objeto (si aun activo)
         localReduction = 0f;
         areaActive = false;
 
@@ -840,9 +880,21 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         areaOnCooldown = false;
 
         areaCoroutine = null;
-        Debug.Log($"[{name}] Armadura de área COOLDOWN finalizado.");
+        Debug.Log($"[{name}] Armadura de area COOLDOWN finalizado.");
     }
+
     #endregion
+
+    #region Logging
+
+    public void DebugKill()
+    {
+        if (currentHealth > 0 && gameObject.name.Contains("Boss", StringComparison.OrdinalIgnoreCase))
+        {
+            Debug.Log("<color=red>[DEBUG] Boss eliminado instantaneamente con la tecla 'B'.</color>");
+            TakeDamage(9999f);
+        }
+    }
 
     private void OnDrawGizmos()
     {
@@ -853,7 +905,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         Gizmos.DrawLine(transform.position, transform.position + deathVFXOffset);
 
 #if UNITY_EDITOR
-        // dibujar radio del área si está activado en inspector
+        // dibujar radio del area si esta activado en inspector
         if (enableAutoArea)
         {
             Gizmos.color = new Color(0f, 1f, 0f, 0.25f);
@@ -881,4 +933,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
                 break;
         }
     }
+
+    #endregion
 }

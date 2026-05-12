@@ -14,6 +14,9 @@ public class EntropyChargeUI : MonoBehaviour
     public Color activeColor = new Color(1f, 0.45f, 0.1f, 1f);
     public Color inactiveColor = new Color(0.3f, 0.3f, 0.3f, 0.4f);
     public Color fillColor = new Color(1f, 0.8f, 0.1f, 1f);
+
+    [SerializeField] private bool canForcedTransform = true;
+
     #endregion
 
     #region Private Fields
@@ -35,7 +38,10 @@ public class EntropyChargeUI : MonoBehaviour
     #region Unity
     private void Awake()
     {
-        enemyTransform = transform.parent;
+        if (canForcedTransform)
+        {
+            enemyTransform = transform.parent;
+        }
         chargeSystem = GetComponentInParent<EntropyChargeSystem>();
     }
 

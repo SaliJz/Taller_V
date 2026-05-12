@@ -6,32 +6,49 @@ using System.Collections.Generic;
 [RequireComponent(typeof(EnemyHealth))]
 public class VeynarEnemy : MonoBehaviour
 {
-    [Header("Spawning")]
+    #region Inspector - References
+
+    [Header("Component References")]
+    [SerializeField] private VeynarAnimCtrl animCtrl;
+
+    [Header("Spawning References")]
     [SerializeField] private GameObject hivePrefab;
     [SerializeField] private GameObject larvaPrefab;
-    [Tooltip("Máximo de colmenas activas simultáneamente.")]
+
+    [Header("Sound References")]
+    [SerializeField] private AudioSource audioSource;
+
+    #endregion
+
+    #region Inspector - Spawning Settings
+
+    [Header("Spawning Settings")]
+    [Tooltip("Maximo de colmenas activas simultaneamente.")]
     [SerializeField] private int maxActiveHives = 3;
-    [Tooltip("Tiempo entre intentos de invocación de colmena.")]
+    [Tooltip("Tiempo entre intentos de invocacion de colmena.")]
     [SerializeField] private float hiveSpawnInterval = 5f;
-    [Tooltip("Distancia mínima para invocar colmenas.")]
+    [Tooltip("Distancia minima para invocar colmenas.")]
     [SerializeField] private float minHiveSpawnRadius = 5f;
-    [Tooltip("Distancia máxima para invocar colmenas.")]
+    [Tooltip("Distancia maxima para invocar colmenas.")]
     [SerializeField] private float maxHiveSpawnRadius = 15f;
 
-    [Header("Behavior")]
+    #endregion
+
+    #region Inspector - Behavior Settings
+
+    [Header("Behavior Settings")]
+    [Tooltip("Tiempo de espera al activarse antes de iniciar cualquier comportamiento.")]
+    [SerializeField] private float spawnDelay = 1f;
     [Tooltip("Rango del teletransporte al re-ocultarse.")]
     [SerializeField] private float teleportRange = 20f;
-    [Tooltip("¿Las colmenas se teletransportan con Veynar?")]
+    [Tooltip("Las colmenas se teletransportan con Veynar?")]
     [SerializeField] private bool teleportHivesWithVeynar = false;
     [Tooltip("Nombre de la capa a la que Veynar cambia al ser invulnerable (ej. 'Default' o 'Ignore Raycast').")]
-    [SerializeField] private string invulnerableLayerName = "Default"; // Para que el escudo no rebote
+    [SerializeField] private string invulnerableLayerName = "Default";
 
-    [Header("Visuals & Effects")]
-    [SerializeField] private Material normalMaterial;
-    [SerializeField] private Material transparentMaterial;
+    #endregion
 
-    [Header("Sound")]
-    [SerializeField] private AudioSource audioSource;
+    #region Inspector - SFX Settings
 
     [Header("SFX Estados")]
     [SerializeField] private AudioClip idleSFX;
@@ -43,43 +60,53 @@ public class VeynarEnemy : MonoBehaviour
     [SerializeField] private AudioClip teleportSFX;
     [SerializeField] private AudioClip deathSFX;
 
+    #endregion
+
+    #region Internal State
+
     private EnemyHealth enemyHealth;
     private Transform playerTransform;
-    private List<Hive> activeHives = new List<Hive>();
-    private Renderer[] allRenderers;
     private NavMeshAgent navAgent;
 
+    private List<Hive> activeHives = new List<Hive>();
     private int previousHiveCount = 0;
-    private Vector3 initialPosition; // Posición inicial para el teletransporte
-    private Material normalMaterialInstance;
-    private Material transparentMaterialInstance;
     private bool hasLostFirstHive = false;
+
+    private Vector3 initialPosition;
 
     private float idleTimer;
     private float idleInterval;
+
+    #endregion
+
+    #region Public Properties
 
     public bool IsDead => enemyHealth != null && enemyHealth.IsDead;
     public Transform PlayerTransform => playerTransform;
     public int ActiveHiveCount => activeHives.Count;
 
+    #endregion
+
+    #region Unity Lifecycle
+
     private void Awake()
     {
         enemyHealth = GetComponent<EnemyHealth>();
-        allRenderers = GetComponentsInChildren<Renderer>();
         navAgent = GetComponent<NavMeshAgent>();
+        animCtrl = GetComponentInChildren<VeynarAnimCtrl>();
 
-        // Crear instancias de los materiales
-        if (normalMaterial != null) normalMaterialInstance = new Material(normalMaterial);
-        if (transparentMaterial != null) transparentMaterialInstance = new Material(transparentMaterial);
-
+        if (animCtrl == null)
+        {
+            Debug.LogWarning($"[VeynarEnemy] VeynarAnimCtrl no encontrado en los hijos de {gameObject.name}.");
+        }
         // Asignar la capa de invulnerabilidad a EnemyHealth
         if (enemyHealth != null)
         {
             enemyHealth.invulnerableLayerIndex = LayerMask.NameToLayer(invulnerableLayerName);
-            if (enemyHealth.invulnerableLayerIndex == -1) // Si la capa no existe
+            if (enemyHealth.invulnerableLayerIndex == -1)
             {
-                Debug.LogWarning($"[VeynarEnemy] La capa '{invulnerableLayerName}' no existe. Veynar podría ser 'targeteable' por el escudo.");
-                enemyHealth.invulnerableLayerIndex = gameObject.layer; // Usar capa actual como fallback
+                Debug.LogWarning($"[VeynarEnemy] La capa '{invulnerableLayerName}' no existe. Veynar podria ser 'targeteable' por el escudo.");
+                enemyHealth.invulnerableLayerIndex = gameObject.layer;
             }
         }
     }
@@ -87,20 +114,21 @@ public class VeynarEnemy : MonoBehaviour
     private void Start()
     {
         playerTransform = GameObject.FindGameObjectWithTag("Player")?.transform;
-        initialPosition = transform.position; // Guardar posición inicial
+        initialPosition = transform.position;
 
         if (hivePrefab == null || larvaPrefab == null)
         {
-            Debug.LogError($"[VeynarEnemy] Prefabs no asignados en {gameObject.name}. Veynar no funcionará correctamente.", this);
+            Debug.LogError($"[VeynarEnemy] Prefabs no asignados en {gameObject.name}. Veynar no funcionara correctamente.", this);
             enabled = false;
             return;
         }
 
-        // Empezar invisible y en la capa transparente
-        foreach (var r in allRenderers)
-        {
-            if (transparentMaterialInstance != null) r.material = transparentMaterialInstance;
-        }
+        StartCoroutine(InitWithDelay());
+    }
+
+    private IEnumerator InitWithDelay()
+    {
+        yield return new WaitForSeconds(spawnDelay);
 
         StartCoroutine(ApplyInitialInvulnerabilityState());
         StartCoroutine(HiveSpawnRoutine());
@@ -110,19 +138,29 @@ public class VeynarEnemy : MonoBehaviour
 
     private void OnEnable()
     {
-        if (enemyHealth != null) enemyHealth.OnDeath += HandleEnemyDeath;
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnDeath += HandleEnemyDeath;
+            enemyHealth.OnDamaged += HandleEnemyDamaged;
+        }
     }
 
     private void OnDisable()
     {
-        if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnDeath -= HandleEnemyDeath;
+            enemyHealth.OnDamaged -= HandleEnemyDamaged;
+        }
     }
 
     private void OnDestroy()
     {
-        if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
-        if (normalMaterialInstance != null) Destroy(normalMaterialInstance);
-        if (transparentMaterialInstance != null) Destroy(transparentMaterialInstance);
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnDeath -= HandleEnemyDeath;
+            enemyHealth.OnDamaged -= HandleEnemyDamaged;
+        }
     }
 
     private void Update()
@@ -137,28 +175,9 @@ public class VeynarEnemy : MonoBehaviour
         }
     }
 
-    private void ResetIdleTimer()
-    {
-        idleTimer = 0f;
-        idleInterval = Random.Range(5f, 10f);
-    }
+    #endregion
 
-    private void HandleEnemyDeath(GameObject enemy)
-    {
-        if (enemy != gameObject) return;
-
-        StopAllCoroutines();
-        PlaySFX(deathSFX);
-
-        foreach (var hive in new List<Hive>(activeHives))
-        {
-            if (hive != null)
-            {
-                Destroy(hive.gameObject);
-            }
-        }
-        activeHives.Clear();
-    }
+    #region Spawning Logic
 
     private IEnumerator HiveSpawnRoutine()
     {
@@ -173,7 +192,6 @@ public class VeynarEnemy : MonoBehaviour
                     navAgent.isStopped = true;
                     navAgent.ResetPath();
                 }
-
                 yield return null;
             }
 
@@ -191,7 +209,6 @@ public class VeynarEnemy : MonoBehaviour
 
     private void SpawnHive()
     {
-        // Lógica de "dona"
         Vector2 randomCircle = Random.insideUnitCircle.normalized * Random.Range(minHiveSpawnRadius, maxHiveSpawnRadius);
         Vector3 spawnPosition = transform.position + new Vector3(randomCircle.x, 0, randomCircle.y);
         spawnPosition.y = -0.4f;
@@ -229,99 +246,79 @@ public class VeynarEnemy : MonoBehaviour
         UpdateVulnerabilityState();
     }
 
+    #endregion
+
+    #region Vulnerability & Visuals Logic
+
     /// <summary>
-    /// Aplica el estado inicial de invulnerabilidad completa 100% y visibilidad 0%.
-    /// Solo se ejecuta al inicio, antes de que se destruya la primera colmena.
+    /// Aplica el estado inicial: invulnerabilidad 100% y camuflaje completo (oculto).
     /// </summary>
     private IEnumerator ApplyInitialInvulnerabilityState()
     {
-        // Delay de 1 frame para asegurar que EnemyHealth haya guardado su capa vulnerable
+        // Un frame de delay para que EnemyHealth guarde su capa vulnerable.
         yield return null;
 
-        // Aplicar invulnerabilidad completa
         if (enemyHealth != null)
         {
-            enemyHealth.SetDynamicVulnerability(1.0f); // 100% reducción
+            enemyHealth.SetDynamicVulnerability(1.0f);
         }
 
-        // Aplicar visibilidad 0%
-        UpdateVisuals(0.0f);
+        // Camuflaje = 1: completamente oculto.
+        animCtrl?.UpdateCamou(1.0f);
 
-        Debug.Log($"[VeynarEnemy] Estado inicial aplicado: Invulnerable (100%) e invisible (0%)");
+        Debug.Log("[VeynarEnemy] Estado inicial aplicado: Invulnerable (100%) y oculto (camou = 1).");
     }
 
     /// <summary>
-    /// Actualiza la vulnerabilidad, visibilidad y capa de Veynar
-    /// basado en el número de colmenas activas.
+    /// Actualiza la vulnerabilidad y el camuflaje de Veynar según las colmenas activas.
+    /// damageReduction = camouflage: 1.0 => 0.67 => 0.33 => 0.0
     /// </summary>
     private void UpdateVulnerabilityState()
     {
-        if (!hasLostFirstHive)
-        {
-            return;
-        }
+        if (!hasLostFirstHive) return;
 
         int currentHives = activeHives.Count;
-
         float statePercent = (maxActiveHives - currentHives) / (float)maxActiveHives;
+        float damageReduction = 1.0f - statePercent; // 1 = máx reducción/camuflaje
+        float visibility = statePercent; // 1 = totalmente visible
 
-        // Reducción: 1.0 (100%), 0.67 (67%), 0.33 (33%), 0.0 (0%)
-        float damageReduction = 1.0f - statePercent;
-        // Visibilidad: 0.0 (0%), 0.33 (33%), 0.67 (67%), 1.0 (100%)
-        float visibility = 1.0f - damageReduction;
-
-        // Aplicar reducción de daño Y cambiar la capa
         if (enemyHealth != null)
         {
             enemyHealth.SetDynamicVulnerability(damageReduction);
         }
 
-        // Aplicar visibilidad progresiva
-        UpdateVisuals(visibility);
+        animCtrl?.UpdateCamou(damageReduction);
 
-        // Lógica de Teletransporte: Si acaba de alcanzar el maximo de colmenas
+        // Teletransporte al volver a tener el máximo de colmenas activas.
         if (currentHives == maxActiveHives && previousHiveCount < maxActiveHives)
         {
             PlaySFX(hiddenStateSFX);
-            TeleportToRandomValidPos(initialPosition, teleportRange);
-            PlaySFX(teleportSFX);
+            StartCoroutine(TeleportSequence(initialPosition, teleportRange));
         }
 
         previousHiveCount = currentHives;
     }
 
-    /// <summary>
-    /// Actualiza los materiales de Veynar para reflejar la visibilidad.
-    /// </summary>
-    /// <param name="visibilityPercent">0.0 (invisible) a 1.0 (totalmente visible)</param>
-    private void UpdateVisuals(float visibilityPercent)
+    #endregion
+
+    #region Movement & Teleport Logic
+
+    private IEnumerator TeleportSequence(Vector3 center, float range)
     {
-        if (allRenderers == null) return;
-
-        if (Mathf.Approximately(visibilityPercent, 1.0f) && normalMaterialInstance != null)
+        if (animCtrl != null)
         {
-            foreach (var r in allRenderers)
-            {
-                r.material = normalMaterialInstance;
-            }
+            animCtrl.PlayMoveOut();
+            yield return StartCoroutine(animCtrl.WaitForMoveOut());
         }
-        // Si no, usar material transparente y ajustar el alfa
-        else if (transparentMaterialInstance != null)
-        {
-            foreach (var r in allRenderers)
-            {
-                r.material = transparentMaterialInstance;
-            }
 
-            Color newColor = transparentMaterialInstance.color;
-            newColor.a = Mathf.Lerp(0.1f, 1.0f, visibilityPercent);
-            transparentMaterialInstance.color = newColor;
-        }
+        PerformTeleport(center, range);
+        PlaySFX(teleportSFX);
+
+        animCtrl?.PlayMoveIn();
     }
 
-    private void TeleportToRandomValidPos(Vector3 center, float range)
+    private void PerformTeleport(Vector3 center, float range)
     {
-        // Teletransporta a 20 unidades de la posición inicial en una dirección aleatoria válida del NavMesh
         Vector3 candidate = center + Random.insideUnitSphere * range;
         candidate.y = transform.position.y;
 
@@ -332,22 +329,16 @@ public class VeynarEnemy : MonoBehaviour
         {
             newPosition = hit.position;
             if (navAgent != null && navAgent.isOnNavMesh)
-            {
                 navAgent.Warp(newPosition);
-            }
             else
-            {
                 transform.position = newPosition;
-            }
         }
         else
         {
-            // Fallback si no encuentra posición
             newPosition = candidate;
             transform.position = newPosition;
         }
 
-        // Teletransportar colmenas si está activado
         if (teleportHivesWithVeynar)
         {
             Vector3 offset = newPosition - oldPosition;
@@ -358,14 +349,46 @@ public class VeynarEnemy : MonoBehaviour
         }
     }
 
+    #endregion
+
+    #region Core Health & Combat Logic
+
+    private void ResetIdleTimer()
+    {
+        idleTimer = 0f;
+        idleInterval = Random.Range(5f, 10f);
+    }
+
+    private void HandleEnemyDamaged()
+    {
+        animCtrl?.PlayDamage();
+    }
+
+    private void HandleEnemyDeath(GameObject enemy)
+    {
+        if (enemy != gameObject) return;
+
+        StopAllCoroutines();
+        PlaySFX(deathSFX);
+
+        foreach (var hive in new List<Hive>(activeHives))
+        {
+            if (hive != null) Destroy(hive.gameObject);
+        }
+        activeHives.Clear();
+    }
+
     public void PlaySFX(AudioClip clip)
     {
         if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
     }
 
+    #endregion
+
+    #region Gizmos
+
     private void OnDrawGizmos()
     {
-        // Mostrar rango de spawn de colmenas
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, maxHiveSpawnRadius);
         Gizmos.color = Color.blue;
@@ -373,4 +396,6 @@ public class VeynarEnemy : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, teleportRange);
     }
+
+    #endregion
 }
