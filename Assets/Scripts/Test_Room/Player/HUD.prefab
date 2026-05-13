@@ -17321,35 +17321,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   interactionMode: 1
-  allShopItems:
-  - {fileID: 11400000, guid: b4d2c3f00f119e5418e569b830c71787, type: 2}
-  - {fileID: 11400000, guid: 83a8ed647735ef2428e619284e361399, type: 2}
-  - {fileID: 11400000, guid: f81041121d980b44eb8d6593aeff25a2, type: 2}
-  - {fileID: 11400000, guid: a75da9f4cc6da71488dadbe1f56aa1f9, type: 2}
-  - {fileID: 11400000, guid: 8fd0c210c9ed3d5458eb0819cd6172da, type: 2}
-  - {fileID: 11400000, guid: 609e9e5543ddcac44afa53c51d1baeb5, type: 2}
-  - {fileID: 11400000, guid: dba3715f1e6db6f4aa7e860035d80de2, type: 2}
-  - {fileID: 11400000, guid: ed3713ed915bdb548a9fa186dbeb8500, type: 2}
-  - {fileID: 11400000, guid: ba17103de671c9d4c83a818b9ce664c5, type: 2}
-  - {fileID: 11400000, guid: 6d13ff2603710414ea06be1da55157ce, type: 2}
-  - {fileID: 11400000, guid: 22877ac4ed7e8ae4082494275799225a, type: 2}
-  - {fileID: 11400000, guid: 4e6b9a7c93bd36c49b3f4abfd0fce47d, type: 2}
-  - {fileID: 11400000, guid: 3e86e4b898e118d4aa9f7bac4d43c79f, type: 2}
-  - {fileID: 11400000, guid: 3a0ad7b615b871741911519fa21d74bc, type: 2}
-  - {fileID: 11400000, guid: bfe9f5f64ab18fc4eab9e046b427364e, type: 2}
-  - {fileID: 11400000, guid: a8a69a64927c8f84fa8acf2ce4272bb6, type: 2}
-  - {fileID: 11400000, guid: 3e571036207fe5b45a9d0257fc51bd9d, type: 2}
-  - {fileID: 11400000, guid: 5267d194f4637fc4a8055c1cb292ef62, type: 2}
-  - {fileID: 11400000, guid: 3f558a493ebe503439ddf43dcead72ac, type: 2}
-  - {fileID: 11400000, guid: 3aa93539d880a98439a51f22f7c73f3c, type: 2}
-  - {fileID: 11400000, guid: 32e76c08d72448a4097f12a5fc374318, type: 2}
-  - {fileID: 11400000, guid: e1f9676c3878e394788f8713c714fef3, type: 2}
-  - {fileID: 11400000, guid: cff6e17620a643d4288e9acdaf4b801e, type: 2}
-  - {fileID: 11400000, guid: 4b0aa26234be5fe4983700d37a0544f1, type: 2}
-  - {fileID: 11400000, guid: 13322733d57fc9c419b315a22bb627e4, type: 2}
-  - {fileID: 11400000, guid: ceb38c2707780f54ebc823d799fe25df, type: 2}
-  - {fileID: 11400000, guid: 000ecf53a8a8bf64b98ed99933523036, type: 2}
-  - {fileID: 11400000, guid: 5019235cea7e26049b2116696b9aac40, type: 2}
   safeRelics: []
   allPacts:
   - {fileID: 11400000, guid: e9008f33002e1d946a13bc132a961ee4, type: 2}
@@ -17404,6 +17375,7 @@ MonoBehaviour:
   - {fileID: 2790493699222432776, guid: 242acf07383a22b45b3779bca557c694, type: 3}
   - {fileID: 2790493699222432776, guid: 98a3939a86578da4fac8c38aa1e5b472, type: 3}
   itemAppearanceEffectPrefab: {fileID: 0}
+  minimumMechanicItems: 1
   shopUIPanel: {fileID: 4853790811511156568}
   uiPanelTransform: {fileID: 6893052232125983173}
   itemNameText: {fileID: 7930261680716843682}
@@ -17771,7 +17743,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: 6145887b087552346860106694c91b96, type: 2}
   m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -17814,7 +17786,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fade: {fileID: 4448367569579532874}
-  fadeImage: {fileID: 0}
+  fadeImage: {fileID: 1134559995647256441}
+  fadeMode: 1
   fadeDuration: 1
   defaultFadeColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!1 &5365904666407963064
