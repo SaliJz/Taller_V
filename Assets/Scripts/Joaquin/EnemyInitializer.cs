@@ -37,12 +37,12 @@ public class EnemyInitializer : MonoBehaviour
 
     private void Awake()
     {
-        if (useAwake) TryGroundAndPlace();
+        if (useAwake && enabled) TryGroundAndPlace();
     }
 
     private void Start()
     {
-        if (!useAwake) TryGroundAndPlace();
+        if (!useAwake && enabled) TryGroundAndPlace();
     }
 
     private void TryGroundAndPlace()
