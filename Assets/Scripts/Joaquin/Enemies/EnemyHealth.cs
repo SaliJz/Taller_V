@@ -346,7 +346,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
                 if (enemyVisualEffects != null)
                 {
-                    enemyVisualEffects.PlayToughnessHitFeedback(transform.position + Vector3.up * offsetAboveEnemy);
+                    enemyVisualEffects.PlayToughnessHitFeedback(transform.position 
+                        + Vector3.up * offsetAboveEnemy, damageAmount);
                 }
 
                 return;

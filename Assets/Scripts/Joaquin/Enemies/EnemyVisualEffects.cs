@@ -68,6 +68,7 @@ public class EnemyVisualEffects : MonoBehaviour
     [Header("Damage Visual Settings")]
     [SerializeField] private Color normalColor = Color.red;
     [SerializeField] private Color criticalColor = new Color(0.5f, 0f, 0f);
+    [SerializeField] private Color toughnessColor = Color.cyan;
     [SerializeField] private AudioClip normalHitSFX;
     [SerializeField] private AudioClip criticalHitSFX;
 
@@ -202,23 +203,24 @@ public class EnemyVisualEffects : MonoBehaviour
 
         ResetAmountFlashValue();
 
+        ParticleSystem psAS = activeStunVFX != null ? activeStunVFX.GetComponent<ParticleSystem>() : null;
+
         if (activeStunVFX != null)
         {
-            if (forceImmediate)
-            {
-                Destroy(activeStunVFX);
-            }
-            else
-            {
-                DetachAndStopStunVFX(activeStunVFX);
-            }
+            if (forceImmediate) VFXHelper.StopAndDestroy(psAS);
+            else DetachAndStopStunVFX(activeStunVFX);
+
             activeStunVFX = null;
         }
 
         for (int i = activePersistentEffects.Count - 1; i >= 0; i--)
         {
             GameObject fx = activePersistentEffects[i];
-            if (fx != null) Destroy(fx);
+            if (fx == null) continue;
+
+            ParticleSystem psFX = fx.GetComponent<ParticleSystem>();
+            if (psFX != null) VFXHelper.StopAndDestroy(psFX);
+            else Destroy(fx);
         }
         activePersistentEffects.Clear();
 
@@ -258,9 +260,9 @@ public class EnemyVisualEffects : MonoBehaviour
 
     #region Damage & Hit Feedback
 
-    public void PlayToughnessHitFeedback(Vector3 position)
+    public void PlayToughnessHitFeedback(Vector3 position, float damageAmount = 0f)
     {
-        ShowDamageNumber(position, 0, false);
+        ShowDamageNumber(position, damageAmount, isCritical: false, isToughness: true);
     }
 
     public void PlayDamageFeedback(Vector3 damagePosition, float damage, bool isCritical)
@@ -314,17 +316,17 @@ public class EnemyVisualEffects : MonoBehaviour
         if (clip != null) audioSource.PlayOneShot(clip);
     }
 
-    public void ShowDamageNumber(Vector3 position, float damage, bool isCritical = false)
+    public void ShowDamageNumber(Vector3 position, float damage, bool isCritical = false, bool isToughness = false)
     {
-        if (damageNumberPrefab != null)
+        if (damageNumberPrefab == null) return;
+
+        GameObject damageNumber = Instantiate(damageNumberPrefab, position, Quaternion.identity, damageNumberParent);
+        DamageNumber dnScript = damageNumber.GetComponent<DamageNumber>();
+        if (dnScript != null)
         {
-            GameObject damageNumber = Instantiate(damageNumberPrefab, position, Quaternion.identity, damageNumberParent);
-            DamageNumber script = damageNumber.GetComponent<DamageNumber>();
-            if (script != null)
-            {
-                script.SetColor(normalColor, criticalColor);
-                script.Initialize(damage, isCritical);
-            }
+            dnScript.SetHealthColor(normalColor, criticalColor);
+            dnScript.SetToughnessColor(toughnessColor);
+            dnScript.Initialize(damage, isCritical, isToughness);
         }
     }
 
@@ -502,15 +504,9 @@ public class EnemyVisualEffects : MonoBehaviour
             vfxToStop.transform.SetParent(null);
         }
 
-        var ps = vfxToStop.GetComponent<ParticleSystem>();
-        if (ps != null)
-        {
-            ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
-        }
-        else
-        {
-            Destroy(vfxToStop);
-        }
+        ParticleSystem vfxPS = vfxToStop.GetComponent<ParticleSystem>();
+
+        VFXHelper.StopAndDestroy(vfxPS);
     }
 
     public void StartArmorGlow()

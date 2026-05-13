@@ -118,9 +118,18 @@ MonoBehaviour:
   damageText: {fileID: 4905503151169323480}
   floatSpeed: 2
   fadeSpeed: 2
-  lifetime: 2
-  normalColor: {r: 1, g: 0, b: 0, a: 1}
-  criticalColor: {r: 0.49019608, g: 0, b: 0, a: 1}
+  lifetime: 1
+  gravity: 9.8
+  lateralSpeed: 0.5
+  normalColor: {r: 1, g: 0.50980395, b: 0, a: 1}
+  criticalColor: {r: 1, g: 0, b: 0, a: 1}
+  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
+  punchScale: 1.5
+  punchDuration: 0.12
+  holdFraction: 0.3
+  maxRotationAngle: 12
+  criticalScale: 3.2
+  normalScale: 2
 --- !u!1 &5397477315426885019
 GameObject:
   m_ObjectHideFlags: 0
