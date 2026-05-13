@@ -16720,8 +16720,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   fade: {fileID: 922851185}
   fadeImage: {fileID: 0}
+  fadeMode: 0
   fadeDuration: 1
-  defaultFadeColor: {r: 0, g: 0, b: 0, a: 1}
+  globalFadeColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!225 &922851185
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -16741,7 +16742,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 922851182}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 

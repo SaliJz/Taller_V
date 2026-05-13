@@ -1684,9 +1684,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fade: {fileID: 467213441}
-  fadeImage: {fileID: 0}
-  fadeDuration: 0
-  defaultFadeColor: {r: 0, g: 0, b: 0, a: 1}
+  fadeImage: {fileID: 467213442}
+  fadeMode: 1
+  fadeDuration: 1
+  globalFadeColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!225 &467213441
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -1711,7 +1712,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: 6145887b087552346860106694c91b96, type: 2}
   m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -6085,7 +6086,7 @@ SpriteRenderer:
   m_Size: {x: 4.5, y: 4.5}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!1 &1500775267
@@ -8643,6 +8644,7 @@ MonoBehaviour:
   lowHealthEffectDuration: 2.5
   temporaryHealthLerpSpeed: 5
   healthBarParentRect: {fileID: 0}
+  handAnim: {fileID: 0}
 --- !u!223 &4521548076829029744
 Canvas:
   m_ObjectHideFlags: 0
