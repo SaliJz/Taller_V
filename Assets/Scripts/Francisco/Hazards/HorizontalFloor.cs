@@ -14,6 +14,7 @@ public class HorizontalFloor : FloorBase
     [Header("Horizontal Settings")]
     [SerializeField] private ContractionAxis contractionAxis = ContractionAxis.X;
     [SerializeField] private ContractionDirection contractionDirection = ContractionDirection.Random;
+    [SerializeField] private float visibilityThreshold = 0.05f;
 
     #endregion
 
@@ -44,9 +45,10 @@ public class HorizontalFloor : FloorBase
 
     protected override void SetChildTriggeredScale()
     {
+        float minScale = 0.01f;
         childTriggeredScale = contractionAxis == ContractionAxis.X
-            ? new Vector3(0f, childDefaultScale.y, childDefaultScale.z)
-            : new Vector3(childDefaultScale.x, childDefaultScale.y, 0f);
+            ? new Vector3(minScale, childDefaultScale.y, childDefaultScale.z)
+            : new Vector3(childDefaultScale.x, childDefaultScale.y, minScale);
     }
 
     public override string GizmoAxisLabel =>
@@ -58,9 +60,11 @@ public class HorizontalFloor : FloorBase
             ? visualChild.transform.localScale
             : Vector3.one;
 
+        float minScale = 0.01f;
+
         return contractionAxis == ContractionAxis.X
-            ? new Vector3(0f, baseScale.y, baseScale.z)
-            : new Vector3(baseScale.x, baseScale.y, 0f);
+            ? new Vector3(minScale, baseScale.y, baseScale.z)
+            : new Vector3(baseScale.x, baseScale.y, minScale);
     }
 
     protected override void OnTransitionBegin(FloorState target)
@@ -79,11 +83,14 @@ public class HorizontalFloor : FloorBase
     {
         if (visualChild == null) return;
 
-        bool nearZero = contractionAxis == ContractionAxis.X
-            ? visualChild.transform.localScale.x < 0.01f
-            : visualChild.transform.localScale.z < 0.01f;
+        float currentTargetAxis = contractionAxis == ContractionAxis.X
+            ? visualChild.transform.localScale.x
+            : visualChild.transform.localScale.z;
 
-        if (nearZero) SetChildMeshVisible(false);
+        if (currentTargetAxis < visibilityThreshold)
+            SetChildMeshVisible(false);
+        else
+            SetChildMeshVisible(true);
     }
 
     #endregion
@@ -94,7 +101,10 @@ public class HorizontalFloor : FloorBase
     {
         if (childRenderers == null) return;
         foreach (var r in childRenderers)
-            if (r) r.enabled = visible;
+        {
+            if (r && r.enabled != visible)
+                r.enabled = visible;
+        }
     }
 
     #endregion
