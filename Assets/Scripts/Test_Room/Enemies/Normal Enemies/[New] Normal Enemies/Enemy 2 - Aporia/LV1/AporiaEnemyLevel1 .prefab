@@ -310,7 +310,7 @@ MonoBehaviour:
   preparationTime: 0.15
   attackTransitionDelay: 0
   attackDamage: 20
-  attackRadius: 2
+  attackRadius: 2.5
   hitDelay: 0.25
   recoveryTime: 1.2
   knockbackForce: 5
@@ -331,6 +331,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   enemiesSheet: {fileID: 11400000, guid: 566256d046a94d049b6d208905123b1f, type: 2}
+  ENEMY_ID: 3
 --- !u!114 &7811850655376459637
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -343,6 +344,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  healthSlider: {fileID: 9032262003328612343}
+  healthFillImage: {fileID: 2238678007939427538}
+  healthPercentageText: {fileID: 0}
+  healthMultiplierText: {fileID: 0}
+  toughnessSystem: {fileID: 7436983276860157215}
+  deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   maxHealth: 100
   currentHealth: 100
   canDieAfterCooldown: 1
@@ -353,12 +360,9 @@ MonoBehaviour:
   onDeathEvent:
     m_PersistentCalls:
       m_Calls: []
-  healthSlider: {fileID: 9032262003328612343}
-  healthFillImage: {fileID: 2238678007939427538}
+  deathVFXOffset: {x: 0, y: 1, z: 0}
   offsetAboveEnemy: 2.75
   glowDelayAfterCritical: 2
-  healthPercentageText: {fileID: 0}
-  healthMultiplierText: {fileID: 0}
   useDynamicHealthBars: 0
   healthPerBar: 100
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
@@ -366,10 +370,6 @@ MonoBehaviour:
   canGrantLifestealOnDeath: 1
   lifestealAmountOnDeathByMelee: 4
   lifestealAmountOnDeathByDistance: 3
-  toughnessSystem: {fileID: 7436983276860157215}
-  deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
-  deathVFXOffset: {x: 0, y: 1, z: 0}
-  invulnerableLayerIndex: 0
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -381,6 +381,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   flattenHeightThreshold: 1.2
   areaCheckInterval: 0.25
+  invulnerableLayerIndex: 0
 --- !u!114 &1619879721751558932
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -406,6 +407,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 857663678c6b68a4ab60f54f457c56a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  toughnessSlider: {fileID: 3759207327643892428}
+  toughnessFillImage: {fileID: 2790399322414349119}
+  toughnessPercentageText: {fileID: 0}
+  toughnessMultiplierText: {fileID: 0}
+  toughnessUIGroup: {fileID: 1761537986907358103}
   useToughness: 0
   maxToughness: 20
   currentToughness: 0
@@ -415,11 +421,6 @@ MonoBehaviour:
   toughnessPerBar: 40
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
-  toughnessSlider: {fileID: 3759207327643892428}
-  toughnessFillImage: {fileID: 2790399322414349119}
-  toughnessPercentageText: {fileID: 0}
-  toughnessMultiplierText: {fileID: 0}
-  toughnessUIGroup: {fileID: 1761537986907358103}
 --- !u!114 &2063845933142064047
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1430,6 +1431,7 @@ MonoBehaviour:
   activeColor: {r: 1, g: 0.45, b: 0.1, a: 1}
   inactiveColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.4}
   fillColor: {r: 1, g: 0.8, b: 0.1, a: 1}
+  canForcedTransform: 1
 --- !u!1 &5026360601981587948
 GameObject:
   m_ObjectHideFlags: 0

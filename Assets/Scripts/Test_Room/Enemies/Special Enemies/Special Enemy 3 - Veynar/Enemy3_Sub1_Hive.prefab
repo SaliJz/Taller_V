@@ -336,6 +336,7 @@ MonoBehaviour:
   activeColor: {r: 1, g: 0.45, b: 0.1, a: 1}
   inactiveColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.4}
   fillColor: {r: 1, g: 0.8, b: 0.1, a: 1}
+  canForcedTransform: 1
 --- !u!1 &2904735876121233766
 GameObject:
   m_ObjectHideFlags: 0
@@ -1177,6 +1178,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  healthSlider: {fileID: 627737706084085071}
+  healthFillImage: {fileID: 8362184698229149973}
+  healthPercentageText: {fileID: 0}
+  healthMultiplierText: {fileID: 0}
+  toughnessSystem: {fileID: 0}
+  deathVFXPrefab: {fileID: 0}
   maxHealth: 20
   currentHealth: 0
   canDieAfterCooldown: 1
@@ -1187,12 +1194,9 @@ MonoBehaviour:
   onDeathEvent:
     m_PersistentCalls:
       m_Calls: []
-  healthSlider: {fileID: 627737706084085071}
-  healthFillImage: {fileID: 8362184698229149973}
+  deathVFXOffset: {x: 0, y: 1, z: 0}
   offsetAboveEnemy: 2
   glowDelayAfterCritical: 2
-  healthPercentageText: {fileID: 0}
-  healthMultiplierText: {fileID: 0}
   useDynamicHealthBars: 0
   healthPerBar: 100
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
@@ -1200,10 +1204,6 @@ MonoBehaviour:
   canGrantLifestealOnDeath: 1
   lifestealAmountOnDeathByMelee: 0
   lifestealAmountOnDeathByDistance: 0
-  toughnessSystem: {fileID: 0}
-  deathVFXPrefab: {fileID: 0}
-  deathVFXOffset: {x: 0, y: 1, z: 0}
-  invulnerableLayerIndex: 0
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -1215,6 +1215,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   flattenHeightThreshold: 1.2
   areaCheckInterval: 0.25
+  invulnerableLayerIndex: 0
 --- !u!114 &8670177762318709039
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1266,9 +1267,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d982de863b76c1742a29bc16302bb042, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  larvaSpawnInterval: 2.25
-  maxLarvas: 3
-  hiveLifetimeAfterProduction: 5
+  larvaSpawnInterval: 2
+  maxLarvas: 2
+  hiveLifetimeAfterProduction: 3
   larvaPrefab: {fileID: 2070855010256960706, guid: d77c866a58ba6f84c818e09b699bd71c, type: 3}
   obstacle: {fileID: 7062026571937158164}
   navMeshAgent: {fileID: 241961261687332342}
