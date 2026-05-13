@@ -61,7 +61,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
     [Header("Falla Estatica")]
     [SerializeField] private float staticFailureDamage = 35f;
     [SerializeField] private float staticFailureWindup = 2f;
-    [SerializeField] private float staticFailureCooldown = 27f;
+    [SerializeField] private float staticFailureCooldown = 20f;
     [SerializeField] private float staticFailureAoERadius = 4.5f;
     [SerializeField, Range(1f, 180f)] private float shieldAngle = 150f;
     [SerializeField] private int backHitsToInterrupt = 5;
@@ -76,7 +76,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
     [SerializeField] private int brokenChargeDashCount = 10;
     [SerializeField] private float brokenChargeDashSpeed = 13.5f;
     [SerializeField] private float brokenChargeHitDamage = 7f;
-    [SerializeField] private float brokenChargeCooldown = 19f;
+    [SerializeField] private float brokenChargeCooldown = 14f;
     [SerializeField] private float zigzagSideOffset = 3.5f;
     [SerializeField] private float dashHitRadius = 1.35f;
 
@@ -118,7 +118,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
     [SerializeField] private float drownedRange = 15f;
     [SerializeField] private int drownedHitCount = 3;
     [SerializeField] private float drownedInterval = 0.9f;
-    [SerializeField] private float drownedCooldown = 14f;
+    [SerializeField] private float drownedCooldown = 8f;
     [SerializeField, Range(0f, 1f)] private float predictiveChance = 0.75f;
     [SerializeField] private int predictiveDashThreshold = 15;
     [SerializeField] private float predictiveLeadDist = 2.75f;
@@ -350,7 +350,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     private IEnumerator MainBrainRoutine()
     {
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(1f);
 
         while (!isDead)
         {
@@ -372,10 +372,14 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
                 yield return ExecuteStaticFailureRoutine();
                 if (isDead || interruptionActive) continue;
 
-                yield return ExecuteBrokenChargeRoutine();
+                if (Time.time >= nextBrokenChargeTime)
+                {
+                    yield return ExecuteBrokenChargeRoutine();
+                }
                 continue;
             }
 
+            nextDrownedTime = Mathf.Min(nextDrownedTime, Time.time + 3f);
             yield return ChaseAndPokeRoutine();
         }
     }
@@ -384,10 +388,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
     {
         state = BossState.Chase;
 
-        float window = 1.5f;
-        float elapsed = 0f;
-
-        while (elapsed < window && !isDead && !interruptionActive)
+        while (!isDead && !interruptionActive)
         {
             if (player == null) yield break;
 
@@ -403,7 +404,17 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
                 yield break;
             }
 
-            elapsed += Time.deltaTime;
+            if (dist <= drownedRange)
+            {
+                MoveTowards(player.position, baseMoveSpeed * 1.1f);
+            }
+
+            if (Time.time >= nextStaticTime)
+            {
+                StopAgent();
+                yield break;
+            }
+
             yield return null;
         }
 
@@ -534,11 +545,14 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         float angle = Vector3.Angle(transform.forward, toAttacker);
         bool blocked = angle <= shieldAngle * 0.5f;
 
-        if (blocked) TriggerFrontShieldBlock(attackerPosition);
+        if (blocked)
+        {
+            TriggerFrontShieldBlock(attackerPosition);
+            return true;
+        }
 
         NotifyBossDamaged(attackerPosition);
-
-        return blocked;
+        return false;
     }
 
     private IEnumerator InterruptStaticFailureRoutine()
@@ -635,8 +649,8 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
     {
         if (isDead) yield break;
 
-        interruptionActive = true;
-        state = BossState.ScrapRam;
+        //interruptionActive = true;
+        //state = BossState.ScrapRam;
 
         StopAgent();
         FacePlayerInstant();
@@ -722,8 +736,8 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         if (isDead) yield break;
 
         nextDivisoryTime = Time.time + divisoryCooldown;
-        interruptionActive = true;
-        state = BossState.DivisoryFailure;
+        //interruptionActive = true;
+        //state = BossState.DivisoryFailure;
 
         StopAgent();
         FacePlayerInstant();
@@ -815,18 +829,22 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         animator?.SetTrigger(AnimAttackHand);
         PlaySFX(drownedHandsSFX);
 
-        for (int i = 0; i < drownedHitCount; i++)
+        try
         {
-            if (isDead) yield break;
+            for (int i = 0; i < drownedHitCount; i++)
+            {
+                if (isDead) yield break;
 
-            Vector3 target = ComputeHandsTarget(usePredictive);
-            SpawnSoulHand(target);
-
-            yield return new WaitForSeconds(drownedInterval);
+                Vector3 target = ComputeHandsTarget(usePredictive);
+                SpawnSoulHand(target);
+                yield return new WaitForSeconds(drownedInterval);
+            }
         }
-
-        state = BossState.Idle;
-        interruptionActive = false;
+        finally
+        {
+            state = BossState.Idle;
+            interruptionActive = false;
+        }
     }
 
     private Vector3 ComputeHandsTarget(bool usePredictive)
@@ -1156,7 +1174,9 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
         // Esfera de contacto del dash (preview en editor)
         Gizmos.color = new Color(1f, 0.55f, 0f, 0.55f);
-        Gizmos.DrawWireSphere(transform.position + Vector3.up * 0.6f, dashHitRadius);
+        Vector3 dashGizmoPos = (attackOrigin != null && attackOrigin != transform) 
+            ? attackOrigin.position : transform.position + Vector3.up * 0.6f;
+        Gizmos.DrawWireSphere(dashGizmoPos, dashHitRadius);
 
         // Escudo frontal Falla Estática
         Vector3 origin = transform.position + Vector3.up;
