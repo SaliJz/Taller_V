@@ -4,6 +4,7 @@ using UnityEngine;
 public class KaisTearShieldEffect : ItemEffectBase
 {
     #region Inspector Fields
+
     [Header("Olas de Escudo")]
     [SerializeField] private float waveSpeed = 5f;
     [SerializeField] private float timeToMaxWidth = 1.5f;
@@ -15,9 +16,11 @@ public class KaisTearShieldEffect : ItemEffectBase
 
     [Header("Compartido")]
     [SerializeField] private LayerMask enemyLayer;
+
     #endregion
 
     #region ItemEffectBase
+
     public override void ApplyEffect(PlayerStatsManager statsManager)
     {
         PlayerCombatEvents.OnShieldThrown += HandleShieldThrown;
@@ -27,9 +30,11 @@ public class KaisTearShieldEffect : ItemEffectBase
     {
         PlayerCombatEvents.OnShieldThrown -= HandleShieldThrown;
     }
+
     #endregion
 
     #region Handlers
+
     private void HandleShieldThrown(Vector3 throwPosition, Vector3 direction, float playerBaseDamage)
     {
         float waveDamage = playerBaseDamage * waveShieldDamagePercent;
@@ -47,5 +52,6 @@ public class KaisTearShieldEffect : ItemEffectBase
             );
         }
     }
+
     #endregion
 }

@@ -124,6 +124,25 @@ public class ItemEffectPool : MonoBehaviour
 
     #endregion
 
+    #region Ground Detection
+
+    private float GetGroundY(Vector3 worldPosition)
+    {
+        int groundLayer = 1 << LayerMask.NameToLayer("Ground");
+        Vector3 origin = new Vector3(worldPosition.x, worldPosition.y + 5f, worldPosition.z);
+
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 15f, groundLayer))
+            return hit.point.y;
+
+        Vector3 belowOrigin = new Vector3(worldPosition.x, worldPosition.y - 2f, worldPosition.z);
+        if (Physics.Raycast(belowOrigin, Vector3.up, out RaycastHit hitUp, 10f, groundLayer))
+            return hitUp.point.y;
+
+        return worldPosition.y;
+    }
+
+    #endregion
+
     #region Dash Fire Methods
 
     public void SpawnDashFire(Vector3 position, float expandDuration, float maxRadius,
@@ -164,9 +183,7 @@ public class ItemEffectPool : MonoBehaviour
         GameObject prefab = isLargeSpike ? largeSpikePrefab : smallSpikePrefab;
 
         if (targetQueue.Count > 0)
-        {
             return targetQueue.Dequeue();
-        }
 
         GameObject go = Instantiate(prefab, Vector3.zero, Quaternion.identity, transform);
         PetraSpike newSpike = go.GetComponent<PetraSpike>();
@@ -178,14 +195,9 @@ public class ItemEffectPool : MonoBehaviour
     {
         PetraSpike spike = GetSpikeFromPool(isLargeSpike);
 
-        float heightOffset = isLargeSpike ? -0.2f : 0.02f;
-        Vector3 finalPos = new Vector3(position.x, heightOffset, position.z);
-
-        if (Physics.Raycast(position + Vector3.up * 1f, Vector3.down, out RaycastHit hit, 3f, 1 << LayerMask.NameToLayer("Ground")))
-        {
-            float sinkAmount = isLargeSpike ? 0.3f : 0.15f;
-            finalPos = hit.point - (Vector3.up * sinkAmount);
-        }
+        float groundY = GetGroundY(position);
+        float sinkAmount = isLargeSpike ? 0.3f : 0.15f;
+        Vector3 finalPos = new Vector3(position.x, groundY - sinkAmount, position.z);
 
         spike.transform.SetPositionAndRotation(finalPos, rotation);
         spike.transform.localScale = Vector3.one * scale;
@@ -204,9 +216,44 @@ public class ItemEffectPool : MonoBehaviour
         Queue<PetraSpike> targetQueue = isLargeSpike ? largeSpikeAvailable : smallSpikeAvailable;
 
         if (!targetQueue.Contains(spike))
-        {
             targetQueue.Enqueue(spike);
+    }
+
+    public PetraSpike SpawnSpikeWithScale(Vector3 position, Quaternion rotation, float damage, float lifetime,
+        LayerMask enemyLayer, bool isLargeSpike, float scale = 1f)
+    {
+        Queue<PetraSpike> targetQueue = isLargeSpike ? largeSpikeAvailable : smallSpikeAvailable;
+        List<PetraSpike> targetList = isLargeSpike ? largeSpikeAll : smallSpikeAll;
+
+        PetraSpike spike;
+
+        if (targetQueue.Count > 0)
+        {
+            spike = targetQueue.Dequeue();
         }
+        else
+        {
+            GameObject prefab = isLargeSpike ? largeSpikePrefab : smallSpikePrefab;
+            GameObject go = Instantiate(prefab, Vector3.zero, Quaternion.identity, transform);
+            spike = go.GetComponent<PetraSpike>();
+            targetList.Add(spike);
+        }
+
+        float groundY = GetGroundY(position);
+        float sinkAmount = isLargeSpike ? 0.3f : 0.15f;
+        Vector3 finalPos = new Vector3(position.x, groundY - sinkAmount, position.z);
+
+        spike.transform.SetPositionAndRotation(finalPos, rotation);
+        spike.transform.localScale = Vector3.one * scale;
+        spike.gameObject.SetActive(true);
+
+        spike.Initialize(damage, lifetime, enemyLayer, isLargeSpike, () =>
+        {
+            spike.transform.localScale = Vector3.one;
+            ReturnSpike(spike, isLargeSpike);
+        });
+
+        return spike;
     }
 
     #endregion
@@ -229,15 +276,16 @@ public class ItemEffectPool : MonoBehaviour
         LayerMask enemyLayer)
     {
         Vector3 launchDir = _lastKnownShieldLaunchDir;
-        Vector3 groundOrigin = new Vector3(originPosition.x, 0.05f, originPosition.z);
+        float groundY = GetGroundY(originPosition);
+        Vector3 groundOrigin = new Vector3(originPosition.x, groundY + 0.05f, originPosition.z);
 
         Vector3 right = Vector3.Cross(Vector3.up, launchDir).normalized;
 
         Vector3[] directions = new Vector3[]
         {
-            right,          
-            -right,         
-            -launchDir      
+            right,
+            -right,
+            -launchDir
         };
 
         foreach (Vector3 dir in directions)
@@ -260,30 +308,32 @@ public class ItemEffectPool : MonoBehaviour
     }
 
     public void SpawnKaiMeleeWave(
-      Vector3 originPosition,
-      Vector3 backDirection,
-      float damage,
-      float speed,      
-      float maxWidth,
-      float duration,
-      LayerMask enemyLayer)
+        Vector3 originPosition,
+        Vector3 backDirection,
+        float damage,
+        float speed,
+        float maxWidth,
+        float duration,
+        LayerMask enemyLayer)
     {
         KaiWave wave = GetKaiWaveFromPool();
         if (wave == null) return;
 
+        float groundY = GetGroundY(originPosition);
+        Vector3 groundOrigin = new Vector3(originPosition.x, groundY + 0.05f, originPosition.z);
+
         wave.Activate(
-            originPosition,
+            groundOrigin,
             backDirection,
             damage,
-            speed,       
+            speed,
             maxWidth,
-            duration,    
-            duration,    
+            duration,
+            duration,
             enemyLayer,
             () => ReturnKaiWave(wave)
         );
     }
-
 
     public void SpawnKaiDashWave(
         Vector3 originPosition,
@@ -298,8 +348,11 @@ public class ItemEffectPool : MonoBehaviour
         KaiWave wave = GetKaiWaveFromPool();
         if (wave == null) return;
 
+        float groundY = GetGroundY(originPosition);
+        Vector3 groundOrigin = new Vector3(originPosition.x, groundY + 0.05f, originPosition.z);
+
         wave.Activate(
-            originPosition,
+            groundOrigin,
             dashDirection,
             damage,
             speed,
@@ -336,59 +389,4 @@ public class ItemEffectPool : MonoBehaviour
     }
 
     #endregion
-
-    public PetraSpike SpawnSpikeWithScale(
-    Vector3 position,
-    Quaternion rotation,
-    float damage,
-    float lifetime,
-    LayerMask enemyLayer,
-    bool isLargeSpike,
-    float scale = 1f)
-    {
-        Queue<PetraSpike> targetQueue = isLargeSpike ? largeSpikeAvailable : smallSpikeAvailable;
-        List<PetraSpike> targetList = isLargeSpike ? largeSpikeAll : smallSpikeAll;
-
-        PetraSpike spike;
-
-        if (targetQueue.Count > 0)
-        {
-            spike = targetQueue.Dequeue();
-        }
-        else
-        {
-            GameObject prefab = isLargeSpike
-                ? largeSpikePrefab
-                : smallSpikePrefab;
-
-            GameObject go =
-                Instantiate(prefab, Vector3.zero, Quaternion.identity, transform);
-
-            spike = go.GetComponent<PetraSpike>();
-
-            targetList.Add(spike);
-        }
-
-        Vector3 finalPos = position;
-        if (Physics.Raycast(position + Vector3.up * 1f, Vector3.down, out RaycastHit hit, 2f))
-        {
-            if (hit.collider.CompareTag("Ground"))
-            {
-                float sinkAmount = isLargeSpike ? 0.3f : 0.15f;
-                finalPos = hit.point - (Vector3.up * sinkAmount);
-            }
-        }
-
-        spike.transform.SetPositionAndRotation(finalPos, rotation);
-        spike.transform.localScale = Vector3.one * scale;  
-        spike.gameObject.SetActive(true);
-
-        spike.Initialize(damage, lifetime, enemyLayer, isLargeSpike, () =>
-        {
-            spike.transform.localScale = Vector3.one;      
-            ReturnSpike(spike, isLargeSpike);
-        });
-
-        return spike;
-    }
 }

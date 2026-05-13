@@ -4,6 +4,7 @@ using UnityEngine;
 public class KaisTearDashEffect : ItemEffectBase
 {
     #region Inspector Fields
+
     [Header("Ola de Dash")]
     [SerializeField] private float waveSpeed = 8f;
     [SerializeField] private float timeToMaxWidth = 0.4f;
@@ -15,9 +16,11 @@ public class KaisTearDashEffect : ItemEffectBase
 
     [Header("Compartido")]
     [SerializeField] private LayerMask enemyLayer;
+
     #endregion
 
     #region ItemEffectBase
+
     public override void ApplyEffect(PlayerStatsManager statsManager)
     {
         _statsManager = statsManager;
@@ -29,20 +32,21 @@ public class KaisTearDashEffect : ItemEffectBase
         PlayerCombatEvents.OnDashStarted -= HandleDashStarted;
         _statsManager = null;
     }
+
     #endregion
 
     #region Private
+
     private PlayerStatsManager _statsManager;
 
     private void HandleDashStarted(Vector3 playerPosition, Vector3 dashDirection)
     {
         float waveDamage = 50f * waveDashDamagePercent;
-        Vector3 spawnPos = new Vector3(playerPosition.x, 0.1f, playerPosition.z);
 
         if (ItemEffectPool.Instance != null)
         {
             ItemEffectPool.Instance.SpawnKaiDashWave(
-                spawnPos,
+                playerPosition,
                 dashDirection,
                 waveDamage,
                 waveSpeed,
@@ -53,5 +57,6 @@ public class KaisTearDashEffect : ItemEffectBase
             );
         }
     }
+
     #endregion
 }
