@@ -2016,9 +2016,9 @@ MonoBehaviour:
     m_Bits: 256
   detectionRadius: 25
   dashActivationDistance: 16.5
-  cooldownShort: 100
-  cooldownMedium: 100
-  cooldownLong: 100
+  cooldownShort: 1
+  cooldownMedium: 1.6
+  cooldownLong: 2.2
   audioSource: {fileID: 1208045150384965345}
   dashSFX: {fileID: 8300000, guid: e0bb04f2504e09a41814942127e10c64, type: 3}
   attackSFX: {fileID: 0}
@@ -2106,6 +2106,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 857663678c6b68a4ab60f54f457c56a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  toughnessSlider: {fileID: 975229379963734638}
+  toughnessFillImage: {fileID: 2408620312114316186}
+  toughnessPercentageText: {fileID: 0}
+  toughnessMultiplierText: {fileID: 0}
+  toughnessUIGroup: {fileID: 1114294714380875708}
   useToughness: 0
   maxToughness: 28
   currentToughness: 0
@@ -2115,11 +2120,6 @@ MonoBehaviour:
   toughnessPerBar: 28
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
-  toughnessSlider: {fileID: 975229379963734638}
-  toughnessFillImage: {fileID: 2408620312114316186}
-  toughnessPercentageText: {fileID: 0}
-  toughnessMultiplierText: {fileID: 0}
-  toughnessUIGroup: {fileID: 1114294714380875708}
 --- !u!114 &9159611241233586929
 MonoBehaviour:
   m_ObjectHideFlags: 0
