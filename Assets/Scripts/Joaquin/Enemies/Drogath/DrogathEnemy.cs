@@ -21,6 +21,8 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         public EnemyToughness toughness;
         public LineRenderer lineRenderer;
         public float currentRegen;
+        public ReelAnimCtrl.Cameras? cameraSlot;
+        public Transform cameraTransform;
     }
 
     #endregion
@@ -35,7 +37,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     [SerializeField] private EnemyToughness enemyToughness;
     [SerializeField] private NavMeshAgent navAgent;
     [SerializeField] private Transform playerTransform;
-    [SerializeField] private Animator animator;
+    [SerializeField] private ReelAnimCtrl reelAnimCtrl;
 
     [Header("Layers")]
     [SerializeField] private LayerMask allyLayers = ~0;
@@ -75,12 +77,18 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     #region Inspector - Movement
 
     [Header("Movement")]
+    [Tooltip("Delay desde el spawn hasta que el enemigo empieza a actuar")]
+    [SerializeField] private float spawnDelay = 1f;
     [Tooltip("Velocidad de movimiento hacia el jugador")]
     [SerializeField] private float moveSpeed = 3.5f;
+    [Tooltip("Aceleracion del NavMeshAgent")]
+    [SerializeField] private float acceleration = 8f;
     [Tooltip("Distancia de parada respecto al jugador")]
     [SerializeField] private float stoppingDistance = 2f;
     [Tooltip("Distancia para considerar que debe atacar")]
     [SerializeField] private float distanceToAttack = 2.5f;
+    [Tooltip("Velocidad de giro en grados por segundo")]
+    [SerializeField] private float rotationSpeed = 60f;
 
     #endregion
 
@@ -163,11 +171,13 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 
     private List<BondInfo> activeBonds = new List<BondInfo>();
     private Dictionary<GameObject, float> rebondCooldowns = new Dictionary<GameObject, float>();
+    private Queue<ReelAnimCtrl.Cameras> availableCameraSlots;
     private Coroutine bondUpdateRoutine;
     private Coroutine combatRoutine;
     private bool hasHitPlayer = false;
     private bool isAttacking = false;
     private bool isDead = false;
+    private bool isReady = false;
     private bool isPerformingAttackAnim = false;
     private float attackTimer = 0f;
     private float idleTimer;
@@ -175,9 +185,6 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     private float stepTimer;
     private float stepRate = 0.5f;
     private float regenSoundCooldown;
-
-    private static readonly int animIdWalk = Animator.StringToHash("Walk");
-    private static readonly int animIdAttack = Animator.StringToHash("Attack");
 
     #endregion
 
@@ -189,7 +196,11 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         if (enemyToughness == null) enemyToughness = GetComponent<EnemyToughness>();
         if (navAgent == null) navAgent = GetComponent<NavMeshAgent>();
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
-        if (animator == null) animator = GetComponentInChildren<Animator>();
+        if (reelAnimCtrl == null) reelAnimCtrl = GetComponentInChildren<ReelAnimCtrl>();
+
+        availableCameraSlots = new Queue<ReelAnimCtrl.Cameras>();
+        availableCameraSlots.Enqueue(ReelAnimCtrl.Cameras.right);
+        availableCameraSlots.Enqueue(ReelAnimCtrl.Cameras.left);
 
         LoadStatsFromSheet();
 
@@ -203,9 +214,9 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
             ReportDebug("NavMeshAgent no encontrado. Drogath requiere este componente.", 3);
         }
 
-        navAgent.stoppingDistance = stoppingDistance;
-        navAgent.acceleration = 8f;
-        navAgent.angularSpeed = 120f;
+        navAgent.stoppingDistance = Mathf.Max(stoppingDistance, distanceToAttack);
+        navAgent.acceleration = acceleration;
+        navAgent.angularSpeed = rotationSpeed;
     }
 
     private void Start()
@@ -225,8 +236,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         // Verificar que el agente este en NavMesh antes de iniciar
         if (IsNavAgentValid())
         {
-            bondUpdateRoutine = StartCoroutine(BondUpdateRoutine());
-            combatRoutine = StartCoroutine(CombatRoutine());
+            StartCoroutine(SpawnDelayRoutine());
             ReportDebug($"Drogath inicializado. Vida: {enemyHealth.MaxHealth}, Radio: {bondRadius}m", 1);
         }
         else
@@ -271,7 +281,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 
     private void Update()
     {
-        if (isDead || !enabled) return;
+        if (isDead || !enabled || !isReady) return;
 
         HandleAudioLogic();
         UpdateAnimationState();
@@ -333,12 +343,25 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         {
             bondUpdateRoutine = StartCoroutine(BondUpdateRoutine());
             combatRoutine = StartCoroutine(CombatRoutine());
+            isReady = true;
             ReportDebug("Drogath colocado en NavMesh correctamente", 1);
         }
         else
         {
             ReportDebug("ERROR: Drogath no pudo ser colocado en NavMesh despues de varios intentos", 3);
         }
+    }
+
+    private IEnumerator SpawnDelayRoutine()
+    {
+        ReportDebug($"Drogath en delay de spawn ({spawnDelay}s)...", 1);
+        yield return new WaitForSeconds(spawnDelay);
+
+        bondUpdateRoutine = StartCoroutine(BondUpdateRoutine());
+        combatRoutine = StartCoroutine(CombatRoutine());
+        isReady = true;
+
+        ReportDebug("Drogath listo para actuar.", 1);
     }
 
     #endregion
@@ -350,12 +373,12 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     /// </summary>
     private void UpdateAnimationState()
     {
-        if (animator == null || navAgent == null) return;
+        if (reelAnimCtrl == null || navAgent == null) return;
 
         // Comprobamos si se mueve calculando la velocidad del NavMeshAgent
         bool isMoving = navAgent.velocity.sqrMagnitude > 0.1f && !navAgent.isStopped;
 
-        animator.SetBool(animIdWalk, isMoving);
+        reelAnimCtrl.walking = isMoving;
     }
 
     private void HandleAudioLogic()
@@ -567,7 +590,11 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
             // Actualizar LineRenderer
             if (bond.lineRenderer != null)
             {
-                bond.lineRenderer.SetPosition(0, transform.position + Vector3.up);
+                Vector3 origin = bond.cameraTransform != null
+                    ? bond.cameraTransform.position
+                    : transform.position + Vector3.up;
+
+                bond.lineRenderer.SetPosition(0, origin);
                 bond.lineRenderer.SetPosition(1, bond.ally.transform.position + Vector3.up);
             }
         }
@@ -626,11 +653,23 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 
     private void CreateBond(GameObject ally, EnemyToughness toughness)
     {
+        // Tomar slot de camara si hay uno disponible
+        ReelAnimCtrl.Cameras? assignedSlot = null;
+        Transform slotTransform = null;
+        if (reelAnimCtrl != null && availableCameraSlots.Count > 0)
+        {
+            assignedSlot = availableCameraSlots.Dequeue();
+            slotTransform = reelAnimCtrl.GetCameraTransform(assignedSlot.Value);
+            reelAnimCtrl.SetTarget(assignedSlot.Value, ally.transform);
+        }
+
         BondInfo bond = new BondInfo
         {
             ally = ally,
             toughness = toughness,
-            currentRegen = 0f
+            currentRegen = 0f,
+            cameraSlot = assignedSlot,
+            cameraTransform = slotTransform
         };
 
         // Crear LineRenderer visual
@@ -642,7 +681,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
             lr.endWidth = bondLineWidth;
             lr.startColor = bondLineColor;
             lr.endColor = bondLineColor;
-            lr.SetPosition(0, transform.position + Vector3.up);
+            lr.SetPosition(0, slotTransform != null ? slotTransform.position : transform.position + Vector3.up);
             lr.SetPosition(1, ally.transform.position + Vector3.up);
             bond.lineRenderer = lr;
         }
@@ -674,6 +713,12 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         if (bond.lineRenderer != null)
         {
             Destroy(bond.lineRenderer.gameObject);
+        }
+
+        if (reelAnimCtrl != null && bond.cameraSlot.HasValue)
+        {
+            reelAnimCtrl.ClearTarget(bond.cameraSlot.Value);
+            availableCameraSlots.Enqueue(bond.cameraSlot.Value);
         }
 
         activeBonds.RemoveAt(index);
@@ -839,7 +884,9 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
             directionToPlayer.y = 0;
             if (directionToPlayer != Vector3.zero)
             {
-                transform.forward = Vector3.Slerp(transform.forward, directionToPlayer, Time.deltaTime * 5f);
+                float maxDegreesDelta = rotationSpeed * Time.deltaTime;
+                Vector3 newForward = Vector3.RotateTowards(transform.forward, directionToPlayer, maxDegreesDelta * Mathf.Deg2Rad, 0f);
+                transform.forward = newForward;
             }
 
             attackTimer += Time.deltaTime;
@@ -858,7 +905,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         isPerformingAttackAnim = true;
         hasHitPlayer = false;
 
-        if (animator != null) animator.SetTrigger(animIdAttack);
+        if (reelAnimCtrl != null) reelAnimCtrl.PlayAttack();
 
         // if (audioSource != null) audioSource.PlayOneShot(attackWindupSFX); 
 
@@ -1091,7 +1138,11 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         // Aplicar efecto de muerte
         ApplyDemonicArmorEffect();
 
-        if (animator != null) animator.SetBool(animIdWalk, false);
+        if (reelAnimCtrl != null)
+        {
+            reelAnimCtrl.walking = false;
+            reelAnimCtrl.PlayDeath();
+        }
     }
 
     private void ApplyDemonicArmorEffect()
@@ -1186,61 +1237,121 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     {
         if (!canDebug) return;
 
-        // Radio de vinculacion
-        Gizmos.color = new Color(0f, 1f, 1f, 0.3f);
-        Gizmos.DrawWireSphere(transform.position + transform.up * 1.875f, bondRadius);
-
-        // Radio de efecto de muerte
-        Gizmos.color = new Color(1f, 0f, 0f, 0.2f);
-        Gizmos.DrawWireSphere(transform.position + transform.up * 1.875f, deathEffectRadius);
-
-        // Rango de parada
-        Gizmos.color = new Color(0f, 1f, 0f, 0.4f);
-        Gizmos.DrawWireSphere(transform.position + transform.up * 1.875f, stoppingDistance);
-
-        // Rango de distancia para atacar
-        Gizmos.color = new Color(1f, 1f, 0f, 0.4f);
-        Gizmos.DrawWireSphere(transform.position + transform.up * 1.875f, distanceToAttack);
-
-        // Rango de ataque
-        Gizmos.color = new Color(1f, 0.5f, 0f, 0.4f);
-        Gizmos.DrawWireSphere(transform.position + transform.up * 1.875f, attackRange);
-
-        // Visualizar angulo del escudo
+        Vector3 center = transform.position + transform.up * 1.875f;
         Vector3 forward = transform.forward;
-        Vector3 right = Quaternion.Euler(0, frontalBlockAngle / 2, 0) * forward;
-        Vector3 left = Quaternion.Euler(0, -frontalBlockAngle / 2, 0) * forward;
 
-        Gizmos.color = new Color(0f, 0.5f, 1f, 0.5f);
-        Gizmos.DrawLine(transform.position, transform.position + forward * 3f);
-        Gizmos.DrawLine(transform.position, transform.position + right * 3f);
-        Gizmos.DrawLine(transform.position, transform.position + left * 3f);
+#if UNITY_EDITOR
+        GUIStyle labelStyle = new GUIStyle();
+        labelStyle.normal.textColor = Color.white;
+        labelStyle.fontSize = 11;
+        labelStyle.fontStyle = FontStyle.Bold;
+#endif
 
-        // Dibujar area del escudo
-        int segments = 20;
-        Vector3 prevPoint = transform.position + left * 3f;
-        for (int i = 1; i <= segments; i++)
+        // Rangos
+
+        // Stopping distance (verde oscuro, punteado visual)
+        Gizmos.color = new Color(0.2f, 0.8f, 0.2f, 0.25f);
+        Gizmos.DrawWireSphere(center, stoppingDistance);
+#if UNITY_EDITOR
+        UnityEditor.Handles.Label(center + transform.right * stoppingDistance, $"  Stop ({stoppingDistance}m)", labelStyle);
+#endif
+
+        // Distancia de ataque (amarillo)
+        Gizmos.color = new Color(1f, 0.9f, 0f, 0.35f);
+        Gizmos.DrawWireSphere(center, distanceToAttack);
+#if UNITY_EDITOR
+        UnityEditor.Handles.Label(center + transform.right * distanceToAttack, $"  Ataque ({distanceToAttack}m)", labelStyle);
+#endif
+
+        // Hitbox de ataque (naranja)
+        Gizmos.color = new Color(1f, 0.45f, 0f, 0.35f);
+        Gizmos.DrawWireSphere(center, attackRange);
+#if UNITY_EDITOR
+        UnityEditor.Handles.Label(center + transform.right * attackRange, $"  Hitbox ({attackRange}m)", labelStyle);
+#endif
+
+        // Radio de vinculacion (cyan)
+        Gizmos.color = new Color(0f, 1f, 1f, 0.15f);
+        Gizmos.DrawWireSphere(center, bondRadius);
+        Gizmos.color = new Color(0f, 1f, 1f, 0.5f);
+        Gizmos.DrawWireSphere(center, bondRadius);
+#if UNITY_EDITOR
+        UnityEditor.Handles.Label(center + transform.right * bondRadius, $"  Bond ({bondRadius}m)", labelStyle);
+#endif
+
+        // Radio de efecto de muerte (rojo suave)
+        Gizmos.color = new Color(1f, 0.1f, 0.1f, 0.12f);
+        Gizmos.DrawWireSphere(center, deathEffectRadius);
+#if UNITY_EDITOR
+        UnityEditor.Handles.Label(center + transform.right * deathEffectRadius, $"  Muerte ({deathEffectRadius}m)", labelStyle);
+#endif
+
+        // Escudo frontal
+        Vector3 shieldOrigin = shieldForwardOverride != null
+            ? shieldForwardOverride.position
+            : transform.position;
+        Vector3 shieldFwd = shieldForwardOverride != null
+            ? shieldForwardOverride.forward
+            : forward;
+
+        float halfAngle = frontalBlockAngle / 2f;
+        Vector3 rightEdge = Quaternion.Euler(0, halfAngle, 0) * shieldFwd;
+        Vector3 leftEdge = Quaternion.Euler(0, -halfAngle, 0) * shieldFwd;
+
+        Gizmos.color = new Color(0.1f, 0.5f, 1f, 0.55f);
+        Gizmos.DrawLine(shieldOrigin, shieldOrigin + shieldFwd * distanceToAttack);
+        Gizmos.DrawLine(shieldOrigin, shieldOrigin + rightEdge * distanceToAttack);
+        Gizmos.DrawLine(shieldOrigin, shieldOrigin + leftEdge * distanceToAttack);
+
+        // Arco del cono
+        Gizmos.color = new Color(0.1f, 0.5f, 1f, 0.3f);
+        int arcSegments = 24;
+        Vector3 prevPoint = shieldOrigin + leftEdge * distanceToAttack;
+        for (int i = 1; i <= arcSegments; i++)
         {
-            float angle = Mathf.Lerp(-frontalBlockAngle / 2, frontalBlockAngle / 2, i / (float)segments);
-            Vector3 dir = Quaternion.Euler(0, angle, 0) * forward;
-            Vector3 point = transform.position + dir * 3f;
+            float t = i / (float)arcSegments;
+            float angle = Mathf.Lerp(-halfAngle, halfAngle, t);
+            Vector3 dir = Quaternion.Euler(0, angle, 0) * shieldFwd;
+            Vector3 point = shieldOrigin + dir * distanceToAttack;
             Gizmos.DrawLine(prevPoint, point);
             prevPoint = point;
         }
 
-        // Dibujar vinculos activos
+#if UNITY_EDITOR
+        UnityEditor.Handles.Label(shieldOrigin + shieldFwd * (distanceToAttack + 0.3f), $"  Escudo ({frontalBlockAngle}°)", labelStyle);
+#endif
+
+        // Estado actua
         if (Application.isPlaying)
         {
+#if UNITY_EDITOR
+            string stateLabel = isDead ? "MUERTO"
+                              : !isReady ? "SPAWN DELAY"
+                              : isAttacking ? "OFENSIVO"
+                              : $"BONDS: {activeBonds.Count}/{maxBonds}";
+
+            GUIStyle stateStyle = new GUIStyle();
+            stateStyle.normal.textColor = isDead ? Color.red
+                                        : !isReady ? Color.gray
+                                        : isAttacking ? new Color(1f, 0.5f, 0f)
+                                        : Color.cyan;
+            stateStyle.fontSize = 13;
+            stateStyle.fontStyle = FontStyle.Bold;
+            UnityEditor.Handles.Label(transform.position + Vector3.up * 4.5f, stateLabel, stateStyle);
+#endif
+
+            // Vinculos activos
             Gizmos.color = bondLineColor;
             foreach (var bond in activeBonds)
             {
-                if (bond.ally != null)
-                {
-                    Gizmos.DrawLine(transform.position + Vector3.up, bond.ally.transform.position + Vector3.up);
+                if (bond.ally == null) continue;
 
-                    // Dibujar esfera pequena en el aliado vinculado
-                    Gizmos.DrawSphere(bond.ally.transform.position + Vector3.up, 0.3f);
-                }
+                Vector3 from = bond.cameraTransform != null
+                    ? bond.cameraTransform.position
+                    : transform.position + Vector3.up;
+
+                Gizmos.DrawLine(from, bond.ally.transform.position + Vector3.up);
+                Gizmos.DrawSphere(bond.ally.transform.position + Vector3.up, 0.25f);
             }
         }
     }
