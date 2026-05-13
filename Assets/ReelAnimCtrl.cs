@@ -2,18 +2,18 @@ using UnityEngine;
 
 public class ReelAnimCtrl : MonoBehaviour
 {
-    [SerializeField] Animator anim;
-    [SerializeField] SkinnedMeshRenderer mesh;
+    [SerializeField] private Animator anim;
+    [SerializeField] private SkinnedMeshRenderer mesh;
 
     [Header("Cameras Aim")]
-    [SerializeField] LookAt leftLookAt;
-    [SerializeField] LookAt rightLookAt;
+    [SerializeField] private LookAt leftLookAt;
+    [SerializeField] private LookAt rightLookAt;
 
     public enum Cameras{ right, left }
 
     public bool walking; //Conectar con el bool 
 
-    void Update()
+    private void Update()
     {
         anim.SetBool("isWalking", walking);
 
@@ -56,6 +56,11 @@ public class ReelAnimCtrl : MonoBehaviour
         }
     }
 
+    public Transform GetCameraTransform(Cameras cam)
+    {
+        return cam == Cameras.right ? rightLookAt.transform : leftLookAt.transform;
+    }
+
     public void ClearTarget(Cameras cam)
     {
         switch (cam)
@@ -73,7 +78,7 @@ public class ReelAnimCtrl : MonoBehaviour
         }
     }
 
-    void testInputs()
+    private void testInputs()
     {
         if(Input.GetKeyDown(KeyCode.J)) PlayAttack();
         if(Input.GetKeyDown(KeyCode.H)) PlayDeath();
