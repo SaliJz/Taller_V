@@ -159,6 +159,8 @@ public class InventoryUIManager : MonoBehaviour
 
         confirmReplaceButton?.onClick.AddListener(OnConfirmReplace);
         cancelReplaceButton?.onClick.AddListener(OnCancelReplace);
+
+        RefreshDisplay();
     }
 
     private void Update()
