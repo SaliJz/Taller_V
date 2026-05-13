@@ -24,7 +24,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8944771883278971680
 Transform:
   m_ObjectHideFlags: 0
@@ -293,8 +293,8 @@ MonoBehaviour:
   blinkFlashMaterial: {fileID: 2100000, guid: f252e05afbca4b14da60e54eabddf22d, type: 2}
   blinkInterval: 0.06
   blinkCount: 6
-  useAmountFlash: 0
-  amountFlashRenderer: {fileID: 0}
+  useAmountFlash: 1
+  amountFlashRenderer: {fileID: 563454857004694506}
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
@@ -582,7 +582,7 @@ RectTransform:
   m_Father: {fileID: 2021305500332809605}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -2052,7 +2052,7 @@ RectTransform:
   m_Father: {fileID: 5796545241555989474}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -2732,6 +2732,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 138a7bdb5dc5256449fde87d0cf85339, type: 3}
+--- !u!137 &563454857004694506 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 5436126149342189201, guid: 138a7bdb5dc5256449fde87d0cf85339, type: 3}
+  m_PrefabInstance: {fileID: 5521752734736018811}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &4346738056852979196 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8138993952924618887, guid: 138a7bdb5dc5256449fde87d0cf85339, type: 3}
