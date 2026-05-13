@@ -642,7 +642,10 @@ public class BaalBoss : MonoBehaviour
             return transform.position + transform.forward * bufferOverrunDashDistance;
         }
 
-        Vector3 dir = (player.position - transform.position).normalized;
+        Vector3 dir = player.position - transform.position;
+        dir.y = 0f;
+        dir.Normalize();
+
         return transform.position + dir * bufferOverrunDashDistance;
     }
 
