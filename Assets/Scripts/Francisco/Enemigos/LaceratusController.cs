@@ -527,10 +527,12 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
         if (distanceToPlayer <= normalAttackRange && Time.time >= lastAttackTime + normalAttackInterval)
         {
-            StartCoroutine(ExecuteNormalAttackSequence());
+            //StartCoroutine(ExecuteNormalAttackSequence());
+            StartAttack();
         }
     }
 
+    /*
     private IEnumerator ExecuteNormalAttackSequence()
     {
         lastAttackTime = Time.time;
@@ -645,7 +647,8 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
             if (Time.time >= lastAttackTime + furyAttackInterval)
             {
-                StartCoroutine(ExecuteFuryAttackSequence());
+                //StartCoroutine(ExecuteFuryAttackSequence());
+                StartAttack();
             }
         }
         else
@@ -661,6 +664,7 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         }
     }
 
+    /*
     private IEnumerator ExecuteFuryAttackSequence()
     {
         lastAttackTime = Time.time;
@@ -695,7 +699,6 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         if (agent != null && agent.enabled) agent.isStopped = false;
     }
 
-    /*
     private void PerformFuryAttack()
     {
         lastAttackTime = Time.time;
@@ -804,13 +807,62 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
     #endregion
 
+    #region Attack Handling
+
+    private void StartAttack()
+    {
+        lastAttackTime = Time.time;
+        isAttacking = true;
+
+        if (agent != null && agent.enabled) agent.isStopped = true;
+        if (animCtrl != null) animCtrl.PlayAttack();
+
+        AudioClip clip = isInFury ? furyAttackClip : normalAttackClip;
+        if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
+    }
+
+    private void OnAttackImpact()
+    {
+        lastDamageInflictedTime = Time.time;
+
+        float damage = isInFury ? furyAttackDamage : normalAttackDamage;
+        float range = isInFury ? furyAttackRange : normalAttackRange;
+        GameObject hitbox = isInFury ? furyAttackHitbox : normalAttackHitbox;
+
+        if (hitbox != null) StartCoroutine(ShowHitbox(hitbox));
+
+        Collider[] hits = Physics.OverlapSphere(transform.position, range, playerLayer);
+        foreach (Collider hit in hits)
+        {
+            if (!hit.CompareTag("Player")) continue;
+
+            ExecuteAttack(hit.gameObject, damage);
+
+            if (!isInFury)
+            {
+                PlayerMovement pm = hit.GetComponent<PlayerMovement>();
+                if (pm != null) StartCoroutine(ApplyPlayerSlow(pm));
+            }
+            break;
+        }
+
+        isAttacking = false;
+    }
+
+    private void OnAttackEnd()
+    {
+        if (agent != null && agent.enabled) agent.isStopped = false;
+    }
+
+    #endregion
+
     #region Fury State Management
 
     private void HandleDamageReceived()
     {
         lastDamageTime = Time.time;
 
-        if (animCtrl != null) animCtrl.PlayDamage();
+        if (animCtrl != null && !isAttacking) animCtrl.PlayDamage();
 
         if (!playerDetected && playerTransform != null)
         {
@@ -1090,10 +1142,10 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         switch (eventName)
         {
             case "AttackImpact":
-                waitingForImpactEvent = false;
+                OnAttackImpact();
                 break;
             case "AttackEnd":
-                waitingForAttackEndEvent = false;
+                OnAttackEnd();
                 break;
         }
     }

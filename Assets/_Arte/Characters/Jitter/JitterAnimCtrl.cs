@@ -89,7 +89,8 @@ public class JitterAnimCtrl : MonoBehaviour
 
     public void PlayDamage()
     {
-        anim.Play("Damage", 0, 0);
+        int hitLayer = anim.layerCount > 1 ? 1 : 0;
+        anim.Play("Damage", hitLayer, 0);
     }
 
     public void PlayDeath()

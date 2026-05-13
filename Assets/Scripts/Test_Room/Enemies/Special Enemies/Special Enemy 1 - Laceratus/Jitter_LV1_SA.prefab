@@ -1227,7 +1227,7 @@ MonoBehaviour:
   maxHealth: 16
   currentHealth: 16
   canDieAfterCooldown: 1
-  deathCooldown: 0.5
+  deathCooldown: 1.3
   canDestroy: 1
   canDisable: 0
   canBeStunned: 1
@@ -1268,6 +1268,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 857663678c6b68a4ab60f54f457c56a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  toughnessSlider: {fileID: 4218839783896417927}
+  toughnessFillImage: {fileID: 6978723454904073146}
+  toughnessPercentageText: {fileID: 0}
+  toughnessMultiplierText: {fileID: 0}
+  toughnessUIGroup: {fileID: 1530389385868224238}
   useToughness: 1
   maxToughness: 40
   currentToughness: 0
@@ -1277,11 +1282,6 @@ MonoBehaviour:
   toughnessPerBar: 20
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
-  toughnessSlider: {fileID: 4218839783896417927}
-  toughnessFillImage: {fileID: 6978723454904073146}
-  toughnessPercentageText: {fileID: 0}
-  toughnessMultiplierText: {fileID: 0}
-  toughnessUIGroup: {fileID: 1530389385868224238}
 --- !u!114 &6119023618504457356
 MonoBehaviour:
   m_ObjectHideFlags: 0
