@@ -1131,9 +1131,9 @@ NavMeshAgent:
   m_AgentTypeID: 0
   m_Radius: 0.75
   m_Speed: 3.5
-  m_Acceleration: 8
+  m_Acceleration: 12
   avoidancePriority: 50
-  m_AngularSpeed: 120
+  m_AngularSpeed: 300
   m_StoppingDistance: 1.5
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
@@ -1154,13 +1154,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ad0af14b9b4e1e409d64132cc02bacb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  visionRange: 50
+  visionRange: 200
   visionConeAngle: 360
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
   normalSpeed: 12
-  patrolDirectionChangeInterval: 4
+  patrolDirectionChangeInterval: 8
   patrolDirectionChangeAngle: 30
   stuckCheckInterval: 2
   stuckDistanceThreshold: 0.1
@@ -1172,16 +1172,16 @@ MonoBehaviour:
   furyJumpCancelDistance: 0.5
   furyJumpDuration: 0.5
   normalAttackDamage: 5
-  normalAttackInterval: 2
-  normalAttackRange: 2
-  normalAttackSlowDuration: 1
-  normalAttackSlowPercent: 0.3
+  normalAttackInterval: 1
+  normalAttackRange: 4
+  normalAttackSlowDuration: 2
+  normalAttackSlowPercent: 0.5
   furyAttackDamage: 15
   furyAttackInterval: 1
-  furyAttackRange: 3
+  furyAttackRange: 4
   furyDecayTime: 5
   furyDecayNoDamageTime: 8
-  furyRegenerationPerSecond: 1
+  furyRegenerationPerSecond: 2
   consecutiveHitPushDistance: 1
   screamTransitionDuration: 1.2
   maxFuryLevel: 1
@@ -1224,8 +1224,8 @@ MonoBehaviour:
   healthMultiplierText: {fileID: 0}
   toughnessSystem: {fileID: 254221231430808994}
   deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
-  maxHealth: 16
-  currentHealth: 16
+  maxHealth: 24
+  currentHealth: 24
   canDieAfterCooldown: 1
   deathCooldown: 0.5
   canDestroy: 1
@@ -1268,20 +1268,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 857663678c6b68a4ab60f54f457c56a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  toughnessSlider: {fileID: 4218839783896417927}
+  toughnessFillImage: {fileID: 6978723454904073146}
+  toughnessPercentageText: {fileID: 0}
+  toughnessMultiplierText: {fileID: 0}
+  toughnessUIGroup: {fileID: 1530389385868224238}
   useToughness: 1
-  maxToughness: 40
-  currentToughness: 0
+  maxToughness: 20
+  currentToughness: 20
   meleeToughnessDamageMultiplier: 1
   rangedToughnessDamageMultiplier: 1
   useDynamicBars: 0
   toughnessPerBar: 20
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
-  toughnessSlider: {fileID: 4218839783896417927}
-  toughnessFillImage: {fileID: 6978723454904073146}
-  toughnessPercentageText: {fileID: 0}
-  toughnessMultiplierText: {fileID: 0}
-  toughnessUIGroup: {fileID: 1530389385868224238}
 --- !u!114 &6119023618504457356
 MonoBehaviour:
   m_ObjectHideFlags: 0

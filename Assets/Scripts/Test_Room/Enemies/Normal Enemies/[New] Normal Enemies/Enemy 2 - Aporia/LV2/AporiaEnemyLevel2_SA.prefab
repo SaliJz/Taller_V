@@ -1738,7 +1738,7 @@ NavMeshAgent:
   m_AgentTypeID: 0
   m_Radius: 0.5
   m_Speed: 3.5
-  m_Acceleration: 8
+  m_Acceleration: 15
   avoidancePriority: 50
   m_AngularSpeed: 120
   m_StoppingDistance: 0
@@ -1798,12 +1798,12 @@ MonoBehaviour:
   attackDamage: 20
   attackRadius: 2.5
   hitDelay: 0.25
-  recoveryTime: 0.5
+  recoveryTime: 1.2
   knockbackForce: 6
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
-  detectionRadius: 25
+  detectionRadius: 45
   dashActivationDistance: 16.5
   cooldownShort: 1
   cooldownMedium: 1.6
@@ -1819,13 +1819,13 @@ MonoBehaviour:
   glassShardAttackPrefab: {fileID: 5211547546469293962, guid: 4bf82bb6cacd4bc429ac27bc797488ec, type: 3}
   shardAttackRadius: 1
   shardAttackDamagePerSec: 4
-  shardAttackDuration: 10
+  shardAttackDuration: 2
   glassShardDashPrefab: {fileID: 6545885080743499958, guid: 331be1eed6567524e91b37fb53401d59, type: 3}
   shardDashDamagePerSec: 8
-  shardDashDuration: 10
+  shardDashDuration: 5
   shardDashSpacing: 1
-  deathWarningDuration: 1.5
-  deathExplosionRadius: 3
+  deathWarningDuration: 0.25
+  deathExplosionRadius: 2.5
   deathExplosionDamage: 15
   deathExplosionKnockback: 4
   glassShardDeathPrefab: {fileID: 5447202004583188465, guid: 1cb4707bced00c74099388b390aa7248, type: 3}
