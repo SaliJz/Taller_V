@@ -6,8 +6,8 @@ public class StaticEnemyLevel2 : StaticEnemyBase, IAnimEventHandler
     [Header("QuickSheet Balance")]
     [SerializeField] private Enemies enemiesSheet;
     [SerializeField] private int ENEMY_ID = 5;
-    private float projectileDamage;
-    private float mineDamage;
+    private float projectileDamage = 7;
+    private float mineDamage = 15;
 
     protected override void Awake()
     {

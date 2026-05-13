@@ -322,7 +322,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -450,6 +450,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 857663678c6b68a4ab60f54f457c56a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  toughnessSlider: {fileID: 5344868262162024283}
+  toughnessFillImage: {fileID: 8672044129905914084}
+  toughnessPercentageText: {fileID: 0}
+  toughnessMultiplierText: {fileID: 0}
+  toughnessUIGroup: {fileID: 179464466501043574}
   useToughness: 0
   maxToughness: 10
   currentToughness: 0
@@ -459,11 +464,6 @@ MonoBehaviour:
   toughnessPerBar: 10
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
-  toughnessSlider: {fileID: 5344868262162024283}
-  toughnessFillImage: {fileID: 8672044129905914084}
-  toughnessPercentageText: {fileID: 0}
-  toughnessMultiplierText: {fileID: 0}
-  toughnessUIGroup: {fileID: 179464466501043574}
 --- !u!54 &-6703627552925181079
 Rigidbody:
   m_ObjectHideFlags: 0

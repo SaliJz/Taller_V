@@ -7,7 +7,7 @@ public class StaticEnemyLevel1 : StaticEnemyBase, IAnimEventHandler
     [SerializeField] private Enemies enemiesSheet;
     [SerializeField] private int ENEMY_ID = 1;
 
-    private float projectileDamage;
+    private float projectileDamage = 5.5f;
 
     protected override void Awake()
     {

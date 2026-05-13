@@ -26,7 +26,7 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
     [SerializeField] private Enemies enemiesSheet;
     [SerializeField] private int ENEMY_ID = 9;
 
-    private float projectileDamage;
+    private float projectileDamage = 13;
     // private float swarmDPS;
 
     private static readonly int ShaderBorderColorId = Shader.PropertyToID("_BorderColor");
