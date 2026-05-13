@@ -20,7 +20,7 @@ public class AporiaEnemyLevel3 : AporiaEnemyBase
     #region Unity Methods
     protected override void Awake()
     {
-        LoadStatsFromSheet();
+        //LoadStatsFromSheet();
         base.Awake();
     }
 

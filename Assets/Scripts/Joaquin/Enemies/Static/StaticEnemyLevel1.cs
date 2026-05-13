@@ -11,7 +11,7 @@ public class StaticEnemyLevel1 : StaticEnemyBase, IAnimEventHandler
 
     protected override void Awake()
     {
-        LoadStatsFromSheet();
+        //LoadStatsFromSheet();
         base.Awake(); 
     }
 

@@ -10,7 +10,7 @@ public class AporiaEnemyLevel1 : AporiaEnemyBase
 
     protected override void Awake()
     {
-        LoadStatsFromSheet();
+        //LoadStatsFromSheet();
         base.Awake(); 
     }
 

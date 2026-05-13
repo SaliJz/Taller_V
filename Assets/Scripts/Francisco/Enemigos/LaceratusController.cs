@@ -137,7 +137,7 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
         if (visualEffects == null) visualEffects = GetComponent<EnemyVisualEffects>();
 
-        LoadStatsFromSheet();
+        //LoadStatsFromSheet();
 
         if (enemyRenderer != null)
         {

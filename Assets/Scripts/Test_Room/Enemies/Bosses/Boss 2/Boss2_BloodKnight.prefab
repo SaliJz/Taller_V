@@ -5885,7 +5885,7 @@ MonoBehaviour:
   collapseSFX: {fileID: 8300000, guid: 84acfbe8c99cbe642976ddd3d0f9636b, type: 3}
   stunSFX: {fileID: 8300000, guid: 05445bdd6d7d0784d8670bd59c86bef2, type: 3}
   deathSFX: {fileID: 8300000, guid: 9733373eb1b2b8a4b84ae205c708ba30, type: 3}
-  showDebugGUI: 1
+  showDebugGUI: 0
 --- !u!114 &8537394917465235362
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5898,6 +5898,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  healthSlider: {fileID: 2153855377087838515}
+  healthFillImage: {fileID: 5264307839621882105}
+  healthPercentageText: {fileID: 0}
+  healthMultiplierText: {fileID: 0}
+  toughnessSystem: {fileID: 0}
+  deathVFXPrefab: {fileID: 5367131650398813456, guid: 37e1b6d330e63ae47ac422c9a837e9e7, type: 3}
   maxHealth: 500
   currentHealth: 0
   canDieAfterCooldown: 1
@@ -5908,12 +5914,9 @@ MonoBehaviour:
   onDeathEvent:
     m_PersistentCalls:
       m_Calls: []
-  healthSlider: {fileID: 2153855377087838515}
-  healthFillImage: {fileID: 5264307839621882105}
+  deathVFXOffset: {x: 0, y: 1, z: 0}
   offsetAboveEnemy: 5
   glowDelayAfterCritical: 2
-  healthPercentageText: {fileID: 0}
-  healthMultiplierText: {fileID: 0}
   useDynamicHealthBars: 0
   healthPerBar: 100
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
@@ -5921,10 +5924,6 @@ MonoBehaviour:
   canGrantLifestealOnDeath: 1
   lifestealAmountOnDeathByMelee: 100
   lifestealAmountOnDeathByDistance: 100
-  toughnessSystem: {fileID: 0}
-  deathVFXPrefab: {fileID: 5367131650398813456, guid: 37e1b6d330e63ae47ac422c9a837e9e7, type: 3}
-  deathVFXOffset: {x: 0, y: 1, z: 0}
-  invulnerableLayerIndex: 0
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -5936,6 +5935,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   flattenHeightThreshold: 1.2
   areaCheckInterval: 0.25
+  invulnerableLayerIndex: 0
 --- !u!114 &822155508931773051
 MonoBehaviour:
   m_ObjectHideFlags: 0

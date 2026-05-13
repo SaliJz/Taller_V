@@ -42,7 +42,7 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
     #region
     protected override void Awake()
     {
-        LoadStatsFromSheet();
+        //LoadStatsFromSheet();
         base.Awake();
     }
 

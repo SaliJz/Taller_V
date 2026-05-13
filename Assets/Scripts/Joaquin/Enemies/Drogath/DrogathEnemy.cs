@@ -202,7 +202,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         availableCameraSlots.Enqueue(ReelAnimCtrl.Cameras.right);
         availableCameraSlots.Enqueue(ReelAnimCtrl.Cameras.left);
 
-        LoadStatsFromSheet();
+        //LoadStatsFromSheet();
 
         if (enemyHealth == null)
         {

@@ -12118,7 +12118,7 @@ MonoBehaviour:
   enrageSpeedBonus: 0.3
   enrageProjSpeedBonus: 0.3
   enrageCooldownReduction: 0.3
-  showDebugGUI: 1
+  showDebugGUI: 0
 --- !u!114 &8652778824960997027
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12131,6 +12131,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  healthSlider: {fileID: 2540106608666749892}
+  healthFillImage: {fileID: 2933543844773906202}
+  healthPercentageText: {fileID: 0}
+  healthMultiplierText: {fileID: 0}
+  toughnessSystem: {fileID: 0}
+  deathVFXPrefab: {fileID: 5367131650398813456, guid: 37e1b6d330e63ae47ac422c9a837e9e7, type: 3}
   maxHealth: 100
   currentHealth: 0
   canDieAfterCooldown: 1
@@ -12141,12 +12147,9 @@ MonoBehaviour:
   onDeathEvent:
     m_PersistentCalls:
       m_Calls: []
-  healthSlider: {fileID: 2540106608666749892}
-  healthFillImage: {fileID: 2933543844773906202}
+  deathVFXOffset: {x: 0, y: 1, z: 0}
   offsetAboveEnemy: 5
   glowDelayAfterCritical: 2
-  healthPercentageText: {fileID: 0}
-  healthMultiplierText: {fileID: 0}
   useDynamicHealthBars: 0
   healthPerBar: 100
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
@@ -12154,10 +12157,6 @@ MonoBehaviour:
   canGrantLifestealOnDeath: 1
   lifestealAmountOnDeathByMelee: 100
   lifestealAmountOnDeathByDistance: 100
-  toughnessSystem: {fileID: 0}
-  deathVFXPrefab: {fileID: 5367131650398813456, guid: 37e1b6d330e63ae47ac422c9a837e9e7, type: 3}
-  deathVFXOffset: {x: 0, y: 1, z: 0}
-  invulnerableLayerIndex: 0
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -12169,6 +12168,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   flattenHeightThreshold: 1.2
   areaCheckInterval: 0.25
+  invulnerableLayerIndex: 0
 --- !u!114 &4936797603261257768
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12184,11 +12184,19 @@ MonoBehaviour:
   meshRenderers:
   - {fileID: 1336740211283227037}
   spriteRenderers: []
+  damageNumberPrefab: {fileID: 3347622852007741979, guid: 0fe22b1b42159b843b8867448643daea, type: 3}
+  damageNumberParent: {fileID: 6191228495325068004}
+  audioSource: {fileID: 1189761445344169945}
   useOriginalMaterials: 1
   defaultMaterial: {fileID: 2100000, guid: d3e8a18f019b7854ab00711e41fce600, type: 2}
   blinkFlashMaterial: {fileID: 2100000, guid: f252e05afbca4b14da60e54eabddf22d, type: 2}
   blinkInterval: 0.06
   blinkCount: 6
+  useAmountFlash: 0
+  amountFlashRenderer: {fileID: 0}
+  amountFlashProperty: _Amount
+  amountFlashPeakValue: 1
+  amountFlashRestValue: 0
   stunMaterial: {fileID: 2100000, guid: 9e980960b4627f14bb1ebfed5d685fec, type: 2}
   stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
@@ -12197,11 +12205,8 @@ MonoBehaviour:
   stunSFX: {fileID: 0}
   glowMaterial: {fileID: 2100000, guid: ad0060fc2496c824ea04f56155e38fcd, type: 2}
   glowIntensity: 2
-  damageNumberPrefab: {fileID: 3347622852007741979, guid: 0fe22b1b42159b843b8867448643daea, type: 3}
-  damageNumberParent: {fileID: 6191228495325068004}
   normalColor: {r: 0, g: 1, b: 0, a: 1}
   criticalColor: {r: 0, g: 0.49019608, b: 0, a: 1}
-  audioSource: {fileID: 1189761445344169945}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
 --- !u!1 &9157797880986715004
