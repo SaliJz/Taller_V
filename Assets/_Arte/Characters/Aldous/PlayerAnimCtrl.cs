@@ -1,4 +1,3 @@
-using System.Linq;
 using UnityEngine;
 
 public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
@@ -294,6 +293,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
     private void SpawnSlash(int index)
     {
         GameObject prefab = VFX_melee[index];
+        prefab.SetActive(false);
         prefab.SetActive(true);
 
         if (debug) Debug.LogWarning($"SLASH: {index + 1} INSTATIATED");
