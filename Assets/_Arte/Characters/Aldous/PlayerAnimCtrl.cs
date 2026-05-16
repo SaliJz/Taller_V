@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
@@ -30,7 +31,9 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
     [Header("Settings & VFX")]
     private float dashTimer;
     public float dashDuration = 0.5f;
-    [SerializeField] GameObject[] VFX_melee;
+    [SerializeField] GameObject[] VFX_meleeBegin;
+    [SerializeField] GameObject[] VFX_meleeMid;
+    [SerializeField] GameObject[] VFX_meleeLate;
 
     [Header("Debug")]
     [SerializeField] private bool debug = false;
@@ -292,7 +295,15 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
 
     private void SpawnSlash(int index)
     {
-        GameObject prefab = VFX_melee[index];
+        Debug.Log($"index: {index}");
+
+        GameObject[] currentSlashes;
+
+        if (currentAge == Age.young) currentSlashes = VFX_meleeBegin;
+        else if (currentAge == Age.adult) currentSlashes = VFX_meleeMid;
+        else currentSlashes = VFX_meleeLate;
+
+        GameObject prefab = currentSlashes[index];
         prefab.SetActive(false);
         prefab.SetActive(true);
 
