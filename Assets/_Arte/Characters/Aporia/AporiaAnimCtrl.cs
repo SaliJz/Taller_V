@@ -118,7 +118,18 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
         if(Input.GetKeyDown(KeyCode.Space)) PlayDash();
         if(Input.GetKeyDown(KeyCode.G)) PlayAttack();
         if(Input.GetKeyDown(KeyCode.L)) PlayDamage();
-    }   
+    }
 
+    public override void PlayState(ActionState state, AnimPriority priority, bool reset = true)
+    {
+        if(state == ActionState.attack && currentPriority == AnimPriority.dash)
+        {
+            isDashing = false;
+            dashTimer = 0;
+            currentPriority = AnimPriority.none;
+        }
+
+        base.PlayState(state, priority, reset);
+    }
 
 }
