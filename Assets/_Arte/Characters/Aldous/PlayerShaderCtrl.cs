@@ -1,6 +1,8 @@
 using System.Collections;
 using UnityEngine;
 
+#pragma warning disable 0414 // Private inspector fields are kept for material/VFX tuning.
+
 public class PlayerShaderCtrl : MonoBehaviour
 {
     #region Variables

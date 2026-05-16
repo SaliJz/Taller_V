@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+#pragma warning disable 0414 // Private state fields are kept for occlusion tuning experiments.
+
 public class CameraOcclusionFade : MonoBehaviour
 {
     public Camera cam;

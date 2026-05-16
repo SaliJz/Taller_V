@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
+#pragma warning disable 0414 // Private inspector/state fields are kept for scene data and editor workflows.
+
 [RequireComponent(typeof(NavMeshAgent), typeof(EnemyHealth))]
 public class MorlockEnemy : MonoBehaviour
 {

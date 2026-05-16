@@ -6,6 +6,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
+#pragma warning disable 0414 // Private inspector fields are kept for scene data and custom tooling.
+
 public class ShopManager : MonoBehaviour
 {
     #region Enums

@@ -382,7 +382,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         previousAudioStates.Clear();
 
         // Incluir AudioSources inactivos también (requiere Unity 2020.1+)
-        AudioSource[] allSources = FindObjectsOfType<AudioSource>(true);
+        AudioSource[] allSources = FindObjectsByType<AudioSource>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
         foreach (AudioSource src in allSources)
         {

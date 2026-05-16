@@ -183,7 +183,7 @@ public class HealthCommentDisplay : MonoBehaviour
     {
         if (spawnParent == null && existingTextInstance == null)
         {
-            Canvas c = FindObjectOfType<Canvas>();
+            Canvas c = FindFirstObjectByType<Canvas>();
             if (c != null) spawnParent = c.GetComponent<RectTransform>();
         }
 
@@ -551,7 +551,7 @@ public class HealthCommentDisplay : MonoBehaviour
             {
                 if (spawnParent == null)
                 {
-                    Canvas c = FindObjectOfType<Canvas>();
+                    Canvas c = FindFirstObjectByType<Canvas>();
                     if (c != null) spawnParent = c.GetComponent<RectTransform>();
                     if (spawnParent == null)
                     {

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections;
 using UnityEngine.InputSystem;
 
+#pragma warning disable 0414 // Private inspector fields are kept for scene data and merchant tuning.
+
 public class MerchantRoomManager : MonoBehaviour
 {
     #region Editor Fields

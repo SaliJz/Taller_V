@@ -44,7 +44,7 @@ public abstract class FichaBase : MonoBehaviour
 
     protected virtual void Start()
     {
-        if (tablero == null) tablero = FindObjectOfType<BoardGenerator>();
+        if (tablero == null) tablero = FindFirstObjectByType<BoardGenerator>();
         _lastPosition = transform.position;
         _col = GetComponent<Collider>();
         StartCoroutine(InitializeRoutine());
@@ -191,7 +191,6 @@ public abstract class FichaBase : MonoBehaviour
 
         tablero.NotifyRouteStarted(gameObject);
 
-        bool aborted = false;
         foreach (var paso in ruta)
         {
             if (jugadorTransform == null)
@@ -201,13 +200,11 @@ public abstract class FichaBase : MonoBehaviour
             }
             if (jugadorTransform == null)
             {
-                aborted = true;
                 break;
             }
 
             if (!tablero.ExisteCasilla(paso))
             {
-                aborted = true;
                 break;
             }
 
@@ -215,7 +212,6 @@ public abstract class FichaBase : MonoBehaviour
             if (paso == coordJugadorActual)
             {
                 AttackPlayer(transform.position);
-                aborted = true;
                 break;
             }
 
@@ -226,7 +222,6 @@ public abstract class FichaBase : MonoBehaviour
             if (coordActual == coordJugadorActual)
             {
                 AttackPlayer(transform.position);
-                aborted = true;
                 break;
             }
         }
@@ -503,7 +498,7 @@ public abstract class FichaBase : MonoBehaviour
 
 //    protected virtual void Start()
 //    {
-//        if (tablero == null) tablero = FindObjectOfType<BoardGenerator>();
+//        if (tablero == null) tablero = FindFirstObjectByType<BoardGenerator>();
 //        _lastPosition = transform.position;
 //        _col = GetComponent<Collider>();
 //        StartCoroutine(InitializeRoutine());

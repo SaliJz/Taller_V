@@ -1,6 +1,8 @@
 using System.Collections;
 using UnityEngine;
 
+#pragma warning disable 0649 // Private fields are read defensively and may be assigned by disabled/editor flows.
+
 public class AporiaEnemyLevel2 : AporiaEnemyBase
 {
     #region Nivel 2 — Configuración Vidrio

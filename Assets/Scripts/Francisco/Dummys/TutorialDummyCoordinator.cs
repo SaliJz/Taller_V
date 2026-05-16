@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
+#pragma warning disable 0414 // Private inspector/state fields are kept for scene data and editor workflows.
+
 public class TutorialDummyCoordinator : MonoBehaviour
 {
     [Header("References")]

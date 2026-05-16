@@ -3,6 +3,8 @@ using UnityEngine.Events;
 using System.Collections;
 using System;
 
+#pragma warning disable 0649 // Private fields are read defensively and may be assigned by disabled/editor flows.
+
 public interface IPlayerSpecialAbility
 {
     event Action OnAbilityActivated;

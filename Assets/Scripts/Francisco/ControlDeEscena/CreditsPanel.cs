@@ -7,6 +7,8 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 
+#pragma warning disable 0414 // Private inspector fields are kept for credits layout tooling.
+
 public class CreditsPanel : MonoBehaviour
 {
     public enum PanelDisplayType { AnimatedScale, CanvasFade, Animator, Static }

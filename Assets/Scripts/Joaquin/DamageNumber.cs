@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 
+#pragma warning disable 0414 // Private inspector fields are kept for prefab tuning.
+
 public class DamageNumber : MonoBehaviour
 {
     #region Inspector - References
