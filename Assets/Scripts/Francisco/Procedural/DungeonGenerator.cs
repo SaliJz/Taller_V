@@ -58,6 +58,7 @@ public class DungeonGenerator : MonoBehaviour
     public ProgressiveEnemySystemConfig defaultEnemyConfig;
 
     [Header("Dependencies")]
+    [SerializeField] private RoomTransitionController roomTransitionController;
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private PlayerStatsManager statsManager;
     private PlayerMovement playerMovement;
@@ -263,7 +264,11 @@ public class DungeonGenerator : MonoBehaviour
             {
                 BoxCollider collider = connectionPoint.gameObject.AddComponent<BoxCollider>();
                 collider.isTrigger = true;
-                collider.size = Vector3.one * 1f;
+
+                collider.size = new Vector3(3f, 2f, 1f);
+
+                collider.center = new Vector3(0f, 1f, 0.5f);
+
                 connectionPoint.gameObject.AddComponent<ConnectionTrigger>();
             }
         }
@@ -449,7 +454,10 @@ public class DungeonGenerator : MonoBehaviour
                     {
                         BoxCollider collider = connectionPoint.gameObject.AddComponent<BoxCollider>();
                         collider.isTrigger = true;
-                        collider.size = Vector3.one * 1f;
+
+                        collider.size = new Vector3(3f, 2f, 1f);
+                        collider.center = new Vector3(0f, 1f, 0.5f);
+
                         connectionPoint.gameObject.AddComponent<ConnectionTrigger>();
                     }
                 }
@@ -1161,7 +1169,7 @@ public class DungeonGenerator : MonoBehaviour
         };
     }
 
-    public IEnumerator TransitionToNextRoom(ConnectionPoint entrancePoint, Transform playerTransform)
+    public IEnumerator TransitionToNextRoom(ConnectionPoint entrancePoint, Transform playerTransform, bool cameFromElevator = false)
     {
         const float PlayerOffsetDistance = 0.75f;
 
@@ -1175,6 +1183,7 @@ public class DungeonGenerator : MonoBehaviour
         float timeToCleanRoom = EndRoomTimer();
 
         float originalPlayerY = playerTransform.position.y;
+
         if (playerMovement != null)
         {
             playerMovement.SetCanMove(false);
@@ -1187,8 +1196,12 @@ public class DungeonGenerator : MonoBehaviour
             DesignateMandatoryExit(oldRoom);
         }
 
-        int oldRoomDoorIndex = System.Array.IndexOf(oldRoom.connectionPoints, entrancePoint);
-        if (oldRoomDoorIndex != -1 && oldRoom.connectionDoors.Length > oldRoomDoorIndex && oldRoom.connectionDoors[oldRoomDoorIndex] != null)
+        int oldRoomDoorIndex =
+            System.Array.IndexOf(oldRoom.connectionPoints, entrancePoint);
+
+        if (oldRoomDoorIndex != -1 &&
+            oldRoom.connectionDoors.Length > oldRoomDoorIndex &&
+            oldRoom.connectionDoors[oldRoomDoorIndex] != null)
         {
             oldRoom.connectionDoors[oldRoomDoorIndex].SetActive(true);
         }
@@ -1197,49 +1210,70 @@ public class DungeonGenerator : MonoBehaviour
 
         if (entrancePoint.connectedTo == null)
         {
-            Debug.LogError($"Error Crítico: Falló la generación de la Sala {CurrentRoomCount}. Revise los logs de 'GetRandomRoomData' para errores de configuración (reglas, probabilidades o prefabs). Deteniendo transición.");
-
-            if (oldRoom != null && oldRoomDoorIndex != -1 && oldRoom.connectionDoors.Length > oldRoomDoorIndex && oldRoom.connectionDoors[oldRoomDoorIndex] != null)
+            if (oldRoom != null &&
+                oldRoomDoorIndex != -1 &&
+                oldRoom.connectionDoors.Length > oldRoomDoorIndex &&
+                oldRoom.connectionDoors[oldRoomDoorIndex] != null)
             {
                 oldRoom.connectionDoors[oldRoomDoorIndex].SetActive(false);
             }
 
-            if (playerMovement != null) playerMovement.SetCanMove(true);
+            if (playerMovement != null)
+            {
+                playerMovement.SetCanMove(true);
+            }
+
             yield break;
         }
 
-        Room newRoom = entrancePoint.connectedTo.GetComponentInParent<Room>();
+        Room newRoom =
+            entrancePoint.connectedTo.GetComponentInParent<Room>();
 
         ConnectionPoint exitPoint = null;
+
         if (newRoom != null)
         {
-            exitPoint = newRoom.connectionPoints.FirstOrDefault(conn => conn.isConnected && conn.connectedTo == entrancePoint.transform);
+            exitPoint = newRoom.connectionPoints.FirstOrDefault(
+                conn =>
+                    conn.isConnected &&
+                    conn.connectedTo == entrancePoint.transform);
         }
 
         if (newRoom == null || exitPoint == null)
         {
-            Debug.LogError("Error crítico: La nueva sala o su punto de entrada no se encontraron correctamente después de la conexión. Deteniendo transición.");
-            if (playerMovement != null) playerMovement.SetCanMove(true);
+            if (playerMovement != null)
+            {
+                playerMovement.SetCanMove(true);
+            }
+
             yield break;
         }
 
-        if (newRoom != null)
+        for (int i = 0; i < newRoom.connectionPoints.Length; i++)
         {
-            for (int i = 0; i < newRoom.connectionPoints.Length; i++)
-            {
-                BoxCollider boxCollider = newRoom.connectionPoints[i].GetComponent<BoxCollider>();
-                if (boxCollider != null)
-                {
-                    boxCollider.enabled = false;
-                }
-            }
-            newRoom.LockAllDoors();
+            BoxCollider boxCollider =
+                newRoom.connectionPoints[i]
+                .GetComponent<BoxCollider>();
 
-            int newRoomEntranceDoorIndex = System.Array.IndexOf(newRoom.connectionPoints, exitPoint);
-            if (newRoomEntranceDoorIndex != -1 && newRoom.connectionDoors.Length > newRoomEntranceDoorIndex && newRoom.connectionDoors[newRoomEntranceDoorIndex] != null)
+            if (boxCollider != null)
             {
-                newRoom.connectionDoors[newRoomEntranceDoorIndex].SetActive(false);
+                boxCollider.enabled = false;
             }
+        }
+
+        newRoom.LockAllDoors();
+
+        int newRoomEntranceDoorIndex =
+            System.Array.IndexOf(
+                newRoom.connectionPoints,
+                exitPoint);
+
+        if (newRoomEntranceDoorIndex != -1 &&
+            newRoom.connectionDoors.Length > newRoomEntranceDoorIndex &&
+            newRoom.connectionDoors[newRoomEntranceDoorIndex] != null)
+        {
+            newRoom.connectionDoors[newRoomEntranceDoorIndex]
+                .SetActive(false);
         }
 
         if (UIManager.Instance != null)
@@ -1247,72 +1281,126 @@ public class DungeonGenerator : MonoBehaviour
             UIManager.Instance.ClearManipulationText();
         }
 
-        yield return FadeController.Instance.FadeOut(
-            onStart: () =>
-            {
-                Vector3 directionOutOfOldRoom = entrancePoint.transform.forward.normalized;
-                directionOutOfOldRoom.y = 0f;
-
-                Vector3 targetPosition = playerTransform.position + directionOutOfOldRoom * playerMoveDistance;
-                targetPosition.y = originalPlayerY;
-                StartCoroutine(MovePlayerWithController(playerTransform, targetPosition, playerMoveDuration));
-            },
-            onComplete: () =>
-            {
-                if (exitPoint != null)
+        if (!cameFromElevator &&
+            roomTransitionController != null &&
+            roomTransitionController.HasPreFadeSequence)
+        {
+            yield return StartCoroutine(
+                roomTransitionController.RunPreFadeSequence(
+                    playerTransform));
+        }
+        else if (!cameFromElevator)
+        {
+            yield return FadeController.Instance.FadeOut(
+                onStart: () =>
                 {
-                    Vector3 directionIntoNewRoom = exitPoint.transform.forward.normalized;
-                    directionIntoNewRoom.y = 0f;
+                    Vector3 directionOutOfOldRoom =
+                        entrancePoint.transform.forward.normalized;
 
-                    Vector3 spawnPositionBase = exitPoint.transform.position;
-                    Vector3 spawnPosition = spawnPositionBase + directionIntoNewRoom * PlayerOffsetDistance;
-                    spawnPosition.y = originalPlayerY;
+                    directionOutOfOldRoom.y = 0f;
 
-                    if (playerMovement != null)
-                    {
-                        playerMovement.TeleportTo(spawnPosition);
-                    }
-                    else
-                    {
-                        playerTransform.position = spawnPosition;
-                    }
-                }
+                    Vector3 targetPosition =
+                        playerTransform.position +
+                        directionOutOfOldRoom *
+                        playerMoveDistance;
+
+                    targetPosition.y = originalPlayerY;
+
+                    StartCoroutine(
+                        roomTransitionController.MovePlayerSmooth(
+                            playerTransform,
+                            targetPosition,
+                            playerMoveDuration));
+                },
+                onComplete: null
+            );
+        }
+
+        if (exitPoint != null)
+        {
+            Vector3 directionIntoNewRoom =
+                exitPoint.transform.forward.normalized;
+
+            directionIntoNewRoom.y = 0f;
+
+            Vector3 spawnPositionBase =
+                exitPoint.transform.position;
+
+            Vector3 spawnPosition =
+                spawnPositionBase +
+                directionIntoNewRoom *
+                PlayerOffsetDistance;
+
+            if (cameFromElevator)
+            {
+                spawnPosition.y =
+                    exitPoint.transform.position.y;
             }
-        );
+            else
+            {
+                spawnPosition.y =
+                    playerTransform.position.y;
+            }
+
+            if (playerMovement != null)
+            {
+                playerMovement.TeleportTo(spawnPosition);
+            }
+            else
+            {
+                playerTransform.position = spawnPosition;
+            }
+        }
 
         yield return FadeController.Instance.FadeIn(
             onStart: () =>
             {
-                if (exitPoint != null)
+                if (exitPoint == null)
+                    return;
+
+                Vector3 directionIntoNewRoom =
+                    exitPoint.transform.forward.normalized;
+
+                directionIntoNewRoom.y = 0f;
+
+                Vector3 targetPosition =
+                    playerTransform.position +
+                    directionIntoNewRoom *
+                    playerMoveDistance;
+
+                if (cameFromElevator)
                 {
-                    Vector3 directionIntoNewRoom = exitPoint.transform.forward.normalized;
-                    directionIntoNewRoom.y = 0f;
-
-                    Vector3 targetPosition = playerTransform.position + directionIntoNewRoom * playerMoveDistance;
-
-                    targetPosition.y = originalPlayerY;
-                    StartCoroutine(MovePlayerWithController(playerTransform, targetPosition, playerMoveDuration));
+                    targetPosition.y =
+                        playerTransform.position.y;
                 }
+                else
+                {
+                    targetPosition.y =
+                        originalPlayerY;
+                }
+
+                StartCoroutine(
+                    roomTransitionController.MovePlayerSmooth(
+                        playerTransform,
+                        targetPosition,
+                        playerMoveDuration));
             },
             onComplete: () =>
             {
-                int newRoomEntranceDoorIndex = System.Array.IndexOf(newRoom.connectionPoints, exitPoint);
-                if (newRoomEntranceDoorIndex != -1 && newRoom.connectionDoors.Length > newRoomEntranceDoorIndex && newRoom.connectionDoors[newRoomEntranceDoorIndex] != null)
-                {
-                    StartCoroutine(ActivateEntranceDoorDelayed(newRoom.connectionDoors[newRoomEntranceDoorIndex]));
-                }
-
                 StartRoomTimer();
 
                 if (DevilManipulationManager.Instance != null)
                 {
-                    if (newRoom != null && newRoom.roomType == RoomType.Combat)
+                    if (newRoom != null &&
+                        newRoom.roomType == RoomType.Combat)
                     {
-                        DevilManipulationManager.Instance.TryActivatePendingManipulation();
+                        DevilManipulationManager.Instance
+                            .TryActivatePendingManipulation();
                     }
                     else
                     {
-                        DevilManipulationManager.Instance.NotifyNonCombatRoom();
+                        DevilManipulationManager.Instance
+                            .NotifyNonCombatRoom();
                     }
                 }
 
@@ -1320,66 +1408,101 @@ public class DungeonGenerator : MonoBehaviour
                 {
                     if (newRoom.isEndRoom)
                     {
-                        AsyncMusicController.Instance.PlayMusic(MusicState.Boss);
+                        AsyncMusicController.Instance
+                            .PlayMusic(MusicState.Boss);
                     }
                     else
                     {
                         switch (newRoom.roomType)
                         {
                             case RoomType.Combat:
-                                AsyncMusicController.Instance.PlayMusic(MusicState.Calm);
+                                AsyncMusicController.Instance
+                                    .PlayMusic(MusicState.Calm);
                                 break;
+
                             case RoomType.Shop:
-                                AsyncMusicController.Instance.PlayMusic(MusicState.Shop);
+                                AsyncMusicController.Instance
+                                    .PlayMusic(MusicState.Shop);
                                 break;
+
                             default:
-                                AsyncMusicController.Instance.PlayMusic(MusicState.Calm);
+                                AsyncMusicController.Instance
+                                    .PlayMusic(MusicState.Calm);
                                 break;
                         }
                     }
                 }
 
-                if (newRoom != null && (newRoom.roomType == RoomType.Combat))
+                if (newRoom != null &&
+                    newRoom.roomType == RoomType.Combat)
                 {
-                    var enemyManager = newRoom.GetComponent<EnemyManager>();
+                    var enemyManager =
+                        newRoom.GetComponent<EnemyManager>();
+
                     if (enemyManager != null)
                     {
-                        StartCoroutine(enemyManager.StartCombatEncounter(exitPoint));
+                        StartCoroutine(
+                            enemyManager.StartCombatEncounter(
+                                exitPoint));
+
                         if (AsyncMusicController.Instance != null)
-                            AsyncMusicController.Instance.PlayMusic(MusicState.Battle);
+                        {
+                            AsyncMusicController.Instance
+                                .PlayMusic(MusicState.Battle);
+                        }
                     }
 
                     newRoom.SetEntrancePoint(exitPoint);
+
                     PreCalculateDoorTypes(newRoom);
                 }
-                else if (newRoom != null && (newRoom.roomType == RoomType.Shop))
+                else if (newRoom != null &&
+                         newRoom.roomType == RoomType.Shop)
                 {
-                    if (DevilManipulationManager.Instance.PendingDistortion == DevilDistortionType.SealedLuck)
+                    if (DevilManipulationManager.Instance
+                        .PendingDistortion ==
+                        DevilDistortionType.SealedLuck)
                     {
-                        ShopManager.Instance.SetDistortionActive(DevilDistortionType.SealedLuck, true);
+                        ShopManager.Instance
+                            .SetDistortionActive(
+                                DevilDistortionType.SealedLuck,
+                                true);
                     }
                     else
                     {
-                        DevilManipulationManager.Instance.TryActivatePendingManipulation();
+                        DevilManipulationManager.Instance
+                            .TryActivatePendingManipulation();
                     }
 
                     newRoom.SetEntrancePoint(exitPoint);
+
                     newRoom.UnlockExitDoors(exitPoint);
+
                     PreCalculateDoorTypes(newRoom);
-                    UpdateDoorPreviews(newRoom); 
+
+                    UpdateDoorPreviews(newRoom);
                 }
                 else
                 {
                     newRoom.EventsOnFinsih();
+
                     newRoom.SetEntrancePoint(exitPoint);
+
                     newRoom.UnlockExitDoors(exitPoint);
+
                     PreCalculateDoorTypes(newRoom);
-                    UpdateDoorPreviews(newRoom); 
+
+                    UpdateDoorPreviews(newRoom);
                 }
 
-                for (int i = 1; i < newRoom.connectionPoints.Length; i++)
+                for (int i = 1;
+                     i < newRoom.connectionPoints.Length;
+                     i++)
                 {
-                    BoxCollider boxCollider = newRoom.connectionPoints[i].GetComponent<BoxCollider>();
+                    BoxCollider boxCollider =
+                        newRoom.connectionPoints[i]
+                        .GetComponent<BoxCollider>();
+
                     if (boxCollider != null)
                     {
                         boxCollider.enabled = true;
@@ -1389,9 +1512,11 @@ public class DungeonGenerator : MonoBehaviour
                 if (playerMovement != null)
                 {
                     playerMovement.SetCanMove(true);
+
                     if (newRoom != null)
                     {
-                        OnRoomEntered?.Invoke(newRoom.roomType);
+                        OnRoomEntered?.Invoke(
+                            newRoom.roomType);
                     }
                 }
             }
@@ -1651,73 +1776,5 @@ public class DungeonGenerator : MonoBehaviour
         }
 
         return validRoomTypes[0];
-    }
-
-    private IEnumerator ActivateEntranceDoorDelayed(GameObject door)
-    {
-        yield return new WaitForSeconds(doorActivateDelay);
-        door.SetActive(true);
-    }
-
-    private IEnumerator MovePlayerWithController(Transform playerTransform, Vector3 targetPosition, float duration)
-    {
-        if (playerHealth != null && statsManager != null)
-        {
-            float healAmount = statsManager.GetStat(StatType.HealthPerRoomRegen);
-
-            if (healAmount > 0)
-            {
-                playerHealth.Heal(healAmount);
-                Debug.Log($"[DungeonGenerator] Jugador curado por {healAmount} HP al cambiar de cuarto.");
-            }
-        }
-
-        ShieldSkill shieldSkill = playerTransform.GetComponent<ShieldSkill>();
-        if (shieldSkill != null && shieldSkill.isSkillActive)
-        {
-            shieldSkill.DeactivateSkillPublic();
-            Debug.Log("[DungeonGenerator] Habilidad ShieldSkill desactivada automáticamente al cambiar de cuarto.");
-        }
-
-        PlayerEffectDistortion.Instance?.ClearAbyssalConfusion();
-        PlayerHealth.Instance?.BlockKillHeal(false);
-        //VisibilityController.Instance?.SetVisibility(0f);     
-        ShopManager.Instance?.SetDistortionActive(DevilDistortionType.SealedLuck, false);
-
-        Vector3 startPosition = playerTransform.position;
-
-        float originalY = startPosition.y;
-        targetPosition.y = originalY;
-
-        float elapsedTime = 0f;
-
-        while (elapsedTime < duration)
-        {
-            elapsedTime += Time.deltaTime;
-            float t = elapsedTime / duration;
-            t = Mathf.SmoothStep(0f, 1f, t);
-
-            Vector3 newPosition = Vector3.Lerp(startPosition, targetPosition, t);
-            newPosition.y = originalY;
-
-            if (playerMovement != null)
-            {
-                playerMovement.TeleportTo(newPosition);
-            }
-            else
-            {
-                playerTransform.position = newPosition;
-            }
-
-            yield return null;
-        }
-
-        Vector3 finalPos = targetPosition;
-        finalPos.y = originalY;
-
-        if (playerMovement != null)
-        {
-            playerMovement.TeleportTo(finalPos);
-        }
     }
 }
