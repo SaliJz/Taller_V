@@ -1017,7 +1017,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.101960786, g: 0.101960786, b: 0.101960786, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -1067,7 +1067,7 @@ Transform:
   m_GameObject: {fileID: 54571282}
   serializedVersion: 2
   m_LocalRotation: {x: 0.23911765, y: 0.3696438, z: -0.09904577, w: 0.89239913}
-  m_LocalPosition: {x: -176.23724, y: 51.915394, z: 216.66275}
+  m_LocalPosition: {x: 906.06274, y: 95.81941, z: 981.1628}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -16136,10 +16136,9 @@ MonoBehaviour:
   isDashing: 0
   isBlocking: 0
   dashDuration: 0.5
-  VFX_melee:
-  - {fileID: 577928645077519482}
-  - {fileID: 7970785115843605970}
-  - {fileID: 7916318443774595521}
+  VFX_meleeBegin: []
+  VFX_meleeMid: []
+  VFX_meleeLate: []
   debug: 0
 --- !u!114 &664404013
 MonoBehaviour:
@@ -16238,7 +16237,7 @@ Transform:
   m_GameObject: {fileID: 664404008}
   serializedVersion: 2
   m_LocalRotation: {x: 0.2578131, y: 0.3674814, z: -0.10678967, w: 0.8871786}
-  m_LocalPosition: {x: -115, y: 1.9153876, z: 277.9}
+  m_LocalPosition: {x: 967.3, y: 45.8194, z: 1042.4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -17327,7 +17326,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &728235580
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23028,7 +23027,9 @@ MonoBehaviour:
   isDashing: 0
   isBlocking: 0
   dashDuration: 0.5
-  VFX_melee: []
+  VFX_meleeBegin: []
+  VFX_meleeMid: []
+  VFX_meleeLate: []
   debug: 0
 --- !u!114 &1198438676
 MonoBehaviour:
@@ -28576,7 +28577,7 @@ Transform:
   m_GameObject: {fileID: 1645103346}
   serializedVersion: 2
   m_LocalRotation: {x: 0.23911765, y: 0.3696438, z: -0.09904577, w: 0.89239913}
-  m_LocalPosition: {x: -176.23724, y: 51.915394, z: 216.66275}
+  m_LocalPosition: {x: 906.06274, y: 95.81941, z: 981.1628}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -33049,7 +33050,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!108 &1979757333
 Light:
   m_ObjectHideFlags: 0
@@ -40598,11 +40599,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1343070828803602541, guid: 96cc9f7ffcfaf894db40fbf042e3e5b9, type: 3}
   m_PrefabInstance: {fileID: 577928645077519480}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &577928645077519482 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8691761627428509639, guid: 96cc9f7ffcfaf894db40fbf042e3e5b9, type: 3}
-  m_PrefabInstance: {fileID: 577928645077519480}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &593058114634141429
 GameObject:
   m_ObjectHideFlags: 0
@@ -42225,6 +42221,10 @@ PrefabInstance:
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 101756209}
+    - target: {fileID: 6802609977637346822, guid: 764d9cabce32a124394a6e324b6b0730, type: 3}
+      propertyPath: m_Name
+      value: Ataud - Entrada
+      objectReference: {fileID: 0}
     - target: {fileID: 7130852796830690567, guid: 764d9cabce32a124394a6e324b6b0730, type: 3}
       propertyPath: m_Name
       value: DressingSalas_N2_A1
@@ -42275,7 +42275,7 @@ PrefabInstance:
       objectReference: {fileID: 101756209}
     - target: {fileID: 7877988771115092027, guid: 764d9cabce32a124394a6e324b6b0730, type: 3}
       propertyPath: m_VersionIndex
-      value: 4438
+      value: 4468
       objectReference: {fileID: 0}
     - target: {fileID: 8068565519384655556, guid: 764d9cabce32a124394a6e324b6b0730, type: 3}
       propertyPath: m_PolyMesh.m_Mesh
@@ -47664,7 +47664,7 @@ PrefabInstance:
       objectReference: {fileID: 1536527433}
     - target: {fileID: 4027097440014955659, guid: 767a5f484c5bac34baaa8113767269dd, type: 3}
       propertyPath: m_VersionIndex
-      value: 4438
+      value: 4474
       objectReference: {fileID: 0}
     - target: {fileID: 5075481162807032155, guid: 767a5f484c5bac34baaa8113767269dd, type: 3}
       propertyPath: m_PolyMesh.m_Mesh
@@ -49217,7 +49217,7 @@ PrefabInstance:
       objectReference: {fileID: 1585191988}
     - target: {fileID: 2984910128778529435, guid: 1f6cc849a20ffc44cb948ff9d2134647, type: 3}
       propertyPath: m_VersionIndex
-      value: 4438
+      value: 4534
       objectReference: {fileID: 0}
     - target: {fileID: 3086921394388967746, guid: 1f6cc849a20ffc44cb948ff9d2134647, type: 3}
       propertyPath: m_Name
@@ -50977,11 +50977,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b71c5601d20b4c441828c4ef37840c91, type: 3}
---- !u!1 &7916318443774595521 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 179912013950389617, guid: b71c5601d20b4c441828c4ef37840c91, type: 3}
-  m_PrefabInstance: {fileID: 7916318443774595520}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7916318443774595522 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 885244902086886676, guid: b71c5601d20b4c441828c4ef37840c91, type: 3}
@@ -51047,11 +51042,6 @@ PrefabInstance:
 --- !u!4 &7970785115843605969 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8467276472772988610, guid: 05228ff2e426a9b46bf9968209f295e8, type: 3}
-  m_PrefabInstance: {fileID: 7970785115843605968}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &7970785115843605970 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8703670209187893264, guid: 05228ff2e426a9b46bf9968209f295e8, type: 3}
   m_PrefabInstance: {fileID: 7970785115843605968}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &8055298099907713076
@@ -51950,7 +51940,7 @@ PrefabInstance:
       objectReference: {fileID: 37601027}
     - target: {fileID: 1226262679110677458, guid: 86680d37a5cee654c89e14981f3b9d6b, type: 3}
       propertyPath: m_VersionIndex
-      value: 4438
+      value: 4531
       objectReference: {fileID: 0}
     - target: {fileID: 1542068087926880305, guid: 86680d37a5cee654c89e14981f3b9d6b, type: 3}
       propertyPath: m_Mesh
@@ -53168,7 +53158,6 @@ SceneRoots:
   - {fileID: 1934357851740949810}
   - {fileID: 2882928475517140202}
   - {fileID: 912185384544503002}
-  - {fileID: 1164689967480327213}
   - {fileID: 5700904559631465090}
   - {fileID: 8459243948171224870}
   - {fileID: 3912611467286171729}
@@ -53176,3 +53165,4 @@ SceneRoots:
   - {fileID: 1029399664320505337}
   - {fileID: 8767686797733017481}
   - {fileID: 5093853534689787550}
+  - {fileID: 1164689967480327213}
