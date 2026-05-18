@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class TransitionInteractive : MonoBehaviour
 {
-    #region Inspector 
+    #region Inspector
 
     [Header("Nodos de Trayectoria")]
     [SerializeField] private List<Nodo> nodes = new List<Nodo>();
@@ -15,9 +15,10 @@ public class TransitionInteractive : MonoBehaviour
 
     #endregion
 
-    #region Referencias 
+    #region Referencias internas
 
     private CharacterController characterController;
+    private PlayerMovement playerMovement;
     private PlayerAnimCtrl playerAnimCtrl;
     private Transform playerTransform;
 
@@ -32,28 +33,21 @@ public class TransitionInteractive : MonoBehaviour
     #region API pública
 
     public bool IsRunning => isRunning;
+    public List<Nodo> Nodes => nodes;
 
-    public void StartTraslation(Transform player)
+    public IEnumerator RunNodes(Transform player)
     {
-        if (isRunning || nodes == null || nodes.Count == 0) return;
+        if (nodes == null || nodes.Count == 0) yield break;
 
         playerTransform = player;
         characterController = player.GetComponent<CharacterController>();
+        playerMovement = player.GetComponent<PlayerMovement>();
         playerAnimCtrl = player.GetComponentInChildren<PlayerAnimCtrl>();
 
-        StartCoroutine(RunTraslation());
-    }
-
-    #endregion
-
-    #region Lógica 
-
-    private IEnumerator RunTraslation()
-    {
         isRunning = true;
 
-        if (characterController != null)
-            characterController.enabled = false;
+        if (characterController != null) characterController.enabled = false;
+        playerMovement?.SetCanMove(false);
 
         for (int i = 0; i < nodes.Count; i++)
         {
@@ -67,60 +61,75 @@ public class TransitionInteractive : MonoBehaviour
             if (!node.UseYAxis)
                 target.y = playerTransform.position.y;
 
-            SetAnimationTowardsNode(node, nextNode);
-
             while (Vector3.Distance(playerTransform.position, target) > arrivalThreshold)
             {
-                Vector3 dir = (target - playerTransform.position).normalized;
-                playerTransform.position = Vector3.MoveTowards(playerTransform.position, target, moveSpeed * Time.deltaTime);
+                playerTransform.position = Vector3.MoveTowards(
+                    playerTransform.position,
+                    target,
+                    moveSpeed * Time.deltaTime);
 
-                Vector3 toNext = nextNode != null
-                    ? (nextNode.NodeTransform.position - playerTransform.position)
-                    : dir;
-                toNext.y = 0f;
-                if (toNext.sqrMagnitude > 0.01f)
-                    playerTransform.rotation = Quaternion.LookRotation(toNext.normalized, Vector3.up);
+                Vector3 moveDir = target - playerTransform.position;
+                moveDir.y = 0f;
+
+                if (moveDir.sqrMagnitude > 0.001f)
+                {
+                    moveDir.Normalize();
+
+                    playerTransform.rotation =
+                        Quaternion.LookRotation(moveDir, Vector3.up);
+
+                    SetAnimDir(moveDir);
+                }
 
                 yield return null;
             }
 
             playerTransform.position = target;
 
-            if (playerAnimCtrl != null)
-                playerAnimCtrl.SetInputAxes(0f, 0f);
+            playerAnimCtrl?.SetInputAxes(0f, 0f);
+
+            playerAnimCtrl?.PlayState(
+                PlayerAnimCtrl.PlayerState.idle,
+                BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.locomotion
+            );
 
             yield return null;
         }
 
-        if (characterController != null)
-            characterController.enabled = true;
-
         isRunning = false;
     }
 
-    private void SetAnimationTowardsNode(Nodo current, Nodo next)
+    public void RestoreControl()
+    {
+        if (characterController != null) characterController.enabled = true;
+        playerMovement?.SetCanMove(true);
+    }
+
+    #endregion
+
+    #region Lógica interna
+
+    private void SetAnimDir(Vector3 worldDir)
     {
         if (playerAnimCtrl == null) return;
 
-        Nodo target = next != null ? next : current;
-        Vector3 dir = target.NodeTransform.position - playerTransform.position;
-        dir.y = 0f;
+        worldDir.y = 0f;
+        if (worldDir.sqrMagnitude < 0.001f) return;
+        worldDir.Normalize();
 
-        if (dir.sqrMagnitude < 0.001f) return;
-
-        dir.Normalize();
-
-        Vector3 camForward = Camera.main != null ? Camera.main.transform.forward : Vector3.forward;
-        Vector3 camRight = Camera.main != null ? Camera.main.transform.right : Vector3.right;
-        camForward.y = 0f;
+        Transform cam = Camera.main != null ? Camera.main.transform : null;
+        Vector3 camFwd = cam != null ? cam.forward : Vector3.forward;
+        Vector3 camRight = cam != null ? cam.right : Vector3.right;
+        camFwd.y = 0f;
         camRight.y = 0f;
-        camForward.Normalize();
+        camFwd.Normalize();
         camRight.Normalize();
 
-        float h = Vector3.Dot(dir, camRight);
-        float v = Vector3.Dot(dir, camForward);
+        float h = Mathf.Round(Vector3.Dot(worldDir, camRight));
+        float v = Mathf.Round(Vector3.Dot(worldDir, camFwd));
 
         playerAnimCtrl.SetInputAxes(h, v);
+        playerAnimCtrl.UpdateDirection(h, v);
     }
 
     #endregion

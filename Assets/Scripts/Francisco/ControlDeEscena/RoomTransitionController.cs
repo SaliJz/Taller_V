@@ -25,7 +25,7 @@ public class RoomTransitionController : MonoBehaviour
 
     [Header("Configuración Level 1")]
     [SerializeField] private TransitionInteractive transitionInteractive;
-    [SerializeField] private ElevatorRiseController elevatorController;
+    [SerializeField] private SequenceTransition sequenceController;
 
     #endregion
 
@@ -52,14 +52,14 @@ public class RoomTransitionController : MonoBehaviour
 
     public IEnumerator RunPreFadeSequence(Transform playerTransform)
     {
-        if (transitionMode == TransitionMode.Level1 && elevatorController != null)
+        if (transitionMode == TransitionMode.Level1 && sequenceController != null)
         {
-            yield return StartCoroutine(elevatorController.ExecuteSequence(playerTransform));
+            yield return StartCoroutine(sequenceController.ExecuteSequence(playerTransform));
         }
     }
 
     public bool HasPreFadeSequence =>
-        transitionMode == TransitionMode.Level1 && elevatorController != null;
+        transitionMode == TransitionMode.Level1 && sequenceController != null;
 
     public IEnumerator MovePlayerSmooth(Transform playerTransform, Vector3 targetPosition, float duration)
     {

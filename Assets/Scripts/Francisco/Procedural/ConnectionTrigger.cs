@@ -7,8 +7,8 @@ public class ConnectionTrigger : MonoBehaviour
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip transitionClip;
 
-    [Header("Elevator (opcional)")]
-    [SerializeField] private ElevatorRiseController elevator;
+    [Header("Transition")]
+    [SerializeField] private SequenceTransition transition;
 
     private DungeonGenerator dungeonGenerator;
     private ConnectionPoint connectionPoint;
@@ -40,7 +40,7 @@ public class ConnectionTrigger : MonoBehaviour
         if (audioSource != null && transitionClip != null)
             audioSource.PlayOneShot(transitionClip);
 
-        if (elevator != null)
+        if (transition != null)
             dungeonGenerator.StartCoroutine(ElevatorThenTransition(other.transform));
         else
             dungeonGenerator.StartCoroutine(dungeonGenerator.TransitionToNextRoom(connectionPoint, other.transform));
@@ -66,7 +66,7 @@ public class ConnectionTrigger : MonoBehaviour
         }
 
         yield return dungeonGenerator.StartCoroutine(
-            elevator.ExecuteSequence(playerTransform));
+            transition.ExecuteSequence(playerTransform));
 
         yield return dungeonGenerator.StartCoroutine(
             dungeonGenerator.TransitionToNextRoom(
