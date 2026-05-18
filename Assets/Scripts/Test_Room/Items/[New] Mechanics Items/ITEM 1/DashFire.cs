@@ -3,8 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-#pragma warning disable 0649 // Private fields are read defensively and may be assigned by disabled/editor flows.
-
 public class DashFire : MonoBehaviour
 {
     #region Private Fields

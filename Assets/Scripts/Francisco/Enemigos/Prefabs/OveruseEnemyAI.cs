@@ -2,8 +2,6 @@ using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
 
-#pragma warning disable 0414 // Private inspector/state fields are kept for scene data and editor workflows.
-
 [DisallowMultipleComponent]
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(EnemyHealth))]

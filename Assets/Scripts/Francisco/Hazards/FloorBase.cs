@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
-#pragma warning disable 0414 // Private inspector fields are kept for scene data and custom editors.
-
 [RequireComponent(typeof(BoxCollider))]
 [RequireComponent(typeof(NavMeshObstacle))]
 public abstract class FloorBase : MonoBehaviour

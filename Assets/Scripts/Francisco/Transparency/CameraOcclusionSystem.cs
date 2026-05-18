@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-#pragma warning disable 0414 // Private inspector fields are kept for camera occlusion tuning.
-
 public class CameraOcclusionSystem : MonoBehaviour
 {
     [Header("References")]

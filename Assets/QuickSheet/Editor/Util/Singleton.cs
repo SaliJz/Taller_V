@@ -19,7 +19,7 @@ namespace UnityQuickSheet
             {
                 if (instance == null)
                 {
-                    instance = (T)FindFirstObjectByType(typeof(T));
+                    instance = (T)FindObjectOfType(typeof(T));
 
                     if (instance == null)
                     {

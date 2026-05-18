@@ -6,8 +6,6 @@ using UnityEngine;
 
 using static RoomProgressionLevel;
 
-#pragma warning disable 0649 // Private fields are read defensively and may be assigned by disabled/editor flows.
-
 public class DungeonGenerator : MonoBehaviour
 {
     [Header("Room Prefabs")]

@@ -1,8 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-#pragma warning disable 0414 // Private inspector fields are kept for scene data and input tuning.
-
 public class PlayerShortcuts : MonoBehaviour
 {
     [Header("Shortcut Configuration")]

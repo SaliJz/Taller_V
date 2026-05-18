@@ -3,8 +3,6 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-#pragma warning disable 0649 // Private fields are read defensively and may be assigned by disabled/editor flows.
-
 /// <summary>
 /// Gestor centralizado de acciones de combate del jugador.
 /// Permite encolar una acción pendiente mientras otra está en ejecución.

@@ -4,8 +4,6 @@ using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.AI;
 
-#pragma warning disable 0414 // Private inspector/state fields are kept for scene data and editor workflows.
-
 [System.Serializable]
 public struct SmashKeyframe
 {
