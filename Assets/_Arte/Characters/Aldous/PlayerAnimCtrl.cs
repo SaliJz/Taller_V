@@ -76,6 +76,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
 
         UpdateDirection(H,V);
         //DebugInputs();
+        UpdateAgeState();
 
         if (UpdateBlockLogic()) return;
         if (UpdateDashLogic()) return;
@@ -119,6 +120,17 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         }
 
         PlayState(nextState, AnimPriority.locomotion, forceRefresh);
+    }
+
+    private void UpdateAgeState()
+    {
+        if (currentAge == nextAge) return;
+        
+        currentAge = nextAge;
+
+        AnimPriority refreshPriority; 
+        refreshPriority = isForcedAnim? currentPriority : AnimPriority.locomotion;
+        PlayState(currentState, refreshPriority);
     }
 
     private bool UpdateBlockLogic()
