@@ -25,7 +25,7 @@ public class RoomTransitionControllerEditor : Editor
         serializedObject.Update();
 
         EditorGUILayout.Space(4);
-        EditorGUILayout.LabelField("── Modo de Transición ──", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("Modo de Transición", EditorStyles.boldLabel);
         EditorGUILayout.PropertyField(transitionMode);
 
         EditorGUILayout.Space(8);
@@ -35,14 +35,14 @@ public class RoomTransitionControllerEditor : Editor
         switch (mode)
         {
             case TransitionMode.Classic:
-                EditorGUILayout.LabelField("── Configuración Classic ──", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("Configuración Classic", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(playerMoveDuration);
                 EditorGUILayout.PropertyField(playerMoveDistance);
                 EditorGUILayout.PropertyField(doorActivateDelay);
                 break;
 
             case TransitionMode.Level1:
-                EditorGUILayout.LabelField("── Configuración Level 1 ──", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("Configuración Level 1", EditorStyles.boldLabel);
                 EditorGUILayout.HelpBox("Level 1 usa ascensores y traslaciones por nodos. Asigna los componentes correspondientes.", MessageType.Info);
                 EditorGUILayout.PropertyField(traslaciónPrefab);
                 EditorGUILayout.PropertyField(elevatorController);

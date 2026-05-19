@@ -11782,18 +11782,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bd539129a83cb44caabe5c26a649dd3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nodes:
-  - {fileID: 6289651771208166767}
-  - {fileID: 1204121931619804868}
-  moveSpeed: 3
-  arrivalThreshold: 0.05
-  riseAfterNodes: 1
-  riseHeight: 5
-  riseDuration: 1.5
-  objectsAnimators:
-  - {fileID: 1325596920056165003}
-  objectsExitParam: Open
-  objectsExitWait: 0.8
+  playerNodes:
+  - timeTrigger: 0
+    nodeTransform: {fileID: 1092449095975767164}
+    speed: 5
+    useYAxis: 0
+  - timeTrigger: 0.6
+    nodeTransform: {fileID: 2343935917292339100}
+    speed: 5
+    useYAxis: 0
+  platformNodes:
+  - timeTrigger: 1.4
+    movementOffset: {x: 0, y: 10, z: 0}
+    speed: 5
+  fadeEvents:
+  - timeTrigger: 1.5
+  animationEvents:
+  - timeTrigger: 1
+    animator: {fileID: 1325596920056165003}
+    paramName: Open
+    value: 0
+  playerGizmoColor: {r: 0, g: 1, b: 0, a: 1}
+  platformGizmoColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  gizmoSphereSize: 0.3
 --- !u!1 &1781202355278143691 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 26010190979668232, guid: b3c38e709de14724c8c0acdcd539a550, type: 3}
@@ -12654,18 +12665,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bd539129a83cb44caabe5c26a649dd3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nodes:
-  - {fileID: 8480773099883717326}
-  - {fileID: 6224192117196720083}
-  moveSpeed: 3
-  arrivalThreshold: 0.05
-  riseAfterNodes: 1
-  riseHeight: 5
-  riseDuration: 1.5
-  objectsAnimators:
-  - {fileID: 3601906323577131632}
-  objectsExitParam: Open
-  objectsExitWait: 0.8
+  playerNodes:
+  - timeTrigger: 0
+    nodeTransform: {fileID: 3044292845058025533}
+    speed: 5
+    useYAxis: 0
+  - timeTrigger: 0.6
+    nodeTransform: {fileID: 754609063054436921}
+    speed: 5
+    useYAxis: 0
+  platformNodes:
+  - timeTrigger: 1.4
+    movementOffset: {x: 0, y: 10, z: 0}
+    speed: 5
+  fadeEvents:
+  - timeTrigger: 1.5
+  animationEvents:
+  - timeTrigger: 1
+    animator: {fileID: 3601906323577131632}
+    paramName: Open
+    value: 0
+  playerGizmoColor: {r: 0, g: 1, b: 0, a: 1}
+  platformGizmoColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  gizmoSphereSize: 0.3
 --- !u!1001 &1819758463759504315
 PrefabInstance:
   m_ObjectHideFlags: 0
