@@ -202,15 +202,21 @@ public class TransitionInteractive : MonoBehaviour
         if (playerNodes != null && playerNodes.Count > 0)
         {
             Gizmos.color = playerGizmoColor;
-            Vector3 lastPos = transform.position;
-            
+            Vector3? lastPos = null; 
+
             for (int i = 0; i < playerNodes.Count; i++)
             {
                 if (playerNodes[i].nodeTransform != null)
                 {
                     Vector3 targetPos = playerNodes[i].nodeTransform.position;
-                    Gizmos.DrawLine(lastPos, targetPos);
+
                     Gizmos.DrawSphere(targetPos, gizmoSphereSize * 0.6f);
+
+                    if (lastPos.HasValue)
+                    {
+                        Gizmos.DrawLine(lastPos.Value, targetPos);
+                    }
+
                     lastPos = targetPos;
                 }
             }
