@@ -242,7 +242,16 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
     private IEnumerator KnockbackTickCustom(CharacterController cc, Vector3 force)
     {
         float t = 0;
-        while (t < 0.25f) { t += Time.deltaTime; cc?.Move(force * Time.deltaTime); yield return null; }
+        var pm = cc.GetComponent<PlayerMovement>();
+        while (t < 0.25f)
+        {
+            if (pm == null || !pm.IsDashing)
+            {
+                cc?.Move(force * Time.deltaTime);
+            }
+            t += Time.deltaTime;
+            yield return null;
+        }
     }
     #endregion
 }

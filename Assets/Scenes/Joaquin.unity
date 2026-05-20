@@ -628,11 +628,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3909259620692616499, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3909259620692616499, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9147642797784961567, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_Name
@@ -640,7 +640,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9147642797784961567, guid: cdf6eb9aec1ae1a4ebbc2fb0e61d3684, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6643,10 +6643,9 @@ MonoBehaviour:
   isDashing: 0
   isBlocking: 0
   dashDuration: 0.5
-  VFX_melee:
-  - {fileID: 285729125}
-  - {fileID: 1889584811}
-  - {fileID: 2056292174}
+  VFX_meleeBegin: []
+  VFX_meleeMid: []
+  VFX_meleeLate: []
   debug: 0
 --- !u!114 &469714746
 MonoBehaviour:
@@ -8672,23 +8671,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 335325190854564059, guid: 2976352416b724b4a95ba58cc145efa3, type: 3}
       propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1467704704254691116, guid: 2976352416b724b4a95ba58cc145efa3, type: 3}
+      propertyPath: m_AnchorMax.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1467704704254691116, guid: 2976352416b724b4a95ba58cc145efa3, type: 3}
-      propertyPath: m_AnchorMax.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1467704704254691116, guid: 2976352416b724b4a95ba58cc145efa3, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2527291602464719552, guid: 2976352416b724b4a95ba58cc145efa3, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2527291602464719552, guid: 2976352416b724b4a95ba58cc145efa3, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8944771883278971680, guid: 2976352416b724b4a95ba58cc145efa3, type: 3}
       propertyPath: m_LocalPosition.x
@@ -8865,7 +8864,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3248756346906325430, guid: 196eedab17c255749b2cfddd17457619, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4431376214508367305, guid: 196eedab17c255749b2cfddd17457619, type: 3}
       propertyPath: m_LocalPosition.x
@@ -8909,19 +8908,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5783309879986193337, guid: 196eedab17c255749b2cfddd17457619, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5783309879986193337, guid: 196eedab17c255749b2cfddd17457619, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9184708069988881995, guid: 196eedab17c255749b2cfddd17457619, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9184708069988881995, guid: 196eedab17c255749b2cfddd17457619, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -23358,6 +23357,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 595312439969399503, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: edgeDetectionDistance
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_LocalPosition.x
       value: -16.41

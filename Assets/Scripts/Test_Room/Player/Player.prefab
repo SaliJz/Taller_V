@@ -7725,6 +7725,17 @@ MonoBehaviour:
   dashCollisionLayers:
     serializedVersion: 2
     m_Bits: 197120
+  minEffectiveDashDistance: 0.75
+  dashGroundSampleStep: 0.2
+  dashGroundProbeHeight: 1.5
+  dashGroundProbeDistance: 3
+  stopDashOnMidPathVoid: 1
+  dashDynamicBlockLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  dashObstacleSkin: 0.08
+  dashStepOffsetOverride: 0.02
+  largeColliderOverlapPadding: 0.03
   gapDashBonusDistance: 5
   groundLayerMask:
     serializedVersion: 2
@@ -7736,6 +7747,9 @@ MonoBehaviour:
   edgeSampleMax: 6
   minHorizontalMagnitude: 0.01
   groundTolerance: 0.15
+  edgeSampleStepDistance: 0.2
+  relaxedGroundHitsRequired: 5
+  dashGroundedGrace: 0.12
   afterimagePrefab: {fileID: 1529516632308541924, guid: 5813d161b87a73e46926413d2ef586b9, type: 3}
   afterimageAlpha: 0.5
   afterimageLifetime: 0.5

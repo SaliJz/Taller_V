@@ -1002,13 +1002,17 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     {
         float duration = 0.2f;
         float elapsed = 0f;
-
+        var pm = cc != null ? cc.GetComponent<PlayerMovement>() : null;
         while (elapsed < duration)
         {
-            if (cc != null && cc.enabled)
+            if (cc != null && cc.enabled) 
             {
-                cc.Move(knockbackVelocity * Time.deltaTime);
+                if (pm == null || !pm.IsDashing)
+                {
+                    cc.Move(knockbackVelocity * Time.deltaTime);
+                }
             }
+
             elapsed += Time.deltaTime;
             yield return null;
         }

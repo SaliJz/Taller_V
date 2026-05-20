@@ -8,12 +8,19 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     #region Inspector – References
 
     [Header("References")]
+    [Tooltip("Controlador principal de las estadísticas (salud, velocidad, etc).")]
     [SerializeField] private PlayerStatsManager statsManager;
+    [Tooltip("Componente físico que mueve y detecta colisiones del jugador.")]
     [SerializeField] private CharacterController controller;
+    [Tooltip("La cámara principal que sigue al jugador.")]
     [SerializeField] private Transform mainCameraTransform;
+    [Tooltip("Controlador de las animaciones del jugador.")]
     [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
+    [Tooltip("Maneja la vida y daño del jugador.")]
     [SerializeField] private PlayerHealth playerHealth;
+    [Tooltip("Controlador para los sonidos del jugador (pasos, dash).")]
     [SerializeField] private PlayerAudioController playerAudioController;
+    [Tooltip("Permite modificar o invertir los controles de entrada si es necesario.")]
     [SerializeField] private PlayerInputModifier inputModifier;
 
     #endregion
@@ -22,8 +29,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     [Header("Movement")]
     [HideInInspector] private float fallbackMoveSpeed = 5f;
+    [Tooltip("Qué tan rápido camina o corre el jugador.")]
     [SerializeField] private float moveSpeed = 5f;
     [HideInInspector] private float fallbackGravity = -9.81f;
+    [Tooltip("Fuerza con la que el jugador es atraído hacia el suelo.")]
     [SerializeField] private float gravity = -9.81f;
 
     #endregion
@@ -31,7 +40,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     #region Inspector – Audio Step Settings
 
     [Header("Audio Step Settings")]
+    [Tooltip("Tipo de superficie actual para cambiar el sonido de los pasos.")]
     [SerializeField] private int level = 0;
+    [Tooltip("Tiempo de espera entre cada sonido de paso (más bajo = pasos más rápidos).")]
     [SerializeField] private float stepInterval = 0.35f;
 
     #endregion
@@ -39,21 +50,41 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     #region Inspector – Dash Settings
 
     [Header("Dash")]
-    [Tooltip("Distancia base del dash antes de aplicar multiplicadores.")]
+    [Tooltip("Distancia normal del impulso (dash).")]
     [SerializeField] private float baseDashDistance = 10f;
-    [Tooltip("Cooldown base del dash antes de aplicar modificadores.")]
+    [Tooltip("Tiempo de espera para poder usar el dash de nuevo.")]
     [SerializeField] private float baseDashCooldown = 0.3f;
-    [Tooltip("Distancia total del dash después de aplicar multiplicadores.")]
+    [Tooltip("Distancia final del dash después de aplicar mejoras u objetos.")]
     [SerializeField] private float dashDistance = 10f;
     //[Tooltip("Cooldown actual del dash después de aplicar modificadores.")]
     //[SerializeField] private float dashCooldown = 0.3f;
-    [Tooltip("Duración del dash en segundos.")]
+    [Tooltip("Cuánto tiempo dura la animación y el movimiento del dash.")]
     [SerializeField] private float dashDuration = 0.3f;
+    [Tooltip("Capas del mapa por las que el jugador puede caminar.")]
     [SerializeField] private LayerMask traversableLayers;
+    [Tooltip("Capas del mapa que detendrán el dash (paredes, obstáculos).")]
     [SerializeField] private LayerMask dashCollisionLayers;
 
+    [Header("Dash - Safety")]
+    [Tooltip("Distancia mínima útil para permitir un dash recortado.")]
+    [SerializeField] private float minEffectiveDashDistance = 0.75f;
+    [Tooltip("Paso de muestreo horizontal para validar suelo durante el dash.")]
+    [SerializeField] private float dashGroundSampleStep = 0.2f;
+    [Tooltip("Altura desde donde se comprueba el suelo durante el dash.")]
+    [SerializeField] private float dashGroundProbeHeight = 1.5f;
+    [Tooltip("Distancia máxima del raycast hacia abajo durante el dash.")]
+    [SerializeField] private float dashGroundProbeDistance = 3f;
+    [Tooltip("Tolerancia extra para considerar grounded en el arranque del dash.")]
+    [SerializeField] private float dashGroundedGrace = 0.12f;
+    [Tooltip("stepOffset reducido durante el dash para evitar trepar colliders grandes de enemigos.")]
+    [SerializeField] private float dashStepOffsetOverride = 0.02f;
+    [Tooltip("Separación mínima respecto a obstáculos sólidos al recortar la distancia.")]
+    [SerializeField] private float dashObstacleSkin = 0.08f;
+
     [Header("Dash - Gap Crossing")]
+    [Tooltip("Distancia extra que se perdona si el dash termina justo en el borde de un abismo.")]
     [SerializeField] private float gapDashBonusDistance = 3f;
+    [Tooltip("Capas consideradas como suelo o piso firme.")]
     [SerializeField] private LayerMask groundLayerMask;
 
     #endregion
@@ -61,13 +92,24 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     #region Inspector – Edge Detection
 
     [Header("Edge Detection")]
+    [Tooltip("Evita que el jugador se caiga por los bordes de las plataformas accidentalmente.")]
     [SerializeField] private bool enableEdgeDetection = true;
+    [Tooltip("Distancia de anticipación para detectar si hay un borde cerca.")]
     [SerializeField] private float edgeDetectionDistance = 0.5f;
+    [Tooltip("Altura desde donde se lanzan los rayos invisibles para detectar el suelo.")]
     [SerializeField] private float edgeRaycastHeight = 0.2f;
+    [Tooltip("Margen de seguridad extra para evitar quedarse colgando del borde.")]
     [SerializeField] private float edgeSafetyMargin = 0.05f;
+    [Tooltip("Cantidad de verificaciones que hace el sistema para encontrar un borde.")]
     [SerializeField] private int edgeSampleMax = 6;
+    [Tooltip("Paso fijo para muestrear bordes en GetMaxSafeDistance (más preciso que solo edgeSampleMax).")]
+    [SerializeField] private float edgeSampleStepDistance = 0.2f;
+    [Tooltip("Movimiento mínimo necesario para activar la detección de bordes.")]
     [SerializeField] private float minHorizontalMagnitude = 0.01f;
+    [Tooltip("Distancia de tolerancia para considerar que el jugador sigue tocando el suelo.")]
     [SerializeField] private float groundTolerance = 0.15f;
+    [Tooltip("Cantidad mínima de puntos con suelo requeridos para aceptar un borde en modo relajado.")]
+    [SerializeField] private int relaxedGroundHitsRequired = 5;
 
     #endregion
 
@@ -75,11 +117,15 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     [Header("Effects")]
     [Header("Afterimage Settings")]
+    [Tooltip("El objeto visual que hace el efecto de 'fantasma' durante el dash.")]
     [SerializeField] private GameObject afterimagePrefab;
+    [Tooltip("Qué tan transparente es el efecto de fantasma (0 es invisible, 1 es sólido).")]
     [SerializeField, Range(0f, 1f)] private float afterimageAlpha = 0.5f;
+    [Tooltip("Cuánto tiempo dura el efecto de fantasma antes de desaparecer.")]
     [SerializeField] private float afterimageLifetime = 0.5f;
 
     [Header("Dash VFX")]
+    [Tooltip("Efecto de partículas (polvo) que sale al hacer el dash.")]
     [SerializeField] private ParticleSystem dashDustVFX;
 
     #endregion
@@ -87,6 +133,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     #region Inspector – Debug
 
     [Header("Debug")]
+    [Tooltip("Muestra líneas de colores en la escena para ver cómo funcionan los rayos y colisiones.")]
     [SerializeField] private bool canDebug = true;
 
     #endregion
@@ -128,10 +175,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     private Vector3 lastTargetCheck = Vector3.zero;
     private bool lastTargetHit = false;
 
-    // External Tracking & Animation
-    //private bool hasIsAttackingParameter = false;
-    //private readonly Dictionary<string, float> runAnimationSpeedOverrides = new Dictionary<string, float>();
-
     #endregion
 
     #region Public Properties
@@ -164,12 +207,14 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     #region Unity Lifecycle
 
+    // Inicializa controles.
     private void Awake()
     {
         playerControls = new PlayerControlls();
         playerControls.Movement.SetCallbacks(this);
     }
 
+    // Configura componentes, capas y estadísticas iniciales.
     private void Start()
     {
         statsManager = GetComponent<PlayerStatsManager>();
@@ -180,7 +225,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         playerAnimCtrl = GetComponentInChildren<PlayerAnimCtrl>();
         playerHealth = GetComponent<PlayerHealth>();
         playerAudioController = GetComponent<PlayerAudioController>();
-        //hasIsAttackingParameter = AnimatorHasParameter(animCtrl, "IsAttacking");
 
         playerLayer = LayerMask.NameToLayer("Player");
 
@@ -195,21 +239,23 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         InitializeDashVFX();
         UpdateDashStatsFromManager();
-        //UpdateMovementAnimationSpeed(false);
     }
 
+    // Activa la suscripción a eventos y controles.
     private void OnEnable()
     {
         PlayerStatsManager.OnStatChanged += HandleStatChanged;
         playerControls?.Movement.Enable();
     }
 
+    // Desactiva eventos y controles.
     private void OnDisable()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
         playerControls?.Movement.Disable();
     }
 
+    // Lógica de actualización de inputs, cooldowns y gravedad.
     private void Update()
     {
         if (dashCooldownTimer > 0)
@@ -225,12 +271,12 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         {
             moveDirection = Vector3.zero;
             playerAnimCtrl?.SetInputAxes(lastMoveX, lastMoveY);
-            //UpdateMovementAnimationSpeed(false);
         }
 
         ApplyGravity();
     }
 
+    // Lógica física de movimiento y rotación.
     private void FixedUpdate()
     {
         if (IsDashing) return;
@@ -256,6 +302,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
+    // Limpieza de memoria y partículas al destruir el objeto.
     private void OnDestroy()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
@@ -279,6 +326,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     #region Initialization & Event Handlers
 
+    /// <summary>
+    /// Recalcula la distancia y el cooldown del dash tomando los valores del gestor de estadísticas.
+    /// </summary>
     private void UpdateDashStatsFromManager()
     {
         if (statsManager == null)
@@ -299,6 +349,11 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         ReportDebug($"Dash Stats actualizados: Distancia={currentDashDistance} (base:{baseDashDistance} x {dashRangeMultiplier}), Cooldown={currentDashCooldown} (base:{baseDashCooldown} + {dashCooldownMod}s)", 1);
     }
 
+    /// <summary>
+    /// Evento que reacciona cuando una estadística del jugador cambia para actualizarla en el movimiento.
+    /// </summary>
+    /// <param name="statType">El tipo de estadística modificada.</param>
+    /// <param name="newValue">El nuevo valor a aplicar.</param>
     private void HandleStatChanged(StatType statType, float newValue)
     {
         if (statType == StatType.MoveSpeed)
@@ -321,6 +376,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     #region Input Handling
 
+    /// <summary>
+    /// Lee el input direccional del nuevo sistema de inputs.
+    /// </summary>
     public void OnMove(InputAction.CallbackContext context)
     {
         Vector2 rawInput = context.ReadValue<Vector2>();
@@ -335,6 +393,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
+    /// <summary>
+    /// Procesa el input leído, orientándolo respecto a la cámara principal y gestionando sonidos de paso y animaciones.
+    /// </summary>
     private void HandleMovementInput()
     {
         if (PauseController.Instance != null && PauseController.IsGamePaused) return;
@@ -356,9 +417,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         bool hasInput = moveDirection.magnitude > 0.1f;
         bool timeIsRunning = Time.timeScale > 0.01f;
         bool isMoving = hasInput && timeIsRunning;
-
-        //if (playerAnimator != null) playerAnimator.SetBool("Running", isMoving);
-        //UpdateMovementAnimationSpeed(isMoving);
 
         if (playerAudioController != null)
         {
@@ -396,6 +454,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     #region Core Movement Physics
 
+    /// <summary>
+    /// Aplica la fuerza de gravedad al jugador.
+    /// </summary>
     private void ApplyGravity()
     {
         if (IsDashing) return;
@@ -416,6 +477,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
+    /// <summary>
+    /// Mueve forzosamente al personaje ignorando su input, pasando por el sistema de detección de bordes si es necesario.
+    /// </summary>
+    /// <param name="displacement">El vector de desplazamiento aplicado.</param>
     public void MoveCharacter(Vector3 displacement)
     {
         if (controller != null && controller.enabled)
@@ -429,6 +494,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
+    /// <summary>
+    /// Bloquea o desbloquea la capacidad del jugador para moverse.
+    /// </summary>
     public void SetCanMove(bool state)
     {
         canMove = state;
@@ -437,10 +505,12 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         {
             moveDirection = Vector3.zero;
             playerAnimCtrl?.SetInputAxes(0f, 0f);
-            //UpdateMovementAnimationSpeed(false);
         }
     }
 
+    /// <summary>
+    /// Inicia un movimiento controlado por un sistema externo (ej. cinemáticas o empujes).
+    /// </summary>
     public void StartForcedMovement(bool ignoreGravity)
     {
         inForcedMove = true;
@@ -452,6 +522,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
+    /// <summary>
+    /// Detiene el movimiento externo forzado.
+    /// </summary>
     public void StopForcedMovement()
     {
         inForcedMove = false;
@@ -461,6 +534,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     public void SetExternalForcesAllowed(bool allowed) { allowExternalForces = allowed; }
 
+    /// <summary>
+    /// Teletransporta al jugador de forma segura desactivando y reactivando su colisionador.
+    /// </summary>
     public void TeleportTo(Vector3 position)
     {
         controller.enabled = false;
@@ -471,23 +547,27 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         moveDirection = Vector3.zero;
     }
 
+    /// <summary>
+    /// Revisa si el jugador está en el suelo de manera estricta o mediante un rayo pequeño debajo de él.
+    /// </summary>
     public bool IsEffectivelyGrounded()
     {
         if (controller == null) return false;
         if (controller.isGrounded) return true;
 
         Vector3 origin = transform.position + Vector3.up * 0.1f;
-        if (Physics.Raycast(origin, Vector3.down, out RaycastHit h, groundTolerance + 0.05f, groundLayerMask, QueryTriggerInteraction.Ignore))
-        {
-            return true;
-        }
-        return false;
+        float maxDistance = groundTolerance + dashGroundedGrace;
+
+        return Physics.Raycast(origin, Vector3.down, out _, maxDistance, groundLayerMask, QueryTriggerInteraction.Ignore);
     }
 
     #endregion
 
     #region Facing & Rotation Control
 
+    /// <summary>
+    /// Suaviza la rotación del personaje hacia donde se está moviendo.
+    /// </summary>
     private void RotateTowardsMovement()
     {
         if (rotationLocked)
@@ -504,6 +584,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
+    /// <summary>
+    /// Bloquea la dirección del jugador en uno de los 8 ejes principales (Norte, Sur, Noreste, etc).
+    /// </summary>
     public void LockFacingTo8Directions(Vector3 worldDirection, bool setAnimatorAxes = true)
     {
         if (worldDirection.sqrMagnitude < 0.0001f) return;
@@ -539,6 +622,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
+    /// <summary>
+    /// Desbloquea la rotación del jugador permitiendo giro libre nuevamente.
+    /// </summary>
     public void UnlockFacing()
     {
         rotationLocked = false;
@@ -587,6 +673,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         yield return StartCoroutine(DashRoutine());
     }
 
+    /// <summary>
+    /// Corrutina principal que controla todo el flujo del dash: orientación, validación de ruta, animación y desplazamiento.
+    /// </summary>
     private IEnumerator DashRoutine()
     {
         Vector3 dashDirection;
@@ -641,29 +730,41 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         int pushAttempts = 0;
 
         Vector3 capsuleCenter = transform.position + controller.center;
-        Vector3 p1 = capsuleCenter + Vector3.up * (controller.height / 2f - controller.radius);
-        Vector3 p2 = capsuleCenter - Vector3.up * (controller.height / 2f - controller.radius);
+        Vector3 sp1 = capsuleCenter + Vector3.up * (controller.height / 2f - controller.radius);
+        Vector3 sp2 = capsuleCenter - Vector3.up * (controller.height / 2f - controller.radius);
 
-        while (Physics.CheckCapsule(p1, p2, controller.radius, traversableLayers, QueryTriggerInteraction.Ignore)
+        while (Physics.CheckCapsule(sp1, sp2, controller.radius, traversableLayers, QueryTriggerInteraction.Ignore)
                && stuckTimer < maxStuckTime
                && pushAttempts < maxPushAttempts)
         {
             Vector3 pushDelta = dashDirection * safetyPushSpeed * Time.deltaTime;
-            Vector3 nextPos = transform.position + pushDelta;
 
-            if (!IsPositionSafeForCapsule(nextPos))
+            if (!IsPositionSafeForCapsule(transform.position + pushDelta))
             {
                 ReportDebug("Safety push detenido: posición insegura detectada.", 1);
                 break;
             }
 
-            controller.Move(pushDelta);
+            if (Physics.SphereCast(transform.position + controller.center, controller.radius * 0.8f,
+                Vector3.up, out _, controller.height * 0.3f, dashCollisionLayers, QueryTriggerInteraction.Ignore))
+            {
+                ReportDebug("Safety push detenido: superficie encima detectada.", 1);
+                break;
+            }
+
+            CollisionFlags pushFlags = controller.Move(pushDelta);
+            if ((pushFlags & CollisionFlags.Above) != 0)
+            {
+                ReportDebug("Safety push detenido: colisión superior.", 1);
+                break;
+            }
+
             stuckTimer += Time.deltaTime;
             pushAttempts++;
 
             capsuleCenter = transform.position + controller.center;
-            p1 = capsuleCenter + Vector3.up * (controller.height / 2f - controller.radius);
-            p2 = capsuleCenter - Vector3.up * (controller.height / 2f - controller.radius);
+            sp1 = capsuleCenter + Vector3.up * (controller.height / 2f - controller.radius);
+            sp2 = capsuleCenter - Vector3.up * (controller.height / 2f - controller.radius);
 
             yield return null;
         }
@@ -679,22 +780,28 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         dashCooldownTimer = currentDashCooldown;
     }
 
+    /// <summary>
+    /// Realiza el desplazamiento suave del dash a lo largo del tiempo indicado.
+    /// </summary>
+    /// <param name="targetPosition">Punto final de destino.</param>
+    /// <param name="duration">Tiempo en segundos que tardará el recorrido.</param>
     private IEnumerator PerformDash(Vector3 targetPosition, float duration)
     {
         float savedGravity = gravity;
         float savedYVelocity = yVelocity;
+        float originalStepOffset = controller.stepOffset;
 
         gravity = 0f;
         yVelocity = 0f;
-
-        float originalStepOffset = controller.stepOffset;
-        controller.stepOffset = Mathf.Max(originalStepOffset, 0.5f);
+        controller.stepOffset = dashStepOffsetOverride;
 
         Vector3 startPosition = transform.position;
-        float startY = transform.position.y;
-
-        Vector3 startPosXZ = new Vector3(transform.position.x, 0f, transform.position.z);
+        Vector3 startPosXZ = new Vector3(startPosition.x, 0f, startPosition.z);
         Vector3 targetPosXZ = new Vector3(targetPosition.x, 0f, targetPosition.z);
+
+        float startY = startPosition.y;
+        float targetY = targetPosition.y;
+        bool isGapCrossing = Mathf.Abs(targetY - startY) > 0.3f;
 
         float startTime = Time.time;
         float endTime = startTime + duration;
@@ -704,7 +811,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         {
             gravity = savedGravity;
             yVelocity = savedYVelocity;
-            if (controller != null) controller.stepOffset = prevStepOffset;
+            controller.stepOffset = originalStepOffset;
             yield break;
         }
 
@@ -716,30 +823,51 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             Vector3 current = transform.position;
             Vector3 currentFixedY = new Vector3(current.x, startY, current.z);
             Vector3 next = new Vector3(lerpedXZ.x, startY, lerpedXZ.z);
-
             Vector3 delta = next - currentFixedY;
-
             delta.y = 0f;
 
-            controller.Move(delta);
-
+            CollisionFlags flags = controller.Move(delta);
             yVelocity = 0f;
+
+            if ((flags & CollisionFlags.Above) != 0)
+            {
+                Vector3 correctedPos = transform.position;
+                correctedPos.y = startY;
+                controller.enabled = false;
+                transform.position = correctedPos;
+                controller.enabled = true;
+                ReportDebug("PerformDash: colisión superior detectada, Y corregida.", 2);
+            }
 
             yield return null;
         }
 
-        Vector3 finalXZ = new Vector3(targetPosXZ.x, startY, targetPosXZ.z);
         Vector3 finalCurrent = transform.position;
-        Vector3 finalCurrentFixedY = new Vector3(finalCurrent.x, startY, finalCurrent.z);
-        Vector3 finalDelta = finalXZ - finalCurrentFixedY;
+        Vector3 finalCurrentXZ = new Vector3(finalCurrent.x, startY, finalCurrent.z);
+        Vector3 finalTargetXZ = new Vector3(targetPosXZ.x, startY, targetPosXZ.z);
+        Vector3 finalDelta = finalTargetXZ - finalCurrentXZ;
         finalDelta.y = 0f;
-        controller.Move(finalDelta);
+
+        if (finalDelta.sqrMagnitude > 0.0001f)
+        {
+            controller.Move(finalDelta);
+        }
+
+        if (isGapCrossing)
+        {
+            yVelocity = 0f;
+        }
 
         gravity = savedGravity;
         yVelocity = savedYVelocity;
-        if (controller != null) controller.stepOffset = prevStepOffset;
+        controller.stepOffset = originalStepOffset;
     }
 
+    /// <summary>
+    /// Comprueba el trayecto del dash para asegurar que no traspasa obstáculos y que termina en un piso válido (sin caer a abismos).
+    /// </summary>
+    /// <param name="direction">Vector de dirección del dash.</param>
+    /// <param name="finalPosition">Variable de salida con la posición final segura calculada.</param>
     private bool ValidateDashPath(Vector3 direction, out Vector3 finalPosition)
     {
         Vector3 origin = transform.position;
@@ -749,9 +877,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         Vector3 p1 = origin + controller.center + Vector3.up * (playerHeight / 2f - playerRadius);
         Vector3 p2 = origin + controller.center - Vector3.up * (playerHeight / 2f - playerRadius);
 
-        if (Physics.CapsuleCast(p1, p2, playerRadius, direction, out RaycastHit obstacleHit, currentDashDistance, dashCollisionLayers, QueryTriggerInteraction.Ignore))
+        if (Physics.CapsuleCast(p1, p2, playerRadius, direction, out RaycastHit obstacleHit,
+            currentDashDistance, dashCollisionLayers, QueryTriggerInteraction.Ignore))
         {
-            float adjustedDistance = Mathf.Max(0f, obstacleHit.distance - playerRadius);
+            float adjustedDistance = Mathf.Max(0f, obstacleHit.distance - playerRadius - dashObstacleSkin);
 
             if (!HasGroundAlongPath(direction, adjustedDistance))
             {
@@ -762,6 +891,15 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
                 return false;
             }
 
+            if (adjustedDistance < minEffectiveDashDistance)
+            {
+                finalPosition = origin;
+                lastTargetCheck = origin;
+                lastTargetHit = false;
+                ReportDebug("Dash cancelado: obstáculo demasiado cerca.", 2);
+                return false;
+            }
+
             finalPosition = origin + direction * adjustedDistance;
             lastTargetCheck = finalPosition;
             lastTargetHit = true;
@@ -769,10 +907,11 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             return true;
         }
 
-        float scanHeight = 2.0f;
+        float scanHeight = dashGroundProbeHeight;
         Vector3 baseTarget = origin + direction * currentDashDistance + Vector3.up * scanHeight;
 
-        if (Physics.Raycast(baseTarget, Vector3.down, out RaycastHit baseGroundHit, playerHeight + scanHeight + 1f, groundLayerMask, QueryTriggerInteraction.Ignore))
+        if (Physics.Raycast(baseTarget, Vector3.down, out RaycastHit baseGroundHit,
+            playerHeight + scanHeight + 1f, groundLayerMask, QueryTriggerInteraction.Ignore))
         {
             finalPosition = baseGroundHit.point;
             lastTargetCheck = finalPosition;
@@ -783,7 +922,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         float scanStart = currentDashDistance + 0.1f;
         float scanMax = currentDashDistance + gapDashBonusDistance;
-        float scanStep = Mathf.Max(0.5f, playerRadius * 0.5f);
+        float scanStep = Mathf.Max(0.15f, dashGroundSampleStep);
 
         RaycastHit foundHit = new RaycastHit();
         bool found = false;
@@ -791,7 +930,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         for (float t = scanStart; t <= scanMax; t += scanStep)
         {
             Vector3 probe = origin + direction * t + Vector3.up * scanHeight;
-            if (Physics.Raycast(probe, Vector3.down, out RaycastHit gh, playerHeight + scanHeight + 1f, groundLayerMask, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(probe, Vector3.down, out RaycastHit gh,
+                playerHeight + scanHeight + 1f, groundLayerMask, QueryTriggerInteraction.Ignore))
             {
                 foundHit = gh;
                 found = true;
@@ -832,19 +972,20 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         float safeLedgeDistance = GetMaxSafeDistance(direction, currentDashDistance);
 
-        float minEffectiveDashDistance = 0.5f;
-
         if (safeLedgeDistance > edgeSafetyMargin)
         {
             if (safeLedgeDistance < minEffectiveDashDistance)
             {
                 finalPosition = origin;
+                lastTargetCheck = origin;
+                lastTargetHit = false;
                 ReportDebug("Dash bloqueado por borde (Distancia segura insuficiente).", 1);
-                return true;
+                return false;
             }
 
             Vector3 safeTarget = origin + direction * safeLedgeDistance + Vector3.up * scanHeight;
-            if (Physics.Raycast(safeTarget, Vector3.down, out RaycastHit ledgeGroundHit, playerHeight + scanHeight + 1f, groundLayerMask, QueryTriggerInteraction.Ignore))
+            if (Physics.Raycast(safeTarget, Vector3.down, out RaycastHit ledgeGroundHit,
+                playerHeight + scanHeight + 1f, groundLayerMask, QueryTriggerInteraction.Ignore))
             {
                 finalPosition = ledgeGroundHit.point;
                 lastTargetCheck = finalPosition;
@@ -863,9 +1004,12 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         lastTargetCheck = origin;
         lastTargetHit = false;
         ReportDebug("Dash cancelado por inseguridad total.", 2);
-        return true;
+        return false;
     }
 
+    /// <summary>
+    /// Cancela abruptamente la acción de dash y reinicia los valores físicos.
+    /// </summary>
     public void CancelDash()
     {
         if (!IsDashing) return;
@@ -893,6 +1037,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         ReportDebug("Dash cancelado.", 1);
     }
 
+    /// <summary>
+    /// Desactiva el dash durante una cantidad específica de segundos.
+    /// </summary>
     public void DisableDashForDuration(float duration)
     {
         if (_dashDisableCoroutine != null)
@@ -915,6 +1062,11 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     #region Edge Detection & Environment Navigation
 
+    /// <summary>
+    /// Modifica el vector de movimiento base para que el jugador se detenga antes de caer por un borde.
+    /// </summary>
+    /// <param name="movement">El vector original de movimiento sugerido.</param>
+    /// <returns>Retorna el mismo vector o un vector truncado (sin avance) si hay un borde.</returns>
     private Vector3 ApplyEdgeDetection(Vector3 movement)
     {
         if (!controller.isGrounded)
@@ -943,8 +1095,13 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         return movement;
     }
 
+    /// <summary>
+    /// Verifica mediante múltiples puntos de control (raycasts) si la posición indicada tiene suelo sólido por debajo.
+    /// </summary>
     public bool IsPositionSafeForCapsule(Vector3 pos)
     {
+        if (controller == null) return false;
+
         float checkRadius = controller.radius * 0.95f;
         float rayLength = controller.height + 1.0f;
 
@@ -964,7 +1121,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         foreach (var p in checkPoints)
         {
             Vector3 origin = p + Vector3.up * edgeRaycastHeight;
-
             if (!Physics.Raycast(origin, Vector3.down, rayLength, groundLayerMask, QueryTriggerInteraction.Ignore))
             {
                 return false;
@@ -974,6 +1130,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         return true;
     }
 
+    /// <summary>
+    /// Verifica si un trayecto lineal entero tiene un piso que lo soporte, previniendo dashes o movimientos que crucen grandes abismos.
+    /// </summary>
     private bool HasGroundAlongPath(Vector3 direction, float distance)
     {
         if (distance < 0.1f) return true;
@@ -997,34 +1156,44 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         return true;
     }
 
+    /// <summary>
+    /// Calcula la distancia máxima que el jugador puede avanzar en una dirección dada antes de tocar un borde peligroso.
+    /// </summary>
     public float GetMaxSafeDistance(Vector3 dir, float maxDesiredDistance)
     {
-        if (!enableEdgeDetection || controller == null || !IsEffectivelyGrounded()) return maxDesiredDistance;
+        if (!enableEdgeDetection || controller == null || !IsEffectivelyGrounded())
+        {
+            return maxDesiredDistance;
+        }
 
         dir.y = 0f;
         if (dir.sqrMagnitude < 0.0001f) return 0f;
         dir.Normalize();
 
-        int samples = Mathf.Clamp(Mathf.CeilToInt((maxDesiredDistance) / (controller.radius * 0.5f)), 2, edgeSampleMax);
-        float step = maxDesiredDistance / samples;
-
+        float step = Mathf.Max(0.05f, edgeSampleStepDistance);
+        int samples = Mathf.Min(Mathf.CeilToInt(maxDesiredDistance / step), edgeSampleMax * 2);
         Vector3 basePos = transform.position;
+        float safeDistance = 0f;
 
         for (int i = 1; i <= samples; i++)
         {
-            float traveled = step * i;
+            float traveled = Mathf.Min(maxDesiredDistance, step * i);
             Vector3 testPos = basePos + dir * traveled;
 
             if (!IsPositionSafeForCapsule(testPos))
             {
-                float safeDistance = Mathf.Max(0f, (step * (i - 1)) - edgeSafetyMargin);
-                return safeDistance;
+                return Mathf.Max(0f, safeDistance - edgeSafetyMargin);
             }
+
+            safeDistance = traveled;
         }
 
-        return maxDesiredDistance;
+        return Mathf.Max(0f, safeDistance - edgeSafetyMargin);
     }
 
+    /// <summary>
+    /// Reduce el desplazamiento horizontal si el final de este cruza el borde de la plataforma.
+    /// </summary>
     private Vector3 ComputeSafeHorizontalDisplacement(Vector3 desiredDisplacement)
     {
         Vector3 horizontal = new Vector3(desiredDisplacement.x, 0f, desiredDisplacement.z);
@@ -1053,6 +1222,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         return desiredDisplacement;
     }
 
+    /// <summary>
+    /// Intenta desplazar al jugador hacia los lados (deslizarse) en vez de detenerlo completamente si choca contra un borde en un ángulo diagonal.
+    /// </summary>
     private Vector3 TryComputeSlideAlongEdge(Vector3 forwardDir, float maxAllowedForwardDistance)
     {
         Vector3 right = Vector3.Cross(Vector3.up, forwardDir).normalized;
@@ -1074,6 +1246,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         return Vector3.zero;
     }
 
+    /// <summary>
+    /// Método maestro para aplicar todos los controles de borde al desplazamiento libre (como ataques o empujes).
+    /// </summary>
     private Vector3 ApplyEdgeDetectionToDisplacement(Vector3 displacement)
     {
         if (!enableEdgeDetection || controller == null || !IsEffectivelyGrounded()) return displacement;
@@ -1101,6 +1276,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         return displacement;
     }
 
+    /// <summary>
+    /// Confirma con un solo raycast si moverse en cierta dirección por 'X' metros evitará caer por un borde.
+    /// </summary>
     public bool IsMovementSafeDirection(Vector3 dir, float distance)
     {
         if (!enableEdgeDetection || controller == null) return true;
@@ -1122,6 +1300,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         return false;
     }
 
+    /// <summary>
+    /// Activa o desactiva la colisión del jugador contra capas especificadas para permitir "atravesar" temporalmente objetos o enemigos.
+    /// </summary>
     private void ToggleLayerCollisions(bool ignore)
     {
         for (int i = 0; i < 32; i++)
@@ -1137,6 +1318,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     #region Visual & Audio Effects
 
+    /// <summary>
+    /// Maneja el contador interno que dispara el sonido de las pisadas.
+    /// </summary>
     private void HandleFootstepsTimer()
     {
         stepTimer -= Time.deltaTime;
@@ -1152,6 +1336,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
+    /// <summary>
+    /// Instancia una copia limpia del material para las partículas del dash.
+    /// </summary>
     private void InitializeDashVFX()
     {
         if (dashDustVFX == null) return;
@@ -1163,6 +1350,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         dashDustVFX.Clear(true);
     }
 
+    /// <summary>
+    /// Prende o apaga el sistema de partículas que genera polvo durante el dash.
+    /// </summary>
     private void PlayDashVFX(bool active)
     {
         if (dashDustVFX == null) return;
@@ -1180,6 +1370,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
+    /// <summary>
+    /// Genera clones transparentes del sprite del jugador cada ciertos microsegundos durante el dash.
+    /// </summary>
     private IEnumerator AfterimageRoutine()
     {
         float interval = 0.05f;

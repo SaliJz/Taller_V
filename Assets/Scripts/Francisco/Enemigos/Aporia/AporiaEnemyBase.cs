@@ -321,7 +321,16 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     private IEnumerator KnockbackTick(CharacterController cc, Vector3 force)
     {
         float t = 0;
-        while (t < 0.2f) { t += Time.deltaTime; cc?.Move(force * Time.deltaTime); yield return null; }
+        var pm = cc.GetComponent<PlayerMovement>();
+        while (t < 0.2f)
+        {
+            if (pm == null || !pm.IsDashing)
+            {
+                cc?.Move(force * Time.deltaTime);
+            }
+            t += Time.deltaTime;
+            yield return null;
+        }
     }
 
     protected IEnumerator DeactivateAfterDelay(GameObject obj, float delay)
