@@ -2314,7 +2314,7 @@ Transform:
   m_GameObject: {fileID: 1163284094665278649}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.000000014901161, z: -0, w: 1}
-  m_LocalPosition: {x: 17.7, y: -0.34000158, z: 34.97558}
+  m_LocalPosition: {x: 18.33516, y: -0.34358454, z: 33.975594}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2353,7 +2353,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   audioSource: {fileID: 0}
   transitionClip: {fileID: 0}
-  transition: {fileID: 0}
+  transition: {fileID: 8788911101101350193}
 --- !u!65 &6510705562176601609
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -10344,7 +10344,7 @@ MonoBehaviour:
   animatedDoors:
   - {fileID: 2980456429671873596, guid: f0d159c1c14487a418c8b38d890f2f44, type: 3}
   - {fileID: 2980456429671873596, guid: f0d159c1c14487a418c8b38d890f2f44, type: 3}
-  - {fileID: 8770558420094214642, guid: f0d159c1c14487a418c8b38d890f2f44, type: 3}
+  - {fileID: 1397552827672889444}
   doorColliders: []
   onFinsih:
     m_PersistentCalls:
@@ -24810,11 +24810,27 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c51754961af96a94eb99f19c4a256e31, type: 3}
+--- !u!95 &1397552827672889444 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 2146815882037605025, guid: c51754961af96a94eb99f19c4a256e31, type: 3}
+  m_PrefabInstance: {fileID: 1057817390790589125}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7684895623139088393 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7208051428901085900, guid: c51754961af96a94eb99f19c4a256e31, type: 3}
   m_PrefabInstance: {fileID: 1057817390790589125}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8788911101101350193 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8599169782495815668, guid: c51754961af96a94eb99f19c4a256e31, type: 3}
+  m_PrefabInstance: {fileID: 1057817390790589125}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9bd539129a83cb44caabe5c26a649dd3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1629936508640696151
 PrefabInstance:
   m_ObjectHideFlags: 0
