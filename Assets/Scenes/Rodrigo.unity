@@ -210,13 +210,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 14681993}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.4607947, y: -0.22746988, z: 0.123469524, w: 0.8489293}
+  m_LocalRotation: {x: 0.85256946, y: -0.24241193, z: -0.22617829, w: 0.4039867}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 56.986, y: -30, z: 0}
+  m_LocalEulerAnglesHint: {x: -324.606, y: 585.51, z: 226.99}
 --- !u!114 &14681996
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -312,6 +312,63 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 53346429}
   m_CullTransparentMesh: 1
+--- !u!1001 &92834037
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 8064256165048075647, guid: c9e3b0c2347bd3a4e8b3354c6bfb9da6, type: 3}
+      propertyPath: m_Name
+      value: SpawnerCanicas
+      objectReference: {fileID: 0}
+    - target: {fileID: 9016180348604396718, guid: c9e3b0c2347bd3a4e8b3354c6bfb9da6, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -29.897581
+      objectReference: {fileID: 0}
+    - target: {fileID: 9016180348604396718, guid: c9e3b0c2347bd3a4e8b3354c6bfb9da6, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 19.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 9016180348604396718, guid: c9e3b0c2347bd3a4e8b3354c6bfb9da6, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -47.266018
+      objectReference: {fileID: 0}
+    - target: {fileID: 9016180348604396718, guid: c9e3b0c2347bd3a4e8b3354c6bfb9da6, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9016180348604396718, guid: c9e3b0c2347bd3a4e8b3354c6bfb9da6, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9016180348604396718, guid: c9e3b0c2347bd3a4e8b3354c6bfb9da6, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9016180348604396718, guid: c9e3b0c2347bd3a4e8b3354c6bfb9da6, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9016180348604396718, guid: c9e3b0c2347bd3a4e8b3354c6bfb9da6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9016180348604396718, guid: c9e3b0c2347bd3a4e8b3354c6bfb9da6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9016180348604396718, guid: c9e3b0c2347bd3a4e8b3354c6bfb9da6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c9e3b0c2347bd3a4e8b3354c6bfb9da6, type: 3}
 --- !u!1001 &242277586
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -874,7 +931,7 @@ GameObject:
   - component: {fileID: 835091645}
   m_Layer: 0
   m_Name: Piso
-  m_TagString: Untagged
+  m_TagString: Ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7097,3 +7154,4 @@ SceneRoots:
   - {fileID: 5942444517580748194}
   - {fileID: 1639743983}
   - {fileID: 1934360157}
+  - {fileID: 92834037}
