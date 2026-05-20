@@ -425,7 +425,13 @@ public class EnemyVisualEffects : MonoBehaviour
 
     public void StartStunEffect(float duration)
     {
+        foreach (var routine in activeBlinkRoutines.Values)
+        {
+            if (routine != null) StopCoroutine(routine);
+        }
+
         activeBlinkRoutines.Clear();
+        RestoreAllOriginalMaterials();
 
         if (stunEffectCoroutine != null)
         {

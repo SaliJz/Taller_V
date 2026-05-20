@@ -348,6 +348,13 @@ public class ExplosiveHead : MonoBehaviour
             }
             else if (collider.TryGetComponent<CharacterController>(out var cc))
             {
+                var pm = cc.GetComponent<PlayerMovement>();
+
+                if (pm != null && pm.IsDashing)
+                {
+                    continue; // Si el jugador está dashing, no se le aplica el knockback del explosivo.
+                }
+
                 Vector3 direction = (collider.transform.position - center).normalized;
                 direction.y = Mathf.Max(direction.y, 0.1f);
                 float pushStrength = ccKnockbackDistance * (1f - normalizedDistance);

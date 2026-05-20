@@ -1140,7 +1140,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public void ApplyKnockback(Vector3 direction, float force, float duration)
     {
-        if (isDying) return;
+        if (isDying || playerMovement.IsDashing) return;
 
         float knockbackResistance = statsManager != null ? statsManager.GetStat(StatType.KnockbackReceived) : 1f;
 

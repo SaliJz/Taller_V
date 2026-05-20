@@ -11,13 +11,21 @@ public class PlayerMeleeAttack : MonoBehaviour
     #region Inspector – References
 
     [Header("References")]
+    [Tooltip("Gestor de estadisticas del jugador para obtener danio, velocidad y radio de ataque.")]
     [SerializeField] private PlayerStatsManager statsManager;
+    [Tooltip("Objeto visual para depurar el area de impacto esferica.")]
     [SerializeField] private GameObject visualSphereHit;
+    [Tooltip("Objeto visual para depurar el area de impacto en forma de caja.")]
     [SerializeField] private GameObject visualBoxHit;
+    [Tooltip("Controlador del escudo del jugador, necesario para saber si esta disponible para atacar.")]
     [SerializeField] private PlayerShieldController playerShieldController;
+    [Tooltip("Controlador de audio para reproducir sonidos de ataque e impacto.")]
     [SerializeField] private PlayerAudioController playerAudioController;
+    [Tooltip("Habilidad del escudo del jugador, usada para calcular bonificaciones de dureza.")]
     [SerializeField] private ShieldSkill playerShieldSkill;
+    [Tooltip("Controlador de animaciones del jugador.")]
     [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
+    [Tooltip("Componente de auto-apuntado para dirigir los ataques hacia los enemigos cercanos.")]
     [SerializeField] private AutoAim autoAim;
 
     #endregion
@@ -25,28 +33,48 @@ public class PlayerMeleeAttack : MonoBehaviour
     #region Inspector – Base Attack Configuration
 
     [Header("Attack Configuration")]
+    [Tooltip("Punto de origen desde donde se calcula el area de impacto del ataque.")]
     [SerializeField] private Transform hitPoint;
+
     [Header("Fallback stats (if no StatsManager)")]
     [HideInInspector] private float fallbackHitRadius = 0.8f;
     [HideInInspector] private float fallbackAttackDamage = 10;
     [HideInInspector] private float fallbackAttackSpeed = 1f;
+
     [Header("Calculated stats")]
+    [Tooltip("Radio de alcance del golpe cuerpo a cuerpo.")]
     [SerializeField] private float hitRadius = 0.8f;
+    [Tooltip("Cantidad de danio base que inflige el ataque.")]
     [SerializeField] private float attackDamage = 10;
+    [Tooltip("Velocidad a la que se ejecuta el ataque.")]
     [SerializeField] private float attackSpeed = 1f;
+    [Tooltip("Valor de referencia para calcular el factor de velocidad de las animaciones.")]
     [SerializeField] private float baseSpeedReference = 1f;
+    [Tooltip("Capa que define que objetos son considerados enemigos para recibir danio.")]
     [SerializeField] private LayerMask enemyLayer;
+    [Tooltip("Si esta activo, dibuja en el editor el area de impacto de los ataques.")]
     [SerializeField] private bool canShowHitGizmo = false;
+
+    [Header("Hit Detection")]
+    [Tooltip("Intervalo de tiempo entre cada parpadeo visual del enemigo al ser aturdido.")]
+    [SerializeField] private float blinkInterval = 0.1f;
+    [Tooltip("Cantidad de veces que parpadeara el enemigo al ser aturdido.")]
+    [SerializeField] private int blinkCount = 10;
 
     #endregion
 
     #region Inspector – Combo Configuration
 
     [Header("Combo Configuration")]
+    [Tooltip("Distancia maxima para detectar y apuntar automaticamente a un enemigo.")]
     [SerializeField] private float autoAimRange = 5f;
+    [Tooltip("Tiempo en segundos antes de que el combo de ataques se reinicie a cero.")]
     [SerializeField] private float comboResetTime = 2f;
+    [Tooltip("Fuerza de impulso hacia adelante aplicada al jugador en cada golpe del combo.")]
     [SerializeField] private float[] baseComboMovementForces = new float[3] { 1.5f, 2f, 1.8f };
+    [Tooltip("Tiempo en segundos que el jugador queda inmovilizado tras cada golpe del combo.")]
     [SerializeField] private float[] comboLockDurations = new float[3] { 0.4f, 0.6f, 0.8f };
+    [Tooltip("Duracion del aturdimiento aplicado a los enemigos por cada golpe del combo.")]
     [SerializeField] private float[] comboStunDurations = new float[3] { 0.5f, 0.5f, 1f };
 
     #endregion
@@ -54,22 +82,33 @@ public class PlayerMeleeAttack : MonoBehaviour
     #region Inspector – Attack Moves Settings
 
     [Header("Attack 1 (Basic)")]
+    [Tooltip("Sistema de particulas para el efecto visual del primer ataque.")]
     [SerializeField] private ParticleSystem vfxAttack1Slash;
+    [Tooltip("Duracion total en segundos de la animacion del primer ataque.")]
     [SerializeField] private float attack1Duration = 0.4f;
 
     [Header("Attack 2 (Area/Spin)")]
+    [Tooltip("Sistema de particulas para el efecto visual del segundo ataque.")]
     [SerializeField] private ParticleSystem vfxAttack2Slash;
+    [Tooltip("Tiempo durante el cual el jugador se desplaza en el segundo ataque.")]
     [SerializeField] private float attack2MovementDuration = 0.6f;
+    [Tooltip("Duracion del giro sobre su propio eje en el segundo ataque.")]
     [SerializeField] private float attack2SpinDuration = 0.4f;
+    [Tooltip("Velocidad a la que el jugador gira en el segundo ataque.")]
     [SerializeField] private float attack2SpinSpeed = 900f;
+    [Tooltip("Angulo total objetivo a girar durante el segundo ataque.")]
     [SerializeField] private float attack2TargetSpinAngle = 360f;
 
     [Header("Attack 3 (Heavy/Charge)")]
+    [Tooltip("Sistema de particulas para el efecto visual del tercer ataque.")]
     [SerializeField] private ParticleSystem vfxAttack3Slash;
+    [Tooltip("Tiempo de preparacion antes de lanzar el golpe final del combo.")]
     [SerializeField] private float attack3PreChargeDuration = 0.3f;
+    [Tooltip("Duracion del desplazamiento hacia adelante en el golpe final.")]
     [SerializeField] private float attack3ChargeDuration = 0.3f;
+    [Tooltip("Velocidad de giro del personaje durante la carga del tercer ataque.")]
     [SerializeField] private float attack3SpinSpeed = 90f;
-    [Tooltip("Multiplicador de daño aplicado solo en el tercer golpe del combo")]
+    [Tooltip("Multiplicador de danio aplicado solo en el tercer golpe del combo")]
     [SerializeField] private float attack3DamageMultiplier = 1.5f;
 
     #endregion
@@ -77,22 +116,30 @@ public class PlayerMeleeAttack : MonoBehaviour
     #region Inspector – Knockback Configuration
 
     [Header("knockback Configuration")]
+    [Tooltip("Fuerza de empuje aplicada a los enemigos cuando el jugador esta en la etapa Joven.")]
     [SerializeField] private float knockbackYoung = 0.25f;
+    [Tooltip("Fuerza de empuje aplicada a los enemigos cuando el jugador esta en la etapa Adulta.")]
     [SerializeField] private float knockbackAdult = 0.5f;
+    [Tooltip("Fuerza de empuje aplicada a los enemigos cuando el jugador esta en la etapa Anciana.")]
     [SerializeField] private float knockbackElder = 0.75f;
-    [SerializeField] private float knockbackMaxDistance = 3f; // Distancia máxima de knockback
+    [Tooltip("Distancia maxima a la que un enemigo puede ser empujado.")]
+    [SerializeField] private float knockbackMaxDistance = 3f; // Distancia maxima de knockback
 
     #endregion
 
     #region Inspector – VFX & Debug
 
     [Header("Melee Impact VFX")]
+    [Tooltip("Prefab del efecto visual que aparece cuando se impacta a un enemigo.")]
     [SerializeField] private GameObject meleeImpactVFX;
     //[SerializeField] private int impactParticleCount = 20;
 
     [Header("Debug")]
+    [Tooltip("Si se activa, el area de impacto tendra forma de caja en lugar de esfera.")]
     [SerializeField] private bool useBoxCollider = false;
+    [Tooltip("Dibuja el area de impacto en la vista de escena si esta habilitado.")]
     [SerializeField] private bool showGizmo = false;
+    [Tooltip("Tiempo que permanecen visibles los gizmos de depuracion.")]
     [SerializeField] private float gizmoDuration = 0.2f;
 
     #endregion
@@ -116,7 +163,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     // Detection Buffers & Tracking
     private HashSet<Collider> hitEnemiesThisCombo = new HashSet<Collider>();
-    private Collider[] hitBuffer = new Collider[64]; // Buffer para detección de enemigos
+    private Collider[] hitBuffer = new Collider[64]; // Buffer para deteccion de enemigos
     private GamepadPointer gamepadPointer;
 
     // Cached Components
@@ -165,14 +212,14 @@ public class PlayerMeleeAttack : MonoBehaviour
         gamepadPointer = FindAnyObjectByType<GamepadPointer>();
         autoAim = GetComponent<AutoAim>();
 
-        if (autoAim == null) ReportDebug("ShieldAutoAim no encontrado. El auto-aim del melee no funcionará.", 2);
-        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMeleeAttack. Usando valores de fallback.", 2);
+        if (autoAim == null) ReportDebug("ShieldAutoAim no encontrado. El auto-aim del melee no funcionara.", 2);
+        if (statsManager == null) ReportDebug("StatsManager no esta asignado en PlayerMeleeAttack. Usando valores de fallback.", 2);
         if (playerHealth == null) ReportDebug("PlayerHealth no se encuentra en el objeto.", 3);
         if (playerShieldController == null) ReportDebug("PlayerShieldController no se encuentra en el objeto.", 3);
-        if (playerMovement == null) ReportDebug("PlayerMovement no se encuentra en el objeto. Lock de rotación no funcionará.", 2);
+        if (playerMovement == null) ReportDebug("PlayerMovement no se encuentra en el objeto. Lock de rotacion no funcionara.", 2);
         if (playerAnimCtrl == null) ReportDebug("PlayerAnimCtrl no se encuentra en los hijos del objeto.", 2);
         if (playerAudioController == null) ReportDebug("PlayerAudioController no se encuentra en el objeto.", 3);
-        if (gamepadPointer == null) ReportDebug("GamepadPointer no se encuentra en la escena. La detección de dispositivo activo para el ataque podría fallar.", 2);
+        if (gamepadPointer == null) ReportDebug("GamepadPointer no se encuentra en la escena. La deteccion de dispositivo activo para el ataque podria fallar.", 2);
     }
 
     private void OnEnable()
@@ -241,6 +288,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     #region Initialization & Stats Synchronization
 
+    // Sincroniza la distancia de empuje del combo con las estadisticas actuales del jugador.
     private void UpdateComboDisplacementFromStats()
     {
         float displacementMod = statsManager != null ? statsManager.GetStat(StatType.MeleeComboDisplacement) : 0f;
@@ -255,6 +303,11 @@ public class PlayerMeleeAttack : MonoBehaviour
         ReportDebug($"Desplazamiento de combo actualizado: Multiplicador x{displacementMod} -> [{currentComboMovementForces[0]:F2}, {currentComboMovementForces[1]:F2}, {currentComboMovementForces[2]:F2}]", 1);
     }
 
+    /// <summary>
+    /// Actualiza las estadisticas internas cuando hay un cambio en el StatsManager.
+    /// </summary>
+    /// <param name="statType">El tipo de estadistica que ha sido modificada.</param>
+    /// <param name="newValue">El nuevo valor de la estadistica modificada.</param>
     private void HandleStatChanged(StatType statType, float newValue)
     {
         switch (statType)
@@ -285,6 +338,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         ReportDebug($"Estadistica {statType} actualizada a {newValue}.", 1);
     }
 
+    // Calcula los valores finales de danio y velocidad de ataque aplicando los multiplicadores.
     private void CalculateStats()
     {
         finalAttackDamage = Mathf.RoundToInt(attackDamage * damageMultiplier);
@@ -300,7 +354,9 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     #region Combat Flow & Core Logic
 
-    // Verifica si el jugador puede atacar (tiene escudo y no está lanzándolo).
+    /// <summary>
+    /// Verifica si el jugador cumple las condiciones necesarias para realizar un ataque (no atacando actualmente, escudo disponible y no arrojado).
+    /// </summary>
     public bool CanAttack()
     {
         if (isAttacking) return false;
@@ -314,7 +370,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
             if (playerShieldController.IsThrowingShield)
             {
-                ReportDebug("No se puede atacar: escudo está siendo lanzado.", 1);
+                ReportDebug("No se puede atacar: escudo esta siendo lanzado.", 1);
                 return false;
             }
         }
@@ -322,6 +378,9 @@ public class PlayerMeleeAttack : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Interrumpe el ataque en curso, reiniciando los combos, la deteccion de enemigos y devolviendo el control al jugador.
+    /// </summary>
     public void CancelAttack()
     {
         if (!isAttacking) return;
@@ -358,7 +417,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     }
 
     /// <summary>
-    /// Método público llamado por PlayerCombatActionManager para ejecutar el ataque.
+    /// Metodo publico llamado por PlayerCombatActionManager para iniciar y ejecutar el ataque de combo.
     /// </summary>
     public IEnumerator ExecuteAttackFromManager()
     {
@@ -370,13 +429,9 @@ public class PlayerMeleeAttack : MonoBehaviour
     }
 
     /// <summary>
-    /// Secuencia de ataque:
-    /// 1) Obtener dirección del mouse (o forward)
-    /// 2) Lockear rotación snapped a 8 direcciones
-    /// 3) Esperar a que la rotación alcance el objetivo (o timeout)
-    /// 4) Ejecutar el ataque (PerformHitDetection)
-    /// 5) Mantener bloqueo durante la duración del ataque y luego desbloquear
+    /// Gestiona la logica secuencial de un golpe especifico dentro del combo, incluyendo apuntado, movimiento y ejecucion.
     /// </summary>
+    /// <param name="attackIndex">El indice del ataque en el combo (0 para el primero, 1 para el segundo, 2 para el tercero).</param>
     private IEnumerator AttackSequence(int attackIndex)
     {
         currentAttackIndex = attackIndex;
@@ -452,6 +507,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         hitEnemiesThisCombo.Clear();
     }
 
+    // Metodo llamado al final de la animacion de ataque para limpiar estados residuales.
     public void OnAttackAnimationEnd()
     {
         //if (playerMovement != null)
@@ -470,6 +526,10 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     #region Targeting & Rotation
 
+    /// <summary>
+    /// Busca la direccion hacia el enemigo mas cercano dentro del rango, dando prioridad al sistema de auto-apuntado si esta activo.
+    /// </summary>
+    /// <param name="enemyDir">Vector de salida con la direccion hacia el objetivo encontrado.</param>
     private bool TryGetNearestEnemyDirection(out Vector3 enemyDir)
     {
         enemyDir = Vector3.forward;
@@ -564,6 +624,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         return false;
     }
 
+    // Activa o desactiva la opcion de auto-apuntado para el combate cuerpo a cuerpo.
     public void SetMeleeAutoAimEnabled(bool enabled)
     {
         if (autoAim != null)
@@ -573,11 +634,13 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
+    // Retorna si la opcion de auto-apuntado se encuentra habilitada.
     public bool IsMeleeAutoAimEnabled()
     {
         return autoAim != null && autoAim.EnableAutoAim;
     }
 
+    // Espera hasta que el jugador termine de rotar y encarar la direccion del ataque antes de golpear.
     private IEnumerator WaitForRotationLock()
     {
         float maxWait = 0.25f;
@@ -625,6 +688,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
+    // Obtiene la direccion en el plano horizontal hacia donde apunta el raton en el mundo.
     private bool TryGetMouseWorldDirection(out Vector3 outDir)
     {
         outDir = Vector3.zero;
@@ -651,6 +715,9 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     #region Attack Moves (Coroutines)
 
+    /// <summary>
+    /// Logica de movimiento y deteccion de danio para el primer ataque del combo.
+    /// </summary>
     private IEnumerator ExecuteAttack1()
     {
         float duration = attack1Duration / currentSpeedFactor;
@@ -665,18 +732,18 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (!playerMovement.IsMovementSafeDirection(forward, desiredTotalDistance))
             {
                 safeDistance = playerMovement.GetMaxSafeDistance(forward, desiredTotalDistance);
-                ReportDebug($"ExecuteAttack1: fast-path falló. safeDistance recortada a {safeDistance}", 1);
+                ReportDebug($"ExecuteAttack1: fast-path fallo. safeDistance recortada a {safeDistance}", 1);
             }
         }
 
         if (safeDistance > 0.001f && playerMovement != null)
         {
-            // Verificar que el punto final sea seguro para la cápsula
+            // Verificar que el punto final sea seguro para la capsula
             Vector3 finalPos = transform.position + forward * safeDistance;
             if (!playerMovement.IsPositionSafeForCapsule(finalPos))
             {
                 safeDistance = 0f;
-                ReportDebug("ExecuteAttack1: Posición final insegura. Movimiento cancelado.", 2);
+                ReportDebug("ExecuteAttack1: Posicion final insegura. Movimiento cancelado.", 2);
             }
         }
 
@@ -736,6 +803,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
+    // Activa los efectos visuales y de sonido para el primer ataque.
     public void ActiveAttack1Slash()
     {
         VFXHelper.SafePlay(vfxAttack1Slash);
@@ -746,6 +814,9 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Logica de movimiento en espiral/giro y deteccion de danio para el segundo ataque del combo.
+    /// </summary>
     private IEnumerator ExecuteAttack2()
     {
         float movementDuration = Mathf.Max(0f, attack2MovementDuration / currentSpeedFactor);
@@ -760,18 +831,18 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (!playerMovement.IsMovementSafeDirection(forward, desiredTotalDistance))
             {
                 safeDistance = playerMovement.GetMaxSafeDistance(forward, desiredTotalDistance);
-                ReportDebug($"ExecuteAttack2: fast-path falló. safeDistance recortada a {safeDistance}", 1);
+                ReportDebug($"ExecuteAttack2: fast-path fallo. safeDistance recortada a {safeDistance}", 1);
             }
         }
 
         if (safeDistance > 0.001f && playerMovement != null)
         {
-            // Verificar que el punto final sea seguro para la cápsula
+            // Verificar que el punto final sea seguro para la capsula
             Vector3 finalPos = transform.position + forward * safeDistance;
             if (!playerMovement.IsPositionSafeForCapsule(finalPos))
             {
                 safeDistance = 0f;
-                ReportDebug("ExecuteAttack2: Posición final insegura. Movimiento cancelado.", 2);
+                ReportDebug("ExecuteAttack2: Posicion final insegura. Movimiento cancelado.", 2);
             }
         }
 
@@ -858,7 +929,7 @@ public class PlayerMeleeAttack : MonoBehaviour
                     yield return null;
                 }
 
-                // corrección final por errores numéricos
+                // correccion final por errores numericos
                 if (Mathf.Abs(rotated - targetAngle) > 0.01f)
                 {
                     float correction = (targetAngle - rotated) * sign;
@@ -876,7 +947,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
         else
         {
-            ReportDebug("ExecuteAttack2: spinDuration o targetSpinAngle inválidos, se omite giro.", 1);
+            ReportDebug("ExecuteAttack2: spinDuration o targetSpinAngle invalidos, se omite giro.", 1);
         }
 
         float lockDuration = comboLockDurations[1] / currentSpeedFactor;
@@ -890,6 +961,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
+    // Activa los efectos visuales y de sonido para el segundo ataque (giro).
     public void ActiveAttack2Slash()
     {
         VFXHelper.SafePlay(vfxAttack2Slash);
@@ -900,6 +972,9 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Logica de carga y ejecucion final pesada para el tercer ataque del combo.
+    /// </summary>
     private IEnumerator ExecuteAttack3()
     {
         float preChargeDuration = attack3PreChargeDuration / currentSpeedFactor;
@@ -923,18 +998,18 @@ public class PlayerMeleeAttack : MonoBehaviour
             if (!playerMovement.IsMovementSafeDirection(forward, desiredTotalDistance))
             {
                 safeDistance = playerMovement.GetMaxSafeDistance(forward, desiredTotalDistance);
-                ReportDebug($"ExecuteAttack3: fast-path falló. safeDistance recortada a {safeDistance}", 1);
+                ReportDebug($"ExecuteAttack3: fast-path fallo. safeDistance recortada a {safeDistance}", 1);
             }
         }
 
         if (safeDistance > 0.001f && playerMovement != null)
         {
-            // Verificar que el punto final sea seguro para la cápsula
+            // Verificar que el punto final sea seguro para la capsula
             Vector3 finalPos = transform.position + forward * safeDistance;
             if (!playerMovement.IsPositionSafeForCapsule(finalPos))
             {
                 safeDistance = 0f;
-                ReportDebug("ExecuteAttack3: Posición final insegura. Movimiento cancelado.", 2);
+                ReportDebug("ExecuteAttack3: Posicion final insegura. Movimiento cancelado.", 2);
             }
         }
 
@@ -989,6 +1064,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         if (remainingTime > 0f) yield return new WaitForSeconds(remainingTime);
     }
 
+    // Activa los efectos visuales y de sonido para el tercer ataque (pesado).
     public void ActiveAttack3Slash()
     {
         VFXHelper.SafePlay(vfxAttack3Slash);
@@ -1003,6 +1079,9 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     #region Hit Detection & Damage Application
 
+    /// <summary>
+    /// Escanea fisicamente el area designada para detectar enemigos, aplicarles danio, estatus e impacto.
+    /// </summary>
     public void PerformHitDetectionWithTracking()
     {
         bool hitAnyEnemy = false;
@@ -1064,32 +1143,23 @@ public class PlayerMeleeAttack : MonoBehaviour
                     else if (iDamageable != null)
                     {
                         damageable.TakeDamage(Mathf.RoundToInt(finalDamageWithCrit), isCritical, meleeDamageType);
-                        ReportDebug($"Golpe a {enemy.name}: DUMMY DE TUTORIAL DETECTADO (Tag). Enviando {finalDamageWithCrit:F2} de daño de {damageTypeForDummy}", 1);
+                        ReportDebug($"Golpe a {enemy.name}: DUMMY DE TUTORIAL DETECTADO (Tag). Enviando {finalDamageWithCrit:F2} de danio de {damageTypeForDummy}", 1);
                     }
                 }
                 else
                 {
                     bool attackSuccessful = ExecuteAttack(enemy.gameObject, calculatedDamage, currentToughnessBonus);
 
-                    ReportDebug($"Golpe a {enemy.name} por {calculatedDamage} de daño.", 1);
+                    ReportDebug($"Golpe a {enemy.name} por {calculatedDamage} de danio.", 1);
 
                     if (attackSuccessful)
                     {
                         EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
                         if (enemyHealth != null)
                         {
-                            switch (currentAttackIndex)
-                            {
-                                case 0:
-                                    enemyHealth.ApplyStun(comboStunDurations[0]);
-                                    break;
-                                case 1:
-                                    enemyHealth.ApplyStun(comboStunDurations[1]);
-                                    break;
-                                case 2:
-                                    enemyHealth.ApplyStun(comboStunDurations[2]);
-                                    break;
-                            }
+                            float stunDelay = blinkInterval * blinkCount;
+                            StartCoroutine(ApplyStunDelayed(enemyHealth, comboStunDurations[currentAttackIndex], stunDelay));
+
                         }
                     }
                     else
@@ -1155,9 +1225,22 @@ public class PlayerMeleeAttack : MonoBehaviour
         showGizmoRoutine = StartCoroutine(ShowGizmoCoroutine(displayDuration));
     }
 
+    // Corrutina que aplica el aturdimiento al enemigo de manera retrasada en base a la duracion de su animacion de hit.
+    private IEnumerator ApplyStunDelayed(EnemyHealth enemyHealth, float stunDuration, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (enemyHealth != null) enemyHealth.ApplyStun(stunDuration);
+    }
+
+    /// <summary>
+    /// Intenta aplicar el danio a un enemigo si este no bloquea el impacto.
+    /// </summary>
+    /// <param name="target">Objeto enemigo a recibir el golpe.</param>
+    /// <param name="damageAmount">Cantidad final de danio a aplicar.</param>
+    /// <param name="toughnessBonus">Bonus extra opcional derivado de escudos/habilidades especiales.</param>
     private bool ExecuteAttack(GameObject target, float damageAmount, float toughnessBonus)
     {
-        if (target.TryGetComponent<IDamageBlocker>(out var blocker) 
+        if (target.TryGetComponent<IDamageBlocker>(out var blocker)
             && target.TryGetComponent<EnemyHealth>(out var healthB))
         {
             if (blocker.ShouldBlockDamage(transform.position))
@@ -1180,6 +1263,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         return true;
     }
 
+    // Calcula y aplica un impulso fisico de empuje (knockback) basado en la etapa de vida del jugador.
     private void ApplyKnockbackSafe(Collider enemy)
     {
         EnemyKnockbackHandler knockbackHandler = enemy.GetComponent<EnemyKnockbackHandler>();
@@ -1215,8 +1299,9 @@ public class PlayerMeleeAttack : MonoBehaviour
     #region VFX & Debugging
 
     /// <summary>
-    /// Reproduce el efecto de impacto en una posición específica.
+    /// Reproduce el efecto de impacto visual instanciandolo en la posicion exacta del enemigo atacado.
     /// </summary>
+    /// <param name="position">Coordenada en el mundo 3D donde sucedio el golpe.</param>
     private void PlayImpactVFX(Vector3 position)
     {
         if (meleeImpactVFX == null) return;
@@ -1224,6 +1309,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         Instantiate(meleeImpactVFX, position, Quaternion.identity);
     }
 
+    // Corrutina auxiliar que controla cuanto tiempo se muestra el gizmo de la colision al momento de golpear.
     private IEnumerator ShowGizmoCoroutine(float duration)
     {
         if (!canShowHitGizmo) yield break;

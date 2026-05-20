@@ -8,17 +8,17 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     #region Inspector – References
 
     [Header("References")]
-    [Tooltip("Controlador principal de las estadísticas (salud, velocidad, etc).")]
+    [Tooltip("Controlador principal de las estadisticas (salud, velocidad, etc).")]
     [SerializeField] private PlayerStatsManager statsManager;
-    [Tooltip("Componente físico que mueve y detecta colisiones del jugador.")]
+    [Tooltip("Componente fisico que mueve y detecta colisiones del jugador.")]
     [SerializeField] private CharacterController controller;
-    [Tooltip("La cámara principal que sigue al jugador.")]
+    [Tooltip("La camara principal que sigue al jugador.")]
     [SerializeField] private Transform mainCameraTransform;
     [Tooltip("Controlador de las animaciones del jugador.")]
     [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
-    [Tooltip("Maneja la vida y daño del jugador.")]
+    [Tooltip("Maneja la vida y danio del jugador.")]
     [SerializeField] private PlayerHealth playerHealth;
-    [Tooltip("Controlador para los sonidos del jugador (pasos, dash).")]
+    [Tooltip("Controlador para los sonidos del jugador (pasos, dash, etc).")]
     [SerializeField] private PlayerAudioController playerAudioController;
     [Tooltip("Permite modificar o invertir los controles de entrada si es necesario.")]
     [SerializeField] private PlayerInputModifier inputModifier;
@@ -29,10 +29,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     [Header("Movement")]
     [HideInInspector] private float fallbackMoveSpeed = 5f;
-    [Tooltip("Qué tan rápido camina o corre el jugador.")]
+    [Tooltip("Que tan rapido camina o corre el jugador.")]
     [SerializeField] private float moveSpeed = 5f;
     [HideInInspector] private float fallbackGravity = -9.81f;
-    [Tooltip("Fuerza con la que el jugador es atraído hacia el suelo.")]
+    [Tooltip("Fuerza con la que el jugador es atraido hacia el suelo.")]
     [SerializeField] private float gravity = -9.81f;
 
     #endregion
@@ -42,7 +42,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [Header("Audio Step Settings")]
     [Tooltip("Tipo de superficie actual para cambiar el sonido de los pasos.")]
     [SerializeField] private int level = 0;
-    [Tooltip("Tiempo de espera entre cada sonido de paso (más bajo = pasos más rápidos).")]
+    [Tooltip("Tiempo de espera entre cada sonido de paso (mas bajo = pasos mas rapidos).")]
     [SerializeField] private float stepInterval = 0.35f;
 
     #endregion
@@ -54,31 +54,31 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [SerializeField] private float baseDashDistance = 10f;
     [Tooltip("Tiempo de espera para poder usar el dash de nuevo.")]
     [SerializeField] private float baseDashCooldown = 0.3f;
-    [Tooltip("Distancia final del dash después de aplicar mejoras u objetos.")]
+    [Tooltip("Distancia final del dash despues de aplicar mejoras u objetos.")]
     [SerializeField] private float dashDistance = 10f;
-    //[Tooltip("Cooldown actual del dash después de aplicar modificadores.")]
+    //[Tooltip("Cooldown actual del dash despues de aplicar modificadores.")]
     //[SerializeField] private float dashCooldown = 0.3f;
-    [Tooltip("Cuánto tiempo dura la animación y el movimiento del dash.")]
+    [Tooltip("Cuanto tiempo dura la animacion y el movimiento del dash.")]
     [SerializeField] private float dashDuration = 0.3f;
     [Tooltip("Capas del mapa por las que el jugador puede caminar.")]
     [SerializeField] private LayerMask traversableLayers;
-    [Tooltip("Capas del mapa que detendrán el dash (paredes, obstáculos).")]
+    [Tooltip("Capas del mapa que detendran el dash (paredes, obstaculos, etc).")]
     [SerializeField] private LayerMask dashCollisionLayers;
 
     [Header("Dash - Safety")]
-    [Tooltip("Distancia mínima útil para permitir un dash recortado.")]
+    [Tooltip("Distancia minima util para permitir un dash recortado.")]
     [SerializeField] private float minEffectiveDashDistance = 0.75f;
     [Tooltip("Paso de muestreo horizontal para validar suelo durante el dash.")]
     [SerializeField] private float dashGroundSampleStep = 0.2f;
     [Tooltip("Altura desde donde se comprueba el suelo durante el dash.")]
     [SerializeField] private float dashGroundProbeHeight = 1.5f;
-    [Tooltip("Distancia máxima del raycast hacia abajo durante el dash.")]
+    [Tooltip("Distancia maxima del raycast hacia abajo durante el dash.")]
     [SerializeField] private float dashGroundProbeDistance = 3f;
     [Tooltip("Tolerancia extra para considerar grounded en el arranque del dash.")]
     [SerializeField] private float dashGroundedGrace = 0.12f;
     [Tooltip("stepOffset reducido durante el dash para evitar trepar colliders grandes de enemigos.")]
     [SerializeField] private float dashStepOffsetOverride = 0.02f;
-    [Tooltip("Separación mínima respecto a obstáculos sólidos al recortar la distancia.")]
+    [Tooltip("Separacion minima respecto a obstaculos solidos al recortar la distancia.")]
     [SerializeField] private float dashObstacleSkin = 0.08f;
 
     [Header("Dash - Gap Crossing")]
@@ -94,7 +94,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [Header("Edge Detection")]
     [Tooltip("Evita que el jugador se caiga por los bordes de las plataformas accidentalmente.")]
     [SerializeField] private bool enableEdgeDetection = true;
-    [Tooltip("Distancia de anticipación para detectar si hay un borde cerca.")]
+    [Tooltip("Distancia de anticipacion para detectar si hay un borde cerca.")]
     [SerializeField] private float edgeDetectionDistance = 0.5f;
     [Tooltip("Altura desde donde se lanzan los rayos invisibles para detectar el suelo.")]
     [SerializeField] private float edgeRaycastHeight = 0.2f;
@@ -102,13 +102,13 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [SerializeField] private float edgeSafetyMargin = 0.05f;
     [Tooltip("Cantidad de verificaciones que hace el sistema para encontrar un borde.")]
     [SerializeField] private int edgeSampleMax = 6;
-    [Tooltip("Paso fijo para muestrear bordes en GetMaxSafeDistance (más preciso que solo edgeSampleMax).")]
+    [Tooltip("Paso fijo para muestrear bordes en GetMaxSafeDistance (mas preciso que solo edgeSampleMax).")]
     [SerializeField] private float edgeSampleStepDistance = 0.2f;
-    [Tooltip("Movimiento mínimo necesario para activar la detección de bordes.")]
+    [Tooltip("Movimiento minimo necesario para activar la deteccion de bordes.")]
     [SerializeField] private float minHorizontalMagnitude = 0.01f;
     [Tooltip("Distancia de tolerancia para considerar que el jugador sigue tocando el suelo.")]
     [SerializeField] private float groundTolerance = 0.15f;
-    [Tooltip("Cantidad mínima de puntos con suelo requeridos para aceptar un borde en modo relajado.")]
+    [Tooltip("Cantidad minima de puntos con suelo requeridos para aceptar un borde en modo relajado.")]
     [SerializeField] private int relaxedGroundHitsRequired = 5;
 
     #endregion
@@ -117,15 +117,15 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     [Header("Effects")]
     [Header("Afterimage Settings")]
-    [Tooltip("El objeto visual que hace el efecto de 'fantasma' durante el dash.")]
+    [Tooltip("El objeto visual que hace el efecto de fantasma durante el dash.")]
     [SerializeField] private GameObject afterimagePrefab;
-    [Tooltip("Qué tan transparente es el efecto de fantasma (0 es invisible, 1 es sólido).")]
+    [Tooltip("Que tan transparente es el efecto de fantasma (0 es invisible, 1 es solido).")]
     [SerializeField, Range(0f, 1f)] private float afterimageAlpha = 0.5f;
-    [Tooltip("Cuánto tiempo dura el efecto de fantasma antes de desaparecer.")]
+    [Tooltip("Cuanto tiempo dura el efecto de fantasma antes de desaparecer.")]
     [SerializeField] private float afterimageLifetime = 0.5f;
 
     [Header("Dash VFX")]
-    [Tooltip("Efecto de partículas (polvo) que sale al hacer el dash.")]
+    [Tooltip("Efecto de particulas (polvo) que sale al hacer el dash.")]
     [SerializeField] private ParticleSystem dashDustVFX;
 
     #endregion
@@ -133,7 +133,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     #region Inspector – Debug
 
     [Header("Debug")]
-    [Tooltip("Muestra líneas de colores en la escena para ver cómo funcionan los rayos y colisiones.")]
+    [Tooltip("Muestra lineas de colores en la escena para ver como funcionan los rayos y colisiones.")]
     [SerializeField] private bool canDebug = true;
 
     #endregion
@@ -207,14 +207,12 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     #region Unity Lifecycle
 
-    // Inicializa controles.
     private void Awake()
     {
         playerControls = new PlayerControlls();
         playerControls.Movement.SetCallbacks(this);
     }
 
-    // Configura componentes, capas y estadísticas iniciales.
     private void Start()
     {
         statsManager = GetComponent<PlayerStatsManager>();
@@ -241,21 +239,18 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         UpdateDashStatsFromManager();
     }
 
-    // Activa la suscripción a eventos y controles.
     private void OnEnable()
     {
         PlayerStatsManager.OnStatChanged += HandleStatChanged;
         playerControls?.Movement.Enable();
     }
 
-    // Desactiva eventos y controles.
     private void OnDisable()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
         playerControls?.Movement.Disable();
     }
 
-    // Lógica de actualización de inputs, cooldowns y gravedad.
     private void Update()
     {
         if (dashCooldownTimer > 0)
@@ -276,7 +271,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         ApplyGravity();
     }
 
-    // Lógica física de movimiento y rotación.
     private void FixedUpdate()
     {
         if (IsDashing) return;
@@ -302,7 +296,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
-    // Limpieza de memoria y partículas al destruir el objeto.
     private void OnDestroy()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
@@ -1499,7 +1492,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     private void OnDrawGizmos()
     {
-#if UNITY_EDITOR 
+#if UNITY_EDITOR
         if (!Application.isPlaying || controller == null) return;
         if (!canDebug) return;
 
@@ -1510,7 +1503,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         Vector3 dashDirection = moveDirection.magnitude > 0.1f ? moveDirection.normalized : transform.forward;
 
         Gizmos.color = Color.yellow;
-        Vector3 baseEnd = origin + dashDirection * dashDistance;
+        Vector3 baseEnd = origin + dashDirection * currentDashDistance;
         Gizmos.DrawLine(origin, baseEnd);
         Gizmos.DrawWireSphere(baseEnd, 0.15f);
 
@@ -1519,9 +1512,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         Gizmos.DrawLine(baseEnd, bonusEnd);
         Gizmos.DrawWireSphere(bonusEnd, 0.1f);
 
-        float scanHeight = 2.0f;
+        float scanHeight = dashGroundProbeHeight;
         Vector3 downOrigin = baseEnd + Vector3.up * scanHeight;
         float downRayMax = controller.height + scanHeight + 1f;
+
         if (Physics.Raycast(downOrigin, Vector3.down, out RaycastHit baseGroundHit, downRayMax, groundLayerMask))
         {
             Gizmos.color = Color.green;
@@ -1536,25 +1530,22 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         if (enableEdgeDetection && controller.isGrounded && moveDirection.magnitude > 0.1f)
         {
-            Vector3 horizontalMovement = new Vector3(moveDirection.x, 0f, moveDirection.z);
-            Vector3 movementDirection = horizontalMovement.normalized;
-
-            Vector3 rayOrigin = transform.position + Vector3.up * edgeRaycastHeight;
+            Vector3 movementDirection = new Vector3(moveDirection.x, 0f, moveDirection.z).normalized;
+            Vector3 rayOriginBase = transform.position + Vector3.up * edgeRaycastHeight;
             float rayDistance = controller.height + 0.6f;
-
             float totalDistance = currentDashDistance + gapDashBonusDistance;
-            int samples = Mathf.Clamp(Mathf.CeilToInt(totalDistance / (controller.radius + edgeDetectionDistance)), 1, edgeSampleMax);
-            float step = totalDistance / samples;
+            float gizmoStep = Mathf.Max(0.1f, edgeSampleStepDistance);
+            int numSamples = Mathf.CeilToInt(totalDistance / gizmoStep);
 
-            Vector3 firstCheck = rayOrigin + movementDirection * (controller.radius + edgeDetectionDistance);
+            Vector3 firstCheck = rayOriginBase + movementDirection * (controller.radius + edgeDetectionDistance);
             Gizmos.color = Color.blue;
-            Gizmos.DrawLine(rayOrigin, firstCheck);
+            Gizmos.DrawLine(rayOriginBase, firstCheck);
             Gizmos.DrawWireSphere(firstCheck, 0.1f);
 
-            for (int i = 1; i <= samples; i++)
+            for (int i = 1; i <= numSamples; i++)
             {
-                float traveled = step * i;
-                Vector3 samplePos = rayOrigin + movementDirection * Mathf.Max(0f, traveled + controller.radius + edgeDetectionDistance);
+                float traveled = Mathf.Min(totalDistance, gizmoStep * i);
+                Vector3 samplePos = rayOriginBase + movementDirection * traveled;
 
                 Gizmos.color = Color.cyan;
                 Gizmos.DrawWireSphere(samplePos, Mathf.Max(0.03f, controller.radius * 0.2f));
@@ -1580,7 +1571,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             Gizmos.DrawWireSphere(lastTargetCheck, 0.12f);
             Gizmos.DrawLine(lastTargetCheck, lastTargetCheck + Vector3.down * (controller.height + 0.6f));
 
-            UnityEditor.Handles.Label(lastTargetCheck + Vector3.up * 0.2f, lastTargetHit ? "lastTargetCheck hit" : "lastTargetCheck miss");
+            UnityEditor.Handles.Label(lastTargetCheck + Vector3.up * 0.2f, lastTargetHit 
+                ? $"{lastTargetCheck} hit" : $"{lastTargetCheck} miss");
         }
 
         UnityEditor.Handles.Label(origin + Vector3.up * 1.5f, "Origen de Dash");
@@ -1600,20 +1592,20 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         Vector3 testP1 = origin + controller.center + Vector3.up * (controller.height / 2f - controller.radius);
         Vector3 testP2 = origin + controller.center - Vector3.up * (controller.height / 2f - controller.radius);
 
-        if (Physics.CapsuleCast(testP1, testP2, controller.radius, testDir, out RaycastHit obsHit,
-            currentDashDistance, dashCollisionLayers, QueryTriggerInteraction.Ignore))
+        if (Physics.CapsuleCast(testP1, testP2, controller.radius, testDir,
+            out RaycastHit obsHit, currentDashDistance, dashCollisionLayers, QueryTriggerInteraction.Ignore))
         {
             float checkDist = Mathf.Max(0f, obsHit.distance - controller.radius);
-            int samples = Mathf.CeilToInt(checkDist / 1f);
-            samples = Mathf.Clamp(samples, 2, 10);
-            float step = checkDist / samples;
+            float step = Mathf.Max(0.1f, edgeSampleStepDistance);
+            int samples = Mathf.CeilToInt(checkDist / step);
+
+            samples = Mathf.Clamp(samples, 2, edgeSampleMax * 2);
 
             for (int i = 1; i <= samples; i++)
             {
                 Vector3 checkPos = origin + testDir * (step * i);
                 Vector3 rayStart = checkPos + Vector3.up * 2f;
-                bool hasGround = Physics.Raycast(rayStart, Vector3.down, controller.height + 3f,
-                    groundLayerMask, QueryTriggerInteraction.Ignore);
+                bool hasGround = Physics.Raycast(rayStart, Vector3.down, controller.height + 3f, groundLayerMask, QueryTriggerInteraction.Ignore);
 
                 Gizmos.color = hasGround ? new Color(0, 1, 0, 0.7f) : new Color(1, 0, 0, 0.9f);
                 Gizmos.DrawWireSphere(checkPos, 0.15f);
@@ -1622,32 +1614,41 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
                 if (!hasGround)
                 {
                     UnityEditor.Handles.color = Color.red;
-                    UnityEditor.Handles.Label(checkPos + Vector3.up * 0.5f, "¡VACÍO!");
+                    UnityEditor.Handles.Label(checkPos + Vector3.up * 0.5f, "VACÍO!");
                 }
             }
 
             UnityEditor.Handles.color = Color.yellow;
-            UnityEditor.Handles.Label(origin + Vector3.up * 2.5f, $"Obstáculo a {obsHit.distance:F1}m - Verificando camino");
+            UnityEditor.Handles.Label(origin + Vector3.up * 2.5f,
+                $"Obstáculo a {obsHit.distance:F1}m - Verificando camino");
         }
 
         if (lastTargetCheck != Vector3.zero)
         {
-            int numDirections = 8;
-            float angleStep = 360f / numDirections;
-            float checkRadius = controller.radius * 0.95f;
+            Vector3 fwdHint = dashDirection;
+            fwdHint.y = 0f;
+            fwdHint.Normalize();
+            Vector3 rightHint = Vector3.Cross(Vector3.up, fwdHint).normalized;
+            float checkRadius = controller.radius * 0.92f;
 
-            for (int i = 0; i < numDirections; i++)
+            Vector3[] safePoints = new Vector3[]
             {
-                float angle = i * angleStep * Mathf.Deg2Rad;
-                Vector3 offset = new Vector3(
-                    Mathf.Cos(angle) * checkRadius,
-                    0f,
-                    Mathf.Sin(angle) * checkRadius
-                );
+            lastTargetCheck,
+            lastTargetCheck + fwdHint * checkRadius,
+            lastTargetCheck - fwdHint * checkRadius,
+            lastTargetCheck + rightHint * checkRadius,
+            lastTargetCheck - rightHint * checkRadius,
+            lastTargetCheck + (fwdHint + rightHint).normalized * checkRadius,
+            lastTargetCheck + (fwdHint - rightHint).normalized * checkRadius,
+            lastTargetCheck + (-fwdHint + rightHint).normalized * checkRadius,
+            lastTargetCheck + (-fwdHint - rightHint).normalized * checkRadius
+            };
 
-                Vector3 checkPoint = lastTargetCheck + offset + Vector3.up * edgeRaycastHeight;
-                bool hasGround = Physics.Raycast(checkPoint, Vector3.down, controller.height + 1f,
-                    groundLayerMask, QueryTriggerInteraction.Ignore);
+            foreach (var pt in safePoints)
+            {
+                Vector3 checkPoint = pt + Vector3.up * edgeRaycastHeight;
+                bool hasGround = Physics.Raycast(checkPoint, Vector3.down, 
+                    controller.height + 1f, groundLayerMask, QueryTriggerInteraction.Ignore);
 
                 Gizmos.color = hasGround ? new Color(0, 1, 0, 0.5f) : new Color(1, 0, 0, 0.8f);
                 Gizmos.DrawLine(checkPoint, checkPoint + Vector3.down * (controller.height + 1f));
