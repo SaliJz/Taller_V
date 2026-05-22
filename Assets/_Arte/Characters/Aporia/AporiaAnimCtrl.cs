@@ -128,6 +128,10 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
             dashTimer = 0;
             currentPriority = AnimPriority.none;
         }
+        if(state == ActionState.damage && currentPriority != AnimPriority.damage)
+        {
+            currentPriority = AnimPriority.none;
+        }
 
         base.PlayState(state, priority, reset);
     }
