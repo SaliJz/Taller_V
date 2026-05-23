@@ -16,6 +16,7 @@ public class PlayerShaderCtrl : MonoBehaviour
     [SerializeField] private float outlineMax = 0.002f;
     [SerializeField] private GameObject BrokenVFX; // Prefab del VFX de ruptura del outline
     [SerializeField] private Material BrokenMat; // Material para el VFX de ruptura, que cambiará de color según el estado de stamina
+    [SerializeField] private GameObject DamageVFX;
 
     [Header("Shine Settings")]
     [Tooltip("Valor máximo del brillo durante el efecto de shine")]
@@ -31,13 +32,17 @@ public class PlayerShaderCtrl : MonoBehaviour
     private Coroutine shineRoutine;
     private Coroutine outlineRoutine;
     private Coroutine damageRoutine;
+    private Coroutine currentHitCoroutine;
 
+    [Header("Propiedades del shader")]
     private static readonly int GrossorID = Shader.PropertyToID("_Grossor");
     private static readonly int ShineID = Shader.PropertyToID("_ShineAmount");
     private static readonly int HasStaminaID = Shader.PropertyToID("_HasStamina");
+    private static readonly int HitAmountID = Shader.PropertyToID("_HitAmount");
 
-    //private bool testBerserActive = false;
-    //private bool testStamina = true;
+    private bool testBerserActive = false;
+    private bool testStamina = true;
+
 
     #endregion
 
@@ -58,7 +63,7 @@ public class PlayerShaderCtrl : MonoBehaviour
 
     private void Update()
     {
-        //TEST_IMPUTS();
+        TEST_IMPUTS();
     }
 
     private void LateUpdate()
@@ -77,7 +82,7 @@ public class PlayerShaderCtrl : MonoBehaviour
     #endregion
 
     #region Testing
-    /*
+
     private void TEST_IMPUTS()
     {
         if (Input.GetKeyDown(KeyCode.Keypad9))
@@ -99,8 +104,11 @@ public class PlayerShaderCtrl : MonoBehaviour
         {
             DamageTrigger();
         }
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            HitFlash();
+        }
     }
-    */
     #endregion
 
     #region Shine Functions
@@ -204,6 +212,7 @@ public class PlayerShaderCtrl : MonoBehaviour
         outlineRoutine = null;
     }
 
+
     private void SetOutline(float value)
     {
         targetRenderer.GetPropertyBlock(mpb);
@@ -246,9 +255,12 @@ public class PlayerShaderCtrl : MonoBehaviour
 
     public void DamageTrigger()
     {
-        if(damageRoutine != null) StopCoroutine(damageRoutine);
+        // if(damageRoutine != null) StopCoroutine(damageRoutine);
 
-        damageRoutine = StartCoroutine(DamageRoutine());
+        // damageRoutine = StartCoroutine(DamageRoutine());
+
+        HitFlash();
+
     }
 
     private IEnumerator DamageRoutine()
@@ -272,6 +284,48 @@ public class PlayerShaderCtrl : MonoBehaviour
         }
 
         spriteRend.color = Color.white;
+    }
+
+    private IEnumerator HitCoroutine()
+    {
+        float time = 0.01f;
+        float timeBetweenFlashes = 0.1f;
+
+        while (time > 0)
+        {
+            time -= Time.deltaTime;
+
+            targetRenderer.GetPropertyBlock(mpb);
+            mpb.SetFloat(HitAmountID, 1);
+
+            targetRenderer.SetPropertyBlock(mpb);
+
+            yield return new WaitForSeconds(timeBetweenFlashes);
+
+            targetRenderer.GetPropertyBlock(mpb);
+            mpb.SetFloat(HitAmountID, 0);
+
+            targetRenderer.SetPropertyBlock(mpb);
+
+            yield return new WaitForSeconds (timeBetweenFlashes);
+            
+        }
+
+        targetRenderer.GetPropertyBlock(mpb);
+        mpb.SetFloat(HitAmountID, 0);
+
+        targetRenderer.SetPropertyBlock(mpb);
+
+    }
+
+    private void HitFlash()
+    {
+        if(currentHitCoroutine != null) StopCoroutine(currentHitCoroutine);
+
+        currentHitCoroutine = StartCoroutine(HitCoroutine());
+
+        DamageVFX.SetActive(false);
+        DamageVFX.SetActive(true);
     }
 
     #endregion
