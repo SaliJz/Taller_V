@@ -733,7 +733,7 @@ MonoBehaviour:
   damageActive: 0
   isDashing: 0
   dashDuration: 0.5
-  AttackVFX: {fileID: 0}
+  AttackVFX: {fileID: 5065482159370362065}
   h: 0
   v: 0
 --- !u!1 &1709227677283849526
@@ -1695,6 +1695,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 5792130343503594548}
   - {fileID: 5423789255242311048}
   - {fileID: 8547942259560842064}
   - {fileID: 5571373378513716035}
@@ -2793,6 +2794,77 @@ RectTransform:
   m_AnchoredPosition: {x: -30.9, y: -19.8}
   m_SizeDelta: {x: 14.540001, y: 17}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1001 &4324288003972586767
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 9137907807618677906}
+    m_Modifications:
+    - target: {fileID: 7810142096279460155, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7810142096279460155, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.87
+      objectReference: {fileID: 0}
+    - target: {fileID: 7810142096279460155, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 2.06
+      objectReference: {fileID: 0}
+    - target: {fileID: 7810142096279460155, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.98973465
+      objectReference: {fileID: 0}
+    - target: {fileID: 7810142096279460155, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.14291741
+      objectReference: {fileID: 0}
+    - target: {fileID: 7810142096279460155, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7810142096279460155, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7810142096279460155, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7810142096279460155, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7810142096279460155, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8813192802501231070, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+      propertyPath: m_Name
+      value: VFX_MeleeSlash_Aporia N2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8813192802501231070, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+--- !u!1 &5065482159370362065 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8813192802501231070, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+  m_PrefabInstance: {fileID: 4324288003972586767}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &5792130343503594548 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7810142096279460155, guid: c2080655781f7614590bc4de1e3b2f28, type: 3}
+  m_PrefabInstance: {fileID: 4324288003972586767}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7749227876284071164
 PrefabInstance:
   m_ObjectHideFlags: 0

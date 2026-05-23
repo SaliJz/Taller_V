@@ -91,7 +91,10 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
 #region Event Void
     protected override void OnAnimationEvent(string ev)
     {
-        //AQUI PONES LA LOGICA QUE NECESITES PARA LLAMAR EVENTOS POR NOMBRE
+        if (ev == "SpawnVFX")
+        {
+            AttackVFX.SetActive(true);
+        }
     }
 #endregion
 
