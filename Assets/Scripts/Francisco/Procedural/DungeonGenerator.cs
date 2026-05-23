@@ -76,6 +76,7 @@ public class DungeonGenerator : MonoBehaviour
     private Dictionary<RoomType, RoomProgressionRule> progressionRuleDictionary = new Dictionary<RoomType, RoomProgressionRule>();
     private List<RoomProgressionRule> usedOnceRules = new List<RoomProgressionRule>();
     private Queue<Room> recentlyGeneratedPrefabs = new Queue<Room>();
+    private RoomType lastGeneratedRoomType = RoomType.Normal;
 
     public static event Action<RoomType> OnRoomEntered;
     public static event Action<RoomType, float> OnRoomCompleted;
@@ -421,6 +422,7 @@ public class DungeonGenerator : MonoBehaviour
 
                 generatedRooms.Add(newRoom);
                 roomsGenerated++;
+                lastGeneratedRoomType = newRoom.roomType;
 
                 recentlyGeneratedPrefabs.Enqueue(newRoomPrefab);
                 if (recentlyGeneratedPrefabs.Count > RECENT_HISTORY_SIZE)
@@ -685,15 +687,12 @@ public class DungeonGenerator : MonoBehaviour
         }
 
         List<RoomType> validRoomTypes = new List<RoomType>();
-
         if (progressionAllowedTypes.Any())
-        {
             validRoomTypes = progressionAllowedTypes.Intersect(generationAllowedTypes).ToList();
-        }
         else
-        {
             validRoomTypes = generationAllowedTypes.ToList();
-        }
+
+        validRoomTypes = ApplyPreviousRoomFilter(validRoomTypes, lastGeneratedRoomType);
 
         if (!validRoomTypes.Any())
         {
@@ -1153,18 +1152,21 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
-    private string GetDistortionName(DevilDistortionType distortion)
+    private List<RoomType> ApplyPreviousRoomFilter(List<RoomType> candidates, RoomType previousType)
     {
-        return distortion switch
+        if (!generationRuleDictionary.ContainsKey(previousType))
+            return candidates; 
+
+        var allowed = generationRuleDictionary[previousType];
+        var filtered = candidates.Where(t => allowed.Contains(t)).ToList();
+
+        if (!filtered.Any())
         {
-            DevilDistortionType.AbyssalConfusion => "Confusión del Abismo",
-            DevilDistortionType.FloorOfTheDamned => "Piso de Condenados",
-            DevilDistortionType.DeceptiveDarkness => "Oscuridad Engañosa",
-            DevilDistortionType.SealedLuck => "Suerte Sellada",
-            DevilDistortionType.WitheredBloodthirst => "Sed de Sangre Marchita",
-            DevilDistortionType.InfernalJudgement => "Juicio Infernal",
-            _ => "Efecto Desconocido"
-        };
+            Debug.LogWarning($"[DungeonGenerator] ApplyPreviousRoomFilter: Filtrar por '{previousType}' dejó 0 candidatos. Se ignora el filtro.");
+            return candidates;
+        }
+
+        return filtered;
     }
 
     public IEnumerator TransitionToNextRoom(ConnectionPoint entrancePoint, Transform playerTransform, bool cameFromElevator = false)
@@ -1635,8 +1637,12 @@ public class DungeonGenerator : MonoBehaviour
         foreach (var rule in probableRules)
         {
             RoomType probableType = rule.GetRoomType();
-            bool allowMultiple = rule.allowMultipleDoorsOfSameType; 
 
+            if (generationRuleDictionary.ContainsKey(lastGeneratedRoomType) &&
+                !generationRuleDictionary[lastGeneratedRoomType].Contains(probableType))
+                continue;
+
+            bool allowMultiple = rule.allowMultipleDoorsOfSameType;
             var freeDoors = exitDoors.Where(cp => assignments[cp] == null).ToList();
             if (freeDoors.Count == 0) break;
 

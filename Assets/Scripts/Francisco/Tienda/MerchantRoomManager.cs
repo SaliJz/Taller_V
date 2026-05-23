@@ -8,7 +8,6 @@ public class MerchantRoomManager : MonoBehaviour
     #region Editor Fields
 
     [Header("Item Settings")]
-    [SerializeField] private float itemEffectDuration = 0.5f;
     [SerializeField] private bool sequentialItemSpawn = false;
 
     #endregion
