@@ -124,6 +124,14 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     private void ProcessCombatInput(CombatActionType actionType)
     {
+        if (actionType == CombatActionType.Dash)
+        {
+            if (isExecutingAction) InterruptCombatActions();
+
+            TryExecuteDash();
+            return;
+        }
+
         if (isExecutingAction)
         {
             TryQueueAction(actionType);
