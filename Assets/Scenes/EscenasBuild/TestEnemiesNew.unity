@@ -10522,7 +10522,6 @@ MonoBehaviour:
   visualChild: {fileID: 2035493807}
   initialDelay: 1
   triggerProbability: 0.5
-  rerollInterval: 5
   triggerDuration: 3
   defaultPoint: {fileID: 0}
   triggeredPoint: {fileID: 0}
@@ -11048,7 +11047,6 @@ MonoBehaviour:
   visualChild: {fileID: 932826786}
   initialDelay: 1
   triggerProbability: 0.5
-  rerollInterval: 5
   triggerDuration: 3
   defaultPoint: {fileID: 0}
   triggeredPoint: {fileID: 0}
@@ -11059,6 +11057,7 @@ MonoBehaviour:
   colorTransitioning: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   contractionAxis: 0
   contractionDirection: 0
+  visibilityThreshold: 0.05
 --- !u!208 &2095306849
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -11870,6 +11869,14 @@ PrefabInstance:
       propertyPath: 'shopItemPrefabs.Array.data[11]'
       value: 
       objectReference: {fileID: 2790493699222432776, guid: d2d3227e6d58afc4da1f8be67e981bd8, type: 3}
+    - target: {fileID: 7470225785151341199, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: restrictedPurchaseScenes.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7470225785151341199, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: 'restrictedPurchaseScenes.Array.data[4]'
+      value: TestEnemiesNew
+      objectReference: {fileID: 0}
     - target: {fileID: 8371086651481551111, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
