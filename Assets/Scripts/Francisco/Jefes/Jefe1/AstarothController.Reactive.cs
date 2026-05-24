@@ -31,15 +31,10 @@ public partial class AstarothController
     {
         if (_isDead) return;
         if (_isDefensiveBlocking) return;
+        if (_defensiveBlockPending) return;
 
-        PrepareCombatInterrupt();
-        DestroyAllInstantiatedEffects();
-        ResetSmashVisuals();
-
-        _defensiveBlockWindowActive = false;
-        _hitsAfterStomp = 0;
-
-        StartCoroutine(DefensiveBlockSequence());
+        _defensiveBlockPending = true;
+        _resumeCombatStep = _combatPatternStep;
     }
 
     private IEnumerator DefensiveBlockSequence()
@@ -48,6 +43,8 @@ public partial class AstarothController
 
         _isDefensiveBlocking = true;
         _currentState = BossState.DefensiveBlock;
+
+        StartDefensiveBlockVisualFeedback();
 
         Vector3 blockCenter = transform.position;
         Vector3 warningCenter = GetGroundPosition(blockCenter);
@@ -114,6 +111,8 @@ public partial class AstarothController
             _navMeshAgent.Warp(blockCenter);
             _navMeshAgent.isStopped = false;
         }
+
+        StopDefensiveBlockVisualFeedback();
 
         _isDefensiveBlocking = false;
         _currentState = BossState.Moving;
@@ -310,7 +309,7 @@ public partial class AstarothController
         _isMudWaving = false;
         _currentState = BossState.Moving;
 
-        _combatPatternStep = _resumeCombatStep; 
+        _combatPatternStep = _resumeCombatStep;
         if (_isDead) yield break;
 
         StartCombatLoop();

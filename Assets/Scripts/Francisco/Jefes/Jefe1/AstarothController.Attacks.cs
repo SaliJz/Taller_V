@@ -12,6 +12,8 @@ public partial class AstarothController
 
         _isAttackingWithWhip = true;
 
+        GameObject whipIndicator = null;
+
         if (_navMeshAgent != null)
         {
             _navMeshAgent.isStopped = true;
@@ -27,10 +29,7 @@ public partial class AstarothController
             _animator.SetInteger(AnimID_Attack, ATTACK_WHIP);
         }
 
-        if (_whipTelegraphPrefab != null && _whipDamageOrigin != null)
-        {
-            SpawnGroundTelegraph(_whipTelegraphPrefab, _whipDamageOrigin.position, _whipHitRadius, _whipDelay1);
-        }
+        whipIndicator = CreatePersistentWhipIndicator();
 
         yield return new WaitForSeconds(_whipDelay1);
         PlayWhipSoundCrisp();
@@ -46,6 +45,8 @@ public partial class AstarothController
 
         yield return new WaitForSeconds(0.6f);
 
+        DestroyWhipIndicator(whipIndicator);
+
         if (_animator != null)
         {
             _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
@@ -53,6 +54,51 @@ public partial class AstarothController
         }
 
         _isAttackingWithWhip = false;
+    }
+
+    private GameObject CreatePersistentWhipIndicator()
+    {
+        if (_whipTelegraphPrefab == null || _whipDamageOrigin == null) return null;
+
+        Vector3 groundPosition = GetGroundPosition(_whipDamageOrigin.position);
+        groundPosition.y += 0.03f;
+
+        GameObject indicator = Instantiate(_whipTelegraphPrefab, groundPosition, Quaternion.identity);
+        indicator.transform.localScale = new Vector3(_whipHitRadius * 2f, 0.05f, _whipHitRadius * 2f);
+
+        _activeWhipIndicator = indicator;
+        _instantiatedEffects.Add(indicator);
+
+        StartCoroutine(FollowWhipIndicator(indicator.transform));
+
+        return indicator;
+    }
+
+    private IEnumerator FollowWhipIndicator(Transform indicator)
+    {
+        while (indicator != null && _isAttackingWithWhip && _whipDamageOrigin != null)
+        {
+            Vector3 groundPosition = GetGroundPosition(_whipDamageOrigin.position);
+            groundPosition.y += 0.03f;
+
+            indicator.position = groundPosition;
+            indicator.localScale = new Vector3(_whipHitRadius * 2f, 0.05f, _whipHitRadius * 2f);
+
+            yield return null;
+        }
+    }
+
+    private void DestroyWhipIndicator(GameObject indicator)
+    {
+        if (indicator == null) return;
+
+        if (_activeWhipIndicator == indicator)
+        {
+            _activeWhipIndicator = null;
+        }
+
+        _instantiatedEffects.Remove(indicator);
+        Destroy(indicator);
     }
 
     private void PlayWhipSoundCrisp()
@@ -69,14 +115,23 @@ public partial class AstarothController
     {
         if (_whipDamageOrigin == null) return;
 
-        Collider[] hits = Physics.OverlapSphere(_whipDamageOrigin.position, _whipHitRadius, LayerMask.GetMask("Player"));
+        Collider[] hits = Physics.OverlapSphere(
+            _whipDamageOrigin.position,
+            _whipHitRadius,
+            LayerMask.GetMask("Player")
+        );
 
         bool playerHit = false;
-        foreach (var hit in hits)
+
+        foreach (Collider hit in hits)
         {
-            ExecuteAttack(hit.gameObject, _whipDamageOrigin.position, _Attack1Damage);
+            GameObject target = hit.transform.root != null
+                ? hit.transform.root.gameObject
+                : hit.gameObject;
+
+            ExecuteAttack(target, _whipDamageOrigin.position, _Attack1Damage);
+
             playerHit = true;
-            _lastWhipHitPlayer = true;
         }
 
         if (playerHit)
@@ -94,16 +149,9 @@ public partial class AstarothController
         if (_isDead) yield break;
 
         _isSmashing = true;
+        _smashRockInFlight = false;
+        _smashImpactCompleted = false;
         _showSmashOverlapGizmo = false;
-
-        if (_smashVisualTransform != null) _smashVisualTransform.gameObject.SetActive(true);
-
-        if (_animator != null)
-        {
-            _animator.SetBool(AnimID_IsRunning, false);
-            _animator.SetBool(AnimID_InsAttacking, true);
-            _animator.SetInteger(AnimID_Attack, ATTACK_SMASH);
-        }
 
         if (_navMeshAgent != null)
         {
@@ -113,42 +161,48 @@ public partial class AstarothController
 
         LookAtPlayer();
 
-        _smashTargetPoint = _player.position;
-        yield return StartCoroutine(TrackSmashGroundIndicator());
+        _smashTargetPoint = _player != null ? _player.position : transform.position;
 
-        if (audioSource != null && smashAttackSFX != null) audioSource.PlayOneShot(smashAttackSFX);
+        BeginHeldSmashRock();
 
-        HashSet<GameObject> hitByDirectImpact = new HashSet<GameObject>();
-
-        for (int k = 0; k < _smashAnimationKeyframes.Length - 1; k++)
+        if (_animator != null)
         {
-            SmashKeyframe startKeyframe = _smashAnimationKeyframes[k];
-            SmashKeyframe endKeyframe = _smashAnimationKeyframes[k + 1];
-
-            if (endKeyframe.IsTargetable)
-            {
-                endKeyframe.Position = transform.InverseTransformPoint(_smashTargetPoint);
-            }
-
-            float segmentDuration = endKeyframe.Time - startKeyframe.Time;
-            if (segmentDuration > 0)
-            {
-                float startTime = Time.time;
-                while (Time.time < startTime + segmentDuration)
-                {
-                    float t = (Time.time - startTime) / segmentDuration;
-                    _smashVisualTransform.localPosition = Vector3.Lerp(startKeyframe.Position, endKeyframe.Position, t);
-                    _smashVisualTransform.localScale = Vector3.Lerp(startKeyframe.Scale, endKeyframe.Scale, t);
-                    CheckDirectRockImpact(hitByDirectImpact);
-                    yield return null;
-                }
-            }
-
-            _smashVisualTransform.localPosition = endKeyframe.Position;
-            _smashVisualTransform.localScale = endKeyframe.Scale;
-
-            if (endKeyframe.IsTargetable) PerformSmashDamage(_smashTargetPoint, hitByDirectImpact);
+            _animator.SetBool(AnimID_IsRunning, false);
+            _animator.SetBool(AnimID_InsAttacking, true);
+            _animator.SetInteger(AnimID_Attack, ATTACK_SMASH);
         }
+
+        Coroutine indicatorRoutine = StartCoroutine(TrackSmashGroundIndicatorDuringAnimation());
+
+        float safetyTimer = 0f;
+        float safetyLimit = Mathf.Max(2f, _smashDelay + _smashRockTravelDuration + 3f);
+
+        while (!_smashImpactCompleted && safetyTimer < safetyLimit)
+        {
+            FollowHeldSmashRock();
+            safetyTimer += Time.deltaTime;
+            yield return null;
+        }
+
+        if (!_smashImpactCompleted && !_smashRockInFlight)
+        {
+            LaunchSmashRockToPlayer();
+        }
+
+        while (_smashRockInFlight)
+        {
+            safetyTimer += Time.deltaTime;
+            yield return null;
+        }
+
+        if (indicatorRoutine != null)
+        {
+            StopCoroutine(indicatorRoutine);
+        }
+
+        HideSmashGroundIndicator();
+
+        yield return new WaitForSeconds(0.25f);
 
         if (_animator != null)
         {
@@ -160,7 +214,20 @@ public partial class AstarothController
         ResetSmashVisuals();
     }
 
-    private IEnumerator TrackSmashGroundIndicator()
+    private void FollowHeldSmashRock()
+    {
+        if (!_smashRockIsHeld) return;
+        if (_smashRockObject == null) return;
+        if (_smashRockHeldFollowTarget == null) return;
+
+        Transform rockTransform = _smashRockObject.transform;
+
+        rockTransform.position = _smashRockHeldFollowTarget.position;
+        rockTransform.rotation = _smashRockHeldFollowTarget.rotation;
+        rockTransform.localScale = _smashRockOriginalLocalScale * _smashRockScale;
+    }
+
+    private IEnumerator TrackSmashGroundIndicatorDuringAnimation()
     {
         Transform indicator = _smashGroundIndicator;
         GameObject createdIndicator = null;
@@ -175,22 +242,18 @@ public partial class AstarothController
             indicator = createdIndicator.transform;
         }
 
-        if (indicator != null)
+        if (indicator == null)
         {
-            indicator.gameObject.SetActive(true);
-            indicator.localScale = new Vector3(_smashRadius * 2f, 0.1f, _smashRadius * 2f);
-        }
-        else
-        {
-            SpawnGroundTelegraph(_smashWarningPrefab, _smashTargetPoint, _smashRadius, _smashDelay);
-            yield return new WaitForSeconds(_smashDelay);
             yield break;
         }
+
+        indicator.gameObject.SetActive(true);
+        indicator.localScale = new Vector3(_smashRadius * 2f, 0.05f, _smashRadius * 2f);
 
         float elapsed = 0f;
         float lockTime = Mathf.Max(0f, _smashDelay - _smashTargetLockBeforeImpact);
 
-        while (elapsed < _smashDelay)
+        while (_isSmashing && !_smashRockInFlight && !_smashImpactCompleted)
         {
             if (_player != null && elapsed < lockTime)
             {
@@ -207,6 +270,7 @@ public partial class AstarothController
 
         if (createdIndicator != null)
         {
+            _instantiatedEffects.Remove(createdIndicator);
             Destroy(createdIndicator);
         }
         else if (indicator != null)
@@ -215,43 +279,169 @@ public partial class AstarothController
         }
     }
 
-    private void ResetSmashVisuals()
+    private void HideSmashGroundIndicator()
     {
-        if (_smashVisualTransform != null)
+        if (_smashGroundIndicator != null)
         {
-            _smashVisualTransform.gameObject.SetActive(false);
-            if (_smashAnimationKeyframes != null && _smashAnimationKeyframes.Length > 0)
-            {
-                _smashVisualTransform.localPosition = _smashAnimationKeyframes[0].Position;
-                _smashVisualTransform.localScale = _smashAnimationKeyframes[0].Scale;
-            }
+            _smashGroundIndicator.gameObject.SetActive(false);
+        }
+    }
+
+    private void LaunchSmashRockToPlayer()
+    {
+        if (_isDead) return;
+        if (!_isSmashing) return;
+        if (_smashRockInFlight) return;
+        if (_smashImpactCompleted) return;
+
+        EndHeldSmashRock();
+        StartCoroutine(ThrowSmashRockToTarget());
+    }
+
+    private IEnumerator ThrowSmashRockToTarget()
+    {
+        _smashRockInFlight = true;
+
+        if (audioSource != null && smashAttackSFX != null)
+        {
+            audioSource.PlayOneShot(smashAttackSFX);
         }
 
-        if (_smashGroundIndicator != null) _smashGroundIndicator.gameObject.SetActive(false);
+        if (_smashRockObject == null)
+        {
+            PerformSmashDamage(_smashTargetPoint, new HashSet<GameObject>());
+            _smashRockInFlight = false;
+            _smashImpactCompleted = true;
+            yield break;
+        }
 
+        Transform rockTransform = _smashRockObject.transform;
+
+        rockTransform.SetParent(null, true);
+        rockTransform.localScale = _smashRockOriginalLocalScale * _smashRockScale;
+        _smashRockObject.SetActive(true);
+
+        Vector3 startPosition = rockTransform.position;
+        Vector3 previousPosition = startPosition;
+
+        Vector3 groundTarget = GetGroundPosition(_smashTargetPoint);
+        Vector3 endPosition = groundTarget + Vector3.up * Mathf.Max(0.05f, _smashIndicatorGroundOffset);
+
+        HashSet<GameObject> hitByDirectImpact = new HashSet<GameObject>();
+
+        float elapsed = 0f;
+
+        while (elapsed < _smashRockTravelDuration)
+        {
+            elapsed += Time.deltaTime;
+
+            float normalizedTime = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, _smashRockTravelDuration));
+            float curveTime = _smashRockTravelCurve != null
+                ? _smashRockTravelCurve.Evaluate(normalizedTime)
+                : normalizedTime;
+
+            Vector3 nextPosition = Vector3.Lerp(startPosition, endPosition, curveTime);
+
+            Vector3 movement = nextPosition - previousPosition;
+            float movementDistance = movement.magnitude;
+
+            if (movementDistance > 0.001f)
+            {
+                CheckRockFlightSphereCast(previousPosition, movement.normalized, movementDistance, hitByDirectImpact);
+            }
+            else
+            {
+                CheckRockFlightOverlap(nextPosition, hitByDirectImpact);
+            }
+
+            rockTransform.position = nextPosition;
+
+            Vector3 direction = endPosition - startPosition;
+            if (direction.sqrMagnitude > 0.01f)
+            {
+                rockTransform.rotation = Quaternion.LookRotation(direction.normalized);
+            }
+
+            previousPosition = nextPosition;
+
+            yield return null;
+        }
+
+        rockTransform.position = endPosition;
+        CheckRockFlightOverlap(endPosition, hitByDirectImpact);
+
+        PerformSmashDamage(endPosition, hitByDirectImpact);
+
+        yield return new WaitForSeconds(0.05f);
+
+        RestoreSmashRockTransform();
+        SetSmashRockActive(false);
+
+        _smashRockInFlight = false;
+        _smashImpactCompleted = true;
+    }
+
+    private void ResetSmashVisuals()
+    {
+        EndHeldSmashRock();
+        RestoreSmashRockTransform();
+        SetSmashRockActive(false);
+
+        if (_smashGroundIndicator != null)
+        {
+            _smashGroundIndicator.gameObject.SetActive(false);
+        }
+
+        _smashRockInFlight = false;
+        _smashImpactCompleted = false;
         _showSmashOverlapGizmo = false;
     }
 
-    private void CheckDirectRockImpact(HashSet<GameObject> alreadyHit)
+    private void CheckRockFlightSphereCast(
+        Vector3 origin,
+        Vector3 direction,
+        float distance,
+        HashSet<GameObject> alreadyHit)
     {
-        Vector3 rockWorldPosition = _smashVisualTransform.position;
-        float rockRadius = _smashVisualTransform.localScale.x * 0.5f;
-        Collider[] nearbyColliders = Physics.OverlapSphere(rockWorldPosition, rockRadius);
+        RaycastHit[] hits = Physics.SphereCastAll(
+            origin,
+            _smashRockHitRadius,
+            direction,
+            distance,
+            LayerMask.GetMask("Player")
+        );
 
-        foreach (var col in nearbyColliders)
+        foreach (RaycastHit hit in hits)
         {
-            GameObject entity = col.gameObject;
-            if (entity.CompareTag("Player"))
-            {
-                GameObject playerRoot = entity.transform.root.gameObject;
-                if (alreadyHit.Contains(playerRoot)) continue;
+            GameObject entity = hit.collider.transform.root != null
+                ? hit.collider.transform.root.gameObject
+                : hit.collider.gameObject;
 
-                alreadyHit.Add(playerRoot);
-                if (playerRoot.TryGetComponent<PlayerHealth>(out var health) || entity.TryGetComponent<PlayerHealth>(out health))
-                {
-                    ExecuteAttack(playerRoot, rockWorldPosition, _Attack2Damage);
-                }
-            }
+            if (alreadyHit.Contains(entity)) continue;
+
+            alreadyHit.Add(entity);
+            ExecuteAttack(entity, hit.point, _Attack2Damage);
+        }
+    }
+
+    private void CheckRockFlightOverlap(Vector3 center, HashSet<GameObject> alreadyHit)
+    {
+        Collider[] hits = Physics.OverlapSphere(
+            center,
+            _smashRockHitRadius,
+            LayerMask.GetMask("Player")
+        );
+
+        foreach (Collider hit in hits)
+        {
+            GameObject entity = hit.transform.root != null
+                ? hit.transform.root.gameObject
+                : hit.gameObject;
+
+            if (alreadyHit.Contains(entity)) continue;
+
+            alreadyHit.Add(entity);
+            ExecuteAttack(entity, center, _Attack2Damage);
         }
     }
 
@@ -271,60 +461,90 @@ public partial class AstarothController
             GameObject visualEffect = Instantiate(_smashRadiusPrefab, smashGroundPosition, Quaternion.identity);
             _instantiatedEffects.Add(visualEffect);
             Destroy(visualEffect, 0.6f);
-            StartCoroutine(ExpandSmashRadiusWithDamage(visualEffect.transform, _smashRadius, smashGroundPosition, alreadyHitByRock));
+
+            StartCoroutine(ExpandSmashRadiusWithDamage(
+                visualEffect.transform,
+                _smashRadius,
+                smashGroundPosition,
+                alreadyHitByRock
+            ));
         }
 
-        if (!_lastSmashHitPlayer) ShowDodgeIndicator();
-        Invoke("DisableSmashOverlapGizmo", 1f);
+        if (!_lastSmashHitPlayer)
+        {
+            ShowDodgeIndicator();
+        }
+
+        Invoke(nameof(DisableSmashOverlapGizmo), 1f);
     }
 
-    private void DisableSmashOverlapGizmo() => _showSmashOverlapGizmo = false;
+    private void DisableSmashOverlapGizmo()
+    {
+        _showSmashOverlapGizmo = false;
+    }
 
-    private IEnumerator ExpandSmashRadiusWithDamage(Transform effectTransform, float targetRadius, Vector3 groundPosition, HashSet<GameObject> alreadyHitByRock)
+    private IEnumerator ExpandSmashRadiusWithDamage(
+        Transform effectTransform,
+        float targetRadius,
+        Vector3 groundPosition,
+        HashSet<GameObject> alreadyHitByRock)
     {
         float duration = 0.5f;
         float elapsedTime = 0f;
-        Vector3 initialScale = Vector3.zero;
-        Vector3 targetScale = new Vector3(targetRadius * 2, 0.5f, targetRadius * 2);
+
+        float startRadius = Mathf.Max(0.25f, _smashRockScale * 0.5f);
+
+        Vector3 initialScale = new Vector3(startRadius * 2f, 0.05f, startRadius * 2f);
+        Vector3 targetScale = new Vector3(targetRadius * 2f, 0.05f, targetRadius * 2f);
 
         HashSet<GameObject> hitByShockwaveEntity = new HashSet<GameObject>();
 
         while (elapsedTime < duration && effectTransform != null)
         {
             elapsedTime += Time.deltaTime;
+
             float t = elapsedTime / duration;
+            float currentRadius = Mathf.Lerp(startRadius, targetRadius, t);
+
             effectTransform.localScale = Vector3.Lerp(initialScale, targetScale, t);
 
-            float currentRadius = Mathf.Lerp(0f, targetRadius, t);
-            Collider[] hitColliders = Physics.OverlapSphere(groundPosition, currentRadius * 1.2f);
+            Collider[] hitColliders = Physics.OverlapSphere(
+                groundPosition,
+                currentRadius,
+                LayerMask.GetMask("Player")
+            );
 
-            foreach (var hitCollider in hitColliders)
+            foreach (Collider hitCollider in hitColliders)
             {
-                GameObject entity = hitCollider.transform.root.gameObject;
+                GameObject entity = hitCollider.transform.root != null
+                    ? hitCollider.transform.root.gameObject
+                    : hitCollider.gameObject;
+
                 if (alreadyHitByRock.Contains(entity) || hitByShockwaveEntity.Contains(entity)) continue;
 
-                if (entity.CompareTag("Player"))
+                float heightDifference = Mathf.Abs(entity.transform.position.y - groundPosition.y);
+                if (heightDifference > 2f) continue;
+
+                if (Vector3.Distance(entity.transform.position, groundPosition) <= currentRadius)
                 {
-                    float heightDifference = Mathf.Abs(entity.transform.position.y - groundPosition.y);
-                    if (heightDifference < 2f)
-                    {
-                        if (Vector3.Distance(entity.transform.position, groundPosition) <= currentRadius)
-                        {
-                            hitByShockwaveEntity.Add(entity);
-                            ExecuteAttack(entity, groundPosition, _Attack2Damage);
-                            ApplySafeKnockback(entity, groundPosition, 10f);
-                            _lastSmashHitPlayer = true;
-                            _totalAttemptsLanded++;
-                        }
-                    }
+                    hitByShockwaveEntity.Add(entity);
+
+                    ExecuteAttack(entity, groundPosition, _Attack2Damage);
+                    ApplySafeKnockback(entity, groundPosition, 10f);
+
+                    _lastSmashHitPlayer = true;
+                    _totalAttemptsLanded++;
                 }
             }
 
             yield return null;
         }
 
-        effectTransform.localScale = targetScale;
-        Destroy(effectTransform.gameObject, 0.5f);
+        if (effectTransform != null)
+        {
+            effectTransform.localScale = targetScale;
+            Destroy(effectTransform.gameObject, 0.5f);
+        }
     }
 
     #endregion
@@ -342,7 +562,7 @@ public partial class AstarothController
             _animator.SetBool(AnimID_IsRunning, true);
         }
 
-        yield return StartCoroutine(MoveToCenter(_roomCenter));
+        yield return MoveToCenter(_roomCenter);
 
         if (_navMeshAgent != null)
         {
@@ -362,15 +582,25 @@ public partial class AstarothController
 
         Vector3 groundPos = GetGroundPosition(transform.position);
 
-        if (_headsTransform != null) yield return StartCoroutine(AnimateHeadDown());
+        if (_headsTransform != null)
+        {
+            yield return AnimateHeadDown();
+        }
 
         if (_nervesVisualizationPrefab != null)
         {
             GameObject pulseObj = Instantiate(_nervesVisualizationPrefab, groundPos, Quaternion.identity);
             FleshPulseController pulseController = pulseObj.GetComponent<FleshPulseController>();
+
             if (pulseController != null)
             {
-                pulseController.Initialize(_roomMaxRadius, _pulseExpansionDuration, _pulseDamage, _pulseSlowPercentage, _pulseSlowDuration);
+                pulseController.Initialize(
+                    _roomMaxRadius,
+                    _pulseExpansionDuration,
+                    _pulseDamage,
+                    _pulseSlowPercentage,
+                    _pulseSlowDuration
+                );
             }
 
             _instantiatedEffects.Add(pulseObj);
@@ -378,11 +608,17 @@ public partial class AstarothController
 
         yield return new WaitForSeconds(_pulseExpansionDuration + _pulseWaitDuration);
 
-        if (_headsTransform != null) StartCoroutine(AnimateHeadUp());
+        if (_headsTransform != null)
+        {
+            StartCoroutine(AnimateHeadUp());
+        }
 
         ShakeCamera(_shakeDuration, _amplitude, _frequency);
 
-        if (pulseAttackSFX != null) AudioSource.PlayClipAtPoint(pulseAttackSFX, transform.position);
+        if (pulseAttackSFX != null)
+        {
+            AudioSource.PlayClipAtPoint(pulseAttackSFX, transform.position);
+        }
 
         if (_crackEffectPrefab != null)
         {
@@ -392,7 +628,6 @@ public partial class AstarothController
         }
 
         ApplyEvolutionBuff();
-        StartCoroutine(BlockAttacksAfterPulse());
 
         if (_animator != null)
         {
@@ -403,20 +638,32 @@ public partial class AstarothController
 
         yield return new WaitForSeconds(1f);
 
-        if (_animator != null) _animator.SetBool(AnimID_ExitSA, false);
+        if (_animator != null)
+        {
+            _animator.SetBool(AnimID_ExitSA, false);
+        }
 
         _isUsingSpecialAbility = false;
         _currentState = BossState.Moving;
 
         if (_isDead) yield break;
+
         StartCombatLoop();
     }
 
     private void ApplyEvolutionBuff()
     {
         _currentEvolutionMultiplier += _speedBuffPerPulse;
-        if (_navMeshAgent != null) _navMeshAgent.speed *= (1f + _speedBuffPerPulse);
-        if (_animator != null) _animator.speed = _currentEvolutionMultiplier;
+
+        if (_navMeshAgent != null)
+        {
+            _navMeshAgent.speed *= 1f + _speedBuffPerPulse;
+        }
+
+        if (_animator != null)
+        {
+            _animator.speed = _currentEvolutionMultiplier;
+        }
     }
 
     private IEnumerator MoveToCenter(Vector3 targetCenter)
@@ -428,11 +675,14 @@ public partial class AstarothController
         _navMeshAgent.SetDestination(targetCenter);
 
         float safetyTimer = 0f;
+
         while (_navMeshAgent.pathPending || _navMeshAgent.remainingDistance > _navMeshAgent.stoppingDistance)
         {
             if (_navMeshAgent.remainingDistance == float.PositiveInfinity) break;
+
             safetyTimer += Time.deltaTime;
             if (safetyTimer >= 5f) break;
+
             yield return null;
         }
 
@@ -445,6 +695,7 @@ public partial class AstarothController
 
         Quaternion start = _headsTransform.localRotation;
         Quaternion target = start * Quaternion.Euler(_headDownRotationAngle, 0, 0);
+
         float elapsed = 0f;
 
         while (elapsed < _headAnimationDuration)
@@ -463,6 +714,7 @@ public partial class AstarothController
 
         Quaternion start = _headsTransform.localRotation;
         Quaternion target = Quaternion.identity;
+
         float elapsed = 0f;
 
         while (elapsed < _headAnimationDuration)
@@ -475,27 +727,28 @@ public partial class AstarothController
         _headsTransform.localRotation = target;
     }
 
-    private IEnumerator BlockAttacksAfterPulse()
-    {
-        _isPulseAttackBlocked = true;
-        yield return new WaitForSeconds(_postPulseAttackDelay);
-        _isPulseAttackBlocked = false;
-    }
-
     private void CalculateRoomRadius()
     {
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position + Vector3.up, Vector3.down, out hit, 10f, LayerMask.GetMask("Ground")))
+        if (Physics.Raycast(transform.position + Vector3.up, Vector3.down, out RaycastHit hit, 10f, LayerMask.GetMask("Ground")))
         {
             _roomCenter = hit.collider.bounds.center;
             _roomCenter.y = transform.position.y;
+
             float calculatedRadius = Mathf.Max(hit.collider.bounds.extents.x, hit.collider.bounds.extents.z);
-            if (_calculateRoomRadiusOnStart) _roomMaxRadius = Mathf.Max(5f, calculatedRadius - 2f);
+
+            if (_calculateRoomRadiusOnStart)
+            {
+                _roomMaxRadius = Mathf.Max(5f, calculatedRadius - 2f);
+            }
         }
         else
         {
             _roomCenter = transform.position;
-            if (_calculateRoomRadiusOnStart) _roomMaxRadius = 25f;
+
+            if (_calculateRoomRadiusOnStart)
+            {
+                _roomMaxRadius = 25f;
+            }
         }
     }
 
@@ -521,37 +774,175 @@ public partial class AstarothController
         if (_isDead) yield break;
 
         LookAtPlayer();
-        SpawnGroundTelegraph(_stompWarningPrefab, transform.position, _stompRadius, _stompTelegraphTime);
 
-        yield return new WaitForSeconds(_stompTelegraphTime);
+        UpdateStompIndicators();
+        SetStompIndicatorsActive(true);
+
+        yield return PullPlayersToStompCenter();
 
         PerformStompImpact();
-        OpenDefensiveBlockWindow();
 
-        yield return new WaitForSeconds(0.5f);
+        SetStompIndicatorsActive(false);
+
+        yield return new WaitForSeconds(0.15f);
 
         _isStomping = false;
-
         _currentState = BossState.Moving;
-        if (_navMeshAgent != null && _navMeshAgent.enabled) _navMeshAgent.isStopped = false;
 
-        _combatPatternStep = _resumeCombatStep;
+        if (_navMeshAgent != null && _navMeshAgent.enabled)
+        {
+            _navMeshAgent.isStopped = false;
+        }
+
+        _combatPatternStep = CombatPatternStep.Whip;
+        _skipNextCombatLoopDelay = true;
+
         StartCombatLoop();
+    }
+
+    private void SetStompIndicatorsActive(bool active)
+    {
+        if (_stompPullIndicatorObject != null)
+        {
+            _stompPullIndicatorObject.SetActive(active);
+        }
+
+        if (_stompImpactIndicatorObject != null)
+        {
+            _stompImpactIndicatorObject.SetActive(active);
+        }
+    }
+
+    private void UpdateStompIndicators()
+    {
+        Vector3 groundPosition = GetGroundPosition(transform.position);
+        groundPosition.y += 0.03f;
+
+        if (_stompPullIndicatorObject != null)
+        {
+            _stompPullIndicatorObject.transform.position = groundPosition;
+            _stompPullIndicatorObject.transform.localScale = GetIndicatorScaleFromRadius(_stompPullRadius);
+        }
+
+        if (_stompImpactIndicatorObject != null)
+        {
+            _stompImpactIndicatorObject.transform.position = groundPosition + Vector3.up * 0.01f;
+            _stompImpactIndicatorObject.transform.localScale = GetIndicatorScaleFromRadius(_stompRadius);
+        }
+    }
+
+    private Vector3 GetIndicatorScaleFromRadius(float radius)
+    {
+        return new Vector3(radius * 2f, 1f, radius * 2f);
+    }
+
+    private IEnumerator PullPlayersToStompCenter()
+    {
+        float elapsed = 0f;
+
+        while (elapsed < _stompPullDuration)
+        {
+            UpdateStompIndicators();
+
+            Collider[] colliders = Physics.OverlapSphere(
+                transform.position,
+                _stompPullRadius,
+                LayerMask.GetMask("Player")
+            );
+
+            foreach (Collider col in colliders)
+            {
+                GameObject target = col.transform.root != null
+                    ? col.transform.root.gameObject
+                    : col.gameObject;
+
+                PullPlayerTowardStompCenter(target);
+            }
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+    }
+
+    private void PullPlayerTowardStompCenter(GameObject target)
+    {
+        if (target == null) return;
+
+        PlayerMovement playerMove = target.GetComponent<PlayerMovement>();
+        if (playerMove != null && playerMove.IsDashing) return;
+
+        Vector3 targetCenter = transform.position;
+        targetCenter.y = target.transform.position.y;
+
+        Vector3 direction = targetCenter - target.transform.position;
+        direction.y = 0f;
+
+        if (direction.sqrMagnitude < 0.01f) return;
+
+        Vector3 displacement = direction.normalized * (_stompPullSpeed * Time.deltaTime);
+
+        if (displacement.magnitude > direction.magnitude)
+        {
+            displacement = direction;
+        }
+
+        if (playerMove != null)
+        {
+            playerMove.MoveCharacter(displacement);
+            return;
+        }
+
+        CharacterController cc = target.GetComponent<CharacterController>();
+        if (cc != null && cc.enabled)
+        {
+            cc.Move(displacement);
+            return;
+        }
+
+        Rigidbody rb = target.GetComponent<Rigidbody>();
+        if (rb != null && !rb.isKinematic)
+        {
+            rb.MovePosition(rb.position + displacement);
+        }
     }
 
     private void PerformStompImpact()
     {
-        if (audioSource != null && stompSFX != null) audioSource.PlayOneShot(stompSFX);
-        if (_stompVFXPrefab != null) Instantiate(_stompVFXPrefab, transform.position, Quaternion.identity);
+        if (audioSource != null && stompSFX != null)
+        {
+            audioSource.PlayOneShot(stompSFX);
+        }
+
+        Vector3 groundPosition = GetGroundPosition(transform.position);
+        groundPosition.y += 0.03f;
+
+        if (_stompVFXPrefab != null)
+        {
+            GameObject stompVFX = Instantiate(_stompVFXPrefab, groundPosition, Quaternion.identity);
+            stompVFX.transform.localScale = GetIndicatorScaleFromRadius(_stompRadius);
+            Destroy(stompVFX, 2f);
+        }
 
         ShakeCamera(0.3f, 2f, 2f);
 
-        Collider[] colliders = Physics.OverlapSphere(transform.position, _stompRadius, LayerMask.GetMask("Player"));
-        foreach (var col in colliders)
+        Collider[] colliders = Physics.OverlapSphere(
+            transform.position,
+            _stompRadius,
+            LayerMask.GetMask("Player")
+        );
+
+        foreach (Collider col in colliders)
         {
-            GameObject target = col.gameObject;
-            if (_enableStompDamage) ExecuteAttack(target, transform.position, _stompDamage);
-            ApplySafeKnockback(target, transform.position, 10f);
+            GameObject target = col.transform.root != null
+                ? col.transform.root.gameObject
+                : col.gameObject;
+
+            if (_enableStompDamage)
+            {
+                ExecuteAttack(target, transform.position, _stompDamage);
+            }
+
+            ApplySafeKnockback(target, transform.position, _stompKnockbackForce);
         }
     }
 

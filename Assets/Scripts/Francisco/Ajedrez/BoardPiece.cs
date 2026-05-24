@@ -54,6 +54,29 @@ public abstract class BoardPiece : MonoBehaviour
 
     #endregion
 
+    #region Lifecycle Management
+
+    public void DeactivatePiece()
+    {
+        isMoving = false;
+        isStunned = false;
+        StopAllCoroutines();
+
+        HideTrail();
+
+        Collider col = GetComponent<Collider>();
+        if (col != null)
+        {
+            col.enabled = false;
+        }
+
+        this.enabled = false;
+
+        Debug.Log($"[BoardPiece] {name} desactivado correctamente.");
+    }
+
+    #endregion
+
     #region Board Resolution
 
     protected void AutoConnectToNearestBoard()

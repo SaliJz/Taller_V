@@ -26,7 +26,6 @@ public abstract class FloorBase : MonoBehaviour
     [Header("Behavior")]
     [SerializeField] private float initialDelay = 1f;
     [SerializeField][Range(0f, 1f)] private float triggerProbability = 0.5f;
-    [SerializeField] private float rerollInterval = 5f;
     [SerializeField] private float triggerDuration = 3f;
 
     [Header("Translate Mode — Limits")]

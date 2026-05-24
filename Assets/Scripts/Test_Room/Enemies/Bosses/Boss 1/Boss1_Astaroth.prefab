@@ -325,6 +325,7 @@ MonoBehaviour:
   activeColor: {r: 1, g: 0.45, b: 0.1, a: 1}
   inactiveColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.4}
   fillColor: {r: 1, g: 0.8, b: 0.1, a: 1}
+  canForcedTransform: 1
 --- !u!1 &2174930762847648109
 GameObject:
   m_ObjectHideFlags: 0
@@ -529,6 +530,37 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!1 &3683075705196781326
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4103773840209656309}
+  m_Layer: 0
+  m_Name: PositionRock
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4103773840209656309
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3683075705196781326}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.2631579, y: 1.5789474, z: 2.631579}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4776444303871267651}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3869005417701405357
 GameObject:
   m_ObjectHideFlags: 0
@@ -1334,6 +1366,8 @@ Transform:
   - {fileID: 8902526919483830138}
   - {fileID: 7656455700908969706}
   - {fileID: 6711169147769174049}
+  - {fileID: 24642346649457331}
+  - {fileID: 7244358022328420833}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!136 &9154410484112978022
@@ -1428,64 +1462,81 @@ MonoBehaviour:
   _safeDistance: 2.5
   _animator: {fileID: 9124850377905314242}
   _stompTriggerDistance: 5
-  _knockbackDistance: 8
-  _stompCooldown: 8
+  _stompCooldown: 6
+  _stompPullRadius: 8
+  _stompPullDuration: 0.5
+  _stompPullSpeed: 10
+  _stompPullIndicatorObject: {fileID: 318825917437841780}
   _enableStompDamage: 1
   _stompDamage: 7.5
   _stompRadius: 4
-  _stompTelegraphTime: 0.8
+  _stompKnockbackForce: 5
+  _stompImpactIndicatorObject: {fileID: 6967666018307541542}
   _stompVFXPrefab: {fileID: 0}
   _enableDefensiveBlock: 1
-  _defensiveBlockHitLimit: 3
+  _defensiveBlockHitLimit: 4
   _defensiveBlockHitWindow: 3
   _defensiveBlockInvulnerableDuration: 1.5
-  _defensiveBlockExplosionExpandDuration: 0.35
+  _defensiveBlockExplosionExpandDuration: 0.45
   _defensiveBlockExplosionDamage: 15
-  _defensiveBlockExplosionRadius: 6
+  _defensiveBlockExplosionRadius: 8.5
   _defensiveBlockKnockbackForce: 10
+  _defensiveBlockCooldown: 8
+  _defensiveBlockCooldownTimer: 0
+  _defensiveBlockCanTriggerAnytime: 1
+  _defensiveBlockTint: {r: 0, g: 0.7466264, b: 1, a: 1}
   _defensiveBlockWarningPrefab: {fileID: 356800748809167506, guid: bf656853fe45a28478947726e3813e8c, type: 3}
   _defensiveBlockExplosionPrefab: {fileID: 5460280037415485855, guid: 305641f2b748d164ab7c12d1bc6018cd, type: 3}
   _enableMudWave: 1
-  _mudWaveTriggerDistance: 12
-  _mudWaveFleeDuration: 3
-  _mudWaveChargeSpeed: 18
-  _mudWaveMinChargeDistance: 20
+  _mudWaveTriggerDistance: 10
+  _mudWaveFleeDuration: 0.65
+  _mudWaveChargeSpeed: 32
+  _mudWaveMinChargeDistance: 22
   _mudWaveOvershootDistance: 8
-  _mudWaveCooldown: 8
-  _mudWaveWarningTime: 0.35
+  _mudWaveCooldown: 5
+  _mudWaveWarningTime: 0.45
   _mudWaveDamage: 15
   _mudWaveHitRadius: 3
   _mudWaveKnockbackForce: 10
-  _mudWaveAnimatorSpeedMultiplier: 1.6
+  _mudWaveAnimatorSpeedMultiplier: 1.4
   _mudWaveWarningPrefab: {fileID: 4420126913089400018, guid: 58e3111c53fc3904c8e8dd1d4ed19f40, type: 3}
   _mudWaveWindVFXRoot: {fileID: 1903618004850249334}
   _whipDamageOrigin: {fileID: 6711169147769174049}
   _whipHitRadius: 10
   _Attack1Damage: 10
-  _attack1Cooldown: 10
   _whipDelay1: 1.54
   _whipDelay2: 0.42
   _whipDelay3: 0.42
-  _smashVisualTransform: {fileID: 1926294932068586014}
-  _smashAnimationKeyframes:
-  - Position: {x: -3.6566527, y: 4.35, z: -0.47}
-    Scale: {x: 1, y: 1, z: 1}
-    Time: 0.5
-    IsTargetable: 0
-  - Position: {x: -3.6566527, y: 6.25, z: -0.25498104}
-    Scale: {x: 6, y: 6, z: 6}
-    Time: 1
-    IsTargetable: 0
-  - Position: {x: -3.6566527, y: 6.25, z: -0.25498104}
-    Scale: {x: 6, y: 6, z: 6}
-    Time: 1.5
-    IsTargetable: 1
-  - Position: {x: -3.6566527, y: 4.35, z: -0.47}
-    Scale: {x: 1, y: 1, z: 1}
-    Time: 1
-    IsTargetable: 0
+  _smashRockObject: {fileID: 4634992738900687444}
+  _smashRockHeldFollowTarget: {fileID: 4103773840209656309}
+  _smashRockScale: 6
+  _smashRockHitRadius: 1.5
+  _smashRockTravelDuration: 0.35
+  _smashRockTravelCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   _Attack2Damage: 20
-  _attack2Cooldown: 8
   _smashRadius: 6
   _smashDetectionRadius: 12
   _smashRadiusPrefab: {fileID: 858073966183631630, guid: 50f8bfdafefbba447b7bfe665ac766b0, type: 3}
@@ -1501,7 +1552,6 @@ MonoBehaviour:
   _pulseDamage: 20
   _nervesVisualizationPrefab: {fileID: 2528258679447591905, guid: d5198e4075e1272418df127375714aaa, type: 3}
   _crackEffectPrefab: {fileID: 0}
-  _postPulseAttackDelay: 0.8
   _headsTransform: {fileID: 0}
   _headDownRotationAngle: 45
   _headAnimationDuration: 0.5
@@ -1513,7 +1563,6 @@ MonoBehaviour:
   _stompWarningPrefab: {fileID: 6660308544926178198, guid: 4819f89c015191d42947f71035b9aaf3, type: 3}
   _whipTelegraphPrefab: {fileID: 6660308544926178198, guid: 4819f89c015191d42947f71035b9aaf3, type: 3}
   _smashWarningPrefab: {fileID: 6660308544926178198, guid: 4819f89c015191d42947f71035b9aaf3, type: 3}
-  _telegraphDuration: 1
   _trailRenderer: {fileID: 307335321892017951}
   _dodgeIndicatorPrefab: {fileID: 0}
   _dodgeIndicatorDuration: 1.5
@@ -1526,7 +1575,6 @@ MonoBehaviour:
   whipAttackSFX: {fileID: 8300000, guid: 3181383ebc5e3324eb4cc6db480478e8, type: 3}
   smashAttackSFX: {fileID: 8300000, guid: 45e1026c1e0b96340b9709a1d16a4c8b, type: 3}
   pulseAttackSFX: {fileID: 8300000, guid: 2d6a0d7573d9b9441b9db22872bf3c33, type: 3}
-  pulseRocksSFX: {fileID: 0}
   stompSFX: {fileID: 8300000, guid: 7e5a0c98145fd754aabe9b1ac080913f, type: 3}
   phase2RageSFX: {fileID: 8300000, guid: 1c0fcb447be34924bb9ccaf793538534, type: 3}
   damageReceivedSFX: {fileID: 8300000, guid: 80bf0d6b3174f0a48bc50493c46b3a1e, type: 3}
@@ -1548,6 +1596,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  healthSlider: {fileID: 6242981443675235560}
+  healthFillImage: {fileID: 2122642152856177435}
+  healthPercentageText: {fileID: 0}
+  healthMultiplierText: {fileID: 0}
+  toughnessSystem: {fileID: 0}
+  deathVFXPrefab: {fileID: 5367131650398813456, guid: 37e1b6d330e63ae47ac422c9a837e9e7, type: 3}
   maxHealth: 100
   currentHealth: 0
   canDieAfterCooldown: 1
@@ -1558,12 +1612,9 @@ MonoBehaviour:
   onDeathEvent:
     m_PersistentCalls:
       m_Calls: []
-  healthSlider: {fileID: 6242981443675235560}
-  healthFillImage: {fileID: 2122642152856177435}
+  deathVFXOffset: {x: 0, y: 1, z: 0}
   offsetAboveEnemy: 5
   glowDelayAfterCritical: 2
-  healthPercentageText: {fileID: 0}
-  healthMultiplierText: {fileID: 0}
   useDynamicHealthBars: 0
   healthPerBar: 100
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
@@ -1571,10 +1622,6 @@ MonoBehaviour:
   canGrantLifestealOnDeath: 1
   lifestealAmountOnDeathByMelee: 100
   lifestealAmountOnDeathByDistance: 100
-  toughnessSystem: {fileID: 0}
-  deathVFXPrefab: {fileID: 5367131650398813456, guid: 37e1b6d330e63ae47ac422c9a837e9e7, type: 3}
-  deathVFXOffset: {x: 0, y: 1, z: 0}
-  invulnerableLayerIndex: 0
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -1586,6 +1633,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   flattenHeightThreshold: 1.2
   areaCheckInterval: 0.25
+  invulnerableLayerIndex: 0
 --- !u!114 &2161127790944536583
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1625,6 +1673,7 @@ MonoBehaviour:
   glowIntensity: 2
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
+  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
 --- !u!114 &1548725866173879885
@@ -2117,6 +2166,148 @@ Transform:
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5098343639695547559, guid: c05c0abf231487f44b5c864e37ce8f8e, type: 3}
   m_PrefabInstance: {fileID: 1427485175822546044}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2719621794222589230
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5759912060094487347}
+    m_Modifications:
+    - target: {fileID: 4699269412076604623, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4975376767033560840, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+      propertyPath: m_Name
+      value: VFX_Astaroth_Stomp_GroundIndicator
+      objectReference: {fileID: 0}
+    - target: {fileID: 4975376767033560840, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+--- !u!1 &6967666018307541542 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4975376767033560840, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+  m_PrefabInstance: {fileID: 2719621794222589230}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7244358022328420833 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4699269412076604623, guid: 681062c9ee33e6946b3dc3fe6c565fcd, type: 3}
+  m_PrefabInstance: {fileID: 2719621794222589230}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4710946305459248764
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5759912060094487347}
+    m_Modifications:
+    - target: {fileID: 4699269412076604623, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4699269412076604623, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4975376767033560840, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+      propertyPath: m_Name
+      value: VFX_Astaroth_WarningStomp_GroundIndicator
+      objectReference: {fileID: 0}
+    - target: {fileID: 4975376767033560840, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+--- !u!4 &24642346649457331 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4699269412076604623, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+  m_PrefabInstance: {fileID: 4710946305459248764}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &318825917437841780 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4975376767033560840, guid: c3d37891646a9f94883d7bb37572dcaf, type: 3}
+  m_PrefabInstance: {fileID: 4710946305459248764}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5027125169124160680
 PrefabInstance:
@@ -2636,11 +2827,17 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: a569ed897d308d04ca28070f1a396856, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4103773840209656309}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a569ed897d308d04ca28070f1a396856, type: 3}
       insertIndex: -1
       addedObject: {fileID: 9124850377905314242}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a569ed897d308d04ca28070f1a396856, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8375198274146207634}
   m_SourcePrefab: {fileID: 100100000, guid: a569ed897d308d04ca28070f1a396856, type: 3}
 --- !u!137 &3795486772564834834 stripped
 SkinnedMeshRenderer:
@@ -2679,6 +2876,18 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &8375198274146207634
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5260915084130978297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05bb8e718a0aa9a43a80951350553a00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!137 &7147808424542078799 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: -6417081564715142169, guid: a569ed897d308d04ca28070f1a396856, type: 3}

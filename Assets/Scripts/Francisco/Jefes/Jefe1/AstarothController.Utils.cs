@@ -68,6 +68,36 @@ public partial class AstarothController
 
     #region Combat Systems
 
+    private void CacheBossRenderers()
+    {
+        _bossRenderers = GetComponentsInChildren<Renderer>(true);
+        _bossOriginalColors = new Color[_bossRenderers.Length];
+
+        for (int i = 0; i < _bossRenderers.Length; i++)
+        {
+            if (_bossRenderers[i] == null) continue;
+
+            Material mat = _bossRenderers[i].material;
+            _bossOriginalColors[i] = mat.HasProperty("_Color") ? mat.color : Color.white;
+        }
+    }
+
+    private void StartDefensiveBlockVisualFeedback()
+    {
+        if (_enemyVisualEffects != null)
+        {
+            _enemyVisualEffects.StartArmorGlow();
+        }
+    }
+
+    private void StopDefensiveBlockVisualFeedback()
+    {
+        if (_enemyVisualEffects != null)
+        {
+            _enemyVisualEffects.StopArmorGlow();
+        }
+    }
+
     private void ExecuteAttack(GameObject target, Vector3 position, float damageAmount)
     {
         if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
@@ -166,10 +196,21 @@ public partial class AstarothController
         if (_isDead) return;
         if (prefab == null) return;
 
-        Vector3 groundPos = GetGroundPosition(centerPosition);
-        GameObject instance = Instantiate(prefab, groundPos, Quaternion.identity);
+        Vector3 origin = centerPosition + Vector3.up * (radius + 0.5f);
+        Vector3 groundCenter;
+
+        if (Physics.SphereCast(origin, radius, Vector3.down, out RaycastHit hit, radius + 2f, LayerMask.GetMask("Ground")))
+        {
+            groundCenter = hit.point + Vector3.up * 0.02f;
+        }
+        else
+        {
+            groundCenter = new Vector3(centerPosition.x, 0.02f, centerPosition.z);
+        }
+
+        GameObject instance = Instantiate(prefab, groundCenter, Quaternion.identity);
         _instantiatedEffects.Add(instance);
-        instance.transform.localScale = new Vector3(radius * 2f, 0.1f, radius * 2f);
+        instance.transform.localScale = new Vector3(radius * 2f, 0.05f, radius * 2f);
         Destroy(instance, duration);
     }
 

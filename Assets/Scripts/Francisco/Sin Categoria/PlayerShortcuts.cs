@@ -13,7 +13,6 @@ public class PlayerShortcuts : MonoBehaviour
     [SerializeField] private float damageAmount = 10f;
 
     [Header("Gamepad Settings")]
-    [SerializeField, Range(0.1f, 1f)] private float stickThreshold = 0.7f;
     [SerializeField, Range(0.1f, 1f)] private float triggerThreshold = 0.5f;
 
     private PlayerHealth playerHealth;

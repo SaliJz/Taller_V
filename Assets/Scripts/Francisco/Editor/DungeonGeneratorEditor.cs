@@ -27,7 +27,6 @@ public class DungeonGeneratorInspector : Editor
     private Vector2 _milestonesScroll;
     private int _selectedProgressionIndex = -1;
 
-    private float _mapZoom = 1f;
     private const float MAP_ZOOM_MIN = 0.35f;
     private const float MAP_ZOOM_MAX = 1.8f;
 
