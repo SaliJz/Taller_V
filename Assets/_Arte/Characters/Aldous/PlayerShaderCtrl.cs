@@ -17,28 +17,34 @@ public class PlayerShaderCtrl : MonoBehaviour
     [SerializeField] private GameObject BrokenVFX; // Prefab del VFX de ruptura del outline
     [SerializeField] private Material BrokenMat; // Material para el VFX de ruptura, que cambiará de color según el estado de stamina
     [SerializeField] private GameObject DamageVFX;
+    [SerializeField] private GameObject StateChangeVFX;
 
     [Header("Shine Settings")]
     [Tooltip("Valor máximo del brillo durante el efecto de shine")]
-    [SerializeField] private float shinePeak = 0.5f;
+    [SerializeField] private float shinePeak = 0.8f;
     [Tooltip("Valor máximo del brillo durante el efecto de shine")]
     [SerializeField] private float damagePeak = 0.5f;
 
-    [Header("Damage Settings")]
-    [Tooltip("Duración total del flash de daño (ida y vuelta)")]
-    [SerializeField] private float damageFlashDuration = 0.15f;
+    [Header("Hit/Heal Settings")]
+    // [Tooltip("Duración total del flash de daño (ida y vuelta)")]
+    // [SerializeField] private float damageFlashDuration = 0.15f;
+    [Tooltip("Color que aparece al recibir daño")]
+    [SerializeField] private Color DamageColor = Color.red;
+    [Tooltip("Color que aparece al recibir vida de enemigos o larvas")]
+    [SerializeField] private Color HealColor = Color.green;
 
     private MaterialPropertyBlock mpb;
     private Coroutine shineRoutine;
     private Coroutine outlineRoutine;
-    private Coroutine damageRoutine;
-    private Coroutine currentHitCoroutine;
+    // private Coroutine damageRoutine;
+    private Coroutine currentFlashCoroutine;
 
     [Header("Propiedades del shader")]
     private static readonly int GrossorID = Shader.PropertyToID("_Grossor");
     private static readonly int ShineID = Shader.PropertyToID("_ShineAmount");
     private static readonly int HasStaminaID = Shader.PropertyToID("_HasStamina");
-    private static readonly int HitAmountID = Shader.PropertyToID("_HitAmount");
+    private static readonly int FlashAmountID = Shader.PropertyToID("_FlashAmount");
+    private static readonly int FlashColorID = Shader.PropertyToID("_FlashColor");
 
     private bool testBerserActive = false;
     private bool testStamina = true;
@@ -63,7 +69,7 @@ public class PlayerShaderCtrl : MonoBehaviour
 
     private void Update()
     {
-        TEST_IMPUTS();
+        // TEST_IMPUTS();
     }
 
     private void LateUpdate()
@@ -104,9 +110,13 @@ public class PlayerShaderCtrl : MonoBehaviour
         {
             DamageTrigger();
         }
-        if (Input.GetKeyDown(KeyCode.P))
+        if (Input.GetKeyDown(KeyCode.O))
         {
-            HitFlash();
+            HealingTrigger();
+        }
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            AgeChangeTrigger();
         }
     }
     #endregion
@@ -120,34 +130,44 @@ public class PlayerShaderCtrl : MonoBehaviour
         shineRoutine = StartCoroutine(ShineRoutine(duration));
     }
 
+    public void AgeChangeTrigger()
+    {
+        ShineTrigger();
+
+        StateChangeVFX.SetActive(false);
+        StateChangeVFX.SetActive(true);
+    }
+
     private IEnumerator ShineRoutine(float duration)
     {
         float half = duration * 0.5f;
         float t = 0f;
 
-        while (t < half)
-        {
-            t += Time.deltaTime;
-            SetShine(Mathf.Lerp(0f, shinePeak, t / half));
-            yield return null;
-        }
+        // while (t < half)
+        // {
+        //     t += Time.deltaTime;
+        //     SetColorID(ShineID, Mathf.Lerp(0f, shinePeak, t / half));
+        //     yield return null;
+        // }
+        SetColorID(ShineID, 1);
+        yield return new WaitForSeconds(0.1f);
 
         t = 0f;
         while (t < half)
         {
             t += Time.deltaTime;
-            SetShine(Mathf.Lerp(shinePeak, 0f, t / half));
+            SetColorID(ShineID, Mathf.Lerp(shinePeak, 0f, t / half));
             yield return null;
         }
 
-        SetShine(0f);
+        SetColorID(ShineID, 0f);
         shineRoutine = null;
     }
 
-    private void SetShine(float value)
+    private void SetColorID(int ID, float value)
     {
         targetRenderer.GetPropertyBlock(mpb);
-        mpb.SetFloat(ShineID, value);
+        mpb.SetFloat(ID, value);
 
         targetRenderer.SetPropertyBlock(mpb);
     }
@@ -251,81 +271,90 @@ public class PlayerShaderCtrl : MonoBehaviour
 
     #endregion
 
-    #region Damage Functions
+    #region Hit/Heal Functions
 
     public void DamageTrigger()
     {
-        // if(damageRoutine != null) StopCoroutine(damageRoutine);
+        if(currentFlashCoroutine != null) StopCoroutine(currentFlashCoroutine);
 
-        // damageRoutine = StartCoroutine(DamageRoutine());
-
-        HitFlash();
-
-    }
-
-    private IEnumerator DamageRoutine()
-    {
-        float t = 0;
-
-        while (t < 1)
-        {
-            t += Time.deltaTime / damageFlashDuration;
-            spriteRend.color = Color.Lerp(Color.white, Color.red, t);
-            yield return null;
-        }
-
-        t = 0;
-
-        while (t < 1)
-        {
-            t += Time.deltaTime / damageFlashDuration;
-            spriteRend.color = Color.Lerp(Color.red, Color.white, t);
-            yield return null;
-        }
-
-        spriteRend.color = Color.white;
-    }
-
-    private IEnumerator HitCoroutine()
-    {
-        float time = 0.01f;
-        float timeBetweenFlashes = 0.1f;
-
-        while (time > 0)
-        {
-            time -= Time.deltaTime;
-
-            targetRenderer.GetPropertyBlock(mpb);
-            mpb.SetFloat(HitAmountID, 1);
-
-            targetRenderer.SetPropertyBlock(mpb);
-
-            yield return new WaitForSeconds(timeBetweenFlashes);
-
-            targetRenderer.GetPropertyBlock(mpb);
-            mpb.SetFloat(HitAmountID, 0);
-
-            targetRenderer.SetPropertyBlock(mpb);
-
-            yield return new WaitForSeconds (timeBetweenFlashes);
-            
-        }
-
-        targetRenderer.GetPropertyBlock(mpb);
-        mpb.SetFloat(HitAmountID, 0);
-
-        targetRenderer.SetPropertyBlock(mpb);
-
-    }
-
-    private void HitFlash()
-    {
-        if(currentHitCoroutine != null) StopCoroutine(currentHitCoroutine);
-
-        currentHitCoroutine = StartCoroutine(HitCoroutine());
+        currentFlashCoroutine = StartCoroutine(HitCoroutine());
 
         DamageVFX.SetActive(false);
         DamageVFX.SetActive(true);
+    }
+
+    public void HealingTrigger()
+    {
+        if(currentFlashCoroutine != null) StopCoroutine(currentFlashCoroutine);
+
+        currentFlashCoroutine = StartCoroutine(HealCoroutine());
+    }
+
+    // private IEnumerator DamageRoutine()
+    // {
+    //     float t = 0;
+
+    //     while (t < 1)
+    //     {
+    //         t += Time.deltaTime / damageFlashDuration;
+    //         spriteRend.color = Color.Lerp(Color.white, Color.red, t);
+    //         yield return null;
+    //     }
+
+    //     t = 0;
+
+    //     while (t < 1)
+    //     {
+    //         t += Time.deltaTime / damageFlashDuration;
+    //         spriteRend.color = Color.Lerp(Color.red, Color.white, t);
+    //         yield return null;
+    //     }
+
+    //     spriteRend.color = Color.white;
+    // }
+
+    private IEnumerator HitCoroutine()
+    {
+        targetRenderer.GetPropertyBlock(mpb);
+        mpb.SetColor(FlashColorID, DamageColor);
+        targetRenderer.SetPropertyBlock(mpb);
+
+        SetColorID(FlashAmountID, 1);
+        yield return new WaitForSeconds(0.08f);
+
+        SetColorID(FlashAmountID, 0);
+        yield return new WaitForSeconds (0.05f);
+
+        SetColorID(FlashAmountID, 1);
+        yield return new WaitForSeconds(0.08f);
+
+        SetColorID(FlashAmountID, 0);
+        currentFlashCoroutine = null;
+    }
+
+    private IEnumerator HealCoroutine(float duration = 0.5f)
+    {
+        float t = 0f;
+        float half = duration* 0.5f;
+
+        targetRenderer.GetPropertyBlock(mpb);
+        mpb.SetColor(FlashColorID, HealColor);
+        targetRenderer.SetPropertyBlock(mpb);
+
+        SetColorID(FlashAmountID, 1);
+        yield return new WaitForSeconds(0.1f);
+
+        while(t < half)
+        {
+            t+= Time.deltaTime;
+            SetColorID(FlashAmountID, Mathf.Lerp(1, 0, t/half));
+            yield return null;
+        }
+
+        SetColorID(FlashAmountID, 0);
+
+
+        currentFlashCoroutine = null;
     }
 
     #endregion

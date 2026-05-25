@@ -492,6 +492,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         UpdateLifeStage();
         UpdateTemporaryHealthUI();
+
+        // if (currentHealth == maxHealth)
+        shaderCtrl?.HealingTrigger();
     }
 
     private void Die()
@@ -616,6 +619,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             }
 
             animCtrl?.SetAgeStage(ageStageValue);
+            shaderCtrl?.AgeChangeTrigger();
             ReportDebug($"Etapa de vida cambiada a {CurrentLifeStage}. Animator AgeStage seteado a {ageStageValue}.", 1);
 
             if (lifeStageText != null)
