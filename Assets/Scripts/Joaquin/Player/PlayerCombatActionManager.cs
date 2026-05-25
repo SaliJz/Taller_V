@@ -370,6 +370,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
             playerMovement.CancelDash();
         }
 
+        if (playerMovement != null) playerMovement.SetCanMove(true);
+
         isExecutingAction = false;
         currentAction = CombatActionType.None;
 
@@ -478,7 +480,7 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     #endregion
 
-    #region Visual Feedback (Comentado)
+    #region Visual Feedback
 
     /*
     private void ShowSkillRequiredWarning(string message)
