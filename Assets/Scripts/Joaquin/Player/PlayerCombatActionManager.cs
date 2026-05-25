@@ -5,10 +5,12 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// Gestor centralizado de acciones de combate del jugador.
-/// Permite encolar una acción pendiente mientras otra está en ejecución.
+/// Permite encolar una accion pendiente mientras otra esta en ejecucion.
 /// </summary>
 public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatActions
 {
+    #region Enums
+
     public enum CombatActionType
     {
         None,
@@ -17,7 +19,9 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
         Dash
     }
 
-    private PlayerControlls playerControls;
+    #endregion
+
+    #region Inspector - References
 
     [Header("Referencias")]
     [SerializeField] private PlayerMeleeAttack meleeAttack;
@@ -26,28 +30,49 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     [SerializeField] private PlayerBlockSystem playerBlockSystem;
     [SerializeField] private PlayerHealth playerHealth;
 
-    [SerializeField] private float inputBufferWindow = 0.12f; // Ventana de tiempo para bufferizar inputs
+    #endregion
 
-    //[Header("Feedback Visual")]
-    //[SerializeField] private bool enableVisualFeedback = true;
-    //[SerializeField] private GameObject skillRequiredWarningPrefab;
-    //[SerializeField] private float warningOffsetY = 2.0f;
-    //[SerializeField] private float warningDuration = 1.5f;
-    //[SerializeField] private Color warningColor = Color.yellow;
-    //[SerializeField] private string meleeBlockedMessage = "¡Activa la habilidad especial!";
-    //[SerializeField] private string rangedBlockedMessage = "¡Desactiva la habilidad especial!";
+    #region Inspector - Feedback Visual
+    /*
+    [Header("Feedback Visual")]
+    [SerializeField] private bool enableVisualFeedback = true;
+    [SerializeField] private GameObject skillRequiredWarningPrefab;
+    [SerializeField] private float warningOffsetY = 2.0f;
+    [SerializeField] private float warningDuration = 1.5f;
+    [SerializeField] private Color warningColor = Color.yellow;
+    [SerializeField] private string meleeBlockedMessage = "Activa la habilidad especial!";
+    [SerializeField] private string rangedBlockedMessage = "Desactiva la habilidad especial!";
+    */
+    #endregion
 
+    #region Inspector - Settings
+
+    // [SerializeField] private float inputBufferWindow = 0.12f; // Ventana de tiempo para bufferizar inputs
+
+    #endregion
+
+    #region Internal State
+
+    private PlayerControlls playerControls;
     private bool isMeleeAttackBlocked = false;
     private bool isShieldThrowBlocked = false;
-    private bool isDashBlocked = false; 
+    private bool isDashBlocked = false;
     private bool isExecutingAction = false;
     private CombatActionType currentAction = CombatActionType.None;
     private CombatActionType queuedAction = CombatActionType.None;
-    private float queuedActionTimestamp = -Mathf.Infinity;
+    // private float queuedActionTimestamp = -Mathf.Infinity;
     private GameObject currentWarning;
+
+    #endregion
+
+    #region Public Properties & Events
 
     public bool IsExecutingAction => isExecutingAction;
     public CombatActionType CurrentAction => currentAction;
+
+    #endregion
+
+    #region Unity Lifecycle
 
     private void Awake()
     {
@@ -79,6 +104,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     {
         Destroy(currentWarning);
     }
+
+    #endregion
 
     #region Input Handlers
 
@@ -143,8 +170,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     }
 
     /// <summary>
-    /// Intenta encolar una acción si ya hay una en ejecución.
-    /// Solo guarda la primera acción solicitada durante la ejecución actual.
+    /// Intenta encolar una accion si ya hay una en ejecucion.
+    /// Solo guarda la primera accion solicitada durante la ejecucion actual.
     /// </summary>
     private void TryQueueAction(CombatActionType actionType)
     {
@@ -164,18 +191,14 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
                 break;
         }
 
-        if (canQueue)
-        {
-            TryBufferAction(actionType);
-        }
+        if (canQueue) TryBufferAction(actionType);
     }
 
-    // Función para encolar con buffer y prioridad de sobrescritura opcional
+    // Funcion para encolar con buffer y prioridad de sobrescritura opcional
     private bool TryBufferAction(CombatActionType action)
     {
         queuedAction = action;
-        queuedActionTimestamp = Time.time;
-        ReportDebug($"Acción {action} bufferizada", 1);
+        ReportDebug($"Accion {action} bufferizada", 1);
         return true;
     }
 
@@ -221,13 +244,13 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
         if (playerBlockSystem != null && playerBlockSystem.IsStunned())
         {
-            ReportDebug("Acción bloqueada: Jugador aturdido por rotura de escudo.", 2);
+            ReportDebug("Accion bloqueada: Jugador aturdido por rotura de escudo.", 2);
             return;
         }
 
         if (playerBlockSystem != null && playerBlockSystem.IsBlockingState())
         {
-            ReportDebug("Acción bloqueada: No se puede esquivar mientras se bloquea.", 2);
+            ReportDebug("Accion bloqueada: No se puede esquivar mientras se bloquea.", 2);
             return;
         }
 
@@ -256,13 +279,13 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
         if (playerBlockSystem != null && playerBlockSystem.IsStunned())
         {
-            ReportDebug("Acción bloqueada: Jugador aturdido por rotura de escudo.", 2);
+            ReportDebug("Accion bloqueada: Jugador aturdido por rotura de escudo.", 2);
             return;
         }
 
         if (playerBlockSystem != null && playerBlockSystem.IsBlockingState())
         {
-            ReportDebug("Acción bloqueada: No se puede esquivar mientras se bloquea.", 2);
+            ReportDebug("Accion bloqueada: No se puede esquivar mientras se bloquea.", 2);
             return;
         }
 
@@ -294,13 +317,13 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
         if (playerBlockSystem != null && playerBlockSystem.IsStunned())
         {
-            ReportDebug("Acción bloqueada: Jugador aturdido por rotura de escudo.", 2);
+            ReportDebug("Accion bloqueada: Jugador aturdido por rotura de escudo.", 2);
             return;
         }
 
         if (playerBlockSystem != null && playerBlockSystem.IsBlockingState())
         {
-            ReportDebug("Acción bloqueada: No se puede esquivar mientras se bloquea.", 2);
+            ReportDebug("Accion bloqueada: No se puede esquivar mientras se bloquea.", 2);
             return;
         }
 
@@ -323,13 +346,12 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     #region Conditionals
 
     /// <summary>
-    /// Interrumpe cualquier acción en curso y limpia la cola de inputs.
+    /// Interrumpe cualquier accion en curso y limpia la cola de inputs.
     /// </summary>
     public void InterruptCombatActions()
     {
-        // Limpiar la cola inmediatamente para evitar que se dispare nada después
+        // Limpiar la cola inmediatamente para evitar que se dispare nada despues
         queuedAction = CombatActionType.None;
-        queuedActionTimestamp = -Mathf.Infinity;
 
         if (!isExecutingAction) return;
 
@@ -351,21 +373,20 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
         isExecutingAction = false;
         currentAction = CombatActionType.None;
 
-        ReportDebug("Combate interrumpido por bloqueo/acción defensiva.", 1);
+        ReportDebug("Combate interrumpido por bloqueo/accion defensiva.", 1);
     }
 
     private bool CanQueueMeleeAttack()
     {
         if (meleeAttack == null) return false;
-        
-        if (currentAction == CombatActionType.MeleeAttack && meleeAttack.ComboCount == 2)
+
+        if (currentAction == CombatActionType.MeleeAttack && meleeAttack.IsOnLastComboAttack)
         {
             ReportDebug("No se puede bufferizar melee: tercer ataque del combo en ejecución.", 1);
             return false;
         }
 
         if (shieldController != null) return shieldController.HasShield;
-        
         return true;
     }
 
@@ -388,16 +409,19 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
         isExecutingAction = false;
         currentAction = CombatActionType.None;
 
-        if (queuedAction != CombatActionType.None && Time.time - queuedActionTimestamp <= inputBufferWindow)
+        if (queuedAction != CombatActionType.None)
         {
             CombatActionType actionToExecute = queuedAction;
             queuedAction = CombatActionType.None;
+
+            if (actionToExecute != CombatActionType.MeleeAttack && meleeAttack != null)
+            {
+                meleeAttack.ResetCombo();
+                ReportDebug("Combo de melee reiniciado: acción no-melee encolada interrumpió la cadena.", 1);
+            }
+
             ReportDebug($"Ejecutando acción encolada: {actionToExecute}", 1);
             StartCoroutine(ExecuteQueuedAction(actionToExecute));
-        }
-        else
-        {
-            queuedAction = CombatActionType.None;
         }
     }
 
@@ -454,9 +478,9 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
 
     #endregion
 
-    /*
-    #region Visual Feedback
+    #region Visual Feedback (Comentado)
 
+    /*
     private void ShowSkillRequiredWarning(string message)
     {
         if (!enableVisualFeedback) return;
@@ -481,7 +505,7 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
             floater.SetText(message);
         }
 
-        // Destruir después de duración
+        // Destruir despues de duracion
         StartCoroutine(DestroyWarningAfterDelay());
     }
 
@@ -495,9 +519,12 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
             currentWarning = null;
         }
     }
+    */
 
     #endregion
-    */
+
+    #region Logging
+
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     private static void ReportDebug(string message, int reportPriorityLevel)
     {
@@ -517,4 +544,6 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
                 break;
         }
     }
+
+    #endregion
 }
