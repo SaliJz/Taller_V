@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerShaderCtrl : MonoBehaviour
 {
@@ -33,6 +34,11 @@ public class PlayerShaderCtrl : MonoBehaviour
     [Tooltip("Color que aparece al recibir vida de enemigos o larvas")]
     [SerializeField] private Color HealColor = Color.green;
 
+    [Header("State Change Settings")]
+    [SerializeField] GameObject afterImagePrefab;
+    [SerializeField] Color startColor;
+    [SerializeField] Color endColor;
+    [SerializeField] float AfterImageLifetime;
     private MaterialPropertyBlock mpb;
     private Coroutine shineRoutine;
     private Coroutine outlineRoutine;
@@ -69,7 +75,9 @@ public class PlayerShaderCtrl : MonoBehaviour
 
     private void Update()
     {
-        // TEST_IMPUTS();
+        #if UNITY_EDITOR
+        if(SceneManager.GetActiveScene().name == "AndreiNew") TEST_IMPUTS();
+        #endif
     }
 
     private void LateUpdate()
@@ -128,14 +136,6 @@ public class PlayerShaderCtrl : MonoBehaviour
         if(shineRoutine != null) StopCoroutine(shineRoutine);
 
         shineRoutine = StartCoroutine(ShineRoutine(duration));
-    }
-
-    public void AgeChangeTrigger()
-    {
-        ShineTrigger();
-
-        StateChangeVFX.SetActive(false);
-        StateChangeVFX.SetActive(true);
     }
 
     private IEnumerator ShineRoutine(float duration)
@@ -355,6 +355,39 @@ public class PlayerShaderCtrl : MonoBehaviour
 
 
         currentFlashCoroutine = null;
+    }
+
+    #endregion
+
+    #region AgeChange Functions
+    void SpawnAfterImage()
+    {
+        GameObject obj = Instantiate(afterImagePrefab);
+        obj.name = "PlayerAfterImage";
+        obj.transform.position = transform.position;
+        obj.transform.rotation = transform.rotation;
+        obj.transform.localScale = transform.localScale;
+
+        SpriteRenderer r = obj.GetComponent<SpriteRenderer>();
+
+        r.sprite = spriteRend.sprite;
+        r.flipX = spriteRend.flipX;
+        r.flipY = spriteRend.flipY;
+        r.sortingLayerID = spriteRend.sortingLayerID;
+        r.sortingOrder = spriteRend.sortingOrder - 1;
+
+        S_AfterImagePrefab afterImage = obj.GetComponent<S_AfterImagePrefab>();
+        afterImage.Initialize(startColor, endColor, AfterImageLifetime);
+    }
+
+    public void AgeChangeTrigger()
+    {
+        ShineTrigger(0.5f);
+
+        SpawnAfterImage();
+
+        StateChangeVFX.SetActive(false);
+        StateChangeVFX.SetActive(true);
     }
 
     #endregion
