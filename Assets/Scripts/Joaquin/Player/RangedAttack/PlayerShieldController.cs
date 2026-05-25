@@ -2,10 +2,29 @@ using UnityEngine;
 using System.Collections;
 
 /// <summary>
-/// Clase que maneja el lanzamiento y recuperación del escudo del jugador.
+/// Clase que maneja el lanzamiento y recuperacion del escudo del jugador.
 /// </summary>
 public class PlayerShieldController : MonoBehaviour
 {
+    #region Enums (y Structs si los hay)
+
+    private struct ShieldConfig
+    {
+        public int damage;
+        public float speed;
+        public float maxDistance;
+        public bool canRebound;
+        public int maxRebounds;
+        public float reboundRadius;
+        public bool canPierce;
+        public int maxPierceTargets;
+        public float knockbackForce;
+    }
+
+    #endregion
+
+    #region Inspector - References
+
     [Header("Referencias")]
     [SerializeField] private PlayerStatsManager statsManager;
     [SerializeField] private GameObject shieldPrefab;
@@ -18,50 +37,82 @@ public class PlayerShieldController : MonoBehaviour
     [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
     [SerializeField] private AutoAim autoAim;
 
+    #endregion
+
+    #region Inspector - Stats
+
     [Header("Stats")]
-    [Tooltip("Daño de ataque por defecto si no se encuentra PlayerStatsManager.")]
+    [Tooltip("Dano de ataque por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private int fallbackshieldDamage = 10;
+
     [SerializeField] private int shieldDamage = 10;
+
     [Tooltip("Velocidad del escudo por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackshieldSpeed = 25f;
+
     [SerializeField] private float shieldSpeed = 25f;
-    [Tooltip("Distancia máxima del escudo por defecto si no se encuentra PlayerStatsManager.")]
+
+    [Tooltip("Distancia maxima del escudo por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackshieldMaxDistance = 30f;
+
     [SerializeField] private float shieldMaxDistance = 30f;
-    [Tooltip("Cantidad máxima de rebotes del escudo por defecto si no se encuentra PlayerStatsManager.")]
+
+    [Tooltip("Cantidad maxima de rebotes del escudo por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private int fallbackshieldMaxRebounds = 2;
+
     [SerializeField] private int shieldMaxRebounds = 2;
+
     [Tooltip("Radio de rebote del escudo por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackshieldReboundRadius = 15f;
+
     [SerializeField] private float shieldReboundRadius = 15f;
+
     [SerializeField] private bool canShieldRebound = true;
 
-    [Header("Configuración por Etapa - JOVEN")]
+    #endregion
+
+    #region Inspector - Configuracion por Etapa JOVEN
+
+    [Header("Configuracion por Etapa - JOVEN")]
     [SerializeField] private int youngShieldDamage = 4;
     [SerializeField] private float youngShieldSpeed = 30f;
     [SerializeField] private int youngMaxRebounds = 2;
     [SerializeField] private float youngReboundRadius = 15f;
 
-    [Header("Configuración por Etapa - ADULTO")]
+    #endregion
+
+    #region Inspector - Configuracion por Etapa ADULTO
+
+    [Header("Configuracion por Etapa - ADULTO")]
     [SerializeField] private int adultShieldDamage = 7;
     [SerializeField] private float adultShieldSpeed = 25f;
     [SerializeField] private float adultKnockbackForce = 1.5f;
 
-    [Header("Configuración por Etapa - VIEJO")]
+    #endregion
+
+    #region Inspector - Configuracion por Etapa VIEJO
+
+    [Header("Configuracion por Etapa - VIEJO")]
     [SerializeField] private int elderShieldDamage = 12;
     [SerializeField] private float elderShieldSpeed = 20f;
     [SerializeField] private bool elderCanPierce = true;
     [SerializeField] private int elderMaxPierceTargets = 5;
 
-    [Header("Animación")]
+    #endregion
+
+    #region Inspector - Animacion
+
+    [Header("Animacion")]
     [SerializeField] private float throwAnimationDuration = 0.15f;
+
+    #endregion
+
+    #region Internal State
 
     private int finalAttackDamage;
     private float finalAttackSpeed;
     private float damageMultiplier = 1f;
     private float speedMultiplier = 1f;
-
-    public bool CanShieldRebound => canShieldRebound;
 
     private bool hasShield = true;
     private bool isThrowingShield = false;
@@ -69,19 +120,29 @@ public class PlayerShieldController : MonoBehaviour
     private int currentShieldDamage;
     private float currentShieldSpeed;
 
+    #endregion
+
+    #region Public Properties & Events
+
+    public bool CanShieldRebound => canShieldRebound;
+
     public int ShieldDamage
     {
         get { return shieldDamage; }
         set { shieldDamage = value; }
     }
 
-    public bool HasShield 
-    { 
+    public bool HasShield
+    {
         get { return hasShield; }
         set { hasShield = value; }
     }
 
     public bool IsThrowingShield => isThrowingShield;
+
+    #endregion
+
+    #region Unity Lifecycle
 
     private void Awake()
     {
@@ -94,14 +155,14 @@ public class PlayerShieldController : MonoBehaviour
         shieldSkill = GetComponent<ShieldSkill>();
         autoAim = GetComponent<AutoAim>();
 
-        if (autoAim == null) ReportDebug("ShieldAutoAim no encontrado. El auto-aim no funcionará.", 2);
-        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerShieldController. Usando valores de fallback.", 2);
-        if (playerMeleeAttack == null) ReportDebug("PlayerMeleeAttack no encontrado. No se podrá verificar estado de ataque melee.", 2);
-        if (playerMovement == null) ReportDebug("PlayerMovement no encontrado. Lock de rotación no funcionará.", 2);
-        if (playerHealth == null) ReportDebug("PlayerHealth no encontrado. Configuración por etapa no funcionará.", 2);
-        if (playerAnimCtrl == null) ReportDebug("PlayerAnimCtrl no encontrado en hijos. Las animaciones de escudo no funcionarán.", 2);
-        if (playerAudioController == null) ReportDebug("PlayerAudioController no encontrado. Los sonidos de escudo no funcionarán.", 2);
-        if (shieldSkill == null) ReportDebug("ShieldSkill no encontrado. Los sonidos de escudo no funcionarán.", 2);
+        if (autoAim == null) ReportDebug("ShieldAutoAim no encontrado. El auto-aim no funcionara.", 2);
+        if (statsManager == null) ReportDebug("StatsManager no esta asignado en PlayerShieldController. Usando valores de fallback.", 2);
+        if (playerMeleeAttack == null) ReportDebug("PlayerMeleeAttack no encontrado. No se podra verificar estado de ataque melee.", 2);
+        if (playerMovement == null) ReportDebug("PlayerMovement no encontrado. Lock de rotacion no funcionara.", 2);
+        if (playerHealth == null) ReportDebug("PlayerHealth no encontrado. Configuracion por etapa no funcionara.", 2);
+        if (playerAnimCtrl == null) ReportDebug("PlayerAnimCtrl no encontrado en hijos. Las animaciones de escudo no funcionaran.", 2);
+        if (playerAudioController == null) ReportDebug("PlayerAudioController no encontrado. Los sonidos de escudo no funcionaran.", 2);
+        if (shieldSkill == null) ReportDebug("ShieldSkill no encontrado. Los sonidos de escudo no funcionaran.", 2);
     }
 
     private void OnEnable()
@@ -121,7 +182,7 @@ public class PlayerShieldController : MonoBehaviour
 
     private void Start()
     {
-        // Inicializar estadísticas del ataque a distancia desde PlayerStatsManager o usar valores de fallback
+        // Inicializar estadisticas del ataque a distancia desde PlayerStatsManager o usar valores de fallback
         float shieldDamageStat = statsManager != null ? statsManager.GetStat(StatType.ShieldAttackDamage) : fallbackshieldDamage;
         shieldDamage = Mathf.RoundToInt(shieldDamageStat);
 
@@ -137,7 +198,7 @@ public class PlayerShieldController : MonoBehaviour
         float shieldReboundRadiusStat = statsManager != null ? statsManager.GetStat(StatType.ShieldReboundRadius) : fallbackshieldReboundRadius;
         shieldReboundRadius = shieldReboundRadiusStat;
 
-        // Inicializar estadísticas globales que afectan a todos los ataques desde PlayerStatsManager o usar valores fallback
+        // Inicializar estadisticas globales que afectan a todos los ataques desde PlayerStatsManager o usar valores fallback
         float damageMultiplierStat = statsManager != null ? statsManager.GetStat(StatType.AttackDamage) : 1f;
         damageMultiplier = damageMultiplierStat;
 
@@ -148,6 +209,25 @@ public class PlayerShieldController : MonoBehaviour
 
         CalculateStats();
     }
+
+    private void Update()
+    {
+        //if (Input.GetMouseButtonDown(1) && hasShield && !isThrowingShield)
+        //{
+        //    // Verificar que no este en medio de un ataque melee
+        //    if (playerMeleeAttack != null && playerMeleeAttack.IsAttacking)
+        //    {
+        //        ReportDebug("No se puede lanzar el escudo mientras se ataca en melee.", 1);
+        //        return;
+        //    }
+
+        //    StartCoroutine(ThrowShieldSequence());
+        //}
+    }
+
+    #endregion
+
+    #region Stat Management
 
     private void HandleStatChanged(StatType statType, float newValue)
     {
@@ -179,10 +259,10 @@ public class PlayerShieldController : MonoBehaviour
         }
 
         CalculateStats();
-        ReportDebug($"Estadística {statType} actualizada a {newValue}.", 1);
+        ReportDebug($"Estadistica {statType} actualizada a {newValue}.", 1);
     }
 
-    // Metodo para recalcular las estadísticas del escudo
+    // Metodo para recalcular las estadisticas del escudo
     private void CalculateStats()
     {
         finalAttackDamage = Mathf.RoundToInt(shieldDamage * damageMultiplier);
@@ -192,23 +272,12 @@ public class PlayerShieldController : MonoBehaviour
         currentShieldSpeed = finalAttackSpeed;
     }
 
-    private void Update()
-    {
-        //if (Input.GetMouseButtonDown(1) && hasShield && !isThrowingShield)
-        //{
-        //    // Verificar que no esté en medio de un ataque melee
-        //    if (playerMeleeAttack != null && playerMeleeAttack.IsAttacking)
-        //    {
-        //        ReportDebug("No se puede lanzar el escudo mientras se ataca en melee.", 1);
-        //        return;
-        //    }
+    #endregion
 
-        //    StartCoroutine(ThrowShieldSequence());
-        //}
-    }
+    #region Shield Combat & Throw Logic
 
     /// <summary>
-    /// Método público llamado por PlayerCombatActionManager para ejecutar el lanzamiento del escudo.
+    /// Metodo publico llamado por PlayerCombatActionManager para ejecutar el lanzamiento del escudo.
     /// </summary>
     public IEnumerator ExecuteShieldThrowFromManager()
     {
@@ -267,9 +336,9 @@ public class PlayerShieldController : MonoBehaviour
 
     /// <summary>
     /// Secuencia de lanzamiento del escudo (similar a AttackSequence del melee):
-    /// 1) Obtener dirección del mouse
-    /// 2) Lockear rotación snapped a 8 direcciones
-    /// 3) Esperar a que la rotación alcance el objetivo
+    /// 1) Obtener direccion del mouse
+    /// 2) Lockear rotacion snapped a 8 direcciones
+    /// 3) Esperar a que la rotacion alcance el objetivo
     /// 4) Lanzar el escudo
     /// 5) Mantener bloqueo hasta que el escudo regrese
     /// </summary>
@@ -277,7 +346,7 @@ public class PlayerShieldController : MonoBehaviour
     {
         if (!hasShield || isThrowingShield) yield break;
 
-        // Verificar que no esté en medio de un ataque melee
+        // Verificar que no este en medio de un ataque melee
         if (playerMeleeAttack != null && playerMeleeAttack.IsAttacking)
         {
             ReportDebug("No se puede lanzar el escudo mientras se ataca en melee.", 1);
@@ -286,7 +355,7 @@ public class PlayerShieldController : MonoBehaviour
 
         isThrowingShield = true;
 
-        // Dirección objetivo
+        // Direccion objetivo
         Vector3 mouseWorldDir;
         if (!TryGetAimDirection(out mouseWorldDir))
         {
@@ -294,7 +363,7 @@ public class PlayerShieldController : MonoBehaviour
         }
         else
         {
-            // fallback: aplicar rotación instantánea snappeada
+            // fallback: aplicar rotacion instantanea snappeada
             RotateTowardsAimInstant();
         }
 
@@ -310,7 +379,7 @@ public class PlayerShieldController : MonoBehaviour
 
         yield return new WaitForSeconds(0.25f);
 
-        // Desbloquear rotación inmediatamente después del lanzamiento
+        // Desbloquear rotacion inmediatamente despues del lanzamiento
         // (el jugador puede moverse mientras el escudo vuela)
         if (playerMovement != null) playerMovement.UnlockFacing();
 
@@ -342,7 +411,7 @@ public class PlayerShieldController : MonoBehaviour
     }
 
     /// <summary>
-    /// Función que Lanza el escudo en la dirección del mouse y lo instancia en el punto y altura del spawn point.
+    /// Funcion que lanza el escudo en la direccion del mouse y lo instancia en el punto y altura del spawn point.
     /// </summary>
     private void ThrowShield()
     {
@@ -398,7 +467,7 @@ public class PlayerShieldController : MonoBehaviour
                 toughnessBonus
             );
 
-            ReportDebug($"Escudo lanzado ({playerHealth.CurrentLifeStage}): Daño={config.damage}, Velocidad={config.speed}", 1);
+            ReportDebug($"Escudo lanzado ({playerHealth.CurrentLifeStage}): Dano={config.damage}, Velocidad={config.speed}", 1);
         }
         else
         {
@@ -407,6 +476,59 @@ public class PlayerShieldController : MonoBehaviour
             ReportDebug("No se pudo obtener instancia del escudo del pool.", 2);
         }
     }
+
+    public void CancelThrow()
+    {
+        if (!isThrowingShield) return;
+
+        StopAllCoroutines();
+
+        isThrowingShield = false;
+
+        if (playerMovement != null)
+        {
+            playerMovement.UnlockFacing();
+        }
+
+        if (hasShield)
+        {
+            if (playerAnimCtrl != null)
+            {
+                playerAnimCtrl.HasShield = true;
+            }
+        }
+
+        ReportDebug("Lanzamiento de escudo cancelado.", 1);
+    }
+
+    // El escudo llama a esta funcion cuando regresa
+    public void CatchShield()
+    {
+        hasShield = true;
+
+        if (playerAnimCtrl != null)
+        {
+            playerAnimCtrl.HasShield = true;
+        }
+
+        bool isBerserker = shieldSkill != null && shieldSkill.IsActive;
+
+        if (playerAudioController != null)
+        {
+            playerAudioController.PlayCatchShieldSound(isBerserker);
+        }
+
+        ReportDebug("Escudo recuperado.", 1);
+    }
+
+    public bool CanThrowShield()
+    {
+        return hasShield && !isThrowingShield;
+    }
+
+    #endregion
+
+    #region Aiming Logic
 
     private bool TryGetAimDirection(out Vector3 outDir)
     {
@@ -493,6 +615,24 @@ public class PlayerShieldController : MonoBehaviour
         outDir = transform.forward;
         return true;
     }
+
+    public void SetAutoAimEnabled(bool enabled)
+    {
+        if (autoAim != null)
+        {
+            autoAim.EnableAutoAim = enabled;
+            ReportDebug($"Auto-aim {(enabled ? "activado" : "desactivado")}", 1);
+        }
+    }
+
+    public bool IsAutoAimEnabled()
+    {
+        return autoAim != null && autoAim.EnableAutoAim;
+    }
+
+    #endregion
+
+    #region Configuration Logic
 
     private ShieldConfig GetShieldConfigForCurrentStage()
     {
@@ -586,90 +726,18 @@ public class PlayerShieldController : MonoBehaviour
         }
     }
 
-    public void CancelThrow()
-    {
-        if (!isThrowingShield) return;
-
-        StopAllCoroutines();
-
-        isThrowingShield = false;
-
-        if (playerMovement != null)
-        {
-            playerMovement.UnlockFacing();
-        }
-
-        if (hasShield)
-        {
-            if (playerAnimCtrl != null)
-            {
-                playerAnimCtrl.HasShield = true;
-            }
-        }
-
-        ReportDebug("Lanzamiento de escudo cancelado.", 1);
-    }
-
-    // El escudo llama a esta función cuando regresa
-    public void CatchShield()
-    {
-        hasShield = true;
-        
-        if (playerAnimCtrl != null)
-        {
-            playerAnimCtrl.HasShield = true;
-        }
-
-        bool isBerserker = shieldSkill != null && shieldSkill.IsActive;
-
-        if (playerAudioController != null)
-        {
-            playerAudioController.PlayCatchShieldSound(isBerserker);
-        }
-
-        ReportDebug("Escudo recuperado.", 1);
-    }
-
-    public bool CanThrowShield()
-    {
-        return hasShield && !isThrowingShield;
-    }
-
-    public void SetAutoAimEnabled(bool enabled)
-    {
-        if (autoAim != null)
-        {
-            autoAim.EnableAutoAim = enabled;
-            ReportDebug($"Auto-aim {(enabled ? "activado" : "desactivado")}", 1);
-        }
-    }
-
-    public bool IsAutoAimEnabled()
-    {
-        return autoAim != null && autoAim.EnableAutoAim;
-    }
-
     // Permite cambiar si el escudo puede rebotar o no
     public void SetRebound(bool value) => canShieldRebound = value;
 
-    private struct ShieldConfig
-    {
-        public int damage;
-        public float speed;
-        public float maxDistance;
-        public bool canRebound;
-        public int maxRebounds;
-        public float reboundRadius;
-        public bool canPierce;
-        public int maxPierceTargets;
-        public float knockbackForce;
-    }
+    #endregion
+
+    #region Logging
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     /// <summary> 
-    /// Función de depuración para reportar mensajes en la consola de Unity. 
+    /// Funcion de depuracion para reportar mensajes en la consola de Unity. 
     /// </summary> 
-    /// <<param name="message">Mensaje a reportar.</param> >
+    /// <param name="message">Mensaje a reportar.</param>
     /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
     private static void ReportDebug(string message, int reportPriorityLevel)
     {
@@ -689,4 +757,6 @@ public class PlayerShieldController : MonoBehaviour
                 break;
         }
     }
+
+    #endregion
 }

@@ -1273,6 +1273,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 857663678c6b68a4ab60f54f457c56a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  toughnessSlider: {fileID: 3591693906224816405}
+  toughnessFillImage: {fileID: 1482814027503698785}
+  toughnessPercentageText: {fileID: 0}
+  toughnessMultiplierText: {fileID: 0}
+  toughnessUIGroup: {fileID: 3777773604889548072}
   useToughness: 1
   maxToughness: 28
   currentToughness: 0
@@ -1282,11 +1287,6 @@ MonoBehaviour:
   toughnessPerBar: 1
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
-  toughnessSlider: {fileID: 3591693906224816405}
-  toughnessFillImage: {fileID: 1482814027503698785}
-  toughnessPercentageText: {fileID: 0}
-  toughnessMultiplierText: {fileID: 0}
-  toughnessUIGroup: {fileID: 3777773604889548072}
 --- !u!114 &4272619635632326757
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1315,16 +1315,17 @@ MonoBehaviour:
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
-  stunMaterial: {fileID: 2100000, guid: 9e980960b4627f14bb1ebfed5d685fec, type: 2}
+  stunMaterial: {fileID: 0}
   stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
-  stunVFXPrefab: {fileID: 0}
+  stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
   stunVFXHeight: 1.5
   stunSFX: {fileID: 0}
   glowMaterial: {fileID: 2100000, guid: a3f9150b5853c7245a07bebb04472891, type: 2}
   glowIntensity: 2
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
+  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
 --- !u!114 &6171586382370169260

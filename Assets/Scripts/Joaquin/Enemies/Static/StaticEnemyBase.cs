@@ -319,7 +319,11 @@ public abstract class StaticEnemyBase : MonoBehaviour
         ReportDebug($"Multiplicadores de sala aplicados a Morlock. Daño x{damageMult}, Velocidad x{speedMult}. Nueva Velocidad: {moveSpeed:F2}", 1);
     }
 
-    protected virtual void HandleDamageTaken() { }
+    protected virtual void HandleDamageTaken() 
+    {
+        if (isDead) return;
+        if (visualCtrl != null) visualCtrl.PlayDamage();
+    }
 
     protected virtual void HandleEnemyDeath(GameObject enemy)
     {
