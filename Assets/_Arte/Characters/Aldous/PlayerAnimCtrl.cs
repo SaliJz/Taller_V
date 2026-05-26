@@ -1,5 +1,6 @@
-using Unity.VisualScripting;
+using System.Text.RegularExpressions;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
 {
@@ -75,8 +76,12 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         _externalInputThisFrame = false;
 
         UpdateDirection(H,V);
-        //DebugInputs();
         UpdateAgeState();
+        
+        #if UNITY_EDITOR
+        if(SceneManager.GetActiveScene().name == "AndreiNew")
+        {DebugInputs();}
+        #endif
 
         if (UpdateBlockLogic()) return;
         if (UpdateDashLogic()) return;
@@ -174,7 +179,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
 
     public void PlayDamage() //DAMAGE-------------------------------
     {
-        if (damageActive) return;
+        // if (damageActive) return;
 
         if (isBlocking)
         {
@@ -252,22 +257,17 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
             _ => "mid:"
         };
 
-        string id = prefix + baseID;
-
-        if(baseID == "melee")
-        {
-            id = $"{prefix}melee{meleeStep}";
-        }
-        else if (!provider.AnimExist(id))
-        {
-            bool isGroup1 = direction == "down" ||
+        bool isGroup1 = direction == "down" ||
                             direction == "downleft" ||
                             direction == "downright" ||
                             direction == "left";
 
-            id += isGroup1? "1":"2";
-                                
-        }
+        string groupSuffix = isGroup1? "1": "2";
+
+        string baseResolved = baseID == "melee"? $"{prefix}melee{meleeStep}": prefix + baseID;
+
+        string id;
+        id = provider.AnimExist(baseResolved + groupSuffix) ? baseResolved + groupSuffix : baseResolved;
 
         if(!HasShield && provider.AnimExist(id + "_ns"))
         {
@@ -326,7 +326,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         //melee3 = 2
     }
 
-    /*
+    #if UNITY_EDITOR
     private void DebugInputs()
     {
         if (Input.GetKeyDown(KeyCode.H)) HasShield = !HasShield;
@@ -357,5 +357,5 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         if (Input.GetKeyDown(KeyCode.Alpha2)) nextAge = Age.adult;
         if (Input.GetKeyDown(KeyCode.Alpha3)) nextAge = Age.old;
     }
-    */
+    #endif
 }
