@@ -6884,7 +6884,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83bab1efc987ca04fa2aa97d295f797a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  libraryObj: {fileID: 0}
   librarySO: {fileID: 11400000, guid: 32ba1f86ad3aaf64a811e81009bf182a, type: 2}
   currentState: 0
   currentDirection: 
@@ -6901,8 +6900,14 @@ MonoBehaviour:
   - {fileID: 860858801}
   - {fileID: 1292905368}
   - {fileID: 605280014}
-  VFX_meleeMid: []
-  VFX_meleeLate: []
+  VFX_meleeMid:
+  - {fileID: 860858801}
+  - {fileID: 1292905368}
+  - {fileID: 605280014}
+  VFX_meleeLate:
+  - {fileID: 860858801}
+  - {fileID: 1292905368}
+  - {fileID: 605280014}
   debug: 0
 --- !u!114 &664404013
 MonoBehaviour:
@@ -9828,7 +9833,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83bab1efc987ca04fa2aa97d295f797a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  libraryObj: {fileID: 0}
   librarySO: {fileID: 11400000, guid: a5d66716fabb212408fb773a7dcb2362, type: 2}
   currentState: 0
   currentDirection: down
@@ -11525,7 +11529,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1516001536
 Transform:
   m_ObjectHideFlags: 0
@@ -17544,6 +17548,10 @@ PrefabInstance:
     - target: {fileID: 8691761627428509639, guid: 96cc9f7ffcfaf894db40fbf042e3e5b9, type: 3}
       propertyPath: m_Name
       value: VFX_Slash1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8691761627428509639, guid: 96cc9f7ffcfaf894db40fbf042e3e5b9, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -26957,6 +26965,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: VFX_Slash3
       objectReference: {fileID: 0}
+    - target: {fileID: 179912013950389617, guid: b71c5601d20b4c441828c4ef37840c91, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 885244902086886676, guid: b71c5601d20b4c441828c4ef37840c91, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.75
@@ -27058,6 +27070,10 @@ PrefabInstance:
     - target: {fileID: 8703670209187893264, guid: 05228ff2e426a9b46bf9968209f295e8, type: 3}
       propertyPath: m_Name
       value: VFX_Slash2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8703670209187893264, guid: 05228ff2e426a9b46bf9968209f295e8, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

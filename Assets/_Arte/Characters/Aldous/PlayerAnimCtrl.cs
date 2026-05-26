@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -86,7 +85,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         if (UpdateBlockLogic()) return;
         if (UpdateDashLogic()) return;
         if (isForcedAnim) return;
-
+        
         HandleLocomotion();
     }
 
@@ -277,17 +276,6 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         if (debug) Debug.Log(id);
         return id;
     }
-
-    protected override void OnAnimationEvent(string ev)
-    {
-        switch (ev)
-        {
-            case "MeleeSlash_1": SpawnSlash(0); break;
-            case "MeleeSlash_2": SpawnSlash(1); break;
-            case "MeleeSlash_3": SpawnSlash(2); break;
-        }
-    }
-
     protected override void OnFinishedAnimation()
     {
         if(currentPriority == AnimPriority.dash) return;
@@ -302,8 +290,18 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         damageActive = false;
         PlayState(PlayerState.idle, AnimPriority.locomotion);
     }
-
     #endregion
+
+    #region Eventos
+    protected override void OnAnimationEvent(string ev)
+    {
+        switch (ev)
+        {
+            case "MeleeSlash_1": SpawnSlash(0); break;
+            case "MeleeSlash_2": SpawnSlash(1); break;
+            case "MeleeSlash_3": SpawnSlash(2); break;
+        }
+    }
 
     private void SpawnSlash(int index)
     {
@@ -325,6 +323,8 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         //melee2 = 1
         //melee3 = 2
     }
+    #endregion
+
 
     #if UNITY_EDITOR
     private void DebugInputs()
