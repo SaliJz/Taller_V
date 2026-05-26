@@ -153,6 +153,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     {
         if (actionType == CombatActionType.Dash)
         {
+            if (currentAction == CombatActionType.Dash) return;
+
             if (isExecutingAction) InterruptCombatActions();
 
             TryExecuteDash();
