@@ -3366,7 +3366,6 @@ GameObject:
   - component: {fileID: 3778725896948117}
   - component: {fileID: 1510169710726747509}
   - component: {fileID: 3274066041647621038}
-  - component: {fileID: 7692691314988583534}
   m_Layer: 3
   m_Name: SueloHorizontal_1
   m_TagString: Ground
@@ -3427,34 +3426,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 2, z: 0}
   m_TimeToStationary: 0.5
---- !u!114 &7692691314988583534
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1771113326826329933}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5e9ffd89e03f904449e2da198872403b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveMode: 0
-  moveSpeed: 5
-  visualChild: {fileID: 2274608241056122475}
-  initialDelay: 1
-  triggerProbability: 0.5
-  triggerDuration: 3
-  defaultPoint: {fileID: 0}
-  triggeredPoint: {fileID: 0}
-  navMeshCarveDelay: 0.4
-  emissiveRenderers: []
-  colorDefault: {r: 0, g: 1, b: 0, a: 1}
-  colorTriggered: {r: 1, g: 0, b: 0, a: 1}
-  colorTransitioning: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  contractionAxis: 1
-  contractionDirection: 0
-  visibilityThreshold: 0.05
 --- !u!1 &1788034171531238361
 GameObject:
   m_ObjectHideFlags: 0
@@ -3574,7 +3545,6 @@ GameObject:
   - component: {fileID: 4924726067868971855}
   - component: {fileID: 6986914462284245314}
   - component: {fileID: 7891038880470251833}
-  - component: {fileID: 8581238592933097297}
   m_Layer: 3
   m_Name: SueloVertical_4
   m_TagString: Ground
@@ -3635,35 +3605,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 2, z: 0}
   m_TimeToStationary: 0.5
---- !u!114 &8581238592933097297
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1799582173753984788}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf8924627a9f81c459b7c0002f5a7086, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveMode: 0
-  moveSpeed: 5
-  visualChild: {fileID: 652408119570420179}
-  initialDelay: 1
-  triggerProbability: 0.5
-  triggerDuration: 3
-  defaultPoint: {fileID: 0}
-  triggeredPoint: {fileID: 0}
-  navMeshCarveDelay: 0.4
-  emissiveRenderers: []
-  colorDefault: {r: 0, g: 1, b: 0, a: 1}
-  colorTriggered: {r: 1, g: 0, b: 0, a: 1}
-  colorTransitioning: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  expandedScaleMultiplier: 10
-  defaultLayerName: Ground
-  expandedLayerName: Opacity
-  objectToToggle: {fileID: 0}
 --- !u!1 &1801497357633685866
 GameObject:
   m_ObjectHideFlags: 0
@@ -6365,7 +6306,6 @@ GameObject:
   - component: {fileID: 3328756584050399403}
   - component: {fileID: 1725043923742266731}
   - component: {fileID: 2802815445209520635}
-  - component: {fileID: 3882298097826352022}
   m_Layer: 3
   m_Name: SueloVertical_3
   m_TagString: Ground
@@ -6426,35 +6366,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 2, z: 0}
   m_TimeToStationary: 0.5
---- !u!114 &3882298097826352022
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3257871746463990830}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf8924627a9f81c459b7c0002f5a7086, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveMode: 0
-  moveSpeed: 5
-  visualChild: {fileID: 8339688498012108749}
-  initialDelay: 1
-  triggerProbability: 0.5
-  triggerDuration: 3
-  defaultPoint: {fileID: 0}
-  triggeredPoint: {fileID: 0}
-  navMeshCarveDelay: 0.4
-  emissiveRenderers: []
-  colorDefault: {r: 0, g: 1, b: 0, a: 1}
-  colorTriggered: {r: 1, g: 0, b: 0, a: 1}
-  colorTransitioning: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  expandedScaleMultiplier: 10
-  defaultLayerName: Ground
-  expandedLayerName: Opacity
-  objectToToggle: {fileID: 0}
 --- !u!1 &3443557913440053613
 GameObject:
   m_ObjectHideFlags: 0
@@ -7204,7 +7115,6 @@ GameObject:
   - component: {fileID: 8024610326834064997}
   - component: {fileID: 6921918752303038575}
   - component: {fileID: 1055266498296826954}
-  - component: {fileID: 1912455372855800577}
   m_Layer: 3
   m_Name: SueloVertical_1
   m_TagString: Ground
@@ -7265,35 +7175,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 2, z: 0}
   m_TimeToStationary: 0.5
---- !u!114 &1912455372855800577
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3749017778988324487}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf8924627a9f81c459b7c0002f5a7086, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveMode: 0
-  moveSpeed: 5
-  visualChild: {fileID: 4347061270747049093}
-  initialDelay: 1
-  triggerProbability: 0.5
-  triggerDuration: 3
-  defaultPoint: {fileID: 0}
-  triggeredPoint: {fileID: 0}
-  navMeshCarveDelay: 0.4
-  emissiveRenderers: []
-  colorDefault: {r: 0, g: 1, b: 0, a: 1}
-  colorTriggered: {r: 1, g: 0, b: 0, a: 1}
-  colorTransitioning: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  expandedScaleMultiplier: 10
-  defaultLayerName: Ground
-  expandedLayerName: Opacity
-  objectToToggle: {fileID: 0}
 --- !u!1 &3869727397032012329
 GameObject:
   m_ObjectHideFlags: 0
@@ -9347,7 +9228,6 @@ GameObject:
   - component: {fileID: 8268739449717188286}
   - component: {fileID: 5130926451031589368}
   - component: {fileID: 6007809299593333118}
-  - component: {fileID: 5650290565896912481}
   m_Layer: 3
   m_Name: SueloVertical_2
   m_TagString: Ground
@@ -9408,35 +9288,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 2, z: 0}
   m_TimeToStationary: 0.5
---- !u!114 &5650290565896912481
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5024139780412185256}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf8924627a9f81c459b7c0002f5a7086, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveMode: 0
-  moveSpeed: 5
-  visualChild: {fileID: 1801497357633685866}
-  initialDelay: 1
-  triggerProbability: 0.5
-  triggerDuration: 3
-  defaultPoint: {fileID: 0}
-  triggeredPoint: {fileID: 0}
-  navMeshCarveDelay: 0.4
-  emissiveRenderers: []
-  colorDefault: {r: 0, g: 1, b: 0, a: 1}
-  colorTriggered: {r: 1, g: 0, b: 0, a: 1}
-  colorTransitioning: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  expandedScaleMultiplier: 10
-  defaultLayerName: Ground
-  expandedLayerName: Opacity
-  objectToToggle: {fileID: 0}
 --- !u!1 &5186078991874399911
 GameObject:
   m_ObjectHideFlags: 0
@@ -10167,7 +10018,6 @@ GameObject:
   - component: {fileID: 4426294990821174581}
   - component: {fileID: 13836843983705064}
   - component: {fileID: 2130847565939530000}
-  - component: {fileID: 5163593796649969533}
   m_Layer: 3
   m_Name: SueloVertical_6
   m_TagString: Ground
@@ -10228,35 +10078,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 2, z: 0}
   m_TimeToStationary: 0.5
---- !u!114 &5163593796649969533
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5476289786039746129}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf8924627a9f81c459b7c0002f5a7086, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveMode: 0
-  moveSpeed: 5
-  visualChild: {fileID: 3671133545566744469}
-  initialDelay: 1
-  triggerProbability: 0.5
-  triggerDuration: 3
-  defaultPoint: {fileID: 0}
-  triggeredPoint: {fileID: 0}
-  navMeshCarveDelay: 0.4
-  emissiveRenderers: []
-  colorDefault: {r: 0, g: 1, b: 0, a: 1}
-  colorTriggered: {r: 1, g: 0, b: 0, a: 1}
-  colorTransitioning: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  expandedScaleMultiplier: 10
-  defaultLayerName: Ground
-  expandedLayerName: Opacity
-  objectToToggle: {fileID: 0}
 --- !u!1 &5592566243503472185
 GameObject:
   m_ObjectHideFlags: 0
@@ -10354,126 +10175,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 1
         m_CallState: 2
-      - m_Target: {fileID: 7692691314988583534}
-        m_TargetAssemblyTypeName: HorizontalFloor, Assembly-CSharp
-        m_MethodName: ForceReset
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
-      - m_Target: {fileID: 3707313560223303930}
-        m_TargetAssemblyTypeName: HorizontalFloor, Assembly-CSharp
-        m_MethodName: ForceReset
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
-      - m_Target: {fileID: 1750822413046601285}
-        m_TargetAssemblyTypeName: HorizontalFloor, Assembly-CSharp
-        m_MethodName: ForceReset
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
-      - m_Target: {fileID: 2312363621646026388}
-        m_TargetAssemblyTypeName: HorizontalFloor, Assembly-CSharp
-        m_MethodName: ForceReset
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
-      - m_Target: {fileID: 1912455372855800577}
-        m_TargetAssemblyTypeName: VerticalFloor, Assembly-CSharp
-        m_MethodName: ForceReset
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
-      - m_Target: {fileID: 5650290565896912481}
-        m_TargetAssemblyTypeName: VerticalFloor, Assembly-CSharp
-        m_MethodName: ForceReset
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
-      - m_Target: {fileID: 3882298097826352022}
-        m_TargetAssemblyTypeName: VerticalFloor, Assembly-CSharp
-        m_MethodName: ForceReset
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
-      - m_Target: {fileID: 8581238592933097297}
-        m_TargetAssemblyTypeName: VerticalFloor, Assembly-CSharp
-        m_MethodName: ForceReset
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
-      - m_Target: {fileID: 17453745893861946}
-        m_TargetAssemblyTypeName: VerticalFloor, Assembly-CSharp
-        m_MethodName: ForceReset
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
-      - m_Target: {fileID: 5163593796649969533}
-        m_TargetAssemblyTypeName: VerticalFloor, Assembly-CSharp
-        m_MethodName: ForceReset
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
       - m_Target: {fileID: 4925789754357403391}
         m_TargetAssemblyTypeName: BishopPiece, Assembly-CSharp
         m_MethodName: DeactivatePiece
@@ -10509,7 +10210,6 @@ GameObject:
   - component: {fileID: 5819977822195812063}
   - component: {fileID: 1341675944694291299}
   - component: {fileID: 3618279727083997786}
-  - component: {fileID: 2312363621646026388}
   m_Layer: 3
   m_Name: SueloHorizontal_4
   m_TagString: Ground
@@ -10570,34 +10270,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 2, z: 0}
   m_TimeToStationary: 0.5
---- !u!114 &2312363621646026388
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5600085078464009580}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5e9ffd89e03f904449e2da198872403b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveMode: 0
-  moveSpeed: 5
-  visualChild: {fileID: 7223654505639510343}
-  initialDelay: 1
-  triggerProbability: 0.5
-  triggerDuration: 3
-  defaultPoint: {fileID: 0}
-  triggeredPoint: {fileID: 0}
-  navMeshCarveDelay: 0.4
-  emissiveRenderers: []
-  colorDefault: {r: 0, g: 1, b: 0, a: 1}
-  colorTriggered: {r: 1, g: 0, b: 0, a: 1}
-  colorTransitioning: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  contractionAxis: 1
-  contractionDirection: 0
-  visibilityThreshold: 0.05
 --- !u!1 &5638856514733173585
 GameObject:
   m_ObjectHideFlags: 0
@@ -12019,7 +11691,6 @@ GameObject:
   - component: {fileID: 1959435934024385687}
   - component: {fileID: 7577116401061263897}
   - component: {fileID: 2463118775198889431}
-  - component: {fileID: 17453745893861946}
   m_Layer: 3
   m_Name: SueloVertical_5
   m_TagString: Ground
@@ -12080,35 +11751,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 2, z: 0}
   m_TimeToStationary: 0.5
---- !u!114 &17453745893861946
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6255781400711656390}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf8924627a9f81c459b7c0002f5a7086, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveMode: 0
-  moveSpeed: 5
-  visualChild: {fileID: 3490811751514422430}
-  initialDelay: 1
-  triggerProbability: 0.5
-  triggerDuration: 3
-  defaultPoint: {fileID: 0}
-  triggeredPoint: {fileID: 0}
-  navMeshCarveDelay: 0.4
-  emissiveRenderers: []
-  colorDefault: {r: 0, g: 1, b: 0, a: 1}
-  colorTriggered: {r: 1, g: 0, b: 0, a: 1}
-  colorTransitioning: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  expandedScaleMultiplier: 10
-  defaultLayerName: Ground
-  expandedLayerName: Opacity
-  objectToToggle: {fileID: 0}
 --- !u!1 &6326088264171776124
 GameObject:
   m_ObjectHideFlags: 0
@@ -13921,7 +13563,6 @@ GameObject:
   - component: {fileID: 2527621731889366579}
   - component: {fileID: 4724269715694694374}
   - component: {fileID: 1145326547074267388}
-  - component: {fileID: 1750822413046601285}
   m_Layer: 3
   m_Name: SueloHorizontal_3
   m_TagString: Ground
@@ -13982,34 +13623,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 2, z: 0}
   m_TimeToStationary: 0.5
---- !u!114 &1750822413046601285
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7143746979734144559}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5e9ffd89e03f904449e2da198872403b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveMode: 0
-  moveSpeed: 5
-  visualChild: {fileID: 9047440320102221852}
-  initialDelay: 1
-  triggerProbability: 0.5
-  triggerDuration: 3
-  defaultPoint: {fileID: 0}
-  triggeredPoint: {fileID: 0}
-  navMeshCarveDelay: 0.4
-  emissiveRenderers: []
-  colorDefault: {r: 0, g: 1, b: 0, a: 1}
-  colorTriggered: {r: 1, g: 0, b: 0, a: 1}
-  colorTransitioning: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  contractionAxis: 1
-  contractionDirection: 0
-  visibilityThreshold: 0.05
 --- !u!1 &7148489289314292370
 GameObject:
   m_ObjectHideFlags: 0
@@ -14746,7 +14359,6 @@ GameObject:
   - component: {fileID: 7112801545233730314}
   - component: {fileID: 7274001799634660715}
   - component: {fileID: 4451468848790953532}
-  - component: {fileID: 3707313560223303930}
   m_Layer: 3
   m_Name: SueloHorizontal_2
   m_TagString: Ground
@@ -14807,34 +14419,6 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 2, z: 0}
   m_TimeToStationary: 0.5
---- !u!114 &3707313560223303930
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7498279695858700700}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5e9ffd89e03f904449e2da198872403b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveMode: 0
-  moveSpeed: 5
-  visualChild: {fileID: 9155458843816988588}
-  initialDelay: 1
-  triggerProbability: 0.5
-  triggerDuration: 3
-  defaultPoint: {fileID: 0}
-  triggeredPoint: {fileID: 0}
-  navMeshCarveDelay: 0.4
-  emissiveRenderers: []
-  colorDefault: {r: 0, g: 1, b: 0, a: 1}
-  colorTriggered: {r: 1, g: 0, b: 0, a: 1}
-  colorTransitioning: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  contractionAxis: 1
-  contractionDirection: 0
-  visibilityThreshold: 0.05
 --- !u!1 &7512702731395291359
 GameObject:
   m_ObjectHideFlags: 0
