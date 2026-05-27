@@ -1330,6 +1330,61 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1596888019
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1596888021}
+  - component: {fileID: 1596888020}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1596888020
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1596888019}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f3ead590d55d514591925257b80c966, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  estadoDeVidaMaterial: {fileID: 2100000, guid: b9f20b8c42893074997b68cfd9002933, type: 2}
+  PrimeraHerida: 0
+  DemasHeridas: 0
+  TiempoHerida: 2
+  Transparencia: 72
+  Posterizado: 0
+  TiempoRespiracion: 4
+  "Tama\xF1oDither": 24.5
+  LimiteDither: 0.3
+  PixeladoActivo: 0
+  SizePixel: 150
+--- !u!4 &1596888021
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1596888019}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 79.99999, y: 7, z: 198}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1600536110
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7264,3 +7319,4 @@ SceneRoots:
   - {fileID: 1934360157}
   - {fileID: 92834037}
   - {fileID: 1483182466}
+  - {fileID: 1596888021}
