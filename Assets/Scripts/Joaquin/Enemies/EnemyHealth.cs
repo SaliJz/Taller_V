@@ -21,10 +21,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [Header("Toughness System")]
     [SerializeField] private EnemyToughness toughnessSystem;
 
-    [Header("Death Feedback")]
-    [Tooltip("Prefab que se instanciara al morir.")]
-    [SerializeField] private GameObject deathVFXPrefab;
-
     #endregion
 
     #region Inspector - Health Settings
@@ -38,15 +34,14 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     [SerializeField] private bool canDisable = false;
     [SerializeField] private bool canBeStunned = true;
     [SerializeField] private UnityEvent onDeathEvent;
-    [SerializeField] private Vector3 deathVFXOffset = new Vector3(0, 1f, 0); // Ajuste para que salga del centro del cuerpo
 
     #endregion
 
     #region Inspector - UI Settings
 
     [Header("UI Offsets & Delays")]
-    [SerializeField] private float offsetAboveEnemy = 2f; // altura del slider sobre el enemigo
-    [SerializeField] private float glowDelayAfterCritical = 2f; // tiempo que el brillo dura tras dano critico
+    [SerializeField] private float offsetAboveEnemy = 2f;
+    [SerializeField] private float glowDelayAfterCritical = 2f;
 
     [Header("Dynamic Bar Configuration")]
     [SerializeField] private bool useDynamicHealthBars = false;
@@ -67,19 +62,19 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     #endregion
 
-    #region Inspector - Area Armor Settings
+    #region Inspector - VFX References
 
-    [Header("Armadura Demonica (Auto)")]
-    [Tooltip("Si true, este componente intentara activar la armadura de area cuando la vida <= areaTriggerPercent.")]
-    [SerializeField] private bool enableAutoArea = false;
-    [SerializeField, Range(0f, 1f)] private float areaTriggerPercent = 0.25f; // 25%
-    [SerializeField, Range(0f, 1f)] private float areaReductionPercent = 0.25f; // 25% reduccion
-    [SerializeField] private float areaDuration = 10f;
-    [SerializeField] private float areaCooldown = 4.5f;
-    [SerializeField] private float areaRadius = 8f;
-    [SerializeField] private LayerMask areaLayers = ~0;
-    [SerializeField] private float flattenHeightThreshold = 1.2f;
-    [SerializeField] private float areaCheckInterval = 0.25f;
+    [Header("Death Feedback")]
+    [SerializeField] private GameObject deathVFXPrefab;
+    [SerializeField] private Transform deathVFXSpawnPoint;
+    [SerializeField] private Vector3 deathVFXOffsetFallBack = new Vector3(0, 1f, 0);
+
+    [Header("VFX Impact")]
+    [SerializeField] private Transform impactVFXSpawnPoint;
+
+    [Header("VFX Health Damage")]
+    [SerializeField] private GameObject healthDamageVFXPrefab;
+    [SerializeField] private Transform healthDamageVFXSpawnPoint;
 
     #endregion
 
@@ -94,10 +89,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private Color originalColor;
     private AttackDamageType lastDamageType;
+    private Vector3 lastDamageSourcePosition;
 
     private Coroutine stunCoroutine;
     private Coroutine currentCriticalDamageCoroutine;
-    private Coroutine areaCoroutine;
     private Coroutine reduccionLocalRoutine;
 
     private int vulnerableLayerIndex;
@@ -113,29 +108,31 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private bool canHealPlayer = true;
     private bool isDead = false;
     private bool isStunned = false;
-    private bool areaActive = false;
-    private bool areaOnCooldown = false;
 
     #endregion
 
     #region Public Properties & Events
 
     public int invulnerableLayerIndex;
-
     public bool ItemEffectHandledDeath { get; set; } = false;
 
     public static event Action<float, float> OnEnemyHealthChanged;
     public Action<GameObject> OnDeath;
     public event Action OnDamaged;
+    public event Action OnToughnessHit;
     public event Action<float, float> OnHealthChanged;
+
+    public bool IsStunned => isStunned;
+    public float MaxHealth => maxHealth;
+    public AttackDamageType LastDamageType => lastDamageType;
+    public Vector3 LastDamageSourcePosition => lastDamageSourcePosition;
+    public Vector3 ImpactVFXPosition => impactVFXSpawnPoint != null ? impactVFXSpawnPoint.position : transform.position;
 
     public bool CanBeStunned
     {
         get { return canBeStunned; }
         set { canBeStunned = value; }
     }
-
-    public bool IsStunned => isStunned;
 
     public float CurrentHealth
     {
@@ -182,10 +179,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         get { return deathCooldown; }
         set { deathCooldown = value; }
     }
-
-    public float MaxHealth => maxHealth;
-
-    public AttackDamageType LastDamageType => lastDamageType;
 
     #endregion
 
@@ -239,12 +232,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         {
             playerTransform.TryGetComponent(out playerHealth);
             playerTransform.TryGetComponent(out playerStatsManager);
-        }
-
-        // arrancar monitor de vida si esta activado
-        if (enableAutoArea)
-        {
-            StartCoroutine(HealthMonitorForArea());
         }
 
         // emitir estado inicial
@@ -309,6 +296,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     public void TakeDamage(float damageAmount, AttackDamageType damageType, Vector3 damageSourcePosition)
     {
+        lastDamageSourcePosition = damageSourcePosition;
         var drogathBlocker = GetComponent<DrogathEnemy>();
         if (drogathBlocker != null)
         {
@@ -334,22 +322,19 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         // Procesar dureza
         if (toughnessSystem != null && toughnessSystem.HasToughness)
         {
-            OnDamaged?.Invoke();
             finalDamage = toughnessSystem.ProcessDamage(damageAmount, damageType, nextHitToughnessBonus);
 
             nextHitToughnessBonus = 0f; // resetear el bonus tras usarlo
 
             if (finalDamage <= 0)
             {
-                // Todo el dano fue absorbido por la dureza
-                ReportDebug($"Dano completamente absorbido por dureza. Tipo: {damageType}", 1);
-
                 if (enemyVisualEffects != null)
                 {
-                    enemyVisualEffects.PlayToughnessHitFeedback(transform.position 
+                    enemyVisualEffects.PlayToughnessHitFeedback(transform.position
                         + Vector3.up * offsetAboveEnemy, damageAmount);
                 }
 
+                OnToughnessHit?.Invoke();
                 return;
             }
             else if (finalDamage < damageAmount)
@@ -381,6 +366,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         OnDamaged?.Invoke();
+        SpawnHealthDamageVFX();
         UpdateHealthUI();
 
         if (Mathf.RoundToInt(currentHealth) % 10 == 0) ReportDebug($"El enemigo ha recibido {finalDamage} de dano. Vida actual: {currentHealth}/{maxHealth}", 1);
@@ -388,7 +374,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         // Feedback visual/sonoro/numerico centralizado en EnemyVisualEffects
         if (enemyVisualEffects != null)
         {
-            enemyVisualEffects.PlayDamageFeedback(transform.position + Vector3.up * offsetAboveEnemy, finalDamage, isCritical);
+            enemyVisualEffects.PlayHealthHitFeedback(transform.position + Vector3.up * offsetAboveEnemy, finalDamage, isCritical);
 
             if (isCritical)
             {
@@ -507,11 +493,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             {
                 if (deathVFXPrefab != null)
                 {
-                    Instantiate(deathVFXPrefab, transform.position + deathVFXOffset, Quaternion.identity);
-                }
-                else
-                {
-                    ReportDebug("No se ha asignado deathVFXPrefab en el inspector.", 2);
+                    Vector3 pos = deathVFXSpawnPoint != null 
+                        ? deathVFXSpawnPoint.position 
+                        : transform.position + deathVFXOffsetFallBack;
+
+                    Instantiate(deathVFXPrefab, pos, Quaternion.identity);
                 }
 
                 Destroy(gameObject);
@@ -529,7 +515,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         if (deathVFXPrefab != null)
         {
-            Instantiate(deathVFXPrefab, transform.position + deathVFXOffset, Quaternion.identity);
+            Instantiate(deathVFXPrefab, transform.position + deathVFXOffsetFallBack, Quaternion.identity);
         }
         else
         {
@@ -542,6 +528,17 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     #endregion
 
     #region UI Management
+
+    private void SpawnHealthDamageVFX()
+    {
+        if (healthDamageVFXPrefab == null) return;
+
+        Vector3 pos = healthDamageVFXSpawnPoint != null
+            ? healthDamageVFXSpawnPoint.position
+            : transform.position;
+
+        Instantiate(healthDamageVFXPrefab, pos, Quaternion.identity);
+    }
 
     private void InitializeHealthUI()
     {
@@ -786,106 +783,6 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     #endregion
 
-    #region Area Armor System
-
-    private IEnumerator HealthMonitorForArea()
-    {
-        // esperar a que MaxHealth tenga sentido.
-        while (maxHealth <= 0f)
-            yield return null;
-
-        while (true)
-        {
-            if (!areaActive && !areaOnCooldown)
-            {
-                float percent = currentHealth / Mathf.Max(1f, maxHealth);
-                if (percent <= areaTriggerPercent)
-                {
-                    ActivateArea();
-                }
-            }
-            yield return new WaitForSeconds(areaCheckInterval);
-        }
-    }
-
-    /// <summary>
-    /// Fuerza la activacion del efecto de area (publica para pruebas).
-    /// </summary>
-    public void ForceActivateArea()
-    {
-        if (areaCoroutine != null) StopCoroutine(areaCoroutine);
-        areaOnCooldown = false;
-        ActivateArea();
-    }
-
-    private void ActivateArea()
-    {
-        if (areaActive || areaOnCooldown) return;
-        areaActive = true;
-
-        // aplicarse localmente
-        ApplyDamageReduction(areaReductionPercent, areaDuration);
-
-        // aplicar a aliados cercanos: priorizamos VidaEnemigoEscudo, fallback a EnemyHealth
-        Collider[] hits = Physics.OverlapSphere(transform.position, areaRadius, areaLayers, QueryTriggerInteraction.Ignore);
-        foreach (var c in hits)
-        {
-            if (c == null) continue;
-            GameObject root = c.transform.root != null ? c.transform.root.gameObject : c.gameObject;
-            if (root == this.gameObject) continue;
-
-            // comprobacion de "chancado" por diferencia Y
-            if (Mathf.Abs(root.transform.position.y - transform.position.y) > flattenHeightThreshold) continue;
-
-            // 1) intentar VidaEnemigoEscudo
-            var vidaEscudo = root.GetComponent<VidaEnemigoEscudo>();
-            if (vidaEscudo != null)
-            {
-                try { vidaEscudo.ApplyDamageReduction(areaReductionPercent, areaDuration); }
-                catch { }
-                continue;
-            }
-
-            // 2) intentar EnemyHealth (este mismo tipo)
-            var enemyH = root.GetComponent<EnemyHealth>();
-            if (enemyH != null)
-            {
-                try { enemyH.ApplyDamageReduction(areaReductionPercent, areaDuration); }
-                catch { }
-                continue;
-            }
-
-            // 3) fallback SendMessage (no rompe si no existe)
-            try
-            {
-                root.SendMessage("ApplyDamageReduction", new object[] { areaReductionPercent, areaDuration }, SendMessageOptions.DontRequireReceiver);
-            }
-            catch { }
-        }
-
-        areaCoroutine = StartCoroutine(AreaDurationAndCooldownRoutine());
-        Debug.Log($"[{name}] Armadura de area ACTIVADA. Radio={areaRadius} Reduccion={(areaReductionPercent * 100f)}%");
-    }
-
-    private IEnumerator AreaDurationAndCooldownRoutine()
-    {
-        yield return new WaitForSeconds(areaDuration);
-
-        // finalizar efecto local en este objeto (si aun activo)
-        localReduction = 0f;
-        areaActive = false;
-
-        // iniciar cooldown
-        areaOnCooldown = true;
-        yield return new WaitForSeconds(areaCooldown);
-        areaOnCooldown = false;
-
-        areaCoroutine = null;
-        Debug.Log($"[{name}] Armadura de area COOLDOWN finalizado.");
-    }
-
-    #endregion
-
     #region Logging
 
     public void DebugKill()
@@ -903,16 +800,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         Gizmos.DrawRay(transform.position, Vector3.up * offsetAboveEnemy);
 
         Gizmos.color = Color.red;
-        Gizmos.DrawLine(transform.position, transform.position + deathVFXOffset);
-
-#if UNITY_EDITOR
-        // dibujar radio del area si esta activado en inspector
-        if (enableAutoArea)
-        {
-            Gizmos.color = new Color(0f, 1f, 0f, 0.25f);
-            Gizmos.DrawWireSphere(transform.position, areaRadius);
-        }
-#endif
+        Gizmos.DrawLine(transform.position, transform.position + deathVFXOffsetFallBack);
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]

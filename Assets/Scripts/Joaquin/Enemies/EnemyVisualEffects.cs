@@ -21,6 +21,10 @@ public class EnemyVisualEffects : MonoBehaviour
 
     [Header("Audio Feedback")]
     [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip hitStunSFX;
+    [SerializeField] private AudioClip toughnessBlockSFX;
+    [SerializeField] private AudioClip normalHitSFX;
+    [SerializeField] private AudioClip criticalHitSFX;
 
     #endregion
 
@@ -54,12 +58,15 @@ public class EnemyVisualEffects : MonoBehaviour
     #region Inspector - Effect Settings
 
     [Header("Stun Effect")]
+    [SerializeField] private GameObject stunVFXPrefab;
+    [SerializeField] private Transform stunVFXSpawnPoint;
+    [SerializeField] private float stunVFXHeightFallback = 2f;
     [SerializeField] private Material stunMaterial;
     [SerializeField] private Color stunGlowColor = Color.yellow;
     [SerializeField] private float stunBlinkSpeed = 0.1f;
-    [SerializeField] private GameObject stunVFXPrefab;
-    [SerializeField] private float stunVFXHeight = 2f;
-    [SerializeField] private AudioClip stunSFX;
+
+    [Header("Toughness Block Effect")]
+    [SerializeField] private Color toughnessColor = Color.cyan;
 
     [Header("Armor Glow Effect")]
     [SerializeField] private Material glowMaterial;
@@ -68,9 +75,6 @@ public class EnemyVisualEffects : MonoBehaviour
     [Header("Damage Visual Settings")]
     [SerializeField] private Color normalColor = Color.red;
     [SerializeField] private Color criticalColor = new Color(0.5f, 0f, 0f);
-    [SerializeField] private Color toughnessColor = Color.cyan;
-    [SerializeField] private AudioClip normalHitSFX;
-    [SerializeField] private AudioClip criticalHitSFX;
 
     #endregion
 
@@ -85,10 +89,8 @@ public class EnemyVisualEffects : MonoBehaviour
     private Coroutine amountBlinkCoroutine = null;
 
     private Dictionary<Component, Coroutine> activeBlinkRoutines = new Dictionary<Component, Coroutine>();
-
     private Dictionary<Renderer, Material> originalMeshMats = new Dictionary<Renderer, Material>();
     private Dictionary<SpriteRenderer, Material> originalSpriteMats = new Dictionary<SpriteRenderer, Material>();
-
     private List<GameObject> activePersistentEffects = new List<GameObject>();
 
     #endregion
@@ -263,12 +265,13 @@ public class EnemyVisualEffects : MonoBehaviour
     public void PlayToughnessHitFeedback(Vector3 position, float damageAmount = 0f)
     {
         ShowDamageNumber(position, damageAmount, isCritical: false, isToughness: true);
+        PlayToughnessBlockSound();
     }
 
-    public void PlayDamageFeedback(Vector3 damagePosition, float damage, bool isCritical)
+    public void PlayHealthHitFeedback(Vector3 damagePosition, float damage, bool isCritical)
     {
         ShowDamageNumber(damagePosition, damage, isCritical);
-        PlayHitSound(isCritical);
+        PlayHealthHitSound(isCritical);
 
         if (isStunned) return;
 
@@ -309,11 +312,17 @@ public class EnemyVisualEffects : MonoBehaviour
         }
     }
 
-    private void PlayHitSound(bool isCritical)
+    private void PlayHealthHitSound(bool isCritical)
     {
         if (audioSource == null) return;
         AudioClip clip = isCritical ? criticalHitSFX : normalHitSFX;
         if (clip != null) audioSource.PlayOneShot(clip);
+    }
+
+    private void PlayToughnessBlockSound()
+    {
+        if (audioSource == null || toughnessBlockSFX == null) return;
+        audioSource.PlayOneShot(toughnessBlockSFX);
     }
 
     public void ShowDamageNumber(Vector3 position, float damage, bool isCritical = false, bool isToughness = false)
@@ -332,7 +341,7 @@ public class EnemyVisualEffects : MonoBehaviour
 
     #endregion
 
-    #region Blink System (Material Swap & Amount)
+    #region Blink System
 
     private IEnumerator BlinkAmountCoroutine()
     {
@@ -458,14 +467,15 @@ public class EnemyVisualEffects : MonoBehaviour
         if (stunMaterial != null) ApplyMaterialToAll(stunMaterial);
         else ApplyColorToAll(stunGlowColor);
 
-        if (audioSource != null && stunSFX != null) audioSource.PlayOneShot(stunSFX);
+        if (audioSource != null && hitStunSFX != null) audioSource.PlayOneShot(hitStunSFX);
 
-        if (stunVFXPrefab != null)
+        if (stunVFXPrefab != null && activeStunVFX == null)
         {
-            if (activeStunVFX == null)
-            {
-                activeStunVFX = Instantiate(stunVFXPrefab, transform.position + Vector3.up * stunVFXHeight, Quaternion.identity, transform);
-            }
+            Vector3 stunSpawnPos = stunVFXSpawnPoint != null
+                ? stunVFXSpawnPoint.position
+                : transform.position + Vector3.up * stunVFXHeightFallback;
+
+            activeStunVFX = Instantiate(stunVFXPrefab, stunSpawnPos, Quaternion.identity, transform);
         }
 
         float elapsed = 0f;
@@ -677,7 +687,7 @@ public class EnemyVisualEffects : MonoBehaviour
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.magenta;
-        Gizmos.DrawLine(transform.position, transform.position + (Vector3.up * stunVFXHeight));
+        Gizmos.DrawLine(transform.position, transform.position + (Vector3.up * stunVFXHeightFallback));
     }
 
     #endregion

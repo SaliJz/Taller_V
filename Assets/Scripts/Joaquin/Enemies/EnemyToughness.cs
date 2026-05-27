@@ -68,6 +68,14 @@ public class EnemyToughness : MonoBehaviour
 
     #endregion
 
+    #region Inspector - VFX References
+
+    [Header("VFX Toughness Block")]
+    [SerializeField] private GameObject toughnessBlockVFXPrefab;
+    [SerializeField] private Transform toughnessBlockVFXSpawnPoint;
+
+    #endregion
+
     #region Internal State
 
     private EnemyHealth enemyHealth;
@@ -204,6 +212,10 @@ public class EnemyToughness : MonoBehaviour
             ReportDebug($"Dureza rota. Overflow de {overflow} dano aplicado a vida.", 1);
             return overflow / finalMultiplier; // Convertir overflow proporcional de vuelta
         }
+        else
+        {
+            SpawnToughnessBlockVFX();
+        }
 
         // Dureza absorbio todo el dano
         ReportDebug($"Dureza absorbio {toughnessDamage} de dano ({finalMultiplier * 100}% del total).", 1);
@@ -248,6 +260,17 @@ public class EnemyToughness : MonoBehaviour
     #endregion
 
     #region UI & Bar Management Logic
+
+    private void SpawnToughnessBlockVFX()
+    {
+        if (toughnessBlockVFXPrefab == null) return;
+
+        Vector3 pos = toughnessBlockVFXSpawnPoint != null
+            ? toughnessBlockVFXSpawnPoint.position
+            : transform.position;
+
+        Instantiate(toughnessBlockVFXPrefab, pos, Quaternion.identity);
+    }
 
     private void UpdateToughnessBars()
     {

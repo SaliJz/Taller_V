@@ -419,7 +419,9 @@ public class Shield : MonoBehaviour
 
             CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, false);
 
-            PlayImpactVFX(enemy.transform.position);
+            EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
+            Vector3 vfxPos = enemyHealth != null ? enemyHealth.ImpactVFXPosition : enemy.transform.position;
+            PlayImpactVFX(vfxPos);
 
             bool isCritical;
             float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
@@ -458,13 +460,18 @@ public class Shield : MonoBehaviour
 
             if (currentLifeStage == PlayerHealth.LifeStage.Adult && knockbackForce > 0)
             {
-                EnemyKnockbackHandler knockbackHandler = enemy.GetComponent<EnemyKnockbackHandler>();
-                if (knockbackHandler != null)
+                EnemyToughness toughness = enemy.GetComponent<EnemyToughness>();
+
+                if (toughness == null || !toughness.HasToughness)
                 {
-                    Vector3 knockbackDir = (enemy.transform.position - transform.position).normalized;
-                    knockbackDir.y = 0;
-                    knockbackHandler.TriggerKnockback(knockbackDir, knockbackForce, 0.3f);
-                    ReportDebug($"Knockback aplicado a {enemy.name}: Fuerza={knockbackForce} (modificado por stats)", 1);
+                    EnemyKnockbackHandler knockbackHandler = enemy.GetComponent<EnemyKnockbackHandler>();
+                    if (knockbackHandler != null)
+                    {
+                        Vector3 knockbackDir = (enemy.transform.position - transform.position).normalized;
+                        knockbackDir.y = 0;
+                        knockbackHandler.TriggerKnockback(knockbackDir, knockbackForce, 0.3f);
+                        ReportDebug($"Knockback aplicado a {enemy.name}: Fuerza={knockbackForce} (modificado por stats)", 1);
+                    }
                 }
             }
 

@@ -79,7 +79,7 @@ public class VidaEnemigoEscudo : MonoBehaviour, IDamageable
         // feedback visual / sonido
         if (enemyVisualEffects != null)
         {
-            enemyVisualEffects.PlayDamageFeedback(transform.position + Vector3.up * offsetAboveEnemy, cantidad, isCritical);
+            enemyVisualEffects.PlayHealthHitFeedback(transform.position + Vector3.up * offsetAboveEnemy, cantidad, isCritical);
 
             if (isCritical)
             {

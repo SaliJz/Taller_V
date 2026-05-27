@@ -120,7 +120,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
         if (dist <= detectionRadius)
         {
-            agent.SetDestination(playerTransform.position);
+            agent?.SetDestination(playerTransform.position);
             attackTimer += Time.deltaTime;
 
             if (attackTimer >= currentCooldown)

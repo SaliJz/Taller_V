@@ -93,7 +93,7 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
 
         yield return new WaitForSeconds(fireRate);
 
-        if (!isDead && currentState != MorlockState.Patrol && currentState != MorlockState.Repositioning)
+        if (!isDead && currentState != StaticState.Patrol && currentState != StaticState.Repositioning)
         {
             float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
             if (distanceToPlayer <= attackRange)
@@ -124,7 +124,7 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
     {
         base.HandleDamageTaken();
 
-        if (isDead || !evasionReady || evasionOnCooldown) return;
+        if (isDead || !evasionReady || evasionOnCooldown || isInHitStun) return;
 
         if (enemyHealth != null && enemyHealth.LastDamageType == AttackDamageType.Melee)
         {

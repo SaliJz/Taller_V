@@ -1131,6 +1131,12 @@ public class PlayerMeleeAttack : MonoBehaviour
 
             ApplyKnockbackSafe(enemy);
 
+            CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, true);
+
+            EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
+            Vector3 vfxPos = enemyHealth != null ? enemyHealth.ImpactVFXPosition : enemy.transform.position;
+            PlayImpactVFX(vfxPos);
+
             bool isCritical;
             float finalDamageWithCrit = CriticalHitSystem.CalculateDamage(calculatedDamage, transform, enemy.transform, out isCritical);
 
@@ -1164,7 +1170,6 @@ public class PlayerMeleeAttack : MonoBehaviour
 
                     if (attackSuccessful)
                     {
-                        EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
                         if (enemyHealth != null)
                         {
                             float stunDelay = blinkInterval * blinkCount;
@@ -1193,10 +1198,6 @@ public class PlayerMeleeAttack : MonoBehaviour
             {
                 explosiveHead.StartPriming(true);
             }
-
-            CombatEventsManager.TriggerPlayerHitEnemy(enemy.gameObject, true);
-
-            PlayImpactVFX(enemy.transform.position);
         }
 
         float displayDuration = gizmoDuration;
@@ -1278,6 +1279,9 @@ public class PlayerMeleeAttack : MonoBehaviour
     {
         EnemyKnockbackHandler knockbackHandler = enemy.GetComponent<EnemyKnockbackHandler>();
         if (knockbackHandler == null || playerHealth == null) return;
+
+        EnemyToughness toughness = enemy.GetComponent<EnemyToughness>();
+        if (toughness != null && toughness.HasToughness) return;
 
         float knockbackForce = 0f;
 

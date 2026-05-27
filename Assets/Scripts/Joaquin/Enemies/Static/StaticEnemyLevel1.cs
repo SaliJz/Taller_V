@@ -71,7 +71,7 @@ public class StaticEnemyLevel1 : StaticEnemyBase, IAnimEventHandler
 
         yield return new WaitForSeconds(fireRate);
 
-        if (!isDead && currentState != MorlockState.Patrol && currentState != MorlockState.Repositioning)
+        if (!isDead && currentState != StaticState.Patrol && currentState != StaticState.Repositioning)
         {
             float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
             if (distanceToPlayer <= attackRange)

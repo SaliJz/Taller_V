@@ -11,7 +11,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
     #region Enums & Structs
 
     public enum MorlockLevel { Nivel1, Nivel2, Nivel3 }
-    protected enum MorlockState { Patrol, Pursue1, Pursue2, Pursue3, Repositioning }
+    protected enum StaticState { Patrol, Pursue1, Pursue2, Pursue3, Repositioning }
 
     #endregion
 
@@ -124,17 +124,27 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     #endregion
 
+    [Header("Hit Stun")]
+    [SerializeField] protected float hitStunDuration = 0.3f;
+    [Header("SFX Daño")]
+    [SerializeField] protected AudioClip hitStunSFX;
+    [SerializeField] protected AudioClip toughnessBlockSFX;
+
     #region Internal State
 
     protected EnemyHealth enemyHealth;
+    protected EnemyToughness enemyToughness;
     protected NavMeshAgent agent;
     protected Transform playerTransform;
     protected CharacterController playerCharacterController;
     protected MorlockWordLibrary wordLibrary;
-    protected MorlockState currentState;
+    protected StaticState currentState;
+    protected StaticState stateBeforeHitStun;
 
+    protected bool isInHitStun = false;
     protected bool isDead = false;
     protected bool isReady = false;
+    protected Coroutine hitStunCoroutine;
     protected Coroutine currentBehaviorCoroutine = null;
     protected Coroutine shootCoroutine = null;
 
@@ -155,11 +165,13 @@ public abstract class StaticEnemyBase : MonoBehaviour
     protected virtual void Awake()
     {
         if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
+        if (enemyToughness == null) enemyToughness = GetComponent<EnemyToughness>();
         if (agent == null) agent = GetComponent<NavMeshAgent>();
         if (visualCtrl == null) visualCtrl = GetComponentInChildren<StaticAnimCtrl>();
         if (wordLibrary == null) wordLibrary = GetComponent<MorlockWordLibrary>();
 
         if (enemyHealth == null) ReportDebug("Componente EnemyHealth no encontrado en el enemigo.", 3);
+        if (enemyToughness == null) ReportDebug("Componente EnemyToughness no encontrado en el enemigo.", 2);
         if (agent == null) ReportDebug("Componente NavMeshAgent no encontrado en el enemigo.", 3);
         if (visualCtrl == null) ReportDebug("Componente StaticAnimCtrl no encontrado en el enemigo.", 2);
     }
@@ -187,6 +199,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         {
             enemyHealth.OnDeath += HandleEnemyDeath;
             enemyHealth.OnDamaged += HandleDamageTaken;
+            enemyHealth.OnToughnessHit += HandleToughnessHit;
         }
     }
 
@@ -196,6 +209,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         {
             enemyHealth.OnDeath -= HandleEnemyDeath;
             enemyHealth.OnDamaged -= HandleDamageTaken;
+            enemyHealth.OnToughnessHit -= HandleToughnessHit;
         }
         StopAllCoroutines();
     }
@@ -206,6 +220,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         {
             enemyHealth.OnDeath -= HandleEnemyDeath;
             enemyHealth.OnDamaged -= HandleDamageTaken;
+            enemyHealth.OnToughnessHit -= HandleToughnessHit;
         }
         StopAllCoroutines();
     }
@@ -231,36 +246,36 @@ public abstract class StaticEnemyBase : MonoBehaviour
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
         float distanceFromOrigin = Vector3.Distance(transform.position, originPosition);
 
-        if (distanceToPlayer > detectionRadius && (currentState != MorlockState.Patrol && currentState != MorlockState.Repositioning))
+        if (distanceToPlayer > detectionRadius && (currentState != StaticState.Patrol && currentState != StaticState.Repositioning))
         {
             if (canReturnToPatrol)
             {
                 if (patrolAroundOrigin && distanceFromOrigin > patrolRadius * 1.1f)
                 {
-                    if (canReposition) ChangeState(MorlockState.Repositioning);
-                    else ChangeState(MorlockState.Patrol);
+                    if (canReposition) ChangeState(StaticState.Repositioning);
+                    else ChangeState(StaticState.Patrol);
                 }
-                else ChangeState(MorlockState.Patrol);
+                else ChangeState(StaticState.Patrol);
             }
             return;
         }
 
         switch (currentState)
         {
-            case MorlockState.Patrol:
+            case StaticState.Patrol:
                 HandleDetectionGrowth();
                 if (distanceToPlayer <= detectionRadius)
                 {
-                    ChangeState(MorlockState.Pursue1);
+                    ChangeState(StaticState.Pursue1);
                 }
                 break;
-            case MorlockState.Pursue1:
+            case StaticState.Pursue1:
                 if (distanceToPlayer <= p2_activationRadius)
                 {
-                    ChangeState(MorlockState.Pursue2);
+                    ChangeState(StaticState.Pursue2);
                 }
                 break;
-            case MorlockState.Pursue2:
+            case StaticState.Pursue2:
                 break;
         }
     }
@@ -304,14 +319,14 @@ public abstract class StaticEnemyBase : MonoBehaviour
         isReady = false;
         yield return new WaitForSeconds(spawnDelay);
         isReady = true;
-        ChangeState(MorlockState.Patrol);
+        ChangeState(StaticState.Patrol);
     }
 
     #endregion
 
     #region Health & Damage System
 
-    public virtual void ApplyRoomMultiplier(float damageMult, float speedMult)
+    protected virtual void ApplyRoomMultiplier(float damageMult, float speedMult)
     {
         minDamageIncrease *= damageMult;
         moveSpeed *= speedMult;
@@ -319,10 +334,74 @@ public abstract class StaticEnemyBase : MonoBehaviour
         ReportDebug($"Multiplicadores de sala aplicados a Morlock. Daño x{damageMult}, Velocidad x{speedMult}. Nueva Velocidad: {moveSpeed:F2}", 1);
     }
 
-    protected virtual void HandleDamageTaken() 
+    protected virtual void HandleDamageTaken()
     {
         if (isDead) return;
+
+        bool hasToughness = enemyToughness != null && enemyToughness.HasToughness;
+
+        if (hasToughness)
+        {
+            PlayToughnessBlockFeedback();
+            return;
+        }
+
+        if (hitStunCoroutine != null) StopCoroutine(hitStunCoroutine);
+        hitStunCoroutine = StartCoroutine(HitStunRoutine());
+    }
+
+    protected void HandleToughnessHit()
+    {
+        if (isDead) return;
+        PlayToughnessBlockFeedback();
+    }
+
+    protected void PlayToughnessBlockFeedback()
+    {
         if (visualCtrl != null) visualCtrl.PlayDamage();
+        if (audioSource != null && toughnessBlockSFX != null)
+        {
+            audioSource.PlayOneShot(toughnessBlockSFX);
+        }
+    }
+
+    protected virtual IEnumerator HitStunRoutine()
+    {
+        isInHitStun = true;
+        stateBeforeHitStun = currentState;
+
+        if (shootCoroutine != null) 
+        { 
+            StopCoroutine(shootCoroutine); 
+            shootCoroutine = null; 
+        }
+
+        if (currentBehaviorCoroutine != null) 
+        { 
+            StopCoroutine(currentBehaviorCoroutine); 
+            currentBehaviorCoroutine = null; 
+        }
+
+        if (agent != null && agent.enabled && agent.isOnNavMesh)
+        { agent.isStopped = true; agent.ResetPath(); }
+
+        if (visualCtrl != null) visualCtrl.PlayDamage();
+        if (audioSource != null && hitStunSFX != null) audioSource.PlayOneShot(hitStunSFX);
+
+        yield return new WaitForSeconds(hitStunDuration);
+
+        if (agent != null && agent.enabled) agent.isStopped = false;
+
+        isInHitStun = false;
+        hitStunCoroutine = null;
+
+        if (!isDead && isReady) yield return StartCoroutine(ForceIdleBrieflyRoutine(0.8f));
+    }
+
+    private IEnumerator ForceIdleBrieflyRoutine(float duration)
+    {
+        yield return new WaitForSeconds(duration);
+        ChangeState(stateBeforeHitStun);
     }
 
     protected virtual void HandleEnemyDeath(GameObject enemy)
@@ -334,7 +413,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         if (visualCtrl != null) visualCtrl.PlayDeath();
         if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
 
-        ChangeState(MorlockState.Repositioning);
+        ChangeState(StaticState.Repositioning);
         StopAllCoroutines();
 
         for (int i = activeTeleportVFXs.Count - 1; i >= 0; i--)
@@ -357,9 +436,9 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     #region AI State Machine
 
-    protected virtual void ChangeState(MorlockState newState)
+    protected virtual void ChangeState(StaticState newState)
     {
-        if (currentState == newState && currentBehaviorCoroutine != null && currentState != MorlockState.Repositioning) return;
+        if (currentState == newState && currentBehaviorCoroutine != null && currentState != StaticState.Repositioning) return;
 
         if (currentBehaviorCoroutine != null)
         {
@@ -377,18 +456,18 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
         switch (currentState)
         {
-            case MorlockState.Patrol:
+            case StaticState.Patrol:
                 detectionRadius = baseDetectionRadius;
                 currentDetectionTimer = 0f;
                 currentBehaviorCoroutine = StartCoroutine(PatrolRoutine());
                 break;
-            case MorlockState.Pursue1:
+            case StaticState.Pursue1:
                 currentBehaviorCoroutine = StartCoroutine(Pursuit1Routine());
                 break;
-            case MorlockState.Pursue2:
+            case StaticState.Pursue2:
                 currentBehaviorCoroutine = StartCoroutine(Pursuit2Routine());
                 break;
-            case MorlockState.Repositioning:
+            case StaticState.Repositioning:
                 currentBehaviorCoroutine = StartCoroutine(RepositioningRoutine());
                 break;
         }
@@ -399,7 +478,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         int freePatrolCount = 0;
         bool shouldContinue = true;
 
-        while (currentState == MorlockState.Patrol && shouldContinue)
+        while (currentState == StaticState.Patrol && shouldContinue)
         {
             Vector3 targetPosition;
             if (patrolWaypoints != null && patrolWaypoints.Length > 0)
@@ -433,13 +512,13 @@ public abstract class StaticEnemyBase : MonoBehaviour
     {
         if (originPosition == Vector3.zero) originPosition = transform.position;
 
-        while (currentState == MorlockState.Repositioning)
+        while (currentState == StaticState.Repositioning)
         {
             float distFromOrigin = Vector3.Distance(transform.position, originPosition);
 
             if (distFromOrigin <= patrolRadius)
             {
-                ChangeState(MorlockState.Patrol);
+                ChangeState(StaticState.Patrol);
                 yield break;
             }
 
@@ -476,7 +555,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     protected virtual IEnumerator Pursuit1Routine()
     {
-        while (currentState == MorlockState.Pursue1)
+        while (currentState == StaticState.Pursue1)
         {
             Vector3 directionToPlayer = (playerTransform.position - transform.position).normalized;
             Vector3 advancePosition = transform.position + directionToPlayer * p1_pursuitAdvanceDistance;
@@ -497,7 +576,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         Vector3 lastTargetPos = Vector3.zero;
         int mask = GetWalkableMask();
 
-        while (currentState == MorlockState.Pursue2)
+        while (currentState == StaticState.Pursue2)
         {
             List<Vector3> validCandidates = new List<Vector3>();
             float[] angles = { 0f, 90f, 180f, 270f };
@@ -570,7 +649,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
     {
         Vector3 targetDirection = Vector3.zero;
 
-        if (currentState == MorlockState.Pursue1 || currentState == MorlockState.Pursue2)
+        if (currentState == StaticState.Pursue1 || currentState == StaticState.Pursue2)
         {
             if (playerTransform != null) targetDirection = (playerTransform.position - transform.position).normalized;
         }
@@ -653,7 +732,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
         SpawnTeleportVFX(finalDestination);
 
-        if (playerTransform != null && currentState != MorlockState.Patrol)
+        if (playerTransform != null && currentState != StaticState.Patrol)
         {
             ForceFacePlayer();
         }
@@ -696,7 +775,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         yield return new WaitForSeconds(fireRate);
         yield return new WaitForSeconds(animTeleportDelay);
 
-        if (!isDead && currentState != MorlockState.Patrol && currentState != MorlockState.Repositioning)
+        if (!isDead && currentState != StaticState.Patrol && currentState != StaticState.Repositioning)
         {
             float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
             if (distanceToPlayer <= attackRange)
