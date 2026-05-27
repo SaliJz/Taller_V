@@ -164,7 +164,7 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
             if (enemyHealth != null)
             {
-                enemyHealth.SetMaxHealth(row.Health); 
+                enemyHealth.SetMaxHealth(row.Health);
             }
 
             EnemyToughness toughnessComp = GetComponent<EnemyToughness>();
@@ -239,6 +239,7 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         if (enemyHealth != null && enemyHealth.IsDead) return;
         if (enemyHealth != null && enemyHealth.IsStunned)
         {
+            CancelAttack();
             if (agent != null && agent.enabled && agent.isOnNavMesh)
             {
                 agent.isStopped = true;
@@ -821,6 +822,14 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         if (audioSource != null && clip != null) audioSource.PlayOneShot(clip);
     }
 
+    private void CancelAttack()
+    {
+        if (!isAttacking) return;
+
+        isAttacking = false;
+        if (agent != null && agent.enabled) agent.isStopped = false;
+    }
+
     private void OnAttackImpact()
     {
         lastDamageInflictedTime = Time.time;
@@ -845,12 +854,11 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
             }
             break;
         }
-
-        isAttacking = false;
     }
 
     private void OnAttackEnd()
     {
+        isAttacking = false;
         if (agent != null && agent.enabled) agent.isStopped = false;
     }
 
@@ -862,7 +870,11 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
     {
         lastDamageTime = Time.time;
 
-        if (animCtrl != null && !isAttacking) animCtrl.PlayDamage();
+        if (animCtrl != null && !isTransitioningToFury)
+        {
+            animCtrl.PlayDamage();
+            if (isAttacking) OnAttackEnd();
+        }
 
         if (!playerDetected && playerTransform != null)
         {
@@ -931,9 +943,10 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         isTransitioningToFury = true;
         furyLevel = 1;
 
+        CancelAttack();
+
         if (audioSource != null && furyTransitionSFX != null) audioSource.PlayOneShot(furyTransitionSFX);
 
-        // SetFuryMode(true) activa RageMode en el Animator y reproduce "Rage Transform"
         if (animCtrl != null) animCtrl.SetFuryMode(true);
 
         ChangeMaterialToFury();
@@ -1063,7 +1076,7 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
             audioSource.PlayOneShot(furyTransitionSFX);
         }
 
-        if (animCtrl != null) animCtrl.PlayAttack();
+        if (animCtrl != null && !isAttacking) animCtrl.PlayAttack();
 
         if (screamHitbox != null)
         {

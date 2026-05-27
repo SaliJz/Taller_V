@@ -114,7 +114,6 @@ public class InventoryUIManager : MonoBehaviour
     private readonly Dictionary<RectTransform, Vector2> restPositions = new Dictionary<RectTransform, Vector2>();
 
     private bool isOpen;
-    private bool ltWasHeld;
     private bool isConfirmPanelOpen;
     private int confirmNavIndex; // 0 = Confirmar, 1 = Cancelar
     private bool confirmPanelJustOpened; // true durante 1 frame para ignorar el input que abrió el panel
@@ -175,9 +174,10 @@ public class InventoryUIManager : MonoBehaviour
         // Gamepad: LT (leftTrigger)
         if (Gamepad.current != null)
         {
-            bool ltHeld = Gamepad.current.leftTrigger.IsActuated();
-            if (ltHeld && !ltWasHeld) ToggleInventory();
-            ltWasHeld = ltHeld;
+            if (Gamepad.current.selectButton.wasPressedThisFrame)
+            {
+                ToggleInventory();
+            }
         }
 
         // Gamepad: navegacion (redirige al panel de confirmacion si esta visible)
