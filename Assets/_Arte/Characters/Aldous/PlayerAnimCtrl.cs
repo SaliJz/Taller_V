@@ -85,7 +85,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         if (UpdateBlockLogic()) return;
         if (UpdateDashLogic()) return;
         if (isForcedAnim) return;
-        
+
         HandleLocomotion();
     }
 
@@ -251,9 +251,9 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         //Contruccion de Prefix de edad
         string prefix = currentAge switch
         {
-            Age.young => "begin:",
+            Age.adult => "mid:",
             Age.old => "late:",
-            _ => "mid:"
+            _ => "begin:"
         };
 
         bool isGroup1 = direction == "down" ||
