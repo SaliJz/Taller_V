@@ -85,7 +85,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1089530199773434117}
   m_Layer: 0
-  m_Name: Boss2_VisualEffects
+  m_Name: Boss2_UI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -106,7 +106,6 @@ Transform:
   m_Children:
   - {fileID: 1639318585140931125}
   - {fileID: 1192280443633831679}
-  - {fileID: 3646275065943798645}
   m_Father: {fileID: 3906577018013161435}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &912949027113013908
@@ -393,6 +392,37 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3906577018013161435}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1768407708242038429
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3002512211233980800}
+  m_Layer: 0
+  m_Name: Boss2_DamageEffect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3002512211233980800
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1768407708242038429}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5321492657052490939}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3520545055034596142
 GameObject:
@@ -5294,6 +5324,37 @@ ParticleSystemRenderer:
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
   m_MaskInteraction: 0
+--- !u!1 &4349644070521000327
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2233588618169059619}
+  m_Layer: 0
+  m_Name: Boss2_NumberEffect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2233588618169059619
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4349644070521000327}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 2.5, z: 0.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5321492657052490939}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4673030196371659468
 GameObject:
   m_ObjectHideFlags: 0
@@ -5410,6 +5471,43 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MainCamera: {fileID: 0}
+--- !u!1 &5624717015764700750
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5321492657052490939}
+  m_Layer: 7
+  m_Name: Boss2_SpawnPointEffects
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5321492657052490939
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5624717015764700750}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2233588618169059619}
+  - {fileID: 4929206651787382122}
+  - {fileID: 3246784652214407526}
+  - {fileID: 3002512211233980800}
+  - {fileID: 6169916822512101979}
+  - {fileID: 6973413974408621537}
+  m_Father: {fileID: 3906577018013161435}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5697239024055666033
 GameObject:
   m_ObjectHideFlags: 0
@@ -5440,6 +5538,37 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3906577018013161435}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6284163180580591009
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3246784652214407526}
+  m_Layer: 0
+  m_Name: Boss2_ImpactEffect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3246784652214407526
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6284163180580591009}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5321492657052490939}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7420206152437532032
 GameObject:
@@ -5645,7 +5774,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!1 &8952976198169274637
+--- !u!1 &8361631993860704528
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -5653,28 +5782,90 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3646275065943798645}
+  - component: {fileID: 4929206651787382122}
   m_Layer: 0
-  m_Name: Boss2_damageNumberParent
+  m_Name: Boss2_StunEffect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3646275065943798645
+--- !u!4 &4929206651787382122
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8952976198169274637}
+  m_GameObject: {fileID: 8361631993860704528}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 3.25, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 2.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1089530199773434117}
+  m_Father: {fileID: 5321492657052490939}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8481213639460801107
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6169916822512101979}
+  m_Layer: 0
+  m_Name: Boss2_BlockEffect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6169916822512101979
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8481213639460801107}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5321492657052490939}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8989448012273427023
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6973413974408621537}
+  m_Layer: 0
+  m_Name: Boss2_DeathEffect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6973413974408621537
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8989448012273427023}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5321492657052490939}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &9147642797784961567
 GameObject:
@@ -5714,6 +5905,7 @@ Transform:
   - {fileID: 7470948446071516051}
   - {fileID: 8250834327438604192}
   - {fileID: 9194010085429894218}
+  - {fileID: 5321492657052490939}
   - {fileID: 1089530199773434117}
   - {fileID: 8663587399157563583}
   - {fileID: 4010180717905474146}
@@ -5903,7 +6095,6 @@ MonoBehaviour:
   healthPercentageText: {fileID: 0}
   healthMultiplierText: {fileID: 0}
   toughnessSystem: {fileID: 0}
-  deathVFXPrefab: {fileID: 5367131650398813456, guid: 37e1b6d330e63ae47ac422c9a837e9e7, type: 3}
   maxHealth: 500
   currentHealth: 0
   canDieAfterCooldown: 1
@@ -5914,7 +6105,6 @@ MonoBehaviour:
   onDeathEvent:
     m_PersistentCalls:
       m_Calls: []
-  deathVFXOffset: {x: 0, y: 1, z: 0}
   offsetAboveEnemy: 5
   glowDelayAfterCritical: 2
   useDynamicHealthBars: 0
@@ -5924,17 +6114,12 @@ MonoBehaviour:
   canGrantLifestealOnDeath: 1
   lifestealAmountOnDeathByMelee: 100
   lifestealAmountOnDeathByDistance: 100
-  enableAutoArea: 0
-  areaTriggerPercent: 0.25
-  areaReductionPercent: 0.25
-  areaDuration: 10
-  areaCooldown: 4.5
-  areaRadius: 8
-  areaLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  flattenHeightThreshold: 1.2
-  areaCheckInterval: 0.25
+  deathVFXPrefab: {fileID: 5367131650398813456, guid: 37e1b6d330e63ae47ac422c9a837e9e7, type: 3}
+  deathVFXSpawnPoint: {fileID: 6973413974408621537}
+  deathVFXOffsetFallBack: {x: 0, y: 1, z: 0}
+  impactVFXSpawnPoint: {fileID: 3246784652214407526}
+  healthDamageVFXPrefab: {fileID: 7926778766954180842, guid: 7bf2489f0a84583448e51d03782c83fe, type: 3}
+  healthDamageVFXSpawnPoint: {fileID: 3002512211233980800}
   invulnerableLayerIndex: 0
 --- !u!114 &822155508931773051
 MonoBehaviour:
@@ -5959,8 +6144,12 @@ MonoBehaviour:
   - {fileID: 7289402639871762739}
   spriteRenderers: []
   damageNumberPrefab: {fileID: 3347622852007741979, guid: 465011437a9e8d24497414b4490e9a11, type: 3}
-  damageNumberParent: {fileID: 3646275065943798645}
+  damageNumberParent: {fileID: 2233588618169059619}
   audioSource: {fileID: 2898185117464482595}
+  hitStunSFX: {fileID: 0}
+  toughnessBlockSFX: {fileID: 0}
+  normalHitSFX: {fileID: 0}
+  criticalHitSFX: {fileID: 0}
   useOriginalMaterials: 1
   defaultMaterial: {fileID: 2100000, guid: d3e8a18f019b7854ab00711e41fce600, type: 2}
   blinkFlashMaterial: {fileID: 2100000, guid: f252e05afbca4b14da60e54eabddf22d, type: 2}
@@ -5971,19 +6160,17 @@ MonoBehaviour:
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
+  stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
+  stunVFXSpawnPoint: {fileID: 4929206651787382122}
+  stunVFXHeightFallback: 2
   stunMaterial: {fileID: 0}
   stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
-  stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
-  stunVFXHeight: 7.5
-  stunSFX: {fileID: 0}
+  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   glowMaterial: {fileID: 2100000, guid: ad0060fc2496c824ea04f56155e38fcd, type: 2}
   glowIntensity: 2
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.6075471, g: 0, b: 0, a: 1}
-  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
-  normalHitSFX: {fileID: 0}
-  criticalHitSFX: {fileID: 0}
 --- !u!1001 &6927835274548612216
 PrefabInstance:
   m_ObjectHideFlags: 0
