@@ -956,6 +956,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb0e270866932442826ba7ffc2c90ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  healthSlider: {fileID: 5581245488883942200}
+  healthFillImage: {fileID: 326038609508606137}
+  healthPercentageText: {fileID: 0}
+  healthMultiplierText: {fileID: 0}
+  toughnessSystem: {fileID: 1035413210620502913}
+  deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   maxHealth: 15
   currentHealth: 15
   canDieAfterCooldown: 1
@@ -966,12 +972,9 @@ MonoBehaviour:
   onDeathEvent:
     m_PersistentCalls:
       m_Calls: []
-  healthSlider: {fileID: 5581245488883942200}
-  healthFillImage: {fileID: 326038609508606137}
+  deathVFXOffset: {x: 0, y: 1, z: 0}
   offsetAboveEnemy: 2.75
   glowDelayAfterCritical: 2
-  healthPercentageText: {fileID: 0}
-  healthMultiplierText: {fileID: 0}
   useDynamicHealthBars: 0
   healthPerBar: 100
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
@@ -979,10 +982,6 @@ MonoBehaviour:
   canGrantLifestealOnDeath: 1
   lifestealAmountOnDeathByMelee: 5
   lifestealAmountOnDeathByDistance: 3.5
-  toughnessSystem: {fileID: 1035413210620502913}
-  deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
-  deathVFXOffset: {x: 0, y: 1, z: 0}
-  invulnerableLayerIndex: 0
   enableAutoArea: 0
   areaTriggerPercent: 0.25
   areaReductionPercent: 0.25
@@ -994,6 +993,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   flattenHeightThreshold: 1.2
   areaCheckInterval: 0.25
+  invulnerableLayerIndex: 0
 --- !u!114 &1035413210620502913
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1006,6 +1006,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 857663678c6b68a4ab60f54f457c56a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  toughnessSlider: {fileID: 7858769018974897066}
+  toughnessFillImage: {fileID: 2804453816186937304}
+  toughnessPercentageText: {fileID: 0}
+  toughnessMultiplierText: {fileID: 0}
+  toughnessUIGroup: {fileID: 6139131260655721233}
   useToughness: 0
   maxToughness: 20
   currentToughness: 0
@@ -1015,11 +1020,6 @@ MonoBehaviour:
   toughnessPerBar: 20
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
-  toughnessSlider: {fileID: 7858769018974897066}
-  toughnessFillImage: {fileID: 2804453816186937304}
-  toughnessPercentageText: {fileID: 0}
-  toughnessMultiplierText: {fileID: 0}
-  toughnessUIGroup: {fileID: 6139131260655721233}
 --- !u!114 &5428783553570261632
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1048,7 +1048,7 @@ MonoBehaviour:
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
-  stunMaterial: {fileID: 2100000, guid: 9e980960b4627f14bb1ebfed5d685fec, type: 2}
+  stunMaterial: {fileID: 0}
   stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
   stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
@@ -1058,6 +1058,7 @@ MonoBehaviour:
   glowIntensity: 2
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
+  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
 --- !u!114 &8294369732220974234
@@ -2024,6 +2025,7 @@ MonoBehaviour:
   activeColor: {r: 1, g: 0.45, b: 0.1, a: 1}
   inactiveColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.4}
   fillColor: {r: 1, g: 0.8, b: 0.1, a: 1}
+  canForcedTransform: 1
 --- !u!1 &6518794109229642094
 GameObject:
   m_ObjectHideFlags: 0

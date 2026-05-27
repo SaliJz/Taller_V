@@ -6,7 +6,7 @@ public abstract class BaseAnimCtrl<TState> : MonoBehaviour where TState : Enum
     protected SpriteAnimator SA;
     protected JsonAnimProvider provider;
 
-    [SerializeField] protected GameObject libraryObj; // En caso de no asignar un provider directamente, se buscara uno en este objeto
+    // [SerializeField] protected GameObject libraryObj; // En caso de no asignar un provider directamente, se buscara uno en este objeto
     [SerializeField] protected JsonAnimLibrarySO librarySO; // Si se asigna, se usara este ScriptableObject como provider
 
     [Header("Current Status")]

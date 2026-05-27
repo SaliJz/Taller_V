@@ -251,12 +251,24 @@ public class TransitionInteractive : MonoBehaviour
 
         Transform cam = Camera.main != null ? Camera.main.transform : null;
         Vector3 camFwd = cam != null ? cam.forward : Vector3.forward;
-        Vector3 camRight = cam != null ? cam.right : Vector3.right;
-        camFwd.y = 0f; camRight.y = 0f;
-        camFwd.Normalize(); camRight.Normalize();
+        camFwd.y = 0f;
+        camFwd.Normalize();
 
-        float h = Mathf.Round(Vector3.Dot(worldDir, camRight));
-        float v = Mathf.Round(Vector3.Dot(worldDir, camFwd));
+        float angle = Vector3.SignedAngle(camFwd, worldDir, Vector3.up);
+        if (angle < 0) angle += 360f;
+
+        float h = 0f;
+        float v = 0f;
+
+        if (angle < 22.5f || angle >= 337.5f) { h = 0f; v = 1f; }
+        else if (angle >= 22.5f && angle < 67.5f) { h = 1f; v = 1f; }
+        else if (angle >= 67.5f && angle < 112.5f) { h = 1f; v = 0f; }
+        else if (angle >= 112.5f && angle < 157.5f) { h = 1f; v = -1f; }
+        else if (angle >= 157.5f && angle < 202.5f) { h = 0f; v = -1f; }
+        else if (angle >= 202.5f && angle < 247.5f) { h = -1f; v = -1f; }
+        else if (angle >= 247.5f && angle < 292.5f) { h = -1f; v = 0f; }
+        else if (angle >= 292.5f && angle < 337.5f) { h = -1f; v = 1f; }
+
         playerAnimCtrl.SetInputAxes(h, v);
         playerAnimCtrl.UpdateDirection(h, v);
     }

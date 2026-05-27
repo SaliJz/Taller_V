@@ -220,17 +220,13 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         if (animCtrl)
             animCtrl.SendMessage("PlayAttack", SendMessageOptions.DontRequireReceiver);
 
-        animHitFired = false;
         yield return new WaitForSeconds(hitDelay);
 
         if (groundIndicator) groundIndicator.SetActive(false);
 
-        if (!animHitFired) OnAttackHit();
-
         yield return new WaitForSeconds(Mathf.Max(0, recoveryTime - hitDelay));
     }
 
-    private bool animHitFired = false;
 
     public virtual void OnAttackHit()
     {
@@ -387,7 +383,6 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     {
         if (eventName == "OnAttackHit")
         {
-            animHitFired = true;
             OnAttackHit();
         }
     }

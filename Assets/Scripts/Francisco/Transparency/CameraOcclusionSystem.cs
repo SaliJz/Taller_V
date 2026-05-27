@@ -51,7 +51,7 @@ public class CameraOcclusionSystem : MonoBehaviour
         {
             if (mat.HasProperty("_Mode"))
             {
-                mat.SetFloat("_Mode", 3); 
+                mat.SetFloat("_Mode", 3);
                 mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
                 mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
                 mat.SetInt("_ZWrite", 0);
@@ -104,6 +104,7 @@ public class CameraOcclusionSystem : MonoBehaviour
 
         foreach (var hit in hits)
         {
+            if (hit.collider == null) continue;
             Renderer renderer = hit.collider.GetComponent<Renderer>();
             if (renderer != null && hit.transform != playerTransform)
             {
@@ -113,6 +114,8 @@ public class CameraOcclusionSystem : MonoBehaviour
 
         foreach (var renderer in currentlyOccluding)
         {
+            if (renderer == null) continue;
+
             if (!occludedObjects.ContainsKey(renderer))
             {
                 MaterialData data = new MaterialData(renderer, renderer.sharedMaterials);
@@ -136,6 +139,13 @@ public class CameraOcclusionSystem : MonoBehaviour
             Renderer renderer = kvp.Key;
             MaterialData data = kvp.Value;
 
+            if (renderer == null)
+            {
+                data.Cleanup();
+                toRemove.Add(renderer);
+                continue;
+            }
+
             if (!currentlyOccluding.Contains(renderer))
             {
                 data.currentAlpha = Mathf.MoveTowards(
@@ -147,7 +157,7 @@ public class CameraOcclusionSystem : MonoBehaviour
 
                 if (data.currentAlpha >= 1.0f - 0.01f)
                 {
-                    if (renderer != null) renderer.sharedMaterials = data.originalMaterials;
+                    renderer.sharedMaterials = data.originalMaterials;
                     toRemove.Add(renderer);
                 }
             }
@@ -157,7 +167,7 @@ public class CameraOcclusionSystem : MonoBehaviour
         {
             if (occludedObjects.ContainsKey(renderer))
             {
-                occludedObjects[renderer].Cleanup();
+                if (renderer != null) occludedObjects[renderer].Cleanup();
                 occludedObjects.Remove(renderer);
             }
         }

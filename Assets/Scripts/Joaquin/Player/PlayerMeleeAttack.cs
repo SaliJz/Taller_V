@@ -183,11 +183,10 @@ public class PlayerMeleeAttack : MonoBehaviour
         get { return attackDamage; }
         set { attackDamage = value; }
     }
-
     public bool IsAttacking => isAttacking;
     public int ComboCount => comboCount;
-
     public event Action<bool> OnAttacked;
+    public bool IsOnLastComboAttack => isAttacking && currentAttackIndex == 2;
 
     #endregion
 
@@ -255,7 +254,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     {
         if (attackCooldown > 0f) attackCooldown -= Time.deltaTime;
 
-        if (Time.time - lastAttackTime > comboResetTime) comboCount = 0;
+        if (!isAttacking && Time.time - lastAttackTime > comboResetTime) comboCount = 0;
 
         //if (Input.GetMouseButtonDown(0) && attackCooldown <= 0f && !isAttacking)
         //{
@@ -355,6 +354,15 @@ public class PlayerMeleeAttack : MonoBehaviour
     #region Combat Flow & Core Logic
 
     /// <summary>
+    /// Reinicia el combo a índice 0.
+    /// </summary>
+    public void ResetCombo()
+    {
+        comboCount = 0;
+        lastAttackTime = 0f;
+    }
+
+    /// <summary>
     /// Verifica si el jugador cumple las condiciones necesarias para realizar un ataque (no atacando actualmente, escudo disponible y no arrojado).
     /// </summary>
     public bool CanAttack()
@@ -423,8 +431,8 @@ public class PlayerMeleeAttack : MonoBehaviour
     {
         if (!CanAttack()) yield break;
 
-        lastAttackTime = Time.time;
         yield return StartCoroutine(AttackSequence(comboCount));
+        lastAttackTime = Time.time;
         comboCount = (comboCount + 1) % 3; // Ciclo: 0 -> 1 -> 2 -> 0
     }
 
@@ -455,12 +463,18 @@ public class PlayerMeleeAttack : MonoBehaviour
         {
             bool isGamepadActive = false;
             if (gamepadPointer != null)
+            {
                 isGamepadActive = (gamepadPointer.GetCurrentActiveDevice() == gamepadPointer.GetCurrentGamepad());
+            }
 
             if (isGamepadActive)
+            {
                 targetDir = transform.forward;
+            }
             else if (!TryGetMouseWorldDirection(out targetDir))
+            {
                 targetDir = transform.forward;
+            }
         }
 
         if (playerMovement != null)
@@ -796,11 +810,9 @@ public class PlayerMeleeAttack : MonoBehaviour
         float lockDuration = comboLockDurations[0] / currentSpeedFactor;
         attackCooldown = lockDuration;
 
-        float remainingTime = Mathf.Max(0, lockDuration - attack1Duration);
-        if (remainingTime > 0)
-        {
-            yield return new WaitForSeconds(remainingTime);
-        }
+        float scaledAttack1Duration = attack1Duration / currentSpeedFactor;
+        float remainingTime = Mathf.Max(0f, lockDuration - scaledAttack1Duration);
+        if (remainingTime > 0) yield return new WaitForSeconds(remainingTime);
     }
 
     // Activa los efectos visuales y de sonido para el primer ataque.
@@ -954,11 +966,9 @@ public class PlayerMeleeAttack : MonoBehaviour
         attackCooldown = lockDuration;
 
         float totalAttackDuration = movementDuration + spinDuration;
+
         float remainingTime = Mathf.Max(0f, lockDuration - totalAttackDuration);
-        if (remainingTime > 0)
-        {
-            yield return new WaitForSeconds(remainingTime);
-        }
+        if (remainingTime > 0) yield return new WaitForSeconds(remainingTime);
     }
 
     // Activa los efectos visuales y de sonido para el segundo ataque (giro).
