@@ -2,17 +2,26 @@ using UnityEngine;
 
 public class AporiaEnemyLevel1 : AporiaEnemyBase
 {
-    // Nota : Siempre supe que serviria de algo hacer script hijo para cada variante, tomala Señor J
+    #region Inspector - QuickSheet Balance
 
+    // Nota : Siempre supe que serviria de algo hacer script hijo para cada variante, tomala Senor J
     [Header("QuickSheet Balance")]
     [SerializeField] private Enemies enemiesSheet;
-    [SerializeField] private int ENEMY_ID = 3; 
+    [SerializeField] private int ENEMY_ID = 3;
+
+    #endregion
+
+    #region Unity Lifecycle
 
     protected override void Awake()
     {
         //LoadStatsFromSheet();
-        base.Awake(); 
+        base.Awake();
     }
+
+    #endregion
+
+    #region Initialization & Data Sync
 
     private void LoadStatsFromSheet()
     {
@@ -60,4 +69,6 @@ public class AporiaEnemyLevel1 : AporiaEnemyBase
 
         Debug.LogWarning($"[AporiaEnemyLevel1] ID {ENEMY_ID} no encontrado en el sheet.");
     }
+
+    #endregion
 }

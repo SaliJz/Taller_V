@@ -5,26 +5,42 @@ using UnityEngine.AI;
 [RequireComponent(typeof(NavMeshAgent), typeof(EnemyHealth))]
 public abstract class AporiaEnemyBase : MonoBehaviour
 {
-    #region Headers Comunes
+    #region Inspector - References
+
     [Header("Referencias")]
     [SerializeField] protected AporiaAnimCtrl animCtrl;
     [SerializeField] protected Transform hitPoint;
     [SerializeField] protected GameObject groundIndicator;
 
+    #endregion
+
+    #region Inspector - Patrullaje
+
     [Header("Patrullaje (Wander)")]
     [SerializeField] protected float wanderRadius = 8f;
     [SerializeField] protected float wanderWaitTime = 3f;
-    protected float wanderTimer;
 
-    [Header("Estadísticas Base")]
+    #endregion
+
+    #region Inspector - Estadisticas Base
+
+    [Header("Estadisticas Base")]
     [SerializeField] protected float health = 35f;
     [SerializeField] protected float moveSpeed = 6.5f;
 
-    [Header("Dash Errático")]
+    #endregion
+
+    #region Inspector - Dash Erratico
+
+    [Header("Dash Erratico")]
     [SerializeField] protected float dashDuration = 0.4f;
     [SerializeField] protected float dashMaxDistance = 10f;
     [SerializeField] protected float preparationTime = 0.25f;
     [SerializeField] protected float attackTransitionDelay = 0.1f;
+
+    #endregion
+
+    #region Inspector - Ataque Base
 
     [Header("Ataque Base")]
     [SerializeField] protected float attackDamage = 30f;
@@ -34,14 +50,26 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     [SerializeField] protected float knockbackForce = 6f;
     [SerializeField] protected LayerMask playerLayer;
 
-    [Header("Percepción")]
+    #endregion
+
+    #region Inspector - Percepcion
+
+    [Header("Percepcion")]
     [SerializeField] protected float detectionRadius = 15f;
     [SerializeField] protected float dashActivationDistance = 10f;
+
+    #endregion
+
+    #region Inspector - Cooldowns
 
     [Header("Cooldowns")]
     [SerializeField] protected float cooldownShort = 1.0f;
     [SerializeField] protected float cooldownMedium = 1.5f;
     [SerializeField] protected float cooldownLong = 2.0f;
+
+    #endregion
+
+    #region Inspector - Sonido
 
     [Header("Sonido")]
     [SerializeField] protected AudioSource audioSource;
@@ -50,20 +78,37 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     [SerializeField] protected AudioClip damageSFX;
     [SerializeField] protected AudioClip deathSFX;
 
-    [Header("Capas")]
-    [SerializeField] protected LayerMask groundLayer = ~0;
     #endregion
 
-    #region Variables Protegidas
+    #region Inspector - Capas
+
+    [Header("Capas")]
+    [SerializeField] protected LayerMask groundLayer = ~0;
+
+    #endregion
+
+    #region Internal State
+
     protected EnemyHealth enemyHealth;
     protected NavMeshAgent agent;
     protected Transform playerTransform;
-    protected bool isAttacking = false;
+    protected float wanderTimer;
     protected float attackTimer;
     protected float currentCooldown;
+    protected bool isAttacking = false;
+    private Coroutine flashCoroutine;
+    private SpriteRenderer cachedSpriteRenderer;
+
+    #endregion
+
+    #region Public Properties & Events
+
+    protected bool IsAgentReady => agent != null && agent.enabled && agent.isOnNavMesh;
+
     #endregion
 
     #region Unity Lifecycle
+
     protected virtual void Awake()
     {
         enemyHealth = GetComponent<EnemyHealth>();
@@ -120,7 +165,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
         if (dist <= detectionRadius)
         {
-            agent?.SetDestination(playerTransform.position);
+            if (IsAgentReady) agent.SetDestination(playerTransform.position);
             attackTimer += Time.deltaTime;
 
             if (attackTimer >= currentCooldown)
@@ -136,9 +181,27 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             HandlePatrol();
         }
     }
+
     #endregion
 
-    #region Rutinas de Combate
+    #region Inicializacion Y Configuracion
+
+    protected virtual void InitializeEnemy()
+    {
+        if (enemyHealth != null) enemyHealth.SetMaxHealth(health);
+        if (agent != null)
+        {
+            agent.speed = moveSpeed;
+            agent.stoppingDistance = attackRadius;
+        }
+    }
+
+    protected virtual void SetupPools() { }
+
+    #endregion
+
+    #region Rutinas De Combate
+
     protected virtual IEnumerator ExecuteFullAttackSequence(bool useDash)
     {
         isAttacking = true;
@@ -182,7 +245,15 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
         if (agent.enabled)
         {
-            agent.Warp(transform.position);
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit navHit, 2f, NavMesh.AllAreas))
+            {
+                agent.Warp(navHit.position);
+            }
+            else
+            {
+                agent.Warp(transform.position);
+            }
+
             agent.updatePosition = true;
             agent.isStopped = false;
         }
@@ -227,7 +298,6 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         yield return new WaitForSeconds(Mathf.Max(0, recoveryTime - hitDelay));
     }
 
-
     public virtual void OnAttackHit()
     {
         if (audioSource && attackSFX) audioSource.PlayOneShot(attackSFX);
@@ -242,37 +312,10 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             }
         }
     }
+
     #endregion
 
-    #region Muerte
-    protected virtual void HandleDeath(GameObject e)
-    {
-        if (e != gameObject) return;
-        ResetDamageFlash();
-        if (audioSource && deathSFX) audioSource.PlayOneShot(deathSFX);
-        animCtrl?.PlayDeath();
-        agent.enabled = false;
-        this.enabled = false;
-    }
-    #endregion
-
-    #region Inicialización y Pools
-    protected virtual void InitializeEnemy()
-    {
-        if (enemyHealth != null) enemyHealth.SetMaxHealth(health);
-        if (agent != null)
-        {
-            agent.speed = moveSpeed;
-            agent.stoppingDistance = attackRadius;
-        }
-    }
-
-    protected virtual void SetupPools() { }
-    #endregion
-
-    #region Utilidades Comunes
-    protected float GetRandomCooldown()
-        => new float[] { cooldownShort, cooldownMedium, cooldownLong }[Random.Range(0, 3)];
+    #region Locomocion Y Patrullaje
 
     protected void HandleLocomotion()
     {
@@ -301,7 +344,9 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         {
             Vector3 randomDir = (Random.insideUnitSphere * wanderRadius) + transform.position;
             if (NavMesh.SamplePosition(randomDir, out NavMeshHit hit, wanderRadius, -1))
-                agent.SetDestination(hit.position);
+            {
+                if (IsAgentReady) agent.SetDestination(hit.position);
+            }
             wanderTimer = 0f;
         }
     }
@@ -329,11 +374,9 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         }
     }
 
-    protected IEnumerator DeactivateAfterDelay(GameObject obj, float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        if (obj != null) obj.SetActive(false);
-    }
+    #endregion
+
+    #region Efectos Y Animaciones
 
     protected void PlayDamageSFX()
     {
@@ -347,9 +390,6 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         if (animCtrl) animCtrl.PlayDamage();
         flashCoroutine = StartCoroutine(DamageFlash());
     }
-
-    private Coroutine flashCoroutine;
-    private SpriteRenderer cachedSpriteRenderer;
 
     private void CacheSpriteRenderer()
     {
@@ -368,7 +408,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         flashCoroutine = null;
     }
 
-    private void ResetDamageFlash()
+    protected void ResetDamageFlash()
     {
         if (flashCoroutine != null)
         {
@@ -386,9 +426,38 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             OnAttackHit();
         }
     }
+
     #endregion
 
-    #region Gizmos
+    #region Salud Y Muerte
+
+    protected virtual void HandleDeath(GameObject e)
+    {
+        if (e != gameObject) return;
+        ResetDamageFlash();
+        if (audioSource && deathSFX) audioSource.PlayOneShot(deathSFX);
+        animCtrl?.PlayDeath();
+        agent.enabled = false;
+        this.enabled = false;
+    }
+
+    #endregion
+
+    #region Utilidades Comunes
+
+    protected float GetRandomCooldown()
+        => new float[] { cooldownShort, cooldownMedium, cooldownLong }[Random.Range(0, 3)];
+
+    protected IEnumerator DeactivateAfterDelay(GameObject obj, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (obj != null) obj.SetActive(false);
+    }
+
+    #endregion
+
+    #region Logging
+
 #if UNITY_EDITOR
     protected virtual void OnDrawGizmos()
     {
@@ -467,5 +536,6 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         else return "UP LEFT";
     }
 #endif
+
     #endregion
 }

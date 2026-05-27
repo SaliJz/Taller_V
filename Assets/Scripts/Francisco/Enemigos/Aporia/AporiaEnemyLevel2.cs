@@ -3,20 +3,29 @@ using UnityEngine;
 
 public class AporiaEnemyLevel2 : AporiaEnemyBase
 {
-    #region Nivel 2 — Configuración Vidrio
-    [Header("Fragmentos de Vidrio — Ataque")]
+    #region Inspector - Fragmentos De Vidrio Ataque
+
+    [Header("Fragmentos de Vidrio - Ataque")]
     [SerializeField] private GameObject glassShardAttackPrefab;
     [SerializeField] private float shardAttackRadius = 1f;
     [SerializeField] private float shardAttackDamagePerSec = 4f;
     [SerializeField] private float shardAttackDuration = 3f;
 
-    [Header("Estela de Vidrio — Dash")]
+    #endregion
+
+    #region Inspector - Estela De Vidrio Dash
+
+    [Header("Estela de Vidrio - Dash")]
     [SerializeField] private GameObject glassShardDashPrefab;
     [SerializeField] private float shardDashDamagePerSec = 4f;
     [SerializeField] private float shardDashDuration = 1f;
     [SerializeField] private float shardDashSpacing = 1f;
 
-    [Header("Muerte — Explosión")]
+    #endregion
+
+    #region Inspector - Muerte Explosion
+
+    [Header("Muerte - Explosion")]
     [SerializeField] private float deathWarningDuration = 1.5f;
     [SerializeField] private float deathExplosionRadius = 3f;
     [SerializeField] private float deathExplosionDamage = 15f;
@@ -27,24 +36,35 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
     [SerializeField] private float shardDeathDuration = 2f;
     [SerializeField] private AudioClip explosionSFX;
 
+    #endregion
+
+    #region Inspector - QuickSheet Balance
+
     [Header("QuickSheet Balance")]
     [SerializeField] private Enemies enemiesSheet;
     [SerializeField] private int ENEMY_ID = 7;
 
     #endregion
 
-    #region Referencias Coroutines
-    private Coroutine _dashCoroutine;
-    private Coroutine _attackCoroutine;
-    private Coroutine _deathCoroutine;
+    #region Internal State
+
+    private Coroutine dashCoroutine;
+    private Coroutine attackCoroutine;
+    private Coroutine deathCoroutine;
+
     #endregion
 
-    #region
+    #region Unity Lifecycle
+
     protected override void Awake()
     {
         //LoadStatsFromSheet();
         base.Awake();
     }
+
+    #endregion
+
+    #region Initialization & Data Sync
 
     private void LoadStatsFromSheet()
     {
@@ -94,9 +114,11 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
 
         Debug.LogWarning($"[AporiaEnemyLevel1] ID {ENEMY_ID} no encontrado en el sheet.");
     }
+
     #endregion
 
-    #region Ataque
+    #region Core Health & Combat
+
     public override void OnAttackHit()
     {
         if (audioSource && attackSFX) audioSource.PlayOneShot(attackSFX);
@@ -113,9 +135,7 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
             }
         }
     }
-    #endregion
 
-    #region Dash
     protected override IEnumerator PerformDash(Vector3 startPos, Vector3 dashEnd, Vector3 attackDirection)
     {
         float elapsed = 0;
@@ -145,22 +165,25 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
             yield return null;
         }
     }
+
     #endregion
 
-    #region Muerte
+    #region Death & Destruction
+
     protected override void HandleDeath(GameObject e)
     {
         if (e != gameObject) return;
-        _deathCoroutine = StartCoroutine(DeathSequence());
+        ResetDamageFlash();
+        deathCoroutine = StartCoroutine(DeathSequence());
     }
 
     private IEnumerator DeathSequence()
     {
-        if (_dashCoroutine != null) StopCoroutine(_dashCoroutine);
-        if (_attackCoroutine != null) StopCoroutine(_attackCoroutine);
+        if (dashCoroutine != null) StopCoroutine(dashCoroutine);
+        if (attackCoroutine != null) StopCoroutine(attackCoroutine);
 
-        agent.isStopped = true;
-        agent.enabled = false;
+        if (agent != null && agent.enabled && agent.isOnNavMesh) agent.isStopped = true;
+        if (agent != null) agent.enabled = false;
         isAttacking = true;
 
         if (animCtrl) animCtrl.SendMessage("PlayDeathWarning", SendMessageOptions.DontRequireReceiver);
@@ -198,9 +221,11 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
             }
         }
     }
+
     #endregion
 
     #region Helpers
+
     private void SpawnGlassArea(GameObject prefab, Vector3 position, float radius,
                                  float damagePerSec, float duration)
     {
@@ -253,5 +278,6 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
             yield return null;
         }
     }
+
     #endregion
 }

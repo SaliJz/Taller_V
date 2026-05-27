@@ -2,27 +2,41 @@ using UnityEngine;
 
 public class AporiaEnemyLevel3 : AporiaEnemyBase
 {
-    #region Nivel 3 — VFX
-    [Header("Nivel 3 — VFX")]
+    #region Inspector - Nivel 3 VFX
+
+    [Header("Nivel 3 - VFX")]
     [SerializeField] private GameObject tongueVFXPrefab;
     [SerializeField] private GameObject nestPrefab;
+
+    #endregion
+
+    #region Inspector - QuickSheet Balance
 
     [Header("QuickSheet Balance")]
     [SerializeField] private Enemies enemiesSheet;
     [SerializeField] private int ENEMY_ID = 11;
 
-   private float currentLarvaSpawnRate;
-
-    private GameObject pooledTongue;
-    private GameObject pooledNest;
     #endregion
 
-    #region Unity Methods
+    #region Internal State
+
+    private float currentLarvaSpawnRate;
+    private GameObject pooledTongue;
+    private GameObject pooledNest;
+
+    #endregion
+
+    #region Unity Lifecycle
+
     protected override void Awake()
     {
         //LoadStatsFromSheet();
         base.Awake();
     }
+
+    #endregion
+
+    #region Initialization & Data Sync
 
     private void LoadStatsFromSheet()
     {
@@ -56,21 +70,21 @@ public class AporiaEnemyLevel3 : AporiaEnemyBase
             return;
         }
     }
-    #endregion
 
-    #region Pools
     protected override void SetupPools()
     {
         if (tongueVFXPrefab) { pooledTongue = Instantiate(tongueVFXPrefab); pooledTongue.SetActive(false); }
-        if (nestPrefab) 
-        { 
+        if (nestPrefab)
+        {
             pooledNest = Instantiate(nestPrefab); pooledNest.SetActive(false);
             pooledNest.GetComponent<AporiaNest>()?.SetRateSpawn(currentLarvaSpawnRate);
         }
     }
+
     #endregion
 
-    #region OnAttackHit: lengua + nido
+    #region Core Health & Combat
+
     public override void OnAttackHit()
     {
         if (audioSource && attackSFX) audioSource.PlayOneShot(attackSFX);
@@ -102,5 +116,6 @@ public class AporiaEnemyLevel3 : AporiaEnemyBase
             pooledNest.SetActive(true);
         }
     }
+
     #endregion
 }
