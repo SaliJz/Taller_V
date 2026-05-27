@@ -174,12 +174,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   letterPrefab: {fileID: 110001, guid: 312b2d08098d483f9f91fc59bf3cd7cc, type: 3}
   letterScaleMultiplier: 0.7
-  letterRevealDelay: 0.005
-  firstLetterOffset: {x: 0, y: 0, z: 0}
-  baseLetterSpacing: 0.001
-  widthSpacingMultiplier: 0.8
-  minimumLetterWidth: 30
-  letterOffsetStep: {x: 0, y: 0, z: 0}
+  letterRevealDelay: 0.01
+  firstLetterOffset: {x: 0, y: 0.12, z: 0.04}
+  baseLetterSpacing: 0.05
+  widthSpacingMultiplier: 1
+  minimumLetterWidth: 20
+  verticalFalloffPerLetter: -0.01
+  depthLagPerLetter: 0.04
   alwaysFaceMainCamera: 1
 --- !u!114 &6409492555120402405
 MonoBehaviour:

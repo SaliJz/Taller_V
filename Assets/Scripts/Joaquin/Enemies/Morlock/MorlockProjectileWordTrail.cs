@@ -18,114 +18,80 @@ public class MorlockProjectileWordTrail : MonoBehaviour
 
     [Tooltip("Initial offset of the first letter relative to the projectile.")]
     [FormerlySerializedAs("firstLetterLocalOffset")]
-    [SerializeField] private Vector3 firstLetterOffset = new Vector3(-0.08f, 0.12f, 0.04f);
+    [SerializeField] private Vector3 firstLetterOffset = new Vector3(0f, 0.12f, 0.04f);
 
     [Tooltip("Minimum spacing kept between letters, even for narrow glyphs.")]
-    [SerializeField, Min(0f)] private float baseLetterSpacing = 0.06f;
+    [SerializeField, Min(0f)] private float baseLetterSpacing = 0.05f;
 
     [Tooltip("How much of each letter's real width is used to separate the trail.")]
-    [SerializeField, Min(0f)] private float widthSpacingMultiplier = 1.15f;
+    [SerializeField, Min(0f)] private float widthSpacingMultiplier = 1.0f;
 
     [Tooltip("Minimum local width used when calculating dynamic spacing.")]
-    [SerializeField, Min(0f)] private float minimumLetterWidth = 32f;
+    [SerializeField, Min(0f)] private float minimumLetterWidth = 20f;
 
-    [Tooltip("Additional per-letter offsets. X adds extra horizontal spacing, Y vertical falloff, Z depth lag.")]
-    [FormerlySerializedAs("letterLocalStep")]
-    [SerializeField] private Vector3 letterOffsetStep = new Vector3(0.12f, -0.015f, 0.08f);
+    [Tooltip("Vertical falloff per letter (keep small, e.g. -0.01).")]
+    [SerializeField] private float verticalFalloffPerLetter = -0.01f;
+
+    [Tooltip("Depth lag per letter (keep small, e.g. 0.04).")]
+    [SerializeField] private float depthLagPerLetter = 0.04f;
 
     [Header("Billboard")]
     [SerializeField] private bool alwaysFaceMainCamera = true;
 
-    private readonly List<Transform> activeLetters = new List<Transform>();
-    private readonly List<int> activeLetterIndices = new List<int>();
-    private readonly List<float> activeLetterTrailOffsets = new List<float>();
+    // ── runtime state ──────────────────────────────────────────────
+    private readonly List<Transform>  activeLetters      = new();
+    private readonly List<TMP_Text>   activeTexts        = new();
+    // trailOffset[i] = world-space horizontal distance from the first letter
+    private readonly List<float>      activeTrailOffsets = new();
 
-    private Camera targetCamera;
+    private Camera    targetCamera;
     private Coroutine spawnRoutine;
-    private string currentWord = string.Empty;
+    private string    currentWord = string.Empty;
 
+    // ── public API ─────────────────────────────────────────────────
     public void InitializeWord(string word)
     {
         currentWord = string.IsNullOrWhiteSpace(word) ? string.Empty : word.Trim();
-
-        if (!isActiveAndEnabled)
-        {
-            return;
-        }
-
-        RestartTrail();
+        if (isActiveAndEnabled) RestartTrail();
     }
 
-    private void Awake()
-    {
-        targetCamera = Camera.main;
-    }
+    public string GetWord() => currentWord;
+
+    // ── Unity messages ─────────────────────────────────────────────
+    private void Awake() => targetCamera = Camera.main;
 
     private void OnEnable()
     {
         if (!string.IsNullOrEmpty(currentWord) && spawnRoutine == null && activeLetters.Count == 0)
-        {
             spawnRoutine = StartCoroutine(SpawnLetters());
-        }
     }
 
     private void OnDisable()
     {
-        if (spawnRoutine != null)
-        {
-            StopCoroutine(spawnRoutine);
-            spawnRoutine = null;
-        }
+        if (spawnRoutine != null) { StopCoroutine(spawnRoutine); spawnRoutine = null; }
     }
 
     private void LateUpdate()
     {
-        if (!alwaysFaceMainCamera || activeLetters.Count == 0)
-        {
-            return;
-        }
+        if (!alwaysFaceMainCamera || activeLetters.Count == 0) return;
+        if (targetCamera == null) targetCamera = Camera.main;
+        if (targetCamera == null) return;
 
-        if (targetCamera == null)
+        for (int i = 0; i < activeLetters.Count; i++)
         {
-            targetCamera = Camera.main;
-        }
-
-        if (targetCamera == null)
-        {
-            return;
-        }
-
-        for (int index = 0; index < activeLetters.Count; index++)
-        {
-            Transform letter = activeLetters[index];
-            if (letter == null)
-            {
-                continue;
-            }
-
-            UpdateLetterPosition(
-                letter,
-                activeLetterIndices[index],
-                activeLetterTrailOffsets[index],
-                targetCamera.transform);
-            FaceCamera(letter, targetCamera.transform);
+            if (activeLetters[i] == null) continue;
+            UpdateLetterPosition(activeLetters[i], i, activeTrailOffsets[i], targetCamera.transform);
+            FaceCamera(activeLetters[i], targetCamera.transform);
         }
     }
 
+    // ── internals ──────────────────────────────────────────────────
     private void RestartTrail()
     {
-        if (spawnRoutine != null)
-        {
-            StopCoroutine(spawnRoutine);
-            spawnRoutine = null;
-        }
-
+        if (spawnRoutine != null) { StopCoroutine(spawnRoutine); spawnRoutine = null; }
         ClearLetters();
-
         if (!string.IsNullOrEmpty(currentWord))
-        {
             spawnRoutine = StartCoroutine(SpawnLetters());
-        }
     }
 
     private IEnumerator SpawnLetters()
@@ -136,141 +102,112 @@ public class MorlockProjectileWordTrail : MonoBehaviour
             yield break;
         }
 
-        int visibleLetterIndex = 0;
-        float accumulatedTrailOffset = 0f;
+        if (targetCamera == null) targetCamera = Camera.main;
 
-        for (int index = 0; index < currentWord.Length; index++)
+        // ── PASS 1: instantiate all letters (positions are temporary) ──
+        foreach (char c in currentWord)
         {
-            char currentCharacter = currentWord[index];
+            if (char.IsWhiteSpace(c)) continue;
 
-            if (!char.IsWhiteSpace(currentCharacter))
+            GameObject obj = Instantiate(letterPrefab, transform);
+            obj.name = $"Letter_{activeLetters.Count}_{c}";
+
+            Transform t = obj.transform;
+            t.localScale *= letterScaleMultiplier;
+
+            TMP_Text tmp = obj.GetComponentInChildren<TMP_Text>(true);
+            if (tmp != null) tmp.text = c.ToString();
+
+            activeLetters.Add(t);
+            activeTexts.Add(tmp);
+            activeTrailOffsets.Add(0f); // placeholder
+
+            if (letterRevealDelay > 0f)
+                yield return new WaitForSeconds(letterRevealDelay);
+            else
+                yield return null;
+        }
+
+        // ── PASS 2: wait one frame so TMP has built all meshes ─────────
+        yield return null;
+
+        // ── PASS 3: measure real widths and assign trail offsets ────────
+        float accumulated = 0f;
+        for (int i = 0; i < activeLetters.Count; i++)
+        {
+            activeTrailOffsets[i] = accumulated;
+            accumulated += MeasureLetterSpacing(activeLetters[i], activeTexts[i]);
+        }
+
+        // ── PASS 4: set final positions ─────────────────────────────────
+        if (targetCamera != null)
+        {
+            for (int i = 0; i < activeLetters.Count; i++)
             {
-                GameObject letterObject = Instantiate(letterPrefab, transform);
-                letterObject.name = $"Letter_{visibleLetterIndex}_{currentCharacter}";
-
-                Transform letterTransform = letterObject.transform;
-                letterTransform.localScale *= letterScaleMultiplier;
-
-                TMP_Text textComponent = letterObject.GetComponentInChildren<TMP_Text>(true);
-                if (textComponent != null)
-                {
-                    textComponent.text = currentCharacter.ToString();
-                }
-
-                activeLetters.Add(letterTransform);
-                activeLetterIndices.Add(visibleLetterIndex);
-                activeLetterTrailOffsets.Add(accumulatedTrailOffset);
-
-                if (targetCamera == null)
-                {
-                    targetCamera = Camera.main;
-                }
-
-                if (targetCamera != null)
-                {
-                    UpdateLetterPosition(
-                        letterTransform,
-                        visibleLetterIndex,
-                        accumulatedTrailOffset,
-                        targetCamera.transform);
-                    FaceCamera(letterTransform, targetCamera.transform);
-                }
-
-                accumulatedTrailOffset += CalculateLetterSpacing(letterTransform, textComponent);
-                visibleLetterIndex++;
-
-                if (letterRevealDelay > 0f)
-                {
-                    yield return new WaitForSeconds(letterRevealDelay);
-                }
-                else
-                {
-                    yield return null;
-                }
+                if (activeLetters[i] == null) continue;
+                UpdateLetterPosition(activeLetters[i], i, activeTrailOffsets[i], targetCamera.transform);
+                FaceCamera(activeLetters[i], targetCamera.transform);
             }
         }
 
         spawnRoutine = null;
     }
 
-    private float CalculateLetterSpacing(Transform letterTransform, TMP_Text textComponent)
+    /// <summary>Returns the world-space width to advance after placing this letter.</summary>
+    private float MeasureLetterSpacing(Transform letterTransform, TMP_Text tmp)
     {
-        float worldLetterWidth = minimumLetterWidth * letterTransform.lossyScale.x;
+        float measured = minimumLetterWidth;
 
-        if (textComponent != null)
+        if (tmp != null)
         {
-            Canvas.ForceUpdateCanvases();
-            textComponent.ForceMeshUpdate();
-
-            float measuredWidth = Mathf.Max(minimumLetterWidth, textComponent.preferredWidth);
-            worldLetterWidth = measuredWidth * letterTransform.lossyScale.x;
+            // preferredWidth is reliable after ForceMeshUpdate (called one frame after spawn)
+            tmp.ForceMeshUpdate();
+            measured = Mathf.Max(minimumLetterWidth, tmp.preferredWidth);
         }
 
-        return baseLetterSpacing + (worldLetterWidth * widthSpacingMultiplier);
+        float worldWidth = measured * letterTransform.lossyScale.x;
+        return baseLetterSpacing + worldWidth * widthSpacingMultiplier;
     }
 
     private void UpdateLetterPosition(
         Transform letterTransform,
         int index,
-        float trailOffset,
+        float trailOffset,       // already in world-space units
         Transform cameraTransform)
     {
-        float horizontalOffset = firstLetterOffset.x + trailOffset + (letterOffsetStep.x * index);
-        float verticalOffset = firstLetterOffset.y + (letterOffsetStep.y * index);
-        float depthOffset = firstLetterOffset.z + (letterOffsetStep.z * index);
+        // Horizontal: trail only (no extra per-index multiplier → no double-offset)
+        float horizontal = firstLetterOffset.x + trailOffset;
+        float vertical   = firstLetterOffset.y + verticalFalloffPerLetter * index;
+        float depth      = firstLetterOffset.z + depthLagPerLetter        * index;
 
-        Vector3 projectedTrailDirection = Vector3.ProjectOnPlane(-transform.forward, cameraTransform.forward);
-        if (projectedTrailDirection.sqrMagnitude <= 0.0001f)
-        {
-            projectedTrailDirection = cameraTransform.right;
-        }
+        // Project the projectile's backward direction onto the camera plane
+        // so the trail always reads left→right from the camera's perspective.
+        Vector3 trailDir = Vector3.ProjectOnPlane(-transform.forward, cameraTransform.forward);
+        if (trailDir.sqrMagnitude <= 0.0001f) trailDir = cameraTransform.right;
+        trailDir.Normalize();
+        if (Vector3.Dot(trailDir, cameraTransform.right) < 0f) trailDir = -trailDir;
 
-        projectedTrailDirection.Normalize();
+        Vector3 upDir = Vector3.ProjectOnPlane(cameraTransform.up, cameraTransform.forward);
+        if (upDir.sqrMagnitude <= 0.0001f) upDir = cameraTransform.up;
+        upDir.Normalize();
 
-        if (Vector3.Dot(projectedTrailDirection, cameraTransform.right) < 0f)
-        {
-            projectedTrailDirection = -projectedTrailDirection;
-        }
-
-        Vector3 projectedVerticalDirection = Vector3.ProjectOnPlane(cameraTransform.up, cameraTransform.forward);
-        if (projectedVerticalDirection.sqrMagnitude <= 0.0001f)
-        {
-            projectedVerticalDirection = cameraTransform.up;
-        }
-
-        projectedVerticalDirection.Normalize();
-
-        Vector3 worldOffset =
-            (projectedTrailDirection * horizontalOffset) +
-            (projectedVerticalDirection * verticalOffset) -
-            (transform.forward * depthOffset);
-
-        letterTransform.position = transform.position + worldOffset;
+        letterTransform.position =
+            transform.position
+            + trailDir  * horizontal
+            + upDir     * vertical
+            - transform.forward * depth;
     }
 
-    private void FaceCamera(Transform letterTransform, Transform cameraTransform)
-    {
-        letterTransform.rotation = Quaternion.LookRotation(cameraTransform.forward, cameraTransform.up);
-    }
+    private static void FaceCamera(Transform t, Transform cam) =>
+        t.rotation = Quaternion.LookRotation(cam.forward, cam.up);
 
     private void ClearLetters()
     {
-        for (int index = 0; index < activeLetters.Count; index++)
-        {
-            Transform letter = activeLetters[index];
-            if (letter != null)
-            {
-                Destroy(letter.gameObject);
-            }
-        }
+        foreach (Transform t in activeLetters)
+            if (t != null) Destroy(t.gameObject);
 
         activeLetters.Clear();
-        activeLetterIndices.Clear();
-        activeLetterTrailOffsets.Clear();
-    }
-
-    public string GetWord()
-    {
-        return currentWord;
+        activeTexts.Clear();
+        activeTrailOffsets.Clear();
     }
 }
