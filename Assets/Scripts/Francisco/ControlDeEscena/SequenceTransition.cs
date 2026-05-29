@@ -19,8 +19,6 @@ public class SequenceTransition : TransitionInteractive
 
         yield return StartCoroutine(RunNodes(playerTransform));
 
-        RestoreControl();
-
         isSequenceRunning = false;
     }
 

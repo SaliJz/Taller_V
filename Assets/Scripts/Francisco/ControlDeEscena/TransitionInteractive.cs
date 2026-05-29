@@ -82,7 +82,7 @@ public class TransitionInteractive : MonoBehaviour
             if (nextPlatformIdx < platformNodes.Count && elapsedTime >= platformNodes[nextPlatformIdx].timeTrigger)
             {
                 PlatformNode currentPlatform = platformNodes[nextPlatformIdx];
-                
+
                 if (!isPlayerAttached)
                 {
                     playerTransform.SetParent(transform);
@@ -96,7 +96,7 @@ public class TransitionInteractive : MonoBehaviour
             if (nextPlayerIdx < playerNodes.Count && elapsedTime >= playerNodes[nextPlayerIdx].timeTrigger)
             {
                 PlayerNode currentPlayer = playerNodes[nextPlayerIdx];
-                
+
                 Vector3 startPos = playerTransform.position;
                 Vector3 targetPos = currentPlayer.nodeTransform != null ? currentPlayer.nodeTransform.position : startPos;
                 if (!currentPlayer.useYAxis) targetPos.y = startPos.y;
@@ -107,7 +107,7 @@ public class TransitionInteractive : MonoBehaviour
                 {
                     elapsedTime += Time.deltaTime;
                     Vector3 prevPos = playerTransform.position;
-                    
+
                     playerTransform.position = Vector3.MoveTowards(playerTransform.position, targetPos, speed * Time.deltaTime);
 
                     Vector3 moveDir = playerTransform.position - prevPos;
@@ -124,9 +124,7 @@ public class TransitionInteractive : MonoBehaviour
                 }
 
                 playerTransform.position = targetPos;
-                playerAnimCtrl?.SetInputAxes(0f, 0f);
-                playerAnimCtrl?.PlayState(PlayerAnimCtrl.PlayerState.idle, BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.locomotion);
-                
+
                 nextPlayerIdx++;
             }
 
@@ -138,7 +136,16 @@ public class TransitionInteractive : MonoBehaviour
         {
             playerTransform.SetParent(null);
         }
-        
+
+        if (playerAnimCtrl != null)
+        {
+            playerAnimCtrl.SetInputAxes(0f, 0f);
+            playerAnimCtrl.UpdateDirection(0f, 0f);
+            playerAnimCtrl.PlayState(PlayerAnimCtrl.PlayerState.idle, BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.locomotion);
+        }
+
+        yield return new WaitForEndOfFrame();
+
         isRunning = false;
     }
 
