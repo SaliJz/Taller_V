@@ -63,6 +63,8 @@ public class TransitionInteractive : MonoBehaviour
         SortAllEvents();
 
         bool isPlayerAttached = false;
+        bool playerMovementFinished = false;
+        bool idleFired = false; 
 
         while (nextPlayerIdx < playerNodes.Count || nextPlatformIdx < platformNodes.Count || nextFadeIdx < fadeEvents.Count || nextAnimIdx < animationEvents.Count)
         {
@@ -93,7 +95,7 @@ public class TransitionInteractive : MonoBehaviour
                 nextPlatformIdx++;
             }
 
-            if (nextPlayerIdx < playerNodes.Count && elapsedTime >= playerNodes[nextPlayerIdx].timeTrigger)
+            if (!playerMovementFinished && nextPlayerIdx < playerNodes.Count && elapsedTime >= playerNodes[nextPlayerIdx].timeTrigger)
             {
                 PlayerNode currentPlayer = playerNodes[nextPlayerIdx];
 
@@ -124,28 +126,34 @@ public class TransitionInteractive : MonoBehaviour
                 }
 
                 playerTransform.position = targetPos;
-
                 nextPlayerIdx++;
+
+                if (nextPlayerIdx >= playerNodes.Count)
+                {
+                    playerMovementFinished = true;
+                    idleFired = true;
+                    ForcePlayerIdle();
+                    if (playerAnimCtrl != null)
+                        playerAnimCtrl.enabled = false;
+                }
             }
 
             elapsedTime += Time.deltaTime;
             yield return null;
         }
 
+        if (!idleFired)
+            ForcePlayerIdle();
+
+        if (playerAnimCtrl != null)
+            playerAnimCtrl.enabled = true;
+
         if (playerTransform != null && playerTransform.parent == transform)
         {
             playerTransform.SetParent(null);
         }
 
-        if (playerAnimCtrl != null)
-        {
-            playerAnimCtrl.SetInputAxes(0f, 0f);
-            playerAnimCtrl.UpdateDirection(0f, 0f);
-            playerAnimCtrl.PlayState(PlayerAnimCtrl.PlayerState.idle, BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.locomotion);
-        }
-
         yield return new WaitForEndOfFrame();
-
         isRunning = false;
     }
 
@@ -180,11 +188,6 @@ public class TransitionInteractive : MonoBehaviour
         }
 
         transform.position = targetPos;
-        
-        if (playerTransform != null && playerTransform.parent == transform)
-        {
-            playerTransform.SetParent(null);
-        }
     }
 
     #endregion
@@ -209,21 +212,16 @@ public class TransitionInteractive : MonoBehaviour
         if (playerNodes != null && playerNodes.Count > 0)
         {
             Gizmos.color = playerGizmoColor;
-            Vector3? lastPos = null; 
+            Vector3? lastPos = null;
 
             for (int i = 0; i < playerNodes.Count; i++)
             {
                 if (playerNodes[i].nodeTransform != null)
                 {
                     Vector3 targetPos = playerNodes[i].nodeTransform.position;
-
                     Gizmos.DrawSphere(targetPos, gizmoSphereSize * 0.6f);
-
                     if (lastPos.HasValue)
-                    {
                         Gizmos.DrawLine(lastPos.Value, targetPos);
-                    }
-
                     lastPos = targetPos;
                 }
             }
@@ -233,6 +231,18 @@ public class TransitionInteractive : MonoBehaviour
     #endregion
 
     #region Lógica Interna
+
+    private void ForcePlayerIdle()
+    {
+        if (playerAnimCtrl == null) return;
+
+        playerAnimCtrl.SetInputAxes(0f, 0f);
+        playerAnimCtrl.UpdateDirection(0f, 0f);
+        playerAnimCtrl.PlayState(
+            PlayerAnimCtrl.PlayerState.idle,
+            BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.locomotion
+        );
+    }
 
     private void ProcessTimelineTriggers(ref int nextAnimIdx, ref int nextFadeIdx, float currentElapsedTime)
     {
@@ -257,24 +267,21 @@ public class TransitionInteractive : MonoBehaviour
         worldDir.Normalize();
 
         Transform cam = Camera.main != null ? Camera.main.transform : null;
-        Vector3 camFwd = cam != null ? cam.forward : Vector3.forward;
+        if (cam == null) return;
+
+        Vector3 camRight = cam.right;
+        camRight.y = 0f;
+        camRight.Normalize();
+
+        Vector3 camFwd = cam.forward;
         camFwd.y = 0f;
         camFwd.Normalize();
 
-        float angle = Vector3.SignedAngle(camFwd, worldDir, Vector3.up);
-        if (angle < 0) angle += 360f;
+        float h = Vector3.Dot(worldDir, camRight);   
+        float v = Vector3.Dot(worldDir, camFwd);    
 
-        float h = 0f;
-        float v = 0f;
-
-        if (angle < 22.5f || angle >= 337.5f) { h = 0f; v = 1f; }
-        else if (angle >= 22.5f && angle < 67.5f) { h = 1f; v = 1f; }
-        else if (angle >= 67.5f && angle < 112.5f) { h = 1f; v = 0f; }
-        else if (angle >= 112.5f && angle < 157.5f) { h = 1f; v = -1f; }
-        else if (angle >= 157.5f && angle < 202.5f) { h = 0f; v = -1f; }
-        else if (angle >= 202.5f && angle < 247.5f) { h = -1f; v = -1f; }
-        else if (angle >= 247.5f && angle < 292.5f) { h = -1f; v = 0f; }
-        else if (angle >= 292.5f && angle < 337.5f) { h = -1f; v = 1f; }
+        h = Mathf.Abs(h) > 0.3f ? Mathf.Sign(h) : 0f;
+        v = Mathf.Abs(v) > 0.3f ? Mathf.Sign(v) : 0f;
 
         playerAnimCtrl.SetInputAxes(h, v);
         playerAnimCtrl.UpdateDirection(h, v);

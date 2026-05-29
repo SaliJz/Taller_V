@@ -61,11 +61,15 @@ public class RoomTransitionController : MonoBehaviour
     public bool HasPreFadeSequence =>
         transitionMode == TransitionMode.Level1 && sequenceController != null;
 
-    public IEnumerator MovePlayerSmooth(Transform playerTransform, Vector3 targetPosition, float duration)
+    public IEnumerator MovePlayerSmooth(Transform playerTransform, Vector3 targetPosition, float duration, Vector3? movementDirection = null)
     {
         Vector3 startPosition = playerTransform.position;
         float originalY = startPosition.y;
         targetPosition.y = originalY;
+
+        PlayerAnimCtrl animCtrl = playerTransform.GetComponentInChildren<PlayerAnimCtrl>();
+        if (animCtrl == null)
+            animCtrl = playerTransform.GetComponent<PlayerAnimCtrl>();
 
         float elapsed = 0f;
         while (elapsed < duration)
@@ -80,6 +84,9 @@ public class RoomTransitionController : MonoBehaviour
             else
                 playerTransform.position = newPos;
 
+            if (animCtrl != null && !animCtrl.isDashing && movementDirection.HasValue)
+                SetAnimDir(animCtrl, movementDirection.Value);
+
             yield return null;
         }
 
@@ -90,6 +97,44 @@ public class RoomTransitionController : MonoBehaviour
             playerMovement.TeleportTo(finalPos);
         else
             playerTransform.position = finalPos;
+
+        if (animCtrl != null && !animCtrl.isDashing)
+            animCtrl.SetInputAxes(0f, 0f);
+    }
+
+    public void SetAnimDirFromWorld(Transform playerTransform, Vector3 worldDir)
+    {
+        PlayerAnimCtrl animCtrl = playerTransform.GetComponentInChildren<PlayerAnimCtrl>();
+        if (animCtrl == null) animCtrl = playerTransform.GetComponent<PlayerAnimCtrl>();
+        if (animCtrl == null) return;
+        SetAnimDir(animCtrl, worldDir);
+    }
+
+    private void SetAnimDir(PlayerAnimCtrl animCtrl, Vector3 worldDir)
+    {
+        worldDir.y = 0f;
+        if (worldDir.sqrMagnitude < 0.001f) return;
+        worldDir.Normalize();
+
+        Transform cam = Camera.main != null ? Camera.main.transform : null;
+        if (cam == null) return;
+
+        Vector3 camRight = cam.right;
+        camRight.y = 0f;
+        camRight.Normalize();
+
+        Vector3 camFwd = cam.forward;
+        camFwd.y = 0f;
+        camFwd.Normalize();
+
+        float h = Vector3.Dot(worldDir, camRight);
+        float v = Vector3.Dot(worldDir, camFwd);
+
+        h = Mathf.Abs(h) > 0.3f ? Mathf.Sign(h) : 0f;
+        v = Mathf.Abs(v) > 0.3f ? Mathf.Sign(v) : 0f;
+
+        animCtrl.SetInputAxes(h, v);
+        animCtrl.UpdateDirection(h, v);
     }
 
     public IEnumerator ActivateDoorDelayed(GameObject door)

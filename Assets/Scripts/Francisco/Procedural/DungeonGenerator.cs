@@ -88,7 +88,7 @@ public class DungeonGenerator : MonoBehaviour
     private float currentProbableMandatoryProbability;
     private const int RECENT_HISTORY_SIZE = 3;
 
-    private float roomStartTime = 0f; 
+    private float roomStartTime = 0f;
     public int CurrentRoomCount { get; private set; } = 0;
     public int currentRoomNumber { get; private set; } = 0;
     public Room CurrentRoom { get; private set; }
@@ -899,8 +899,8 @@ public class DungeonGenerator : MonoBehaviour
     {
         int roomNum = roomsGenerated + 1;
 
-        var availableRules = progressionRules 
-            .Where(r => r != null) 
+        var availableRules = progressionRules
+            .Where(r => r != null)
             .Where(r => roomNum >= r.minRoomNumber && roomNum <= r.maxRoomNumber)
             .Where(r => r.roomType == roomType)
             .Where(r => !r.generateOnce || !usedOnceRules.Contains(r))
@@ -1027,7 +1027,7 @@ public class DungeonGenerator : MonoBehaviour
         }
 
         newWave.enemyPrefabs = waveEnemies.ToArray();
-        newWave.enemyCount = totalCount; 
+        newWave.enemyCount = totalCount;
 
         Debug.Log($"[ConvertPredefinedWave] Wave generada con {totalCount} enemigos totales.");
 
@@ -1155,7 +1155,7 @@ public class DungeonGenerator : MonoBehaviour
     private List<RoomType> ApplyPreviousRoomFilter(List<RoomType> candidates, RoomType previousType)
     {
         if (!generationRuleDictionary.ContainsKey(previousType))
-            return candidates; 
+            return candidates;
 
         var allowed = generationRuleDictionary[previousType];
         var filtered = candidates.Where(t => allowed.Contains(t)).ToList();
@@ -1310,7 +1310,8 @@ public class DungeonGenerator : MonoBehaviour
                         roomTransitionController.MovePlayerSmooth(
                             playerTransform,
                             targetPosition,
-                            playerMoveDuration));
+                            playerMoveDuration,
+                            directionOutOfOldRoom));
                 },
                 onComplete: null
             );
@@ -1323,24 +1324,12 @@ public class DungeonGenerator : MonoBehaviour
 
             directionIntoNewRoom.y = 0f;
 
-            Vector3 spawnPositionBase =
-                exitPoint.transform.position;
-
             Vector3 spawnPosition =
-                spawnPositionBase +
+                exitPoint.transform.position +
                 directionIntoNewRoom *
                 PlayerOffsetDistance;
 
-            if (cameFromElevator)
-            {
-                spawnPosition.y =
-                    exitPoint.transform.position.y;
-            }
-            else
-            {
-                spawnPosition.y =
-                    playerTransform.position.y;
-            }
+            spawnPosition.y = exitPoint.transform.position.y;
 
             if (playerMovement != null)
             {
@@ -1350,6 +1339,9 @@ public class DungeonGenerator : MonoBehaviour
             {
                 playerTransform.position = spawnPosition;
             }
+
+            roomTransitionController.SetAnimDirFromWorld(
+                playerTransform, directionIntoNewRoom);
         }
 
         yield return FadeController.Instance.FadeIn(
@@ -1368,22 +1360,14 @@ public class DungeonGenerator : MonoBehaviour
                     directionIntoNewRoom *
                     playerMoveDistance;
 
-                if (cameFromElevator)
-                {
-                    targetPosition.y =
-                        playerTransform.position.y;
-                }
-                else
-                {
-                    targetPosition.y =
-                        originalPlayerY;
-                }
+                targetPosition.y = playerTransform.position.y;
 
                 StartCoroutine(
                     roomTransitionController.MovePlayerSmooth(
                         playerTransform,
                         targetPosition,
-                        playerMoveDuration));
+                        playerMoveDuration,
+                        directionIntoNewRoom));
             },
             onComplete: () =>
             {
@@ -1573,7 +1557,7 @@ public class DungeonGenerator : MonoBehaviour
             if (connectionPoint.isConnected) continue;
 
             if (!doorPreviewCache.TryGetValue(connectionPoint, out RoomType nextRoomType))
-                continue; 
+                continue;
 
             DoorPreviewIndicator indicator = connectionPoint.GetComponentInChildren<DoorPreviewIndicator>();
 
@@ -1655,7 +1639,7 @@ public class DungeonGenerator : MonoBehaviour
                 if (roll < rule.probability)
                 {
                     assignments[door] = probableType;
-                    if (!allowMultiple) break; 
+                    if (!allowMultiple) break;
                 }
             }
         }
