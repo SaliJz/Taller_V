@@ -1,4 +1,5 @@
 // VidaEnemigoEscudo.cs (actualizado: manejo por-source de áreas)
+/*
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -219,9 +220,4 @@ public class VidaEnemigoEscudo : MonoBehaviour, IDamageable
     }
     #endregion
 }
-
-
-
-
-
-
+*/

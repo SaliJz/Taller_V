@@ -380,7 +380,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
             {
                 ReportDebug("El enemigo ha recibido dano critico.", 1);
 
-                enemyVisualEffects.StartArmorGlow();
+                //enemyVisualEffects.StartArmorGlow();
 
                 if (currentCriticalDamageCoroutine != null) StopCoroutine(currentCriticalDamageCoroutine);
                 currentCriticalDamageCoroutine = StartCoroutine(StopGlowAfterDelay(glowDelayAfterCritical));
@@ -675,7 +675,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         if (enemyVisualEffects != null)
         {
-            enemyVisualEffects.StopArmorGlow();
+            //enemyVisualEffects.StopArmorGlow();
         }
     }
 
