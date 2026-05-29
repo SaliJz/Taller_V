@@ -5,10 +5,12 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Clase que maneja el HUD (Heads-Up Display) del jugador.
+/// Clase que maneja el HUD del jugador.
 /// </summary> 
 public class HUDManager : MonoBehaviour
 {
+    #region Structs & Classes
+
     [System.Serializable]
     public class LifeStageIcon
     {
@@ -16,7 +18,9 @@ public class HUDManager : MonoBehaviour
         public Sprite icon;
     }
 
-    public static HUDManager Instance { get; private set; }
+    #endregion
+
+    #region Inspector - Componentes del HUD
 
     [Header("Componentes del HUD")]
     [SerializeField] private Image healthBar;
@@ -24,13 +28,25 @@ public class HUDManager : MonoBehaviour
     [SerializeField] private Image lifeStageIconImage;
     [SerializeField] private List<LifeStageIcon> lifeStageIcons;
 
-    [Header("Prompt de Interacci�n")]
+    #endregion
+
+    #region Inspector - Prompt De Interaccion
+
+    [Header("Prompt de Interaccion")]
     [SerializeField] private GameObject interactionPromptPanel;
     [SerializeField] private TextMeshProUGUI interactionPromptText;
+
+    #endregion
+
+    #region Inspector - Etapas de Vida Root Objects
 
     [Header("Etapas de Vida - Root Objects")]
     [SerializeField] private GameObject adultRootStage;
     [SerializeField] private GameObject elderRootStage;
+
+    #endregion
+
+    #region Inspector - Low Health VFX
 
     [Header("Low Health VFX")]
     [SerializeField] private Image screenFlashOverlay;
@@ -41,22 +57,57 @@ public class HUDManager : MonoBehaviour
     [SerializeField] private float lowHealthThreshold = 0.25f;
     [SerializeField] private float lowHealthEffectDuration = 2.5f;
 
+    #endregion
+
+    #region Inspector - Vida Temporal Animacion
+
     [Header("Vida Temporal - Animacion")]
     [SerializeField] private float temporaryHealthLerpSpeed = 5f;
     [SerializeField] private RectTransform healthBarParentRect;
 
+    #endregion
+
+    #region Inspector - Ghosting de Barra de Vida
+
+    [Header("Ghosting de Barra de Vida")]
+    [SerializeField] private Image ghostHealthBar;
+    [SerializeField] private float ghostDecayDuration = 1f;
+    [SerializeField] private float ghostDecaySpeed = 0.5f;
+
+    #endregion
+
+    #region Inspector - VFX Cambio de Etapa
+
+    [Header("VFX Cambio de Etapa - Secuencia Mano")]
+    [SerializeField] private HUDHandAnimCtrl handAnim;
+
+    #endregion
+
+    #region Internal State
+
+    private float ghostFill = 1f;
+    private float ghostTargetFill = 1f;
+    private float ghostSnapFill = -1f;
     private float targetTempHealthPercentage = 0f;
     private float maxHealthForTempBar = 1f;
-
+    private float lowHealthTimer;
     private bool isLowHealth = false;
+    private Color originalHealthBarColor;
+
+    private Coroutine ghostDecayCoroutine;
     private Coroutine healthBarFlashCoroutine;
     private Coroutine screenFlashCoroutine;
     private Coroutine lowHealthEffectCoroutine;
-    private Color originalHealthBarColor;
-    private float lowHealthTimer;
 
-    [Header("VFX Cambio de Etapa - Secuencia Mano")]
-    [SerializeField] HUDHandAnimCtrl handAnim;
+    #endregion
+
+    #region Public Properties & Events
+
+    public static HUDManager Instance { get; private set; }
+
+    #endregion
+
+    #region Unity Lifecycle
 
     private void Awake()
     {
@@ -72,7 +123,7 @@ public class HUDManager : MonoBehaviour
         // Inicializar overlay de pantalla
         if (screenFlashOverlay != null)
         {
-            // Asegurarse de que el overlay est� invisible al inicio
+            // Asegurarse de que el overlay esta invisible al inicio
             Color transparent = lowHealthScreenFlashColor;
             transparent.a = 0f;
             screenFlashOverlay.color = transparent;
@@ -128,18 +179,22 @@ public class HUDManager : MonoBehaviour
         if (lowHealthEffectCoroutine != null) StopCoroutine(lowHealthEffectCoroutine);
     }
 
+    #endregion
+
+    #region Health & Ghosting Management
+
     /// <summary>
-    /// Funci�n que actualiza la barra de salud en el HUD.
+    /// Funcion que actualiza la barra de salud en el HUD.
     /// </summary>
     /// <param name="currentHealth"> Vida actual del jugador </param>
-    /// <param name="maxHealth"> Vida m�xima del jugador </param>
+    /// <param name="maxHealth"> Vida maxima del jugador </param>
     private void UpdateHealthBar(float currentHealth, float maxHealth)
     {
         if (healthBar == null) return;
 
         if (maxHealth <= 0f)
         {
-            Debug.LogWarning("[HUDManager] maxHealth inv�lido en UpdateHealthBar: " + maxHealth);
+            Debug.LogWarning("[HUDManager] maxHealth invalido en UpdateHealthBar: " + maxHealth);
             healthBar.fillAmount = 0f;
             return;
         }
@@ -147,7 +202,10 @@ public class HUDManager : MonoBehaviour
         float healthPercentage = Mathf.Clamp01(currentHealth / maxHealth);
         healthBar.fillAmount = healthPercentage;
 
-        // Verificar si est� en vida baja
+        // Ghosting
+        UpdateGhostBar(healthPercentage);
+
+        // Verificar si esta en vida baja
         bool shouldShowLowHealthEffects = healthPercentage < lowHealthThreshold;
 
         if (shouldShowLowHealthEffects && !isLowHealth)
@@ -158,7 +216,7 @@ public class HUDManager : MonoBehaviour
         }
         else if (shouldShowLowHealthEffects && isLowHealth)
         {
-            // Reiniciar efectos si a�n est� en vida baja
+            // Reiniciar efectos si aun esta en vida baja
             ResetLowHealthEffects();
         }
         else if (!shouldShowLowHealthEffects && isLowHealth)
@@ -192,6 +250,98 @@ public class HUDManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Actualiza el estado de la barra ghost al recibir dano.
+    /// Solo actua si la nueva vida es menor a la anterior (dano real).
+    /// </summary>
+    private void UpdateGhostBar(float newHealthFill)
+    {
+        if (ghostHealthBar == null) return;
+
+        // Solo aplica cuando hay dano (fill baja)
+        if (newHealthFill >= ghostFill)
+        {
+            // Curacion o sin cambio: la ghost sigue al instante para no quedar por debajo
+            ghostFill = newHealthFill;
+            ghostTargetFill = newHealthFill;
+            ghostSnapFill = -1f;
+            ghostHealthBar.fillAmount = ghostFill;
+            if (ghostDecayCoroutine != null)
+            {
+                StopCoroutine(ghostDecayCoroutine);
+                ghostDecayCoroutine = null;
+            }
+            return;
+        }
+
+        // Hay un golpe nuevo:
+        if (ghostDecayCoroutine != null)
+        {
+            // Si la barra ghost todavia estaba bajando
+            // Snapea al fill de la barra principal justo antes de este golpe
+            ghostSnapFill = ghostTargetFill;
+        }
+
+        // El nuevo objetivo es el fill actual de la barra principal
+        ghostTargetFill = newHealthFill;
+
+        // Reiniciar la corrutina de descenso
+        if (ghostDecayCoroutine != null) StopCoroutine(ghostDecayCoroutine);
+        ghostDecayCoroutine = StartCoroutine(GhostDecayRoutine());
+
+        ReportDebug($"Ghost bar activada. Snap: {ghostSnapFill:F2} -> Actual: {ghostFill:F2} -> Target: {ghostTargetFill:F2}", 1);
+    }
+
+    /// <summary>
+    /// Corrutina que maneja el descenso suave 
+    /// y el snap previo si aplica
+    /// de la barra de ghosting.
+    /// </summary>
+    private IEnumerator GhostDecayRoutine()
+    {
+        // Si hay un snap pendiente, aplicarlo de inmediato
+        if (ghostSnapFill >= 0f)
+        {
+            ghostFill = ghostSnapFill;
+            ghostHealthBar.fillAmount = ghostFill;
+            ghostSnapFill = -1f;
+        }
+
+        // Esperar ghostDecayDuration antes de empezar a bajar
+        float elapsed = 0f;
+        while (elapsed < ghostDecayDuration)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Descender suavemente desde ghostFill hasta ghostTargetFill
+        float startFill = ghostFill;
+        elapsed = 0f;
+
+        float distance = Mathf.Max(startFill - ghostTargetFill, 0f);
+        float totalDecayTime = Mathf.Max(distance / ghostDecaySpeed, 0.1f);
+
+        while (elapsed < totalDecayTime)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / totalDecayTime);
+            ghostFill = Mathf.Lerp(startFill, ghostTargetFill, t);
+            ghostHealthBar.fillAmount = ghostFill;
+            yield return null;
+        }
+
+        ghostFill = ghostTargetFill;
+        ghostHealthBar.fillAmount = ghostFill;
+        ghostDecayCoroutine = null;
+
+        ReportDebug($"Ghost bar llego a target: {ghostFill:F2}", 1);
+    }
+
+    #endregion
+
+    #region Low Health Effects
+
+    /// <summary>
     /// Inicia los efectos visuales de vida baja.
     /// </summary>
     private void StartLowHealthEffects()
@@ -207,27 +357,11 @@ public class HUDManager : MonoBehaviour
         if (screenFlashCoroutine != null) StopCoroutine(screenFlashCoroutine);
         screenFlashCoroutine = StartCoroutine(ScreenFlashRoutine());
 
-        // Iniciar corrutina de duraci�n del efecto
+        // Iniciar corrutina de duracion del efecto
         if (lowHealthEffectCoroutine != null) StopCoroutine(lowHealthEffectCoroutine);
         lowHealthEffectCoroutine = StartCoroutine(LowHealthEffectDurationRoutine());
 
         ReportDebug("Efectos de vida baja activados.", 1);
-    }
-
-    public void SetInteractionPrompt(bool active, string actionName, string actionText)
-    {
-        if (interactionPromptPanel == null) return;
-
-        interactionPromptPanel.SetActive(active);
-
-        if (active)
-        {
-            string buttonPrompt = InputIconManager.Instance != null
-                ? InputIconManager.Instance.GetPromptForAction(actionName)
-                : "[E]"; 
-
-            interactionPromptText.text = $"{buttonPrompt} {actionText}";
-        }
     }
 
     /// <summary>
@@ -264,14 +398,14 @@ public class HUDManager : MonoBehaviour
             screenFlashCoroutine = null;
         }
 
-        // Detener corrutina de duraci�n
+        // Detener corrutina de duracion
         if (lowHealthEffectCoroutine != null)
         {
             StopCoroutine(lowHealthEffectCoroutine);
             lowHealthEffectCoroutine = null;
         }
 
-        // Asegurarse de que el overlay est� invisible
+        // Asegurarse de que el overlay esta invisible
         if (screenFlashOverlay != null)
         {
             Color transparent = lowHealthScreenFlashColor;
@@ -283,7 +417,7 @@ public class HUDManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Rutina que controla la duraci�n total del efecto de vida baja
+    /// Rutina que controla la duracion total del efecto de vida baja
     /// </summary>
     private IEnumerator LowHealthEffectDurationRoutine()
     {
@@ -378,8 +512,28 @@ public class HUDManager : MonoBehaviour
         }
     }
 
+    #endregion
+
+    #region UI Updates & Interaction
+
+    public void SetInteractionPrompt(bool active, string actionName, string actionText)
+    {
+        if (interactionPromptPanel == null) return;
+
+        interactionPromptPanel.SetActive(active);
+
+        if (active)
+        {
+            string buttonPrompt = InputIconManager.Instance != null
+                ? InputIconManager.Instance.GetPromptForAction(actionName)
+                : "[E]";
+
+            interactionPromptText.text = $"{buttonPrompt} {actionText}";
+        }
+    }
+
     /// <summary>
-    /// Funci�n que actualiza el icono de la etapa de vida en el HUD.
+    /// Funcion que actualiza el icono de la etapa de vida en el HUD.
     /// </summary>
     /// <param name="newStage"> Nueva etapa de vida del jugador </param>
     private void UpdateLifeStageIcon(PlayerHealth.LifeStage newStage)
@@ -410,11 +564,15 @@ public class HUDManager : MonoBehaviour
         handAnim.PlaySmashSecuence();
     }
 
+    #endregion
+
+    #region Logging
+
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     /// <summary> 
-    /// Funci�n de depuraci�n para reportar mensajes en la consola de Unity. 
+    /// Funcion de depuracion para reportar mensajes en la consola de Unity. 
     /// </summary> 
-    /// <<param name="message">Mensaje a reportar.</param> >
+    /// <param name="message">Mensaje a reportar.</param>
     /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
     private static void ReportDebug(string message, int reportPriorityLevel)
     {
@@ -434,4 +592,6 @@ public class HUDManager : MonoBehaviour
                 break;
         }
     }
+
+    #endregion
 }
