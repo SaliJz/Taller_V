@@ -388,6 +388,8 @@ MonoBehaviour:
   baseDamage: 10
   explosionRadius: 1
   larvaRenderer: {fileID: 3406694872015079568}
+  rotationSpeed: 16
+  rotationOffset: 0
 --- !u!114 &5877659156932573668
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -405,7 +407,6 @@ MonoBehaviour:
   healthPercentageText: {fileID: 0}
   healthMultiplierText: {fileID: 0}
   toughnessSystem: {fileID: 2002351381241149244}
-  deathVFXPrefab: {fileID: 0}
   maxHealth: 3
   currentHealth: 0
   canDieAfterCooldown: 1
@@ -416,7 +417,6 @@ MonoBehaviour:
   onDeathEvent:
     m_PersistentCalls:
       m_Calls: []
-  deathVFXOffset: {x: 0, y: 1, z: 0}
   offsetAboveEnemy: 2
   glowDelayAfterCritical: 2
   useDynamicHealthBars: 0
@@ -426,17 +426,12 @@ MonoBehaviour:
   canGrantLifestealOnDeath: 0
   lifestealAmountOnDeathByMelee: 0
   lifestealAmountOnDeathByDistance: 0
-  enableAutoArea: 0
-  areaTriggerPercent: 0.25
-  areaReductionPercent: 0.25
-  areaDuration: 10
-  areaCooldown: 4.5
-  areaRadius: 8
-  areaLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  flattenHeightThreshold: 1.2
-  areaCheckInterval: 0.25
+  deathVFXPrefab: {fileID: 0}
+  deathVFXSpawnPoint: {fileID: 0}
+  deathVFXOffsetFallBack: {x: 0, y: 1, z: 0}
+  impactVFXSpawnPoint: {fileID: 0}
+  healthDamageVFXPrefab: {fileID: 0}
+  healthDamageVFXSpawnPoint: {fileID: 0}
   invulnerableLayerIndex: 0
 --- !u!114 &2002351381241149244
 MonoBehaviour:
@@ -464,6 +459,8 @@ MonoBehaviour:
   toughnessPerBar: 10
   toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
+  toughnessBlockVFXPrefab: {fileID: 0}
+  toughnessBlockVFXSpawnPoint: {fileID: 0}
 --- !u!54 &-6703627552925181079
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -6,9 +6,9 @@ public class ResurrectedLarva : BaseLarva
     #region Settings
 
     [Header("Damage")]
-    public float damagePercentOfEnemyBase = 0.5f;
-    public float explosionRadius = 0.5f;
-    public float baseDamage = 10f;
+    [SerializeField] private float damagePercentOfEnemyBase = 0.5f;
+    [SerializeField] private float explosionRadius = 0.5f;
+    [SerializeField] private float baseDamage = 10f;
 
     #endregion
 

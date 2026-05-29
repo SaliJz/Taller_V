@@ -7,20 +7,20 @@ public abstract class BaseLarva : MonoBehaviour
     #region Settings
 
     [Header("Movement")]
-    public float moveSpeed = 5f;
-    public float lifetime = 5f;
+    [SerializeField] protected float moveSpeed = 5f;
+    [SerializeField] protected float lifetime = 5f;
 
     [Header("Idle Wander")]
-    public float wanderRadius = 3f;
-    public float wanderInterval = 2f;
-    public float wanderSpeed = 2f;
+    [SerializeField] protected float wanderRadius = 3f;
+    [SerializeField] protected float wanderInterval = 2f;
+    [SerializeField] protected float wanderSpeed = 2f;
 
     [Header("Invulnerability")]
-    public float invulnerabilityTime = 1f;
+    [SerializeField] protected float invulnerabilityTime = 1f;
 
     [Header("Rotation")]
-    public float rotationSpeed = 8f;
-    public float rotationOffset = 0f;
+    [SerializeField] protected float rotationSpeed = 8f;
+    [SerializeField] protected float rotationOffset = 0f;
 
     #endregion
 

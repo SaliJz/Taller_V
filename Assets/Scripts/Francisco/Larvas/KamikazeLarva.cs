@@ -5,12 +5,12 @@ public class KamikazeLarva : BaseLarva
     #region Settings
 
     [Header("Detection")]
-    public float detectionRadius = 10f;
-    public LayerMask enemyLayer;
+    [SerializeField] private float detectionRadius = 10f;
+    [SerializeField] private LayerMask enemyLayer;
 
     [Header("Explosion")]
-    public GameObject explosionAreaPrefab;
-    public float explosionTriggerRange = 1.2f;
+    [SerializeField] private GameObject explosionAreaPrefab;
+    [SerializeField] private float explosionTriggerRange = 1.2f;
 
     #endregion
 

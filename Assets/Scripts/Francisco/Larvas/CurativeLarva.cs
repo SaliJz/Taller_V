@@ -5,9 +5,13 @@ public class CurativeLarva : BaseLarva
     #region Settings
 
     [Header("Healing")]
-    public float baseHealAmount = 15f;
-    public float healingRadius = 0.75f;
-    public float stopDistance = 0.5f;
+    [SerializeField] private float baseHealAmount = 15f;
+    [SerializeField] private float healingRadius = 0.75f;
+    [SerializeField] private float stopDistance = 0.5f;
+
+    [Header("Detection & Grace Time")]
+    [SerializeField] private float detectionRadius = 8f;
+    [SerializeField] private float loseTargetGraceTime = 1.5f;
 
     #endregion
 
@@ -17,6 +21,8 @@ public class CurativeLarva : BaseLarva
     private Transform playerTransform;
     private float calculatedHealAmount;
     private bool hasHealed = false;
+
+    private float graceTimer = 0f;
 
     #endregion
 
@@ -42,16 +48,55 @@ public class CurativeLarva : BaseLarva
         if (calculatedHealAmount == 0) calculatedHealAmount = baseHealAmount;
     }
 
-    protected override bool HasTarget() => playerTransform != null;
+    protected override bool HasTarget()
+    {
+        if (playerTransform == null) return false;
 
-    protected override void SearchForTarget() { }
+        bool isInRange = Vector3.Distance(transform.position, playerTransform.position) <= detectionRadius;
+
+        return isInRange || graceTimer > 0f;
+    }
+
+    protected override void SearchForTarget()
+    {
+        if (playerTransform == null) return;
+
+        bool isInRange = Vector3.Distance(transform.position, playerTransform.position) <= detectionRadius;
+
+        if (isInRange)
+        {
+            graceTimer = loseTargetGraceTime;
+            currentState = LarvaState.Chase;
+        }
+        else
+        {
+            if (currentState == LarvaState.Chase)
+            {
+                graceTimer -= Time.deltaTime;
+
+                if (graceTimer <= 0f)
+                {
+                    currentState = LarvaState.Idle;
+
+                    if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+                    {
+                        agent.ResetPath();
+                        agent.speed = wanderSpeed; 
+                    }
+                }
+            }
+        }
+    }
 
     protected override void OnChaseUpdate()
     {
         if (hasHealed || playerTransform == null) return;
 
         if (agent != null && agent.isOnNavMesh)
+        {
+            agent.speed = moveSpeed;
             agent.SetDestination(playerTransform.position);
+        }
 
         if (Vector3.Distance(transform.position, playerTransform.position) <= healingRadius)
             HealAndDie();
@@ -100,6 +145,9 @@ public class CurativeLarva : BaseLarva
 
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(transform.position, healingRadius);
+
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, detectionRadius);
     }
 
     #endregion
