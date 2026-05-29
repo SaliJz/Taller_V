@@ -1513,8 +1513,8 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 2.61
-  m_Height: 6.5
+  m_Radius: 2.5
+  m_Height: 12
   m_Direction: 1
   m_Center: {x: 0, y: 3.25, z: 0}
 --- !u!54 &1174011676078653410
@@ -1553,7 +1553,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 5831055655091660515}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 2.5
+  m_Radius: 2
   m_Speed: 15
   m_Acceleration: 9
   avoidancePriority: 50
@@ -1772,25 +1772,20 @@ MonoBehaviour:
   toughnessBlockSFX: {fileID: 0}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
-  useOriginalMaterials: 1
-  defaultMaterial: {fileID: 2100000, guid: d86e7347337312a41ad9711f4e131bea, type: 2}
-  blinkFlashMaterial: {fileID: 2100000, guid: f252e05afbca4b14da60e54eabddf22d, type: 2}
-  blinkInterval: 0.06
-  blinkCount: 6
   useAmountFlash: 0
   amountFlashRenderer: {fileID: 0}
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
+  blinkInterval: 0.06
+  blinkCount: 6
   stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
   stunVFXSpawnPoint: {fileID: 487080949538094516}
   stunVFXHeightFallback: 2
-  stunMaterial: {fileID: 0}
-  stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
-  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   glowMaterial: {fileID: 2100000, guid: b4e58dcad18308f42af5b40ebb3e5dae, type: 2}
   glowIntensity: 2
+  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
 --- !u!114 &1548725866173879885
