@@ -1160,24 +1160,24 @@ MonoBehaviour:
   stuckDistanceThreshold: 0.1
   furySpeedMultiplier: 1.5
   furyLevel2SpeedBonus: 0
-  furyJumpDistance: 2
-  furyJumpReducedDistance: 1
-  furyJumpDelay: 2
-  furyJumpCancelDistance: 0.5
-  furyJumpDuration: 0.5
+  furyJumpDistance: 0
+  furyJumpReducedDistance: 0
+  furyJumpDelay: 0
+  furyJumpCancelDistance: 0
+  furyJumpDuration: 0
   normalAttackDamage: 5
   normalAttackInterval: 1
   normalAttackRange: 4
   normalAttackSlowDuration: 2
   normalAttackSlowPercent: 0.5
   furyAttackDamage: 15
-  furyAttackInterval: 1
+  furyAttackInterval: 0.5
   furyAttackRange: 4
   furyDecayTime: 5
   furyDecayNoDamageTime: 8
   furyRegenerationPerSecond: 2
-  consecutiveHitPushDistance: 1
-  screamTransitionDuration: 1.2
+  consecutiveHitPushDistance: 0
+  screamTransitionDuration: 0
   maxFuryLevel: 1
   normalStateMaterial: {fileID: -3113694911958652215, guid: 87b5c11cfcdd0c14ab4ec1ce7357cd8d, type: 3}
   furyStateMaterial: {fileID: 2100000, guid: 6512acb028f5ffe4dac0c63c2723253c, type: 2}
@@ -1234,8 +1234,8 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeathByMelee: 6
-  lifestealAmountOnDeathByDistance: 7
+  lifestealAmountOnDeathByMelee: 9
+  lifestealAmountOnDeathByDistance: 4
   deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   deathVFXSpawnPoint: {fileID: 7571899337443149478}
   deathVFXOffsetFallBack: {x: 0, y: 1, z: 0}
@@ -1292,25 +1292,20 @@ MonoBehaviour:
   toughnessBlockSFX: {fileID: 0}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
-  useOriginalMaterials: 1
-  defaultMaterial: {fileID: 0}
-  blinkFlashMaterial: {fileID: 0}
-  blinkInterval: 0.03
-  blinkCount: 6
   useAmountFlash: 1
   amountFlashRenderer: {fileID: 960429316647147083}
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
+  blinkInterval: 0.03
+  blinkCount: 6
   stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
   stunVFXSpawnPoint: {fileID: 7928775998470772813}
   stunVFXHeightFallback: 2
-  stunMaterial: {fileID: 0}
-  stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
-  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   glowMaterial: {fileID: 0}
   glowIntensity: 2
+  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
 --- !u!114 &4499002389334469887

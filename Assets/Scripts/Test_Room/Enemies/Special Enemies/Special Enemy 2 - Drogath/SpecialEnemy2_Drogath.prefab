@@ -1015,13 +1015,13 @@ MonoBehaviour:
   shieldForwardOverride: {fileID: 8926953427477216282}
   spawnDelay: 1
   moveSpeed: 5
-  acceleration: 8
+  acceleration: 5
   stoppingDistance: 5
   distanceToAttack: 5
-  rotationSpeed: 90
+  rotationSpeed: 20
   meleeDamage: 15
   attackInterval: 1.5
-  attackRange: 2.5
+  attackRange: 5
   knockbackForce: 4
   attackImpactDelay: 0.85
   attackRecoveryTime: 0.75
@@ -1077,7 +1077,7 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeathByMelee: 6
+  lifestealAmountOnDeathByMelee: 12
   lifestealAmountOnDeathByDistance: 7
   deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   deathVFXSpawnPoint: {fileID: 1425993951489477357}
@@ -1105,7 +1105,7 @@ MonoBehaviour:
   toughnessUIGroup: {fileID: 4518159154207647908}
   useToughness: 0
   maxToughness: 24
-  currentToughness: 0
+  currentToughness: 24
   meleeToughnessDamageMultiplier: 1
   rangedToughnessDamageMultiplier: 0.25
   useDynamicBars: 0
@@ -1135,25 +1135,20 @@ MonoBehaviour:
   toughnessBlockSFX: {fileID: 0}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
-  useOriginalMaterials: 1
-  defaultMaterial: {fileID: 0}
-  blinkFlashMaterial: {fileID: 0}
-  blinkInterval: 0.06
-  blinkCount: 6
   useAmountFlash: 1
   amountFlashRenderer: {fileID: 7354806123164144813}
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
+  blinkInterval: 0.06
+  blinkCount: 6
   stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
   stunVFXSpawnPoint: {fileID: 6647558057813823167}
   stunVFXHeightFallback: 2
-  stunMaterial: {fileID: 0}
-  stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
-  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   glowMaterial: {fileID: 0}
   glowIntensity: 2
+  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
 --- !u!114 &178183074396786907

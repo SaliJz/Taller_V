@@ -1340,7 +1340,7 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeathByMelee: 10
+  lifestealAmountOnDeathByMelee: 15
   lifestealAmountOnDeathByDistance: 10
   deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   deathVFXSpawnPoint: {fileID: 92589986234656451}
@@ -1398,25 +1398,20 @@ MonoBehaviour:
   toughnessBlockSFX: {fileID: 0}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
-  useOriginalMaterials: 1
-  defaultMaterial: {fileID: 0}
-  blinkFlashMaterial: {fileID: 0}
-  blinkInterval: 0.06
-  blinkCount: 6
   useAmountFlash: 1
   amountFlashRenderer: {fileID: 2329461190968338942}
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
+  blinkInterval: 0.06
+  blinkCount: 6
   stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
   stunVFXSpawnPoint: {fileID: 2358646209186825400}
   stunVFXHeightFallback: 2
-  stunMaterial: {fileID: 0}
-  stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
-  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   glowMaterial: {fileID: 0}
   glowIntensity: 2
+  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
 --- !u!114 &6171586382370169260
