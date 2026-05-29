@@ -785,7 +785,7 @@ MonoBehaviour:
   - {fileID: 7947717021995340786}
   merchantPrefab: {fileID: 4559248171723188780, guid: f970020ca5b441e4b8929fabcd9a39cc, type: 3}
   merchantSpawnLocation: {fileID: 1768495640071205269}
-  appearanceEffectPrefab: {fileID: 3331059551027662099, guid: 2284c4e660fb31d448f6e834dae89219, type: 3}
+  appearanceEffectPrefab: {fileID: 0}
   effectDuration: 1
 --- !u!114 &2768175268448419773
 MonoBehaviour:
@@ -799,7 +799,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d41652a0a37e8b4d99f876af04cadc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemEffectDuration: 0.5
   sequentialItemSpawn: 0
   hasTakenPact: 0
 --- !u!1 &2205231864222660420
@@ -2839,6 +2838,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   audioSource: {fileID: 6543015726425565592}
   transitionClip: {fileID: 0}
+  transition: {fileID: 0}
 --- !u!65 &38821816203148902
 BoxCollider:
   m_ObjectHideFlags: 0
