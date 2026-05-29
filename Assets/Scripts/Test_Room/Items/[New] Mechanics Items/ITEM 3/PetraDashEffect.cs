@@ -131,7 +131,8 @@ public class PetraDashEffect : ItemEffectBase
     {
         Vector3 dashStartPosition = startPosition;
 
-        float dashDistance = FindAnyObjectByType<PlayerMovement>().DashDistanceReturn(); 
+        float dashDistance = coroutineRunner is PlayerMovement playerMove ? playerMove.LastCalculatedDashDistance : 10f;
+
         Vector3 dashFinalPosition =
             dashStartPosition + dashDirection.normalized * dashDistance;
 

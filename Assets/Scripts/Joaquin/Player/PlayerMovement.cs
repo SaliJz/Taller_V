@@ -179,6 +179,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     #region Public Properties
 
+    public float LastCalculatedDashDistance { get; private set; }
     public int Level
     {
         get { return level; }
@@ -695,6 +696,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         {
             yield break;
         }
+
+        LastCalculatedDashDistance = Vector3.Distance(new Vector3(transform.position.x, 0f, transform.position.z), new Vector3(targetDashPosition.x, 0f, targetDashPosition.z));
 
         IsDashing = true;
         PlayerCombatEvents.RaiseDashStarted(transform.position, dashDirection);

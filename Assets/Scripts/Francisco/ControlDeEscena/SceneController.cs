@@ -2,14 +2,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Events;
 using System.Collections;
-using System.Collections.Generic; 
-
-[System.Serializable]
-public struct SceneTransition
-{
-    public KeyCode inputKey;
-    public string targetSceneName;
-}
 
 public class SceneController : MonoBehaviour
 {
@@ -17,10 +9,10 @@ public class SceneController : MonoBehaviour
 
     [Header("Input General")]
     [SerializeField] private KeyCode _inputKey;
-
-    [Header("Transiciones de Escena")]
-    [SerializeField] private List<SceneTransition> _sceneTransitions;
     [SerializeField] private UnityEvent OnKeyPressed;
+
+    [Header("Configuración Centralizada")]
+    [SerializeField] private SceneShortcutData shortcutData;
 
     private void Awake()
     {
@@ -46,13 +38,14 @@ public class SceneController : MonoBehaviour
 
     private void CheckSceneTransitions()
     {
-        if (_sceneTransitions == null) return;
+        if (shortcutData == null || shortcutData.sceneTransitions == null) return;
 
-        foreach (var transition in _sceneTransitions)
+        foreach (var transition in shortcutData.sceneTransitions)
         {
             if (Input.GetKeyDown(transition.inputKey))
             {
                 LoadSceneByName(transition.targetSceneName);
+                break; 
             }
         }
     }
