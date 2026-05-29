@@ -126,14 +126,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 6
-  lifeTime: 5
+  lifetime: 5
+  wanderRadius: 3
+  wanderInterval: 2
+  wanderSpeed: 2
+  invulnerabilityTime: 1
+  rotationSpeed: 8
+  rotationOffset: 90
   detectionRadius: 10
-  explosionTriggerRange: 1.2
-  explosionAreaPrefab: {fileID: 5545404414370365311, guid: f7a5d0ca7ac780747883c7bfb14a91a7, type: 3}
   enemyLayer:
     serializedVersion: 2
     m_Bits: 128
-  invulnerabilityTime: 1
+  explosionAreaPrefab: {fileID: 5545404414370365311, guid: f7a5d0ca7ac780747883c7bfb14a91a7, type: 3}
+  explosionTriggerRange: 1.2
 --- !u!195 &8757515611011634336
 NavMeshAgent:
   m_ObjectHideFlags: 0
