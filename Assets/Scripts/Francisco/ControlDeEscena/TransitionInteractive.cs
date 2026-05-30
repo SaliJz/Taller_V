@@ -119,6 +119,11 @@ public class TransitionInteractive : MonoBehaviour
                         moveDir.Normalize();
                         playerTransform.rotation = Quaternion.LookRotation(moveDir, Vector3.up);
                         SetAnimDir(moveDir);
+                        playerAnimCtrl?.PlayState(
+                            PlayerAnimCtrl.PlayerState.run,
+                            BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.locomotion,
+                            false
+                        );
                     }
 
                     ProcessTimelineTriggers(ref nextAnimIdx, ref nextFadeIdx, elapsedTime);
@@ -278,7 +283,7 @@ public class TransitionInteractive : MonoBehaviour
         camFwd.Normalize();
 
         float h = Vector3.Dot(worldDir, camRight);   
-        float v = Vector3.Dot(worldDir, camFwd);    
+        float v = Vector3.Dot(worldDir, camFwd);     
 
         h = Mathf.Abs(h) > 0.3f ? Mathf.Sign(h) : 0f;
         v = Mathf.Abs(v) > 0.3f ? Mathf.Sign(v) : 0f;

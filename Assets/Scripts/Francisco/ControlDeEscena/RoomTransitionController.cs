@@ -85,7 +85,14 @@ public class RoomTransitionController : MonoBehaviour
                 playerTransform.position = newPos;
 
             if (animCtrl != null && !animCtrl.isDashing && movementDirection.HasValue)
+            {
                 SetAnimDir(animCtrl, movementDirection.Value);
+                animCtrl.PlayState(
+                    PlayerAnimCtrl.PlayerState.run,
+                    BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.locomotion,
+                    false
+                );
+            }
 
             yield return null;
         }
