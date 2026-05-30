@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Unity.VisualScripting;
 
 public class TorreMovimiento : MonoBehaviour
 {
@@ -9,6 +10,8 @@ public class TorreMovimiento : MonoBehaviour
 
     private Vector3 posicionInicial;
     private Vector3 posicionFinal;
+
+    Coroutine corrutinaActual;
 
     void Start()
     {
@@ -21,6 +24,26 @@ public class TorreMovimiento : MonoBehaviour
         );
 
         StartCoroutine(MovimientoCompleto());
+    }
+
+    void OnEnable()
+    {
+        IniciarCorrutina();
+    }
+
+    void IniciarCorrutina()
+    {
+        if (corrutinaActual != null) StopCoroutine(corrutinaActual);
+
+        posicionInicial = transform.position;
+
+        posicionFinal = new Vector3(
+            transform.position.x,
+            transform.position.y + altura,
+            transform.position.z
+        );
+
+        corrutinaActual = StartCoroutine(MovimientoCompleto());
     }
 
     IEnumerator MovimientoCompleto()
@@ -49,6 +72,6 @@ public class TorreMovimiento : MonoBehaviour
             yield return null;
         }
 
-        Destroy(transform.parent.gameObject);
+        // Destroy(transform.parent.gameObject);
     }
 }
