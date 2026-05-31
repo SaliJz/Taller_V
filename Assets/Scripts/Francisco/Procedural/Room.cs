@@ -20,7 +20,7 @@ public class Room : MonoBehaviour
     public AudioClip openDoorClip;
 
     [Header("Room Properties")]
-    public RoomType roomType = RoomType.Normal;
+    public RoomType roomType;
     public bool isStartRoom = false;
     public bool isEndRoom = false;
 
@@ -53,6 +53,20 @@ public class Room : MonoBehaviour
     private void Start()
     {
         InitializeDoorStates();
+        if (roomType != RoomType.Combat)
+        {
+            UnlockAllTriggers();
+        }
+    }
+
+    private void UnlockAllTriggers()
+    {
+        foreach (ConnectionPoint cp in connectionPoints)
+        {
+            if (cp == null) continue;
+            ConnectionTrigger trigger = cp.GetComponent<ConnectionTrigger>();
+            if (trigger != null) trigger.Unlock();
+        }
     }
 
     public void InitializeEnemyManager(EnemyManager manager)
@@ -185,6 +199,11 @@ public class Room : MonoBehaviour
             {
                 if (obj != null) obj.SetActive(false);
             }
+        }
+
+        {
+            ConnectionTrigger trigger = connectionPoints[doorIndex].GetComponent<ConnectionTrigger>();
+            if (trigger != null) trigger.Unlock();
         }
     }
 

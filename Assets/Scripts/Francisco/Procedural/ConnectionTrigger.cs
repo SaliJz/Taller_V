@@ -13,6 +13,7 @@ public class ConnectionTrigger : MonoBehaviour
     private DungeonGenerator dungeonGenerator;
     private ConnectionPoint connectionPoint;
     private bool hasTriggered = false;
+    public bool isUnlocked = false;
 
     private void Start()
     {
@@ -23,9 +24,15 @@ public class ConnectionTrigger : MonoBehaviour
             audioSource = GetComponentInChildren<AudioSource>();
     }
 
+    public void Unlock()
+    {
+        isUnlocked = true;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (hasTriggered ||
+            !isUnlocked ||
             connectionPoint == null ||
             connectionPoint.isConnected ||
             dungeonGenerator == null ||
