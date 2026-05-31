@@ -124,16 +124,30 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     #endregion
 
+    #region Inspector - Telegraphed Settings
+    
     [Header("Hit Stun")]
     [SerializeField] protected float hitStunDuration = 0.3f;
+    
     [Header("SFX Daño")]
     [SerializeField] protected AudioClip hitStunSFX;
     [SerializeField] protected AudioClip toughnessBlockSFX;
+
+    [Header("Anticipación de Ataque")]
+    [SerializeField] protected float anticipationPauseDuration = 0.6f;
+    [SerializeField] protected float anticipationBlinkDuration = 0.15f;
+    [SerializeField] protected float anticipationSFXPitch = 1.0f;
+    [SerializeField] protected AudioClip anticipationSFX;
+    [SerializeField] protected GameObject attackVFXPrefab;
+    [SerializeField] protected Transform attackVFXSpawnPoint;
+
+    #endregion
 
     #region Internal State
 
     protected EnemyHealth enemyHealth;
     protected EnemyToughness enemyToughness;
+    private EnemyVisualEffects enemyVisualEffects;
     protected NavMeshAgent agent;
     protected Transform playerTransform;
     protected CharacterController playerCharacterController;
@@ -144,9 +158,11 @@ public abstract class StaticEnemyBase : MonoBehaviour
     protected bool isInHitStun = false;
     protected bool isDead = false;
     protected bool isReady = false;
+    protected bool isInAnticipation = false;
     protected Coroutine hitStunCoroutine;
     protected Coroutine currentBehaviorCoroutine = null;
     protected Coroutine shootCoroutine = null;
+    protected Coroutine anticipationCoroutine = null;
 
     protected int currentWaypointIndex = 0;
     protected Vector3 originPosition;
@@ -166,6 +182,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
     {
         if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
         if (enemyToughness == null) enemyToughness = GetComponent<EnemyToughness>();
+        if (enemyVisualEffects == null) enemyVisualEffects = GetComponent<EnemyVisualEffects>();
         if (agent == null) agent = GetComponent<NavMeshAgent>();
         if (visualCtrl == null) visualCtrl = GetComponentInChildren<StaticAnimCtrl>();
         if (wordLibrary == null) wordLibrary = GetComponent<MorlockWordLibrary>();
@@ -174,6 +191,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         if (enemyToughness == null) ReportDebug("Componente EnemyToughness no encontrado en el enemigo.", 2);
         if (agent == null) ReportDebug("Componente NavMeshAgent no encontrado en el enemigo.", 3);
         if (visualCtrl == null) ReportDebug("Componente StaticAnimCtrl no encontrado en el enemigo.", 2);
+        if (enemyVisualEffects == null) ReportDebug("Componente EnemyVisualEffects no encontrado en el enemigo.", 2);
     }
 
     protected virtual void Start()
@@ -370,6 +388,8 @@ public abstract class StaticEnemyBase : MonoBehaviour
         isInHitStun = true;
         stateBeforeHitStun = currentState;
 
+        CancelAnticipation();
+
         if (shootCoroutine != null) 
         { 
             StopCoroutine(shootCoroutine); 
@@ -382,8 +402,12 @@ public abstract class StaticEnemyBase : MonoBehaviour
             currentBehaviorCoroutine = null; 
         }
 
+        if (visualCtrl != null) visualCtrl.restoreOriginalMaterials();
+
         if (agent != null && agent.enabled && agent.isOnNavMesh)
-        { agent.isStopped = true; agent.ResetPath(); }
+        { 
+            agent.isStopped = true; agent.ResetPath();
+        }
 
         if (visualCtrl != null) visualCtrl.PlayDamage();
         if (audioSource != null && hitStunSFX != null) audioSource.PlayOneShot(hitStunSFX);
@@ -568,6 +592,8 @@ public abstract class StaticEnemyBase : MonoBehaviour
             yield return StartCoroutine(TeleportToPositionRoutine(targetPosition));
             StartShootCoroutine();
             yield return new WaitForSeconds(p1_teleportCooldown);
+
+            while (shootCoroutine != null || isInAnticipation) yield return null;
         }
     }
 
@@ -617,6 +643,8 @@ public abstract class StaticEnemyBase : MonoBehaviour
             }
 
             yield return new WaitForSeconds(p2_teleportCooldown);
+
+            while (shootCoroutine != null || isInAnticipation) yield return null;
         }
     }
 
@@ -792,6 +820,8 @@ public abstract class StaticEnemyBase : MonoBehaviour
     {
         if (enemyHealth != null && enemyHealth.IsStunned || isDead) return;
 
+        SpawnAttackVFX();
+
         if (audioSource != null && shootSFX != null) audioSource.PlayOneShot(shootSFX);
 
         Vector3 aimPoint = playerTransform.position;
@@ -803,6 +833,8 @@ public abstract class StaticEnemyBase : MonoBehaviour
         }
 
         Vector3 directionToAim = (aimPoint - firePoint.position).normalized;
+        directionToAim.y = 0f;
+        directionToAim.Normalize();
         firePoint.rotation = Quaternion.LookRotation(directionToAim);
 
         InstantiateAndInitializeProjectile();
@@ -864,6 +896,57 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     #endregion
 
+    public void StartAnticipationPause()
+    {
+        if (isDead || isInHitStun) return;
+        if (anticipationCoroutine != null) StopCoroutine(anticipationCoroutine);
+        anticipationCoroutine = StartCoroutine(AnticipationRoutine());
+    }
+
+    protected virtual IEnumerator AnticipationRoutine()
+    {
+        isInAnticipation = true;
+
+        if (visualCtrl != null) visualCtrl.PauseAnimation();
+
+        if (audioSource != null && anticipationSFX != null)
+        {
+            audioSource.pitch = anticipationSFXPitch;
+            audioSource.PlayOneShot(anticipationSFX);
+            audioSource.pitch = 1f;
+        }
+
+        // Esperar el tiempo previo al blink
+        float waitBeforeBlink = anticipationPauseDuration - anticipationBlinkDuration;
+        if (waitBeforeBlink > 0f) yield return new WaitForSeconds(waitBeforeBlink);
+
+        // Blink rojo de anticipación
+        if (enemyVisualEffects != null)
+        {
+            enemyVisualEffects.PlayAnticipationBlink(anticipationBlinkDuration);
+        }
+
+        yield return new WaitForSeconds(anticipationBlinkDuration);
+
+        if (visualCtrl != null) visualCtrl.ResumeAnimation();
+
+        isInAnticipation = false;
+        anticipationCoroutine = null;
+    }
+
+    protected void CancelAnticipation()
+    {
+        if (anticipationCoroutine != null)
+        {
+            StopCoroutine(anticipationCoroutine);
+            anticipationCoroutine = null;
+        }
+        
+        if (visualCtrl != null) visualCtrl.ResumeAnimation();
+        if (enemyVisualEffects != null) enemyVisualEffects.CancelAnticipationBlink();
+        isInAnticipation = false;
+    }
+
     #region Visual & Audio Effects
 
     protected virtual void HandleIdleSound()
@@ -885,6 +968,17 @@ public abstract class StaticEnemyBase : MonoBehaviour
     {
         idleTimer = 0f;
         idleInterval = Random.Range(5f, 9f);
+    }
+
+    protected virtual void SpawnAttackVFX()
+    {
+        if (attackVFXPrefab == null) return;
+        
+        Vector3 pos = attackVFXSpawnPoint != null
+            ? attackVFXSpawnPoint.position
+            : (firePoint != null ? firePoint.position : transform.position);
+        
+        Instantiate(attackVFXPrefab, pos, Quaternion.identity);
     }
 
     protected virtual void SpawnTeleportVFX(Vector3 basePosition)

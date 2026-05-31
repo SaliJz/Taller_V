@@ -69,6 +69,16 @@ public class StaticAnimCtrl : MonoBehaviour
         if (anim != null) anim.SetTrigger("Damage");
     }
 
+    public void PauseAnimation()
+    {
+        if (anim != null) anim.speed = 0f;
+    }
+
+    public void ResumeAnimation()
+    {
+        if (anim != null) anim.speed = 1f;
+    }
+
     private void TESTinputs()
     {
         if (Input.GetKeyDown(KeyCode.Mouse0)) PlayShoot();

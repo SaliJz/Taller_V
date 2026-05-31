@@ -61,6 +61,10 @@ public class EnemyVisualEffects : MonoBehaviour
     [Header("Toughness Block Effect")]
     [SerializeField] private Color toughnessColor = Color.cyan;
 
+    [Header("Anticipation Telegraph Blink")]
+    [SerializeField] private float anticipationBlinkInterval = 0.04f;
+    [SerializeField] private Color anticipationBlinkColor = Color.red;
+
     [Header("Damage Visual Settings")]
     [SerializeField] private Color normalColor = Color.red;
     [SerializeField] private Color criticalColor = new Color(0.5f, 0f, 0f);
@@ -76,6 +80,8 @@ public class EnemyVisualEffects : MonoBehaviour
     private Material amountFlashMatInstance = null;
     private Coroutine amountBlinkCoroutine = null;
     private Coroutine glowCoroutine = null;
+    private Coroutine anticipationBlinkCoroutine = null;
+    private Color originalFlashColor = Color.white;
 
     private Dictionary<Renderer, Material> originalMeshMats = new Dictionary<Renderer, Material>();
     private Dictionary<SpriteRenderer, Material> originalSpriteMats = new Dictionary<SpriteRenderer, Material>();
@@ -162,6 +168,11 @@ public class EnemyVisualEffects : MonoBehaviour
             amountFlashMatInstance = new Material(amountFlashRenderer.sharedMaterial);
             amountFlashRenderer.material = amountFlashMatInstance;
             SetAmountFlashValue(amountFlashRestValue);
+
+            if (amountFlashMatInstance.HasProperty("_Color"))
+            { 
+                originalFlashColor = amountFlashMatInstance.GetColor("_Color");
+            }
         }
         else
         {
@@ -181,7 +192,8 @@ public class EnemyVisualEffects : MonoBehaviour
         stunEffectCoroutine = null;
         amountBlinkCoroutine = null;
         glowCoroutine = null;
-
+        anticipationBlinkCoroutine = null;
+        ResetAnticipationBlink();
         ResetAmountFlashValue();
 
         ParticleSystem psAS = activeStunVFX != null ? activeStunVFX.GetComponent<ParticleSystem>() : null;
@@ -298,7 +310,7 @@ public class EnemyVisualEffects : MonoBehaviour
 
     #endregion
 
-    #region Blink System
+    #region Hit Blink System
 
     private IEnumerator BlinkAmountCoroutine()
     {
@@ -324,6 +336,76 @@ public class EnemyVisualEffects : MonoBehaviour
     private void ResetAmountFlashValue()
     {
         SetAmountFlashValue(amountFlashRestValue);
+    }
+
+    #endregion
+
+    #region Anticipation Telegraph Blink
+
+    public void PlayAnticipationBlink(float duration)
+    {
+        if (anticipationBlinkCoroutine != null)
+        {
+            StopCoroutine(anticipationBlinkCoroutine);
+            anticipationBlinkCoroutine = null;
+        }
+        anticipationBlinkCoroutine = StartCoroutine(AnticipationBlinkCoroutine(duration));
+    }
+
+    public void CancelAnticipationBlink()
+    {
+        if (anticipationBlinkCoroutine != null)
+        {
+            StopCoroutine(anticipationBlinkCoroutine);
+            anticipationBlinkCoroutine = null;
+        }
+        ResetAnticipationBlink();
+    }
+
+    private IEnumerator AnticipationBlinkCoroutine(float duration)
+    {
+        if (!useAmountFlash || amountFlashMatInstance == null)
+        {
+            anticipationBlinkCoroutine = null;
+            yield break;
+        }
+
+        bool hasColor = amountFlashMatInstance.HasProperty("_Color");
+
+        if (hasColor)
+        {
+            amountFlashMatInstance.SetColor("_Color", anticipationBlinkColor);
+        }
+
+        float elapsed = 0f;
+        bool isPeak = false;
+
+        while (elapsed < duration)
+        {
+            isPeak = !isPeak;
+            amountFlashMatInstance.SetFloat(amountFlashProperty,
+                isPeak ? amountFlashPeakValue : amountFlashRestValue);
+
+            elapsed += anticipationBlinkInterval;
+            yield return new WaitForSeconds(anticipationBlinkInterval);
+        }
+
+        ResetAnticipationBlink();
+        anticipationBlinkCoroutine = null;
+    }
+
+    private void ResetAnticipationBlink()
+    {
+        if (!useAmountFlash || amountFlashMatInstance == null) return;
+
+        // Restaurar Amount
+        amountFlashMatInstance.SetFloat(amountFlashProperty, amountFlashRestValue);
+
+        // Restaurar Color al original cacheado
+        if (amountFlashMatInstance.HasProperty("_Color"))
+        {
+            amountFlashMatInstance.SetColor("_Color", originalFlashColor);
+        }
     }
 
     #endregion

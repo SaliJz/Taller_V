@@ -88,5 +88,6 @@ public class StaticEnemyLevel1 : StaticEnemyBase, IAnimEventHandler
     public void HandleAnimEvents(string eventName)
     {
         if (eventName == "AnimEvent_Shoot") ExecuteProjectileSpawn();
+        if (eventName == "AnimEvent_AnticipationPause") StartAnticipationPause();
     }
 }

@@ -3,9 +3,15 @@ using System.Collections;
 
 public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
 {
+    #region Inspector - Reactive Evasion
+
     [Header("Static Level 3 - Reactive Evasion")]
     [SerializeField] private float evasionCooldown = 6f;
     [SerializeField] private float evasionTeleportDistance = 8f;
+
+    #endregion
+
+    #region Inspector - Stress Residue
 
     [Header("Static Level 3 - Stress Residue")]
     [SerializeField] private GameObject stressResiduePrefab;
@@ -13,44 +19,68 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
     [SerializeField] private float residueDPS = 2f;
     [SerializeField] private float residueRadius = 2f;
 
+    #endregion
+
+    #region Inspector - VFX Screen
+
     [Header("Static Level 3 - VFX Screen")]
     [SerializeField] private Renderer screenRenderer;
     [SerializeField] private Color evasionReadyBorderColor = Color.red;
     [SerializeField] private Color evasionCooldownBorderColor = Color.gray;
 
+    #endregion
+
+    #region Inspector - SFX
+
     [Header("Static Level 3 - SFX")]
     [SerializeField] private AudioClip evasionSFX;
     [SerializeField] private AudioClip retaliatoryShootSFX;
+
+    #endregion
+
+    #region Inspector - QuickSheet Balance
 
     [Header("QuickSheet Balance")]
     [SerializeField] private Enemies enemiesSheet;
     [SerializeField] private int ENEMY_ID = 9;
 
+    #endregion
+
+    #region Internal State
+
     private float projectileDamage = 13;
     // private float swarmDPS;
 
-    private static readonly int ShaderBorderColorId = Shader.PropertyToID("_BorderColor");
-    private static readonly int ShaderShowIconId = Shader.PropertyToID("_ShowIcon");
-    private static readonly int ShaderIconTypeId = Shader.PropertyToID("_IconType");
+    private static readonly int shaderBorderColorId = Shader.PropertyToID("_BorderColor");
+    private static readonly int shaderShowIconId = Shader.PropertyToID("_ShowIcon");
+    private static readonly int shaderIconTypeId = Shader.PropertyToID("_IconType");
 
-    private const int ICON_EYE = 0;
-    private const int ICON_NO_SIGNAL = 1;
+    private const int iconEye = 0;
+    private const int iconNoSignal = 1;
 
     private bool evasionReady = true;
     private bool evasionOnCooldown = false;
     private Coroutine evasionCooldownRoutine;
     private Coroutine screenFeedbackRoutine;
 
-    protected override void InitializedEnemy()
-    {
-        base.InitializedEnemy();
-        UpdateEvasionFeedback();
-    }
+    #endregion
+
+    #region Unity Lifecycle
 
     protected override void Awake()
     {
         //LoadStatsFromSheet();
         base.Awake();
+    }
+
+    #endregion
+
+    #region Initialization & Data Sync
+
+    protected override void InitializedEnemy()
+    {
+        base.InitializedEnemy();
+        UpdateEvasionFeedback();
     }
 
     private void LoadStatsFromSheet()
@@ -65,7 +95,6 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
             moveSpeed = row.Movespeed;
             projectileDamage = row.Regulardamage;
             // swarmDPS = row.Explosionareadamage; // No hay valor en la tabla, Jamil
-
 
             EnemyToughness toughnessComp = GetComponent<EnemyToughness>();
             if (toughnessComp != null)
@@ -87,6 +116,10 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
         }
     }
 
+    #endregion
+
+    #region Core Health & Combat
+
     protected override IEnumerator ShootAfterDelayRoutine()
     {
         if (useRandomFireRate) fireRate = Random.Range(minFireRate, maxFireRate);
@@ -105,11 +138,6 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
         }
 
         shootCoroutine = null;
-    }
-
-    public void HandleAnimEvents(string eventName)
-    {
-        if (eventName == "AnimEvent_Shoot") ExecuteProjectileSpawn();
     }
 
     protected override void OnBeforeTeleport(Vector3 fromPosition)
@@ -170,6 +198,44 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
         evasionCooldownRoutine = StartCoroutine(EvasionCooldownRoutine());
     }
 
+    protected override float CalculateDamageByDistance(float distance)
+    {
+        maxDistanceForDamageIncrease = projectileDamage;
+        maxDistanceForDamageStart = projectileDamage - 7;
+
+        if (distance <= maxDistanceForDamageIncrease) return maxDamageIncrease;
+        if (distance >= maxDistanceForDamageStart) return minDamageIncrease;
+
+        float t = (distance - maxDistanceForDamageIncrease) / (maxDistanceForDamageStart - maxDistanceForDamageIncrease);
+        return Mathf.Lerp(maxDamageIncrease, minDamageIncrease, t);
+    }
+
+    protected override void InstantiateAndInitializeProjectile()
+    {
+        GameObject projectileObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+
+        StaticProjectileBase projectile = projectileObj.GetComponent<StaticProjectileBase>();
+
+        if (projectile != null)
+        {
+            float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+            float calculatedDamage = CalculateDamageByDistance(distanceToPlayer);
+            string selectedWord = wordLibrary != null ? wordLibrary.GetRandomWord() : "GLITCH";
+
+            projectile.Initialize(projectileSpeed, calculatedDamage, selectedWord); // Faltaria agregar una variable para pasarle dato de dano del prefab de explosion
+        }
+    }
+
+    public void HandleAnimEvents(string eventName)
+    {
+        if (eventName == "AnimEvent_Shoot") ExecuteProjectileSpawn();
+        if (eventName == "AnimEvent_AnticipationPause") StartAnticipationPause();
+    }
+
+    #endregion
+
+    #region Status Effects & Feedback
+
     private IEnumerator EvasionCooldownRoutine()
     {
         UpdateEvasionFeedback();
@@ -194,45 +260,19 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
 
         if (evasionReady && !evasionOnCooldown)
         {
-            mat.SetColor(ShaderBorderColorId, evasionReadyBorderColor);
-            mat.SetFloat(ShaderIconTypeId, ICON_EYE);
+            mat.SetColor(shaderBorderColorId, evasionReadyBorderColor);
+            mat.SetFloat(shaderIconTypeId, iconEye);
         }
         else
         {
-            mat.SetColor(ShaderBorderColorId, evasionCooldownBorderColor);
-            mat.SetFloat(ShaderIconTypeId, ICON_NO_SIGNAL);
+            mat.SetColor(shaderBorderColorId, evasionCooldownBorderColor);
+            mat.SetFloat(shaderIconTypeId, iconNoSignal);
         }
 
-        mat.SetFloat(ShaderShowIconId, 1f);
+        mat.SetFloat(shaderShowIconId, 1f);
         yield return null;
         screenFeedbackRoutine = null;
     }
 
-    protected override float CalculateDamageByDistance(float distance)
-    {
-        maxDistanceForDamageIncrease = projectileDamage;
-        maxDistanceForDamageStart = projectileDamage - 7; 
-
-        if (distance <= maxDistanceForDamageIncrease) return maxDamageIncrease;
-        if (distance >= maxDistanceForDamageStart) return minDamageIncrease;
-
-        float t = (distance - maxDistanceForDamageIncrease) / (maxDistanceForDamageStart - maxDistanceForDamageIncrease);
-        return Mathf.Lerp(maxDamageIncrease, minDamageIncrease, t);
-    }
-
-    protected override void InstantiateAndInitializeProjectile()
-    {
-        GameObject projectileObj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
-
-        StaticProjectileBase projectile = projectileObj.GetComponent<StaticProjectileBase>();
-
-        if (projectile != null)
-        {
-            float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
-            float calculatedDamage = CalculateDamageByDistance(distanceToPlayer);
-            string selectedWord = wordLibrary != null ? wordLibrary.GetRandomWord() : "GLITCH";
-
-            projectile.Initialize(projectileSpeed, calculatedDamage, selectedWord); // Faltaria agregar una variable para pasarle dato de daño del prefab de explosion
-        }
-    }
+    #endregion
 }
