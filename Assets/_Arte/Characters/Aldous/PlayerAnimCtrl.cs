@@ -64,6 +64,12 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
 
     private void Update()
     {
+        if (DialogManager.Instance != null && DialogManager.Instance.IsActive)
+        {
+            PlayState(PlayerState.idle, AnimPriority.locomotion, false);
+            return;
+        }
+
         if (!_externalInputThisFrame)
         {
             if (PauseController.Instance != null && PauseController.IsGamePaused) return;
