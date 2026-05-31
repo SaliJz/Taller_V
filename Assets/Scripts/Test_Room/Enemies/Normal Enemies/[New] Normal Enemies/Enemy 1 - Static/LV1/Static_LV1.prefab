@@ -1040,7 +1040,7 @@ MonoBehaviour:
   projectileSpeed: 15
   maxDamageIncrease: 7.5
   maxDistanceForDamageIncrease: 6
-  maxDistanceForDamageStart: 20
+  maxDistanceForDamageStart: 50
   attackRange: 50
   canReturnToPatrol: 1
   detectionRadius: 50
@@ -1170,25 +1170,20 @@ MonoBehaviour:
   toughnessBlockSFX: {fileID: 0}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
-  useOriginalMaterials: 1
-  defaultMaterial: {fileID: 2100000, guid: e3b68ff965f66bc4badc9b01b4574bf2, type: 2}
-  blinkFlashMaterial: {fileID: 2100000, guid: f252e05afbca4b14da60e54eabddf22d, type: 2}
-  blinkInterval: 0.06
-  blinkCount: 6
   useAmountFlash: 1
   amountFlashRenderer: {fileID: 1859513459576510540}
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
+  blinkInterval: 0.06
+  blinkCount: 6
   stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
   stunVFXSpawnPoint: {fileID: 7940124262307261}
   stunVFXHeightFallback: 2
-  stunMaterial: {fileID: 0}
-  stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
-  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   glowMaterial: {fileID: 0}
   glowIntensity: 2
+  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
 --- !u!114 &8294369732220974234

@@ -2201,7 +2201,7 @@ MonoBehaviour:
   detectionRadius: 50
   detectionGrowthInterval: 2.5
   detectionGrowthAmount: 10
-  teleportRange: 5
+  teleportRange: 7.5
   patrolWaypoints: []
   loopWaypoints: 1
   freePatrolIterations: 10
@@ -2215,7 +2215,7 @@ MonoBehaviour:
   p1_pursuitLateralVariationMin: 3
   p1_pursuitLateralVariationMax: 5
   p2_activationRadius: 7.5
-  p2_teleportCooldown: 2
+  p2_teleportCooldown: 2.5
   p2_teleportRange: 7.5
   spawnDelay: 1
   audioSource: {fileID: 5166852922664610649}
@@ -2336,25 +2336,20 @@ MonoBehaviour:
   toughnessBlockSFX: {fileID: 0}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
-  useOriginalMaterials: 1
-  defaultMaterial: {fileID: 2100000, guid: 1019599fd1d45c14cb8e05936532a627, type: 2}
-  blinkFlashMaterial: {fileID: 2100000, guid: f252e05afbca4b14da60e54eabddf22d, type: 2}
-  blinkInterval: 0.06
-  blinkCount: 6
   useAmountFlash: 1
   amountFlashRenderer: {fileID: 5504885612706643710}
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
+  blinkInterval: 0.06
+  blinkCount: 6
   stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
   stunVFXSpawnPoint: {fileID: 3829149575260398844}
   stunVFXHeightFallback: 2
-  stunMaterial: {fileID: 0}
-  stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
-  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   glowMaterial: {fileID: 0}
   glowIntensity: 2
+  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
 --- !u!114 &3458616993713977508

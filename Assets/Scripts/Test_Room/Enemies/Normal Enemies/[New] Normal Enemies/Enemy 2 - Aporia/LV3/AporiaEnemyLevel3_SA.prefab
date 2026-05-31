@@ -1989,9 +1989,9 @@ MonoBehaviour:
   attackTransitionDelay: 0
   attackDamage: 20
   attackRadius: 2.5
-  hitDelay: 0.5
+  hitDelay: 0.25
   recoveryTime: 1.2
-  knockbackForce: 7
+  knockbackForce: 10
   playerLayer:
     serializedVersion: 2
     m_Bits: 256
@@ -2104,25 +2104,20 @@ MonoBehaviour:
   toughnessBlockSFX: {fileID: 0}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
-  useOriginalMaterials: 1
-  defaultMaterial: {fileID: 2100000, guid: 6905b05850ab3e44d85d01f9773214da, type: 2}
-  blinkFlashMaterial: {fileID: 0}
-  blinkInterval: 0.06
-  blinkCount: 6
   useAmountFlash: 0
   amountFlashRenderer: {fileID: 0}
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
+  blinkInterval: 0.06
+  blinkCount: 6
   stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
   stunVFXSpawnPoint: {fileID: 2930194237827201640}
   stunVFXHeightFallback: 2
-  stunMaterial: {fileID: 0}
-  stunGlowColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   stunBlinkSpeed: 0.1
-  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   glowMaterial: {fileID: 0}
   glowIntensity: 2
+  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
 --- !u!114 &9159611241233586929
