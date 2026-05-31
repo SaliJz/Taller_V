@@ -1,10 +1,9 @@
-using JetBrains.Annotations;
 using UnityEngine;
 
 public class JitterAnimCtrl : MonoBehaviour
 {
     [Header("References")]
-    Animator anim;
+    [SerializeField] Animator anim;
     [SerializeField] SkinnedMeshRenderer mesh;
     MaterialPropertyBlock propBlock;
 
