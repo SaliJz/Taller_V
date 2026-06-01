@@ -1230,8 +1230,8 @@ MonoBehaviour:
   furyAttackHitbox: {fileID: 0}
   screamHitbox: {fileID: 0}
   hitboxDisplayDuration: 0.2
-  animCtrl: {fileID: 2645563989516676831, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
-  audioSource: {fileID: 4785209160859040218, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
+  animCtrl: {fileID: 6172888018471876708}
+  audioSource: {fileID: 1689218095433789533}
   presenceSFX: {fileID: 8300000, guid: 272f6f049913fa84383303f5ab52fc64, type: 3}
   normalMoveSFX: {fileID: 8300000, guid: 0571e6753fa06fd41b7c78c33818c63b, type: 3}
   furyMoveSFX: {fileID: 8300000, guid: 5d92ed6a33875a9418b0d79529112639, type: 3}
@@ -1350,6 +1350,8 @@ MonoBehaviour:
   glowMaterial: {fileID: 0}
   glowIntensity: 2
   toughnessColor: {r: 0, g: 1, b: 1, a: 1}
+  anticipationBlinkInterval: 0.04
+  anticipationBlinkColor: {r: 1, g: 0, b: 0, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
 --- !u!114 &7299182699207949349
@@ -2538,6 +2540,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d302954649d0c624c8527aede8558203, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &6172888018471876708 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8599253210685323657, guid: e2ec77b09f78ddd4592170f4bda26aae, type: 3}
+  m_PrefabInstance: {fileID: 2520942433765605869}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2291676069932803324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 118dd44faaae1274b9627fd501c9ea46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!137 &8955495561997107440 stripped

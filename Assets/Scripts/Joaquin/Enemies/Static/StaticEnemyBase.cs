@@ -27,11 +27,12 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     #region Inspector - Difficulty Settings
 
-    [Header("Dificultad de anticipación por disparo")]
+    [Header("Dificultad de anticipacion por disparo")]
     [SerializeField] protected MorlockLevel currentLevel = MorlockLevel.Nivel1;
     [SerializeField] protected float interceptProbabilityNivel1 = 0.25f;
     [SerializeField] protected float interceptProbabilityNivel2 = 0.5f;
     [SerializeField] protected float interceptProbabilityNivel3 = 0.75f;
+
     #endregion
 
     #region Inspector - Base Stats Settings
@@ -101,6 +102,14 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     #endregion
 
+    #region Inspector - Enemy Separation Settings
+
+    [Header("Separacion entre enemigos")]
+    [SerializeField] private float minEnemySeparation = 2.5f;
+    [SerializeField] private int separationAttempts = 8;
+
+    #endregion
+
     #region Inspector - Audio Settings
 
     [Header("Sound")]
@@ -111,6 +120,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
     [SerializeField] protected AudioClip deathSFX;
     [Header("SFX Combate")]
     [SerializeField] protected AudioClip shootSFX;
+
     #endregion
 
     #region Inspector - VFX Settings
@@ -125,17 +135,16 @@ public abstract class StaticEnemyBase : MonoBehaviour
     #endregion
 
     #region Inspector - Telegraphed Settings
-    
+
     [Header("Hit Stun")]
     [SerializeField] protected float hitStunDuration = 0.3f;
-    
-    [Header("SFX Daño")]
+
+    [Header("SFX Dano")]
     [SerializeField] protected AudioClip hitStunSFX;
     [SerializeField] protected AudioClip toughnessBlockSFX;
 
-    [Header("Anticipación de Ataque")]
+    [Header("Anticipacion de Ataque")]
     [SerializeField] protected float anticipationPauseDuration = 0.6f;
-    [SerializeField] protected float anticipationBlinkDuration = 0.15f;
     [SerializeField] protected float anticipationSFXPitch = 1.0f;
     [SerializeField] protected AudioClip anticipationSFX;
     [SerializeField] protected GameObject attackVFXPrefab;
@@ -173,6 +182,10 @@ public abstract class StaticEnemyBase : MonoBehaviour
     protected float currentDetectionTimer;
     protected float baseDetectionRadius;
     protected Vector3 lastLookDirection = Vector3.forward;
+
+    protected static readonly List<Vector3> reservedPositions = new List<Vector3>();
+    protected Vector3 ownReservedPosition = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+    protected static readonly Vector3 unsetPosition = new Vector3(float.MinValue, float.MinValue, float.MinValue);
 
     #endregion
 
@@ -223,6 +236,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     protected virtual void OnDisable()
     {
+        ReleasePosition();
         if (enemyHealth != null)
         {
             enemyHealth.OnDeath -= HandleEnemyDeath;
@@ -349,14 +363,14 @@ public abstract class StaticEnemyBase : MonoBehaviour
         minDamageIncrease *= damageMult;
         moveSpeed *= speedMult;
         if (agent != null) agent.speed = moveSpeed;
-        ReportDebug($"Multiplicadores de sala aplicados a Morlock. Daño x{damageMult}, Velocidad x{speedMult}. Nueva Velocidad: {moveSpeed:F2}", 1);
+        ReportDebug($"Multiplicadores de sala aplicados a Morlock. Dano x{damageMult}, Velocidad x{speedMult}. Nueva Velocidad: {moveSpeed:F2}", 1);
     }
 
     protected virtual void HandleDamageTaken()
     {
         if (isDead) return;
 
-        bool hasToughness = enemyToughness != null && enemyToughness.HasToughness;
+        bool hasToughness = enemyToughness != null && enemyToughness.HasToughness && enemyToughness.CurrentToughness > 0;
 
         if (hasToughness)
         {
@@ -370,8 +384,8 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     protected void HandleToughnessHit()
     {
-        if (isDead) return;
-        PlayToughnessBlockFeedback();
+        //if (isDead) return;
+        //PlayToughnessBlockFeedback();
     }
 
     protected void PlayToughnessBlockFeedback()
@@ -390,22 +404,22 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
         CancelAnticipation();
 
-        if (shootCoroutine != null) 
-        { 
-            StopCoroutine(shootCoroutine); 
-            shootCoroutine = null; 
+        if (shootCoroutine != null)
+        {
+            StopCoroutine(shootCoroutine);
+            shootCoroutine = null;
         }
 
-        if (currentBehaviorCoroutine != null) 
-        { 
-            StopCoroutine(currentBehaviorCoroutine); 
-            currentBehaviorCoroutine = null; 
+        if (currentBehaviorCoroutine != null)
+        {
+            StopCoroutine(currentBehaviorCoroutine);
+            currentBehaviorCoroutine = null;
         }
 
         if (visualCtrl != null) visualCtrl.restoreOriginalMaterials();
 
         if (agent != null && agent.enabled && agent.isOnNavMesh)
-        { 
+        {
             agent.isStopped = true; agent.ResetPath();
         }
 
@@ -431,7 +445,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
     protected virtual void HandleEnemyDeath(GameObject enemy)
     {
         if (isDead || enemy != gameObject) return;
-
+        ReleasePosition();
         isDead = true;
 
         if (visualCtrl != null) visualCtrl.PlayDeath();
@@ -639,7 +653,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
             }
             else
             {
-                ReportDebug("Pursue2: Ningún punto cumple con la distancia/navmesh requerida. Esperandondo.", 2);
+                ReportDebug("Pursue2: Ningun punto cumple con la distancia/navmesh requerida. Esperando.", 2);
             }
 
             yield return new WaitForSeconds(p2_teleportCooldown);
@@ -659,7 +673,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         {
             return ~(1 << trapsAreaIndex);
         }
-        return NavMesh.AllAreas; 
+        return NavMesh.AllAreas;
     }
 
     protected virtual void HandleDetectionGrowth()
@@ -669,7 +683,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         {
             detectionRadius += detectionGrowthAmount;
             currentDetectionTimer = 0f;
-            ReportDebug($"Rango de detección aumentado. Nuevo radio: {detectionRadius}", 1);
+            ReportDebug($"Rango de deteccion aumentado. Nuevo radio: {detectionRadius}", 1);
         }
     }
 
@@ -738,6 +752,12 @@ public abstract class StaticEnemyBase : MonoBehaviour
         }
         else yield break;
 
+        // Buscar posicion separada si hay otro enemigo cerca
+        finalDestination = FindSeparatedPosition(finalDestination);
+
+        // Liberar posicion actual antes de iniciar el TP
+        ReleasePosition();
+
         OnBeforeTeleport(transform.position);
 
         if (visualCtrl != null) visualCtrl.PlayTPout();
@@ -751,6 +771,9 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
         transform.position = finalDestination;
         if (agent != null && agent.enabled) agent.Warp(finalDestination);
+
+        // Reclamar posicion al llegar
+        ClaimPosition(finalDestination);
 
         if (visualCtrl != null)
         {
@@ -896,6 +919,8 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     #endregion
 
+    #region Hit Stun & Anticipation
+
     public void StartAnticipationPause()
     {
         if (isDead || isInHitStun) return;
@@ -916,17 +941,16 @@ public abstract class StaticEnemyBase : MonoBehaviour
             audioSource.pitch = 1f;
         }
 
-        // Esperar el tiempo previo al blink
-        float waitBeforeBlink = anticipationPauseDuration - anticipationBlinkDuration;
-        if (waitBeforeBlink > 0f) yield return new WaitForSeconds(waitBeforeBlink);
-
-        // Blink rojo de anticipación
+        // Blink rojo de anticipacion
         if (enemyVisualEffects != null)
         {
-            enemyVisualEffects.PlayAnticipationBlink(anticipationBlinkDuration);
+            enemyVisualEffects.PlayAnticipationBlink(anticipationPauseDuration);
         }
 
-        yield return new WaitForSeconds(anticipationBlinkDuration);
+        // Shake de anticipacion
+        if (visualCtrl != null) visualCtrl.PlayAnticipationShake(anticipationPauseDuration);
+
+        yield return new WaitForSeconds(anticipationPauseDuration);
 
         if (visualCtrl != null) visualCtrl.ResumeAnimation();
 
@@ -941,11 +965,76 @@ public abstract class StaticEnemyBase : MonoBehaviour
             StopCoroutine(anticipationCoroutine);
             anticipationCoroutine = null;
         }
-        
+
         if (visualCtrl != null) visualCtrl.ResumeAnimation();
+        if (visualCtrl != null) visualCtrl.StopAnticipationShake();
         if (enemyVisualEffects != null) enemyVisualEffects.CancelAnticipationBlink();
         isInAnticipation = false;
     }
+
+    #endregion
+
+    #region Enemy Separation System
+
+    private void ClaimPosition(Vector3 pos)
+    {
+        ReleasePosition();
+        ownReservedPosition = pos;
+        reservedPositions.Add(pos);
+    }
+
+    private void ReleasePosition()
+    {
+        if (ownReservedPosition != unsetPosition)
+        {
+            reservedPositions.Remove(ownReservedPosition);
+            ownReservedPosition = unsetPosition;
+        }
+    }
+
+    private bool IsOccupiedByOther(Vector3 pos)
+    {
+        foreach (var reserved in reservedPositions)
+        {
+            if (reserved == ownReservedPosition) continue; // ignorar la propia
+            if (Vector3.Distance(reserved, pos) < minEnemySeparation) return true;
+        }
+        return false;
+    }
+
+    private Vector3 FindSeparatedPosition(Vector3 desired)
+    {
+        if (!IsOccupiedByOther(desired)) return desired;
+
+        int mask = GetWalkableMask();
+
+        for (int i = 0; i < separationAttempts; i++)
+        {
+            // Radio creciente para no buscar siempre en el mismo anillo
+            float radius = minEnemySeparation * (1f + i * 0.4f);
+            Vector3 offset = Random.insideUnitCircle * radius;
+            Vector3 candidate = desired + new Vector3(offset.x, 0f, offset.y);
+
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(candidate, out hit, 2f, mask) && !IsOccupiedByOther(hit.position))
+            {
+                return hit.position;
+            }
+        }
+
+        // Fallback determinista: offset basado en InstanceID para evitar solapamiento exacto
+        float spread = (GetInstanceID() % 10) * 0.4f - 2f;
+        Vector3 fallback = desired + new Vector3(spread, 0f, spread * 0.5f);
+        NavMeshHit fallbackHit;
+        if (NavMesh.SamplePosition(fallback, out fallbackHit, 3f, mask))
+        {
+            return fallbackHit.position;
+        }
+
+        return desired;
+    }
+
+    #endregion
 
     #region Visual & Audio Effects
 
@@ -973,11 +1062,11 @@ public abstract class StaticEnemyBase : MonoBehaviour
     protected virtual void SpawnAttackVFX()
     {
         if (attackVFXPrefab == null) return;
-        
+
         Vector3 pos = attackVFXSpawnPoint != null
             ? attackVFXSpawnPoint.position
             : (firePoint != null ? firePoint.position : transform.position);
-        
+
         Instantiate(attackVFXPrefab, pos, Quaternion.identity);
     }
 
@@ -1024,7 +1113,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     #endregion
 
-    #region Debugging
+    #region Logging
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     protected static void ReportDebug(string message, int reportPriorityLevel)

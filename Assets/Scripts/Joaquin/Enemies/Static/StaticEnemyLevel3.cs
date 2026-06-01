@@ -176,6 +176,8 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
             currentBehaviorCoroutine = null;
         }
 
+        while (shootCoroutine != null || isInAnticipation) yield return null;
+
         Vector3 escapeDir = (transform.position - playerTransform.position).normalized;
         Vector3 evasionTarget = transform.position + escapeDir * evasionTeleportDistance;
 
@@ -189,7 +191,8 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
             {
                 audioSource.PlayOneShot(retaliatoryShootSFX);
             }
-            ExecuteProjectileSpawn();
+            if (visualCtrl != null) visualCtrl.PlayShoot();
+            //ExecuteProjectileSpawn();
         }
 
         ChangeState(currentState);
