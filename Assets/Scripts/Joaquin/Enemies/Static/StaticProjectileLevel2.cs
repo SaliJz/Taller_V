@@ -4,6 +4,7 @@ public class StaticProjectileLevel2 : StaticProjectileBase
 {
     [Header("Mine Settings")]
     [SerializeField] private GameObject minePrefab;
+    [SerializeField] private GameObject PlayerImpactVFX;
     private float storedMineDamage;
 
     public void InitializeLevel2(float pSpeed, float pDamage, string pWord, float pMineDmg)
@@ -24,8 +25,11 @@ public class StaticProjectileLevel2 : StaticProjectileBase
 
             if (mineInstance.TryGetComponent<StaticTrapMine>(out var trapScript))
             {
+                //Instancia de explosión distinta al colisionar con el player
+                Instantiate(PlayerImpactVFX, transform.position, PlayerImpactVFX.transform.rotation);
+
                 string currentWord = wordTrail != null ? wordTrail.GetWord() : "STATIC";
-                trapScript.InitializeTrap(currentWord, storedMineDamage);
+                trapScript.InitializeTrap(currentWord, storedMineDamage, false);
             }
         }
 
@@ -42,6 +46,9 @@ public class StaticProjectileLevel2 : StaticProjectileBase
 
             if (mineInstance.TryGetComponent<StaticTrapMine>(out var trapScript))
             {
+                //Instancia el efecto de impacto al crear minas
+                Instantiate(proyectileImpactVFX, transform.position, proyectileImpactVFX.transform.rotation);
+
                 string currentWord = wordTrail != null ? wordTrail.GetWord() : "STATIC";
                 trapScript.InitializeTrap(currentWord, storedMineDamage);
             }

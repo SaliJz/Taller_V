@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
 {
@@ -15,8 +16,9 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
     float dashTimer;
     public float dashDuration = 0.5f;
     [SerializeField] GameObject AttackVFX;
+    [SerializeField] GameObject ImpactVFX;
     public float h, v; //CONECTAR A VELOCIDAD DEL ENEMIGO
-    Vector2 nextdirecion;
+    // Vector2 nextdirecion;
 
     protected override void Start()
     {
@@ -91,9 +93,18 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
 #region Event Void
     protected override void OnAnimationEvent(string ev)
     {
-        if (ev == "SpawnVFX")
+        switch (ev)
         {
-            AttackVFX.SetActive(true);
+            case "SpawnVFX": AttackVFX.SetActive(true); break;
+            case "ImpactVFX": 
+            {
+                if(ImpactVFX != null)
+                {
+                ImpactVFX.SetActive(false);
+                ImpactVFX.SetActive(true); 
+                }
+                break;
+            }
         }
     }
 #endregion

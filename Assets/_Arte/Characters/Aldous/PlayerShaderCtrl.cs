@@ -17,8 +17,7 @@ public class PlayerShaderCtrl : MonoBehaviour
     [SerializeField] private float outlineMax = 0.002f;
     [SerializeField] private GameObject BrokenVFX; // Prefab del VFX de ruptura del outline
     [SerializeField] private Material BrokenMat; // Material para el VFX de ruptura, que cambiará de color según el estado de stamina
-    [SerializeField] private GameObject DamageVFX;
-    [SerializeField] private GameObject StateChangeVFX;
+
 
     [Header("Shine Settings")]
     [Tooltip("Valor máximo del brillo durante el efecto de shine")]
@@ -31,14 +30,17 @@ public class PlayerShaderCtrl : MonoBehaviour
     // [SerializeField] private float damageFlashDuration = 0.15f;
     [Tooltip("Color que aparece al recibir daño")]
     [SerializeField] private Color DamageColor = Color.red;
+    [SerializeField] private GameObject DamageVFX;
     [Tooltip("Color que aparece al recibir vida de enemigos o larvas")]
     [SerializeField] private Color HealColor = Color.green;
+    [SerializeField] private GameObject HealVFX;
 
     [Header("State Change Settings")]
-    [SerializeField] GameObject afterImagePrefab;
     [SerializeField] Color startColor;
     [SerializeField] Color endColor;
     [SerializeField] float AfterImageLifetime;
+    [SerializeField] GameObject afterImagePrefab;
+    [SerializeField] private GameObject StateChangeVFX;
     private MaterialPropertyBlock mpb;
     private Coroutine shineRoutine;
     private Coroutine outlineRoutine;
@@ -288,30 +290,10 @@ public class PlayerShaderCtrl : MonoBehaviour
         if(currentFlashCoroutine != null) StopCoroutine(currentFlashCoroutine);
 
         currentFlashCoroutine = StartCoroutine(HealCoroutine());
+
+        HealVFX.SetActive(false);
+        HealVFX.SetActive(true);
     }
-
-    // private IEnumerator DamageRoutine()
-    // {
-    //     float t = 0;
-
-    //     while (t < 1)
-    //     {
-    //         t += Time.deltaTime / damageFlashDuration;
-    //         spriteRend.color = Color.Lerp(Color.white, Color.red, t);
-    //         yield return null;
-    //     }
-
-    //     t = 0;
-
-    //     while (t < 1)
-    //     {
-    //         t += Time.deltaTime / damageFlashDuration;
-    //         spriteRend.color = Color.Lerp(Color.red, Color.white, t);
-    //         yield return null;
-    //     }
-
-    //     spriteRend.color = Color.white;
-    // }
 
     private IEnumerator HitCoroutine()
     {

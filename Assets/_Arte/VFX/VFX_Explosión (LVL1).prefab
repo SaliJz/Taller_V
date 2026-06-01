@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4610356313733165322}
   - component: {fileID: 7287504670980128459}
   m_Layer: 0
-  m_Name: "VFX_Explosi\xF3n"
+  m_Name: "VFX_Explosi\xF3n (LVL1)"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -44,7 +44,7 @@ ParticleSystem:
   serializedVersion: 8
   lengthInSec: 3.5
   simulationSpeed: 1
-  stopAction: 0
+  stopAction: 2
   cullingMode: 0
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
@@ -107,7 +107,7 @@ ParticleSystem:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-  moveWithTransform: 0
+  moveWithTransform: 1
   moveWithCustomTransform: {fileID: 0}
   scalingMode: 1
   randomSeed: 0
@@ -752,7 +752,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 1
+      value: 0.2
       mode: 0
       spread: 0
       speed:
@@ -981,8 +981,8 @@ ParticleSystem:
       countCurve:
         serializedVersion: 2
         minMaxState: 3
-        scalar: 12
-        minScalar: 35
+        scalar: 6
+        minScalar: 12
         maxCurve:
           serializedVersion: 2
           m_Curve:
@@ -4949,7 +4949,7 @@ ParticleSystem:
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 1
-  looping: 1
+  looping: 0
   prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0
@@ -5070,8 +5070,8 @@ ParticleSystem:
     startSpeed:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 50
-      minScalar: 100
+      scalar: 25
+      minScalar: 50
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -5188,8 +5188,8 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 2.2
-      minScalar: 2.8
+      scalar: 1.5
+      minScalar: 2.2
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -5652,7 +5652,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 1
+      value: 0.5
       mode: 0
       spread: 0
       speed:
@@ -5881,8 +5881,8 @@ ParticleSystem:
       countCurve:
         serializedVersion: 2
         minMaxState: 3
-        scalar: 15
-        minScalar: 30
+        scalar: 8
+        minScalar: 12
         maxCurve:
           serializedVersion: 2
           m_Curve:

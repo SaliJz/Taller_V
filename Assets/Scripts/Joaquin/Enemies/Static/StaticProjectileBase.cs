@@ -11,6 +11,9 @@ public abstract class StaticProjectileBase : MonoBehaviour
     [SerializeField] protected LayerMask playerLayer;
     [SerializeField] protected LayerMask environmentLayer;
 
+    [Header("Collission VFX")]
+    [SerializeField] protected GameObject proyectileImpactVFX;
+
     protected MorlockProjectileWordTrail wordTrail;
     protected Rigidbody rb;
     protected Vector3 originPosition;

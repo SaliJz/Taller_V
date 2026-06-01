@@ -44,7 +44,8 @@ public class StaticTrapMine : BaseTrapMine
     /// </summary>
     /// <param name="wordToDisplay">Texto decorativo (heredado de la versión original).</param>
     /// <param name="dmg">Daño de la explosión.</param>
-    public void InitializeTrap(string wordToDisplay, float dmg)
+    /// <param name="SpawnVFX">VFX se instancia
+    public void InitializeTrap(string wordToDisplay, float dmg, bool SpawnVFX = true)
     {
         rb.useGravity = true;
         rb.isKinematic = false;
@@ -53,6 +54,8 @@ public class StaticTrapMine : BaseTrapMine
 
         Vector3 randomBounce = new Vector3(Random.Range(-2f, 2f), 3f, Random.Range(-2f, 2f));
         rb.AddForce(randomBounce, ForceMode.Impulse);
+
+        if(!SpawnVFX) explosionSpherePrefab = null;
 
         Invoke(nameof(ExplodePublic), duration);
     }

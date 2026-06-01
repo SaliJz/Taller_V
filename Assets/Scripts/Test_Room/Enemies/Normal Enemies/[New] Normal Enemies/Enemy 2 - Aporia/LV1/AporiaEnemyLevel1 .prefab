@@ -187,6 +187,7 @@ Transform:
   - {fileID: 972664531185815189}
   - {fileID: 963092918058534623}
   - {fileID: 2323864352894703201}
+  - {fileID: 4925566966943103781}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!136 &3578341920115796374
@@ -436,6 +437,8 @@ MonoBehaviour:
   glowMaterial: {fileID: 0}
   glowIntensity: 2
   toughnessColor: {r: 0, g: 1, b: 1, a: 1}
+  anticipationBlinkInterval: 0.04
+  anticipationBlinkColor: {r: 1, g: 0, b: 0, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
 --- !u!114 &2063845933142064047
@@ -1443,6 +1446,7 @@ MonoBehaviour:
   isDashing: 1
   dashDuration: 0.5
   AttackVFX: {fileID: 7621600035606433343}
+  ImpactVFX: {fileID: 1818341369332982539}
   h: -1
   v: 1
 --- !u!1 &4545017819492514827
@@ -2762,4 +2766,71 @@ GameObject:
 Transform:
   m_CorrespondingSourceObject: {fileID: 7810142096279460155, guid: 5a81669117474564facffb40825e6689, type: 3}
   m_PrefabInstance: {fileID: 1408391868130037729}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8638516484564834736
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2260509911831360707}
+    m_Modifications:
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 2.78
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7988865868457753275, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_Name
+      value: EfectoGolpeKronus 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+--- !u!1 &1818341369332982539 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7988865868457753275, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+  m_PrefabInstance: {fileID: 8638516484564834736}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &4925566966943103781 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+  m_PrefabInstance: {fileID: 8638516484564834736}
   m_PrefabAsset: {fileID: 0}
