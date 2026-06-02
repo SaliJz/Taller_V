@@ -1054,7 +1054,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3425788958060345074, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -14.43
       objectReference: {fileID: 0}
     - target: {fileID: 3425788958060345074, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1090,23 +1090,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3776010021068202972, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
       propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4383706972352852811, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
+      propertyPath: m_AnchorMax.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4383706972352852811, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
-      propertyPath: m_AnchorMax.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4383706972352852811, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8095910642422760361, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8095910642422760361, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6615,16 +6615,17 @@ MonoBehaviour:
   outlineMax: 0.002
   BrokenVFX: {fileID: 3191284374403391635, guid: fe106a95aa4e26543be336f8d5b112d1, type: 3}
   BrokenMat: {fileID: 2100000, guid: e824a4db627b8dd42a3cdd5924adf905, type: 2}
-  DamageVFX: {fileID: 0}
-  StateChangeVFX: {fileID: 0}
   shinePeak: 0.5
   damagePeak: 0.5
   DamageColor: {r: 1, g: 0, b: 0, a: 1}
+  DamageVFX: {fileID: 0}
   HealColor: {r: 0, g: 1, b: 0, a: 1}
-  afterImagePrefab: {fileID: 0}
+  HealVFX: {fileID: 0}
   startColor: {r: 0, g: 0, b: 0, a: 0}
   endColor: {r: 0, g: 0, b: 0, a: 0}
   AfterImageLifetime: 0
+  afterImagePrefab: {fileID: 0}
+  StateChangeVFX: {fileID: 0}
 --- !u!114 &469714745
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10352,7 +10353,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4091443790445650418, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -10368,11 +10369,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4383706972352852811, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4383706972352852811, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5146661151797545069, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -10412,11 +10413,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8095910642422760361, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8095910642422760361, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8648442972101299658, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x

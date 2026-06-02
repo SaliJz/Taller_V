@@ -528,96 +528,9 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
         if (distanceToPlayer <= normalAttackRange && Time.time >= lastAttackTime + normalAttackInterval)
         {
-            //StartCoroutine(ExecuteNormalAttackSequence());
             StartAttack();
         }
     }
-
-    /*
-    private IEnumerator ExecuteNormalAttackSequence()
-    {
-        lastAttackTime = Time.time;
-        isAttacking = true;
-
-        if (agent != null && agent.enabled) agent.isStopped = true;
-
-        if (animCtrl != null) animCtrl.PlayAttack();
-        if (audioSource != null && normalAttackClip != null) audioSource.PlayOneShot(normalAttackClip);
-
-        waitingForImpactEvent = true;
-        yield return new WaitUntil(() => !waitingForImpactEvent);
-
-        lastDamageInflictedTime = Time.time;
-        if (normalAttackHitbox != null) StartCoroutine(ShowHitbox(normalAttackHitbox));
-
-        Collider[] hits = Physics.OverlapSphere(transform.position, normalAttackRange, playerLayer);
-        foreach (Collider hit in hits)
-        {
-            if (hit.CompareTag("Player"))
-            {
-                IDamageable damageable = hit.GetComponent<IDamageable>();
-                if (damageable != null)
-                {
-                    ExecuteAttack(hit.gameObject, normalAttackDamage);
-                    PlayerMovement playerMovement = hit.GetComponent<PlayerMovement>();
-                    if (playerMovement != null) StartCoroutine(ApplyPlayerSlow(playerMovement));
-                }
-                break;
-            }
-        }
-
-        waitingForAttackEndEvent = true;
-        yield return new WaitUntil(() => !waitingForAttackEndEvent);
-
-        isAttacking = false;
-        if (agent != null && agent.enabled) agent.isStopped = false;
-    }
-
-    /*
-    private void PerformNormalAttack()
-    {
-        lastAttackTime = Time.time;
-        lastDamageInflictedTime = Time.time;
-
-        if (animator != null)
-        {
-            animator.SetTrigger(normalAttackAnimationTrigger);
-        }
-
-        if (audioSource != null && normalAttackClip != null)
-        {
-            audioSource.PlayOneShot(normalAttackClip);
-        }
-
-        if (normalAttackHitbox != null)
-        {
-            StartCoroutine(ShowHitbox(normalAttackHitbox));
-        }
-
-        Collider[] hits = Physics.OverlapSphere(transform.position, normalAttackRange, playerLayer);
-
-        foreach (Collider hit in hits)
-        {
-            if (hit.CompareTag("Player"))
-            {
-                IDamageable damageable = hit.GetComponent<IDamageable>();
-                if (damageable != null)
-                {
-                    ExecuteAttack(hit.gameObject, normalAttackDamage);
-
-                    PlayerMovement playerMovement = hit.GetComponent<PlayerMovement>();
-                    if (playerMovement != null)
-                    {
-                        StartCoroutine(ApplyPlayerSlow(playerMovement));
-                    }
-
-                    Debug.Log($"Laceratus: Ataque normal - Danio: {normalAttackDamage}");
-                }
-                break;
-            }
-        }
-    }
-    */
 
     private IEnumerator ApplyPlayerSlow(PlayerMovement playerMovement)
     {
@@ -648,7 +561,6 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
             if (Time.time >= lastAttackTime + furyAttackInterval)
             {
-                //StartCoroutine(ExecuteFuryAttackSequence());
                 StartAttack();
             }
         }
@@ -657,86 +569,14 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
             timeSinceOutOfRange += Time.deltaTime;
             furyJumpTimer += Time.deltaTime;
 
-            if (timeSinceOutOfRange >= furyJumpDelay && furyJumpTimer >= furyJumpDelay)
+            if (furyJumpDelay > 0 && furyJumpDuration > 0 
+                && timeSinceOutOfRange >= furyJumpDelay && furyJumpTimer >= furyJumpDelay)
             {
                 PerformFuryJump(distanceToPlayer);
                 furyJumpTimer = 0f;
             }
         }
     }
-
-    /*
-    private IEnumerator ExecuteFuryAttackSequence()
-    {
-        lastAttackTime = Time.time;
-        isAttacking = true;
-
-        if (agent != null && agent.enabled) agent.isStopped = true;
-
-        if (animCtrl != null) animCtrl.PlayAttack();
-        if (audioSource != null && furyAttackClip != null) audioSource.PlayOneShot(furyAttackClip);
-
-        waitingForImpactEvent = true;
-        yield return new WaitUntil(() => !waitingForImpactEvent);
-
-        lastDamageInflictedTime = Time.time;
-        if (furyAttackHitbox != null) StartCoroutine(ShowHitbox(furyAttackHitbox));
-
-        Collider[] hits = Physics.OverlapSphere(transform.position, furyAttackRange, playerLayer);
-        foreach (Collider hit in hits)
-        {
-            if (hit.CompareTag("Player"))
-            {
-                IDamageable damageable = hit.GetComponent<IDamageable>();
-                if (damageable != null) ExecuteAttack(hit.gameObject, furyAttackDamage);
-                break;
-            }
-        }
-
-        waitingForAttackEndEvent = true;
-        yield return new WaitUntil(() => !waitingForAttackEndEvent);
-
-        isAttacking = false;
-        if (agent != null && agent.enabled) agent.isStopped = false;
-    }
-
-    private void PerformFuryAttack()
-    {
-        lastAttackTime = Time.time;
-        lastDamageInflictedTime = Time.time;
-
-        if (animator != null)
-        {
-            animator.SetTrigger(furyAttackAnimationTrigger);
-        }
-
-        if (audioSource != null && furyAttackClip != null)
-        {
-            audioSource.PlayOneShot(furyAttackClip);
-        }
-
-        if (furyAttackHitbox != null)
-        {
-            StartCoroutine(ShowHitbox(furyAttackHitbox));
-        }
-
-        Collider[] hits = Physics.OverlapSphere(transform.position, furyAttackRange, playerLayer);
-
-        foreach (Collider hit in hits)
-        {
-            if (hit.CompareTag("Player"))
-            {
-                IDamageable damageable = hit.GetComponent<IDamageable>();
-                if (damageable != null)
-                {
-                    ExecuteAttack(hit.gameObject, furyAttackDamage);
-                    Debug.Log($"Laceratus: Ataque furia - Danio: {furyAttackDamage}");
-                }
-                break;
-            }
-        }
-    }
-    */
 
     private void PerformFuryJump(float distanceToPlayer)
     {
