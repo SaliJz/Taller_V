@@ -532,14 +532,13 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         }
     }
 
-    private IEnumerator ApplyPlayerSlow(PlayerMovement playerMovement)
+    private void ApplyPlayerSlow(PlayerStatsManager playerStatsManager, float slowPercent, float slowDuration)
     {
-        float originalSpeed = playerMovement.MoveSpeed;
-        playerMovement.MoveSpeed *= (1f - normalAttackSlowPercent);
-
-        yield return new WaitForSeconds(normalAttackSlowDuration);
-
-        playerMovement.MoveSpeed = originalSpeed;
+        if (playerStatsManager != null)
+        {
+            string slowKey = "JitterSlow_" + GetInstanceID();
+            playerStatsManager.ApplyTimedModifier(slowKey, StatType.MoveSpeed, -slowPercent, slowDuration, isPercentage: true);
+        }
     }
 
     #endregion
@@ -689,8 +688,8 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
             if (!isInFury)
             {
-                PlayerMovement pm = hit.GetComponent<PlayerMovement>();
-                if (pm != null) StartCoroutine(ApplyPlayerSlow(pm));
+                PlayerStatsManager statsManager = hit.GetComponent<PlayerStatsManager>();
+                if (statsManager != null) ApplyPlayerSlow(statsManager, normalAttackSlowPercent, normalAttackSlowDuration);
             }
             break;
         }
