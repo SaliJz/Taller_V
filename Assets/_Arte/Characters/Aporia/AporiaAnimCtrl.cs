@@ -1,11 +1,12 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
 {
     public enum ActionState
     {
-        run, dash, attack, death, damage
+        idle, run, dash, attack, death, damage
     }
 
     [Header("State Flags")]
@@ -31,7 +32,10 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
     {
         string directionBeforeUpdate = currentDirection;
 
-        // handleTESTimputs();
+        #if UNITY_EDITOR
+        if(SceneManager.GetActiveScene().name == "AndreiNew") handleTESTimputs();
+        #endif
+
         UpdateDirection(h,v);
 
         UpdateDashLogic();
@@ -47,6 +51,10 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
                 {
                     PlayState(ActionState.run, AnimPriority.locomotion, false);
                 }
+            }
+            else
+            {
+                PlayState(ActionState.idle, AnimPriority.locomotion, false);
             }
         }
         
@@ -124,7 +132,7 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
         return true;
     }
 
-    void handleTESTimputs() //COMENTAR AL CONECTAR AL ENEMIGO
+    void handleTESTimputs()
     {
         h = Input.GetAxisRaw("Horizontal");
         v = Input.GetAxisRaw("Vertical");
