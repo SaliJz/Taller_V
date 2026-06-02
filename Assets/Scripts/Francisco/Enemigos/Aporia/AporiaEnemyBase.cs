@@ -87,17 +87,34 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
     #endregion
 
+    #region Inspector - Telegraphed Settings
+
+    [Header("Hit Stun")]
+    [SerializeField] protected float hitStunDuration = 0.3f;
+    [SerializeField] protected float forceIdleDuration = 0.8f;
+
+    [Header("SFX Dano")]
+    [SerializeField] protected AudioClip hitStunSFX;
+    [SerializeField] protected AudioClip toughnessBlockSFX;
+
+    #endregion
+
     #region Internal State
 
+    protected EnemyVisualEffects enemyVisualEffects;
+    protected EnemyToughness enemyToughness;
     protected EnemyHealth enemyHealth;
     protected NavMeshAgent agent;
     protected Transform playerTransform;
+
     protected float wanderTimer;
     protected float attackTimer;
     protected float currentCooldown;
     protected bool isAttacking = false;
-    private Coroutine flashCoroutine;
-    private SpriteRenderer cachedSpriteRenderer;
+    protected bool isInHitStun = false;
+
+    protected Coroutine attackSequenceCoroutine;
+    protected Coroutine hitStunCoroutine;
 
     #endregion
 
@@ -113,9 +130,13 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     {
         enemyHealth = GetComponent<EnemyHealth>();
         agent = GetComponent<NavMeshAgent>();
+        enemyVisualEffects = GetComponent<EnemyVisualEffects>();
+        enemyToughness = GetComponent<EnemyToughness>();
 
         if (audioSource == null)
+        {
             audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
+        }
 
         InitializeEnemy();
         SetupPools();
@@ -139,8 +160,9 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     {
         if (enemyHealth != null)
         {
-            enemyHealth.OnDeath += HandleDeath;
-            enemyHealth.OnDamaged += PlayDamageSFX;
+            enemyHealth.OnDeath += HandleEnemyDeath;
+            enemyHealth.OnDamaged += HandleDamageTaken;
+            enemyHealth.OnToughnessHit += HandleToughnessHit;
         }
     }
 
@@ -148,14 +170,28 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     {
         if (enemyHealth != null)
         {
-            enemyHealth.OnDeath -= HandleDeath;
-            enemyHealth.OnDamaged -= PlayDamageSFX;
+            enemyHealth.OnDeath -= HandleEnemyDeath;
+            enemyHealth.OnDamaged -= HandleDamageTaken;
+            enemyHealth.OnToughnessHit -= HandleToughnessHit;
         }
+        StopAllCoroutines();
+    }
+
+    protected virtual void OnDestroy()
+    {
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnDeath -= HandleEnemyDeath;
+            enemyHealth.OnDamaged -= HandleDamageTaken;
+            enemyHealth.OnToughnessHit -= HandleToughnessHit;
+        }
+        StopAllCoroutines();
     }
 
     protected virtual void Update()
     {
-        if (isAttacking || (enemyHealth != null && (enemyHealth.IsStunned || enemyHealth.IsDead))) return;
+        if (isAttacking || isInHitStun || 
+            (enemyHealth != null && (enemyHealth.IsStunned || enemyHealth.IsDead))) return;
 
         HandleLocomotion();
 
@@ -171,9 +207,13 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             if (attackTimer >= currentCooldown)
             {
                 if (dist <= attackRadius)
-                    StartCoroutine(ExecuteFullAttackSequence(false));
+                {
+                    attackSequenceCoroutine = StartCoroutine(ExecuteFullAttackSequence(false));
+                }
                 else if (dist <= dashActivationDistance)
-                    StartCoroutine(ExecuteFullAttackSequence(true));
+                {
+                    attackSequenceCoroutine = StartCoroutine(ExecuteFullAttackSequence(true));
+                }
             }
         }
         else
@@ -259,6 +299,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         }
 
         isAttacking = false;
+        attackSequenceCoroutine = null;
         currentCooldown = GetRandomCooldown();
     }
 
@@ -289,7 +330,9 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         }
 
         if (animCtrl)
+        {
             animCtrl.SendMessage("PlayAttack", SendMessageOptions.DontRequireReceiver);
+        }
 
         yield return new WaitForSeconds(hitDelay);
 
@@ -322,7 +365,12 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         if (animCtrl == null || agent == null || !agent.enabled) return;
 
         Vector3 moveDir = isAttacking ? transform.forward : agent.velocity;
-        if (moveDir.sqrMagnitude < 0.01f) { animCtrl.h = 0; animCtrl.v = 0; return; }
+        if (moveDir.sqrMagnitude < 0.01f) 
+        { 
+            animCtrl.h = 0; 
+            animCtrl.v = 0; 
+            return; 
+        }
 
         float angle = Mathf.Atan2(moveDir.x, moveDir.z) * Mathf.Rad2Deg - 45f;
         if (angle < 0) angle += 360f;
@@ -378,45 +426,63 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
     #region Efectos Y Animaciones
 
-    protected void PlayDamageSFX()
+    protected void HandleDamageTaken()
     {
-        if (audioSource && damageSFX) audioSource.PlayOneShot(damageSFX);
-        if (flashCoroutine != null)
+        if (enemyHealth != null && enemyHealth.IsDead) return;
+
+        bool hasToughness = enemyToughness != null && enemyToughness.HasToughness && enemyToughness.CurrentToughness > 0;
+
+        if (hasToughness)
         {
-            StopCoroutine(flashCoroutine);
-            if (cachedSpriteRenderer) cachedSpriteRenderer.material.SetFloat("_Amount", 0f);
+            return;
         }
 
-        if (animCtrl) animCtrl.PlayDamage();
-        flashCoroutine = StartCoroutine(DamageFlash());
+        if (hitStunCoroutine != null) StopCoroutine(hitStunCoroutine);
+        hitStunCoroutine = StartCoroutine(HitStunRoutine());
     }
 
-    private void CacheSpriteRenderer()
+    protected void HandleToughnessHit()
     {
-        if (cachedSpriteRenderer != null) return;
-        cachedSpriteRenderer = animCtrl?.GetComponent<SpriteRenderer>();
-    }
+        if (enemyToughness == null || !enemyToughness.HasToughness || enemyToughness.CurrentToughness <= 0) return;
+        if (enemyHealth != null && enemyHealth.IsDead) return;
 
-    private IEnumerator DamageFlash()
-    {
-        CacheSpriteRenderer();
-        if (!cachedSpriteRenderer) yield break;
-
-        cachedSpriteRenderer.material.SetFloat("_Amount", 1f);
-        yield return new WaitForSeconds(0.15f);
-        cachedSpriteRenderer.material.SetFloat("_Amount", 0f);
-        flashCoroutine = null;
-    }
-
-    protected void ResetDamageFlash()
-    {
-        if (flashCoroutine != null)
+        if (animCtrl != null) animCtrl.PlayDamage();
+        if (audioSource != null && toughnessBlockSFX != null)
         {
-            StopCoroutine(flashCoroutine);
-            flashCoroutine = null;
+            audioSource.PlayOneShot(toughnessBlockSFX);
         }
-        CacheSpriteRenderer();
-        if (cachedSpriteRenderer) cachedSpriteRenderer.material.SetFloat("_Amount", 0f);
+    }
+
+    protected virtual IEnumerator HitStunRoutine()
+    {
+        isInHitStun = true;
+
+        if (attackSequenceCoroutine != null)
+        {
+            StopCoroutine(attackSequenceCoroutine);
+            attackSequenceCoroutine = null;
+        }
+        isAttacking = false;
+
+        if (IsAgentReady) 
+        { 
+            agent.isStopped = true; 
+            agent.ResetPath(); 
+        }
+
+        if (groundIndicator != null) groundIndicator.SetActive(false);
+
+        if (animCtrl != null) animCtrl.PlayDamage();
+        if (audioSource != null && hitStunSFX != null) audioSource.PlayOneShot(hitStunSFX);
+
+        yield return new WaitForSeconds(hitStunDuration);
+
+        if (agent != null && agent.enabled) agent.isStopped = false;
+
+        isInHitStun = false;
+        hitStunCoroutine = null;
+
+        attackTimer = -forceIdleDuration;
     }
 
     protected virtual void HandleAnimEvents(string eventName)
@@ -431,12 +497,28 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
     #region Salud Y Muerte
 
-    protected virtual void HandleDeath(GameObject e)
+    protected virtual void HandleEnemyDeath(GameObject enemy)
     {
-        if (e != gameObject) return;
-        ResetDamageFlash();
+        if (enemy != gameObject) return;
+
+        if (hitStunCoroutine != null) 
+        { 
+            StopCoroutine(hitStunCoroutine); 
+            hitStunCoroutine = null; 
+        }
+
+        if (attackSequenceCoroutine != null) 
+        { 
+            StopCoroutine(attackSequenceCoroutine); 
+            attackSequenceCoroutine = null; 
+        }
+
+        isInHitStun = false;
+        isAttacking = false;
+
         if (audioSource && deathSFX) audioSource.PlayOneShot(deathSFX);
-        animCtrl?.PlayDeath();
+        if (animCtrl != null) animCtrl.PlayDeath();
+
         agent.enabled = false;
         this.enabled = false;
     }

@@ -1187,6 +1187,7 @@ MonoBehaviour:
   isDashing: 0
   dashDuration: 0.5
   AttackVFX: {fileID: 1050446927725776010}
+  ImpactVFX: {fileID: 0}
   h: 0
   v: 0
 --- !u!1 &3332914037808363938
@@ -2008,6 +2009,10 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  hitStunDuration: 0.3
+  forceIdleDuration: 0.8
+  hitStunSFX: {fileID: 0}
+  toughnessBlockSFX: {fileID: 0}
   tongueVFXPrefab: {fileID: 0}
   nestPrefab: {fileID: 3022416804554668879, guid: 8581b67ab6a53c1428c997e77db2e35a, type: 3}
   enemiesSheet: {fileID: 11400000, guid: 566256d046a94d049b6d208905123b1f, type: 2}
@@ -2104,8 +2109,8 @@ MonoBehaviour:
   toughnessBlockSFX: {fileID: 0}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
-  useAmountFlash: 0
-  amountFlashRenderer: {fileID: 0}
+  useAmountFlash: 1
+  amountFlashRenderer: {fileID: 8785067081531800894}
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
@@ -2118,6 +2123,8 @@ MonoBehaviour:
   glowMaterial: {fileID: 0}
   glowIntensity: 2
   toughnessColor: {r: 0, g: 1, b: 1, a: 1}
+  anticipationBlinkInterval: 0.04
+  anticipationBlinkColor: {r: 1, g: 0, b: 0, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5, g: 0, b: 0, a: 1}
 --- !u!114 &9159611241233586929

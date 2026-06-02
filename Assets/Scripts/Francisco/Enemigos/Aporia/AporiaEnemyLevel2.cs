@@ -170,10 +170,23 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
 
     #region Death & Destruction
 
-    protected override void HandleDeath(GameObject e)
+    protected override void HandleEnemyDeath(GameObject enemy)
     {
-        if (e != gameObject) return;
-        ResetDamageFlash();
+        if (enemy != gameObject) return;
+        
+        if (hitStunCoroutine != null) 
+        { 
+            StopCoroutine(hitStunCoroutine); 
+            hitStunCoroutine = null; 
+        }
+
+        if (attackSequenceCoroutine != null) 
+        { 
+            StopCoroutine(attackSequenceCoroutine); 
+            attackSequenceCoroutine = null; 
+        }
+
+        isAttacking = false;
         deathCoroutine = StartCoroutine(DeathSequence());
     }
 
@@ -194,7 +207,7 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
 
         TriggerExplosion();
 
-        animCtrl?.PlayDeath();
+        if (animCtrl) animCtrl.PlayDeath();
 
         GameObject shard = Instantiate(glassShardDeathPrefab, transform.position, Quaternion.identity);
         shard.transform.localScale = Vector3.one * (shardDeathRadius * 2f);

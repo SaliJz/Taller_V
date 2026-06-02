@@ -138,6 +138,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     [Header("Hit Stun")]
     [SerializeField] protected float hitStunDuration = 0.3f;
+    [SerializeField] protected float forceIdleDuration = 0.8f;
 
     [Header("SFX Dano")]
     [SerializeField] protected AudioClip hitStunSFX;
@@ -368,13 +369,12 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     protected virtual void HandleDamageTaken()
     {
-        if (isDead) return;
+        if (enemyHealth != null && enemyHealth.IsDead) return;
 
         bool hasToughness = enemyToughness != null && enemyToughness.HasToughness && enemyToughness.CurrentToughness > 0;
 
         if (hasToughness)
         {
-            PlayToughnessBlockFeedback();
             return;
         }
 
@@ -384,12 +384,9 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     protected void HandleToughnessHit()
     {
-        //if (isDead) return;
-        //PlayToughnessBlockFeedback();
-    }
+        if (enemyToughness == null || !enemyToughness.HasToughness || enemyToughness.CurrentToughness <= 0) return;
+        if (enemyHealth != null && enemyHealth.IsDead) return;
 
-    protected void PlayToughnessBlockFeedback()
-    {
         if (visualCtrl != null) visualCtrl.PlayDamage();
         if (audioSource != null && toughnessBlockSFX != null)
         {
@@ -433,7 +430,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         isInHitStun = false;
         hitStunCoroutine = null;
 
-        if (!isDead && isReady) yield return StartCoroutine(ForceIdleBrieflyRoutine(0.8f));
+        if (!isDead && isReady) yield return StartCoroutine(ForceIdleBrieflyRoutine(forceIdleDuration));
     }
 
     private IEnumerator ForceIdleBrieflyRoutine(float duration)
@@ -445,6 +442,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
     protected virtual void HandleEnemyDeath(GameObject enemy)
     {
         if (isDead || enemy != gameObject) return;
+
         ReleasePosition();
         isDead = true;
 

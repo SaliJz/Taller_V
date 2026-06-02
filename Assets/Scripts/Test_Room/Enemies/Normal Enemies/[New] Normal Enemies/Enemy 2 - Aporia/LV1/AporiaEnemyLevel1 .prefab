@@ -329,6 +329,10 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  hitStunDuration: 0.3
+  forceIdleDuration: 0.8
+  hitStunSFX: {fileID: 0}
+  toughnessBlockSFX: {fileID: 0}
   enemiesSheet: {fileID: 11400000, guid: 566256d046a94d049b6d208905123b1f, type: 2}
   ENEMY_ID: 3
 --- !u!114 &7811850655376459637
@@ -423,8 +427,8 @@ MonoBehaviour:
   toughnessBlockSFX: {fileID: 0}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
-  useAmountFlash: 0
-  amountFlashRenderer: {fileID: 0}
+  useAmountFlash: 1
+  amountFlashRenderer: {fileID: 8275568866475249069}
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
