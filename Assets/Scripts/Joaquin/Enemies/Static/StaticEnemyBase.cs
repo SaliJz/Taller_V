@@ -140,6 +140,10 @@ public abstract class StaticEnemyBase : MonoBehaviour
     [SerializeField] protected float hitStunDuration = 0.3f;
     [SerializeField] protected float forceIdleDuration = 0.8f;
 
+    [Header("VFX Ataque")]
+    [SerializeField] protected GameObject attackVFXPrefab;
+    [SerializeField] protected Transform attackVFXSpawnPoint;
+
     [Header("SFX Dano")]
     [SerializeField] protected AudioClip hitStunSFX;
     [SerializeField] protected AudioClip toughnessBlockSFX;
@@ -148,8 +152,6 @@ public abstract class StaticEnemyBase : MonoBehaviour
     [SerializeField] protected float anticipationPauseDuration = 0.6f;
     [SerializeField] protected float anticipationSFXPitch = 1.0f;
     [SerializeField] protected AudioClip anticipationSFX;
-    [SerializeField] protected GameObject attackVFXPrefab;
-    [SerializeField] protected Transform attackVFXSpawnPoint;
 
     #endregion
 
@@ -264,15 +266,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
         UpdateAnimationAndRotation();
 
-        if (enemyHealth != null && enemyHealth.IsStunned)
-        {
-            if (agent != null && agent.enabled && agent.isOnNavMesh)
-            {
-                agent.isStopped = true;
-                agent.ResetPath();
-            }
-            return;
-        }
+        if (enemyHealth != null && enemyHealth.IsStunned) return;
 
         HandleIdleSound();
 
@@ -371,7 +365,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
     {
         if (enemyHealth != null && enemyHealth.IsDead) return;
 
-        bool hasToughness = enemyToughness != null && enemyToughness.HasToughness && enemyToughness.CurrentToughness > 0;
+        bool hasToughness = enemyToughness != null && enemyToughness.HasToughness;
 
         if (hasToughness)
         {
@@ -384,7 +378,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     protected void HandleToughnessHit()
     {
-        if (enemyToughness == null || !enemyToughness.HasToughness || enemyToughness.CurrentToughness <= 0) return;
+        if (enemyToughness == null || !enemyToughness.HasToughness) return;
         if (enemyHealth != null && enemyHealth.IsDead) return;
 
         if (visualCtrl != null) visualCtrl.PlayDamage();

@@ -87,6 +87,10 @@ public class AporiaEnemyLevel3 : AporiaEnemyBase
 
     public override void OnAttackHit()
     {
+        if (enemyHealth != null && (enemyHealth.IsStunned || enemyHealth.IsDead)) return;
+
+        SpawnAttackVFX();
+
         if (audioSource && attackSFX) audioSource.PlayOneShot(attackSFX);
 
         Vector3 spawnPosition = hitPoint.position;
