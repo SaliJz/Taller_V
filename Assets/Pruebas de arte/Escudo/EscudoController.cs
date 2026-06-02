@@ -25,6 +25,8 @@ public class EscudoController : MonoBehaviour
     {
         rend = GetComponent<Renderer>();
         block = new MaterialPropertyBlock();
+
+        SetShaderValues(0,0);
     }
 
     private void Update()
@@ -42,6 +44,7 @@ public class EscudoController : MonoBehaviour
 
     private IEnumerator EfectoEscudo()
     {
+        Alpha = 1f;
         SetShaderValues(Alpha, AmbientOcclusion);
 
         float tiempo = 0f;
