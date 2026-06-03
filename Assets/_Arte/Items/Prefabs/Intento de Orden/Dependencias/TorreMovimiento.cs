@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections;
-using Unity.VisualScripting;
 
 public class TorreMovimiento : MonoBehaviour
 {
@@ -10,68 +9,49 @@ public class TorreMovimiento : MonoBehaviour
 
     private Vector3 posicionInicial;
     private Vector3 posicionFinal;
+    private Coroutine corrutinaActual;
 
-    Coroutine corrutinaActual;
-
-    void Start()
+    public void Initialize(Transform origin)
     {
-        posicionInicial = transform.position;
-
+        posicionInicial = new Vector3(
+            origin.position.x,
+            origin.position.y,
+            origin.position.z
+        );
         posicionFinal = new Vector3(
-            transform.position.x,
-            transform.position.y + altura,
-            transform.position.z
+            origin.position.x,
+            origin.position.y + altura,
+            origin.position.z
         );
 
-        StartCoroutine(MovimientoCompleto());
-    }
+        transform.position = posicionInicial;
 
-    void OnEnable()
-    {
-        IniciarCorrutina();
-    }
-
-    void IniciarCorrutina()
-    {
         if (corrutinaActual != null) StopCoroutine(corrutinaActual);
-
-        posicionInicial = transform.position;
-
-        posicionFinal = new Vector3(
-            transform.position.x,
-            transform.position.y + altura,
-            transform.position.z
-        );
-
         corrutinaActual = StartCoroutine(MovimientoCompleto());
     }
 
     IEnumerator MovimientoCompleto()
     {
         float tiempo = 0f;
-
         while (tiempo < duracion)
         {
             tiempo += Time.deltaTime;
-            float t = tiempo / duracion;
-
+            float t = Mathf.Clamp01(tiempo / duracion);
             transform.position = Vector3.Lerp(posicionInicial, posicionFinal, t);
             yield return null;
         }
+        transform.position = posicionFinal;
 
         yield return new WaitForSeconds(tiempoDeVida);
 
         tiempo = 0f;
-
         while (tiempo < duracion)
         {
             tiempo += Time.deltaTime;
-            float t = tiempo / duracion;
-
+            float t = Mathf.Clamp01(tiempo / duracion);
             transform.position = Vector3.Lerp(posicionFinal, posicionInicial, t);
             yield return null;
         }
-
-        // Destroy(transform.parent.gameObject);
+        transform.position = posicionInicial;
     }
 }

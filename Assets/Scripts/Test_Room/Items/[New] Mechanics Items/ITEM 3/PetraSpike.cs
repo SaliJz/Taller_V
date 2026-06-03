@@ -29,6 +29,9 @@ public class PetraSpike : MonoBehaviour
         overlappingEnemies.Clear();
         tickTimer = 0f;
 
+        var torre = GetComponentInChildren<TorreMovimiento>();
+        if (torre != null) torre.Initialize(transform);
+
         StopAllCoroutines();
         StartCoroutine(LifetimeRoutine(lifetime));
     }
