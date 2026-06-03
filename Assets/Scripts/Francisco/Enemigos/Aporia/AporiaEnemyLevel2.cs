@@ -159,7 +159,7 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
             distanceCovered += Vector3.Distance(lastShardPos, transform.position);
             if (distanceCovered >= shardDashSpacing)
             {
-                SpawnGlassShard(glassShardDashPrefab, transform.position,
+                SpawnGlassShard(glassShardDashPrefab, lastShardPos,
                                 shardDashDamagePerSec, shardDashDuration);
                 lastShardPos = transform.position;
                 distanceCovered = 0;
