@@ -41,7 +41,8 @@ public class CameraOcclusionFade : MonoBehaviour
 
             Ray ray = new Ray(cam.transform.position, dir.normalized);
 
-            if (Physics.Raycast(ray, out RaycastHit hit, dist, obstructionMask))
+            RaycastHit[] hits = Physics.RaycastAll(ray, dist, obstructionMask);
+            foreach (var hit in hits)
             {
                 Renderer r = hit.collider.GetComponent<Renderer>();
                 if (r) shouldFade.Add(r);
