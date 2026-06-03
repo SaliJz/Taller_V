@@ -282,7 +282,7 @@ MonoBehaviour:
   castDistance: 5
   navSampleDistance: 0.5
   disableOnFail: 0
-  useAwake: 1
+  useAwake: 0
   drawDetailedGizmos: 0
   gizmoScale: 1
 --- !u!114 &2702574300446480621
@@ -329,10 +329,16 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  spawnDelay: 1
   hitStunDuration: 0.3
   forceIdleDuration: 0.8
   hitStunSFX: {fileID: 0}
   toughnessBlockSFX: {fileID: 0}
+  anticipationPauseDuration: 0.4
+  anticipationSFXPitch: 1
+  anticipationSFX: {fileID: 0}
+  attackVFXPrefab: {fileID: 0}
+  attackVFXSpawnPoint: {fileID: 0}
   enemiesSheet: {fileID: 11400000, guid: 566256d046a94d049b6d208905123b1f, type: 2}
   ENEMY_ID: 3
 --- !u!114 &7811850655376459637
@@ -1453,6 +1459,8 @@ MonoBehaviour:
   ImpactVFX: {fileID: 1818341369332982539}
   h: -1
   v: 1
+  shakeIntensity: 0.2
+  shakeFrequency: 2
 --- !u!1 &4545017819492514827
 GameObject:
   m_ObjectHideFlags: 0

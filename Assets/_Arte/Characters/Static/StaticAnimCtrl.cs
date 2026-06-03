@@ -66,16 +66,16 @@ public class StaticAnimCtrl : MonoBehaviour
         if (anim != null) anim.Play("TP in");
     }
 
+    public void PlayDamage()
+    {
+        if (anim != null) anim.SetTrigger("Damage");
+    }
+
     public void restoreOriginalMaterials()
     {
         mesh.sharedMaterials = originalMaterials;
 
         visualEffects?.ReapplyAmountFlashMaterial();
-    }
-
-    public void PlayDamage()
-    {
-        if (anim != null) anim.SetTrigger("Damage");
     }
 
     public void PauseAnimation()

@@ -87,6 +87,13 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
     #endregion
 
+    #region Inspector - Spawn Settings
+
+    [Header("Configuracion de spawn")]
+    [SerializeField] protected float spawnDelay = 1.0f;
+
+    #endregion
+
     #region Inspector - Telegraphed Settings
 
     [Header("Hit Stun")]
@@ -117,10 +124,13 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     protected float wanderTimer;
     protected float attackTimer;
     protected float currentCooldown;
+
+    protected bool isReady = false;
     protected bool isAttacking = false;
     protected bool isInHitStun = false;
     protected bool isInAnticipation = false;
 
+    protected Coroutine spawnCoroutine;
     protected Coroutine attackSequenceCoroutine;
     protected Coroutine hitStunCoroutine;
     protected Coroutine anticipationCoroutine = null;
@@ -137,46 +147,53 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
     protected virtual void Awake()
     {
-        enemyHealth = GetComponent<EnemyHealth>();
-        agent = GetComponent<NavMeshAgent>();
-        enemyVisualEffects = GetComponent<EnemyVisualEffects>();
-        enemyToughness = GetComponent<EnemyToughness>();
+        var pObj = GameObject.FindGameObjectWithTag("Player");
+        if (pObj) playerTransform = pObj.transform;
 
-        if (audioSource == null)
-        {
-            audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
-        }
-
-        InitializeEnemy();
-        SetupPools();
+        if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
+        if (enemyToughness == null) enemyToughness = GetComponent<EnemyToughness>();
+        if (enemyVisualEffects == null) enemyVisualEffects = GetComponent<EnemyVisualEffects>();
+        if (agent == null) agent = GetComponent<NavMeshAgent>();
+        if (animCtrl == null) animCtrl = GetComponentInChildren<AporiaAnimCtrl>();
+        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
 
         if (groundIndicator) groundIndicator.SetActive(false);
     }
 
     protected virtual void Start()
     {
-        var pObj = GameObject.FindGameObjectWithTag("Player");
-        if (pObj) playerTransform = pObj.transform;
-
         currentCooldown = cooldownMedium;
         wanderTimer = wanderWaitTime;
 
         SpriteAnimator animator = GetComponentInChildren<SpriteAnimator>();
         if (animator != null) animator.onAnimEvent += HandleAnimEvents;
+
+        InitializeEnemy();
+        SetupPools();
     }
 
     protected virtual void OnEnable()
     {
+        isReady = false;
+        isAttacking = false;
+        isInHitStun = false;
+        CancelAnticipation();
+
         if (enemyHealth != null)
         {
             enemyHealth.OnDeath += HandleEnemyDeath;
             enemyHealth.OnDamaged += HandleDamageTaken;
             enemyHealth.OnToughnessHit += HandleToughnessHit;
         }
+
+        if (spawnCoroutine != null) StopCoroutine(spawnCoroutine);
+        spawnCoroutine = StartCoroutine(SpawnRoutine());
     }
 
     protected virtual void OnDisable()
     {
+        isReady = false;
+
         CancelAnticipation();
         isInHitStun = false;
         isAttacking = false;
@@ -187,6 +204,13 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             enemyHealth.OnDamaged -= HandleDamageTaken;
             enemyHealth.OnToughnessHit -= HandleToughnessHit;
         }
+
+        if (spawnCoroutine != null)
+        {
+            StopCoroutine(spawnCoroutine);
+            spawnCoroutine = null;
+        }
+
         StopAllCoroutines();
     }
 
@@ -198,12 +222,15 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             enemyHealth.OnDamaged -= HandleDamageTaken;
             enemyHealth.OnToughnessHit -= HandleToughnessHit;
         }
+
         StopAllCoroutines();
     }
 
     protected virtual void Update()
     {
-        if (isAttacking || isInHitStun || 
+        if (!isReady) return;
+
+        if (isAttacking || isInHitStun ||
             (enemyHealth != null && (enemyHealth.IsStunned || enemyHealth.IsDead))) return;
 
         HandleLocomotion();
@@ -242,6 +269,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     protected virtual void InitializeEnemy()
     {
         if (enemyHealth != null) enemyHealth.SetMaxHealth(health);
+
         if (agent != null)
         {
             agent.speed = moveSpeed;
@@ -250,6 +278,18 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     }
 
     protected virtual void SetupPools() { }
+
+    protected virtual IEnumerator SpawnRoutine()
+    {
+        isReady = false;
+
+        yield return null;
+
+        if (spawnDelay > 0f) yield return new WaitForSeconds(spawnDelay);
+
+        isReady = true;
+        spawnCoroutine = null;
+    }
 
     #endregion
 
@@ -260,16 +300,23 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         isAttacking = true;
         attackTimer = 0f;
 
+        Vector3 attackDirection = playerTransform != null
+        ? (playerTransform.position - transform.position).normalized
+        : transform.forward;
+        attackDirection.y = 0;
+        if (attackDirection == Vector3.zero) attackDirection = transform.forward;
+
         if (agent.enabled)
         {
             agent.isStopped = true;
             agent.updatePosition = false;
+            agent.updateRotation = false;
+            agent.velocity = Vector3.zero;
         }
 
-        Vector3 attackDirection = (playerTransform.position - transform.position).normalized;
-        attackDirection.y = 0;
-        if (attackDirection == Vector3.zero) attackDirection = transform.forward;
         transform.forward = attackDirection;
+
+        if (animCtrl != null) ForceLocomotionBlend(attackDirection);
 
         if (useDash)
         {
@@ -312,6 +359,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             }
 
             agent.updatePosition = true;
+            agent.updateRotation = true;
             agent.isStopped = false;
         }
 
@@ -390,6 +438,12 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     {
         if (animCtrl == null || agent == null || !agent.enabled) return;
 
+        if (isAttacking)
+        {
+            ForceLocomotionBlend(transform.forward);
+            return;
+        }
+
         Vector3 moveDir = isAttacking ? transform.forward : agent.velocity;
         if (moveDir.sqrMagnitude < 0.01f) 
         { 
@@ -425,12 +479,31 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         }
     }
 
+    protected void ForceLocomotionBlend(Vector3 direction)
+    {
+        if (animCtrl == null) return;
+
+        float angle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg - 45f;
+        if (angle < 0) angle += 360f;
+
+        if (angle < 22.5f || angle >= 337.5f) { animCtrl.h = 0; animCtrl.v = 1; }
+        else if (angle < 67.5f) { animCtrl.h = 1; animCtrl.v = 1; }
+        else if (angle < 112.5f) { animCtrl.h = 1; animCtrl.v = 0; }
+        else if (angle < 157.5f) { animCtrl.h = 1; animCtrl.v = -1; }
+        else if (angle < 202.5f) { animCtrl.h = 0; animCtrl.v = -1; }
+        else if (angle < 247.5f) { animCtrl.h = -1; animCtrl.v = -1; }
+        else if (angle < 292.5f) { animCtrl.h = -1; animCtrl.v = 0; }
+        else { animCtrl.h = -1; animCtrl.v = 1; }
+    }
+
     protected void ApplyKnockback(Transform target)
     {
         Vector3 dir = (target.position - transform.position).normalized;
         dir.y = 0;
         if (target.TryGetComponent<CharacterController>(out var cc))
+        {
             StartCoroutine(KnockbackTick(cc, dir * knockbackForce));
+        }
     }
 
     private IEnumerator KnockbackTick(CharacterController cc, Vector3 force)
@@ -494,7 +567,10 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         if (IsAgentReady) 
         { 
             agent.isStopped = true; 
-            agent.ResetPath(); 
+            agent.ResetPath();
+            agent.updatePosition = true;
+            agent.updateRotation = true;
+            agent.velocity = Vector3.zero;
         }
 
         if (groundIndicator != null) groundIndicator.SetActive(false);

@@ -1184,6 +1184,8 @@ MonoBehaviour:
   ImpactVFX: {fileID: 0}
   h: 0
   v: 0
+  shakeIntensity: 0.2
+  shakeFrequency: 2
 --- !u!1 &3332914037808363938
 GameObject:
   m_ObjectHideFlags: 0
@@ -1931,7 +1933,7 @@ MonoBehaviour:
   castDistance: 5
   navSampleDistance: 0.5
   disableOnFail: 0
-  useAwake: 1
+  useAwake: 0
   drawDetailedGizmos: 0
   gizmoScale: 1
 --- !u!114 &5477974535051018732
@@ -1978,10 +1980,17 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  spawnDelay: 1
   hitStunDuration: 0.3
   forceIdleDuration: 0.8
   hitStunSFX: {fileID: 0}
   toughnessBlockSFX: {fileID: 0}
+  anticipationPauseDuration: 0.4
+  anticipationSFXPitch: 1
+  anticipationSFX: {fileID: 0}
+  attackVFXPrefab: {fileID: 0}
+  attackVFXSpawnPoint: {fileID: 0}
+  currentLarvaSpawnRate: 2
   tongueVFXPrefab: {fileID: 0}
   nestPrefab: {fileID: 3022416804554668879, guid: 8581b67ab6a53c1428c997e77db2e35a, type: 3}
   enemiesSheet: {fileID: 11400000, guid: 566256d046a94d049b6d208905123b1f, type: 2}

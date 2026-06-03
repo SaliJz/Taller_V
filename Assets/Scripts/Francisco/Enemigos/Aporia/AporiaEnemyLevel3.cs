@@ -2,6 +2,9 @@ using UnityEngine;
 
 public class AporiaEnemyLevel3 : AporiaEnemyBase
 {
+    [Header("Nivel 3 - Stats")]
+    [SerializeField] private float currentLarvaSpawnRate = 2f;
+
     #region Inspector - Nivel 3 VFX
 
     [Header("Nivel 3 - VFX")]
@@ -20,7 +23,6 @@ public class AporiaEnemyLevel3 : AporiaEnemyBase
 
     #region Internal State
 
-    private float currentLarvaSpawnRate;
     private GameObject pooledTongue;
     private GameObject pooledNest;
 
@@ -73,11 +75,17 @@ public class AporiaEnemyLevel3 : AporiaEnemyBase
 
     protected override void SetupPools()
     {
-        if (tongueVFXPrefab) { pooledTongue = Instantiate(tongueVFXPrefab); pooledTongue.SetActive(false); }
+        if (tongueVFXPrefab) 
+        { 
+            pooledTongue = Instantiate(tongueVFXPrefab); 
+            pooledTongue.SetActive(false); 
+        }
+
         if (nestPrefab)
         {
-            pooledNest = Instantiate(nestPrefab); pooledNest.SetActive(false);
-            pooledNest.GetComponent<AporiaNest>()?.SetRateSpawn(currentLarvaSpawnRate);
+            pooledNest = Instantiate(nestPrefab); 
+            pooledNest.SetActive(false);
+            pooledNest.GetComponent<AporiaNest>()?.SetRateSpawn(currentLarvaSpawnRate); // Configura la tasa de spawn en el AporiaNest
         }
     }
 

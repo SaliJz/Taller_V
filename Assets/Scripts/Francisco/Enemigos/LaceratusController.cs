@@ -85,19 +85,45 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
     #endregion
 
+    #region Inspector - Telegraphed Settings
+
+    [Header("Hit Stun")]
+    [SerializeField] protected float hitStunDuration = 0.3f;
+    [SerializeField] protected float forceIdleDuration = 0.8f;
+
+    [Header("SFX Dano")]
+    [SerializeField] protected AudioClip hitStunSFX;
+    [SerializeField] protected AudioClip toughnessBlockSFX;
+
+    [Header("Anticipación de Ataque")]
+    [SerializeField] private float calmAnticipationDuration = 0.5f;
+    [SerializeField] private float furyAnticipationDuration = 0.3f;
+    [SerializeField] private AudioClip calmAnticipationSFX;
+    [SerializeField] private AudioClip furyAnticipationSFX;
+    [SerializeField] private GameObject furyAttackVFXPrefab;
+    [SerializeField] private Transform furyAttackVFXSpawnPoint;
+
+    #endregion
+
     #region Private Fields
 
     private NavMeshAgent agent;
     private EnemyHealth enemyHealth;
+    private EnemyVisualEffects enemyVisualEffects;
+    private EnemyToughness enemyToughness;
     private EnemyKnockbackHandler knockbackHandler;
     private Transform playerTransform;
-    private EnemyVisualEffects visualEffects;
 
+    private bool isInAnticipation = false;
+    private bool pendingPushbackScreamAfterHitStun = false;
+    private bool pendingEnterFuryAfterHitStun = false;
     private bool isInFury = false;
     private bool playerDetected = false;
     private bool isTransitioningToFury = false;
     private bool isPerformingJump = false;
     private bool isAttacking = false;
+    private bool isInHitStun = false;
+
     private int consecutiveHitsReceived = 0;
     private int furyLevel = 0;
 
@@ -113,6 +139,10 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
     private Coroutine furyDecayCoroutine;
     private Coroutine furyRegenerationCoroutine;
+    private Coroutine hitStunCoroutine;
+    private Coroutine furyJumpCoroutine;
+    private Coroutine anticipationCoroutine = null;
+
     private Material originalMaterial;
 
     private Vector3 currentPatrolDirection;
@@ -120,9 +150,6 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
     private float audioStepTimer;
     private float idleAudioTimer;
     private float idleAudioInterval;
-
-    private bool waitingForImpactEvent;
-    private bool waitingForAttackEndEvent;
 
     #endregion
 
@@ -133,9 +160,10 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         if (agent == null) agent = GetComponent<NavMeshAgent>();
         if (animCtrl == null) animCtrl = GetComponentInChildren<JitterAnimCtrl>();
         if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
+        if (enemyToughness == null) enemyToughness = GetComponent<EnemyToughness>();
         if (knockbackHandler == null) knockbackHandler = GetComponent<EnemyKnockbackHandler>();
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
-        if (visualEffects == null) visualEffects = GetComponent<EnemyVisualEffects>();
+        if (enemyVisualEffects == null) enemyVisualEffects = GetComponent<EnemyVisualEffects>();
 
         //LoadStatsFromSheet();
 
@@ -211,8 +239,9 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
     {
         if (enemyHealth != null)
         {
-            enemyHealth.OnDamaged += HandleDamageReceived;
-            enemyHealth.OnDeath += HandleDeath;
+            enemyHealth.OnDeath += HandleEnemyDeath;
+            enemyHealth.OnDamaged += HandleDamageTaken;
+            enemyHealth.OnToughnessHit += HandleToughnessHit;
         }
     }
 
@@ -220,18 +249,22 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
     {
         if (enemyHealth != null)
         {
-            enemyHealth.OnDamaged -= HandleDamageReceived;
-            enemyHealth.OnDeath -= HandleDeath;
+            enemyHealth.OnDeath -= HandleEnemyDeath;
+            enemyHealth.OnDamaged -= HandleDamageTaken;
+            enemyHealth.OnToughnessHit -= HandleToughnessHit;
         }
+        StopAllCoroutines();
     }
 
     private void OnDestroy()
     {
         if (enemyHealth != null)
         {
-            enemyHealth.OnDamaged -= HandleDamageReceived;
-            enemyHealth.OnDeath -= HandleDeath;
+            enemyHealth.OnDeath -= HandleEnemyDeath;
+            enemyHealth.OnDamaged -= HandleDamageTaken;
+            enemyHealth.OnToughnessHit -= HandleToughnessHit;
         }
+        StopAllCoroutines();
     }
 
     private void Update()
@@ -249,7 +282,7 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
             return;
         }
 
-        if (isTransitioningToFury || isPerformingJump || isAttacking)
+        if (isTransitioningToFury || isPerformingJump || isAttacking || isInHitStun)
         {
             if (animCtrl != null && !isTransitioningToFury) animCtrl.isWalking = false;
             return;
@@ -345,9 +378,12 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         idleAudioInterval = Random.Range(4f, 8f);
     }
 
-    private void HandleDeath(GameObject enemy)
+    private void HandleEnemyDeath(GameObject enemy)
     {
         if (enemy != gameObject) return;
+
+        CancelAnticipation();
+        isInHitStun = false;
 
         StopAllCoroutines();
 
@@ -355,6 +391,8 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         if (furyAttackHitbox != null) furyAttackHitbox.SetActive(false);
         if (screamHitbox != null) screamHitbox.SetActive(false);
 
+        pendingEnterFuryAfterHitStun = false;
+        pendingPushbackScreamAfterHitStun = false;
         isAttacking = false;
         isPerformingJump = false;
         isTransitioningToFury = false;
@@ -580,6 +618,7 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
     private void PerformFuryJump(float distanceToPlayer)
     {
         if (knockbackHandler == null || playerTransform == null) return;
+        if (isInHitStun || isTransitioningToFury) return;
 
         if (distanceToPlayer < furyJumpCancelDistance)
         {
@@ -590,14 +629,14 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         Vector3 directionToPlayer = (playerTransform.position - transform.position).normalized;
         directionToPlayer.y = 0;
 
-        float jumpDistance = furyJumpDistance;
+        float jumpDistance = distanceToPlayer < furyJumpDistance 
+            ? furyJumpReducedDistance : furyJumpDistance;
 
-        if (distanceToPlayer < furyJumpDistance)
+        if (furyJumpCoroutine != null)
         {
-            jumpDistance = furyJumpReducedDistance;
+            StopCoroutine(furyJumpCoroutine);
         }
-
-        StartCoroutine(ExecuteFuryJump(directionToPlayer, jumpDistance));
+        furyJumpCoroutine = StartCoroutine(ExecuteFuryJump(directionToPlayer, jumpDistance));
     }
 
     private IEnumerator ExecuteFuryJump(Vector3 direction, float distance)
@@ -641,6 +680,7 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         }
 
         isPerformingJump = false;
+        furyJumpCoroutine = null;
 
         Debug.Log($"Jitter: Salto de furia completado - Distancia: {distance}");
     }
@@ -673,6 +713,14 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
     {
         lastDamageInflictedTime = Time.time;
 
+        if (isInFury && furyAttackVFXPrefab != null)
+        {
+            Vector3 vfxPos = furyAttackVFXSpawnPoint != null
+                ? furyAttackVFXSpawnPoint.position
+                : transform.position;
+            Instantiate(furyAttackVFXPrefab, vfxPos, transform.rotation);
+        }
+
         float damage = isInFury ? furyAttackDamage : normalAttackDamage;
         float range = isInFury ? furyAttackRange : normalAttackRange;
         GameObject hitbox = isInFury ? furyAttackHitbox : normalAttackHitbox;
@@ -697,6 +745,8 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
     private void OnAttackEnd()
     {
+        if (isInHitStun) return;
+
         isAttacking = false;
         if (agent != null && agent.enabled) agent.isStopped = false;
     }
@@ -705,30 +755,22 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
     #region Fury State Management
 
-    private void HandleDamageReceived()
+    private void HandleDamageTaken()
     {
-        lastDamageTime = Time.time;
+        if (enemyHealth != null && enemyHealth.IsDead) return;
 
-        if (animCtrl != null && !isTransitioningToFury)
-        {
-            animCtrl.PlayDamage();
-            if (isAttacking) OnAttackEnd();
-        }
+        bool hasToughness = enemyToughness != null && enemyToughness.HasToughness;
+
+        lastDamageTime = Time.time;
 
         if (!playerDetected && playerTransform != null)
         {
             playerDetected = true;
-            Debug.Log("Jitter: Jugador detectado por danio recibido!");
-        }
-
-        if (isInFury && knockbackHandler != null)
-        {
-            StartCoroutine(ReduceKnockbackEffect());
         }
 
         if (!isInFury)
         {
-            StartCoroutine(EnterFuryState());
+            pendingEnterFuryAfterHitStun = true;
         }
         else
         {
@@ -738,13 +780,37 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
             {
                 furyLevel++;
                 UpdateFurySpeed();
-                Debug.Log($"Jitter: Nivel de furia aumentado a {furyLevel}");
             }
 
             if (consecutiveHitsReceived >= 2)
             {
-                PerformPushbackScream();
+                pendingPushbackScreamAfterHitStun = true;
                 consecutiveHitsReceived = 0;
+            }
+
+            if (furyRegenerationCoroutine != null)
+            {
+                StopCoroutine(furyRegenerationCoroutine);
+            }
+            furyRegenerationCoroutine = StartCoroutine(FuryRegenerationRoutine());
+        }
+
+        if (!hasToughness)
+        {
+            if (hitStunCoroutine != null)
+            {
+                StopCoroutine(hitStunCoroutine);
+            }
+            hitStunCoroutine = StartCoroutine(HitStunRoutine());
+        }
+        else
+        {
+            if (agent != null && agent.enabled && agent.isOnNavMesh && !isTransitioningToFury)
+            {
+                if (!isAttacking)
+                {
+                    agent.isStopped = false;
+                }
             }
         }
 
@@ -753,14 +819,80 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
             StopCoroutine(furyDecayCoroutine);
         }
         furyDecayCoroutine = StartCoroutine(FuryDecayRoutine());
+    }
 
-        if (isInFury)
+    private void HandleToughnessHit()
+    {
+        if (enemyHealth != null && enemyHealth.IsDead) return;
+
+        CancelAttack();
+        if (animCtrl != null) animCtrl.PlayDamage();
+        if (audioSource != null && toughnessBlockSFX != null)
         {
-            if (furyRegenerationCoroutine != null)
+            audioSource.PlayOneShot(toughnessBlockSFX);
+        }
+    }
+
+    private IEnumerator HitStunRoutine()
+    {
+        isInHitStun = true;
+
+        CancelAnticipation();
+
+        CancelAttack();
+
+        if (furyJumpCoroutine != null)
+        {
+            StopCoroutine(furyJumpCoroutine);
+            furyJumpCoroutine = null;
+            isPerformingJump = false;
+
+            if (agent != null && !agent.enabled)
             {
-                StopCoroutine(furyRegenerationCoroutine);
+                agent.enabled = true;
             }
-            furyRegenerationCoroutine = StartCoroutine(FuryRegenerationRoutine());
+        }
+
+        if (agent != null && agent.enabled)
+        {
+            if (!agent.isOnNavMesh)
+            {
+                NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 2f, NavMesh.AllAreas);
+                agent.Warp(hit.position);
+            }
+
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
+        if (animCtrl != null && !isTransitioningToFury)
+        {
+            animCtrl.PlayDamage();
+        }
+
+        yield return new WaitForSeconds(hitStunDuration);
+
+        yield return new WaitForSeconds(forceIdleDuration);
+
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = false;
+        }
+
+        isInHitStun = false;
+        hitStunCoroutine = null;
+
+        if (pendingEnterFuryAfterHitStun && !isInFury && !isTransitioningToFury)
+        {
+            pendingEnterFuryAfterHitStun = false;
+            StartCoroutine(EnterFuryState());
+            yield break;
+        }
+
+        if (pendingPushbackScreamAfterHitStun && isInFury && !isTransitioningToFury)
+        {
+            pendingPushbackScreamAfterHitStun = false;
+            PerformPushbackScream();
         }
     }
 
@@ -784,25 +916,28 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
         CancelAttack();
 
-        if (audioSource != null && furyTransitionSFX != null) audioSource.PlayOneShot(furyTransitionSFX);
+        if (audioSource != null && furyTransitionSFX != null)
+        {
+            audioSource.PlayOneShot(furyTransitionSFX);
+        }
 
         if (animCtrl != null) animCtrl.SetFuryMode(true);
 
         ChangeMaterialToFury();
 
-        Debug.Log("Jitter: Entrando en estado de furia");
-
-        if (agent != null && agent.enabled)
-        {
-            agent.isStopped = true;
-        }
+        if (agent != null && agent.enabled) agent.isStopped = true;
 
         yield return new WaitForSeconds(screamTransitionDuration);
 
-        if (agent != null && agent.enabled)
+        if (this == null || !gameObject.activeInHierarchy) yield break;
+        if (enemyHealth != null && enemyHealth.IsDead) yield break;
+        if (isInHitStun)
         {
-            agent.isStopped = false;
+            isTransitioningToFury = false;
+            yield break;
         }
+
+        if (agent != null && agent.enabled) agent.isStopped = false;
 
         isInFury = true;
         isTransitioningToFury = false;
@@ -853,6 +988,9 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
             StopCoroutine(furyRegenerationCoroutine);
             furyRegenerationCoroutine = null;
         }
+
+        pendingEnterFuryAfterHitStun = false;
+        pendingPushbackScreamAfterHitStun = false;
 
         Debug.Log("Jitter: Saliendo del estado de furia");
     }
@@ -999,7 +1137,70 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
             case "AttackEnd":
                 OnAttackEnd();
                 break;
+            case "AnimEvent_AnticipationPause":
+                StartAnticipationPause();
+                break;
         }
+    }
+
+    #endregion
+
+    #region Anticipation Pause
+
+    private void StartAnticipationPause()
+    {
+        if (enemyHealth != null && enemyHealth.IsDead) return;
+        if (isInHitStun) return;
+
+        if (anticipationCoroutine != null) StopCoroutine(anticipationCoroutine);
+        anticipationCoroutine = StartCoroutine(AnticipationRoutine());
+    }
+
+    private IEnumerator AnticipationRoutine()
+    {
+        isInAnticipation = true;
+
+        float duration = isInFury ? furyAnticipationDuration : calmAnticipationDuration;
+        AudioClip sfx = isInFury ? furyAnticipationSFX : calmAnticipationSFX;
+
+        if (animCtrl != null) animCtrl.PauseAnimation();
+
+        if (audioSource != null && sfx != null)
+        {
+            audioSource.PlayOneShot(sfx);
+        }
+
+        if (enemyVisualEffects != null)
+        {
+            enemyVisualEffects.PlayAnticipationBlink(duration);
+        }
+
+        if (animCtrl != null)
+        {
+            animCtrl.PlayAnticipationShake(duration);
+        }
+
+        yield return new WaitForSeconds(duration);
+
+        if (animCtrl != null) animCtrl.ResumeAnimation();
+
+        isInAnticipation = false;
+        anticipationCoroutine = null;
+    }
+
+    private void CancelAnticipation()
+    {
+        if (anticipationCoroutine != null)
+        {
+            StopCoroutine(anticipationCoroutine);
+            anticipationCoroutine = null;
+        }
+        
+        if (animCtrl != null) animCtrl.ResumeAnimation();
+        if (animCtrl != null) animCtrl.StopAnticipationShake();
+        if (enemyVisualEffects != null) enemyVisualEffects.CancelAnticipationBlink();
+        
+        isInAnticipation = false;
     }
 
     #endregion
@@ -1034,9 +1235,9 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
     {
         if (enemyRenderer == null || furyStateMaterial == null) return;
 
-        if (visualEffects != null)
+        if (enemyVisualEffects != null)
         {
-            visualEffects.UpdateBaseMaterial(enemyRenderer, furyStateMaterial);
+            enemyVisualEffects.UpdateBaseMaterial(enemyRenderer, furyStateMaterial);
         }
         else
         {
@@ -1050,9 +1251,9 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
         Material matToUse = (normalStateMaterial != null) ? normalStateMaterial : originalMaterial;
 
-        if (visualEffects != null)
+        if (enemyVisualEffects != null)
         {
-            visualEffects.UpdateBaseMaterial(enemyRenderer, matToUse);
+            enemyVisualEffects.UpdateBaseMaterial(enemyRenderer, matToUse);
         }
         else
         {

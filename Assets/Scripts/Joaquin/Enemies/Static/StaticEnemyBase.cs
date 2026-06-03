@@ -171,10 +171,12 @@ public abstract class StaticEnemyBase : MonoBehaviour
     protected bool isDead = false;
     protected bool isReady = false;
     protected bool isInAnticipation = false;
+
     protected Coroutine hitStunCoroutine;
     protected Coroutine currentBehaviorCoroutine = null;
     protected Coroutine shootCoroutine = null;
     protected Coroutine anticipationCoroutine = null;
+    protected Coroutine spawnCoroutine = null;
 
     protected int currentWaypointIndex = 0;
     protected Vector3 originPosition;
@@ -202,12 +204,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         if (agent == null) agent = GetComponent<NavMeshAgent>();
         if (visualCtrl == null) visualCtrl = GetComponentInChildren<StaticAnimCtrl>();
         if (wordLibrary == null) wordLibrary = GetComponent<MorlockWordLibrary>();
-
-        if (enemyHealth == null) ReportDebug("Componente EnemyHealth no encontrado en el enemigo.", 3);
-        if (enemyToughness == null) ReportDebug("Componente EnemyToughness no encontrado en el enemigo.", 2);
-        if (agent == null) ReportDebug("Componente NavMeshAgent no encontrado en el enemigo.", 3);
-        if (visualCtrl == null) ReportDebug("Componente StaticAnimCtrl no encontrado en el enemigo.", 2);
-        if (enemyVisualEffects == null) ReportDebug("Componente EnemyVisualEffects no encontrado en el enemigo.", 2);
+        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
     }
 
     protected virtual void Start()
@@ -223,29 +220,48 @@ public abstract class StaticEnemyBase : MonoBehaviour
         }
 
         InitializedEnemy();
-        StartCoroutine(SpawnRoutine());
         ResetIdleTimer();
     }
 
     protected virtual void OnEnable()
     {
+        isReady = false;
+        isInHitStun = false;
+        isInAnticipation = false;
+        isDead = false;
+
         if (enemyHealth != null)
         {
             enemyHealth.OnDeath += HandleEnemyDeath;
             enemyHealth.OnDamaged += HandleDamageTaken;
             enemyHealth.OnToughnessHit += HandleToughnessHit;
         }
+
+        if (spawnCoroutine != null) StopCoroutine(spawnCoroutine);
+        spawnCoroutine = StartCoroutine(SpawnRoutine());
     }
 
     protected virtual void OnDisable()
     {
+        isReady = false;
+        isInHitStun = false;
+
+        CancelAnticipation();
         ReleasePosition();
+
         if (enemyHealth != null)
         {
             enemyHealth.OnDeath -= HandleEnemyDeath;
             enemyHealth.OnDamaged -= HandleDamageTaken;
             enemyHealth.OnToughnessHit -= HandleToughnessHit;
         }
+
+        if (spawnCoroutine != null)
+        {
+            StopCoroutine(spawnCoroutine);
+            spawnCoroutine = null;
+        }
+
         StopAllCoroutines();
     }
 
@@ -346,6 +362,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         isReady = false;
         yield return new WaitForSeconds(spawnDelay);
         isReady = true;
+        spawnCoroutine = null;
         ChangeState(StaticState.Patrol);
     }
 

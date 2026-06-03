@@ -221,6 +221,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private void Start()
     {
+        if (CameraOcclusionFade.Instance != null)
+        {
+            CameraOcclusionFade.Instance.AddTarget(transform);
+        }
+
         var playerGameObject = GameObject.FindGameObjectWithTag("Player");
         playerTransform = playerGameObject ? playerGameObject.transform : null;
 
@@ -239,17 +244,30 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         UpdateHealthUI();
     }
 
+    private void OnDisable()
+    {
+        if (CameraOcclusionFade.Instance != null)
+        {
+            CameraOcclusionFade.Instance.RemoveTarget(transform);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (CameraOcclusionFade.Instance != null)
+        {
+            CameraOcclusionFade.Instance.RemoveTarget(transform);
+        }
+
+        if (isDead) StopAllCoroutines();
+    }
+
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.B))
         {
             DebugKill();
         }
-    }
-
-    private void OnDestroy()
-    {
-        if (isDead) StopAllCoroutines();
     }
 
     #endregion

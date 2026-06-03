@@ -28,6 +28,7 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
     private SpriteAnimator spriteAnimator;
     private Coroutine shakeCoroutine;
     private Vector3 originalLocalPosition;
+    private bool originalPositionCaptured = false;
 
     protected override void Start()
     {
@@ -35,7 +36,7 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
 
         spriteAnimator = GetComponent<SpriteAnimator>();
         originalLocalPosition = transform.localPosition;
-
+        originalPositionCaptured = true;
         PlayState(ActionState.run, AnimPriority.locomotion);
     }
 
@@ -171,7 +172,11 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
             StopCoroutine(shakeCoroutine);
             shakeCoroutine = null;
         }
-        transform.localPosition = originalLocalPosition;
+
+        if (originalPositionCaptured)
+        {
+            transform.localPosition = originalLocalPosition;
+        }
     }
 
     private System.Collections.IEnumerator ShakeRoutine(float duration)

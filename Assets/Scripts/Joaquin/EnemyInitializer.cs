@@ -5,10 +5,16 @@ using UnityEngine.AI;
 [DisallowMultipleComponent]
 public class EnemyInitializer : MonoBehaviour
 {
+    #region Inspector - Grounding Configuration
+
     [Header("Grounding Configuration")]
     [SerializeField] private LayerMask groundLayer = ~0;
     [Tooltip("Radio aproximado del personaje (usado por SphereCast).")]
     [SerializeField] private float characterRadius = 0.5f;
+
+    #endregion
+
+    #region Inspector - Cast Settings
 
     [Header("Cast Settings")]
     [Tooltip("Altura sobre transform.position desde la cual inicia el SphereCast.")]
@@ -18,22 +24,36 @@ public class EnemyInitializer : MonoBehaviour
     [Tooltip("Distancia de muestreo para NavMesh.SamplePosition.")]
     [SerializeField] private float navSampleDistance = 1f;
 
+    #endregion
+
+    #region Inspector - Runtime Behavior
+
     [Header("Runtime behavior")]
     [Tooltip("Si true, desactiva el GameObject al fallar.")]
     [SerializeField] private bool disableOnFail = true;
     [Tooltip("Usar Awake o Start para inicializar? Awake = true, Start = false.")]
-    [SerializeField] private bool useAwake = true;
+    [SerializeField] private bool useAwake = false;
+
+    #endregion
+
+    #region Inspector - Debug Gizmos
 
     [Header("Debug Gizmos")]
     [SerializeField] private bool drawDetailedGizmos = true;
     [SerializeField] private float gizmoScale = 1f;
 
-    // cache para gizmos/debug
+    #endregion
+
+    #region Internal State
+
     private bool lastValid = false;
     private Vector3 lastPhysHit = Vector3.zero;
     private Vector3 lastNavHit = Vector3.zero;
-
     private bool initializedOnce = false;
+
+    #endregion
+
+    #region Unity Lifecycle
 
     private void Awake()
     {
@@ -45,11 +65,15 @@ public class EnemyInitializer : MonoBehaviour
         if (!useAwake && enabled) TryGroundAndPlace();
     }
 
+    #endregion
+
+    #region Initialization And Placement
+
     private void TryGroundAndPlace()
     {
-        if (initializedOnce) return; // proteger doble ejecución
-        initializedOnce = true;
+        if (initializedOnce) return;
 
+        initializedOnce = true;
         Vector3 origin = transform.position;
 
         bool ok = GroundingUtility.TryFindValidGroundPosition(
@@ -64,6 +88,7 @@ public class EnemyInitializer : MonoBehaviour
         if (ok)
         {
             NavMeshAgent localAgent = GetComponent<NavMeshAgent>();
+
             if (localAgent != null)
             {
                 if (localAgent.isOnNavMesh)
@@ -92,19 +117,21 @@ public class EnemyInitializer : MonoBehaviour
             lastNavHit = validPosition;
             lastPhysHit = validPosition;
 
-            Debug.Log($"[EnemyInitializer] Se encontró posición válida en NavMesh para '{gameObject.name}' en {origin}.", gameObject);
+            Debug.Log($"[EnemyInitializer] Se encontro posicion valida en NavMesh para '{gameObject.name}' en {origin}.", gameObject);
         }
         else
         {
             lastValid = false;
 #if UNITY_EDITOR
-            Debug.LogError($"[EnemyInitializer] No se encontró posición válida en NavMesh para '{gameObject.name}' en {origin}.", gameObject);
+            Debug.LogError($"[EnemyInitializer] No se encontro posicion valida en NavMesh para '{gameObject.name}' en {origin}.", gameObject);
 #endif
             if (disableOnFail) gameObject.SetActive(false);
         }
     }
 
-    #region Gizmos
+    #endregion
+
+    #region Debug And Gizmos
 
     private void OnDrawGizmos()
     {

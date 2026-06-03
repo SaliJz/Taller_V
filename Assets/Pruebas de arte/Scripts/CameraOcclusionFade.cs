@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class CameraOcclusionFade : MonoBehaviour
 {
+    public static CameraOcclusionFade Instance { get; private set; }
+
     public Camera cam;
     public LayerMask obstructionMask;
     public List<Transform> targets;
@@ -17,6 +19,13 @@ public class CameraOcclusionFade : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+            return;
+        }
+        Instance = this;
+
         if (!cam) cam = Camera.main;
         mpb = new MaterialPropertyBlock();
     }

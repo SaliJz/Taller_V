@@ -3,27 +3,34 @@ using UnityEngine;
 public class JitterAnimCtrl : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] Animator anim;
-    [SerializeField] SkinnedMeshRenderer mesh;
-    MaterialPropertyBlock propBlock;
+    [SerializeField] private Animator anim;
+    [SerializeField] private SkinnedMeshRenderer mesh;
+    private MaterialPropertyBlock propBlock;
 
     [Header("State Bools")]
     public bool isWalking; //CONECTAR AL BOOL EQUIVALENTE DEL ENEMIGO
-    static readonly int IsWalkingHash = Animator.StringToHash("IsWalking");
-    bool isOnFuryMode = false;
+    private static readonly int IsWalkingHash = Animator.StringToHash("IsWalking");
+    private bool isOnFuryMode = false;
 
     [Header("HeartBeat Settings")]
-    [SerializeField] float normalFrecuency = 1.5f;
-    [SerializeField] float furyFrecuency = 4f;
-    [SerializeField] float pulseValue = 8f;
+    [SerializeField] private float normalFrecuency = 1.5f;
+    [SerializeField] private float furyFrecuency = 4f;
+    [SerializeField] private float pulseValue = 8f;
 
-    void Awake()
+    [Header("Anticipation Shake")]
+    [SerializeField] private float shakeIntensity = 0.2f;
+    [SerializeField] private float shakeFrequency = 2f;
+
+    private Coroutine shakeCoroutine;
+    private Vector3 originalLocalPosition;
+
+    private void Awake()
     {
         anim = GetComponent<Animator>();
         propBlock = new MaterialPropertyBlock();
     }
 
-    void Update()
+    private void Update()
     {
         HandleMovement();
         BeatRythim();
@@ -34,11 +41,12 @@ public class JitterAnimCtrl : MonoBehaviour
         // testImputs();
     }
 
-    void HandleMovement()
+    private void HandleMovement()
     {
         anim.SetBool(IsWalkingHash, isWalking);
     }
-    void BeatRythim()
+
+    private void BeatRythim()
     {
         float frecuency = isOnFuryMode? furyFrecuency: normalFrecuency;
         float baseWave = Mathf.Sin(Time.time * frecuency * Mathf.PI);
@@ -46,7 +54,8 @@ public class JitterAnimCtrl : MonoBehaviour
 
         mesh.SetBlendShapeWeight(0, pulse * 100);
     }
-    void ElectricPulse()
+
+    private void ElectricPulse()
     {
         float pulse = Mathf.PingPong(Time.time * pulseValue, 1f);
 
@@ -54,7 +63,8 @@ public class JitterAnimCtrl : MonoBehaviour
         propBlock.SetFloat("_Amount", pulse);
         mesh.SetPropertyBlock(propBlock, 1);
     }
-    void ElectricityReset()
+
+    private void ElectricityReset()
     {
         mesh.GetPropertyBlock(propBlock, 1);
         if (propBlock.GetFloat("_Amount") > 0f)
@@ -65,7 +75,8 @@ public class JitterAnimCtrl : MonoBehaviour
 
     }
 
-#region Public actions
+    #region Public actions
+
     public void SetFuryMode (bool active)
     {
         if (isOnFuryMode == active) return;
@@ -96,9 +107,50 @@ public class JitterAnimCtrl : MonoBehaviour
         anim.SetTrigger("Death");
     }
 
-#endregion    
+    public void PauseAnimation()
+    {
+        if (anim != null) anim.speed = 0f;
+    }
 
-    void testImputs()
+    public void ResumeAnimation()
+    {
+        if (anim != null) anim.speed = 1f;
+    }
+
+    public void PlayAnticipationShake(float duration)
+    {
+        StopAnticipationShake();
+        shakeCoroutine = StartCoroutine(ShakeRoutine(duration));
+    }
+
+    public void StopAnticipationShake()
+    {
+        if (shakeCoroutine != null)
+        {
+            StopCoroutine(shakeCoroutine);
+            shakeCoroutine = null;
+        }
+        transform.localPosition = originalLocalPosition;
+    }
+
+    private System.Collections.IEnumerator ShakeRoutine(float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            float offsetX = Mathf.Sin(elapsed * shakeFrequency * Mathf.PI * 2f) * shakeIntensity;
+            float offsetZ = Mathf.Cos(elapsed * shakeFrequency * Mathf.PI * 2.3f) * shakeIntensity * 0.6f;
+            transform.localPosition = originalLocalPosition + new Vector3(offsetX, 0f, offsetZ);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        transform.localPosition = originalLocalPosition;
+        shakeCoroutine = null;
+    }
+
+    #endregion    
+
+    private void testImputs()
     {
         if (Input.GetKeyDown(KeyCode.W)) isWalking = true;
         if (Input.GetKeyUp(KeyCode.W)) isWalking = false;
