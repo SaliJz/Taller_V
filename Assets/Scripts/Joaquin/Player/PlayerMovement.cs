@@ -431,8 +431,20 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             {
                 if (hasInput)
                 {
-                    lastMoveX = Mathf.Round(moveX);
-                    lastMoveY = Mathf.Round(moveY);
+                    float absX = Mathf.Abs(moveX);
+                    float absY = Mathf.Abs(moveY);
+                    float dominant = Mathf.Max(absX, absY);
+
+                    if (dominant > 0f)
+                    {
+                        lastMoveX = moveX / dominant;
+                        lastMoveY = moveY / dominant;
+                    }
+                    else
+                    {
+                        lastMoveX = Mathf.Round(moveX);
+                        lastMoveY = Mathf.Round(moveY);
+                    }
 
                     playerAnimCtrl?.SetInputAxes(lastMoveX, lastMoveY);
                 }
