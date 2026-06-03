@@ -156,6 +156,8 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
                 transform.position = nextPos;
             }
 
+            if (agent != null && agent.enabled) agent.nextPosition = transform.position;
+
             distanceCovered += Vector3.Distance(lastShardPos, transform.position);
             if (distanceCovered >= shardDashSpacing)
             {

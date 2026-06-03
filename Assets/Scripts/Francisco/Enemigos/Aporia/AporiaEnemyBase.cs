@@ -347,21 +347,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
         yield return StartCoroutine(PerformAttack(attackDirection));
 
-        if (agent.enabled)
-        {
-            if (NavMesh.SamplePosition(transform.position, out NavMeshHit navHit, 2f, NavMesh.AllAreas))
-            {
-                agent.Warp(navHit.position);
-            }
-            else
-            {
-                agent.Warp(transform.position);
-            }
-
-            agent.updatePosition = true;
-            agent.updateRotation = true;
-            agent.isStopped = false;
-        }
+        RestoreAgentPostAttack();
 
         isAttacking = false;
         attackSequenceCoroutine = null;
@@ -380,6 +366,8 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             {
                 transform.position = nextPos;
             }
+
+            if (agent != null && agent.enabled) agent.nextPosition = transform.position;
 
             if (Vector3.Distance(transform.position, playerTransform.position) < 1.2f)
             {
@@ -561,6 +549,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         {
             StopCoroutine(attackSequenceCoroutine);
             attackSequenceCoroutine = null;
+            RestoreAgentPostAttack();
         }
         isAttacking = false;
 
@@ -660,6 +649,21 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         if (animCtrl != null) animCtrl.StopAnticipationShake();
         if (enemyVisualEffects != null) enemyVisualEffects.CancelAnticipationBlink();
         isInAnticipation = false;
+    }
+
+    protected void RestoreAgentPostAttack()
+    {
+        if (agent == null || !agent.enabled) return;
+
+        NavMeshHit navHit;
+        Vector3 syncPos = NavMesh.SamplePosition(transform.position, out navHit, 2f, NavMesh.AllAreas)
+            ? navHit.position
+            : transform.position;
+
+        agent.Warp(syncPos);
+        agent.updatePosition = true;
+        agent.updateRotation = true;
+        agent.isStopped = false;
     }
 
     #endregion
