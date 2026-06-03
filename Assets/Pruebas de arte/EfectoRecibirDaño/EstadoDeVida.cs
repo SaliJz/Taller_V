@@ -129,6 +129,8 @@ public class EstadoDeVida : MonoBehaviour
         SetFloat(PROP_CONDICION_DAÑO, condicion);
         SetFloat(PROP_TRANSPARENCIA, Transparencia);
         SetFloat(PROP_INTENSIDAD_POSTERIZADO, Posterizado);
+
+        PrimeraHerida = false;
     }
 
     private void DesactivarDaño()

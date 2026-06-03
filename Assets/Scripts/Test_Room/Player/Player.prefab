@@ -7673,6 +7673,7 @@ MonoBehaviour:
   damageEmissionIntensity: 2
   damageFlashDuration: 0.1
   damageFlashCount: 3
+  damageUIEffect: {fileID: 747295311151660179}
   shieldBlockCooldown: 18
   temporaryHealthDuration: 10
   temporaryHealthDecaySpeed: 0.5
@@ -8376,6 +8377,7 @@ GameObject:
   - component: {fileID: 1413196301853600944}
   - component: {fileID: 5887762237279078087}
   - component: {fileID: 1469489433089181258}
+  - component: {fileID: 747295311151660179}
   m_Layer: 0
   m_Name: GFX
   m_TagString: Untagged
@@ -8579,6 +8581,30 @@ MonoBehaviour:
   AfterImageLifetime: 0.55
   afterImagePrefab: {fileID: 4791112577931823704, guid: 9db76e67641cddd4e9684f7e5a0e72a4, type: 3}
   StateChangeVFX: {fileID: 849212865732852136}
+--- !u!114 &747295311151660179
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6991594973495407509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f3ead590d55d514591925257b80c966, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  estadoDeVidaMaterial: {fileID: 2100000, guid: b9f20b8c42893074997b68cfd9002933, type: 2}
+  PrimeraHerida: 0
+  DemasHeridas: 0
+  TiempoHerida: 0.3
+  Transparencia: 72
+  Posterizado: 40.8
+  VidaBajaActiva: 0
+  TiempoRespiracion: 4
+  "Tama\xF1oDither": 24.5
+  LimiteDither: 0.3
+  PixeladoActivo: 0
+  SizePixel: 150
 --- !u!1 &7097059385777304942
 GameObject:
   m_ObjectHideFlags: 0

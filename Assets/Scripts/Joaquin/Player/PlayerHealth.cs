@@ -73,6 +73,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private float damageEmissionIntensity = 2f;
     [SerializeField] private float damageFlashDuration = 0.1f;
     [SerializeField] private int damageFlashCount = 3;
+    [SerializeField] private EstadoDeVida damageUIEffect;
 
     #endregion
 
@@ -427,6 +428,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             animCtrl?.PlayDamage();
             audioController?.PlayDamageSound();
             shaderCtrl?.DamageTrigger();
+            if(damageUIEffect != null) damageUIEffect.PrimeraHerida = true;
 
             currentHealth -= damageToApply;
             currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
