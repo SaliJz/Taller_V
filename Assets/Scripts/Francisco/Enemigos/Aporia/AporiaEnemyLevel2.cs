@@ -121,6 +121,10 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
 
     public override void OnAttackHit()
     {
+        if (enemyHealth != null && (enemyHealth.IsStunned || enemyHealth.IsDead)) return;
+
+        SpawnAttackVFX();
+
         if (audioSource && attackSFX) audioSource.PlayOneShot(attackSFX);
 
         Collider[] targets = Physics.OverlapSphere(hitPoint.position, attackRadius, playerLayer);
@@ -148,7 +152,9 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
             Vector3 nextPos = Vector3.Lerp(startPos, dashEnd, elapsed / dashDuration);
 
             if (Physics.Raycast(nextPos + Vector3.up, Vector3.down, 2f, groundLayer))
+            {
                 transform.position = nextPos;
+            }
 
             distanceCovered += Vector3.Distance(lastShardPos, transform.position);
             if (distanceCovered >= shardDashSpacing)
@@ -160,7 +166,9 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
             }
 
             if (Vector3.Distance(transform.position, playerTransform.position) < 1.2f)
+            {
                 break;
+            }
 
             yield return null;
         }
@@ -173,7 +181,9 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
     protected override void HandleEnemyDeath(GameObject enemy)
     {
         if (enemy != gameObject) return;
-        
+
+        CancelAnticipation();
+
         if (hitStunCoroutine != null) 
         { 
             StopCoroutine(hitStunCoroutine); 
@@ -251,8 +261,6 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
             dmg.damagePerSecond = damagePerSec;
             dmg.playerLayer = playerLayer;
         }
-
-        Destroy(shard, duration);
     }
 
     private void SpawnGlassShard(GameObject prefab, Vector3 position,
@@ -274,7 +282,9 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
         Vector3 dir = (target.position - transform.position).normalized;
         dir.y = 0;
         if (target.TryGetComponent<CharacterController>(out var cc))
+        {
             StartCoroutine(KnockbackTickCustom(cc, dir * force));
+        }
     }
 
     private IEnumerator KnockbackTickCustom(CharacterController cc, Vector3 force)

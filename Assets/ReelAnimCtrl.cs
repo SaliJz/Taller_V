@@ -1,9 +1,11 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class ReelAnimCtrl : MonoBehaviour
 {
     [SerializeField] private Animator anim;
     [SerializeField] private SkinnedMeshRenderer mesh;
+    [SerializeField] private EscudoController shieldCtrl;
 
     [Header("Cameras Aim")]
     [SerializeField] private LookAt leftLookAt;
@@ -26,7 +28,9 @@ public class ReelAnimCtrl : MonoBehaviour
             mesh.SetBlendShapeWeight(0, 0);
         }
 
-        // testInputs();
+        #if UNITY_EDITOR
+        if(SceneManager.GetActiveScene().name == "AndreiNew") testInputs();
+        #endif
     }
 
     public void PlayAttack()
@@ -78,11 +82,17 @@ public class ReelAnimCtrl : MonoBehaviour
         }
     }
 
+    public void PlayInvulnerabilityVFX()
+    {
+        shieldCtrl.Escudo = true;
+    }
+
     private void testInputs()
     {
         if(Input.GetKeyDown(KeyCode.J)) PlayAttack();
         if(Input.GetKeyDown(KeyCode.H)) PlayDeath();
-        if (Input.GetKeyDown(KeyCode.O)) anim.Play("Idle"); //Para testing
+        if (Input.GetKeyDown(KeyCode.O)) anim.Play("Idle");
+        if(Input.GetKeyDown(KeyCode.P)) shieldCtrl.Escudo = true;
     }
 
 }

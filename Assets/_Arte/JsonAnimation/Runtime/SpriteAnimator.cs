@@ -13,6 +13,7 @@ public class SpriteAnimator : MonoBehaviour
     int frameIndex;
     float timer;
     [NonSerialized] public bool holdOnLastFrame;
+    [NonSerialized] public bool paused = false;
     int lastEventFrame = -1;
 
     public Action onAnimFinished;
@@ -31,7 +32,8 @@ public class SpriteAnimator : MonoBehaviour
 
     private void Update()
     {
-        if(currentAnim == null) return;
+        if (paused) return;
+        if (currentAnim == null) return;
 
         timer += Time.deltaTime;
         float frameTime = 1f / currentAnim.frameRate;

@@ -1,11 +1,12 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
 {
     public enum ActionState
     {
-        run, dash, attack, death, damage
+        idle, run, dash, attack, death, damage
     }
 
     [Header("State Flags")]
@@ -13,25 +14,39 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
     public bool isDashing;
 
     [Header("Settings & VFX")]
-    float dashTimer;
+    private float dashTimer;
     public float dashDuration = 0.5f;
-    [SerializeField] GameObject AttackVFX;
-    [SerializeField] GameObject ImpactVFX;
+    [SerializeField] private GameObject AttackVFX;
+    [SerializeField] private GameObject ImpactVFX;
     public float h, v; //CONECTAR A VELOCIDAD DEL ENEMIGO
     // Vector2 nextdirecion;
+
+    [Header("Anticipation Shake")]
+    [SerializeField] private float shakeIntensity = 0.2f;
+    [SerializeField] private float shakeFrequency = 2f;
+
+    private SpriteAnimator spriteAnimator;
+    private Coroutine shakeCoroutine;
+    private Vector3 originalLocalPosition;
 
     protected override void Start()
     {
         base.Start();
 
+        spriteAnimator = GetComponent<SpriteAnimator>();
+        originalLocalPosition = transform.localPosition;
+
         PlayState(ActionState.run, AnimPriority.locomotion);
     }
 
-    void Update()
+    private void Update()
     {
         string directionBeforeUpdate = currentDirection;
 
-        // handleTESTimputs();
+        #if UNITY_EDITOR
+        if(SceneManager.GetActiveScene().name == "AndreiNew") handleTESTimputs();
+        #endif
+
         UpdateDirection(h,v);
 
         UpdateDashLogic();
@@ -48,12 +63,17 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
                     PlayState(ActionState.run, AnimPriority.locomotion, false);
                 }
             }
+            else
+            {
+                PlayState(ActionState.idle, AnimPriority.locomotion, false);
+            }
         }
         
     }
 
-#region Public Actions
-    void PlayAttack()
+    #region Public Actions
+
+    private void PlayAttack()
     {
         PlayState(ActionState.attack, AnimPriority.attack);
     }
@@ -66,7 +86,7 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
         PlayState(ActionState.dash, AnimPriority.dash);
     }
 
-    void EndDash()
+    private void EndDash()
     {
         isDashing = false;
         damageActive = false;
@@ -83,31 +103,35 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
     {
         PlayState(ActionState.damage, AnimPriority.damage);
     }
-#endregion
+
+    #endregion
 
     protected override string ResolveFullID(string baseID, string direction)
     {
         return baseID;
     }
 
-#region Event Void
+    #region Event Void
+
     protected override void OnAnimationEvent(string ev)
     {
         switch (ev)
         {
-            case "SpawnVFX": AttackVFX.SetActive(true); break;
+            case "SpawnVFX": 
+                if (AttackVFX != null) AttackVFX.SetActive(true); break;
             case "ImpactVFX": 
             {
                 if(ImpactVFX != null)
                 {
-                ImpactVFX.SetActive(false);
-                ImpactVFX.SetActive(true); 
+                    ImpactVFX.SetActive(false);
+                    ImpactVFX.SetActive(true); 
                 }
                 break;
             }
         }
     }
-#endregion
+
+    #endregion
 
     protected override void OnFinishedAnimation()
     {
@@ -115,7 +139,7 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
         PlayState(ActionState.run, AnimPriority.locomotion);
     }
 
-    bool UpdateDashLogic()
+    private bool UpdateDashLogic()
     {
         if(!isDashing) return false;
 
@@ -124,7 +148,48 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
         return true;
     }
 
-    void handleTESTimputs() //COMENTAR AL CONECTAR AL ENEMIGO
+    public void PauseAnimation()
+    {
+        if (spriteAnimator != null) spriteAnimator.paused = true;
+    }
+
+    public void ResumeAnimation()
+    {
+        if (spriteAnimator != null) spriteAnimator.paused = false;
+    }
+
+    public void PlayAnticipationShake(float duration)
+    {
+        StopAnticipationShake();
+        shakeCoroutine = StartCoroutine(ShakeRoutine(duration));
+    }
+
+    public void StopAnticipationShake()
+    {
+        if (shakeCoroutine != null)
+        {
+            StopCoroutine(shakeCoroutine);
+            shakeCoroutine = null;
+        }
+        transform.localPosition = originalLocalPosition;
+    }
+
+    private System.Collections.IEnumerator ShakeRoutine(float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            float offsetX = Mathf.Sin(elapsed * shakeFrequency * Mathf.PI * 2f) * shakeIntensity;
+            float offsetZ = Mathf.Cos(elapsed * shakeFrequency * Mathf.PI * 2.3f) * shakeIntensity * 0.6f;
+            transform.localPosition = originalLocalPosition + new Vector3(offsetX, 0f, offsetZ);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        transform.localPosition = originalLocalPosition;
+        shakeCoroutine = null;
+    }
+
+    private void handleTESTimputs()
     {
         h = Input.GetAxisRaw("Horizontal");
         v = Input.GetAxisRaw("Vertical");
@@ -149,5 +214,4 @@ public class AporiaAnimCtrl : BaseAnimCtrl<AporiaAnimCtrl.ActionState>
 
         base.PlayState(state, priority, reset);
     }
-
 }

@@ -73,6 +73,7 @@ public class EnemyVisualEffects : MonoBehaviour
 
     #region Internal State
 
+    private bool spriteColorCached = false;
     private bool isStunned = false;
     private Coroutine stunEffectCoroutine = null;
     private GameObject activeStunVFX;
@@ -82,6 +83,8 @@ public class EnemyVisualEffects : MonoBehaviour
     private Coroutine glowCoroutine = null;
     private Coroutine anticipationBlinkCoroutine = null;
     private Color originalFlashColor = Color.white;
+    private Color originalSpriteColor = Color.white;
+    private Color cachedOriginalSpriteColor = Color.white;
 
     private Dictionary<Renderer, Material> originalMeshMats = new Dictionary<Renderer, Material>();
     private Dictionary<SpriteRenderer, Material> originalSpriteMats = new Dictionary<SpriteRenderer, Material>();
@@ -126,10 +129,14 @@ public class EnemyVisualEffects : MonoBehaviour
     private void ValidateRenderers()
     {
         if (meshRenderers == null || meshRenderers.Length == 0)
+        {
             meshRenderers = GetComponentsInChildren<Renderer>();
+        }
 
         if (spriteRenderers == null || spriteRenderers.Length == 0)
+        {
             spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        }
 
         if ((meshRenderers == null || meshRenderers.Length == 0) && (spriteRenderers == null || spriteRenderers.Length == 0))
         {
@@ -172,6 +179,13 @@ public class EnemyVisualEffects : MonoBehaviour
             if (amountFlashMatInstance.HasProperty("_Color"))
             { 
                 originalFlashColor = amountFlashMatInstance.GetColor("_Color");
+            }
+
+            SpriteRenderer sr = amountFlashRenderer as SpriteRenderer;
+            if (sr != null)
+            {
+                cachedOriginalSpriteColor = sr.color;
+                spriteColorCached = true;
             }
         }
         else
@@ -233,7 +247,9 @@ public class EnemyVisualEffects : MonoBehaviour
             foreach (var r in meshRenderers)
             {
                 if (r != null && originalMeshMats.ContainsKey(r))
+                {
                     r.material = originalMeshMats[r];
+                }
             }
         }
 
@@ -241,8 +257,13 @@ public class EnemyVisualEffects : MonoBehaviour
         {
             foreach (var s in spriteRenderers)
             {
-                if (s != null && originalSpriteMats.ContainsKey(s))
+                if (s == null) continue;
+                if (useAmountFlash && (s as Renderer) == amountFlashRenderer) continue;
+
+                if (originalSpriteMats.ContainsKey(s))
+                {
                     s.material = originalSpriteMats[s];
+                }
             }
         }
 
@@ -272,6 +293,8 @@ public class EnemyVisualEffects : MonoBehaviour
 
         if (useAmountFlash && amountFlashRenderer != null && amountFlashMatInstance != null)
         {
+            ReapplyAmountFlashMaterial();
+
             if (amountBlinkCoroutine != null)
             {
                 StopCoroutine(amountBlinkCoroutine);
@@ -370,9 +393,16 @@ public class EnemyVisualEffects : MonoBehaviour
             yield break;
         }
 
-        bool hasColor = amountFlashMatInstance.HasProperty("_Color");
+        amountFlashRenderer.material = amountFlashMatInstance;
 
-        if (hasColor)
+        SpriteRenderer sr = amountFlashRenderer as SpriteRenderer;
+        if (sr != null)
+        {
+            originalSpriteColor = sr.color;
+            amountFlashMatInstance.SetColor("_Color", anticipationBlinkColor);
+            sr.color = Color.white;
+        }
+        else if (amountFlashMatInstance.HasProperty("_Color"))
         {
             amountFlashMatInstance.SetColor("_Color", anticipationBlinkColor);
         }
@@ -402,7 +432,13 @@ public class EnemyVisualEffects : MonoBehaviour
         amountFlashMatInstance.SetFloat(amountFlashProperty, amountFlashRestValue);
 
         // Restaurar Color al original cacheado
-        if (amountFlashMatInstance.HasProperty("_Color"))
+        SpriteRenderer sr = amountFlashRenderer as SpriteRenderer;
+        if (sr != null)
+        {
+            amountFlashMatInstance.SetColor("_Color", Color.white);
+            sr.color = originalSpriteColor;
+        }
+        else if (amountFlashMatInstance.HasProperty("_Color"))
         {
             amountFlashMatInstance.SetColor("_Color", originalFlashColor);
         }

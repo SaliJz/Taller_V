@@ -97,6 +97,13 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     [SerializeField] protected AudioClip hitStunSFX;
     [SerializeField] protected AudioClip toughnessBlockSFX;
 
+    [Header("Anticipacion de Ataque")]
+    [SerializeField] protected float anticipationPauseDuration = 0.4f;
+    [SerializeField] protected float anticipationSFXPitch = 1.0f;
+    [SerializeField] protected AudioClip anticipationSFX;
+    [SerializeField] protected GameObject attackVFXPrefab;
+    [SerializeField] protected Transform attackVFXSpawnPoint;
+
     #endregion
 
     #region Internal State
@@ -112,9 +119,11 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     protected float currentCooldown;
     protected bool isAttacking = false;
     protected bool isInHitStun = false;
+    protected bool isInAnticipation = false;
 
     protected Coroutine attackSequenceCoroutine;
     protected Coroutine hitStunCoroutine;
+    protected Coroutine anticipationCoroutine = null;
 
     #endregion
 
@@ -168,6 +177,10 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
     protected virtual void OnDisable()
     {
+        CancelAnticipation();
+        isInHitStun = false;
+        isAttacking = false;
+
         if (enemyHealth != null)
         {
             enemyHealth.OnDeath -= HandleEnemyDeath;
@@ -269,12 +282,16 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             Vector3 dashEnd = startPos + attackDirection * dashMaxDistance;
 
             if (NavMesh.Raycast(startPos, dashEnd, out NavMeshHit hit, NavMesh.AllAreas))
+            {
                 dashEnd = hit.position;
+            }
 
             yield return StartCoroutine(PerformDash(startPos, dashEnd, attackDirection));
 
             if (attackTransitionDelay > 0f)
+            {
                 yield return new WaitForSeconds(attackTransitionDelay);
+            }
         }
         else
         {
@@ -312,11 +329,14 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             Vector3 nextPos = Vector3.Lerp(startPos, dashEnd, elapsed / dashDuration);
 
             if (Physics.Raycast(nextPos + Vector3.up, Vector3.down, 2f, groundLayer))
+            {
                 transform.position = nextPos;
+            }
 
             if (Vector3.Distance(transform.position, playerTransform.position) < 1.2f)
+            {
                 break;
-
+            }
             yield return null;
         }
     }
@@ -336,6 +356,8 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
         yield return new WaitForSeconds(hitDelay);
 
+        while (isInAnticipation) yield return null;
+
         if (groundIndicator) groundIndicator.SetActive(false);
 
         yield return new WaitForSeconds(Mathf.Max(0, recoveryTime - hitDelay));
@@ -343,6 +365,10 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
     public virtual void OnAttackHit()
     {
+        if (enemyHealth != null && (enemyHealth.IsStunned || enemyHealth.IsDead)) return;
+
+        SpawnAttackVFX();
+
         if (audioSource && attackSFX) audioSource.PlayOneShot(attackSFX);
 
         Collider[] targets = Physics.OverlapSphere(hitPoint.position, attackRadius, playerLayer);
@@ -430,7 +456,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     {
         if (enemyHealth != null && enemyHealth.IsDead) return;
 
-        bool hasToughness = enemyToughness != null && enemyToughness.HasToughness && enemyToughness.CurrentToughness > 0;
+        bool hasToughness = enemyToughness != null && enemyToughness.HasToughness;
 
         if (hasToughness)
         {
@@ -443,7 +469,6 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
     protected void HandleToughnessHit()
     {
-        if (enemyToughness == null || !enemyToughness.HasToughness || enemyToughness.CurrentToughness <= 0) return;
         if (enemyHealth != null && enemyHealth.IsDead) return;
 
         if (animCtrl != null) animCtrl.PlayDamage();
@@ -456,6 +481,8 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     protected virtual IEnumerator HitStunRoutine()
     {
         isInHitStun = true;
+
+        CancelAnticipation();
 
         if (attackSequenceCoroutine != null)
         {
@@ -485,12 +512,78 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         attackTimer = -forceIdleDuration;
     }
 
+    protected virtual void SpawnAttackVFX()
+    {
+        if (attackVFXPrefab == null) return;
+
+        Vector3 pos = attackVFXSpawnPoint != null
+            ? attackVFXSpawnPoint.position
+            : (hitPoint != null ? hitPoint.position : transform.position);
+
+        Instantiate(attackVFXPrefab, pos, Quaternion.identity);
+    }
+
     protected virtual void HandleAnimEvents(string eventName)
     {
-        if (eventName == "OnAttackHit")
+        if (eventName == "OnAttackHit") OnAttackHit();
+        if (eventName == "AnimEvent_AnticipationPause") StartAnticipationPause();
+    }
+
+    #endregion
+
+    #region Anticipacion De Ataque
+
+    public void StartAnticipationPause()
+    {
+        if (enemyHealth != null && enemyHealth.IsDead) return;
+        if (isInHitStun) return;
+
+        if (anticipationCoroutine != null) StopCoroutine(anticipationCoroutine);
+        anticipationCoroutine = StartCoroutine(AnticipationRoutine());
+    }
+
+    protected virtual IEnumerator AnticipationRoutine()
+    {
+        isInAnticipation = true;
+
+        if (animCtrl != null) animCtrl.PauseAnimation();
+
+        if (audioSource != null && anticipationSFX != null)
         {
-            OnAttackHit();
+            audioSource.pitch = anticipationSFXPitch;
+            audioSource.PlayOneShot(anticipationSFX);
+            audioSource.pitch = 1f;
         }
+
+        // Blink rojo de anticipacion
+        if (enemyVisualEffects != null)
+        {
+            enemyVisualEffects.PlayAnticipationBlink(anticipationPauseDuration);
+        }
+
+        // Shake de anticipacion
+        if (animCtrl != null) animCtrl.PlayAnticipationShake(anticipationPauseDuration);
+
+        yield return new WaitForSeconds(anticipationPauseDuration);
+
+        if (animCtrl != null) animCtrl.ResumeAnimation();
+
+        isInAnticipation = false;
+        anticipationCoroutine = null;
+    }
+
+    protected void CancelAnticipation()
+    {
+        if (anticipationCoroutine != null)
+        {
+            StopCoroutine(anticipationCoroutine);
+            anticipationCoroutine = null;
+        }
+
+        if (animCtrl != null) animCtrl.ResumeAnimation();
+        if (animCtrl != null) animCtrl.StopAnticipationShake();
+        if (enemyVisualEffects != null) enemyVisualEffects.CancelAnticipationBlink();
+        isInAnticipation = false;
     }
 
     #endregion
@@ -500,6 +593,8 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     protected virtual void HandleEnemyDeath(GameObject enemy)
     {
         if (enemy != gameObject) return;
+
+        CancelAnticipation();
 
         if (hitStunCoroutine != null) 
         { 
