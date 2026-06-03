@@ -366,6 +366,8 @@ MonoBehaviour:
   p2_teleportCooldown: 2.5
   p2_teleportRange: 7.5
   spawnDelay: 1
+  minEnemySeparation: 2.5
+  separationAttempts: 8
   audioSource: {fileID: 8739655723809894776}
   idleSFX: {fileID: 0}
   teleportSFX: {fileID: 0}
@@ -377,6 +379,7 @@ MonoBehaviour:
   teleportVFXDurationToDestroy: 1.5
   teleportVFXDelay: 1.5
   hitStunDuration: 0.3
+  forceIdleDuration: 0.8
   hitStunSFX: {fileID: 0}
   toughnessBlockSFX: {fileID: 0}
   anticipationPauseDuration: 0.6
@@ -420,7 +423,7 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 0, b: 0, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeathByMelee: 6
+  lifestealAmountOnDeathByMelee: 5.5
   lifestealAmountOnDeathByDistance: 4
   deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   deathVFXSpawnPoint: {fileID: 669605419391421803}
