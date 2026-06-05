@@ -3,16 +3,17 @@ using UnityEngine;
 
 public class HUDHandAnimCtrl : MonoBehaviour
 {
-    [SerializeField] RectTransform[] positions;
-    [SerializeField] RectTransform hand;
-    [SerializeField] RectTransform HUDtoShake;
-    [SerializeField] Animator anim;
+    [SerializeField] private RectTransform[] positions;
+    [SerializeField] private RectTransform hand;
+    [SerializeField] private Animator anim;
+    [SerializeField] private RectTransform HUDtoShake;
+    public RectTransform getHUDToShake => HUDtoShake;
 
     [Header("Anim Timming")]
-    [SerializeField] float timeToSmash = 0.5f;
-    [SerializeField] AnimationCurve SmashEase;
-    [SerializeField] float timeToFall = 1f;
-    [SerializeField] AnimationCurve FallEase;
+    [SerializeField] private float timeToSmash = 0.5f;
+    [SerializeField] private AnimationCurve SmashEase;
+    [SerializeField] private float timeToFall = 1f;
+    [SerializeField] private AnimationCurve FallEase;
 
     [Header("Shake")]
     [SerializeField] float shakeDuration = 0.3f;
@@ -20,6 +21,8 @@ public class HUDHandAnimCtrl : MonoBehaviour
 
     string baseAnimID = "IdleHand";
     string triggerName = "Close";
+
+    public System.Action onSmashImpact;
 
     Coroutine activeSecuence;
 
@@ -50,6 +53,7 @@ public class HUDHandAnimCtrl : MonoBehaviour
         anim.SetTrigger(triggerName);
         yield return StartCoroutine(LerpHandPosition(positions[0], positions[1], timeToSmash, SmashEase));
 
+        onSmashImpact?.Invoke();
         StartCoroutine(ShakeHUD());
 
         yield return new WaitForSeconds(0.25f);

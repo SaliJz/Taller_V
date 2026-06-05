@@ -27,6 +27,7 @@ public class HUDManager : MonoBehaviour
     [SerializeField] private Image temporaryHealthBar;
     [SerializeField] private Image lifeStageIconImage;
     [SerializeField] private List<LifeStageIcon> lifeStageIcons;
+    [SerializeField] private PlayerHealth.LifeStage pendingStage;
 
     #endregion
 
@@ -83,6 +84,14 @@ public class HUDManager : MonoBehaviour
 
     #endregion
 
+    #region Inspector - Estado Berserker
+    [SerializeField] private RectTransform gearSprite;
+    [SerializeField] private ShieldSkill berserkerScript;
+    [SerializeField] private float gearRotationSpeed = 90f;
+    [SerializeField] private float HUDShakeIntensity = 1.5f;
+    [SerializeField] private float HUDnoStamiShakeIntensity = 4f;
+    #endregion
+
     #region Internal State
 
     private float ghostFill = 1f;
@@ -98,6 +107,12 @@ public class HUDManager : MonoBehaviour
     private Coroutine healthBarFlashCoroutine;
     private Coroutine screenFlashCoroutine;
     private Coroutine lowHealthEffectCoroutine;
+
+    private IPlayerSpecialAbility playerAbility;
+    private bool isGearRotating = false;
+    private Coroutine berserkerShakeCoroutine;
+    Vector2 HUDOriginalPos;
+    float currentShakeIntensity;
 
     #endregion
 
@@ -129,6 +144,15 @@ public class HUDManager : MonoBehaviour
             screenFlashOverlay.color = transparent;
             screenFlashOverlay.raycastTarget = false; // No bloquear interacciones
         }
+
+        handAnim.onSmashImpact += ApplyLifeStageIcon;
+        ShieldSkill.OnStaminaChanged += HandleStaminaChange;
+
+        GameObject player = GameObject.FindWithTag("Player");
+        if(player != null) berserkerScript = player.GetComponent<ShieldSkill>();
+        else Debug.LogWarning("[HUD Manager] No se encontró player para obtener ShieldSkill");
+
+        playerAbility = berserkerScript;
     }
 
     private void Update()
@@ -161,18 +185,31 @@ public class HUDManager : MonoBehaviour
                 temporaryHealthBar.fillAmount = Mathf.Lerp(temporaryHealthBar.fillAmount, targetTempHealthPercentage, Time.deltaTime * temporaryHealthLerpSpeed);
             }
         }
+
+        if (isGearRotating)
+        {
+            gearSprite.Rotate(0f, 0f , gearRotationSpeed * Time.deltaTime);
+        }
     }
 
     private void OnEnable()
     {
         PlayerHealth.OnHealthChanged += UpdateHealthBar;
         PlayerHealth.OnLifeStageChanged += UpdateLifeStageIcon;
+        handAnim.onSmashImpact -= ApplyLifeStageIcon;
+        playerAbility.OnAbilityActivated += StartGearRotation;
+        playerAbility.OnAbilityDeactivated += StopGearRotation;
+        
     }
 
     private void OnDisable()
     {
         PlayerHealth.OnHealthChanged -= UpdateHealthBar;
         PlayerHealth.OnLifeStageChanged -= UpdateLifeStageIcon;
+        handAnim.onSmashImpact -= ApplyLifeStageIcon;
+        playerAbility.OnAbilityActivated -= StartGearRotation;
+        playerAbility.OnAbilityDeactivated -= StopGearRotation;
+        ShieldSkill.OnStaminaChanged -= HandleStaminaChange;
 
         if (healthBarFlashCoroutine != null) StopCoroutine(healthBarFlashCoroutine);
         if (screenFlashCoroutine != null) StopCoroutine(screenFlashCoroutine);
@@ -532,25 +569,31 @@ public class HUDManager : MonoBehaviour
         }
     }
 
+    private void UpdateLifeStageIcon(PlayerHealth.LifeStage newStage)
+    {
+        pendingStage = newStage;
+        handAnim.PlaySmashSecuence();
+    }
+
     /// <summary>
     /// Funcion que actualiza el icono de la etapa de vida en el HUD.
     /// </summary>
     /// <param name="newStage"> Nueva etapa de vida del jugador </param>
-    private void UpdateLifeStageIcon(PlayerHealth.LifeStage newStage)
+    private void ApplyLifeStageIcon()
     {
-        LifeStageIcon foundIcon = lifeStageIcons.Find(icon => icon.stage == newStage);
+        LifeStageIcon foundIcon = lifeStageIcons.Find(icon => icon.stage == pendingStage);
         if (foundIcon != null && lifeStageIconImage != null)
         {
             lifeStageIconImage.sprite = foundIcon.icon;
-            ReportDebug($"Icono del HUD actualizado a: {newStage}", 1);
+            ReportDebug($"Icono del HUD actualizado a: {pendingStage}", 1);
         }
 
-        if (newStage == PlayerHealth.LifeStage.Adult)
+        if (pendingStage == PlayerHealth.LifeStage.Adult)
         {
             if (adultRootStage != null) adultRootStage.SetActive(true);
             if (elderRootStage != null) elderRootStage.SetActive(false);
         }
-        else if (newStage == PlayerHealth.LifeStage.Elder)
+        else if (pendingStage == PlayerHealth.LifeStage.Elder)
         {
             if (adultRootStage != null) adultRootStage.SetActive(false);
             if (elderRootStage != null) elderRootStage.SetActive(true);
@@ -561,7 +604,48 @@ public class HUDManager : MonoBehaviour
             if (elderRootStage != null) elderRootStage.SetActive(false);
         }
 
-        handAnim.PlaySmashSecuence();
+    }
+    #endregion
+
+    #region UI Berserker Effect
+
+    private void StartGearRotation()
+    {
+        isGearRotating = true;
+        currentShakeIntensity = HUDShakeIntensity;
+        if (berserkerShakeCoroutine != null) StopCoroutine(berserkerShakeCoroutine);
+        berserkerShakeCoroutine = StartCoroutine(BerserkerShakeLoop());
+
+    }
+    private void StopGearRotation()
+    {
+        isGearRotating = false;
+        StopCoroutine(berserkerShakeCoroutine);
+        berserkerShakeCoroutine = null;
+        handAnim.getHUDToShake.localPosition = HUDOriginalPos;
+    }
+
+    private IEnumerator BerserkerShakeLoop()
+    {
+        RectTransform hud = handAnim.getHUDToShake;
+        if(hud == null) yield break;
+
+        HUDOriginalPos = hud.localPosition;
+
+        while (true)
+        {
+            float randomX = Random.Range(-currentShakeIntensity, currentShakeIntensity);
+            float randomY = Random.Range(-currentShakeIntensity, currentShakeIntensity);
+
+            hud.localPosition = HUDOriginalPos + new Vector2(randomX, randomY);
+            yield return null;
+        }
+    }
+
+    private void HandleStaminaChange(float current, float max)
+    {
+        if (!isGearRotating) return;
+        currentShakeIntensity =  current <= 0? HUDnoStamiShakeIntensity : HUDShakeIntensity;
     }
 
     #endregion

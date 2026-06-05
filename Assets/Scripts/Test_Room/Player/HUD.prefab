@@ -7057,8 +7057,8 @@ MonoBehaviour:
   - {fileID: 8857271630498438874}
   - {fileID: 7502275692581440489}
   hand: {fileID: 2155343435459433734}
-  HUDtoShake: {fileID: 8869464531813646361}
   anim: {fileID: 1004082622421687418}
+  HUDtoShake: {fileID: 8869464531813646361}
   timeToSmash: 0.3
   SmashEase:
     serializedVersion: 2
@@ -7449,6 +7449,7 @@ MonoBehaviour:
     icon: {fileID: -194203726, guid: ec4179ff4f38f404bb963fa67de394e2, type: 3}
   - stage: 2
     icon: {fileID: -815941148, guid: ec4179ff4f38f404bb963fa67de394e2, type: 3}
+  pendingStage: 0
   interactionPromptPanel: {fileID: 5941995844965826013}
   interactionPromptText: {fileID: 1398129677981972671}
   adultRootStage: {fileID: 6203496552970313747}
@@ -7466,6 +7467,11 @@ MonoBehaviour:
   ghostDecayDuration: 1
   ghostDecaySpeed: 0.5
   handAnim: {fileID: 4144427210154251071}
+  gearSprite: {fileID: 707807428906523667}
+  berserkerScript: {fileID: 0}
+  gearRotationSpeed: 180
+  HUDShakeIntensity: 1.5
+  HUDnoStamiShakeIntensity: 8
 --- !u!114 &6992182797086318901
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9006,7 +9012,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -883.9999, y: -458}
+  m_AnchoredPosition: {x: -857, y: -444.8}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2401227845840502044
