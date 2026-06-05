@@ -132,7 +132,7 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
             if (distanceToPlayer <= attackRange)
             {
                 ForceFacePlayer();
-                if (visualCtrl != null) visualCtrl.PlayShoot();
+                if (animCtrl != null) animCtrl.PlayShoot();
                 //ExecuteProjectileSpawn();
             }
         }
@@ -191,7 +191,7 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
             {
                 audioSource.PlayOneShot(retaliatoryShootSFX);
             }
-            if (visualCtrl != null) visualCtrl.PlayShoot();
+            if (animCtrl != null) animCtrl.PlayShoot();
             //ExecuteProjectileSpawn();
         }
 

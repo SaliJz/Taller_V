@@ -77,7 +77,7 @@ public class StaticEnemyLevel1 : StaticEnemyBase, IAnimEventHandler
             if (distanceToPlayer <= attackRange)
             {
                 ForceFacePlayer();
-                if (visualCtrl != null) visualCtrl.PlayShoot();
+                if (animCtrl != null) animCtrl.PlayShoot();
                 //ExecuteProjectileSpawn();
             }
         }

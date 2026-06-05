@@ -84,7 +84,22 @@ public class ReelAnimCtrl : MonoBehaviour
 
     public void PlayInvulnerabilityVFX()
     {
-        shieldCtrl.Escudo = true;
+        if(shieldCtrl != null) shieldCtrl.Escudo = true;
+    }
+
+    //public void PlayDamage()
+    //{
+    //    if (anim != null) anim.Play("Damage", 0, 0);
+    //}
+
+    public void PauseAnimation()
+    {
+        if (anim != null) anim.speed = 0f;
+    }
+
+    public void ResumeAnimation()
+    {
+        if (anim != null) anim.speed = 1f;
     }
 
     private void testInputs()

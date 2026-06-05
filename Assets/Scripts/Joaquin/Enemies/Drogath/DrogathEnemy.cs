@@ -35,9 +35,11 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     [SerializeField] private GameObject visualHit;
     [SerializeField] private EnemyHealth enemyHealth;
     [SerializeField] private EnemyToughness enemyToughness;
+    [SerializeField] private EnemyVisualEffects enemyVisualEffects;
+    [SerializeField] private ReelAnimCtrl animCtrl;
     [SerializeField] private NavMeshAgent navAgent;
     [SerializeField] private Transform playerTransform;
-    [SerializeField] private ReelAnimCtrl reelAnimCtrl;
+
 
     [Header("Layers")]
     [SerializeField] private LayerMask allyLayers = ~0;
@@ -156,6 +158,18 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 
     #endregion
 
+    #region Inspector - Telegraphed Settings
+
+    [Header("Hit Stun")]
+    [SerializeField] protected float hitStunDuration = 0.3f;
+    [SerializeField] protected float forceIdleDuration = 0.8f;
+
+    [Header("SFX Dano")]
+    [SerializeField] protected AudioClip hitStunSFX;
+    [SerializeField] protected AudioClip toughnessBlockSFX;
+
+    #endregion
+
     #region Inspector - Debugging
 
     [Header("Debugging")]
@@ -172,13 +186,19 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     private List<BondInfo> activeBonds = new List<BondInfo>();
     private Dictionary<GameObject, float> rebondCooldowns = new Dictionary<GameObject, float>();
     private Queue<ReelAnimCtrl.Cameras> availableCameraSlots;
+    
     private Coroutine bondUpdateRoutine;
     private Coroutine combatRoutine;
+    private Coroutine hitStunCoroutine = null;
+    private Coroutine attackSequenceCoroutine = null;
+
     private bool hasHitPlayer = false;
     private bool isAttacking = false;
     private bool isDead = false;
     private bool isReady = false;
     private bool isPerformingAttackAnim = false;
+    private bool isInHitStun = false;
+
     private float attackTimer = 0f;
     private float idleTimer;
     private float idleInterval;
@@ -196,23 +216,14 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         if (enemyToughness == null) enemyToughness = GetComponent<EnemyToughness>();
         if (navAgent == null) navAgent = GetComponent<NavMeshAgent>();
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
-        if (reelAnimCtrl == null) reelAnimCtrl = GetComponentInChildren<ReelAnimCtrl>();
+        if (animCtrl == null) animCtrl = GetComponentInChildren<ReelAnimCtrl>();
+        if (enemyVisualEffects == null) enemyVisualEffects = GetComponent<EnemyVisualEffects>();
 
         availableCameraSlots = new Queue<ReelAnimCtrl.Cameras>();
         availableCameraSlots.Enqueue(ReelAnimCtrl.Cameras.right);
         availableCameraSlots.Enqueue(ReelAnimCtrl.Cameras.left);
 
         //LoadStatsFromSheet();
-
-        if (enemyHealth == null)
-        {
-            ReportDebug("EnemyHealth no encontrado. Drogath requiere este componente.", 3);
-        }
-
-        if (navAgent == null)
-        {
-            ReportDebug("NavMeshAgent no encontrado. Drogath requiere este componente.", 3);
-        }
 
         navAgent.stoppingDistance = Mathf.Max(stoppingDistance, distanceToAttack);
         navAgent.acceleration = acceleration;
@@ -252,17 +263,21 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     {
         if (enemyHealth != null)
         {
-            enemyHealth.OnDeath += HandleDeath;
-            enemyHealth.OnDamaged += OnDamageTaken;
+            enemyHealth.OnDeath += HandleEnemyDeath;
+            enemyHealth.OnDamaged += HandleDamageTaken;
+            enemyHealth.OnToughnessHit += HandleToughnessHit;
         }
     }
 
     private void OnDisable()
     {
+        isInHitStun = false;
+
         if (enemyHealth != null)
         {
-            enemyHealth.OnDeath -= HandleDeath;
-            enemyHealth.OnDamaged -= OnDamageTaken;
+            enemyHealth.OnDeath -= HandleEnemyDeath;
+            enemyHealth.OnDamaged -= HandleDamageTaken;
+            enemyHealth.OnToughnessHit -= HandleToughnessHit;
         }
     }
 
@@ -271,8 +286,9 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         // Desuscribirse del evento
         if (enemyHealth != null)
         {
-            enemyHealth.OnDeath -= HandleDeath;
-            enemyHealth.OnDamaged -= OnDamageTaken;
+            enemyHealth.OnDeath -= HandleEnemyDeath;
+            enemyHealth.OnDamaged -= HandleDamageTaken;
+            enemyHealth.OnToughnessHit -= HandleToughnessHit;
         }
 
         // Limpiar vinculos
@@ -373,12 +389,12 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     /// </summary>
     private void UpdateAnimationState()
     {
-        if (reelAnimCtrl == null || navAgent == null) return;
+        if (animCtrl == null || navAgent == null) return;
 
         // Comprobamos si se mueve calculando la velocidad del NavMeshAgent
         bool isMoving = navAgent.velocity.sqrMagnitude > 0.1f && !navAgent.isStopped;
 
-        reelAnimCtrl.walking = isMoving;
+        animCtrl.walking = isMoving;
     }
 
     private void HandleAudioLogic()
@@ -656,11 +672,11 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         // Tomar slot de camara si hay uno disponible
         ReelAnimCtrl.Cameras? assignedSlot = null;
         Transform slotTransform = null;
-        if (reelAnimCtrl != null && availableCameraSlots.Count > 0)
+        if (animCtrl != null && availableCameraSlots.Count > 0)
         {
             assignedSlot = availableCameraSlots.Dequeue();
-            slotTransform = reelAnimCtrl.GetCameraTransform(assignedSlot.Value);
-            reelAnimCtrl.SetTarget(assignedSlot.Value, ally.transform);
+            slotTransform = animCtrl.GetCameraTransform(assignedSlot.Value);
+            animCtrl.SetTarget(assignedSlot.Value, ally.transform);
         }
 
         BondInfo bond = new BondInfo
@@ -715,9 +731,9 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
             Destroy(bond.lineRenderer.gameObject);
         }
 
-        if (reelAnimCtrl != null && bond.cameraSlot.HasValue)
+        if (animCtrl != null && bond.cameraSlot.HasValue)
         {
-            reelAnimCtrl.ClearTarget(bond.cameraSlot.Value);
+            animCtrl.ClearTarget(bond.cameraSlot.Value);
             availableCameraSlots.Enqueue(bond.cameraSlot.Value);
         }
 
@@ -854,6 +870,12 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
             return;
         }
 
+        if (isInHitStun) 
+        { 
+            SafeStopAgent(); // Frenar mientras esta aturdido
+            return; 
+        }
+
         // Verificar si esta aturdido
         if (enemyHealth != null && enemyHealth.IsStunned)
         {
@@ -894,7 +916,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
             if (attackTimer >= attackInterval)
             {
                 hasHitPlayer = false;
-                StartCoroutine(ExecuteAttackSequence());
+                attackSequenceCoroutine = StartCoroutine(ExecuteAttackSequence());
                 attackTimer = 0f;
             }
         }
@@ -905,7 +927,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         isPerformingAttackAnim = true;
         hasHitPlayer = false;
 
-        if (reelAnimCtrl != null) reelAnimCtrl.PlayAttack();
+        if (animCtrl != null) animCtrl.PlayAttack();
 
         // if (audioSource != null) audioSource.PlayOneShot(attackWindupSFX); 
 
@@ -926,6 +948,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 
         yield return new WaitForSeconds(attackRecoveryTime);
 
+        attackSequenceCoroutine = null;
         isPerformingAttackAnim = false;
     }
 
@@ -1081,6 +1104,11 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 
         if (isBlocked)
         {
+            if (animCtrl != null)
+            {
+                animCtrl.PlayInvulnerabilityVFX();
+            }
+
             if (audioSource != null && blockSFX != null)
             {
                 audioSource.PlayOneShot(blockSFX);
@@ -1105,14 +1133,81 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 
     #region Death Effect
 
-    private void OnDamageTaken()
+    private void HandleDamageTaken()
     {
+        if (isDead) return;
+
+        bool hasToughness = enemyToughness != null && enemyToughness.HasToughness;
+
+        if (hasToughness)
+        {
+            return;
+        }
+
+        if (hitStunCoroutine != null) StopCoroutine(hitStunCoroutine);
+        hitStunCoroutine = StartCoroutine(HitStunRoutine());
     }
 
-    private void HandleDeath(GameObject deadEnemy)
+    protected void HandleToughnessHit()
+    {
+        if (enemyToughness == null || !enemyToughness.HasToughness) return;
+        if (enemyHealth != null && enemyHealth.IsDead) return;
+
+        //if (animCtrl != null) animCtrl.PlayDamage();
+        if (audioSource != null && toughnessBlockSFX != null)
+        {
+            audioSource.PlayOneShot(toughnessBlockSFX);
+        }
+    }
+
+    private IEnumerator HitStunRoutine()
+    {
+        isInHitStun = true;
+
+        // Cancelar ataque en curso
+        if (attackSequenceCoroutine != null)
+        {
+            StopCoroutine(attackSequenceCoroutine);
+            attackSequenceCoroutine = null;
+            isPerformingAttackAnim = false;
+        }
+
+        SafeStopAgent();
+        SafeResetPath();
+
+        //if (animCtrl != null) animCtrl.PlayDamage();
+        if (audioSource != null && hitStunSFX != null)
+        {
+            audioSource.PlayOneShot(hitStunSFX);
+        }
+
+        yield return new WaitForSeconds(hitStunDuration);
+
+        isInHitStun = false;
+        hitStunCoroutine = null;
+
+        attackTimer = 0f;
+
+        if (isAttacking) SafeResumeAgent();
+    }
+
+    private void HandleEnemyDeath(GameObject deadEnemy)
     {
         if (isDead) return;
         isDead = true;
+
+        isInHitStun = false;
+        if (hitStunCoroutine != null)
+        {
+            StopCoroutine(hitStunCoroutine);
+            hitStunCoroutine = null;
+        }
+        if (attackSequenceCoroutine != null)
+        {
+            StopCoroutine(attackSequenceCoroutine);
+            attackSequenceCoroutine = null;
+        }
+        isPerformingAttackAnim = false;
 
         if (audioSource != null && deathSFX != null)
         {
@@ -1142,10 +1237,10 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         // Aplicar efecto de muerte
         ApplyDemonicArmorEffect();
 
-        if (reelAnimCtrl != null)
+        if (animCtrl != null)
         {
-            reelAnimCtrl.walking = false;
-            reelAnimCtrl.PlayDeath();
+            animCtrl.walking = false;
+            animCtrl.PlayDeath();
         }
     }
 
