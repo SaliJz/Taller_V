@@ -325,7 +325,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6a42828fee48e44c91eecabf29aadfd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  visualCtrl: {fileID: 2423318767102269477}
+  animCtrl: {fileID: 0}
   stats: {fileID: 0}
   projectilePrefab: {fileID: 713251673742679768, guid: 505551ba0a201cd4a9599b6d51f1b74d, type: 3}
   firePoint: {fileID: 5145137300942332047}
@@ -380,13 +380,13 @@ MonoBehaviour:
   teleportVFXDelay: 1.5
   hitStunDuration: 0.3
   forceIdleDuration: 0.8
+  attackVFXPrefab: {fileID: 0}
+  attackVFXSpawnPoint: {fileID: 0}
   hitStunSFX: {fileID: 0}
   toughnessBlockSFX: {fileID: 0}
   anticipationPauseDuration: 0.6
   anticipationSFXPitch: 1
   anticipationSFX: {fileID: 0}
-  attackVFXPrefab: {fileID: 0}
-  attackVFXSpawnPoint: {fileID: 0}
   enemiesSheet: {fileID: 11400000, guid: 566256d046a94d049b6d208905123b1f, type: 2}
   ENEMY_ID: 5
 --- !u!114 &3891392444235311981
@@ -456,7 +456,7 @@ MonoBehaviour:
   rangedToughnessDamageMultiplier: 1
   useDynamicBars: 0
   toughnessPerBar: 24
-  toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
+  toughnessBaseColor: {r: 0.92941177, g: 0.8156863, b: 0.80784315, a: 1}
   colorGradientIntensity: 0.3
   toughnessBlockVFXPrefab: {fileID: 0}
   toughnessBlockVFXSpawnPoint: {fileID: 8363388573838260009}
@@ -495,7 +495,7 @@ MonoBehaviour:
   stunBlinkSpeed: 0.1
   glowMaterial: {fileID: 0}
   glowIntensity: 2
-  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
+  toughnessColor: {r: 0.92941177, g: 0.8156863, b: 0.80784315, a: 1}
   anticipationBlinkInterval: 0.04
   anticipationBlinkColor: {r: 1, g: 0, b: 0, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}

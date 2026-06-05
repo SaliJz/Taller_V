@@ -8,7 +8,7 @@ public class DamageNumber : MonoBehaviour
     #region Inspector - References
 
     [Header("References")]
-    [SerializeField] private TextMeshProUGUI damageText;
+    [SerializeField] private TextMeshPro damageText;
 
     #endregion
 

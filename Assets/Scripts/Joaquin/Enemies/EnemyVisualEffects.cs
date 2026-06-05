@@ -28,9 +28,9 @@ public class EnemyVisualEffects : MonoBehaviour
 
     #endregion
 
-    #region Inspector - Flash / Blink Settings
+    #region Inspector - Flash And Blink Settings
 
-    [Header("Flash / Blink - Amount Override")]
+    [Header("Flash And Blink Amount Override")]
     [Tooltip("Si es true, se anima el valor '_Amount' en el renderer referenciado.")]
     [SerializeField] private bool useAmountFlash = false;
     [Tooltip("Renderer cuyo material recibira el cambio de _Amount.")]
@@ -41,8 +41,7 @@ public class EnemyVisualEffects : MonoBehaviour
     [SerializeField] private float amountFlashPeakValue = 1f;
     [Tooltip("Valor del _Amount en reposo (antes y despues del flash).")]
     [SerializeField] private float amountFlashRestValue = 0f;
-    [SerializeField] private float blinkInterval = 0.06f;
-    [SerializeField] private int blinkCount = 6;
+    [SerializeField] private float hitFlashDuration = 0.1f;
 
     #endregion
 
@@ -52,7 +51,6 @@ public class EnemyVisualEffects : MonoBehaviour
     [SerializeField] private GameObject stunVFXPrefab;
     [SerializeField] private Transform stunVFXSpawnPoint;
     [SerializeField] private float stunVFXHeightFallback = 2f;
-    [SerializeField] private float stunBlinkSpeed = 0.1f;
 
     [Header("Armor Glow Effect")]
     [SerializeField] private Material glowMaterial;
@@ -77,15 +75,13 @@ public class EnemyVisualEffects : MonoBehaviour
     private bool isStunned = false;
     private Coroutine stunEffectCoroutine = null;
     private GameObject activeStunVFX;
-
     private Material amountFlashMatInstance = null;
-    private Coroutine amountBlinkCoroutine = null;
+    private Coroutine hitFlashCoroutine = null;
     private Coroutine glowCoroutine = null;
     private Coroutine anticipationBlinkCoroutine = null;
     private Color originalFlashColor = Color.white;
     private Color originalSpriteColor = Color.white;
     private Color cachedOriginalSpriteColor = Color.white;
-
     private Dictionary<Renderer, Material> originalMeshMats = new Dictionary<Renderer, Material>();
     private Dictionary<SpriteRenderer, Material> originalSpriteMats = new Dictionary<SpriteRenderer, Material>();
     private List<GameObject> activePersistentEffects = new List<GameObject>();
@@ -124,7 +120,7 @@ public class EnemyVisualEffects : MonoBehaviour
 
     #endregion
 
-    #region Initialization & Data Sync
+    #region Initialization And Data Sync
 
     private void ValidateRenderers()
     {
@@ -177,7 +173,7 @@ public class EnemyVisualEffects : MonoBehaviour
             SetAmountFlashValue(amountFlashRestValue);
 
             if (amountFlashMatInstance.HasProperty("_Color"))
-            { 
+            {
                 originalFlashColor = amountFlashMatInstance.GetColor("_Color");
             }
 
@@ -204,7 +200,7 @@ public class EnemyVisualEffects : MonoBehaviour
         StopAllCoroutines();
 
         stunEffectCoroutine = null;
-        amountBlinkCoroutine = null;
+        hitFlashCoroutine = null;
         glowCoroutine = null;
         anticipationBlinkCoroutine = null;
         ResetAnticipationBlink();
@@ -276,7 +272,7 @@ public class EnemyVisualEffects : MonoBehaviour
 
     #endregion
 
-    #region Damage & Hit Feedback
+    #region Damage And Hit Feedback
 
     public void PlayToughnessHitFeedback(Vector3 position, float damageAmount = 0f)
     {
@@ -289,18 +285,24 @@ public class EnemyVisualEffects : MonoBehaviour
         ShowDamageNumber(damagePosition, damage, isCritical);
         PlayHealthHitSound(isCritical);
 
-        if (isStunned) return;
-
         if (useAmountFlash && amountFlashRenderer != null && amountFlashMatInstance != null)
         {
             ReapplyAmountFlashMaterial();
 
-            if (amountBlinkCoroutine != null)
+            if (hitFlashCoroutine != null)
             {
-                StopCoroutine(amountBlinkCoroutine);
-                amountBlinkCoroutine = null;
+                StopCoroutine(hitFlashCoroutine);
+                SetAmountFlashValue(amountFlashRestValue);
             }
-            amountBlinkCoroutine = StartCoroutine(BlinkAmountCoroutine());
+            hitFlashCoroutine = StartCoroutine(HitFlashCoroutine(hitFlashDuration));
+        }
+
+        if (isStunned) return;
+
+        if (anticipationBlinkCoroutine != null)
+        {
+            StopCoroutine(anticipationBlinkCoroutine);
+            anticipationBlinkCoroutine = null;
         }
     }
 
@@ -322,6 +324,7 @@ public class EnemyVisualEffects : MonoBehaviour
         if (damageNumberPrefab == null) return;
 
         GameObject damageNumber = Instantiate(damageNumberPrefab, position, Quaternion.identity, damageNumberParent);
+
         DamageNumber dnScript = damageNumber.GetComponent<DamageNumber>();
         if (dnScript != null)
         {
@@ -335,24 +338,35 @@ public class EnemyVisualEffects : MonoBehaviour
 
     #region Hit Blink System
 
-    private IEnumerator BlinkAmountCoroutine()
+    private IEnumerator HitFlashCoroutine(float duration)
     {
-        bool isPeak = false;
-
-        for (int i = 0; i < blinkCount; i++)
+        if (!useAmountFlash || amountFlashMatInstance == null || amountFlashRenderer == null)
         {
-            isPeak = !isPeak;
-            SetAmountFlashValue(isPeak ? amountFlashPeakValue : amountFlashRestValue);
-            yield return new WaitForSeconds(blinkInterval);
+            hitFlashCoroutine = null;
+            yield break;
         }
 
-        ResetAmountFlashValue();
-        amountBlinkCoroutine = null;
+        ReapplyAmountFlashMaterial();
+        SetAmountFlashValue(amountFlashPeakValue);
+
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float value = Mathf.Lerp(amountFlashPeakValue, amountFlashRestValue, t);
+            SetAmountFlashValue(value);
+            yield return null;
+        }
+
+        ForceRestoreAmountFlashVisualState();
+        hitFlashCoroutine = null;
     }
 
     private void SetAmountFlashValue(float value)
     {
-        if (amountFlashMatInstance == null) return;
+        if (!useAmountFlash || amountFlashMatInstance == null) return;
         amountFlashMatInstance.SetFloat(amountFlashProperty, value);
     }
 
@@ -408,16 +422,14 @@ public class EnemyVisualEffects : MonoBehaviour
         }
 
         float elapsed = 0f;
-        bool isPeak = false;
 
         while (elapsed < duration)
         {
-            isPeak = !isPeak;
-            amountFlashMatInstance.SetFloat(amountFlashProperty,
-                isPeak ? amountFlashPeakValue : amountFlashRestValue);
-
-            elapsed += anticipationBlinkInterval;
-            yield return new WaitForSeconds(anticipationBlinkInterval);
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float value = Mathf.Lerp(amountFlashRestValue, amountFlashPeakValue, t);
+            SetAmountFlashValue(value);
+            yield return null;
         }
 
         ResetAnticipationBlink();
@@ -426,27 +438,26 @@ public class EnemyVisualEffects : MonoBehaviour
 
     private void ResetAnticipationBlink()
     {
-        if (!useAmountFlash || amountFlashMatInstance == null) return;
+        if (!useAmountFlash || amountFlashRenderer == null || amountFlashMatInstance == null) return;
 
-        // Restaurar Amount
-        amountFlashMatInstance.SetFloat(amountFlashProperty, amountFlashRestValue);
+        amountFlashRenderer.material = amountFlashMatInstance;
+        SetAmountFlashValue(amountFlashRestValue);
 
-        // Restaurar Color al original cacheado
+        if (amountFlashMatInstance.HasProperty("_Color"))
+        {
+            amountFlashMatInstance.SetColor("_Color", originalFlashColor);
+        }
+
         SpriteRenderer sr = amountFlashRenderer as SpriteRenderer;
         if (sr != null)
         {
-            amountFlashMatInstance.SetColor("_Color", Color.white);
-            sr.color = originalSpriteColor;
-        }
-        else if (amountFlashMatInstance.HasProperty("_Color"))
-        {
-            amountFlashMatInstance.SetColor("_Color", originalFlashColor);
+            sr.color = spriteColorCached ? cachedOriginalSpriteColor : Color.white;
         }
     }
 
     #endregion
 
-    #region Stun & Armor Effects
+    #region Stun And Armor Effects
 
     public void StartStunEffect(float duration)
     {
@@ -485,21 +496,7 @@ public class EnemyVisualEffects : MonoBehaviour
             activeStunVFX = Instantiate(stunVFXPrefab, stunSpawnPos, Quaternion.identity, transform);
         }
 
-        float elapsed = 0f;
-        float nextBlink = 0f;
-        bool visible = true;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            if (elapsed >= nextBlink)
-            {
-                visible = !visible;
-                SetRenderersActive(visible);
-                nextBlink = elapsed + stunBlinkSpeed;
-            }
-            yield return null;
-        }
+        yield return new WaitForSeconds(duration);
 
         CleanupStunEffect();
     }
@@ -642,6 +639,25 @@ public class EnemyVisualEffects : MonoBehaviour
             {
                 if (s != null) s.enabled = active;
             }
+        }
+    }
+
+    private void ForceRestoreAmountFlashVisualState()
+    {
+        if (!useAmountFlash || amountFlashRenderer == null || amountFlashMatInstance == null)
+            return;
+
+        amountFlashRenderer.material = amountFlashMatInstance;
+
+        SetAmountFlashValue(amountFlashRestValue);
+
+        if (amountFlashMatInstance.HasProperty("_Color"))
+            amountFlashMatInstance.SetColor("_Color", originalFlashColor);
+
+        SpriteRenderer sr = amountFlashRenderer as SpriteRenderer;
+        if (sr != null)
+        {
+            sr.color = spriteColorCached ? cachedOriginalSpriteColor : Color.white;
         }
     }
 

@@ -23,11 +23,15 @@ public class JitterAnimCtrl : MonoBehaviour
 
     private Coroutine shakeCoroutine;
     private Vector3 originalLocalPosition;
+    private bool originalPositionCaptured = false;
 
     private void Awake()
     {
         anim = GetComponent<Animator>();
         propBlock = new MaterialPropertyBlock();
+
+        originalLocalPosition = transform.localPosition;
+        originalPositionCaptured = true;
     }
 
     private void Update()
@@ -130,7 +134,11 @@ public class JitterAnimCtrl : MonoBehaviour
             StopCoroutine(shakeCoroutine);
             shakeCoroutine = null;
         }
-        transform.localPosition = originalLocalPosition;
+
+        if (originalPositionCaptured)
+        {
+            transform.localPosition = originalLocalPosition;
+        }
     }
 
     private System.Collections.IEnumerator ShakeRoutine(float duration)

@@ -532,7 +532,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     {
         if (enemyHealth != null && enemyHealth.IsDead) return;
 
-        if (animCtrl != null) animCtrl.PlayDamage();
+        //if (animCtrl != null) animCtrl.PlayDamage();
         if (audioSource != null && toughnessBlockSFX != null)
         {
             audioSource.PlayOneShot(toughnessBlockSFX);

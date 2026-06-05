@@ -16,12 +16,15 @@ public class StaticAnimCtrl : MonoBehaviour
 
     private Coroutine shakeCoroutine;
     private Vector3 originalLocalPosition;
+    private bool originalPositionCaptured = false;
 
     private void Awake()
     {
         anim = gameObject.GetComponent<Animator>();
         visualEffects = GetComponentInParent<EnemyVisualEffects>();
+
         originalLocalPosition = transform.localPosition;
+        originalPositionCaptured = true;
 
         if (mesh != null)
         {
@@ -101,7 +104,11 @@ public class StaticAnimCtrl : MonoBehaviour
             StopCoroutine(shakeCoroutine);
             shakeCoroutine = null;
         }
-        transform.localPosition = originalLocalPosition;
+
+        if (originalPositionCaptured)
+        {
+            transform.localPosition = originalLocalPosition;
+        }
     }
 
     private System.Collections.IEnumerator ShakeRoutine(float duration)

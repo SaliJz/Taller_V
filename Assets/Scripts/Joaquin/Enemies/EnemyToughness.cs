@@ -113,6 +113,7 @@ public class EnemyToughness : MonoBehaviour
         {
             currentToughness = maxToughness;
             if (toughnessUIGroup != null && !toughnessUIGroup.activeSelf) toughnessUIGroup.SetActive(true);
+            if (toughnessSlider != null && toughnessFillImage != null) toughnessFillImage.color = toughnessBaseColor;
         }
         else
         {

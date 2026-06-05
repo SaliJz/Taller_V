@@ -11,9 +11,9 @@ using UnityEngine.InputSystem;
 /// otorgandoles regeneracion de superarmor mientras esten en rango.
 /// Al morir libera una onda que otorga superarmor temporal.
 /// </summary>
-public class DrogathEnemy : MonoBehaviour, IDamageBlocker
+public class DrogathEnemy : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 {
-    #region Enums & Structs
+    #region Enums And Structs
 
     private class BondInfo
     {
@@ -39,7 +39,6 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     [SerializeField] private ReelAnimCtrl animCtrl;
     [SerializeField] private NavMeshAgent navAgent;
     [SerializeField] private Transform playerTransform;
-
 
     [Header("Layers")]
     [SerializeField] private LayerMask allyLayers = ~0;
@@ -124,30 +123,36 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 
     #endregion
 
-    #region Inspector - Visual Feedback
+    #region Inspector - Visual Effects
 
     [Header("Visual Feedback")]
     [SerializeField] private LineRenderer bondLineRendererPrefab;
     [SerializeField] private Color bondLineColor = Color.cyan;
     [SerializeField] private float bondLineWidth = 0.1f;
 
+    [Header("VFX Ataque")]
+    [SerializeField] private GameObject attackVFXPrefab;
+    [SerializeField] private Transform attackVFXSpawnPoint;
+
     #endregion
 
-    #region Inspector - Sound FX
+    #region Inspector - Sound And Audio
 
-    [Header("Sound")]
+    [Header("Core Audio")]
     [SerializeField] private AudioSource audioSource;
 
-    [Header("SFX Ambiente/Movimiento")]
+    [Header("SFX Ambiente y Movimiento")]
     [Tooltip("Sonido aleatorio cuando esta quieto.")]
     [SerializeField] private AudioClip idleSFX;
     [Tooltip("Sonido de pasos al moverse.")]
     [SerializeField] private AudioClip runSFX;
 
-    [Header("SFX Combate")]
+    [Header("SFX Combate y Dano")]
     [SerializeField] private AudioClip attackSFX;
     [SerializeField] private AudioClip blockSFX;
     [SerializeField] private AudioClip deathSFX;
+    [SerializeField] private AudioClip hitStunSFX;
+    [SerializeField] private AudioClip toughnessBlockSFX;
 
     [Header("SFX Habilidades (Vinculo)")]
     [Tooltip("Suena una vez al establecer un vinculo nuevo.")]
@@ -156,17 +161,18 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     [SerializeField] private AudioClip bondRegenSFX;
     [SerializeField] private AudioClip bondBreakSFX;
 
+    [Header("SFX Anticipacion")]
+    [SerializeField] private AudioClip anticipationSFX;
+    [SerializeField] private float anticipationSFXPitch = 1.0f;
+
     #endregion
 
-    #region Inspector - Telegraphed Settings
+    #region Inspector - Telegraphed Timings
 
-    [Header("Hit Stun")]
-    [SerializeField] protected float hitStunDuration = 0.3f;
-    [SerializeField] protected float forceIdleDuration = 0.8f;
-
-    [Header("SFX Dano")]
-    [SerializeField] protected AudioClip hitStunSFX;
-    [SerializeField] protected AudioClip toughnessBlockSFX;
+    [Header("Hit Stun y Anticipacion")]
+    [SerializeField] private float hitStunDuration = 0.3f;
+    [SerializeField] private float forceIdleDuration = 0.8f;
+    [SerializeField] private float anticipationPauseDuration = 1f;
 
     #endregion
 
@@ -186,11 +192,11 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     private List<BondInfo> activeBonds = new List<BondInfo>();
     private Dictionary<GameObject, float> rebondCooldowns = new Dictionary<GameObject, float>();
     private Queue<ReelAnimCtrl.Cameras> availableCameraSlots;
-    
     private Coroutine bondUpdateRoutine;
     private Coroutine combatRoutine;
     private Coroutine hitStunCoroutine = null;
     private Coroutine attackSequenceCoroutine = null;
+    private Coroutine anticipationCoroutine = null;
 
     private bool hasHitPlayer = false;
     private bool isAttacking = false;
@@ -198,6 +204,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     private bool isReady = false;
     private bool isPerformingAttackAnim = false;
     private bool isInHitStun = false;
+    private bool isInAnticipation = false;
 
     private float attackTimer = 0f;
     private float idleTimer;
@@ -205,6 +212,8 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     private float stepTimer;
     private float stepRate = 0.5f;
     private float regenSoundCooldown;
+    private float hitStunRecoveryCooldown = 0f;
+    private float hitStunRecoveryGrace = 0.1f;
 
     #endregion
 
@@ -299,13 +308,18 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
     {
         if (isDead || !enabled || !isReady) return;
 
+        if (hitStunRecoveryCooldown > 0f)
+        {
+            hitStunRecoveryCooldown -= Time.deltaTime;
+        }
+
         HandleAudioLogic();
         UpdateAnimationState();
     }
 
     #endregion
 
-    #region Initialization & Data Sync
+    #region Initialization And Data Sync
 
     private void LoadStatsFromSheet()
     {
@@ -382,66 +396,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 
     #endregion
 
-    #region Movement & Animation
-
-    /// <summary>
-    /// Controla el parametro de movimiento en el Animator
-    /// </summary>
-    private void UpdateAnimationState()
-    {
-        if (animCtrl == null || navAgent == null) return;
-
-        // Comprobamos si se mueve calculando la velocidad del NavMeshAgent
-        bool isMoving = navAgent.velocity.sqrMagnitude > 0.1f && !navAgent.isStopped;
-
-        animCtrl.walking = isMoving;
-    }
-
-    private void HandleAudioLogic()
-    {
-        if (navAgent != null && navAgent.enabled && !navAgent.isStopped && navAgent.velocity.sqrMagnitude > 0.2f)
-        {
-            stepTimer += Time.deltaTime;
-            if (stepTimer >= stepRate)
-            {
-                if (audioSource != null && runSFX != null)
-                {
-                    audioSource.pitch = Random.Range(0.9f, 1.05f);
-                    audioSource.PlayOneShot(runSFX, 0.35f);
-                    audioSource.pitch = 1f;
-                }
-                stepTimer = 0f;
-            }
-
-            ResetIdleTimer();
-        }
-        else
-        {
-            stepTimer = stepRate;
-
-            idleTimer += Time.deltaTime;
-            if (idleTimer >= idleInterval)
-            {
-                if (audioSource != null && idleSFX != null)
-                {
-                    audioSource.PlayOneShot(idleSFX);
-                }
-                ResetIdleTimer();
-            }
-        }
-
-        if (regenSoundCooldown > 0) regenSoundCooldown -= Time.deltaTime;
-    }
-
-    private void ResetIdleTimer()
-    {
-        idleTimer = 0f;
-        idleInterval = Random.Range(4f, 8f);
-    }
-
-    #endregion
-
-    #region NavMesh Validation
+    #region Movement And NavMesh Control
 
     /// <summary>
     /// Verifica si el NavMeshAgent esta en condiciones validas para ser usado
@@ -529,7 +484,90 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 
     #endregion
 
-    #region Bond System
+    #region Animation And Audio Control
+
+    /// <summary>
+    /// Controla el parametro de movimiento en el Animator
+    /// </summary>
+    private void UpdateAnimationState()
+    {
+        if (animCtrl == null || navAgent == null) return;
+
+        // Comprobamos si se mueve calculando la velocidad del NavMeshAgent
+        bool isMoving = navAgent.velocity.sqrMagnitude > 0.1f && !navAgent.isStopped;
+
+        animCtrl.walking = isMoving;
+    }
+
+    private void HandleAudioLogic()
+    {
+        if (navAgent != null && navAgent.enabled && !navAgent.isStopped && navAgent.velocity.sqrMagnitude > 0.2f)
+        {
+            stepTimer += Time.deltaTime;
+            if (stepTimer >= stepRate)
+            {
+                if (audioSource != null && runSFX != null)
+                {
+                    audioSource.pitch = Random.Range(0.9f, 1.05f);
+                    audioSource.PlayOneShot(runSFX, 0.35f);
+                    audioSource.pitch = 1f;
+                }
+                stepTimer = 0f;
+            }
+
+            ResetIdleTimer();
+        }
+        else
+        {
+            stepTimer = stepRate;
+
+            idleTimer += Time.deltaTime;
+            if (idleTimer >= idleInterval)
+            {
+                if (audioSource != null && idleSFX != null)
+                {
+                    audioSource.PlayOneShot(idleSFX);
+                }
+                ResetIdleTimer();
+            }
+        }
+
+        if (regenSoundCooldown > 0) regenSoundCooldown -= Time.deltaTime;
+    }
+
+    private void ResetIdleTimer()
+    {
+        idleTimer = 0f;
+        idleInterval = Random.Range(4f, 8f);
+    }
+
+    public void HandleAnimEvents(string eventName)
+    {
+        switch (eventName)
+        {
+            case "AnimEvent_AttackHit":
+                if (isDead || (enemyHealth != null && enemyHealth.IsStunned)) break;
+                CheckMeleeHitbox();
+                break;
+
+            case "AnimEvent_AttackEnd":
+                isPerformingAttackAnim = false;
+                if (attackSequenceCoroutine != null)
+                {
+                    StopCoroutine(attackSequenceCoroutine);
+                    attackSequenceCoroutine = null;
+                }
+                break;
+
+            case "AnimEvent_AnticipationPause":
+                StartAnticipationPause();
+                break;
+        }
+    }
+
+    #endregion
+
+    #region Bond System Logic
 
     private IEnumerator BondUpdateRoutine()
     {
@@ -810,7 +848,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 
     #endregion
 
-    #region Combat System
+    #region Combat And Attack Logic
 
     private IEnumerator CombatRoutine()
     {
@@ -870,10 +908,16 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
             return;
         }
 
-        if (isInHitStun) 
-        { 
+        if (isInHitStun)
+        {
             SafeStopAgent(); // Frenar mientras esta aturdido
-            return; 
+            return;
+        }
+
+        if (isInAnticipation)
+        {
+            SafeStopAgent(); // Frenar mientras se prepara para atacar
+            return;
         }
 
         // Verificar si esta aturdido
@@ -929,32 +973,27 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 
         if (animCtrl != null) animCtrl.PlayAttack();
 
-        // if (audioSource != null) audioSource.PlayOneShot(attackWindupSFX); 
+        float timeout = attackImpactDelay + attackRecoveryTime + 0.5f;
+        float elapsed = 0f;
 
-        yield return new WaitForSeconds(attackImpactDelay);
-
-        if (isDead || (enemyHealth != null && enemyHealth.IsStunned))
+        while (isPerformingAttackAnim && elapsed < timeout)
         {
-            isPerformingAttackAnim = false;
-            yield break;
+            elapsed += Time.deltaTime;
+            yield return null;
         }
 
-        if (audioSource != null && attackSFX != null)
-        {
-            audioSource.PlayOneShot(attackSFX, 0.75f);
-        }
-
-        CheckMeleeHitbox();
-
-        yield return new WaitForSeconds(attackRecoveryTime);
-
-        attackSequenceCoroutine = null;
         isPerformingAttackAnim = false;
+        attackSequenceCoroutine = null;
     }
 
     private void CheckMeleeHitbox()
     {
         if (playerTransform == null) return;
+
+        if (audioSource != null && attackSFX != null)
+        {
+            audioSource.PlayOneShot(attackSFX);
+        }
 
         Vector3 impactPos = hitPoint != null ? hitPoint.position : transform.position + transform.forward;
 
@@ -1028,7 +1067,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         var pm = cc != null ? cc.GetComponent<PlayerMovement>() : null;
         while (elapsed < duration)
         {
-            if (cc != null && cc.enabled) 
+            if (cc != null && cc.enabled)
             {
                 if (pm == null || !pm.IsDashing)
                 {
@@ -1065,7 +1104,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 
     #endregion
 
-    #region Shield System
+    #region Shield And Block Logic
 
     /// <summary>
     /// Verifica si un ataque desde una direccion dada debe ser bloqueado por el escudo.
@@ -1131,7 +1170,59 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
 
     #endregion
 
-    #region Death Effect
+    #region Hit Stun And Anticipation Logic
+
+    public void StartAnticipationPause()
+    {
+        if (isDead || isInHitStun || hitStunRecoveryCooldown > 0f) return;
+
+        if (anticipationCoroutine != null) StopCoroutine(anticipationCoroutine);
+        anticipationCoroutine = StartCoroutine(AnticipationRoutine());
+    }
+
+    protected virtual IEnumerator AnticipationRoutine()
+    {
+        isInAnticipation = true;
+
+        if (animCtrl != null) animCtrl.PauseAnimation();
+
+        if (audioSource != null && anticipationSFX != null)
+        {
+            audioSource.pitch = anticipationSFXPitch;
+            audioSource.PlayOneShot(anticipationSFX);
+            audioSource.pitch = 1f;
+        }
+
+        // Blink rojo de anticipacion
+        if (enemyVisualEffects != null)
+        {
+            enemyVisualEffects.PlayAnticipationBlink(anticipationPauseDuration);
+        }
+
+        // Shake de anticipacion
+        if (animCtrl != null) animCtrl.PlayAnticipationShake(anticipationPauseDuration);
+
+        yield return new WaitForSeconds(anticipationPauseDuration);
+
+        if (animCtrl != null) animCtrl.ResumeAnimation();
+
+        isInAnticipation = false;
+        anticipationCoroutine = null;
+    }
+
+    protected void CancelAnticipation()
+    {
+        if (anticipationCoroutine != null)
+        {
+            StopCoroutine(anticipationCoroutine);
+            anticipationCoroutine = null;
+        }
+
+        if (animCtrl != null) animCtrl.ResumeAnimation();
+        if (animCtrl != null) animCtrl.StopAnticipationShake();
+        if (enemyVisualEffects != null) enemyVisualEffects.CancelAnticipationBlink();
+        isInAnticipation = false;
+    }
 
     private void HandleDamageTaken()
     {
@@ -1172,6 +1263,8 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
             isPerformingAttackAnim = false;
         }
 
+        CancelAnticipation();
+
         SafeStopAgent();
         SafeResetPath();
 
@@ -1182,19 +1275,27 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         }
 
         yield return new WaitForSeconds(hitStunDuration);
+        yield return new WaitForSeconds(forceIdleDuration);
 
         isInHitStun = false;
         hitStunCoroutine = null;
-
         attackTimer = 0f;
+
+        hitStunRecoveryCooldown = hitStunRecoveryGrace;
 
         if (isAttacking) SafeResumeAgent();
     }
+
+    #endregion
+
+    #region Death Effect Logic
 
     private void HandleEnemyDeath(GameObject deadEnemy)
     {
         if (isDead) return;
         isDead = true;
+
+        CancelAnticipation();
 
         isInHitStun = false;
         if (hitStunCoroutine != null)
@@ -1420,7 +1521,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker
         UnityEditor.Handles.Label(shieldOrigin + shieldFwd * (distanceToAttack + 0.3f), $"  Escudo ({frontalBlockAngle}°)", labelStyle);
 #endif
 
-        // Estado actua
+        // Estado actual
         if (Application.isPlaying)
         {
 #if UNITY_EDITOR

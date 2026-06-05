@@ -1149,6 +1149,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ad0af14b9b4e1e409d64132cc02bacb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  enemyRenderer: {fileID: 0}
+  normalAttackHitbox: {fileID: 0}
+  furyAttackHitbox: {fileID: 0}
+  screamHitbox: {fileID: 0}
+  animCtrl: {fileID: 2645563989516676831}
+  furyAttackVFXPrefab: {fileID: 0}
+  furyAttackVFXSpawnPoint: {fileID: 0}
   visionRange: 200
   visionConeAngle: 360
   playerLayer:
@@ -1159,13 +1166,6 @@ MonoBehaviour:
   patrolDirectionChangeAngle: 30
   stuckCheckInterval: 2
   stuckDistanceThreshold: 0.1
-  furySpeedMultiplier: 1.5
-  furyLevel2SpeedBonus: 0
-  furyJumpDistance: 0
-  furyJumpReducedDistance: 0
-  furyJumpDelay: 0
-  furyJumpCancelDistance: 0
-  furyJumpDuration: 0
   normalAttackDamage: 15
   normalAttackInterval: 0.5
   normalAttackRange: 5
@@ -1174,20 +1174,26 @@ MonoBehaviour:
   furyAttackDamage: 15
   furyAttackInterval: 0.25
   furyAttackRange: 5
+  furySpeedMultiplier: 1.5
+  furyLevel2SpeedBonus: 0
+  furyJumpDistance: 0
+  furyJumpReducedDistance: 0
+  furyJumpDelay: 0
+  furyJumpCancelDistance: 0
+  furyJumpDuration: 0
   furyDecayTime: 6
   furyDecayNoDamageTime: 0
   furyRegenerationPerSecond: 2
   consecutiveHitPushDistance: 0
   screamTransitionDuration: 0
   maxFuryLevel: 1
+  hitStunDuration: 0.3
+  forceIdleDuration: 0.8
+  calmAnticipationDuration: 0.5
+  furyAnticipationDuration: 0.3
   normalStateMaterial: {fileID: -3113694911958652215, guid: 87b5c11cfcdd0c14ab4ec1ce7357cd8d, type: 3}
   furyStateMaterial: {fileID: 2100000, guid: 6512acb028f5ffe4dac0c63c2723253c, type: 2}
-  enemyRenderer: {fileID: 0}
-  normalAttackHitbox: {fileID: 0}
-  furyAttackHitbox: {fileID: 0}
-  screamHitbox: {fileID: 0}
   hitboxDisplayDuration: 0.2
-  animCtrl: {fileID: 2645563989516676831}
   audioSource: {fileID: 4785209160859040218}
   presenceSFX: {fileID: 8300000, guid: 272f6f049913fa84383303f5ab52fc64, type: 3}
   normalMoveSFX: {fileID: 8300000, guid: 0571e6753fa06fd41b7c78c33818c63b, type: 3}
@@ -1199,18 +1205,12 @@ MonoBehaviour:
   furyJumpSFX: {fileID: 8300000, guid: b364a7e72272d7f44883e8e521fec720, type: 3}
   pushbackSFX: {fileID: 0}
   deathSFX: {fileID: 8300000, guid: 6ea9302d1a575c546935db43fe977cec, type: 3}
-  enemiesSheet: {fileID: 11400000, guid: 566256d046a94d049b6d208905123b1f, type: 2}
-  ENEMY_ID: 13
-  hitStunDuration: 0.3
-  forceIdleDuration: 0.8
   hitStunSFX: {fileID: 0}
   toughnessBlockSFX: {fileID: 0}
-  calmAnticipationDuration: 0.5
-  furyAnticipationDuration: 0.3
   calmAnticipationSFX: {fileID: 0}
   furyAnticipationSFX: {fileID: 0}
-  furyAttackVFXPrefab: {fileID: 0}
-  furyAttackVFXSpawnPoint: {fileID: 0}
+  enemiesSheet: {fileID: 11400000, guid: 566256d046a94d049b6d208905123b1f, type: 2}
+  ENEMY_ID: 13
 --- !u!114 &599553113384920727
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1278,7 +1278,7 @@ MonoBehaviour:
   rangedToughnessDamageMultiplier: 1
   useDynamicBars: 0
   toughnessPerBar: 20
-  toughnessBaseColor: {r: 0, g: 1, b: 1, a: 1}
+  toughnessBaseColor: {r: 0.92941177, g: 0.8156863, b: 0.80784315, a: 1}
   colorGradientIntensity: 0.3
   toughnessBlockVFXPrefab: {fileID: 0}
   toughnessBlockVFXSpawnPoint: {fileID: 2305864397206634455}
@@ -1316,7 +1316,7 @@ MonoBehaviour:
   stunBlinkSpeed: 0.1
   glowMaterial: {fileID: 0}
   glowIntensity: 2
-  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
+  toughnessColor: {r: 0.92941177, g: 0.8156863, b: 0.80784315, a: 1}
   anticipationBlinkInterval: 0.04
   anticipationBlinkColor: {r: 1, g: 0, b: 0, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
@@ -2486,7 +2486,7 @@ Transform:
   m_GameObject: {fileID: 9157533237140269856}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.5, z: 0}
+  m_LocalPosition: {x: 0, y: 1.75, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
