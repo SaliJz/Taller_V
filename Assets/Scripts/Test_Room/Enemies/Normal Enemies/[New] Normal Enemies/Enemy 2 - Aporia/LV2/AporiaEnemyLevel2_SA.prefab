@@ -681,6 +681,8 @@ MonoBehaviour:
   ImpactVFX: {fileID: 0}
   h: 0
   v: 0
+  shakeIntensity: 0.2
+  shakeFrequency: 2
 --- !u!1 &1709227677283849526
 GameObject:
   m_ObjectHideFlags: 0
@@ -1703,10 +1705,16 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  spawnDelay: 1
   hitStunDuration: 0.3
   forceIdleDuration: 0.8
   hitStunSFX: {fileID: 0}
   toughnessBlockSFX: {fileID: 0}
+  anticipationPauseDuration: 0.4
+  anticipationSFXPitch: 1
+  anticipationSFX: {fileID: 0}
+  attackVFXPrefab: {fileID: 0}
+  attackVFXSpawnPoint: {fileID: 0}
   glassShardAttackPrefab: {fileID: 5211547546469293962, guid: 4bf82bb6cacd4bc429ac27bc797488ec, type: 3}
   shardAttackRadius: 1
   shardAttackDamagePerSec: 4
@@ -1882,9 +1890,11 @@ MonoBehaviour:
   GroundLayer:
     serializedVersion: 2
     m_Bits: 8
-  startYoffset: 5
-  spawnYoffset: 0.1
-  shadowScale: 0.12
+  shadowPosition: {fileID: 0}
+  shadowScale: 1.2
+  spawnYoffset: 0.02
+  checkInterval: 0.1
+  checkShadows: 0
 --- !u!1 &4310477365995469995
 GameObject:
   m_ObjectHideFlags: 0

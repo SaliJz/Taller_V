@@ -446,7 +446,7 @@ MonoBehaviour:
   stunBlinkSpeed: 0.1
   glowMaterial: {fileID: 0}
   glowIntensity: 2
-  toughnessColor: {r: 0, g: 1, b: 1, a: 1}
+  toughnessColor: {r: 1, g: 0.5235849, b: 0.56867933, a: 1}
   anticipationBlinkInterval: 0.04
   anticipationBlinkColor: {r: 1, g: 0, b: 0, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
@@ -497,9 +497,11 @@ MonoBehaviour:
   GroundLayer:
     serializedVersion: 2
     m_Bits: 8
-  startYoffset: 5
-  spawnYoffset: 0.1
-  shadowScale: 0.12
+  shadowPosition: {fileID: 0}
+  shadowScale: 1
+  spawnYoffset: 0.02
+  checkInterval: 0.1
+  checkShadows: 0
 --- !u!1 &1580283940580259111
 GameObject:
   m_ObjectHideFlags: 0

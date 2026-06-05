@@ -230,6 +230,7 @@ GameObject:
   - component: {fileID: 5877659156932573668}
   - component: {fileID: 2002351381241149244}
   - component: {fileID: -6703627552925181079}
+  - component: {fileID: 477884786747546225}
   m_Layer: 7
   m_Name: Larva 1
   m_TagString: Enemy
@@ -253,6 +254,7 @@ Transform:
   - {fileID: 8938355604456255546}
   - {fileID: 1884389722555077146}
   - {fileID: 2271320479749637649}
+  - {fileID: 8988374209368808046}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &7499967202020531457
@@ -489,6 +491,27 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &477884786747546225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1531481768560991545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0aac80912e5b0246b0c4161d40e77a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowPrefab: {fileID: 4558005614469577162, guid: 5486048298c515f41913b1617b0f5cc5, type: 3}
+  GroundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  shadowPosition: {fileID: 8988374209368808046}
+  shadowScale: 3
+  spawnYoffset: 1
+  checkInterval: 0.1
+  checkShadows: 0
 --- !u!1 &1555363013426165324
 GameObject:
   m_ObjectHideFlags: 0
@@ -1132,6 +1155,37 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &8644323120263823572
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8988374209368808046}
+  m_Layer: 0
+  m_Name: ShadowPosSpawn
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8988374209368808046
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8644323120263823572}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1168432785339426082}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1733851274537951738
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1146,7 +1200,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 95594fc0d58674141ad96fab53b8e4ed, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 2.48
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 95594fc0d58674141ad96fab53b8e4ed, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1195,35 +1249,8 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 95594fc0d58674141ad96fab53b8e4ed, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 7862545715386767818}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 95594fc0d58674141ad96fab53b8e4ed, type: 3}
---- !u!1 &1499286761241337003 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 95594fc0d58674141ad96fab53b8e4ed, type: 3}
-  m_PrefabInstance: {fileID: 1733851274537951738}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &7862545715386767818
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1499286761241337003}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d0aac80912e5b0246b0c4161d40e77a7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  shadowPrefab: {fileID: 4558005614469577162, guid: 5486048298c515f41913b1617b0f5cc5, type: 3}
-  GroundLayer:
-    serializedVersion: 2
-    m_Bits: 8
-  startYoffset: 1
-  spawnYoffset: 0.1
-  shadowScale: 0.2
 --- !u!4 &2271320479749637649 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 95594fc0d58674141ad96fab53b8e4ed, type: 3}

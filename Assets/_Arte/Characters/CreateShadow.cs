@@ -1,38 +1,86 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CreateShadow : MonoBehaviour
 {
+    [Header("Referencias")]
     [SerializeField] GameObject shadowPrefab;
     [SerializeField] LayerMask GroundLayer;
-    public float startYoffset = 5f;
-    public float spawnYoffset = 0.1f;
-    public float shadowScale;
+    [Tooltip("Si este field esta vacio, el script tomará la posicion central del objeto")]
+    [SerializeField] Transform shadowPosition;
 
-    void Start()
+    [Header("Configuración")]
+    public float shadowScale = 1f;
+    [SerializeField] float spawnYoffset = 0.02f;
+    [SerializeField] float checkInterval = 0.1f;
+    [Tooltip("Hacer chequeo de si el personaje está en el suelo o pasando por un abismo (reservado para Aldous y aporia (quiza)")]
+    [SerializeField] bool checkShadows = false;
+
+    private GameObject shadowInstance;
+    private float timer;
+    private float currentShadowScale;
+
+    private void Start()
     {
         SpawnShadow();
     }
 
-    void SpawnShadow()
+    private void Update()
+    {
+        if (checkShadows)
+        {
+            timer += Time.deltaTime;
+
+            if(timer > checkInterval)
+            {
+                timer = 0f;
+                CheckGround();
+            }
+        }
+
+        if (shadowInstance != null) shadowInstance.transform.rotation = Quaternion.identity;
+
+        UpdateShadowSize();
+    }
+
+    private void SpawnShadow()
     {
         RaycastHit hit;
+        Vector3 shadowSpawnPoint = shadowPosition? shadowPosition.position : transform.position;
+        Vector3 rayOrigin = shadowSpawnPoint + Vector3.up * 0.5f;
 
-        Vector3 Offset = new Vector3 (transform.position.x, transform.position.y + startYoffset, transform.position.z);
-
-        if (Physics.Raycast(Offset, Vector3.down, out hit, 50f, GroundLayer))
+        if (Physics.Raycast(rayOrigin, Vector3.down, out hit, 50f, GroundLayer))
         {
             Vector3 spawnPos = hit.point + new Vector3(0, spawnYoffset, 0);
             Quaternion spawnRotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
-            Vector3 spawnScale = new Vector3(shadowScale, 1, shadowScale);
 
-            GameObject shadowInstance = Instantiate(shadowPrefab, spawnPos, spawnRotation);
-            shadowInstance.transform.localScale = Vector3.one * shadowScale;
-            shadowInstance.transform.SetParent(this.transform);
+            shadowInstance = Instantiate(shadowPrefab, spawnPos, spawnRotation);
+            shadowInstance.transform.localScale = Vector3.one * shadowScale * 0.1f;
+            if(shadowPosition != null) shadowInstance.transform.SetParent(shadowPosition.transform);
+            else shadowInstance.transform.SetParent(this.transform);
             Debug.Log("Sombra spawneada");
         }
         else
         {
             Debug.LogWarning($"[{gameObject.name}] No se encontró suelo para spawnear la sombra.");
         }
+    }
+
+    private void UpdateShadowSize()
+    {
+        if (shadowInstance == null || currentShadowScale == shadowScale) return;
+
+        shadowInstance.transform.localScale = Vector3.one * shadowScale * 0.1f;
+        currentShadowScale = shadowScale;
+    }
+
+    private void CheckGround()
+    {
+        if (shadowInstance == null) return;
+        Vector3 shadowSpawnPoint = shadowPosition? shadowPosition.position : transform.position;
+
+        Vector3 rayOrigin = shadowSpawnPoint + Vector3.up * 0.5f;
+        bool hasGround = Physics.Raycast(rayOrigin, Vector3.down, 50f, GroundLayer);
+        shadowInstance.SetActive(hasGround);
     }
 }

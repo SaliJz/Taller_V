@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 8686822032995205116}
   - component: {fileID: 3416400601459276787}
   - component: {fileID: 4455227293463665330}
+  - component: {fileID: 119370115010490289}
   m_Layer: 19
   m_Name: Shield
   m_TagString: Escudo
@@ -218,6 +219,27 @@ CapsuleCollider:
   m_Height: 1
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &119370115010490289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 97364978854938720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0aac80912e5b0246b0c4161d40e77a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowPrefab: {fileID: 4558005614469577162, guid: 5486048298c515f41913b1617b0f5cc5, type: 3}
+  GroundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  shadowPosition: {fileID: 0}
+  shadowScale: 2
+  spawnYoffset: 0.02
+  checkInterval: 0.1
+  checkShadows: 0
 --- !u!1 &3492959782852944213
 GameObject:
   m_ObjectHideFlags: 0
@@ -5237,7 +5259,7 @@ Transform:
   m_GameObject: {fileID: 6080422196327213691}
   serializedVersion: 2
   m_LocalRotation: {x: 0.17164353, y: 0.44603074, z: -0.08759263, w: 0.87402666}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -0.269, y: 0, z: -0.164}
   m_LocalScale: {x: 1, y: 2.7990727, z: 1.1201483}
   m_ConstrainProportionsScale: 0
   m_Children: []
