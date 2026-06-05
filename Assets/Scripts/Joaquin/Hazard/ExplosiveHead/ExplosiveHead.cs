@@ -6,7 +6,7 @@ using UnityEngine;
 /// ExplosiveHead:
 /// - Detecta proximidad con un contador (OnTriggerEnter/Exit).
 /// - Reproduce grito y efectos visuales de priming.
-/// - Tras priming explota, aplica daño y empuje.
+/// - Tras priming explota, aplica daï¿½o y empuje.
 /// - Debug: OnGUI + Gizmos
 /// </summary>
 [RequireComponent(typeof(SphereCollider))]
@@ -15,12 +15,12 @@ public class ExplosiveHead : MonoBehaviour
     private enum HazardState { Armed, Priming, Exploded }
     private HazardState currentState = HazardState.Armed;
 
-    [Header("Parámetros")]
-    [Tooltip("Tiempo en segundos desde el grito hasta la explosión.")]
+    [Header("Parï¿½metros")]
+    [Tooltip("Tiempo en segundos desde el grito hasta la explosiï¿½n.")]
     [SerializeField] private float primingDuration = 1.2f;
-    [Tooltip("Radio de la explosión para aplicar daño y empuje.")]
+    [Tooltip("Radio de la explosiï¿½n para aplicar daï¿½o y empuje.")]
     [SerializeField] private float explosionRadius = 5f;
-    [Tooltip("Daño máximo infligido por la explosión (en el centro).")]
+    [Tooltip("Daï¿½o mï¿½ximo infligido por la explosiï¿½n (en el centro).")]
     [SerializeField] private float explosionDamage = 40f;
     [Tooltip("Fuerza aplicada a Rigidbodies (AddExplosionForce).")]
     [SerializeField] private float rigidbodyKnockbackForce = 700f;
@@ -28,15 +28,15 @@ public class ExplosiveHead : MonoBehaviour
     [SerializeField] private float ccKnockbackDistance = 3f;
 
     [Header("Comportamiento")]
-    [Tooltip("Si true, inicia la secuencia automáticamente al detectar objetivos en el trigger.")]
+    [Tooltip("Si true, inicia la secuencia automï¿½ticamente al detectar objetivos en el trigger.")]
     [SerializeField] private bool enableProximityTrigger = true;
-    [Tooltip("Si true, el daño decrece con la distancia (falloff).")]
+    [Tooltip("Si true, el daï¿½o decrece con la distancia (falloff).")]
     [SerializeField] private bool useDamageFalloff = true;
-    [Tooltip("Si true, la priming se cancelará si el jugador sale del área antes de explotar.")]
+    [Tooltip("Si true, la priming se cancelarï¿½ si el jugador sale del ï¿½rea antes de explotar.")]
     [SerializeField] private bool cancelIfPlayerLeaves = false;
 
     [Header("Filtrado")]
-    [Tooltip("Máscara para limitar qué capas reciben daño/knockback.")]
+    [Tooltip("Mï¿½scara para limitar quï¿½ capas reciben daï¿½o/knockback.")]
     [SerializeField] private LayerMask affectLayers = ~0;
 
     [Header("Referencias")]
@@ -46,30 +46,31 @@ public class ExplosiveHead : MonoBehaviour
     [SerializeField] private AudioClip screamSound;
     [SerializeField] private AudioClip explosionSound;
     [SerializeField] private GameObject explosionSpherePrefab;
+    [SerializeField] private GameObject explosionAreaVFX;
 
     [Header("Glow / Priming visuals")]
     [SerializeField] private List<Renderer> renderersToFlash = new List<Renderer>();
     [SerializeField] private Color flashColor = Color.white;
     [SerializeField] private float flashMaxIntensity = 3f;
-    [Tooltip("Curva que controla la intensidad del parpadeo en función del progreso 0..1 (0 inicio, 1 momento de explosión).")]
+    [Tooltip("Curva que controla la intensidad del parpadeo en funciï¿½n del progreso 0..1 (0 inicio, 1 momento de explosiï¿½n).")]
     [SerializeField] private AnimationCurve intensityOverTime = AnimationCurve.EaseInOut(0, 0, 1, 1);
-    [Tooltip("Curva que controla la frecuencia del parpadeo (Hz) en función del progreso 0..1. Ej: 1 -> 1Hz, 6 -> 6Hz.")]
+    [Tooltip("Curva que controla la frecuencia del parpadeo (Hz) en funciï¿½n del progreso 0..1. Ej: 1 -> 1Hz, 6 -> 6Hz.")]
     [SerializeField] private AnimationCurve frequencyOverTime = AnimationCurve.Linear(0, 1f, 1, 8f);
     [Tooltip("Curve to shape the blink envelope (0..1 input -> 0..1 output). Use to ease the on/off of the blink.")]
     [SerializeField] private AnimationCurve blinkEnvelope = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-    [Header("Jaw (mandíbula)")]
-    [Tooltip("Transform usado como mandíbula (un cubo rotado sobre X para pruebas).")]
+    [Header("Jaw (mandï¿½bula)")]
+    [Tooltip("Transform usado como mandï¿½bula (un cubo rotado sobre X para pruebas).")]
     [SerializeField] private Transform jawTransform;
-    [Tooltip("Ángulo (grados) de la mandíbula cerrada (normal).")]
+    [Tooltip("ï¿½ngulo (grados) de la mandï¿½bula cerrada (normal).")]
     [SerializeField] private float jawClosedAngle = 0f;
-    [Tooltip("Ángulo (grados) de la mandíbula abierta en el máximo grito (negativo para rotar hacia abajo).")]
+    [Tooltip("ï¿½ngulo (grados) de la mandï¿½bula abierta en el mï¿½ximo grito (negativo para rotar hacia abajo).")]
     [SerializeField] private float jawOpenAngle = -45f;
-    [Tooltip("Curve para la apertura de la mandíbula (0..1 input -> 0..1 output).")]
+    [Tooltip("Curve para la apertura de la mandï¿½bula (0..1 input -> 0..1 output).")]
     [SerializeField] private AnimationCurve jawCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Header("Overlap settings")]
-    [Tooltip("Cantidad máxima de colliders a procesar en la explosión (para OverlapSphereNonAlloc).")]
+    [Tooltip("Cantidad mï¿½xima de colliders a procesar en la explosiï¿½n (para OverlapSphereNonAlloc).")]
     [SerializeField] private int maxTargets = 32;
 
     [Header("Debug (OnGUI/Gizmos)")]
@@ -178,7 +179,7 @@ public class ExplosiveHead : MonoBehaviour
 
         this.forceExplodeOnDamage = forceExplode;
 
-        if (verboseDebug) Debug.Log("[ExplosiveHead] Priming forzado por daño externo (escudo).", this);
+        if (verboseDebug) Debug.Log("[ExplosiveHead] Priming forzado por daï¿½o externo (escudo).", this);
 
         if (hazardRoutine != null)
         {
@@ -196,13 +197,15 @@ public class ExplosiveHead : MonoBehaviour
     }
 
     /// <summary>
-    /// Corrutina que maneja la secuencia de grito -> espera -> explosión.
+    /// Corrutina que maneja la secuencia de grito -> espera -> explosiï¿½n.
     /// </summary>
     private IEnumerator ActivationSequence()
     {
         currentState = HazardState.Priming;
         primingTimeLeft = primingDuration;
         PlayAudio(screamSound, 0.85f);
+
+        explosionAreaVFX.SetActive(true);
 
         float elapsed = 1.4f;
 
@@ -257,7 +260,7 @@ public class ExplosiveHead : MonoBehaviour
 
         ApplyFlashToRenderers(finalIntensity * flashMaxIntensity);
 
-        // Mandíbula
+        // Mandï¿½bula
         if (jawTransform != null)
         {
             float jawT = jawCurve.Evaluate(progress);
@@ -291,7 +294,7 @@ public class ExplosiveHead : MonoBehaviour
     }
 
     /// <summary>
-    /// Gestiona la lógica de la explosión: daño, empuje y efectos.
+    /// Gestiona la lï¿½gica de la explosiï¿½n: daï¿½o, empuje y efectos.
     /// </summary>
     private void Explode()
     {
@@ -352,7 +355,7 @@ public class ExplosiveHead : MonoBehaviour
 
                 if (pm != null && pm.IsDashing)
                 {
-                    continue; // Si el jugador está dashing, no se le aplica el knockback del explosivo.
+                    continue; // Si el jugador estï¿½ dashing, no se le aplica el knockback del explosivo.
                 }
 
                 Vector3 direction = (collider.transform.position - center).normalized;
