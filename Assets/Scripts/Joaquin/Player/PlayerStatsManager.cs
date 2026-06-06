@@ -771,6 +771,7 @@ public partial class PlayerStatsManager : MonoBehaviour
         StatType.ShieldAttackDamage
         };
 
+        // Quita únicamente los modificadores de la etapa anterior
         foreach (var stat in affectedStats)
         {
             if (lifeStageModifiers.ContainsKey(stat))
@@ -796,14 +797,13 @@ public partial class PlayerStatsManager : MonoBehaviour
             }
         }
 
+        // Aplica los nuevos modificadores según la etapa
         switch (newStage)
         {
             case LifeStage.Young:
-                Debug.Log("[PlayerStatsManager] Etapa Joven: Sin modificadores adicionales de etapa.");
                 break;
 
             case LifeStage.Adult:
-                Debug.Log("[PlayerStatsManager] Etapa Adulto: +10% a todas las stats de combate.");
                 ApplyLifeStageMod(StatType.MoveSpeed, -0.05f);
                 ApplyLifeStageMod(StatType.MeleeAttackSpeed, -0.17f);
                 ApplyLifeStageMod(StatType.MeleeAttackDamage, 0.5f);
@@ -812,7 +812,6 @@ public partial class PlayerStatsManager : MonoBehaviour
                 break;
 
             case LifeStage.Elder:
-                Debug.Log("[PlayerStatsManager] Etapa Anciano: +20% a todas las stats de combate.");
                 ApplyLifeStageMod(StatType.MoveSpeed, -0.1f);
                 ApplyLifeStageMod(StatType.MeleeAttackSpeed, -0.34f);
                 ApplyLifeStageMod(StatType.MeleeAttackDamage, 2f);
@@ -868,8 +867,6 @@ public partial class PlayerStatsManager : MonoBehaviour
                 }
             }
         }
-
-        Debug.Log($"[PlayerStatsManager] Cambio de etapa completado. Modificadores re-aplicados: {namedModifiers.Count}");
     }
 
     private void ApplyLifeStageMod(StatType stat, float percentage)
