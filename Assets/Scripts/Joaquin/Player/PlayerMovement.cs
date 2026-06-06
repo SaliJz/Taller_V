@@ -320,6 +320,21 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     #region Initialization & Event Handlers
 
+    public void ResetMovementState()
+    {
+        moveDirection = Vector3.zero;
+
+        lastMoveX = 0f;
+        lastMoveY = 0f;
+
+        UnlockFacing();
+
+        if (playerAnimCtrl != null)
+        {
+            playerAnimCtrl.SetInputAxes(0f, 0f);
+        }
+    }
+
     /// <summary>
     /// Recalcula la distancia y el cooldown del dash tomando los valores del gestor de estadísticas.
     /// </summary>
