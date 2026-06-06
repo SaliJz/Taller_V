@@ -1,7 +1,9 @@
+using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -127,6 +129,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private PlayerMeleeAttack playerMeleeAttack;
     private PlayerShieldController playerShieldController;
     private InventoryManager inventoryManager;
+    private CinemachineImpulseSource _cinemachineShake;
 
     // Material Caching
     private MeshRenderer[] cachedMeshRenderers;
@@ -204,6 +207,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         playerShieldController = GetComponent<PlayerShieldController>();
         blockSystem = GetComponent<PlayerBlockSystem>();
         combatActionManager = GetComponent<PlayerCombatActionManager>();
+        _cinemachineShake = GetComponent<CinemachineImpulseSource>();
 
         shaderCtrl = GetComponentInChildren<PlayerShaderCtrl>();
         if (shaderCtrl == null) ReportDebug("PlayerShaderCtrl no encontrado en PlayerHealth.", 2);
@@ -428,7 +432,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             animCtrl?.PlayDamage();
             audioController?.PlayDamageSound();
             shaderCtrl?.DamageTrigger();
-            if(damageUIEffect != null) damageUIEffect.PrimeraHerida = true;
+            _cinemachineShake.GenerateImpulse();
+            if (damageUIEffect != null) damageUIEffect.PrimeraHerida = true;
 
             currentHealth -= damageToApply;
             currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
