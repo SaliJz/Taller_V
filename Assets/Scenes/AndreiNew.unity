@@ -6840,7 +6840,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!54 &664404009
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -11729,6 +11729,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ad0af14b9b4e1e409d64132cc02bacb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  enemyRenderer: {fileID: 0}
+  normalAttackHitbox: {fileID: 0}
+  furyAttackHitbox: {fileID: 0}
+  screamHitbox: {fileID: 0}
+  animCtrl: {fileID: 0}
+  furyAttackVFXPrefab: {fileID: 0}
+  furyAttackVFXSpawnPoint: {fileID: 0}
   visionRange: 7
   visionConeAngle: 60
   playerLayer:
@@ -11739,13 +11746,6 @@ MonoBehaviour:
   patrolDirectionChangeAngle: 30
   stuckCheckInterval: 2
   stuckDistanceThreshold: 0.1
-  furySpeedMultiplier: 2
-  furyLevel2SpeedBonus: 0.3
-  furyJumpDistance: 2
-  furyJumpReducedDistance: 1
-  furyJumpDelay: 2
-  furyJumpCancelDistance: 0.5
-  furyJumpDuration: 0.5
   normalAttackDamage: 5
   normalAttackInterval: 1.5
   normalAttackRange: 1
@@ -11754,20 +11754,26 @@ MonoBehaviour:
   furyAttackDamage: 10
   furyAttackInterval: 0.75
   furyAttackRange: 2
+  furySpeedMultiplier: 2
+  furyLevel2SpeedBonus: 0.3
+  furyJumpDistance: 2
+  furyJumpReducedDistance: 1
+  furyJumpDelay: 2
+  furyJumpCancelDistance: 0.5
+  furyJumpDuration: 0.5
   furyDecayTime: 3
   furyDecayNoDamageTime: 5
   furyRegenerationPerSecond: 1
   consecutiveHitPushDistance: 1
   screamTransitionDuration: 1.2
   maxFuryLevel: 2
+  hitStunDuration: 0.3
+  forceIdleDuration: 0.8
+  calmAnticipationDuration: 0.5
+  furyAnticipationDuration: 0.3
   normalStateMaterial: {fileID: 0}
   furyStateMaterial: {fileID: 0}
-  enemyRenderer: {fileID: 0}
-  normalAttackHitbox: {fileID: 0}
-  furyAttackHitbox: {fileID: 0}
-  screamHitbox: {fileID: 0}
   hitboxDisplayDuration: 0.2
-  animCtrl: {fileID: 0}
   audioSource: {fileID: 0}
   presenceSFX: {fileID: 0}
   normalMoveSFX: {fileID: 0}
@@ -11779,18 +11785,12 @@ MonoBehaviour:
   furyJumpSFX: {fileID: 0}
   pushbackSFX: {fileID: 0}
   deathSFX: {fileID: 0}
-  enemiesSheet: {fileID: 0}
-  ENEMY_ID: 13
-  hitStunDuration: 0.3
-  forceIdleDuration: 0.8
   hitStunSFX: {fileID: 0}
   toughnessBlockSFX: {fileID: 0}
-  calmAnticipationDuration: 0.5
-  furyAnticipationDuration: 0.3
   calmAnticipationSFX: {fileID: 0}
   furyAnticipationSFX: {fileID: 0}
-  furyAttackVFXPrefab: {fileID: 0}
-  furyAttackVFXSpawnPoint: {fileID: 0}
+  enemiesSheet: {fileID: 0}
+  ENEMY_ID: 13
 --- !u!1 &1516001535
 GameObject:
   m_ObjectHideFlags: 0
@@ -26195,6 +26195,63 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5016ec52d18af054d8d699bdee60fc85, type: 3}
+--- !u!1001 &5741139223240491397
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1227615228177028136, guid: 4002a448f7f23e64a8ae31b8c955bfb3, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 967.97156
+      objectReference: {fileID: 0}
+    - target: {fileID: 1227615228177028136, guid: 4002a448f7f23e64a8ae31b8c955bfb3, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 44.53
+      objectReference: {fileID: 0}
+    - target: {fileID: 1227615228177028136, guid: 4002a448f7f23e64a8ae31b8c955bfb3, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1042.5591
+      objectReference: {fileID: 0}
+    - target: {fileID: 1227615228177028136, guid: 4002a448f7f23e64a8ae31b8c955bfb3, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 1227615228177028136, guid: 4002a448f7f23e64a8ae31b8c955bfb3, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1227615228177028136, guid: 4002a448f7f23e64a8ae31b8c955bfb3, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 1227615228177028136, guid: 4002a448f7f23e64a8ae31b8c955bfb3, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1227615228177028136, guid: 4002a448f7f23e64a8ae31b8c955bfb3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1227615228177028136, guid: 4002a448f7f23e64a8ae31b8c955bfb3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 1227615228177028136, guid: 4002a448f7f23e64a8ae31b8c955bfb3, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1892229992745160338, guid: 4002a448f7f23e64a8ae31b8c955bfb3, type: 3}
+      propertyPath: m_Name
+      value: THE HOST ANIM
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4002a448f7f23e64a8ae31b8c955bfb3, type: 3}
 --- !u!23 &5826891585792183497
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -29802,3 +29859,4 @@ SceneRoots:
   - {fileID: 1611731326}
   - {fileID: 3893963672842489904}
   - {fileID: 1262893100}
+  - {fileID: 5741139223240491397}
