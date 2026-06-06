@@ -5,48 +5,44 @@ using UnityEngine.InputSystem;
 
 public class DialogueInputBridge : MonoBehaviour
 {
-    [Header("Start Dialogue")]
+    public enum StepType
+    {
+        Dialogue,
+        WaitForInput
+    }
+
+    [System.Serializable]
+    public struct SequenceStep
+    {
+        [Header("Settings")]
+        public string stepLabel;
+        public StepType type;
+
+        [Header("Dialogue Settings")]
+        public DialogLine[] dialogueLines;
+
+        [Header("Input Settings")]
+        public InputActionReference actionToWait;
+        public int requiredPresses;
+        public float maxTimeBetweenPresses;
+
+        [Header("Step Events")]
+        public UnityEvent OnStepBefore;
+        public UnityEvent OnStepAfter;
+    }
+
+    [Header("Sequence Config")]
     [SerializeField] private bool playOnStart = true;
-    [SerializeField] private DialogLine[] startDialogue;
-    [SerializeField] private UnityEvent OnStartDialogueBegin;
-    [SerializeField] private UnityEvent OnStartDialogueEnd;
-
-    [Header("Input Wait")]
-    [SerializeField] private InputActionReference actionToContinue;
-    [SerializeField] private int requiredPresses = 1;
-    [SerializeField] private float maxTimeBetweenPresses = 0f;
-    [SerializeField] private UnityEvent OnStartWaitingForInput;
-    [SerializeField] private UnityEvent OnInputPressed;
-    [SerializeField] private UnityEvent OnRequiredInputsCompleted;
-
-    [Header("End Dialogue")]
-    [SerializeField] private DialogLine[] endDialogue;
-    [SerializeField] private UnityEvent OnEndDialogueBegin;
-    [SerializeField] private UnityEvent OnEndDialogueEnd;
+    [SerializeField] private bool playOnlyOnce = true;
+    [SerializeField] private SequenceStep[] sequenceSteps;
 
     [Header("State")]
-    [SerializeField] private bool playOnlyOnce = true;
     [SerializeField] private bool isRunning;
     [SerializeField] private bool hasPlayed;
+    [SerializeField] private int currentStepIndex;
     [SerializeField] private int currentPresses;
 
     private bool waitingForDialogue;
-
-    private void OnEnable()
-    {
-        if (actionToContinue != null && actionToContinue.action != null)
-        {
-            actionToContinue.action.Enable();
-        }
-    }
-
-    private void OnDisable()
-    {
-        if (actionToContinue != null && actionToContinue.action != null)
-        {
-            actionToContinue.action.Disable();
-        }
-    }
 
     private void Start()
     {
@@ -60,6 +56,7 @@ public class DialogueInputBridge : MonoBehaviour
     {
         if (isRunning) return;
         if (playOnlyOnce && hasPlayed) return;
+        if (sequenceSteps == null || sequenceSteps.Length == 0) return;
 
         StartCoroutine(SequenceRoutine());
     }
@@ -69,57 +66,25 @@ public class DialogueInputBridge : MonoBehaviour
         isRunning = true;
         hasPlayed = true;
 
-        OnStartDialogueBegin?.Invoke();
-        yield return StartCoroutine(PlayDialogue(startDialogue));
-        OnStartDialogueEnd?.Invoke();
+        for (currentStepIndex = 0; currentStepIndex < sequenceSteps.Length; currentStepIndex++)
+        {
+            SequenceStep currentStep = sequenceSteps[currentStepIndex];
 
-        OnStartWaitingForInput?.Invoke();
-        yield return StartCoroutine(WaitForInputSequence());
+            currentStep.OnStepBefore?.Invoke();
 
-        OnRequiredInputsCompleted?.Invoke();
+            if (currentStep.type == StepType.Dialogue)
+            {
+                yield return StartCoroutine(PlayDialogue(currentStep.dialogueLines));
+            }
+            else if (currentStep.type == StepType.WaitForInput)
+            {
+                yield return StartCoroutine(WaitForInputSequence(currentStep));
+            }
 
-        OnEndDialogueBegin?.Invoke();
-        yield return StartCoroutine(PlayDialogue(endDialogue));
-        OnEndDialogueEnd?.Invoke();
+            currentStep.OnStepAfter?.Invoke();
+        }
 
         isRunning = false;
-    }
-
-    private IEnumerator WaitForInputSequence()
-    {
-        currentPresses = 0;
-        float timer = 0f;
-        int targetPresses = Mathf.Max(1, requiredPresses);
-
-        while (currentPresses < targetPresses)
-        {
-            if (WasContinueActionPressed())
-            {
-                currentPresses++;
-                timer = 0f;
-                OnInputPressed?.Invoke();
-            }
-
-            if (maxTimeBetweenPresses > 0f && currentPresses > 0)
-            {
-                timer += Time.deltaTime;
-
-                if (timer > maxTimeBetweenPresses)
-                {
-                    currentPresses = 0;
-                    timer = 0f;
-                }
-            }
-
-            yield return null;
-        }
-    }
-
-    private bool WasContinueActionPressed()
-    {
-        return actionToContinue != null &&
-               actionToContinue.action != null &&
-               actionToContinue.action.WasPressedThisFrame();
     }
 
     private IEnumerator PlayDialogue(DialogLine[] dialogue)
@@ -139,12 +104,57 @@ public class DialogueInputBridge : MonoBehaviour
         yield return new WaitUntil(() => !waitingForDialogue);
     }
 
+    private IEnumerator WaitForInputSequence(SequenceStep step)
+    {
+        if (step.actionToWait == null || step.actionToWait.action == null) yield break;
+
+        step.actionToWait.action.Enable();
+        currentPresses = 0;
+        float timer = 0f;
+        int targetPresses = Mathf.Max(1, step.requiredPresses);
+
+        while (currentPresses < targetPresses)
+        {
+            if (step.actionToWait.action.WasPressedThisFrame())
+            {
+                currentPresses++;
+                timer = 0f;
+            }
+
+            if (step.maxTimeBetweenPresses > 0f && currentPresses > 0)
+            {
+                timer += Time.deltaTime;
+
+                if (timer > step.maxTimeBetweenPresses)
+                {
+                    currentPresses = 0;
+                    timer = 0f;
+                }
+            }
+
+            yield return null;
+        }
+
+        step.actionToWait.action.Disable();
+    }
+
     public void ResetSequence()
     {
         StopAllCoroutines();
+
+        if (isRunning && currentStepIndex < sequenceSteps.Length)
+        {
+            var currentStep = sequenceSteps[currentStepIndex];
+            if (currentStep.type == StepType.WaitForInput && currentStep.actionToWait != null && currentStep.actionToWait.action != null)
+            {
+                currentStep.actionToWait.action.Disable();
+            }
+        }
+
         isRunning = false;
         hasPlayed = false;
         waitingForDialogue = false;
         currentPresses = 0;
+        currentStepIndex = 0;
     }
 }

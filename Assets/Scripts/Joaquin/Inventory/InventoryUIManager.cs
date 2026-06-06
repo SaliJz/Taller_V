@@ -76,6 +76,9 @@ public class InventoryUIManager : MonoBehaviour
     [Tooltip("Color de fondo normal de los botones del panel de confirmacion")]
     [SerializeField] private Color confirmButtonDefaultColor = new Color(0.2f, 0.2f, 0.2f, 1f);
 
+    [Header("Lock Settings")]
+    [SerializeField] private bool canCloseInventory = true;
+
     [Header("Animacion de Reveal")]
     [SerializeField] private float slotRevealDuration = 0.12f;
     [SerializeField] private float slotStagger = 0.04f; // delay entre slots consecutivos
@@ -266,8 +269,12 @@ public class InventoryUIManager : MonoBehaviour
     public void OpenInventory()
     {
         isOpen = true;
-        inventoryPreviousTimeScale = Time.timeScale;
-        Time.timeScale = 0f;
+
+        if (canCloseInventory)
+        {
+            inventoryPreviousTimeScale = Time.timeScale;
+            Time.timeScale = 0f;
+        }
         //Cursor.visible = true;
         //Cursor.lockState = CursorLockMode.None;
 
@@ -309,6 +316,12 @@ public class InventoryUIManager : MonoBehaviour
 
     public void CloseInventory()
     {
+        if (!canCloseInventory)
+        {
+            Debug.Log("[InventoryUIManager] El cierre del inventario está bloqueado en este momento.");
+            return;
+        }
+
         isOpen = false;
         Time.timeScale = inventoryPreviousTimeScale;
 
@@ -353,6 +366,11 @@ public class InventoryUIManager : MonoBehaviour
                 yield break;
             }
         }
+    }
+
+    public void SetCloseLock(bool isLocked)
+    {
+        canCloseInventory = !isLocked;
     }
 
     #endregion
