@@ -14,6 +14,10 @@ public abstract class StaticProjectileBase : MonoBehaviour
     [Header("Collission VFX")]
     [SerializeField] protected GameObject proyectileImpactVFX;
 
+    [Header("Audio")]
+    [SerializeField] protected AudioSource audioSource;
+    [SerializeField] protected AudioClip impactSound;
+
     protected MorlockProjectileWordTrail wordTrail;
     protected Rigidbody rb;
     protected Vector3 originPosition;

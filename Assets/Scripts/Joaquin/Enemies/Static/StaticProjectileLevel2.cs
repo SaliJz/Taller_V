@@ -19,6 +19,7 @@ public class StaticProjectileLevel2 : StaticProjectileBase
         hasImpacted = true;
         player.GetComponent<IDamageable>()?.TakeDamage(damage);
 
+        if (audioSource != null && impactSound != null) audioSource.PlayOneShot(impactSound);
         if (minePrefab != null)
         {
             GameObject mineInstance = Instantiate(minePrefab, transform.position, Quaternion.identity);
@@ -40,6 +41,7 @@ public class StaticProjectileLevel2 : StaticProjectileBase
     {
         hasImpacted = true;
 
+        if (audioSource != null && impactSound != null) audioSource.PlayOneShot(impactSound);
         if (minePrefab != null)
         {
             GameObject mineInstance = Instantiate(minePrefab, transform.position, Quaternion.identity);

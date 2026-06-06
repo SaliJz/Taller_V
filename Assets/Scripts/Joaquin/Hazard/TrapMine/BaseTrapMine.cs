@@ -24,6 +24,10 @@ public abstract class BaseTrapMine : MonoBehaviour
     [SerializeField] protected ParticleSystem explosionVFXPrefab;
     [SerializeField] protected GameObject explosionSpherePrefab;
 
+    [Header("Audio")]
+    [SerializeField] protected AudioSource audioSource;
+    [SerializeField] protected AudioClip explosionSound;
+
     #endregion
 
     #region Propiedades públicas
@@ -79,6 +83,8 @@ public abstract class BaseTrapMine : MonoBehaviour
         hasExploded = true;
 
         CancelInvoke();
+
+        if (audioSource != null && explosionSound != null) audioSource.PlayOneShot(explosionSound);
 
         SpawnExplosionVFX();
         ApplyExplosionEffects();

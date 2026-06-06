@@ -2224,10 +2224,10 @@ MonoBehaviour:
   minEnemySeparation: 2.5
   separationAttempts: 8
   audioSource: {fileID: 5166852922664610649}
-  idleSFX: {fileID: 0}
-  teleportSFX: {fileID: 0}
+  idleSFX: {fileID: 8300000, guid: d93c85f68e19b09409e5b3a194e19390, type: 3}
+  teleportSFX: {fileID: 8300000, guid: dba0835f84fbe3a46bcf0eee2b14fe91, type: 3}
   deathSFX: {fileID: 0}
-  shootSFX: {fileID: 0}
+  shootSFX: {fileID: 8300000, guid: d1719458c74f17f4285b31c476c02335, type: 3}
   animTeleportDelay: 0
   teleportVFX: {fileID: 0}
   teleportVFXHeightOffset: 1.5
@@ -2352,12 +2352,10 @@ MonoBehaviour:
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
-  blinkInterval: 0.06
-  blinkCount: 6
+  hitFlashDuration: 0.1
   stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
   stunVFXSpawnPoint: {fileID: 1649969872078894623}
   stunVFXHeightFallback: 2
-  stunBlinkSpeed: 0.1
   glowMaterial: {fileID: 0}
   glowIntensity: 2
   toughnessColor: {r: 0.92941177, g: 0.8156863, b: 0.80784315, a: 1}

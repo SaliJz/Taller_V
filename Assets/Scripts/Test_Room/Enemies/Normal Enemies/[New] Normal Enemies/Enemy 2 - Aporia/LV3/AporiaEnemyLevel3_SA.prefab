@@ -2005,7 +2005,7 @@ MonoBehaviour:
   cooldownLong: 2.2
   audioSource: {fileID: 1208045150384965345}
   dashSFX: {fileID: 8300000, guid: e0bb04f2504e09a41814942127e10c64, type: 3}
-  attackSFX: {fileID: 0}
+  attackSFX: {fileID: 8300000, guid: b53b6c35573722744bf147fda504de74, type: 3}
   damageSFX: {fileID: 0}
   deathSFX: {fileID: 8300000, guid: 44c52c9c30162ba4690b5aae5d729e31, type: 3}
   groundLayer:
@@ -2123,12 +2123,10 @@ MonoBehaviour:
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
-  blinkInterval: 0.06
-  blinkCount: 6
+  hitFlashDuration: 0.1
   stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
   stunVFXSpawnPoint: {fileID: 2930194237827201640}
   stunVFXHeightFallback: 2
-  stunBlinkSpeed: 0.1
   glowMaterial: {fileID: 0}
   glowIntensity: 2
   toughnessColor: {r: 0.92941177, g: 0.8156863, b: 0.80784315, a: 1}
