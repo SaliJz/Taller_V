@@ -98,6 +98,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     private const string SHIELD_SKILL_MODIFIER_KEY = "ShieldSkillBuff";
     private const float LOW_HEALTH_THRESHOLD = 10f;
     private float currentStaminaDrainRate;
+    private bool canDeactivate = true;
 
     private PlayerControlls playerControls;
     private PlayerHealth playerHealth;
@@ -372,7 +373,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
             return;
         }
 
-        if (isSkillActive) DeactivateSkill();
+        if (isSkillActive && canDeactivate) DeactivateSkill();
         else
         {
             if (!CanActivateSkill())
@@ -383,6 +384,11 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
 
             ActivateSkill();
         }
+    }
+
+    public void SetDeactivationLock(bool isLocked)
+    {
+        canDeactivate = !isLocked;
     }
 
     private void ActivateSkill()
@@ -490,6 +496,11 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
 
     private void UpdateActiveSkill()
     {
+        if (DialogManager.Instance != null && DialogManager.Instance.IsActive)
+        {
+            return;
+        }
+
         if (currentStamina > 0)
         {
             ConsumeStamina();

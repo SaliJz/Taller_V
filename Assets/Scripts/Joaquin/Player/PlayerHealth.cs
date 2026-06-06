@@ -1010,17 +1010,34 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private IEnumerator TemporaryHealthDecayRoutine()
     {
-        yield return new WaitForSeconds(temporaryHealthDuration);
+        float graceTimer = 0f;
+        while (graceTimer < temporaryHealthDuration)
+        {
+            if (DialogManager.Instance != null && DialogManager.Instance.IsActive)
+            {
+                yield return null;
+                continue;
+            }
+
+            graceTimer += Time.deltaTime;
+            yield return null;
+        }
 
         ReportDebug("Tiempo de gracia de vida temporal terminado. Iniciando decaimiento rápido.", 1);
 
         float startHealth = currentTemporaryHealth;
-        float timePassed = 0f;
+        float decayTimer = 0f;
 
-        while (timePassed < temporaryHealthDecaySpeed)
+        while (decayTimer < temporaryHealthDecaySpeed)
         {
-            timePassed += Time.deltaTime;
-            currentTemporaryHealth = Mathf.Lerp(startHealth, 0f, timePassed / temporaryHealthDecaySpeed);
+            if (DialogManager.Instance != null && DialogManager.Instance.IsActive)
+            {
+                yield return null;
+                continue;
+            }
+
+            decayTimer += Time.deltaTime;
+            currentTemporaryHealth = Mathf.Lerp(startHealth, 0f, decayTimer / temporaryHealthDecaySpeed);
             UpdateTemporaryHealthUI();
             yield return null;
         }

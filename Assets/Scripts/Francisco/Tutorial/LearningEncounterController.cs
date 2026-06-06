@@ -39,11 +39,18 @@ public class LearningEncounterController : MonoBehaviour
     [Header("Phase 4: Completion")]
     public DialogLine[] dialogue4_Success;
 
+    [Header("Player Damage Dialogue Settings")]
+    public DialogLine[] dialogue_OnPlayerDamaged;
+    private bool playerDamageDialogueTriggered = false;
+
     [Header("Events")]
     public UnityEvent OnDisplaySkillReminder;
     public UnityEvent OnDisplayMeleeReminderBefore;
     public UnityEvent OnDisplayMeleeReminderAfter;
+    public UnityEvent OnEncounterCompleteBefore;
     public UnityEvent OnEncounterComplete;
+    public UnityEvent OnPlayerDamagedDialogBefore;
+    public UnityEvent OnPlayerDamagedDialogAfter;
 
     private void Start()
     {
@@ -65,25 +72,49 @@ public class LearningEncounterController : MonoBehaviour
         playerAbility.OnAbilityActivated += ActivateSpecialMode;
         playerAbility.OnAbilityDeactivated += DeactivateSpecialMode;
 
+        if (PlayerHealth.Instance != null)
+        {
+            PlayerHealth.Instance.OnDamageReceived += HandlePlayerDamage;
+        }
+        else
+        {
+            PlayerHealth.OnPlayerInstantiated += HandlePlayerInstantiated;
+        }
+
         StartCoroutine(InitializeEncounter());
+    }
+
+    private void OnDestroy()
+    {
+        PlayerHealth.OnPlayerInstantiated -= HandlePlayerInstantiated;
+        if (PlayerHealth.Instance != null)
+        {
+            PlayerHealth.Instance.OnDamageReceived -= HandlePlayerDamage;
+        }
+    }
+
+    private void HandlePlayerInstantiated(PlayerHealth playerHealth)
+    {
+        PlayerHealth.OnPlayerInstantiated -= HandlePlayerInstantiated;
+        if (playerHealth != null)
+        {
+            playerHealth.OnDamageReceived += HandlePlayerDamage;
+        }
     }
 
     private IEnumerator InitializeEncounter()
     {
         yield return new WaitForSeconds(0.1f);
 
-        if (DialogManager.Instance != null && dialogue1_Intro.Length > 0)
-        {
-            DialogManager.Instance.StartDialog(dialogue1_Intro);
-            yield return new WaitForSeconds(2f);
-        }
+        ActivateSlimeAfterIntro();
+    }
 
+    private void ActivateSlimeAfterIntro()
+    {
         if (slimeArmor != null)
         {
             slimeArmor.gameObject.SetActive(true);
         }
-
-        SetState(EncounterState.Phase1_Intro);
     }
 
     private void SetState(EncounterState newState)
@@ -116,11 +147,30 @@ public class LearningEncounterController : MonoBehaviour
                 {
                     if (DialogManager.Instance != null && dialogue1_Intro.Length > 0)
                     {
-                        DialogManager.Instance.StartDialog(dialogue1_Intro);
+                        UnityEvent onIntroHitsFinished = new UnityEvent();
+                        onIntroHitsFinished.AddListener(() => SetState(EncounterState.Phase2_AwaitingSkill));
+
+                        DialogManager.Instance.StartDialog(dialogue1_Intro, onIntroHitsFinished);
                     }
-                    SetState(EncounterState.Phase2_AwaitingSkill);
+                    else
+                    {
+                        SetState(EncounterState.Phase2_AwaitingSkill);
+                    }
                 }
             }
+        }
+    }
+
+    private void HandlePlayerDamage(float damageAmount)
+    {
+        if (playerDamageDialogueTriggered || currentState == EncounterState.Phase4_Completed) return;
+
+        playerDamageDialogueTriggered = true;
+
+        if (DialogManager.Instance != null && dialogue_OnPlayerDamaged.Length > 0)
+        {
+            OnPlayerDamagedDialogBefore?.Invoke();
+            DialogManager.Instance.StartDialog(dialogue_OnPlayerDamaged, OnPlayerDamagedDialogAfter);
         }
     }
 
@@ -130,6 +180,8 @@ public class LearningEncounterController : MonoBehaviour
 
         if (currentState == EncounterState.Phase3_LearningCombat && isMeleeKill)
         {
+            OnEncounterCompleteBefore?.Invoke();
+
             if (DialogManager.Instance != null && dialogue4_Success.Length > 0)
             {
                 UnityEvent onFinishSuccess = new UnityEvent();
