@@ -64,6 +64,7 @@ public class BossIntroDirector : MonoBehaviour
             }
         }
 
+        DisablePlayerLogicScripts(playerTransform);
         FindActiveCinemachineCamera();
         DisableBossLogicScripts();
 
@@ -120,6 +121,7 @@ public class BossIntroDirector : MonoBehaviour
         }
 
         EnableBossLogicScripts();
+        EnablePlayerLogicScripts(playerTransform);
 
         if (introSequence != null)
         {
@@ -191,6 +193,34 @@ public class BossIntroDirector : MonoBehaviour
         foreach (MonoBehaviour script in scripts)
         {
             if (script == null || script == this || script.GetType().Namespace?.StartsWith("UnityEngine") == true)
+                continue;
+
+            script.enabled = true;
+        }
+    }
+
+    private void DisablePlayerLogicScripts(Transform playerTransform)
+    {
+        if (playerTransform == null) return;
+
+        MonoBehaviour[] scripts = playerTransform.GetComponents<MonoBehaviour>();
+        foreach (MonoBehaviour script in scripts)
+        {
+            if (script == null || script.GetType().Namespace?.StartsWith("UnityEngine") == true)
+                continue;
+
+            script.enabled = false;
+        }
+    }
+
+    private void EnablePlayerLogicScripts(Transform playerTransform)
+    {
+        if (playerTransform == null) return;
+
+        MonoBehaviour[] scripts = playerTransform.GetComponents<MonoBehaviour>();
+        foreach (MonoBehaviour script in scripts)
+        {
+            if (script == null || script.GetType().Namespace?.StartsWith("UnityEngine") == true)
                 continue;
 
             script.enabled = true;

@@ -796,6 +796,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     /// <param name="duration">Tiempo en segundos que tardará el recorrido.</param>
     private IEnumerator PerformDash(Vector3 targetPosition, float duration)
     {
+        if (controller == null || !controller.enabled) yield break;
+
         float savedGravity = gravity;
         float savedYVelocity = yVelocity;
         float originalStepOffset = controller.stepOffset;
@@ -826,6 +828,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
         while (Time.time < endTime)
         {
+            if (!controller.enabled) break;
+
             float t = Mathf.Clamp01((Time.time - startTime) / duration);
             Vector3 lerpedXZ = Vector3.Lerp(startPosXZ, targetPosXZ, t);
 
@@ -842,24 +846,26 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             {
                 Vector3 correctedPos = transform.position;
                 correctedPos.y = startY;
-                controller.enabled = false;
                 transform.position = correctedPos;
-                controller.enabled = true;
+
                 ReportDebug("PerformDash: colisión superior detectada, Y corregida.", 2);
             }
 
             yield return null;
         }
 
-        Vector3 finalCurrent = transform.position;
-        Vector3 finalCurrentXZ = new Vector3(finalCurrent.x, startY, finalCurrent.z);
-        Vector3 finalTargetXZ = new Vector3(targetPosXZ.x, startY, targetPosXZ.z);
-        Vector3 finalDelta = finalTargetXZ - finalCurrentXZ;
-        finalDelta.y = 0f;
-
-        if (finalDelta.sqrMagnitude > 0.0001f)
+        if (controller != null && controller.enabled)
         {
-            controller.Move(finalDelta);
+            Vector3 finalCurrent = transform.position;
+            Vector3 finalCurrentXZ = new Vector3(finalCurrent.x, startY, finalCurrent.z);
+            Vector3 finalTargetXZ = new Vector3(targetPosXZ.x, startY, targetPosXZ.z);
+            Vector3 finalDelta = finalTargetXZ - finalCurrentXZ;
+            finalDelta.y = 0f;
+
+            if (finalDelta.sqrMagnitude > 0.0001f)
+            {
+                controller.Move(finalDelta);
+            }
         }
 
         if (isGapCrossing)
