@@ -13,8 +13,6 @@ public class BossIntroDirector : MonoBehaviour
 
     [Header("Boss References")]
     [SerializeField] private GameObject bossGameObject;
-    [SerializeField] private Animator bossVisualAnimator;
-    [SerializeField] private string introPoseTrigger = "IntroPose";
 
     [Header("User Interface")]
     [SerializeField] private GameObject bossIntroCanvas;
@@ -66,12 +64,6 @@ public class BossIntroDirector : MonoBehaviour
         }
 
         yield return new WaitForSeconds(cameraBlendDuration);
-
-        if (bossVisualAnimator != null)
-        {
-            bossVisualAnimator.updateMode = AnimatorUpdateMode.Normal;
-            bossVisualAnimator.SetTrigger(introPoseTrigger);
-        }
 
         if (bossIntroCanvas != null)
         {
