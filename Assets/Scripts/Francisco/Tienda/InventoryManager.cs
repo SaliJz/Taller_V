@@ -6,28 +6,40 @@ using UnityEngine;
 
 public class InventoryManager : MonoBehaviour
 {
-    public const int MaxInventorySize = 21;
+    #region Inspector - UI And Feedback
+
+    [Header("UI Y Mensajes De Advertencia")]
+    public GameObject inventoryFullPanel;
+    public TextMeshProUGUI inventoryFullText;
+    [TextArea]
+    public string[] inventoryFullMessages = new string[]
+    {
+        "Inventario lleno.",
+        "No puedes llevar mas."
+    };
+    public float messageDisplayTime = 2.0f;
+
+    [Header("Visualizacion Del Inventario UI")]
+    public Transform itemTextsParent;
+    private TextMeshProUGUI[] itemDisplayTexts;
+
+    #endregion
+
+    #region Internal State
+
     [SerializeField] private static readonly List<ShopItem> currentRunItems = new List<ShopItem>();
     [SerializeField] private readonly List<ItemEffectBase> activeAmuletEffects = new List<ItemEffectBase>();
     [SerializeField] private readonly List<ItemEffectBase> activeEffects = new List<ItemEffectBase>();
-
     private PlayerStatsManager playerStatsManager;
     private PlayerHealth playerHealth;
+    private int messageIndex = 0;
+    private Coroutine hideMessageCoroutine;
 
-    private void Awake()
-    {
-        playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
-        if (playerStatsManager == null)
-        {
-            Debug.LogError("PlayerStatsManager no encontrado.");
-        }
+    #endregion
 
-        playerHealth = FindAnyObjectByType<PlayerHealth>();
-        if (playerHealth == null)
-        {
-            Debug.LogWarning("PlayerHealth no encontrado. Funciones de curacion/escudo podrian fallar.");
-        }
-    }
+    #region Public Properties And Events
+
+    public int MaxInventorySize { get; private set; } = 21;
 
     public static List<ShopItem> CurrentRunItems
     {
@@ -54,6 +66,43 @@ public class InventoryManager : MonoBehaviour
         }
     }
 
+    #endregion
+
+    #region Unity Lifecycle
+
+    private void Awake()
+    {
+        playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
+        if (playerStatsManager == null)
+        {
+            Debug.LogError("PlayerStatsManager no encontrado.");
+        }
+
+        playerHealth = FindAnyObjectByType<PlayerHealth>();
+        if (playerHealth == null)
+        {
+            Debug.LogWarning("PlayerHealth no encontrado. Funciones de curacion/escudo podrian fallar.");
+        }
+    }
+
+    private void Start()
+    {
+        if (inventoryFullPanel != null) inventoryFullPanel.SetActive(false);
+        else if (inventoryFullText != null) inventoryFullText.gameObject.SetActive(false);
+
+        if (itemTextsParent != null)
+        {
+            itemDisplayTexts = itemTextsParent.GetComponentsInChildren<TextMeshProUGUI>(false);
+            MaxInventorySize = itemDisplayTexts.Length;
+        }
+
+        UpdateInventoryUI();
+    }
+
+    #endregion
+
+    #region Item Management Logic
+
     public void ResetRunItems()
     {
         PlayerStatsManager statsManager = FindAnyObjectByType<PlayerStatsManager>();
@@ -76,40 +125,6 @@ public class InventoryManager : MonoBehaviour
         Debug.Log("[InventoryManager] Inventario y todos los efectos activos reiniciados.");
     }
 
-
-    [Header("UI y Mensajes de Advertencia")]
-    public GameObject inventoryFullPanel;
-    public TextMeshProUGUI inventoryFullText;
-
-    [TextArea]
-    public string[] inventoryFullMessages = new string[]
-    {
-        "Inventario lleno.",
-        "No puedes llevar mas."
-    };
-
-    public float messageDisplayTime = 2.0f;
-
-    private int messageIndex = 0;
-    private Coroutine hideMessageCoroutine;
-
-    [Header("Visualizacion del Inventario (UI)")]
-    public TextMeshProUGUI[] itemDisplayTexts = new TextMeshProUGUI[MaxInventorySize];
-
-    private void Start()
-    {
-        if (inventoryFullPanel != null)
-        {
-            inventoryFullPanel.SetActive(false);
-        }
-        else if (inventoryFullText != null)
-        {
-            inventoryFullText.gameObject.SetActive(false);
-        }
-
-        UpdateInventoryUI();
-    }
-
     public bool TryAddItem(ShopItem item)
     {
         if (item.behavioralEffects != null && item.behavioralEffects.Count > 0)
@@ -117,11 +132,27 @@ public class InventoryManager : MonoBehaviour
             HandleEffectReplacement(item);
         }
 
-        if (CurrentRunItems.Count < MaxInventorySize)
+        // Determinar si es un ítem mecánico o normal
+        bool isMechanic = InventoryUIManager.Instance != null && InventoryUIManager.Instance.GetMechanicSlotIndex(item) >= 0;
+
+        if (isMechanic)
         {
             CurrentRunItems.Add(item);
             UpdateInventoryUI();
             return true;
+        }
+        else
+        {
+            // Si es normal, cuenta cuantos normales se tiene, sin sumar los mecánicos
+            int normalItemsCount = CurrentRunItems.Count(i =>
+                InventoryUIManager.Instance == null || InventoryUIManager.Instance.GetMechanicSlotIndex(i) < 0);
+
+            if (normalItemsCount < MaxInventorySize)
+            {
+                CurrentRunItems.Add(item);
+                UpdateInventoryUI();
+                return true;
+            }
         }
 
         ShowInventoryFullMessage();
@@ -130,7 +161,7 @@ public class InventoryManager : MonoBehaviour
 
     /// <summary>
     /// Remueve el efecto conductual anterior del mismo tipo si existe.
-    /// NO aplica el nuevo efecto — eso lo hace ShopManager.CompletePurchase.
+    /// NO aplica el nuevo efecto - eso lo hace ShopManager.CompletePurchase.
     /// </summary>
     private void HandleEffectReplacement(ShopItem newItem)
     {
@@ -142,7 +173,8 @@ public class InventoryManager : MonoBehaviour
                 existingEffect.RemoveEffect(playerStatsManager);
                 activeEffects.Remove(existingEffect);
             }
-            // Registrar el nuevo en activeEffects para futuras búsquedas de reemplazo
+
+            // Registrar el nuevo en activeEffects para futuras busquedas de reemplazo
             if (!activeEffects.Contains(newEffect))
                 activeEffects.Add(newEffect);
         }
@@ -184,18 +216,21 @@ public class InventoryManager : MonoBehaviour
         newEffect.ApplyEffect(playerStatsManager);
     }
 
-
     public bool RemoveRandomRelic()
     {
-        if (CurrentRunItems.Count == 0)
+        // Obtener solo reliquias normales para el sorteo del Pacto
+        List<ShopItem> normalRelics = CurrentRunItems.Where(i =>
+            InventoryUIManager.Instance == null || InventoryUIManager.Instance.GetMechanicSlotIndex(i) < 0
+        ).ToList();
+
+        if (normalRelics.Count == 0)
         {
             ShowWarningMessage("No tienes reliquias para quitar.");
             return false;
         }
 
-        CurrentRunItems.Shuffle();
-
-        ShopItem relicToRemove = CurrentRunItems[0];
+        normalRelics.Shuffle();
+        ShopItem relicToRemove = normalRelics[0]; // Elegir una reliquia normal
 
         if (playerStatsManager != null)
         {
@@ -215,30 +250,36 @@ public class InventoryManager : MonoBehaviour
             }
         }
 
-        CurrentRunItems.RemoveAt(0);
-
+        // Se remueve de la lista original
+        CurrentRunItems.Remove(relicToRemove);
         UpdateInventoryUI();
 
         ShowWarningMessage($"Pacto cumplido: Se ha quitado la reliquia '{relicToRemove.itemName}'.");
         return true;
     }
 
+    #endregion
+
+    #region UI And Feedback Logic
+
     private void UpdateInventoryUI()
     {
-        List<ShopItem> currentItems = CurrentRunItems;
+        if (itemDisplayTexts == null) return;
 
-        for (int i = 0; i < MaxInventorySize; i++)
+        // Filtro para que a los textos de la UI solo vayan los ítems normales
+        List<ShopItem> normalItems = CurrentRunItems.Where(i =>
+            InventoryUIManager.Instance == null || InventoryUIManager.Instance.GetMechanicSlotIndex(i) < 0
+        ).ToList();
+
+        for (int i = 0; i < itemDisplayTexts.Length; i++)
         {
-            if (itemDisplayTexts[i] != null)
+            if (i < normalItems.Count)
             {
-                if (i < currentItems.Count)
-                {
-                    itemDisplayTexts[i].text = currentItems[i].itemName;
-                }
-                else
-                {
-                    itemDisplayTexts[i].text = "";
-                }
+                itemDisplayTexts[i].text = normalItems[i].itemName;
+            }
+            else
+            {
+                itemDisplayTexts[i].text = "";
             }
         }
     }
@@ -293,4 +334,6 @@ public class InventoryManager : MonoBehaviour
             inventoryFullText.gameObject.SetActive(false);
         }
     }
+
+    #endregion
 }

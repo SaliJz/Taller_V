@@ -31,7 +31,11 @@ public class InventoryUIManager : MonoBehaviour
     [Tooltip("Contiene col1 pasivos + col2 + col3 oculto cuando cerrado")]
     [SerializeField] private GameObject inventoryExpandRoot;
 
-    [Header("Contenedores de Columnas")]
+    [Header("Formato de Interfaz")]
+    [Tooltip("Activa para usar el formato antiguo (21 slots). Desactiva para el nuevo formato (9 slots).")]
+    [SerializeField] private bool useLegacyFormat = true;
+
+    [Header("Contenedores de Columnas (Formato Clásico)")]
     [SerializeField] private Transform col1AboveContainer;  // 2 slots encima de los dorados
     [SerializeField] private Transform col1BelowContainer;  // 2 slots debajo de los dorados
     [SerializeField] private Transform column2Container;
@@ -106,6 +110,9 @@ public class InventoryUIManager : MonoBehaviour
     private readonly List<InventorySlot> col1BelowSlots = new List<InventorySlot>();
     private readonly List<InventorySlot> col2Slots = new List<InventorySlot>();
     private readonly List<InventorySlot> col3Slots = new List<InventorySlot>();
+
+    private readonly List<InventorySlot> topSquareSlots = new List<InventorySlot>();
+    private readonly List<InventorySlot> diamondSlots = new List<InventorySlot>();
 
     private readonly ShopItem[] mechanicSlots = new ShopItem[3];
     private float inventoryPreviousTimeScale = 1f;
@@ -199,10 +206,19 @@ public class InventoryUIManager : MonoBehaviour
     private void CollectSlots()
     {
         CollectFromContainer(goldenSlotsContainer, goldenSlots);
-        CollectFromContainer(col1AboveContainer, col1AboveSlots);
-        CollectFromContainer(col1BelowContainer, col1BelowSlots);
         CollectFromContainer(column2Container, col2Slots);
         CollectFromContainer(column3Container, col3Slots);
+
+        if (useLegacyFormat)
+        {
+            CollectFromContainer(col1AboveContainer, col1AboveSlots);
+            CollectFromContainer(col1BelowContainer, col1BelowSlots);
+        }
+        else
+        {
+            col1AboveSlots.Clear();
+            col1BelowSlots.Clear();
+        }
 
         foreach (var s in goldenSlots) s.SetGolden(true, goldenSlotColor);
     }
@@ -213,16 +229,16 @@ public class InventoryUIManager : MonoBehaviour
         list.Clear();
         foreach (Transform child in container)
         {
+            if (!child.gameObject.activeSelf) continue;
+
             var slot = child.GetComponent<InventorySlot>();
             if (slot == null) continue;
 
-            // Asegurar CanvasGroup para la animacion de reveal
             if (child.GetComponent<CanvasGroup>() == null)
             {
                 child.gameObject.AddComponent<CanvasGroup>();
             }
 
-            // Guardar posicion rest una vez; nunca se sobreescribe
             var rt = child.GetComponent<RectTransform>();
             if (rt != null && !restPositions.ContainsKey(rt))
             {
@@ -348,31 +364,36 @@ public class InventoryUIManager : MonoBehaviour
         if (opening)
         {
             InventoryAudioManager.Instance?.PlayBarsExpandSound();
-            // Col1: pasivos arriba y abajo simultaneos, luego col2, luego col3
-            var above = StartCoroutine(StaggerSlots(col1AboveSlots, new Vector2(0, -slideOffsetY), opening));
-            var below = StartCoroutine(StaggerSlots(col1BelowSlots, new Vector2(0, slideOffsetY), opening));
-            yield return above;
-            yield return below;
 
-            yield return new WaitForSecondsRealtime(columnDelay);
+            if (useLegacyFormat)
+            {
+                var above = StartCoroutine(StaggerSlots(col1AboveSlots, new Vector2(0, -slideOffsetY), opening));
+                var below = StartCoroutine(StaggerSlots(col1BelowSlots, new Vector2(0, slideOffsetY), opening));
+                yield return above;
+                yield return below;
+                yield return new WaitForSecondsRealtime(columnDelay);
+            }
+
             yield return StartCoroutine(StaggerSlots(col2Slots, new Vector2(slideOffsetX, 0), opening));
-
             yield return new WaitForSecondsRealtime(columnDelay);
             yield return StartCoroutine(StaggerSlots(col3Slots, new Vector2(slideOffsetX, 0), opening));
         }
         else
         {
             InventoryAudioManager.Instance?.PlayBarsRetractSound();
-            // Inverso
+
             yield return StartCoroutine(StaggerSlots(col3Slots, new Vector2(slideOffsetX, 0), opening));
             yield return new WaitForSecondsRealtime(columnDelay);
             yield return StartCoroutine(StaggerSlots(col2Slots, new Vector2(slideOffsetX, 0), opening));
-            yield return new WaitForSecondsRealtime(columnDelay);
 
-            var above = StartCoroutine(StaggerSlots(col1AboveSlots, new Vector2(0, -slideOffsetY), opening));
-            var below = StartCoroutine(StaggerSlots(col1BelowSlots, new Vector2(0, slideOffsetY), opening));
-            yield return above;
-            yield return below;
+            if (useLegacyFormat)
+            {
+                yield return new WaitForSecondsRealtime(columnDelay);
+                var above = StartCoroutine(StaggerSlots(col1AboveSlots, new Vector2(0, -slideOffsetY), opening));
+                var below = StartCoroutine(StaggerSlots(col1BelowSlots, new Vector2(0, slideOffsetY), opening));
+                yield return above;
+                yield return below;
+            }
 
             inventoryExpandRoot?.SetActive(false);
         }
@@ -469,10 +490,14 @@ public class InventoryUIManager : MonoBehaviour
     public void RefreshDisplay()
     {
         foreach (var s in goldenSlots) s.ClearSlot();
-        foreach (var s in col1AboveSlots) s.ClearSlot();
-        foreach (var s in col1BelowSlots) s.ClearSlot();
         foreach (var s in col2Slots) s.ClearSlot();
         foreach (var s in col3Slots) s.ClearSlot();
+
+        if (useLegacyFormat)
+        {
+            foreach (var s in col1AboveSlots) s.ClearSlot();
+            foreach (var s in col1BelowSlots) s.ClearSlot();
+        }
 
         RebuildMechanicState();
 
@@ -484,29 +509,15 @@ public class InventoryUIManager : MonoBehaviour
 
         var passives = CollectPassives();
         int p = 0;
-        foreach (var s in col1AboveSlots)
+
+        if (useLegacyFormat)
         {
-            if (p >= passives.Count) break;
-            s.SetItem(passives[p++]);
+            foreach (var s in col1AboveSlots) { if (p >= passives.Count) break; s.SetItem(passives[p++]); }
+            foreach (var s in col1BelowSlots) { if (p >= passives.Count) break; s.SetItem(passives[p++]); }
         }
 
-        foreach (var s in col1BelowSlots)
-        {
-            if (p >= passives.Count) break;
-            s.SetItem(passives[p++]);
-        }
-
-        foreach (var s in col2Slots)
-        {
-            if (p >= passives.Count) break;
-            s.SetItem(passives[p++]);
-        }
-
-        foreach (var s in col3Slots)
-        {
-            if (p >= passives.Count) break;
-            s.SetItem(passives[p++]);
-        }
+        foreach (var s in col2Slots) { if (p >= passives.Count) break; s.SetItem(passives[p++]); }
+        foreach (var s in col3Slots) { if (p >= passives.Count) break; s.SetItem(passives[p++]); }
     }
 
     private void RebuildMechanicState()
@@ -531,11 +542,18 @@ public class InventoryUIManager : MonoBehaviour
 
     private InventorySlot FindSlotWithItem(ShopItem item)
     {
-        foreach (var list in new[] { col1AboveSlots, col1BelowSlots, col2Slots, col3Slots })
+        if (useLegacyFormat)
         {
-            foreach (var s in list)
+            foreach (var list in new[] { col1AboveSlots, col1BelowSlots, col2Slots, col3Slots })
             {
-                if (s.CurrentItem == item) return s;
+                foreach (var s in list) if (s.CurrentItem == item) return s;
+            }
+        }
+        else
+        {
+            foreach (var list in new[] { topSquareSlots, diamondSlots })
+            {
+                foreach (var s in list) if (s.CurrentItem == item) return s;
             }
         }
 
@@ -653,6 +671,19 @@ public class InventoryUIManager : MonoBehaviour
         pendingShopManager = null;
         shopRef?.RegisterPendingPurchaseCallback(null);
         shopRef?.FireCancelCallback();
+    }
+
+    /// <summary>
+    /// Devuelve dinámicamente la cantidad de slots normales activos.
+    /// </summary>
+    public int GetNormalSlotsCount()
+    {
+        int count = col2Slots.Count + col3Slots.Count;
+        if (useLegacyFormat)
+        {
+            count += col1AboveSlots.Count + col1BelowSlots.Count;
+        }
+        return count;
     }
 
     #endregion
@@ -777,11 +808,11 @@ public class InventoryUIManager : MonoBehaviour
         navGrid = new List<List<InventorySlot>>();
 
         var col0 = new List<InventorySlot>();
-        col0.AddRange(col1AboveSlots);
+        if (useLegacyFormat) col0.AddRange(col1AboveSlots);
         col0.AddRange(goldenSlots);
-        col0.AddRange(col1BelowSlots);
-        navGrid.Add(col0);
+        if (useLegacyFormat) col0.AddRange(col1BelowSlots);
 
+        navGrid.Add(col0);
         navGrid.Add(new List<InventorySlot>(col2Slots));
         navGrid.Add(new List<InventorySlot>(col3Slots));
     }
