@@ -139,7 +139,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &15088090
 RectTransform:
   m_ObjectHideFlags: 0
@@ -186,7 +186,7 @@ Animator:
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: 4f61bc3ff2f26e9469bc59ac693d7430, type: 2}
   m_CullingMode: 0
-  m_UpdateMode: 2
+  m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
@@ -2184,7 +2184,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &326828267
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2235,7 +2235,7 @@ Canvas:
   m_Enabled: 1
   serializedVersion: 3
   m_RenderMode: 1
-  m_Camera: {fileID: 1354114476}
+  m_Camera: {fileID: 0}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
   m_ReceivesEvents: 1
@@ -4195,9 +4195,7 @@ MonoBehaviour:
   cameraBlendDuration: 1
   uiAnimationDuration: 5
   bossGameObject: {fileID: 1259146623}
-  bossVisualAnimator: {fileID: 0}
-  introPoseTrigger: IntroPose
-  bossIntroCanvas: {fileID: 15088089}
+  bossIntroCanvas: {fileID: 326828266}
   shakeDelayAfterUiActive: 0
 --- !u!114 &591025693
 MonoBehaviour:
@@ -8672,10 +8670,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1354114479}
   - component: {fileID: 1354114476}
-  - component: {fileID: 1354114478}
   - component: {fileID: 1354114477}
   m_Layer: 0
-  m_Name: Camera
+  m_Name: Boss Intro Camera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8776,14 +8773,6 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
---- !u!81 &1354114478
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1354114475}
-  m_Enabled: 1
 --- !u!4 &1354114479
 Transform:
   m_ObjectHideFlags: 0

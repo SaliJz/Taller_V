@@ -27,6 +27,16 @@ public class BossIntroDirector : MonoBehaviour
     private bool isIntroRunning = false;
     private CinemachineCamera activeCinemachineCamera;
     private Transform originalCameraTarget;
+    private Camera canvasCamera;
+
+    #endregion
+
+    #region Unity Lifecycle
+
+    private void Awake()
+    {
+        canvasCamera = FindNonMainCamera();
+    }
 
     #endregion
 
@@ -67,6 +77,15 @@ public class BossIntroDirector : MonoBehaviour
 
         if (bossIntroCanvas != null)
         {
+            if (canvasCamera == null) canvasCamera = FindNonMainCamera();
+
+            Canvas canvas = bossIntroCanvas.GetComponent<Canvas>();
+            if (canvas != null && canvasCamera != null)
+            {
+                canvas.renderMode = RenderMode.ScreenSpaceCamera;
+                canvas.worldCamera = canvasCamera;
+            }
+
             bossIntroCanvas.SetActive(true);
 
             Animator uiAnimator = bossIntroCanvas.GetComponent<Animator>();
@@ -114,6 +133,17 @@ public class BossIntroDirector : MonoBehaviour
         {
             impulseSource.GenerateImpulse();
         }
+    }
+
+    private Camera FindNonMainCamera()
+    {
+        Camera[] allCameras = Camera.allCameras;
+        foreach (Camera cam in allCameras)
+        {
+            if (!cam.CompareTag("MainCamera"))
+                return cam;
+        }
+        return null;
     }
 
     private void FindActiveCinemachineCamera()
