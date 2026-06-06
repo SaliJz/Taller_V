@@ -108,7 +108,7 @@ public class HeavyDebris : MonoBehaviour
             if (hit.TryGetComponent(out EnemyHealth enemyHealth))
             {
                 // Aplicar daño.
-                enemyHealth.TakeDamage(damageToEnemies, AttackDamageType.Melee, transform.position);
+                enemyHealth.TakeDamage(damageToEnemies, AttackDamageType.Nothing, transform.position);
                 Debug.Log($"Pilar dañó a {hit.name} por la caída de escombros.");
             }
         }

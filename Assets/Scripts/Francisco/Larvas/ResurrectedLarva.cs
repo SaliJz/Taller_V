@@ -109,7 +109,7 @@ public class ResurrectedLarva : BaseLarva
             if (root != null && root.CompareTag("Player")) continue;
 
             IDamageable damageable = hitCollider.GetComponentInParent<IDamageable>();
-            damageable?.TakeDamage(baseDamage, false);
+            damageable?.TakeDamage(baseDamage, false, AttackDamageType.Nothing);
         }
     }
 

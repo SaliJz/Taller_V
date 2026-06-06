@@ -42,7 +42,7 @@ public class ExplosionDamage : MonoBehaviour
         EnemyHealth enemyHealth = col.GetComponent<EnemyHealth>();
         if (enemyHealth != null)
         {
-            enemyHealth.TakeDamage(damage, AttackDamageType.Melee, transform.position);
+            enemyHealth.TakeDamage(damage, AttackDamageType.Nothing, transform.position);
 
             Vector3 knockbackDir = (col.transform.position - transform.position).normalized;
             knockbackDir.y = 0;

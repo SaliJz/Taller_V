@@ -174,14 +174,14 @@ public class SpikeTrap : MonoBehaviour
         EnemyHealth eHealth = target.GetComponent<EnemyHealth>();
         if (eHealth != null)
         {
-            eHealth.TakeDamage(damage);
+            eHealth.TakeDamage(damage, false, AttackDamageType.Nothing);
             return;
         }
 
         IDamageable damageable = target.GetComponent<IDamageable>();
         if (damageable != null)
         {
-            damageable.TakeDamage(damage);
+            damageable.TakeDamage(damage, false, AttackDamageType.Nothing);
         }
     }
 

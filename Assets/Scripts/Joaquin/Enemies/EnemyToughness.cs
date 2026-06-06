@@ -13,6 +13,7 @@ public enum AttackDamageType
 {
     Melee,
     Ranged,
+    Nothing,
 }
 
 #endregion
