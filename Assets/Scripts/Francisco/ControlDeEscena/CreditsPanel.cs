@@ -1,3 +1,4 @@
+using UnityEngine.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
@@ -108,7 +109,10 @@ public class CreditsPanel : MonoBehaviour
             canvasGroup.blocksRaycasts = false;
         }
 
-        gameObject.SetActive(false);
+        if (SceneManager.GetActiveScene().name != "Scene_Credits")
+        {
+            gameObject.SetActive(false);
+        }
     }
 
     private void OnDestroy()

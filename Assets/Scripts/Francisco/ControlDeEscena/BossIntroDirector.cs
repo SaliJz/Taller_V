@@ -9,7 +9,7 @@ public class BossIntroDirector : MonoBehaviour
     [Header("Sequence and Control")]
     [SerializeField] private SequenceTransition introSequence;
     [SerializeField] private float cameraBlendDuration = 1.5f;
-    [SerializeField] private float uiAnimationDuration = 3.0f;
+    [SerializeField] private float uiAnimationDuration = 5.0f;
 
     [Header("Boss References")]
     [SerializeField] private GameObject bossGameObject;
@@ -67,6 +67,12 @@ public class BossIntroDirector : MonoBehaviour
         FindActiveCinemachineCamera();
         DisableBossLogicScripts();
 
+        if (canvasCamera == null) canvasCamera = FindNonMainCamera();
+        if (canvasCamera != null)
+        {
+            canvasCamera.gameObject.SetActive(true);
+        }
+
         if (activeCinemachineCamera != null && bossGameObject != null)
         {
             originalCameraTarget = activeCinemachineCamera.Target.TrackingTarget;
@@ -77,8 +83,6 @@ public class BossIntroDirector : MonoBehaviour
 
         if (bossIntroCanvas != null)
         {
-            if (canvasCamera == null) canvasCamera = FindNonMainCamera();
-
             Canvas canvas = bossIntroCanvas.GetComponent<Canvas>();
             if (canvas != null && canvasCamera != null)
             {
@@ -102,6 +106,11 @@ public class BossIntroDirector : MonoBehaviour
         if (bossIntroCanvas != null)
         {
             bossIntroCanvas.SetActive(false);
+        }
+
+        if (canvasCamera != null)
+        {
+            canvasCamera.gameObject.SetActive(false);
         }
 
         if (activeCinemachineCamera != null && originalCameraTarget != null)

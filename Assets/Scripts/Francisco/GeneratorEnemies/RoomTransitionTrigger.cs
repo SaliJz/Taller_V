@@ -3,57 +3,90 @@ using UnityEngine;
 
 public class RoomTransitionTrigger : MonoBehaviour
 {
+    #region Inspector
+
     [Header("Room Generation")]
-    public GameObject roomPrefab;
-    public float generationDistance = 50f;
-    public string playerSpawnPointName = "SpawnPoint";
+    [SerializeField] private GameObject roomPrefab;
+    [SerializeField] private float generationDistance = 50f;
+    [SerializeField] private string playerSpawnPointName = "SpawnPoint";
 
     [Header("Player Control References")]
     [SerializeField] private PlayerMovement playerMovement;
     [SerializeField] private PlayerMeleeAttack playerMeleeAttack;
     [SerializeField] private PlayerShieldController playerShieldController;
 
+    #endregion
+
+    #region Private State
+
     private bool hasTriggered = false;
-    private GameObject player;
+    private GameObject playerGameObject;
+
+    #endregion
+
+    #region Unity Lifecycle
 
     private void Awake()
     {
-        player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        playerGameObject = GameObject.FindGameObjectWithTag("Player");
+        if (playerGameObject != null)
         {
-            playerMovement = player.GetComponent<PlayerMovement>();
-            playerMeleeAttack = player.GetComponent<PlayerMeleeAttack>();
-            playerShieldController = player.GetComponent<PlayerShieldController>();
+            playerMovement = playerGameObject.GetComponent<PlayerMovement>();
+            playerMeleeAttack = playerGameObject.GetComponent<PlayerMeleeAttack>();
+            playerShieldController = playerGameObject.GetComponent<PlayerShieldController>();
         }
     }
+
+    #endregion
+
+    #region Trigger Detection
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player") && !hasTriggered)
+        if (hasTriggered) return;
+
+        if (other.CompareTag("Player"))
         {
             hasTriggered = true;
-            StartCoroutine(TransitionToNextRoom());
+            StartCoroutine(TransitionToNextRoomRoutine());
         }
     }
 
-    private IEnumerator TransitionToNextRoom()
+    #endregion
+
+    #region Transition Flow
+
+    private IEnumerator TransitionToNextRoomRoutine()
     {
         SetPlayerControls(false);
+
+        Animator playerAnimator = playerGameObject != null ? playerGameObject.GetComponentInChildren<Animator>() : null;
+        if (playerAnimator != null)
+        {
+            playerAnimator.SetFloat("Speed", 0f);
+            playerAnimator.Play("Idle");
+        }
 
         yield return StartCoroutine(FadeController.Instance.FadeOut());
 
         Vector3 spawnPosition = transform.position + transform.forward * generationDistance;
         GameObject spawnedRoom = Instantiate(roomPrefab, spawnPosition, Quaternion.identity);
 
-        Transform playerSpawnPoint = FindPlayerSpawnPoint(spawnedRoom);
+        Transform playerSpawnPoint = FindPlayerSpawnPointDeep(spawnedRoom.transform);
         if (playerSpawnPoint != null)
         {
-            playerMovement.TeleportTo(playerSpawnPoint.position);
-            Debug.Log($"Jugador teletransportado a la nueva sala en: {playerSpawnPoint.position}");
+            if (playerMovement != null)
+            {
+                playerMovement.TeleportTo(playerSpawnPoint.position);
+            }
+            else
+            {
+                playerGameObject.transform.position = playerSpawnPoint.position;
+            }
         }
         else
         {
-            Debug.LogError($"No se encontró un GameObject con el nombre '{playerSpawnPointName}' en la nueva sala. El jugador no será teletransportado.");
+            Debug.LogError($"RoomTransitionTrigger: '{playerSpawnPointName}' could not be found in the spawned room hierarchy.");
         }
 
         yield return StartCoroutine(FadeController.Instance.FadeIn());
@@ -61,9 +94,27 @@ public class RoomTransitionTrigger : MonoBehaviour
         SetPlayerControls(true);
     }
 
-    private Transform FindPlayerSpawnPoint(GameObject room)
+    #endregion
+
+    #region Helper Methods
+
+    private Transform FindPlayerSpawnPointDeep(Transform parent)
     {
-        return room.transform.Find(playerSpawnPointName);
+        if (parent.name == playerSpawnPointName)
+        {
+            return parent;
+        }
+
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform result = FindPlayerSpawnPointDeep(parent.GetChild(i));
+            if (result != null)
+            {
+                return result;
+            }
+        }
+
+        return null;
     }
 
     private void SetPlayerControls(bool enabled)
@@ -72,4 +123,6 @@ public class RoomTransitionTrigger : MonoBehaviour
         if (playerMeleeAttack != null) playerMeleeAttack.enabled = enabled;
         if (playerShieldController != null) playerShieldController.enabled = enabled;
     }
+
+    #endregion
 }

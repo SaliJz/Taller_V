@@ -3,76 +3,61 @@ using UnityEditor;
 [CustomEditor(typeof(CreditsPanel))]
 public class CreditsPanelEditor : Editor
 {
-    SerializedProperty displayTypeProp;
-    SerializedProperty canvasGroupProp;
-
-    SerializedProperty panelAnimatorProp;
-    SerializedProperty openTriggerProp;
-    SerializedProperty closeTriggerProp;
-
-    SerializedProperty openCloseDurationProp;
-    SerializedProperty openEaseProp;
-    SerializedProperty closeEaseProp;
-    SerializedProperty startScaleProp;
-    SerializedProperty endScaleProp;
-
-    SerializedProperty firstSelectedButtonProp;
-
-    SerializedProperty creditsViewportProp;
-    SerializedProperty creditsContainerProp;
-    SerializedProperty scrollSpeedProp;
-    SerializedProperty autoScrollDelayProp;
-    SerializedProperty loopCreditsProp;
-
-    SerializedProperty leftAlignmentOffsetProp;
-    SerializedProperty centerAlignmentOffsetProp;
-    SerializedProperty rightAlignmentOffsetProp;
-
-    SerializedProperty creditsEntriesProp;
-
-    SerializedProperty titlePrefabProp;
-    SerializedProperty subtitlePrefabProp;
-    SerializedProperty rolePrefabProp;
-    SerializedProperty namePrefabProp;
-    SerializedProperty roleWithNamePrefabProp;
-    SerializedProperty imageWithTextPrefabProp;
-    SerializedProperty spacerPrefabProp;
-
-    SerializedProperty defaultSpacingProp;
-    SerializedProperty titleColorProp;
-    SerializedProperty subtitleColorProp;
-    SerializedProperty roleColorProp;
-    SerializedProperty nameColorProp;
+    private SerializedProperty displayTypeProp;
+    private SerializedProperty canvasGroupProp;
+    private SerializedProperty panelAnimatorProp;
+    private SerializedProperty openTriggerProp;
+    private SerializedProperty closeTriggerProp;
+    private SerializedProperty openCloseDurationProp;
+    private SerializedProperty openEaseProp;
+    private SerializedProperty closeEaseProp;
+    private SerializedProperty startScaleProp;
+    private SerializedProperty endScaleProp;
+    private SerializedProperty firstSelectedButtonProp;
+    private SerializedProperty creditsViewportProp;
+    private SerializedProperty creditsContainerProp;
+    private SerializedProperty scrollSpeedProp;
+    private SerializedProperty autoScrollDelayProp;
+    private SerializedProperty loopCreditsProp;
+    private SerializedProperty leftAlignmentOffsetProp;
+    private SerializedProperty centerAlignmentOffsetProp;
+    private SerializedProperty rightAlignmentOffsetProp;
+    private SerializedProperty creditsEntriesProp;
+    private SerializedProperty titlePrefabProp;
+    private SerializedProperty subtitlePrefabProp;
+    private SerializedProperty rolePrefabProp;
+    private SerializedProperty namePrefabProp;
+    private SerializedProperty roleWithNamePrefabProp;
+    private SerializedProperty imageWithTextPrefabProp;
+    private SerializedProperty spacerPrefabProp;
+    private SerializedProperty defaultSpacingProp;
+    private SerializedProperty titleColorProp;
+    private SerializedProperty subtitleColorProp;
+    private SerializedProperty roleColorProp;
+    private SerializedProperty nameColorProp;
 
     private void OnEnable()
     {
         displayTypeProp = serializedObject.FindProperty("displayType");
         canvasGroupProp = serializedObject.FindProperty("canvasGroup");
-
         panelAnimatorProp = serializedObject.FindProperty("panelAnimator");
         openTriggerProp = serializedObject.FindProperty("openTrigger");
         closeTriggerProp = serializedObject.FindProperty("closeTrigger");
-
         openCloseDurationProp = serializedObject.FindProperty("openCloseDuration");
         openEaseProp = serializedObject.FindProperty("openEase");
         closeEaseProp = serializedObject.FindProperty("closeEase");
         startScaleProp = serializedObject.FindProperty("startScale");
         endScaleProp = serializedObject.FindProperty("endScale");
-
         firstSelectedButtonProp = serializedObject.FindProperty("firstSelectedButton");
-
         creditsViewportProp = serializedObject.FindProperty("creditsViewport");
         creditsContainerProp = serializedObject.FindProperty("creditsContainer");
         scrollSpeedProp = serializedObject.FindProperty("scrollSpeed");
         autoScrollDelayProp = serializedObject.FindProperty("autoScrollDelay");
         loopCreditsProp = serializedObject.FindProperty("loopCredits");
-
         leftAlignmentOffsetProp = serializedObject.FindProperty("leftAlignmentOffset");
         centerAlignmentOffsetProp = serializedObject.FindProperty("centerAlignmentOffset");
         rightAlignmentOffsetProp = serializedObject.FindProperty("rightAlignmentOffset");
-
         creditsEntriesProp = serializedObject.FindProperty("creditsEntries");
-
         titlePrefabProp = serializedObject.FindProperty("titlePrefab");
         subtitlePrefabProp = serializedObject.FindProperty("subtitlePrefab");
         rolePrefabProp = serializedObject.FindProperty("rolePrefab");
@@ -80,7 +65,6 @@ public class CreditsPanelEditor : Editor
         roleWithNamePrefabProp = serializedObject.FindProperty("roleWithNamePrefab");
         imageWithTextPrefabProp = serializedObject.FindProperty("imageWithTextPrefab");
         spacerPrefabProp = serializedObject.FindProperty("spacerPrefab");
-
         defaultSpacingProp = serializedObject.FindProperty("defaultSpacing");
         titleColorProp = serializedObject.FindProperty("titleColor");
         subtitleColorProp = serializedObject.FindProperty("subtitleColor");
@@ -92,94 +76,74 @@ public class CreditsPanelEditor : Editor
     {
         serializedObject.Update();
 
-        CreditsPanel.PanelDisplayType currentDisplayType = (CreditsPanel.PanelDisplayType)displayTypeProp.enumValueIndex;
-
         EditorGUILayout.LabelField("Panel Display Settings", EditorStyles.boldLabel);
-        EditorGUILayout.PropertyField(displayTypeProp);
-
-        if (currentDisplayType == CreditsPanel.PanelDisplayType.CanvasFade)
+        if (displayTypeProp != null)
         {
-            EditorGUILayout.PropertyField(canvasGroupProp);
-            EditorGUILayout.Space();
-        }
+            EditorGUILayout.PropertyField(displayTypeProp);
+            CreditsPanel.PanelDisplayType displayType = (CreditsPanel.PanelDisplayType)displayTypeProp.enumValueIndex;
 
-        if (currentDisplayType == CreditsPanel.PanelDisplayType.Animator)
-        {
-            EditorGUILayout.PropertyField(panelAnimatorProp);
-            EditorGUILayout.PropertyField(openTriggerProp);
-            EditorGUILayout.PropertyField(closeTriggerProp);
-        }
-
-        if (currentDisplayType != CreditsPanel.PanelDisplayType.Static && currentDisplayType != CreditsPanel.PanelDisplayType.Animator)
-        {
-            EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField("DOTween Settings", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(openCloseDurationProp);
-            EditorGUILayout.PropertyField(openEaseProp);
-            EditorGUILayout.PropertyField(closeEaseProp);
-
-            if (currentDisplayType == CreditsPanel.PanelDisplayType.AnimatedScale)
+            switch (displayType)
             {
-                EditorGUILayout.Space();
-                EditorGUILayout.LabelField("Scale Animation Vectors", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(startScaleProp);
-                EditorGUILayout.PropertyField(endScaleProp);
-            }
-            else if (currentDisplayType == CreditsPanel.PanelDisplayType.CanvasFade)
-            {
-                EditorGUILayout.HelpBox("Canvas Fade mode active. Animation uses Canvas Group Alpha. Scale vectors are hidden.", MessageType.Info);
-            }
-        }
+                case CreditsPanel.PanelDisplayType.CanvasFade:
+                    if (canvasGroupProp != null) EditorGUILayout.PropertyField(canvasGroupProp);
+                    if (openCloseDurationProp != null) EditorGUILayout.PropertyField(openCloseDurationProp);
+                    break;
 
-        if (currentDisplayType == CreditsPanel.PanelDisplayType.Static)
-        {
-            EditorGUILayout.HelpBox("Static mode selected. Panel will simply activate/deactivate without animation.", MessageType.Info);
+                case CreditsPanel.PanelDisplayType.AnimatedScale:
+                    if (openCloseDurationProp != null) EditorGUILayout.PropertyField(openCloseDurationProp);
+                    if (openEaseProp != null) EditorGUILayout.PropertyField(openEaseProp);
+                    if (closeEaseProp != null) EditorGUILayout.PropertyField(closeEaseProp);
+                    if (startScaleProp != null) EditorGUILayout.PropertyField(startScaleProp);
+                    if (endScaleProp != null) EditorGUILayout.PropertyField(endScaleProp);
+                    break;
+
+                case CreditsPanel.PanelDisplayType.Animator:
+                    if (panelAnimatorProp != null) EditorGUILayout.PropertyField(panelAnimatorProp);
+                    if (openTriggerProp != null) EditorGUILayout.PropertyField(openTriggerProp);
+                    if (closeTriggerProp != null) EditorGUILayout.PropertyField(closeTriggerProp);
+                    break;
+            }
         }
 
         EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("Focus Control", EditorStyles.boldLabel);
-        EditorGUILayout.PropertyField(firstSelectedButtonProp);
+        if (firstSelectedButtonProp != null) EditorGUILayout.PropertyField(firstSelectedButtonProp);
 
         EditorGUILayout.Space(10);
-        EditorGUILayout.LabelField("Credits Container (Sin ScrollRect)", EditorStyles.boldLabel);
-        EditorGUILayout.HelpBox(
-            "Viewport: RectTransform padre con componente Mask (NO se mueve)\n" +
-            "Container: RectTransform hijo que contiene los créditos (SE MUEVE hacia arriba)",
-            MessageType.Info);
-
-        EditorGUILayout.PropertyField(creditsViewportProp);
-        EditorGUILayout.PropertyField(creditsContainerProp);
-        EditorGUILayout.PropertyField(scrollSpeedProp);
-        EditorGUILayout.PropertyField(autoScrollDelayProp);
-        EditorGUILayout.PropertyField(loopCreditsProp);
+        EditorGUILayout.LabelField("Credits Scroller Settings", EditorStyles.boldLabel);
+        if (creditsViewportProp != null) EditorGUILayout.PropertyField(creditsViewportProp);
+        if (creditsContainerProp != null) EditorGUILayout.PropertyField(creditsContainerProp);
+        if (scrollSpeedProp != null) EditorGUILayout.PropertyField(scrollSpeedProp);
+        if (autoScrollDelayProp != null) EditorGUILayout.PropertyField(autoScrollDelayProp);
+        if (loopCreditsProp != null) EditorGUILayout.PropertyField(loopCreditsProp);
 
         EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("Alignment Offsets", EditorStyles.boldLabel);
-        EditorGUILayout.PropertyField(leftAlignmentOffsetProp);
-        EditorGUILayout.PropertyField(centerAlignmentOffsetProp);
-        EditorGUILayout.PropertyField(rightAlignmentOffsetProp);
+        if (leftAlignmentOffsetProp != null) EditorGUILayout.PropertyField(leftAlignmentOffsetProp);
+        if (centerAlignmentOffsetProp != null) EditorGUILayout.PropertyField(centerAlignmentOffsetProp);
+        if (rightAlignmentOffsetProp != null) EditorGUILayout.PropertyField(rightAlignmentOffsetProp);
 
         EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("Prefab References", EditorStyles.boldLabel);
-        EditorGUILayout.PropertyField(titlePrefabProp);
-        EditorGUILayout.PropertyField(subtitlePrefabProp);
-        EditorGUILayout.PropertyField(rolePrefabProp);
-        EditorGUILayout.PropertyField(namePrefabProp);
-        EditorGUILayout.PropertyField(roleWithNamePrefabProp);
-        EditorGUILayout.PropertyField(imageWithTextPrefabProp);
-        EditorGUILayout.PropertyField(spacerPrefabProp);
+        if (titlePrefabProp != null) EditorGUILayout.PropertyField(titlePrefabProp);
+        if (subtitlePrefabProp != null) EditorGUILayout.PropertyField(subtitlePrefabProp);
+        if (rolePrefabProp != null) EditorGUILayout.PropertyField(rolePrefabProp);
+        if (namePrefabProp != null) EditorGUILayout.PropertyField(namePrefabProp);
+        if (roleWithNamePrefabProp != null) EditorGUILayout.PropertyField(roleWithNamePrefabProp);
+        if (imageWithTextPrefabProp != null) EditorGUILayout.PropertyField(imageWithTextPrefabProp);
+        if (spacerPrefabProp != null) EditorGUILayout.PropertyField(spacerPrefabProp);
 
         EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("Style Settings", EditorStyles.boldLabel);
-        EditorGUILayout.PropertyField(defaultSpacingProp);
-        EditorGUILayout.PropertyField(titleColorProp);
-        EditorGUILayout.PropertyField(subtitleColorProp);
-        EditorGUILayout.PropertyField(roleColorProp);
-        EditorGUILayout.PropertyField(nameColorProp);
+        if (defaultSpacingProp != null) EditorGUILayout.PropertyField(defaultSpacingProp);
+        if (titleColorProp != null) EditorGUILayout.PropertyField(titleColorProp);
+        if (subtitleColorProp != null) EditorGUILayout.PropertyField(subtitleColorProp);
+        if (roleColorProp != null) EditorGUILayout.PropertyField(roleColorProp);
+        if (nameColorProp != null) EditorGUILayout.PropertyField(nameColorProp);
 
         EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("Credits Content", EditorStyles.boldLabel);
-        EditorGUILayout.PropertyField(creditsEntriesProp, true);
+        if (creditsEntriesProp != null) EditorGUILayout.PropertyField(creditsEntriesProp, true);
 
         serializedObject.ApplyModifiedProperties();
     }
