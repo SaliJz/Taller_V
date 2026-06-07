@@ -474,7 +474,8 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         StopAgent();
         FacePlayerInstant();
         SetWalking(false);
-        animator?.ResetTrigger(AnimAttackEnded);
+
+        animator?.SetBool(AnimAttackEnded, false);
         animator?.SetTrigger(AnimSwordStack);
         PlaySFX(staticChargeSFX);
 
@@ -483,6 +484,8 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
             staticFailureAoERadius * 2f,
             staticFailureWarningPrefab
         );
+
+        bool successfullyReleased = false;
 
         try
         {
@@ -506,12 +509,18 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
             DealAoEDamage(attackOrigin.position, staticFailureAoERadius, staticFailureDamage);
             PlaySFX(staticImpactSFX);
             ShakeCamera(2f, 0.25f);
+
             animator?.SetBool(AnimAttackEnded, true);
+            successfullyReleased = true;
             yield return new WaitForSeconds(0.4f);
 
         }
         finally
         {
+            if (!successfullyReleased && animator != null)
+            {
+                animator.SetBool(AnimAttackEnded, true);
+            }
             ReportDebug("ExecuteStaticFailureRoutine: escudo desactivado.", 1);
         }
     }
@@ -566,7 +575,8 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         SetWalking(false);
         PlaySFX(stunSFX);
         SpawnImpactStunVFX(transform.position);
-        animator?.SetTrigger(AnimAttackEnded);
+
+        animator?.SetBool(AnimAttackEnded, true);
 
         yield return new WaitForSeconds(interruptStunDuration);
 
