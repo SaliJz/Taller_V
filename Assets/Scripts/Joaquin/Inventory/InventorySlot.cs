@@ -97,7 +97,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         isGoldenSlot = golden;
         if (backgroundImage != null && golden)
         {
-            backgroundImage.color = new Color(color.r, color.g, color.b, 0.15f);
+            backgroundImage.color = new Color(color.r, color.g, color.b, 1f);
             originalBackgroundColor = backgroundImage.color;
         }
         if (rarityBorder != null && golden)
