@@ -124,7 +124,7 @@ public class TheHostAnimCtrl : MonoBehaviour
     }
     #endregion
 
-    IEnumerator TP_Rescalation()
+    private IEnumerator TP_Rescalation()
     {
         float t = 0;
 
@@ -150,7 +150,7 @@ public class TheHostAnimCtrl : MonoBehaviour
         transform.localScale = originalScale;
     }
 
-    IEnumerator UnBloqBufferAttack()
+    private IEnumerator UnBloqBufferAttack()
     {
         anim.SetBool(ATK_BLOQ, true);
 
@@ -175,7 +175,7 @@ public class TheHostAnimCtrl : MonoBehaviour
     }
 
     #region Testing
-    void testInputs()
+    private void testInputs()
     {
         if(Input.GetKeyDown(KeyCode.J)) PlayBufferPre();
         if(Input.GetKeyDown(KeyCode.K)) PlayBufferAttack();

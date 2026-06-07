@@ -6044,6 +6044,11 @@ MonoBehaviour:
   divisoryWallThickness: 1.2
   divisoryWallHeight: 3.5
   divisoryRayMaxLength: 40
+  divisoryMoveToCenterSpeed: 8
+  divisoryArrivalRadius: 1.2
+  divisoryTravelTimeout: 5
+  divisoryRoomCenterOffset: {x: 0, y: 0, z: 0}
+  divisoryRoomCenterSampleRadius: 8
   drownedDamage: 15
   drownedRange: 15
   drownedHitCount: 3
@@ -6078,6 +6083,12 @@ MonoBehaviour:
   stunSFX: {fileID: 8300000, guid: 05445bdd6d7d0784d8670bd59c86bef2, type: 3}
   deathSFX: {fileID: 8300000, guid: 9733373eb1b2b8a4b84ae205c708ba30, type: 3}
   showDebugGUI: 0
+  enemyVisualEffects: {fileID: 0}
+  damageSFX: {fileID: 0}
+  defaultAnticipationDuration: 0.7
+  anticipationSFX: {fileID: 0}
+  anticipationShakeIntensity: 0.2
+  anticipationShakeFrequency: 2
 --- !u!114 &8537394917465235362
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6133,17 +6144,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 120953a634ec616478c5722a12285e45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  meshRenderers:
-  - {fileID: 8865157454970020558}
-  - {fileID: 6683432410872946437}
-  - {fileID: 6721810934057515549}
-  - {fileID: 8938198771339220960}
-  - {fileID: 5080425121345094272}
-  - {fileID: 4489067646091321849}
-  - {fileID: 5248766024570190522}
-  - {fileID: 7289402639871762739}
+  meshRenderers: []
   spriteRenderers: []
-  damageNumberPrefab: {fileID: 3347622852007741979, guid: 465011437a9e8d24497414b4490e9a11, type: 3}
+  damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
   damageNumberParent: {fileID: 2233588618169059619}
   audioSource: {fileID: 2898185117464482595}
   hitStunSFX: {fileID: 0}
@@ -6159,13 +6162,13 @@ MonoBehaviour:
   stunVFXPrefab: {fileID: 3342460872232482477, guid: 096ab38d0ba3e494f92903137faf83e6, type: 3}
   stunVFXSpawnPoint: {fileID: 4929206651787382122}
   stunVFXHeightFallback: 2
-  glowMaterial: {fileID: 2100000, guid: ad0060fc2496c824ea04f56155e38fcd, type: 2}
+  glowMaterial: {fileID: 0}
   glowIntensity: 2
   toughnessColor: {r: 0.92941177, g: 0.8156863, b: 0.80784315, a: 1}
   anticipationBlinkInterval: 0.04
   anticipationBlinkColor: {r: 1, g: 0, b: 0, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
-  criticalColor: {r: 0.6075471, g: 0, b: 0, a: 1}
+  criticalColor: {r: 0.5294118, g: 0, b: 0, a: 1}
 --- !u!1001 &6927835274548612216
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6522,34 +6525,9 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 5883165677478660824}
   m_SourcePrefab: {fileID: 100100000, guid: 4908d849299ea2441ab9d5320aa067b0, type: 3}
---- !u!137 &4489067646091321849 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: -2420471187766448767, guid: 4908d849299ea2441ab9d5320aa067b0, type: 3}
-  m_PrefabInstance: {fileID: 6927835274548612216}
-  m_PrefabAsset: {fileID: 0}
---- !u!137 &5080425121345094272 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 2784868069289938680, guid: 4908d849299ea2441ab9d5320aa067b0, type: 3}
-  m_PrefabInstance: {fileID: 6927835274548612216}
-  m_PrefabAsset: {fileID: 0}
---- !u!137 &5248766024570190522 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: -6272456988924234046, guid: 4908d849299ea2441ab9d5320aa067b0, type: 3}
-  m_PrefabInstance: {fileID: 6927835274548612216}
-  m_PrefabAsset: {fileID: 0}
 --- !u!137 &6683432410872946437 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 4387859690819556221, guid: 4908d849299ea2441ab9d5320aa067b0, type: 3}
-  m_PrefabInstance: {fileID: 6927835274548612216}
-  m_PrefabAsset: {fileID: 0}
---- !u!137 &6721810934057515549 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 4425971994704590437, guid: 4908d849299ea2441ab9d5320aa067b0, type: 3}
-  m_PrefabInstance: {fileID: 6927835274548612216}
-  m_PrefabAsset: {fileID: 0}
---- !u!137 &7289402639871762739 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: -8859226505687995061, guid: 4908d849299ea2441ab9d5320aa067b0, type: 3}
   m_PrefabInstance: {fileID: 6927835274548612216}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &7470948446071516051 stripped
@@ -6584,13 +6562,3 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!137 &8865157454970020558 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 1955618621128502966, guid: 4908d849299ea2441ab9d5320aa067b0, type: 3}
-  m_PrefabInstance: {fileID: 6927835274548612216}
-  m_PrefabAsset: {fileID: 0}
---- !u!137 &8938198771339220960 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 2030632049305836440, guid: 4908d849299ea2441ab9d5320aa067b0, type: 3}
-  m_PrefabInstance: {fileID: 6927835274548612216}
-  m_PrefabAsset: {fileID: 0}

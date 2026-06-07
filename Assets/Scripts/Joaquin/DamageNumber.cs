@@ -8,7 +8,7 @@ public class DamageNumber : MonoBehaviour
     #region Inspector - References
 
     [Header("References")]
-    [SerializeField] private TextMeshPro damageText;
+    [SerializeField] private TMP_Text damageText;
 
     #endregion
 
@@ -20,6 +20,7 @@ public class DamageNumber : MonoBehaviour
     [SerializeField] private float lifetime = 2f;
     [SerializeField] private float gravity = 9.8f;
     [SerializeField] private float lateralSpeed = 0.5f;
+    [SerializeField] private float gravityDelay = 0.5f;
 
     #endregion
 
@@ -129,7 +130,6 @@ public class DamageNumber : MonoBehaviour
 
     private IEnumerator AnimateAndDeactivate()
     {
-        // Fase 1: Scale Punch
         float punchElapsed = 0f;
         while (punchElapsed < punchDuration)
         {
@@ -145,7 +145,6 @@ public class DamageNumber : MonoBehaviour
         }
         transform.localScale = Vector3.one * targetScale;
 
-        // Fase 2: Movimiento con gravedad + hold + fade ease-in
         float elapsed = 0f;
         float holdTime = lifetime * holdFraction;
         float fadeDuration = lifetime - holdTime;
@@ -154,13 +153,17 @@ public class DamageNumber : MonoBehaviour
         {
             elapsed += Time.deltaTime;
 
-            velocity.y -= gravity * Time.deltaTime;
+            if (elapsed >= gravityDelay)
+            {
+                velocity.y -= gravity * Time.deltaTime;
+            }
+
             transform.position += velocity * Time.deltaTime;
 
             if (elapsed > holdTime)
             {
                 float fadeT = (elapsed - holdTime) / fadeDuration;
-                canvasGroup.alpha = 1f - (fadeT * fadeT); // ease-in cuadratico
+                canvasGroup.alpha = 1f - (fadeT * fadeT);
             }
             else
             {

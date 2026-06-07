@@ -11,7 +11,7 @@ public class BaalBoss : MonoBehaviour
     [SerializeField] private Transform hitPoint;
     [SerializeField] private EnemyHealth enemyHealth;
     [SerializeField] private NavMeshAgent agent;
-    [SerializeField] private Animator animator;
+    [SerializeField] private TheHostAnimCtrl animController;
     [SerializeField] private Transform player;
 
     [Header("Audio")]
@@ -289,7 +289,6 @@ public class BaalBoss : MonoBehaviour
         if (agent == null) agent = GetComponent<NavMeshAgent>();
         if (agent != null) agent.speed = moveSpeed;
 
-        if (animator == null) animator = GetComponentInChildren<Animator>();
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
 
         if (player == null)
@@ -369,7 +368,6 @@ public class BaalBoss : MonoBehaviour
             agent.enabled = false;
         }
 
-        if (animator != null) animator.SetTrigger(AnimID_Death);
         if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
 
         this.enabled = false;
@@ -518,7 +516,7 @@ public class BaalBoss : MonoBehaviour
             audioSource.PlayOneShot(exceptionAnticipationSFX);
         }
 
-        if (animator != null) animator.SetTrigger(AnimID_ExceptionFatal);
+        if (animController != null) animController.PlayShotAttack();
 
         float glowOnlyTime = Mathf.Max(0f, exceptionAnticipationTime - exceptionDirPreviewTime);
         yield return new WaitForSeconds(glowOnlyTime);
@@ -604,11 +602,11 @@ public class BaalBoss : MonoBehaviour
             audioSource.PlayOneShot(bufferOverrunChargeSFX);
         }
 
-        if (animator != null) animator.SetTrigger(AnimID_BufferOverrunCharge);
+        if (animController != null) animController.PlayBufferPre();
 
         yield return new WaitForSeconds(bufferOverrunChargeDuration);
 
-        if (animator != null) animator.SetTrigger(AnimID_BufferOverrunDash);
+        if (animController != null) animController.PlayBufferAttack();
 
         Vector3 dashTarget = CalculateBufferOverrunTarget();
         yield return StartCoroutine(DashToPosition(dashTarget, bufferOverrunDashDuration));
@@ -710,6 +708,12 @@ public class BaalBoss : MonoBehaviour
 
         SpawnMemoryLeak(transform.position);
 
+        if (animController != null)
+        {
+            animController.PlayTP_pre();
+            yield return new WaitForSeconds(animController.TPanitipacionTime);
+        }
+
         Vector3 evasionPos = GetEvasionPosition(defragTeleportDist);
         PerformTeleport(evasionPos);
 
@@ -792,6 +796,12 @@ public class BaalBoss : MonoBehaviour
         StopAgent();
 
         SpawnMemoryLeak(transform.position);
+
+        if (animController != null)
+        {
+            animController.PlayTP_pre();
+            yield return new WaitForSeconds(animController.TPanitipacionTime);
+        }
 
         Vector3 blindFlank = GetPlayerBlindFlank();
         PerformTeleport(blindFlank);
@@ -932,8 +942,6 @@ public class BaalBoss : MonoBehaviour
         {
             audioSource.PlayOneShot(sobrecargaSFX);
         }
-
-        if (animator != null) animator.SetTrigger(AnimID_Sobrecarga);
 
         if (sobrecargaWavePrefab != null)
         {
@@ -1105,7 +1113,7 @@ public class BaalBoss : MonoBehaviour
             audioSource.PlayOneShot(teleportSFX);
         }
 
-        if (animator != null) animator.SetTrigger(AnimID_Teleport);
+        if (animController != null) animController.PlayTP_Impact();
 
         ReportDebug($"TELEPORT: {transform.position}", 1);
     }
@@ -1172,7 +1180,8 @@ public class BaalBoss : MonoBehaviour
             agent.isStopped = true;
             agent.velocity = Vector3.zero;
         }
-        if (animator != null) animator.SetBool(AnimID_Walking, false);
+
+        if (animController != null) animController.IsWalking = false;
     }
 
     private void FacePlayer()
