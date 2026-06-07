@@ -122,6 +122,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     public event Action OnToughnessHit;
     public event Action<float, float> OnHealthChanged;
 
+    public Transform HealthBarAnchor => healthSlider.transform;
     public bool IsStunned => isStunned;
     public float MaxHealth => maxHealth;
     public AttackDamageType LastDamageType => lastDamageType;

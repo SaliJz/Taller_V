@@ -89,6 +89,8 @@ public class AutoAim : MonoBehaviour
     private Material fifaMaterial;
     private float fifaColorTime = 0f;
 
+    private EnemyHealth currentTargetHealth;
+
     #endregion
 
     #region Properties
@@ -210,7 +212,12 @@ public class AutoAim : MonoBehaviour
         if (!enableAutoAim) return null;
 
         Collider[] cols = Physics.OverlapSphere(playerPosition, autoAimRange, enemyLayer);
-        if (cols.Length == 0) { currentTarget = null; return null; }
+        if (cols.Length == 0)
+        {
+            currentTarget = null;
+            currentTargetHealth = null;
+            return null;
+        }
 
         Transform best = null;
         float bestScore = float.MaxValue;
@@ -229,7 +236,10 @@ public class AutoAim : MonoBehaviour
             if (!IsEnemyValid(col)) continue;
 
             float dist = Vector3.Distance(playerPosition, col.transform.position);
-            float score = (dist / autoAimRange) * 0.6f + (angle / autoAimAngle) * 0.4f;
+            float normalizedDist = dist / autoAimRange;
+            float normalizedAngle = angle / autoAimAngle;
+            float proximityBonus = normalizedDist < 0.15f ? -1f : 0f;
+            float score = proximityBonus + normalizedAngle * 0.8f + normalizedDist * 0.2f;
 
             if (score < bestScore)
             {
@@ -238,8 +248,21 @@ public class AutoAim : MonoBehaviour
             }
         }
 
-        if (best != null) { currentTarget = best; lastTargetTime = Time.time; }
-        else currentTarget = null;
+        if (best != null)
+        {
+            if (currentTarget != best)
+            {
+                currentTarget = best;
+                currentTargetHealth = best.GetComponent<EnemyHealth>();
+            }
+
+            lastTargetTime = Time.time;
+        }
+        else
+        {
+            currentTarget = null;
+            currentTargetHealth = null;
+        }
 
         return best;
     }
@@ -302,6 +325,7 @@ public class AutoAim : MonoBehaviour
     public void ClearTarget()
     {
         currentTarget = null;
+        currentTargetHealth = null;
         HideAllFX();
     }
 
@@ -529,7 +553,17 @@ public class AutoAim : MonoBehaviour
             bob = fifaBobCurve.Evaluate(t) * fifaBobAmount;
         }
 
-        Vector3 worldPos = target.position + Vector3.up * (fifaHeightAboveEnemy + bob);
+        Vector3 worldPos;
+
+        if (currentTargetHealth != null && currentTargetHealth.HealthBarAnchor != null)
+        {
+            worldPos = currentTargetHealth.HealthBarAnchor.position + Vector3.up * (fifaHeightAboveEnemy + bob);
+        }
+        else
+        {
+            worldPos = target.position + Vector3.up * (fifaHeightAboveEnemy + bob);
+        }
+
         fifaArrowObj.transform.position = worldPos;
 
         if (fifaBillboardToCamera)
