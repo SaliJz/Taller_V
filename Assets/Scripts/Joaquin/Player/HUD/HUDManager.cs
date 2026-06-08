@@ -113,6 +113,7 @@ public class HUDManager : MonoBehaviour
     private Coroutine berserkerShakeCoroutine;
     Vector2 HUDOriginalPos;
     float currentShakeIntensity;
+    bool isInitialize = false;
 
     #endregion
 
@@ -153,6 +154,11 @@ public class HUDManager : MonoBehaviour
         else Debug.LogWarning("[HUD Manager] No se encontró player para obtener ShieldSkill");
 
         playerAbility = berserkerScript;
+    }
+
+    private void Start()
+    {
+        StartCoroutine(onStartIgnoreHandAnim());
     }
 
     private void Update()
@@ -196,7 +202,7 @@ public class HUDManager : MonoBehaviour
     {
         PlayerHealth.OnHealthChanged += UpdateHealthBar;
         PlayerHealth.OnLifeStageChanged += UpdateLifeStageIcon;
-        handAnim.onSmashImpact -= ApplyLifeStageIcon;
+        handAnim.onSmashImpact += ApplyLifeStageIcon;
         playerAbility.OnAbilityActivated += StartGearRotation;
         playerAbility.OnAbilityDeactivated += StopGearRotation;
         
@@ -571,8 +577,15 @@ public class HUDManager : MonoBehaviour
 
     private void UpdateLifeStageIcon(PlayerHealth.LifeStage newStage)
     {
+        if (!isInitialize) return;
         pendingStage = newStage;
         handAnim.PlaySmashSecuence();
+    }
+
+    private IEnumerator onStartIgnoreHandAnim()
+    {
+        yield return null;
+        isInitialize = true;
     }
 
     /// <summary>
