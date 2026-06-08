@@ -39,7 +39,7 @@ public class DungeonGenerator : MonoBehaviour
     public float repetitionPenalty = 0.8f;
     [Range(0.1f, 1.0f)]
     public float weightDecay = 0.7f;
-    [Range(5f, 200f)]
+    [Range(5f, 500f)]
     public float roomDistance = 20f;
 
     [Header("Player Movement Settings")]

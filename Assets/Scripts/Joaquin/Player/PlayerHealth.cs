@@ -441,7 +441,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
                 _ => new Vector3(1.4f, -10f, 0f)
             };
 
-            _cinemachineShake.GenerateImpulse(customVelocity);
+            _cinemachineShake.DefaultVelocity = customVelocity;
+            _cinemachineShake.GenerateImpulse();
 
             if (damageUIEffect != null) damageUIEffect.PrimeraHerida = true;
 
