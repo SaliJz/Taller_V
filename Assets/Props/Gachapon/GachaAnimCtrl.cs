@@ -16,7 +16,7 @@ public class GachaAnimCtrl : MonoBehaviour
     [SerializeField] float shakeStrength = 0.2f;
     [SerializeField] float shakeFrecuency = 25f;
     
-    private bool isAnimating = false;
+    public bool isAnimating = false;
     public bool IsAnimating { get { return isAnimating; } }
     public GachaEyeDrop EyeScript => eyeScript;
 
@@ -75,10 +75,10 @@ public class GachaAnimCtrl : MonoBehaviour
         yield return new WaitForSeconds(0.35f);
         handAnimator.Play(handAnims.spit, 0, 0f);
         //SpawnEye
-        yield return new WaitForSeconds(0.8f);
-        LaunchEyeEvent();
+        // yield return new WaitForSeconds(0.8f);
+        // LaunchEyeEvent();
 
-        isAnimating = false;
+        // isAnimating = false;
     }
 
     IEnumerator Shake(float duration)
@@ -100,7 +100,7 @@ public class GachaAnimCtrl : MonoBehaviour
         shakeTarget.localPosition = originalPos;
     }
 
-    void LaunchEyeEvent()
+    public void LaunchEyeEvent()
     {
         eyeScript.LaunchEye();
     }
