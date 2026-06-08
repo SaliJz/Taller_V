@@ -29,6 +29,8 @@ public class RookPiece : BoardPiece
     private Coroutine brainCoroutine;
     private ChessPieceAttack attackComponent;
 
+    private List<Vector2Int> patrolPath = new List<Vector2Int>();
+
     private readonly Vector2Int[] moveDirs = new Vector2Int[]
     {
         new Vector2Int(0, 1), new Vector2Int(0, -1),
@@ -205,15 +207,91 @@ public class RookPiece : BoardPiece
 
     private IEnumerator PatrolRoutine()
     {
-        Vector2Int dir = moveDirs[Random.Range(0, moveDirs.Length)];
-        Vector2Int target = currentCoord;
-        for (int i = 1; i <= patrolStepDist; i++)
+        if (patrolPath.Count == 0)
         {
-            Vector2Int next = currentCoord + (dir * i);
-            if (boardManager.TileExists(next) && !boardManager.IsTileOccupied(next)) target = next;
-            else break;
+            GenerateLongPatrolPath();
         }
-        if (target != currentCoord) yield return StartCoroutine(MoveRoutine(target, patrolMoveSpeed));
+
+        if (patrolPath.Count > 0)
+        {
+            int stepSize = Random.Range(1, patrolStepDist + 1);
+            stepSize = Mathf.Min(stepSize, patrolPath.Count);
+
+            Vector2Int targetCoord = currentCoord;
+            int actualSteps = 0;
+
+            for (int i = 0; i < stepSize; i++)
+            {
+                Vector2Int nextCheck = patrolPath[i];
+                if (boardManager.TileExists(nextCheck) && !boardManager.IsTileOccupied(nextCheck))
+                {
+                    targetCoord = nextCheck;
+                    actualSteps++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (actualSteps > 0)
+            {
+                patrolPath.RemoveRange(0, actualSteps);
+                yield return StartCoroutine(MoveRoutine(targetCoord, patrolMoveSpeed));
+            }
+            else
+            {
+                patrolPath.Clear();
+                yield return new WaitForSeconds(detectionInterval);
+            }
+        }
+        else
+        {
+            yield return new WaitForSeconds(detectionInterval);
+        }
+    }
+
+    private void GenerateLongPatrolPath()
+    {
+        patrolPath.Clear();
+        Vector2Int current = currentCoord;
+        List<Vector2Int> preferredDirs = new List<Vector2Int>(moveDirs);
+
+        int shuffles = preferredDirs.Count;
+        while (shuffles > 1)
+        {
+            shuffles--;
+            int k = Random.Range(0, shuffles + 1);
+            Vector2Int value = preferredDirs[k];
+            preferredDirs[k] = preferredDirs[shuffles];
+            preferredDirs[shuffles] = value;
+        }
+
+        foreach (var dir in preferredDirs)
+        {
+            int spacesFree = 0;
+            for (int i = 1; i <= patrolStepDist * 3; i++)
+            {
+                Vector2Int test = current + (dir * i);
+                if (boardManager.TileExists(test))
+                {
+                    spacesFree++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (spacesFree >= 1)
+            {
+                for (int i = 1; i <= spacesFree; i++)
+                {
+                    patrolPath.Add(current + (dir * i));
+                }
+                break;
+            }
+        }
     }
     #endregion
 
@@ -261,6 +339,7 @@ public class RookPiece : BoardPiece
         isStunned = false;
         isMoving = false;
         HideTrail();
+        patrolPath.Clear();
         if (brainCoroutine != null) StopCoroutine(brainCoroutine);
         brainCoroutine = StartCoroutine(RookBrain());
     }

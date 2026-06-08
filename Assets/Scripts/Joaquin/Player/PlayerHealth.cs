@@ -432,7 +432,17 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             animCtrl?.PlayDamage();
             audioController?.PlayDamageSound();
             shaderCtrl?.DamageTrigger();
-            _cinemachineShake.GenerateImpulse();
+
+            Vector3 customVelocity = damageAmount switch
+            {
+                < 10f => new Vector3(0.2f, -1f, 0f),
+                < 20f => new Vector3(0.5f, -2.5f, 0f),
+                < 30f => new Vector3(0.9f, -5f, 0f),
+                _ => new Vector3(1.4f, -10f, 0f)
+            };
+
+            _cinemachineShake.GenerateImpulse(customVelocity);
+
             if (damageUIEffect != null) damageUIEffect.PrimeraHerida = true;
 
             currentHealth -= damageToApply;

@@ -28,6 +28,8 @@ public class KnightPiece : BoardPiece
     private Coroutine brainCoroutine;
     private ChessPieceAttack attackComponent;
 
+    private List<Vector2Int> patrolPath = new List<Vector2Int>();
+
     private readonly Vector2Int[] knightMoves = new Vector2Int[]
     {
         new Vector2Int(2, 1), new Vector2Int(2, -1), new Vector2Int(-2, 1), new Vector2Int(-2, -1),
@@ -204,14 +206,69 @@ public class KnightPiece : BoardPiece
 
     private IEnumerator PatrolRoutine()
     {
-        var validMoves = new List<Vector2Int>();
-        foreach (var m in knightMoves)
+        if (patrolPath.Count == 0)
         {
-            Vector2Int next = currentCoord + m;
-            if (boardManager.TileExists(next) && !boardManager.IsTileOccupied(next)) validMoves.Add(next);
+            GenerateLongPatrolPath();
         }
-        if (validMoves.Count > 0)
-            yield return StartCoroutine(MoveRoutine(validMoves[Random.Range(0, validMoves.Count)], patrolMoveSpeed));
+
+        if (patrolPath.Count > 0)
+        {
+            Vector2Int nextCoord = patrolPath[0];
+
+            if (boardManager.TileExists(nextCoord) && !boardManager.IsTileOccupied(nextCoord))
+            {
+                Vector2Int intermediate = GetIntermediateLPoint(currentCoord, nextCoord);
+                if (boardManager.TileExists(intermediate))
+                {
+                    patrolPath.RemoveAt(0);
+                    yield return StartCoroutine(MoveRoutine(nextCoord, patrolMoveSpeed));
+                }
+                else
+                {
+                    patrolPath.Clear();
+                    yield return new WaitForSeconds(detectionInterval);
+                }
+            }
+            else
+            {
+                patrolPath.Clear();
+                yield return new WaitForSeconds(detectionInterval);
+            }
+        }
+        else
+        {
+            yield return new WaitForSeconds(detectionInterval);
+        }
+    }
+
+    private void GenerateLongPatrolPath()
+    {
+        patrolPath.Clear();
+        Vector2Int current = currentCoord;
+        int pathLength = Random.Range(3, 6);
+
+        for (int i = 0; i < pathLength; i++)
+        {
+            var validMoves = new List<Vector2Int>();
+            foreach (var m in knightMoves)
+            {
+                Vector2Int next = current + m;
+                if (boardManager.TileExists(next))
+                {
+                    Vector2Int intermediate = GetIntermediateLPoint(current, next);
+                    if (boardManager.TileExists(intermediate))
+                    {
+                        validMoves.Add(next);
+                    }
+                }
+            }
+
+            if (validMoves.Count == 0) break;
+
+            Vector2Int chosen = validMoves[Random.Range(0, validMoves.Count)];
+            patrolPath.Add(chosen);
+            current = chosen;
+        }
     }
     #endregion
 
@@ -252,7 +309,10 @@ public class KnightPiece : BoardPiece
     #region Overrides & Gizmos
     public override void OnStunEnd()
     {
-        isStunned = false; isMoving = false; HideTrail();
+        isStunned = false;
+        isMoving = false;
+        HideTrail();
+        patrolPath.Clear();
         if (brainCoroutine != null) StopCoroutine(brainCoroutine);
         brainCoroutine = StartCoroutine(KnightBrain());
     }

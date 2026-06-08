@@ -28,6 +28,8 @@ public class PawnPiece : BoardPiece
     private Coroutine brainCoroutine;
     private ChessPieceAttack attackComponent;
 
+    private List<Vector2Int> patrolPath = new List<Vector2Int>();
+
     private readonly Vector2Int[] moveDirs = new Vector2Int[]
     {
         new Vector2Int(0, 1), new Vector2Int(0, -1),
@@ -204,15 +206,81 @@ public class PawnPiece : BoardPiece
 
     private IEnumerator PatrolRoutine()
     {
-        var valid = new List<Vector2Int>();
-        foreach (var dir in moveDirs)
+        if (patrolPath.Count == 0)
         {
-            Vector2Int next = currentCoord + dir;
-            if (boardManager.TileExists(next) && !boardManager.IsTileOccupied(next))
-                valid.Add(next);
+            GenerateLongPatrolPath();
         }
-        if (valid.Count > 0)
-            yield return StartCoroutine(MoveRoutine(valid[Random.Range(0, valid.Count)], patrolMoveSpeed));
+
+        if (patrolPath.Count > 0)
+        {
+            int stepSize = Random.Range(1, 3);
+            stepSize = Mathf.Min(stepSize, patrolPath.Count);
+
+            Vector2Int targetCoord = currentCoord;
+            int actualSteps = 0;
+
+            for (int i = 0; i < stepSize; i++)
+            {
+                Vector2Int nextCheck = patrolPath[i];
+                if (boardManager.TileExists(nextCheck) && !boardManager.IsTileOccupied(nextCheck))
+                {
+                    targetCoord = nextCheck;
+                    actualSteps++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (actualSteps > 0)
+            {
+                patrolPath.RemoveRange(0, actualSteps);
+                yield return StartCoroutine(MoveRoutine(targetCoord, patrolMoveSpeed));
+            }
+            else
+            {
+                patrolPath.Clear();
+                yield return new WaitForSeconds(detectionInterval);
+            }
+        }
+        else
+        {
+            yield return new WaitForSeconds(detectionInterval);
+        }
+    }
+
+    private void GenerateLongPatrolPath()
+    {
+        patrolPath.Clear();
+        Vector2Int current = currentCoord;
+        Vector2Int lastDir = Vector2Int.zero;
+        int pathLength = Random.Range(6, 10);
+
+        for (int i = 0; i < pathLength; i++)
+        {
+            var validDirs = new List<Vector2Int>();
+            foreach (var dir in moveDirs)
+            {
+                Vector2Int next = current + dir;
+                if (boardManager.TileExists(next))
+                {
+                    validDirs.Add(dir);
+                }
+            }
+
+            if (validDirs.Count == 0) break;
+
+            Vector2Int chosenDir = validDirs[Random.Range(0, validDirs.Count)];
+            if (validDirs.Contains(lastDir) && Random.value > 0.2f)
+            {
+                chosenDir = lastDir;
+            }
+
+            current += chosenDir;
+            patrolPath.Add(current);
+            lastDir = chosenDir;
+        }
     }
     #endregion
 
@@ -269,6 +337,7 @@ public class PawnPiece : BoardPiece
         isStunned = false;
         isMoving = false;
         HideTrail();
+        patrolPath.Clear();
         if (brainCoroutine != null) StopCoroutine(brainCoroutine);
         brainCoroutine = StartCoroutine(PawnBrain());
     }
