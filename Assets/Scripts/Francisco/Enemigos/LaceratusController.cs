@@ -166,6 +166,7 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
     private Vector3 lastPatrolPosition;
     private Vector3 currentPatrolDirection;
+    private Vector3 frozenAttackDirection;
 
     private Coroutine furyDecayCoroutine;
     private Coroutine furyRegenerationCoroutine;
@@ -847,7 +848,27 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         lastAttackTime = Time.time;
         isAttacking = true;
 
-        if (agent != null && agent.enabled) agent.isStopped = true;
+        if (playerTransform != null)
+        {
+            frozenAttackDirection = (playerTransform.position - transform.position).normalized;
+            frozenAttackDirection.y = 0;
+            if (frozenAttackDirection == Vector3.zero) frozenAttackDirection = transform.forward;
+        }
+        else
+        {
+            frozenAttackDirection = transform.forward;
+        }
+
+        transform.forward = frozenAttackDirection;
+
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = true;
+            agent.updatePosition = false;
+            agent.updateRotation = false;
+            agent.velocity = Vector3.zero;
+        }
+
         if (animCtrl != null) animCtrl.PlayAttack();
 
         AudioClip clip = isInFury ? furyAttackClip : normalAttackClip;
@@ -859,7 +880,12 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         if (!isAttacking) return;
 
         isAttacking = false;
-        if (agent != null && agent.enabled) agent.isStopped = false;
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = false;
+            agent.updatePosition = true;
+            agent.updateRotation = true;
+        }
     }
 
     private void OnAttackImpact()
@@ -885,6 +911,10 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         {
             if (!hit.CompareTag("Player")) continue;
 
+            Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;
+            dirToTarget.y = 0;
+            if (Vector3.Dot(dirToTarget, frozenAttackDirection) < 0f) continue;
+
             ExecuteAttack(hit.gameObject, damage);
 
             if (!isInFury)
@@ -902,7 +932,12 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         if (isInAnticipation) return;
 
         isAttacking = false;
-        if (agent != null && agent.enabled) agent.isStopped = false;
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = false;
+            agent.updatePosition = true;
+            agent.updateRotation = true;
+        }
     }
 
     private void ExecuteAttack(GameObject target, float damageAmount)
