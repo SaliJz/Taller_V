@@ -68,11 +68,24 @@ public class CreditsPanel : MonoBehaviour
     [SerializeField] private Color roleColor = new Color(0.8f, 0.8f, 0.8f);
     [SerializeField] private Color nameColor = Color.white;
 
+
+    [SerializeField] private Material estadoDeVidaMaterial;
+
     private Tweener scrollTween;
     private List<GameObject> instantiatedObjects = new List<GameObject>();
     private float contentHeight;
     private float currentYPosition = 0f;
     private float currentLineMaxHeight = 0f;
+
+    private const string PROP_CONDICION_DAÑO = "_Condicion";
+    private const string PROP_TRANSPARENCIA = "_Transparencia";
+    private const string PROP_INTENSIDAD_POSTERIZADO = "_IntensidadPosterizado";
+    private const string PROP_CONDICION_VIDA = "_Condici_n";
+    private const string PROP_TIEMPO_RESPIRACION = "_TiempoRespiraci_n";
+    private const string PROP_TAMAÑO_DITHER = "_Tama_oDither";
+    private const string PROP_LIMITE_DITHER = "_LimiteDither";
+    private const string PROP_CONDICION_PIXEL = "_Condici_nPixel";
+    private const string PROP_SIZE_PIXEL = "_SizePixel";
 
     #endregion
 
@@ -113,6 +126,16 @@ public class CreditsPanel : MonoBehaviour
         {
             gameObject.SetActive(false);
         }
+
+        SetFloat(PROP_CONDICION_DAÑO, 0f);
+        SetFloat(PROP_TRANSPARENCIA, 72f);
+        SetFloat(PROP_INTENSIDAD_POSTERIZADO, 0f);
+        SetFloat(PROP_CONDICION_VIDA, 0f);
+        SetFloat(PROP_TIEMPO_RESPIRACION, 4f);
+        SetFloat(PROP_TAMAÑO_DITHER, 24.5f);
+        SetFloat(PROP_LIMITE_DITHER, 0.3f);
+        SetFloat(PROP_CONDICION_PIXEL, 0f);
+        SetFloat(PROP_SIZE_PIXEL, 150f);
     }
 
     private void OnDestroy()
@@ -245,6 +268,11 @@ public class CreditsPanel : MonoBehaviour
         {
             creditsContainer.anchoredPosition = new Vector2(creditsContainer.anchoredPosition.x, 0f);
         }
+    }
+
+    private void SetFloat(string property, float value)
+    {
+        estadoDeVidaMaterial.SetFloat(property, value);
     }
 
     #endregion

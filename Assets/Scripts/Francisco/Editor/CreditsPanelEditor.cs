@@ -35,6 +35,7 @@ public class CreditsPanelEditor : Editor
     private SerializedProperty subtitleColorProp;
     private SerializedProperty roleColorProp;
     private SerializedProperty nameColorProp;
+    private SerializedProperty estadoDeVidaMaterial;
 
     private void OnEnable()
     {
@@ -70,6 +71,7 @@ public class CreditsPanelEditor : Editor
         subtitleColorProp = serializedObject.FindProperty("subtitleColor");
         roleColorProp = serializedObject.FindProperty("roleColor");
         nameColorProp = serializedObject.FindProperty("nameColor");
+        estadoDeVidaMaterial = serializedObject.FindProperty("estadoDeVidaMaterial");
     }
 
     public override void OnInspectorGUI()
@@ -144,6 +146,11 @@ public class CreditsPanelEditor : Editor
         EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("Credits Content", EditorStyles.boldLabel);
         if (creditsEntriesProp != null) EditorGUILayout.PropertyField(creditsEntriesProp, true);
+
+        EditorGUILayout.Space(10);
+        EditorGUILayout.LabelField("References Content", EditorStyles.boldLabel);
+        if (estadoDeVidaMaterial != null) EditorGUILayout.PropertyField(estadoDeVidaMaterial);
+
 
         serializedObject.ApplyModifiedProperties();
     }
