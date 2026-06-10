@@ -34,6 +34,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
     [SerializeField] GameObject[] VFX_meleeBegin;
     [SerializeField] GameObject[] VFX_meleeMid;
     [SerializeField] GameObject[] VFX_meleeLate;
+    [SerializeField] ParticleSystem VFX_wallParticles;
 
     [Header("Debug")]
     [SerializeField] private bool debug = false;
@@ -77,11 +78,13 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
 
             H = Input.GetAxisRaw("Horizontal");
             V = Input.GetAxisRaw("Vertical");
+            
         }
         _externalInputThisFrame = false;
 
         UpdateDirection(H,V);
         UpdateAgeState();
+        UpdateWalkParticles();
         
         #if UNITY_EDITOR
         if(SceneManager.GetActiveScene().name == "AndreiNew")
@@ -107,21 +110,6 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         bool ageChanged = currentAge != nextAge;
 
         bool forceRefresh = shieldChanged || ageChanged;
-        // bool stateChanged = nextState != currentState;
-        // bool directionChanged = lastDirection != currentDirection;
-
-        // if(stateChanged || directionChanged || shieldChanged || ageChanged)
-        // {
-        //     bool shouldReset = stateChanged&& !IsLoopingState(nextState);
-        //     if(shieldChanged && !IsLoopingState(nextState)) shouldReset = false;
-
-        //     currentState = nextState;
-        //     currentShield = HasShield;
-        //     currentAge = nextAge;
-        //     currentDirection = lastDirection;
-
-        //     PlayState(currentState, AnimPriority.locomotion, shouldReset);
-        // }
 
         if (forceRefresh)
         {
@@ -129,7 +117,23 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
             currentAge = nextAge;
         }
 
+
         PlayState(nextState, AnimPriority.locomotion, forceRefresh);
+    }
+
+    private void UpdateWalkParticles()
+    {
+         if(VFX_wallParticles != null)
+        {
+            if (IsWalking() && currentPriority == AnimPriority.locomotion)
+            {
+                if (!VFX_wallParticles.isPlaying) VFX_wallParticles.Play();
+            } 
+            else
+            {
+                if (!VFX_wallParticles.isStopped) VFX_wallParticles.Stop();
+            } 
+        }
     }
 
     private void UpdateAgeState()

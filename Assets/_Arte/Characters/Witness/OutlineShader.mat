@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: MaterialCortina
-  m_Shader: {fileID: -6465566751694194690, guid: badda52191bf5b14ba5c2ad80bb4d059, type: 3}
+  m_Name: OutlineShader
+  m_Shader: {fileID: -6465566751694194690, guid: edf7f22319ff76649916fd4fabcc53f2, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -18,8 +18,9 @@ Material:
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: _Color
+  disabledShaderPasses:
+  - MOTIONVECTORS
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -37,12 +38,23 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Pixeles: 1000
-    - _PosterizeSteps: 27.2
-    - _Progress: 1
-    - _Softness: 1
+    - _OutlineSize: 1.05
+    - _QueueControl: 0
+    - _QueueOffset: 0
     m_Colors:
-    - _Color: {r: 0, g: 0.8182056, b: 1, a: 1}
-    - _ColorPixeles: {r: 0.3636056, g: 1, b: 0.051886797, a: 0}
+    - _OutlineColor: {r: 0, g: 1, b: 0.6194389, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!114 &136927846659427888
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 10
