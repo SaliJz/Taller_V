@@ -48,7 +48,9 @@ public class PlayerStatsPanel : MonoBehaviour
 
     private void Update()
     {
-        bool isInventoryOpen = InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen;
+        bool isInventoryOpen = InventoryUIManager.Instance != null &&
+                               InventoryUIManager.Instance.IsOpen &&
+                               !InventoryUIManager.Instance.IsConfirmPanelOpen;
 
         if (isInventoryOpen != wasInventoryOpen)
         {

@@ -14,6 +14,7 @@ public class InventoryUIManager : MonoBehaviour
 
     public static InventoryUIManager Instance { get; private set; }
     public bool IsOpen => isOpen;
+    public bool IsConfirmPanelOpen => isConfirmPanelOpen;
 
     #endregion
 
@@ -125,6 +126,7 @@ public class InventoryUIManager : MonoBehaviour
 
     private bool isOpen;
     private bool isConfirmPanelOpen;
+    private bool wasInventoryOpenBeforeConfirm;
     private int confirmNavIndex; // 0 = Confirmar, 1 = Cancelar
     private bool confirmPanelJustOpened; // true durante 1 frame para ignorar el input que abrió el panel
     private ShopItem pendingReplaceItem;
@@ -174,6 +176,12 @@ public class InventoryUIManager : MonoBehaviour
 
     private void Update()
     {
+        if (isConfirmPanelOpen)
+        {
+            UpdateGamepadConfirmNavigation();
+            return;
+        }
+
         // Teclado: Tab
         if (Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame)
         {
@@ -181,7 +189,7 @@ public class InventoryUIManager : MonoBehaviour
             return;
         }
 
-        // Gamepad: LT (leftTrigger)
+        // Gamepad: Select 
         if (Gamepad.current != null)
         {
             if (Gamepad.current.selectButton.wasPressedThisFrame)
@@ -190,11 +198,9 @@ public class InventoryUIManager : MonoBehaviour
             }
         }
 
-        // Gamepad: navegacion (redirige al panel de confirmacion si esta visible)
         if (isOpen)
         {
-            if (isConfirmPanelOpen) UpdateGamepadConfirmNavigation();
-            else UpdateGamepadNavigation();
+            UpdateGamepadNavigation();
         }
     }
 
@@ -320,6 +326,16 @@ public class InventoryUIManager : MonoBehaviour
         {
             Debug.Log("[InventoryUIManager] El cierre del inventario está bloqueado en este momento.");
             return;
+        }
+
+        if (isConfirmPanelOpen)
+        {
+            var shopRef = pendingShopManager;
+            pendingReplaceItem = null;
+            pendingShopManager = null;
+            shopRef?.RegisterPendingPurchaseCallback(null);
+            shopRef?.FireCancelCallback();
+            isConfirmPanelOpen = false;
         }
 
         isOpen = false;
@@ -631,6 +647,7 @@ public class InventoryUIManager : MonoBehaviour
             return;
         }
 
+        wasInventoryOpenBeforeConfirm = isOpen;
         isOpen = true;
 
         if (itemUIPanel != null && itemUIPanel.activeSelf) itemUIPanel.SetActive(false);
@@ -668,9 +685,14 @@ public class InventoryUIManager : MonoBehaviour
             RefreshDisplay();
         }
 
-        isOpen = false;
         isConfirmPanelOpen = false;
         replaceConfirmPanel?.SetActive(false);
+
+        if (!wasInventoryOpenBeforeConfirm)
+        {
+            isOpen = false;
+        }
+
         Time.timeScale = confirmPreviousTimeScale;
     }
 
@@ -678,17 +700,21 @@ public class InventoryUIManager : MonoBehaviour
     {
         ReportDebug("Jugador cancela el reemplazo de item mecanico. No se realizara ningun cambio.", 1);
 
-        isOpen = false;
-        isConfirmPanelOpen = false;
-        replaceConfirmPanel?.SetActive(false);
-        Time.timeScale = confirmPreviousTimeScale;
-
-        // Guardar referencia antes de nullear para que FireCancelCallback llegue a ShopItemDisplay
         var shopRef = pendingShopManager;
         pendingReplaceItem = null;
         pendingShopManager = null;
         shopRef?.RegisterPendingPurchaseCallback(null);
         shopRef?.FireCancelCallback();
+
+        isConfirmPanelOpen = false;
+        replaceConfirmPanel?.SetActive(false);
+
+        if (!wasInventoryOpenBeforeConfirm)
+        {
+            isOpen = false;
+        }
+
+        Time.timeScale = confirmPreviousTimeScale;
     }
 
     /// <summary>

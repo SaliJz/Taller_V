@@ -127,11 +127,11 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         {
             if (IsWalking() && currentPriority == AnimPriority.locomotion)
             {
-                if (!VFX_wallParticles.isPlaying) VFX_wallParticles.Play();
+                if (!VFX_wallParticles.isPlaying) VFXHelper.SafePlay(VFX_wallParticles);
             } 
             else
             {
-                if (!VFX_wallParticles.isStopped) VFX_wallParticles.Stop();
+                if (!VFX_wallParticles.isStopped) VFXHelper.SafeStop(VFX_wallParticles, false);
             } 
         }
     }

@@ -402,6 +402,18 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
     }
 
+    private static (float h, float v) SnapTo8Dir(float x, float y)
+    {
+        if (x == 0 && y == 0) return (0, 0);
+
+        float angle = Mathf.Atan2(y, x) * Mathf.Rad2Deg;
+        float snapped = Mathf.Round(angle / 45f) * 45f;
+
+        float h = Mathf.Round(Mathf.Cos(snapped * Mathf.Deg2Rad));
+        float v = Mathf.Round(Mathf.Sin(snapped * Mathf.Deg2Rad));
+        return (h, v);
+    }
+
     /// <summary>
     /// Procesa el input leído, orientándolo respecto a la cámara principal y gestionando sonidos de paso y animaciones.
     /// </summary>
@@ -446,8 +458,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             {
                 if (hasInput)
                 {
-                    lastMoveX = Mathf.Round(moveX);
-                    lastMoveY = Mathf.Round(moveY);
+                    var (h, v) = SnapTo8Dir(moveX, moveY);
+                    lastMoveX = h;
+                    lastMoveY = v;
+                    playerAnimCtrl?.SetInputAxes(lastMoveX, lastMoveY);
                 }
                 else
                 {

@@ -73,6 +73,13 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
     {
         if (!context.started) return;
 
+        if (InventoryUIManager.Instance != null &&
+            InventoryUIManager.Instance.IsOpen &&
+            !InventoryUIManager.Instance.IsConfirmPanelOpen)
+        {
+            return;
+        }
+
         if (isPlayerInProximity && shopManager != null)
         {
             AttemptPurchase();

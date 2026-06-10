@@ -4,7 +4,7 @@ using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.AI;
 
-public partial class AstarothController : MonoBehaviour
+public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 {
     #region Enums
 
@@ -491,6 +491,11 @@ public partial class AstarothController : MonoBehaviour
         {
             LaunchSmashRockToPlayer();
         }
+    }
+
+    public void HandleAnimEvents(string eventName)
+    {
+
     }
 
     private void CacheSmashRockTransform()
