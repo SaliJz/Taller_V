@@ -243,13 +243,9 @@ public partial class AstarothController
 
         yield return new WaitForSeconds(_mudWaveWarningTime);
 
-        float previousAnimatorSpeed = 1f;
-        if (_animator != null)
-        {
-            previousAnimatorSpeed = _animator.speed;
-            _animator.speed = previousAnimatorSpeed * _mudWaveAnimatorSpeedMultiplier;
-            _animator.SetBool(AnimID_IsRunning, true);
-        }
+        float previousAnimatorSpeed = _animCtrl != null ? _animCtrl.GetAnimatorSpeed() : 1f;
+        _animCtrl?.SetAnimatorSpeed(previousAnimatorSpeed * _mudWaveAnimatorSpeedMultiplier);
+        if (_animCtrl != null) _animCtrl.isWalking = true;
 
         PlayMudWaveWindVFX();
 
@@ -295,11 +291,8 @@ public partial class AstarothController
 
         StopMudWaveWindVFX();
 
-        if (_animator != null)
-        {
-            _animator.speed = previousAnimatorSpeed;
-            _animator.SetBool(AnimID_IsRunning, false);
-        }
+        _animCtrl?.SetAnimatorSpeed(previousAnimatorSpeed);
+        if (_animCtrl != null) _animCtrl.isWalking = false;
 
         _navMeshAgent.Warp(transform.position);
         _navMeshAgent.speed = _originalSpeed;

@@ -26,7 +26,7 @@ public class TheWeightAnimCtrl : MonoBehaviour
     [SerializeField] Material swapMaterial;
     [SerializeField] float ghostVanishTime = 0.2f;
     [SerializeField] GameObject FleshPrefab;
-    [SerializeField] int fleshCount; 
+    [SerializeField] int fleshCount;
     [SerializeField] float fleshLifetime;
 
     Animator formaBase_anim;
@@ -35,7 +35,7 @@ public class TheWeightAnimCtrl : MonoBehaviour
     Animator pulpo_anim;
 
     private bool internalWalking;
-    public bool isWalking ///////ESTE BOOL SE DEBE IGUALAR AL VALOR EQUIVALENTE DE WALKING DEL BOSS
+    public bool isWalking
     {
         get => internalWalking;
         set
@@ -46,13 +46,13 @@ public class TheWeightAnimCtrl : MonoBehaviour
         }
     }
 
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
     void Update()
     {
-        if(SceneManager.GetActiveScene().name == "AndreiNew")
-        TestImputs();
+        if (SceneManager.GetActiveScene().name == "AndreiNew")
+            TestImputs();
     }
-    #endif
+#endif
 
     private const string ANIM_BASE_ATTACK = "A_Base_Attack";
     private const string ANIM_CANON_SHOT = "A_Canon_Disparo";
@@ -79,30 +79,30 @@ public class TheWeightAnimCtrl : MonoBehaviour
 
         switch (newForm)
         {
-            case SwapForms.formaBase: 
-            {
-                formaBaseModel.SetActive(true); 
-                currentMesh = formaBaseMesh;
-                break;
-            }
-            case SwapForms.apisonador: 
-            {
-                apisonadorModel.SetActive(true);
-                currentMesh = apisonadorMesh;
-                break;
-            }
-            case SwapForms.canon: 
-            {
-                canonModel.SetActive(true);
-                currentMesh = canonMesh;
-                break;
-            }
-            case SwapForms.pulpo: 
-            {
-                pulpoModel.SetActive(true);
-                currentMesh = pulpoMesh;
-                break;
-            }
+            case SwapForms.formaBase:
+                {
+                    formaBaseModel.SetActive(true);
+                    currentMesh = formaBaseMesh;
+                    break;
+                }
+            case SwapForms.apisonador:
+                {
+                    apisonadorModel.SetActive(true);
+                    currentMesh = apisonadorMesh;
+                    break;
+                }
+            case SwapForms.canon:
+                {
+                    canonModel.SetActive(true);
+                    currentMesh = canonMesh;
+                    break;
+                }
+            case SwapForms.pulpo:
+                {
+                    pulpoModel.SetActive(true);
+                    currentMesh = pulpoMesh;
+                    break;
+                }
         }
     }
 
@@ -138,10 +138,10 @@ public class TheWeightAnimCtrl : MonoBehaviour
     {
         Vector3[] vertices = bakedMesh.vertices;
 
-        for(int i = 0; i < fleshCount; i++)
+        for (int i = 0; i < fleshCount; i++)
         {
             Vector3 localPos = vertices[Random.Range(0, vertices.Length)];
-            Vector3 worldPos = currentMesh[0]. transform.TransformPoint(localPos);
+            Vector3 worldPos = currentMesh[0].transform.TransformPoint(localPos);
 
             GameObject currentFlesh = Instantiate(FleshPrefab, worldPos, Random.rotation);
 
@@ -159,17 +159,46 @@ public class TheWeightAnimCtrl : MonoBehaviour
     public void PlayAttack() => formaBase_anim.Play(ANIM_BASE_ATTACK);
     public void PlayCanonShot() => canon_anim.SetTrigger("Shot");
 
+    public void SetAttacking(bool attacking)
+    {
+        formaBase_anim.SetBool("InsAttacking", attacking);
+    }
+
+    public void SetExitSA(bool exitSA)
+    {
+        formaBase_anim.SetBool("ExitSA", exitSA);
+    }
+
+    public void SetAnimatorSpeed(float speed)
+    {
+        formaBase_anim.speed = speed;
+        apisonador_anim.speed = speed;
+        canon_anim.speed = speed;
+        pulpo_anim.speed = speed;
+    }
+
+    public float GetAnimatorSpeed()
+    {
+        return formaBase_anim.speed;
+    }
+
+    public void PlayDeath()
+    {
+        formaBase_anim.ResetTrigger("DeathTrigger");
+        formaBase_anim.SetTrigger("DeathTrigger");
+    }
+
     #endregion
 
     void TestImputs()
     {
-        if(Input.GetKeyDown(KeyCode.J)) PlayApisonador();
-        if(Input.GetKeyDown(KeyCode.K)) PlayCanon();
-        if(Input.GetKeyDown(KeyCode.L)) PlayPulpo();
-        if(Input.GetKeyDown(KeyCode.O)) ReturnToIdle();
-        if(Input.GetKeyDown(KeyCode.Mouse0)) PlayPrepareBaseAttack();
-        if(Input.GetKeyDown(KeyCode.Mouse1)) PlayAttack();
-        if(Input.GetKeyDown(KeyCode.N)) PlayCanonShot();
+        if (Input.GetKeyDown(KeyCode.J)) PlayApisonador();
+        if (Input.GetKeyDown(KeyCode.K)) PlayCanon();
+        if (Input.GetKeyDown(KeyCode.L)) PlayPulpo();
+        if (Input.GetKeyDown(KeyCode.O)) ReturnToIdle();
+        if (Input.GetKeyDown(KeyCode.Mouse0)) PlayPrepareBaseAttack();
+        if (Input.GetKeyDown(KeyCode.Mouse1)) PlayAttack();
+        if (Input.GetKeyDown(KeyCode.N)) PlayCanonShot();
 
         float h = Input.GetAxisRaw("Horizontal");
         float y = Input.GetAxisRaw("Vertical");

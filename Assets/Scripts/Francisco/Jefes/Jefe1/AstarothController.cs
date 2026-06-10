@@ -54,7 +54,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     [Header("Movement Settings")]
     [SerializeField] private float _stoppingDistance = 15f;
     [SerializeField] private float _safeDistance = 2.5f;
-    [SerializeField] private Animator _animator;
 
     private NavMeshAgent _navMeshAgent;
     private float _originalSpeed;
@@ -214,7 +213,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     [SerializeField] private float _movementSpeedForPulse = 10f;
     [SerializeField] private float _pulseDelay = 1.05f;
 
-    [Header("Evolución Pulso Carnal")]
+    [Header("Evolucion Pulso Carnal")]
     [SerializeField] private float _speedBuffPerPulse = 0.20f;
 
     private float _currentEvolutionMultiplier = 1.0f;
@@ -301,20 +300,9 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
     #endregion
 
-    #region Animation Hashes & Events
+    #region Animation
 
-    private static readonly int AnimID_IsRunning = Animator.StringToHash("IsRunning");
-    private static readonly int AnimID_IsDeath = Animator.StringToHash("DeathTrigger");
-    private static readonly int AnimID_InsAttacking = Animator.StringToHash("InsAttacking");
-    private static readonly int AnimID_Attack = Animator.StringToHash("Attack");
-    private static readonly int AnimID_ExitSA = Animator.StringToHash("ExitSA");
-
-    private const int ATTACK_NONE = 0;
-    private const int ATTACK_WHIP = 1;
-    private const int ATTACK_SMASH = 2;
-    private const int ATTACK_SPECIAL = 3;
-
-    private AnimationEventBridge _animEventBridge;
+    private TheWeightAnimCtrl _animCtrl;
 
     #endregion
 
@@ -324,14 +312,9 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     {
         if (_enemyHealth == null) _enemyHealth = GetComponent<EnemyHealth>();
         if (_navMeshAgent == null) _navMeshAgent = GetComponent<NavMeshAgent>();
-        if (_animator == null) _animator = GetComponentInChildren<Animator>();
+        if (_animCtrl == null) _animCtrl = GetComponentInChildren<TheWeightAnimCtrl>();
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
         if (_enemyVisualEffects == null) _enemyVisualEffects = GetComponent<EnemyVisualEffects>();
-
-        if (_animator != null)
-        {
-            _animEventBridge = _animator.GetComponent<AnimationEventBridge>();
-        }
 
         if (_vcam == null)
         {
@@ -385,11 +368,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
             _enemyHealth.OnHealthChanged += HandleEnemyHealthChange;
             _enemyHealth.OnDamaged += HandleDamageReceived;
         }
-
-        if (_animEventBridge != null)
-        {
-            _animEventBridge.OnAnimationStringTriggered += HandleAnimationStringEvent;
-        }
     }
 
     private void OnDisable()
@@ -399,11 +377,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
             _enemyHealth.OnDeath -= HandleEnemyDeath;
             _enemyHealth.OnHealthChanged -= HandleEnemyHealthChange;
             _enemyHealth.OnDamaged -= HandleDamageReceived;
-        }
-
-        if (_animEventBridge != null)
-        {
-            _animEventBridge.OnAnimationStringTriggered -= HandleAnimationStringEvent;
         }
     }
 
@@ -485,17 +458,12 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
     #region Animation Events
 
-    private void HandleAnimationStringEvent(string eventName)
+    public void HandleAnimEvents(string eventName)
     {
         if (eventName == nameof(LaunchSmashRockToPlayer))
         {
             LaunchSmashRockToPlayer();
         }
-    }
-
-    public void HandleAnimEvents(string eventName)
-    {
-
     }
 
     private void CacheSmashRockTransform()
@@ -725,11 +693,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     {
         if (_isDead) return;
 
-        if (_animator != null)
-        {
-            _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
-            _animator.SetBool(AnimID_InsAttacking, false);
-        }
+        _animCtrl?.SetAttacking(false);
 
         DestroyWhipIndicator(_activeWhipIndicator);
         SetStompIndicatorsActive(false);
@@ -747,7 +711,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         float distance = Vector3.Distance(transform.position, _player.position);
 
         bool isMoving = _navMeshAgent.velocity.magnitude > 0.1f && !_navMeshAgent.isStopped;
-        if (_animator != null) _animator.SetBool(AnimID_IsRunning, isMoving);
+        if (_animCtrl != null) _animCtrl.isWalking = isMoving;
 
         if (distance > _stoppingDistance)
         {
@@ -860,17 +824,13 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
             _navMeshAgent.enabled = false;
         }
 
-        if (_animator != null)
+        if (_animCtrl != null)
         {
-            _animator.speed = 1f;
-
-            _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
-            _animator.SetBool(AnimID_InsAttacking, false);
-            _animator.SetBool(AnimID_IsRunning, false);
-            _animator.SetBool(AnimID_ExitSA, false);
-
-            _animator.ResetTrigger(AnimID_IsDeath);
-            _animator.SetTrigger(AnimID_IsDeath);
+            _animCtrl.SetAnimatorSpeed(1f);
+            _animCtrl.SetAttacking(false);
+            _animCtrl.isWalking = false;
+            _animCtrl.SetExitSA(false);
+            _animCtrl.PlayDeath();
         }
 
         if (audioSource != null && deathSFX != null) audioSource.PlayOneShot(deathSFX);
@@ -967,11 +927,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
         if (_trailRenderer != null) _trailRenderer.enabled = false;
 
-        if (_animator != null)
-        {
-            _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
-            _animator.SetBool(AnimID_InsAttacking, false);
-        }
+        _animCtrl?.SetAttacking(false);
 
         _currentState = BossState.SpecialAbility;
         _isSpecialAbilityPending = false;

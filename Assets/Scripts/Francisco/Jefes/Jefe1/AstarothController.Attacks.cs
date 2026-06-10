@@ -22,12 +22,8 @@ public partial class AstarothController
 
         LookAtPlayer();
 
-        if (_animator != null)
-        {
-            _animator.SetBool(AnimID_IsRunning, false);
-            _animator.SetBool(AnimID_InsAttacking, true);
-            _animator.SetInteger(AnimID_Attack, ATTACK_WHIP);
-        }
+        if (_animCtrl != null) _animCtrl.isWalking = false;
+        if (_animCtrl != null) _animCtrl.PlayPrepareBaseAttack();
 
         whipIndicator = CreatePersistentWhipIndicator();
 
@@ -47,11 +43,7 @@ public partial class AstarothController
 
         DestroyWhipIndicator(whipIndicator);
 
-        if (_animator != null)
-        {
-            _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
-            _animator.SetBool(AnimID_InsAttacking, false);
-        }
+        _animCtrl?.SetAttacking(false);
 
         _isAttackingWithWhip = false;
     }
@@ -165,12 +157,8 @@ public partial class AstarothController
 
         BeginHeldSmashRock();
 
-        if (_animator != null)
-        {
-            _animator.SetBool(AnimID_IsRunning, false);
-            _animator.SetBool(AnimID_InsAttacking, true);
-            _animator.SetInteger(AnimID_Attack, ATTACK_SMASH);
-        }
+        if (_animCtrl != null) _animCtrl.isWalking = false;
+        if (_animCtrl != null) _animCtrl.SetAttacking(true);
 
         Coroutine indicatorRoutine = StartCoroutine(TrackSmashGroundIndicatorDuringAnimation());
 
@@ -204,11 +192,7 @@ public partial class AstarothController
 
         yield return new WaitForSeconds(0.25f);
 
-        if (_animator != null)
-        {
-            _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
-            _animator.SetBool(AnimID_InsAttacking, false);
-        }
+        _animCtrl?.SetAttacking(false);
 
         _isSmashing = false;
         ResetSmashVisuals();
@@ -557,10 +541,7 @@ public partial class AstarothController
 
         _isUsingSpecialAbility = true;
 
-        if (_animator != null)
-        {
-            _animator.SetBool(AnimID_IsRunning, true);
-        }
+        if (_animCtrl != null) _animCtrl.isWalking = true;
 
         yield return MoveToCenter(_roomCenter);
 
@@ -570,13 +551,9 @@ public partial class AstarothController
             _navMeshAgent.velocity = Vector3.zero;
         }
 
-        if (_animator != null)
-        {
-            _animator.SetBool(AnimID_IsRunning, false);
-            _animator.SetBool(AnimID_ExitSA, false);
-            _animator.SetBool(AnimID_InsAttacking, true);
-            _animator.SetInteger(AnimID_Attack, ATTACK_SPECIAL);
-        }
+        if (_animCtrl != null) _animCtrl.isWalking = false;
+        if (_animCtrl != null) _animCtrl.SetExitSA(false);
+        if (_animCtrl != null) _animCtrl.SetAttacking(true);
 
         yield return new WaitForSeconds(_pulseDelay);
 
@@ -629,19 +606,12 @@ public partial class AstarothController
 
         ApplyEvolutionBuff();
 
-        if (_animator != null)
-        {
-            _animator.SetBool(AnimID_ExitSA, true);
-            _animator.SetBool(AnimID_InsAttacking, false);
-            _animator.SetInteger(AnimID_Attack, ATTACK_NONE);
-        }
+        _animCtrl?.SetExitSA(true);
+        _animCtrl?.SetAttacking(false);
 
         yield return new WaitForSeconds(1f);
 
-        if (_animator != null)
-        {
-            _animator.SetBool(AnimID_ExitSA, false);
-        }
+        _animCtrl?.SetExitSA(false);
 
         _isUsingSpecialAbility = false;
         _currentState = BossState.Moving;
@@ -660,10 +630,7 @@ public partial class AstarothController
             _navMeshAgent.speed *= 1f + _speedBuffPerPulse;
         }
 
-        if (_animator != null)
-        {
-            _animator.speed = _currentEvolutionMultiplier;
-        }
+        _animCtrl?.SetAnimatorSpeed(_currentEvolutionMultiplier);
     }
 
     private IEnumerator MoveToCenter(Vector3 targetCenter)
