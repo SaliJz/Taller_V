@@ -3,20 +3,25 @@ using UnityEngine;
 [RequireComponent(typeof(MeshRenderer))]
 public class EspejoController : MonoBehaviour
 {
-    [Header("Estados")]
-    public bool Base = true;
-    public bool Nivel1;
-    public bool Nivel2;
-    public bool Nivel3;
+    public enum EstadoEspejo
+    {
+        Base,
+        Nivel1,
+        Nivel2,
+        Nivel3
+    }
+
+    [Header("Estado actual")]
+    public EstadoEspejo estadoActual = EstadoEspejo.Base;
 
     [Header("Materiales")]
     public Material textBase;
     public Material EspejoMaterial;
 
-    [Header("Posiciones de Cámara")]
-    public Transform nivel1;
-    public Transform nivel2;
-    public Transform nivel3;
+    [Header("Objetos por nivel")]
+    public GameObject nivel1;
+    public GameObject nivel2;
+    public GameObject nivel3;
 
     [Header("Referencias")]
     public GameObject Player;
@@ -31,10 +36,7 @@ public class EspejoController : MonoBehaviour
     private Vector3 ultimaPosicionPlayer;
     private float rotacionActualY;
 
-    private bool lastBase;
-    private bool lastNivel1;
-    private bool lastNivel2;
-    private bool lastNivel3;
+    private EstadoEspejo ultimoEstado;
 
     private void Awake()
     {
@@ -43,64 +45,25 @@ public class EspejoController : MonoBehaviour
         if (Player != null)
             ultimaPosicionPlayer = Player.transform.position;
 
-        GuardarEstados();
+        ultimoEstado = estadoActual;
         AplicarEstado();
     }
 
     private void Update()
     {
-        ControlarBoolUnico();
-        AplicarEstado();
+        if (estadoActual != ultimoEstado)
+        {
+            AplicarEstado();
+            ultimoEstado = estadoActual;
+        }
+
         RotarCamaraSegunPlayer();
-    }
-
-    private void ControlarBoolUnico()
-    {
-        if (Base != lastBase && Base)
-        {
-            Nivel1 = false;
-            Nivel2 = false;
-            Nivel3 = false;
-        }
-        else if (Nivel1 != lastNivel1 && Nivel1)
-        {
-            Base = false;
-            Nivel2 = false;
-            Nivel3 = false;
-        }
-        else if (Nivel2 != lastNivel2 && Nivel2)
-        {
-            Base = false;
-            Nivel1 = false;
-            Nivel3 = false;
-        }
-        else if (Nivel3 != lastNivel3 && Nivel3)
-        {
-            Base = false;
-            Nivel1 = false;
-            Nivel2 = false;
-        }
-
-        if (!Base && !Nivel1 && !Nivel2 && !Nivel3)
-        {
-            Base = true;
-        }
-
-        GuardarEstados();
-    }
-
-    private void GuardarEstados()
-    {
-        lastBase = Base;
-        lastNivel1 = Nivel1;
-        lastNivel2 = Nivel2;
-        lastNivel3 = Nivel3;
     }
 
     private void AplicarEstado()
     {
         AplicarMaterial();
-        MoverCamaraANivel();
+        ActivarNivel();
     }
 
     private void AplicarMaterial()
@@ -115,7 +78,7 @@ public class EspejoController : MonoBehaviour
             return;
         }
 
-        if (Base)
+        if (estadoActual == EstadoEspejo.Base)
         {
             materiales[2] = textBase;
         }
@@ -127,22 +90,16 @@ public class EspejoController : MonoBehaviour
         meshRenderer.materials = materiales;
     }
 
-    private void MoverCamaraANivel()
+    private void ActivarNivel()
     {
-        if (CameraEspejo == null) return;
+        if (nivel1 != null)
+            nivel1.SetActive(estadoActual == EstadoEspejo.Nivel1);
 
-        if (Nivel1 && nivel1 != null)
-        {
-            CameraEspejo.transform.position = nivel1.position;
-        }
-        else if (Nivel2 && nivel2 != null)
-        {
-            CameraEspejo.transform.position = nivel2.position;
-        }
-        else if (Nivel3 && nivel3 != null)
-        {
-            CameraEspejo.transform.position = nivel3.position;
-        }
+        if (nivel2 != null)
+            nivel2.SetActive(estadoActual == EstadoEspejo.Nivel2);
+
+        if (nivel3 != null)
+            nivel3.SetActive(estadoActual == EstadoEspejo.Nivel3);
     }
 
     private void RotarCamaraSegunPlayer()
