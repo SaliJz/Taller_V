@@ -59,7 +59,7 @@ public class StaticAnimCtrl : MonoBehaviour
             tpArray[i] = tpMaterial;
         }
 
-        mesh.materials = tpArray;
+        if (mesh != null) mesh.materials = tpArray;
 
         if (anim != null) anim.Play("TP out");
     }
@@ -78,7 +78,7 @@ public class StaticAnimCtrl : MonoBehaviour
     {
         mesh.sharedMaterials = originalMaterials;
 
-        visualEffects?.ReapplyAmountFlashMaterial();
+        if (visualEffects != null) visualEffects.ReapplyAmountFlashMaterials();
     }
 
     public void PauseAnimation()

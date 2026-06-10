@@ -739,8 +739,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 120953a634ec616478c5722a12285e45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  meshRenderers: []
-  spriteRenderers: []
+  renderers:
+  - {fileID: 231278842355388676}
   damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
   damageNumberParent: {fileID: 922941283125968610}
   audioSource: {fileID: 1249595950714450606}
@@ -748,8 +748,7 @@ MonoBehaviour:
   toughnessBlockSFX: {fileID: 0}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
-  useAmountFlash: 0
-  amountFlashRenderer: {fileID: 0}
+  useAmountFlash: 1
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
@@ -2431,6 +2430,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 95594fc0d58674141ad96fab53b8e4ed, type: 3}
+--- !u!137 &231278842355388676 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -1113911287857993747, guid: 95594fc0d58674141ad96fab53b8e4ed, type: 3}
+  m_PrefabInstance: {fileID: 8340452605037983465}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8373744256824135938 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 95594fc0d58674141ad96fab53b8e4ed, type: 3}

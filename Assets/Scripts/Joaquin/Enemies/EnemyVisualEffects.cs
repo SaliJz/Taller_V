@@ -10,10 +10,8 @@ public class EnemyVisualEffects : MonoBehaviour
     #region Inspector - References
 
     [Header("Renderers Configuration")]
-    [Tooltip("Si se deja vacio, buscara MeshRenderers en los hijos.")]
-    [SerializeField] private Renderer[] meshRenderers;
-    [Tooltip("Si se deja vacio, buscara SpriteRenderers en los hijos.")]
-    [SerializeField] private SpriteRenderer[] spriteRenderers;
+    [Tooltip("Si se deja vacio, buscara Renderers en los hijos.")]
+    [SerializeField] private Renderer[] renderers;
 
     [Header("Damage Numbers")]
     [SerializeField] private GameObject damageNumberPrefab;
@@ -31,10 +29,8 @@ public class EnemyVisualEffects : MonoBehaviour
     #region Inspector - Flash And Blink Settings
 
     [Header("Flash And Blink Amount Override")]
-    [Tooltip("Si es true, se anima el valor '_Amount' en el renderer referenciado.")]
+    [Tooltip("Si es true, se anima el valor '_Amount' en los renderers referenciados.")]
     [SerializeField] private bool useAmountFlash = false;
-    [Tooltip("Renderer cuyo material recibira el cambio de _Amount.")]
-    [SerializeField] private Renderer amountFlashRenderer;
     [Tooltip("Nombre de la propiedad float del shader que se animara.")]
     [SerializeField] private string amountFlashProperty = "_Amount";
     [Tooltip("Valor del _Amount durante el pico del flash.")]
@@ -71,19 +67,18 @@ public class EnemyVisualEffects : MonoBehaviour
 
     #region Internal State
 
-    private bool spriteColorCached = false;
     private bool isStunned = false;
+
     private Coroutine stunEffectCoroutine = null;
     private GameObject activeStunVFX;
-    private Material amountFlashMatInstance = null;
+
     private Coroutine hitFlashCoroutine = null;
     private Coroutine glowCoroutine = null;
     private Coroutine anticipationBlinkCoroutine = null;
-    private Color originalFlashColor = Color.white;
-    private Color originalSpriteColor = Color.white;
-    private Color cachedOriginalSpriteColor = Color.white;
+
     private Dictionary<Renderer, Material> originalMeshMats = new Dictionary<Renderer, Material>();
-    private Dictionary<SpriteRenderer, Material> originalSpriteMats = new Dictionary<SpriteRenderer, Material>();
+    private Dictionary<Renderer, Material> amountFlashMatInstances = new Dictionary<Renderer, Material>();
+    private Dictionary<Renderer, Color> originalFlashColors = new Dictionary<Renderer, Color>();
     private List<GameObject> activePersistentEffects = new List<GameObject>();
 
     #endregion
@@ -94,7 +89,7 @@ public class EnemyVisualEffects : MonoBehaviour
     {
         ValidateRenderers();
         CacheOriginalMaterials();
-        CacheAmountFlashMaterial();
+        CacheAmountFlashMaterials();
     }
 
     private void OnEnable()
@@ -111,11 +106,11 @@ public class EnemyVisualEffects : MonoBehaviour
     {
         CleanupAllEffects(true);
 
-        if (amountFlashMatInstance != null)
+        foreach (var mat in amountFlashMatInstances.Values)
         {
-            Destroy(amountFlashMatInstance);
-            amountFlashMatInstance = null;
+            if (mat != null) Destroy(mat);
         }
+        amountFlashMatInstances.Clear();
     }
 
     #endregion
@@ -124,70 +119,55 @@ public class EnemyVisualEffects : MonoBehaviour
 
     private void ValidateRenderers()
     {
-        if (meshRenderers == null || meshRenderers.Length == 0)
+        if (renderers == null || renderers.Length == 0)
         {
-            meshRenderers = GetComponentsInChildren<Renderer>();
+            renderers = GetComponentsInChildren<Renderer>();
         }
 
-        if (spriteRenderers == null || spriteRenderers.Length == 0)
+        if (renderers == null || renderers.Length == 0)
         {
-            spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
-        }
-
-        if ((meshRenderers == null || meshRenderers.Length == 0) && (spriteRenderers == null || spriteRenderers.Length == 0))
-        {
-            Debug.LogWarning($"[EnemyVisualEffects] No se encontraron Renderers ni Sprites en {gameObject.name}.");
+            Debug.LogWarning($"[EnemyVisualEffects] No se encontraron Renderers en {gameObject.name}.");
         }
     }
 
     private void CacheOriginalMaterials()
     {
         originalMeshMats.Clear();
-        originalSpriteMats.Clear();
 
-        if (meshRenderers != null)
+        if (renderers != null)
         {
-            foreach (var r in meshRenderers)
+            foreach (var r in renderers)
             {
                 if (r != null) originalMeshMats[r] = r.sharedMaterial;
             }
         }
-
-        if (spriteRenderers != null)
-        {
-            foreach (var s in spriteRenderers)
-            {
-                if (s != null) originalSpriteMats[s] = s.sharedMaterial;
-            }
-        }
     }
 
-    private void CacheAmountFlashMaterial()
+    private void CacheAmountFlashMaterials()
     {
-        if (!useAmountFlash || amountFlashRenderer == null) return;
+        amountFlashMatInstances.Clear();
+        originalFlashColors.Clear();
 
-        if (amountFlashRenderer.sharedMaterial != null)
+        if (!useAmountFlash || renderers == null || renderers.Length == 0) return;
+
+        foreach (var r in renderers)
         {
-            amountFlashMatInstance = new Material(amountFlashRenderer.sharedMaterial);
-            amountFlashRenderer.material = amountFlashMatInstance;
-            SetAmountFlashValue(amountFlashRestValue);
-
-            if (amountFlashMatInstance.HasProperty("_Color"))
+            if (r != null && r.sharedMaterial != null)
             {
-                originalFlashColor = amountFlashMatInstance.GetColor("_Color");
-            }
+                Material matInstance = new Material(r.sharedMaterial);
+                amountFlashMatInstances[r] = matInstance;
+                r.material = matInstance;
 
-            SpriteRenderer sr = amountFlashRenderer as SpriteRenderer;
-            if (sr != null)
-            {
-                cachedOriginalSpriteColor = sr.color;
-                spriteColorCached = true;
+                if (matInstance.HasProperty(amountFlashProperty))
+                {
+                    matInstance.SetFloat(amountFlashProperty, amountFlashRestValue);
+                }
+
+                if (matInstance.HasProperty("_Color"))
+                {
+                    originalFlashColors[r] = matInstance.GetColor("_Color");
+                }
             }
-        }
-        else
-        {
-            Debug.LogWarning($"[EnemyVisualEffects] amountFlashRenderer '{amountFlashRenderer.name}' no tiene sharedMaterial. Amount flash desactivado.");
-            useAmountFlash = false;
         }
     }
 
@@ -238,34 +218,25 @@ public class EnemyVisualEffects : MonoBehaviour
 
     private void RestoreAllOriginalMaterials()
     {
-        if (meshRenderers != null)
+        if (renderers != null)
         {
-            foreach (var r in meshRenderers)
+            foreach (var r in renderers)
             {
-                if (r != null && originalMeshMats.ContainsKey(r))
+                if (r == null) continue;
+
+                if (useAmountFlash && amountFlashMatInstances.ContainsKey(r))
+                {
+                    r.material = amountFlashMatInstances[r];
+                }
+                else if (originalMeshMats.ContainsKey(r))
                 {
                     r.material = originalMeshMats[r];
                 }
             }
         }
 
-        if (spriteRenderers != null)
+        if (useAmountFlash)
         {
-            foreach (var s in spriteRenderers)
-            {
-                if (s == null) continue;
-                if (useAmountFlash && (s as Renderer) == amountFlashRenderer) continue;
-
-                if (originalSpriteMats.ContainsKey(s))
-                {
-                    s.material = originalSpriteMats[s];
-                }
-            }
-        }
-
-        if (useAmountFlash && amountFlashRenderer != null && amountFlashMatInstance != null)
-        {
-            amountFlashRenderer.material = amountFlashMatInstance;
             ResetAmountFlashValue();
         }
     }
@@ -285,9 +256,9 @@ public class EnemyVisualEffects : MonoBehaviour
         ShowDamageNumber(damagePosition, damage, isCritical);
         PlayHealthHitSound(isCritical);
 
-        if (useAmountFlash && amountFlashRenderer != null && amountFlashMatInstance != null)
+        if (useAmountFlash && amountFlashMatInstances.Count > 0)
         {
-            ReapplyAmountFlashMaterial();
+            ReapplyAmountFlashMaterials();
 
             if (hitFlashCoroutine != null)
             {
@@ -340,13 +311,13 @@ public class EnemyVisualEffects : MonoBehaviour
 
     private IEnumerator HitFlashCoroutine(float duration)
     {
-        if (!useAmountFlash || amountFlashMatInstance == null || amountFlashRenderer == null)
+        if (!useAmountFlash || amountFlashMatInstances.Count == 0)
         {
             hitFlashCoroutine = null;
             yield break;
         }
 
-        ReapplyAmountFlashMaterial();
+        ReapplyAmountFlashMaterials();
         SetAmountFlashValue(amountFlashPeakValue);
 
         float elapsed = 0f;
@@ -366,8 +337,14 @@ public class EnemyVisualEffects : MonoBehaviour
 
     private void SetAmountFlashValue(float value)
     {
-        if (!useAmountFlash || amountFlashMatInstance == null) return;
-        amountFlashMatInstance.SetFloat(amountFlashProperty, value);
+        if (!useAmountFlash) return;
+        foreach (var mat in amountFlashMatInstances.Values)
+        {
+            if (mat != null && mat.HasProperty(amountFlashProperty))
+            {
+                mat.SetFloat(amountFlashProperty, value);
+            }
+        }
     }
 
     private void ResetAmountFlashValue()
@@ -401,24 +378,20 @@ public class EnemyVisualEffects : MonoBehaviour
 
     private IEnumerator AnticipationBlinkCoroutine(float duration)
     {
-        if (!useAmountFlash || amountFlashMatInstance == null)
+        if (!useAmountFlash || amountFlashMatInstances.Count == 0)
         {
             anticipationBlinkCoroutine = null;
             yield break;
         }
 
-        amountFlashRenderer.material = amountFlashMatInstance;
+        ReapplyAmountFlashMaterials();
 
-        SpriteRenderer sr = amountFlashRenderer as SpriteRenderer;
-        if (sr != null)
+        foreach (var mat in amountFlashMatInstances.Values)
         {
-            originalSpriteColor = sr.color;
-            amountFlashMatInstance.SetColor("_Color", anticipationBlinkColor);
-            sr.color = Color.white;
-        }
-        else if (amountFlashMatInstance.HasProperty("_Color"))
-        {
-            amountFlashMatInstance.SetColor("_Color", anticipationBlinkColor);
+            if (mat.HasProperty("_Color"))
+            {
+                mat.SetColor("_Color", anticipationBlinkColor);
+            }
         }
 
         float elapsed = 0f;
@@ -438,21 +411,7 @@ public class EnemyVisualEffects : MonoBehaviour
 
     private void ResetAnticipationBlink()
     {
-        if (!useAmountFlash || amountFlashRenderer == null || amountFlashMatInstance == null) return;
-
-        amountFlashRenderer.material = amountFlashMatInstance;
-        SetAmountFlashValue(amountFlashRestValue);
-
-        if (amountFlashMatInstance.HasProperty("_Color"))
-        {
-            amountFlashMatInstance.SetColor("_Color", originalFlashColor);
-        }
-
-        SpriteRenderer sr = amountFlashRenderer as SpriteRenderer;
-        if (sr != null)
-        {
-            sr.color = spriteColorCached ? cachedOriginalSpriteColor : Color.white;
-        }
+        ForceRestoreAmountFlashVisualState();
     }
 
     #endregion
@@ -552,10 +511,7 @@ public class EnemyVisualEffects : MonoBehaviour
         while (true)
         {
             float intensity = baseIntensity + Mathf.Sin(Time.time * 3f) * glowIntensity;
-
-            UpdateGlowIntensity(meshRenderers, intensity);
-            UpdateGlowIntensity(spriteRenderers, intensity);
-
+            UpdateGlowIntensity(intensity);
             yield return null;
         }
     }
@@ -564,10 +520,17 @@ public class EnemyVisualEffects : MonoBehaviour
 
     #region External Material Control
 
-    public void ReapplyAmountFlashMaterial()
+    public void ReapplyAmountFlashMaterials()
     {
-        if (!useAmountFlash || amountFlashRenderer == null || amountFlashMatInstance == null) return;
-        amountFlashRenderer.material = amountFlashMatInstance;
+        if (!useAmountFlash) return;
+
+        foreach (var kvp in amountFlashMatInstances)
+        {
+            if (kvp.Key != null && kvp.Value != null)
+            {
+                kvp.Key.material = kvp.Value;
+            }
+        }
     }
 
     public void UpdateBaseMaterial(Renderer targetRenderer, Material newMaterial)
@@ -595,24 +558,16 @@ public class EnemyVisualEffects : MonoBehaviour
 
     private void ApplyMaterialToAll(Material mat)
     {
-        if (meshRenderers != null)
+        if (renderers != null)
         {
-            foreach (var r in meshRenderers)
+            foreach (var r in renderers)
             {
                 if (r != null) r.material = mat;
             }
         }
-
-        if (spriteRenderers != null)
-        {
-            foreach (var s in spriteRenderers)
-            {
-                if (s != null) s.material = mat;
-            }
-        }
     }
 
-    private void UpdateGlowIntensity<T>(T[] renderers, float intensity) where T : Renderer
+    private void UpdateGlowIntensity(float intensity)
     {
         if (renderers == null) return;
         foreach (var r in renderers)
@@ -626,38 +581,31 @@ public class EnemyVisualEffects : MonoBehaviour
 
     private void SetRenderersActive(bool active)
     {
-        if (meshRenderers != null)
+        if (renderers != null)
         {
-            foreach (var r in meshRenderers)
+            foreach (var r in renderers)
             {
                 if (r != null) r.enabled = active;
-            }
-        }
-        if (spriteRenderers != null)
-        {
-            foreach (var s in spriteRenderers)
-            {
-                if (s != null) s.enabled = active;
             }
         }
     }
 
     private void ForceRestoreAmountFlashVisualState()
     {
-        if (!useAmountFlash || amountFlashRenderer == null || amountFlashMatInstance == null)
-            return;
+        if (!useAmountFlash) return;
 
-        amountFlashRenderer.material = amountFlashMatInstance;
-
+        ReapplyAmountFlashMaterials();
         SetAmountFlashValue(amountFlashRestValue);
 
-        if (amountFlashMatInstance.HasProperty("_Color"))
-            amountFlashMatInstance.SetColor("_Color", originalFlashColor);
-
-        SpriteRenderer sr = amountFlashRenderer as SpriteRenderer;
-        if (sr != null)
+        foreach (var kvp in amountFlashMatInstances)
         {
-            sr.color = spriteColorCached ? cachedOriginalSpriteColor : Color.white;
+            Renderer r = kvp.Key;
+            Material mat = kvp.Value;
+
+            if (r != null && mat != null && mat.HasProperty("_Color") && originalFlashColors.ContainsKey(r))
+            {
+                mat.SetColor("_Color", originalFlashColors[r]);
+            }
         }
     }
 

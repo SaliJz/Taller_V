@@ -195,6 +195,7 @@ MonoBehaviour:
   shieldTrailClip: {fileID: 0}
   shieldImpactBerserkerClip: {fileID: 8300000, guid: 53bf9ed2f0573b84782f869f51d3ecde, type: 3}
   shieldTrailBerserkerClip: {fileID: 0}
+  spriteChild: {fileID: 2082191160286329536}
   debugMode: 1
 --- !u!136 &4455227293463665330
 CapsuleCollider:
@@ -266,7 +267,7 @@ Transform:
   m_GameObject: {fileID: 3492959782852944213}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: -1, z: 0}
   m_LocalScale: {x: 1, y: 4, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -316,7 +317,7 @@ TrailRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: -2
   m_Time: 0.5
   m_PreviewTimeScale: 1
   m_Parameters:

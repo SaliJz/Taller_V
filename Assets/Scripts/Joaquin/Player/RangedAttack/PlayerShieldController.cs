@@ -44,29 +44,23 @@ public class PlayerShieldController : MonoBehaviour
     [Header("Stats")]
     [Tooltip("Dano de ataque por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private int fallbackshieldDamage = 10;
-
     [SerializeField] private int shieldDamage = 10;
 
     [Tooltip("Velocidad del escudo por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackshieldSpeed = 25f;
-
     [SerializeField] private float shieldSpeed = 25f;
 
     [Tooltip("Distancia maxima del escudo por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackshieldMaxDistance = 30f;
-
     [SerializeField] private float shieldMaxDistance = 30f;
 
     [Tooltip("Cantidad maxima de rebotes del escudo por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private int fallbackshieldMaxRebounds = 2;
-
     [SerializeField] private int shieldMaxRebounds = 2;
 
     [Tooltip("Radio de rebote del escudo por defecto si no se encuentra PlayerStatsManager.")]
     [HideInInspector] private float fallbackshieldReboundRadius = 15f;
-
     [SerializeField] private float shieldReboundRadius = 15f;
-
     [SerializeField] private bool canShieldRebound = true;
 
     #endregion

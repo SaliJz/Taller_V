@@ -9,12 +9,12 @@ public class Shield : MonoBehaviour
 {
     #region Enums
 
-    private enum ShieldState 
-    { 
-        Inactive, 
-        Thrown, 
-        Returning, 
-        Rebounding 
+    private enum ShieldState
+    {
+        Inactive,
+        Thrown,
+        Returning,
+        Rebounding
     }
 
     #endregion
@@ -107,6 +107,14 @@ public class Shield : MonoBehaviour
     [Header("Berserker SFX")]
     [SerializeField] private AudioClip shieldImpactBerserkerClip;
     [SerializeField] private AudioClip shieldTrailBerserkerClip;
+
+    #endregion
+
+    #region Inspector - Sprite Offset (Billboard 2.5D)
+
+    [Header("Sprite Offset por Direccion")]
+    [Tooltip("Transform del hijo que contiene el SpriteRenderer. Se reposiciona al lanzar segun la direccion.")]
+    [SerializeField] private Transform spriteChild;
 
     #endregion
 
@@ -328,6 +336,7 @@ public class Shield : MonoBehaviour
         this.owner = owner;
         this.returnTarget = owner.transform;
         transform.forward = direction;
+        ApplySpriteOffsetForDirection(direction);
         startPosition = transform.position;
         lastPosition = transform.position;
 
@@ -378,7 +387,47 @@ public class Shield : MonoBehaviour
 
     #endregion
 
-    #region Combat & Hit Detection
+    #region Sprite Offset
+
+    // Offsets calibrados para cada una de las 8 direcciones cardinales/diagonales.
+    private static readonly Vector3[] SpriteDirectionOffsets = new Vector3[]
+    {
+        new Vector3(-0.25f, 0f, -0.30f), // 0: +Z
+        new Vector3( 0.00f, 0f, -0.40f), // 1: +X +Z
+        new Vector3( 0.30f, 0f, -0.40f), // 2: +X
+        new Vector3( 0.40f, 0f,  0.00f), // 3: +X -Z
+        new Vector3( 0.25f, 0f,  0.35f), // 4: -Z
+        new Vector3( 0.00f, 0f,  0.45f), // 5: -X -Z
+        new Vector3(-0.30f, 0f,  0.35f), // 6: -X
+        new Vector3(-0.40f, 0f, -0.10f), // 7: -X +Z
+    };
+
+    /// <summary>
+    /// Ajusta la posicion local del sprite hijo interpolando entre los offsets de las
+    /// 8 direcciones calibradas, segun el angulo exacto de lanzamiento.
+    /// Esto cubre cualquier direccion intermedia sin necesidad de calibracion manual.
+    /// </summary>
+    private void ApplySpriteOffsetForDirection(Vector3 direction)
+    {
+        if (spriteChild == null) return;
+
+        float angle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+        if (angle < 0f) angle += 360f;
+
+        float exactSector = angle / 45f;
+        int sectorA = Mathf.FloorToInt(exactSector) % 8;
+        int sectorB = (sectorA + 1) % 8;
+        float t = exactSector - Mathf.Floor(exactSector);
+
+        Vector3 offset = Vector3.Lerp(SpriteDirectionOffsets[sectorA], SpriteDirectionOffsets[sectorB], t);
+
+        spriteChild.localPosition = offset;
+        ReportDebug($"SpriteOffset aplicado: angulo={angle:F1} sectorA={sectorA} sectorB={sectorB} t={t:F2} offset={offset}", 1);
+    }
+
+    #endregion
+
+    #region Hit Detection & Damage Application
 
     private void PerformHitDetection(Transform hitTransform)
     {

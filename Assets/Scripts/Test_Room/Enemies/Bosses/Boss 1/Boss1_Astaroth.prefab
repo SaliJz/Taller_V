@@ -1761,10 +1761,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 120953a634ec616478c5722a12285e45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  meshRenderers:
-  - {fileID: 7147808424542078799}
+  renderers:
   - {fileID: 3795486772564834834}
-  spriteRenderers: []
+  - {fileID: 7147808424542078799}
   damageNumberPrefab: {fileID: 3329388719281996926, guid: 32562ea11b23fa54694905eae349d9eb, type: 3}
   damageNumberParent: {fileID: 7655396069423417815}
   audioSource: {fileID: 3118501603687521992}
@@ -1773,7 +1772,6 @@ MonoBehaviour:
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
   useAmountFlash: 1
-  amountFlashRenderer: {fileID: 7147808424542078799}
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
