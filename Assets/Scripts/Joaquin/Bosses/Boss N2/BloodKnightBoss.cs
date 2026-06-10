@@ -7,7 +7,7 @@ using UnityEngine.AI;
 /// <summary>
 /// Jefe 2 - BloodKnight / The Ones Who Shattered.
 /// </summary>
-public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
+public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 {
     #region Enums
 
@@ -51,6 +51,8 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
     [SerializeField] private float maxHealth = 500f;
     [SerializeField] private float baseMoveSpeed = 7f;
     [SerializeField] private float aggroRange = 20f;
+    [SerializeField] private float angurSpeed = 720f;
+    [SerializeField] private float stoppingDistance = 2.5f;
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private LayerMask obstacleLayers;
 
@@ -60,6 +62,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     [Header("Falla Estatica")]
     [SerializeField] private float staticFailureDamage = 35f;
+    [Tooltip("Tiempo de canalización antes de ejecutar la animación de ataque.")]
     [SerializeField] private float staticFailureWindup = 2f;
     [SerializeField] private float staticFailureCooldown = 20f;
     [SerializeField] private float staticFailureAoERadius = 4.5f;
@@ -104,8 +107,8 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
     [SerializeField] private float divisoryWallDuration = 5f;
     [SerializeField] private float divisoryContactDmg = 2.5f;
     [SerializeField] private float divisoryInstantDmg = 12.5f;
+    [Tooltip("Tiempo de canalización antes de ejecutar la animación de ataque.")]
     [SerializeField] private float divisoryCastTime = 0.8f;
-    //[SerializeField] private Vector3 divisoryWallScale = new Vector3(1.2f, 3.2f, 18f);
     [SerializeField] private float divisoryWallThickness = 1.2f;
     [SerializeField] private float divisoryWallHeight = 3.5f;
     [SerializeField] private float divisoryRayMaxLength = 40f;
@@ -168,6 +171,23 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     #endregion
 
+    #region Inspector - Telegraphed Timings & Feedback
+
+    [Header("Hit Stun y Anticipación")]
+    [SerializeField] private KnightAnimCtrl knightAnimCtrl;
+    [SerializeField] private EnemyVisualEffects enemyVisualEffects;
+
+    [SerializeField] private float hitStunDuration = 0.3f;
+    [SerializeField] private float forceIdleDuration = 0.8f;
+    [SerializeField] private float anticipationPauseDuration = 1f;
+
+    [Header("SFX Anticipación y Daño")]
+    [SerializeField] private AudioClip hitStunSFX;
+    [SerializeField] private AudioClip anticipationSFX;
+    [SerializeField] private float anticipationSFXPitch = 1.0f;
+
+    #endregion
+
     #region Inspector - Debug
 
     [Header("Debug")]
@@ -177,12 +197,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     #region Internal State
 
-    private static readonly int AnimWalking = Animator.StringToHash("Walking");
-    private static readonly int AnimSwordStack = Animator.StringToHash("SwordStack");
-    private static readonly int AnimAttackDash = Animator.StringToHash("AttackDash");
-    private static readonly int AnimAttackHand = Animator.StringToHash("AttackHand");
     private static readonly int AnimAttackEnded = Animator.StringToHash("AttackEnded");
-    private static readonly int AnimDeath = Animator.StringToHash("Death");
 
     private BossState state = BossState.Idle;
     private float currentHealth;
@@ -196,7 +211,9 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
     private bool interruptionActive;
     private bool phaseCollapsed;
 
-    private bool staticShieldActive => 
+    private bool attackExecuteTriggered = false;
+
+    private bool staticShieldActive =>
         state == BossState.StaticFailureWindup && !isDead;
     private int rearHitsDuringWindup;
 
@@ -211,7 +228,6 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     private PlayerHealth playerHealth;
     private PlayerMovement playerMovement;
-    private PlayerStatsManager playerStats;
 
     private CinemachineBasicMultiChannelPerlin camNoise;
 
@@ -219,6 +235,12 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     private Vector3 debugDashSpherePos;
     private bool debugDashSphereActive;
+
+    private Coroutine anticipationCoroutine = null;
+    private Coroutine hitStunCoroutine = null;
+    private bool isInAnticipation = false;
+    private bool isInHitStun = false;
+    private float hitStunRecoveryCooldown = 0f;
 
     #endregion
 
@@ -246,27 +268,42 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     private void OnEnable()
     {
-        if (enemyHealth == null) return;
-        enemyHealth.OnHealthChanged += HandleHealthChanged;
-        enemyHealth.OnDeath += HandleDeath;
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnHealthChanged += HandleHealthChanged;
+            enemyHealth.OnDeath += HandleDeath;
+            enemyHealth.OnDamaged += HandleDamageTaken;
+        }
 
-        if (playerMovement == null) return;
-        PlayerMovement.OnDashPerformed += RegisterPlayerDash;
+        if (playerMovement != null)
+        {
+            PlayerMovement.OnDashPerformed += RegisterPlayerDash;
+        }
     }
 
     private void OnDisable()
     {
-        if (enemyHealth == null) return;
-        enemyHealth.OnHealthChanged -= HandleHealthChanged;
-        enemyHealth.OnDeath -= HandleDeath;
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnHealthChanged -= HandleHealthChanged;
+            enemyHealth.OnDeath -= HandleDeath;
+            enemyHealth.OnDamaged -= HandleDamageTaken;
+        }
 
-        if (playerMovement == null) return;
-        PlayerMovement.OnDashPerformed -= RegisterPlayerDash;
+        if (playerMovement != null)
+        {
+            PlayerMovement.OnDashPerformed -= RegisterPlayerDash;
+        }
     }
 
     private void Update()
     {
         if (isDead || player == null) return;
+
+        if (hitStunRecoveryCooldown > 0f)
+        {
+            hitStunRecoveryCooldown -= Time.deltaTime;
+        }
 
         TrackPlayerVelocity();
         TickScrapAura();
@@ -281,7 +318,8 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
     {
         if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
         if (agent == null) agent = GetComponent<NavMeshAgent>();
-        if (animator == null) animator = GetComponentInChildren<Animator>();
+        if (knightAnimCtrl == null) knightAnimCtrl = GetComponentInChildren<KnightAnimCtrl>();
+        if (enemyVisualEffects == null) enemyVisualEffects = GetComponent<EnemyVisualEffects>();
         if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
 
         if (player == null)
@@ -292,21 +330,22 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
                 player = playerObj.transform;
                 playerHealth = playerObj.GetComponent<PlayerHealth>();
                 playerMovement = playerObj.GetComponent<PlayerMovement>();
-                playerStats = playerObj.GetComponent<PlayerStatsManager>();
             }
         }
 
         if (vcam == null) vcam = Object.FindFirstObjectByType<CinemachineCamera>();
         if (vcam != null)
+        {
             camNoise = vcam.GetCinemachineComponent(CinemachineCore.Stage.Noise) as CinemachineBasicMultiChannelPerlin;
+        }
 
         if (enemyHealth != null) enemyHealth.SetMaxHealth(maxHealth);
 
         if (agent != null)
         {
             agent.speed = baseMoveSpeed;
-            agent.angularSpeed = 720f;
-            agent.stoppingDistance = 1.75f;
+            agent.angularSpeed = angurSpeed;
+            agent.stoppingDistance = stoppingDistance;
         }
 
         if (attackOrigin == null) attackOrigin = transform;
@@ -323,10 +362,14 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         maxHealth = max;
 
         if (player != null && Vector3.Distance(transform.position, player.position) <= scrapRamActiveDist)
+        {
             lastDamageInRangeTime = Time.time;
+        }
 
         if (!phaseCollapsed && currentHealth <= maxHealth * collapseThreshold)
+        {
             StartCoroutine(EnterCollapsePhaseRoutine());
+        }
     }
 
     private void HandleDeath(GameObject go)
@@ -335,13 +378,21 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         isDead = true;
         state = BossState.Dead;
 
+        CancelAnticipation();
+
+        if (knightAnimCtrl != null) knightAnimCtrl.SetAttackEnded(true);
+
         StopAllCoroutines();
         CleanupSpawnedObjects();
 
-        if (agent != null) { agent.isStopped = true; agent.enabled = false; }
+        if (agent != null)
+        {
+            agent.isStopped = true;
+            agent.enabled = false;
+        }
 
         PlaySFX(deathSFX);
-        animator?.SetTrigger(AnimDeath);
+        if (knightAnimCtrl != null) knightAnimCtrl.PlayDeath();
     }
 
     #endregion
@@ -354,8 +405,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
         while (!isDead)
         {
-            while (interruptionActive)
-                yield return null;
+            while (interruptionActive) yield return null;
 
             if (!PlayerInAggroRange())
             {
@@ -404,9 +454,17 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
                 yield break;
             }
 
-            if (dist <= drownedRange)
+            if (dist <= agent.stoppingDistance)
+            {
+                StopAgent();
+            }
+            else if (dist <= drownedRange)
             {
                 MoveTowards(player.position, baseMoveSpeed * 1.1f);
+            }
+            else
+            {
+                MoveTowards(player.position, baseMoveSpeed * 0.7f);
             }
 
             if (Time.time >= nextStaticTime)
@@ -425,37 +483,31 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
     {
         if (isDead || interruptionActive || player == null) return;
 
+        if (state == BossState.StaticFailureWindup || state == BossState.StaticFailureRelease ||
+            state == BossState.BrokenCharge || state == BossState.ScrapRam ||
+            state == BossState.DivisoryFailure || state == BossState.DrownedHands ||
+            state == BossState.Stunned || state == BossState.PhaseTransition)
+        {
+            return;
+        }
+
         float dist = Vector3.Distance(transform.position, player.position);
 
-        // Falla Divisoria
-        if (dist > divisoryTriggerDist 
-            && Time.time >= nextDivisoryTime)
+        if (dist > divisoryTriggerDist && Time.time >= nextDivisoryTime)
         {
-            interruptionActive = true;
-            state = BossState.DivisoryFailure;
             StartCoroutine(ExecuteDivisoryFailureRoutine());
             return;
         }
 
-        // Embestida de Chatarra
-        if (dist <= scrapRamActiveDist 
-            && (Time.time - lastDamageInRangeTime) >= scrapRamNoDamageWindow)
+        if (dist <= scrapRamActiveDist && (Time.time - lastDamageInRangeTime) >= scrapRamNoDamageWindow)
         {
             lastDamageInRangeTime = Time.time;
-            interruptionActive = true;
-            state = BossState.ScrapRam;
             StartCoroutine(ExecuteScrapRamRoutine());
             return;
         }
 
-        // Manos de los Ahogados (predictivo)
-        if (playerDashCount >= predictiveDashThreshold
-            && dist <= drownedRange
-            && Time.time >= nextDrownedTime
-            && state == BossState.Chase)
+        if (playerDashCount >= predictiveDashThreshold && dist <= drownedRange && Time.time >= nextDrownedTime && state == BossState.Chase)
         {
-            interruptionActive = true;
-            state = BossState.DrownedHands;
             nextDrownedTime = Time.time + drownedCooldown;
             StartCoroutine(ExecuteDrownedHandsRoutine(usePredictive: true));
         }
@@ -467,6 +519,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     private IEnumerator ExecuteStaticFailureRoutine()
     {
+        interruptionActive = true; // Bloquea superposiciones
         state = BossState.StaticFailureWindup;
         rearHitsDuringWindup = 0;
         nextStaticTime = Time.time + staticFailureCooldown;
@@ -475,34 +528,33 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         FacePlayerInstant();
         SetWalking(false);
 
-        animator?.SetBool(AnimAttackEnded, false);
-        animator?.SetTrigger(AnimSwordStack);
-        PlaySFX(staticChargeSFX);
-
         GameObject warning = SpawnWarningIndicator(
             attackOrigin.position,
             staticFailureAoERadius * 2f,
             staticFailureWarningPrefab
         );
 
-        bool successfullyReleased = false;
+        PlaySFX(staticChargeSFX);
+
+        yield return new WaitForSeconds(staticFailureWindup);
+
+        if (isDead || state != BossState.StaticFailureWindup)
+        {
+            if (warning != null) Destroy(warning);
+            interruptionActive = false;
+            yield break;
+        }
+
+        attackExecuteTriggered = false;
+        if (knightAnimCtrl != null) knightAnimCtrl.PlayStaticFailure();
 
         try
         {
-            float elapsed = 0f;
-            while (elapsed < staticFailureWindup)
-            {
-                elapsed += Time.deltaTime;
-                yield return null;
-
-                if (state != BossState.StaticFailureWindup)
-                {
-                    if (warning != null) Destroy(warning);
-                    yield break;
-                }
-            }
+            yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.StaticFailureWindup);
 
             if (warning != null) Destroy(warning);
+
+            if (isDead || state != BossState.StaticFailureWindup) yield break;
 
             state = BossState.StaticFailureRelease;
 
@@ -511,17 +563,18 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
             ShakeCamera(2f, 0.25f);
 
             animator?.SetBool(AnimAttackEnded, true);
-            successfullyReleased = true;
             yield return new WaitForSeconds(0.4f);
-
         }
         finally
         {
-            if (!successfullyReleased && animator != null)
+            if (knightAnimCtrl != null) knightAnimCtrl.SetAttackEnded(true);
+            if (warning != null) Destroy(warning);
+
+            if (state == BossState.StaticFailureRelease || state == BossState.StaticFailureWindup)
             {
-                animator.SetBool(AnimAttackEnded, true);
+                state = BossState.Idle;
             }
-            ReportDebug("ExecuteStaticFailureRoutine: escudo desactivado.", 1);
+            interruptionActive = false; // Libera el bloqueo
         }
     }
 
@@ -566,7 +619,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     private IEnumerator InterruptStaticFailureRoutine()
     {
-        if (state != BossState.StaticFailureWindup || interruptionActive) yield break;
+        if (state != BossState.StaticFailureWindup) yield break;
 
         interruptionActive = true;
         state = BossState.Stunned;
@@ -576,7 +629,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         PlaySFX(stunSFX);
         SpawnImpactStunVFX(transform.position);
 
-        animator?.SetBool(AnimAttackEnded, true);
+        if (knightAnimCtrl != null) knightAnimCtrl.SetAttackEnded(true);
 
         yield return new WaitForSeconds(interruptStunDuration);
 
@@ -607,6 +660,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     private IEnumerator ExecuteBrokenChargeRoutine()
     {
+        interruptionActive = true; // Bloquea superposiciones
         state = BossState.BrokenCharge;
         nextBrokenChargeTime = Time.time + brokenChargeCooldown;
 
@@ -614,18 +668,28 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
         for (int i = 0; i < brokenChargeDashCount; i++)
         {
-            if (isDead || interruptionActive) yield break;
+            if (isDead || state != BossState.BrokenCharge) break;
 
             FacePlayerInstant();
 
-            SpawnBossMine(mineDropPoint.position);
+            attackExecuteTriggered = false;
 
+            if (knightAnimCtrl != null) knightAnimCtrl.PlayBrokenCharge();
+
+            SpawnBossMine(mineDropPoint.position);
             Vector3 target = ComputeZigzagTarget(i);
-            animator?.SetTrigger(AnimAttackDash);
             PlaySFX(dashSFX);
 
-            yield return DashRoutine(target, timePerDash * 0.65f, brokenChargeDashSpeed,
-                                     dealContactDamage: true, spawnCrystalOnWallHit: true);
+            yield return DashRoutine(target, timePerDash * 0.65f, brokenChargeDashSpeed, dealContactDamage: false, spawnCrystalOnWallHit: true);
+
+            yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.BrokenCharge);
+
+            if (isDead || state != BossState.BrokenCharge) break;
+
+            if (attackExecuteTriggered)
+            {
+                DealAoEDamage(attackOrigin.position, dashHitRadius * 1.25f, brokenChargeHitDamage);
+            }
 
             float rest = timePerDash * 0.35f;
             yield return new WaitForSeconds(rest);
@@ -633,7 +697,12 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
         StopAgent();
         SetWalking(false);
-        state = BossState.Idle;
+
+        if (state == BossState.BrokenCharge)
+        {
+            state = BossState.Idle;
+        }
+        interruptionActive = false; // Libera el bloqueo
     }
 
     private Vector3 ComputeZigzagTarget(int dashIndex)
@@ -657,12 +726,25 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     private IEnumerator ExecuteScrapRamRoutine()
     {
+        interruptionActive = true; // Bloquea superposiciones
         if (isDead) yield break;
 
-        //interruptionActive = true;
-        //state = BossState.ScrapRam;
-
+        state = BossState.ScrapRam;
         StopAgent();
+        SetWalking(false);
+        FacePlayerInstant();
+
+        attackExecuteTriggered = false;
+        if (knightAnimCtrl != null) knightAnimCtrl.PlayScrapRam();
+
+        yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.ScrapRam);
+
+        if (isDead || state != BossState.ScrapRam)
+        {
+            interruptionActive = false;
+            yield break;
+        }
+
         FacePlayerInstant();
         PlaySFX(scrapRamSFX);
 
@@ -673,21 +755,11 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
         while (elapsed < scrapRamDuration)
         {
-            if (player != null)
-            {
-                Vector3 desiredDir = (player.position - transform.position).normalized;
-                desiredDir.y = 0f;
-                if (desiredDir.sqrMagnitude > 0.001f)
-                {
-                    Quaternion desired = Quaternion.LookRotation(desiredDir);
-                    transform.rotation = Quaternion.RotateTowards(
-                        transform.rotation, desired, scrapRamMaxTurnRate * Time.deltaTime);
-                }
-            }
+            if (state != BossState.ScrapRam) break;
 
             transform.position += transform.forward * scrapRamSpeed * Time.deltaTime;
 
-            Vector3 ramHitCenter = attackOrigin != null ? attackOrigin.position 
+            Vector3 ramHitCenter = attackOrigin != null ? attackOrigin.position
                 : transform.position + transform.forward * 0.8f;
             Collider[] playerHits = Physics.OverlapSphere(ramHitCenter, 1.2f, playerLayer);
 
@@ -699,7 +771,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
             }
             if (hitPlayer) break;
 
-            if (Physics.SphereCast(transform.position + Vector3.up * 0.75f, 
+            if (Physics.SphereCast(transform.position + Vector3.up * 0.75f,
                 0.6f, transform.forward, out RaycastHit wallHit, 0.9f, obstacleLayers))
             {
                 hitWall = true;
@@ -733,8 +805,11 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
             yield return new WaitForSeconds(0.25f);
         }
 
-        interruptionActive = false;
-        state = BossState.Idle;
+        if (state == BossState.ScrapRam)
+        {
+            state = BossState.Idle;
+        }
+        interruptionActive = false; // Libera el bloqueo
     }
 
     #endregion
@@ -743,24 +818,39 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     private IEnumerator ExecuteDivisoryFailureRoutine()
     {
+        interruptionActive = true; // Bloquea superposiciones
         if (isDead) yield break;
 
+        state = BossState.DivisoryFailure;
         nextDivisoryTime = Time.time + divisoryCooldown;
-        //interruptionActive = true;
-        //state = BossState.DivisoryFailure;
 
         StopAgent();
         FacePlayerInstant();
+
         PlaySFX(divisorySFX);
 
         yield return new WaitForSeconds(divisoryCastTime);
 
-        if (solidLightWallPrefab != null && TryComputeDivisoryWall(out Vector3 center, 
-            out Quaternion rot, out float length))
+        if (isDead || state != BossState.DivisoryFailure)
+        {
+            interruptionActive = false;
+            yield break;
+        }
+
+        attackExecuteTriggered = false;
+        if (knightAnimCtrl != null) knightAnimCtrl.PlayHandAttack();
+
+        yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.DivisoryFailure);
+
+        if (isDead || state != BossState.DivisoryFailure)
+        {
+            interruptionActive = false;
+            yield break;
+        }
+
+        if (solidLightWallPrefab != null && TryComputeDivisoryWall(out Vector3 center, out Quaternion rot, out float length))
         {
             SolidLightWall wall = Instantiate(solidLightWallPrefab, center, rot);
-
-            // Escala: X = grosor, Y = altura, Z = longitud calculada
             wall.transform.localScale = new Vector3(divisoryWallThickness, divisoryWallHeight, length);
             wall.ContactDamagePerSecond = divisoryContactDmg;
             wall.InstantDamageOnSpawn = divisoryInstantDmg;
@@ -769,16 +859,15 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         }
 
         yield return new WaitForSeconds(0.2f);
-        interruptionActive = false;
-        state = BossState.Idle;
+
+        if (state == BossState.DivisoryFailure)
+        {
+            state = BossState.Idle;
+        }
+        interruptionActive = false; // Libera el bloqueo
     }
 
-    /// <summary>
-    /// Lanza dos raycasts en la dirección perpendicular al jugador para
-    /// encontrar ambas paredes de la sala y calcular centro + longitud real.
-    /// </summary>
-    private bool TryComputeDivisoryWall(out Vector3 wallCenter, 
-        out Quaternion wallRotation, out float wallLength)
+    private bool TryComputeDivisoryWall(out Vector3 wallCenter, out Quaternion wallRotation, out float wallLength)
     {
         wallCenter = transform.position;
         wallRotation = Quaternion.identity;
@@ -793,21 +882,17 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
         Vector3 perpDir = Vector3.Cross(Vector3.up, toPlayer).normalized;
 
-        Vector3 origin = new Vector3(transform.position.x,
-                                     transform.position.y + 0.5f,
-                                     transform.position.z);
+        Vector3 origin = new Vector3(transform.position.x, transform.position.y + 0.5f, transform.position.z);
 
         float distLeft = divisoryRayMaxLength;
         float distRight = divisoryRayMaxLength;
 
-        if (Physics.Raycast(origin, perpDir, out RaycastHit hitRight,
-            divisoryRayMaxLength, obstacleLayers))
+        if (Physics.Raycast(origin, perpDir, out RaycastHit hitRight, divisoryRayMaxLength, obstacleLayers))
         {
             distRight = hitRight.distance;
         }
 
-        if (Physics.Raycast(origin, -perpDir, out RaycastHit hitLeft,
-            divisoryRayMaxLength, obstacleLayers))
+        if (Physics.Raycast(origin, -perpDir, out RaycastHit hitLeft, divisoryRayMaxLength, obstacleLayers))
         {
             distLeft = hitLeft.distance;
         }
@@ -815,8 +900,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         wallLength = distLeft + distRight;
         wallCenter = origin + perpDir * (distRight * 0.5f - distLeft * 0.5f);
 
-        if (Physics.Raycast(wallCenter + Vector3.up * 5f, Vector3.down, 
-            out RaycastHit groundHit, 15f, groundLayerMask))
+        if (Physics.Raycast(wallCenter + Vector3.up * 5f, Vector3.down, out RaycastHit groundHit, 15f, groundLayerMask))
         {
             wallCenter.y = groundHit.point.y + divisoryWallHeight * 0.5f;
         }
@@ -831,29 +915,36 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     private IEnumerator ExecuteDrownedHandsRoutine(bool usePredictive)
     {
-        bool calledAsInterruption = interruptionActive;
-        if (!calledAsInterruption) interruptionActive = true;
-
+        interruptionActive = true; // Bloquea superposiciones
         state = BossState.DrownedHands;
-
-        animator?.SetTrigger(AnimAttackHand);
-        PlaySFX(drownedHandsSFX);
 
         try
         {
             for (int i = 0; i < drownedHitCount; i++)
             {
-                if (isDead) yield break;
+                if (isDead) break;
+
+                attackExecuteTriggered = false;
+                if (knightAnimCtrl != null) knightAnimCtrl.PlayHandAttack();
+
+                yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.DrownedHands);
+
+                if (isDead || state != BossState.DrownedHands) break;
 
                 Vector3 target = ComputeHandsTarget(usePredictive);
                 SpawnSoulHand(target);
+                PlaySFX(drownedHandsSFX);
+
                 yield return new WaitForSeconds(drownedInterval);
             }
         }
         finally
         {
-            state = BossState.Idle;
-            interruptionActive = false;
+            if (state == BossState.DrownedHands)
+            {
+                state = BossState.Idle;
+            }
+            interruptionActive = false; // Libera el bloqueo
         }
     }
 
@@ -887,7 +978,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         if (phaseCollapsed || isDead) yield break;
 
         phaseCollapsed = true;
-        interruptionActive = true;
+        interruptionActive = true; // Bloquea superposiciones
         state = BossState.PhaseTransition;
 
         StopAgent();
@@ -916,8 +1007,8 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
             spawnedObjects.Add(aura);
         }
 
-        interruptionActive = false;
         state = BossState.Idle;
+        interruptionActive = false; // Libera el bloqueo
     }
 
     private void TickScrapAura()
@@ -938,27 +1029,28 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         float elapsed = 0f;
         bool hasHitPlayer = false;
 
-        ReportDebug($"DashRoutine inicio → target={target}, dur={duration:F2}s, spd={speed}", 1);
-
         while (elapsed < duration && !isDead)
         {
+            if (isInAnticipation)
+            {
+                yield return null;
+                continue;
+            }
+
             Vector3 dir = (target - transform.position);
             dir.y = 0f;
 
             if (dir.sqrMagnitude < 0.05f)
             {
-                ReportDebug("DashRoutine: llegó al target (sqrMag < 0.05), saliendo.", 1);
                 break;
             }
 
             dir.Normalize();
             transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
 
-            if (Physics.SphereCast(transform.position + Vector3.up * 0.5f, 
+            if (Physics.SphereCast(transform.position + Vector3.up * 0.5f,
                 0.45f, dir, out RaycastHit wallHit, 0.8f, obstacleLayers))
             {
-                ReportDebug($"DashRoutine: chocó con pared → {wallHit.collider.name}", 1);
-
                 if (spawnCrystalOnWallHit)
                 {
                     SpawnCrystalTrail(wallHit.point + wallHit.normal * 0.1f, wallHit.normal);
@@ -973,7 +1065,6 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
                 if (DealContactDamageDuringDash())
                 {
                     hasHitPlayer = true;
-                    ReportDebug($"DashRoutine: golpe registrado en t={elapsed:F2}s.", 1);
                 }
             }
 
@@ -982,7 +1073,6 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         }
 
         debugDashSphereActive = false;
-        ReportDebug($"DashRoutine fin → elapsed={elapsed:F2}s, hitPlayer={hasHitPlayer}", 1);
     }
 
     private bool DealContactDamageDuringDash()
@@ -993,21 +1083,15 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         debugDashSphereActive = true;
 
         Collider[] hits = Physics.OverlapSphere(center, dashHitRadius, playerLayer);
-        ReportDebug($"DealContactDamage: OverlapSphere r={dashHitRadius} → {hits.Length} hits", 1);
 
         foreach (var c in hits)
         {
             if (!c.CompareTag("Player")) continue;
 
             PlayerHealth ph = c.GetComponent<PlayerHealth>();
-            if (ph == null)
-            {
-                ReportDebug("DealContactDamage: jugador sin PlayerHealth.", 2);
-                return false;
-            }
+            if (ph == null) return false;
 
             ph.TakeDamage(brokenChargeHitDamage);
-            ReportDebug($"DealContactDamage: {brokenChargeHitDamage} PV → {c.name}", 1);
             return true;
         }
 
@@ -1076,6 +1160,131 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     #endregion
 
+    #region Hit Stun And Anticipation Logic
+
+    public void HandleAnimEvents(string eventName)
+    {
+        switch (eventName)
+        {
+            case "AnimEvent_AnticipationPause":
+                StartAnticipationPause();
+                break;
+            case "AnimEvent_AttackExecute":
+                attackExecuteTriggered = true;
+                break;
+        }
+    }
+
+    public void StartAnticipationPause()
+    {
+        if (isDead || isInHitStun || hitStunRecoveryCooldown > 0f) return;
+
+        if (anticipationCoroutine != null) StopCoroutine(anticipationCoroutine);
+        anticipationCoroutine = StartCoroutine(AnticipationRoutine());
+    }
+
+    private IEnumerator AnticipationRoutine()
+    {
+        isInAnticipation = true;
+        StopAgent();
+
+        if (knightAnimCtrl != null) knightAnimCtrl.PauseAnimation();
+
+        if (audioSource != null && anticipationSFX != null)
+        {
+            audioSource.pitch = anticipationSFXPitch;
+            audioSource.PlayOneShot(anticipationSFX);
+            audioSource.pitch = 1f;
+        }
+
+        if (enemyVisualEffects != null)
+        {
+            enemyVisualEffects.PlayAnticipationBlink(anticipationPauseDuration);
+        }
+
+        if (knightAnimCtrl != null)
+        {
+            knightAnimCtrl.PlayAnticipationShake(anticipationPauseDuration);
+        }
+
+        yield return new WaitForSeconds(anticipationPauseDuration);
+
+        if (knightAnimCtrl != null) knightAnimCtrl.ResumeAnimation();
+
+        isInAnticipation = false;
+        anticipationCoroutine = null;
+    }
+
+    private void CancelAnticipation()
+    {
+        if (anticipationCoroutine != null)
+        {
+            StopCoroutine(anticipationCoroutine);
+            anticipationCoroutine = null;
+        }
+
+        if (knightAnimCtrl != null)
+        {
+            knightAnimCtrl.ResumeAnimation();
+            knightAnimCtrl.StopAnticipationShake();
+        }
+
+        if (enemyVisualEffects != null)
+        {
+            enemyVisualEffects.CancelAnticipationBlink();
+        }
+
+        isInAnticipation = false;
+    }
+
+    private void HandleDamageTaken()
+    {
+        if (isDead) return;
+
+        if (state == BossState.StaticFailureWindup
+            || state == BossState.StaticFailureRelease)
+            return;
+
+        if (hitStunCoroutine != null) StopCoroutine(hitStunCoroutine);
+        hitStunCoroutine = StartCoroutine(HitStunRoutine());
+    }
+
+    private IEnumerator HitStunRoutine()
+    {
+        state = BossState.Stunned;
+        isInHitStun = true;
+        interruptionActive = true;
+
+        CancelAnticipation();
+        StopAgent();
+        SetWalking(false);
+
+        if (knightAnimCtrl != null)
+        {
+            knightAnimCtrl.ResumeAnimation();
+            knightAnimCtrl.SetAttackEnded(true);
+        }
+
+        if (audioSource != null && hitStunSFX != null)
+        {
+            audioSource.PlayOneShot(hitStunSFX);
+        }
+
+        yield return new WaitForSeconds(hitStunDuration);
+        yield return new WaitForSeconds(forceIdleDuration);
+
+        if (knightAnimCtrl != null) knightAnimCtrl.SetAttackEnded(false);
+
+        isInHitStun = false;
+        hitStunCoroutine = null;
+        hitStunRecoveryCooldown = 0.1f;
+
+        interruptionActive = false;
+        state = BossState.Idle;
+    }
+
+    #endregion
+
     #region Spawners & VFX
 
     private void SpawnBossMine(Vector3 pos)
@@ -1104,8 +1313,20 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
     private GameObject SpawnWarningIndicator(Vector3 pos, float scale, GameObject prefab)
     {
         if (prefab == null) return null;
+
+        float verticalOffset = 0.05f;
+        int groundLayer = LayerMask.GetMask("Ground");
+
+        Vector3 rayOrigin = new Vector3(pos.x, pos.y + 50f, pos.z);
+
+        if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, 100f, groundLayer))
+        {
+            pos.y = hit.point.y + verticalOffset;
+        }
+
         var obj = Instantiate(prefab, pos, Quaternion.identity);
-        obj.transform.localScale = Vector3.one * scale;
+        obj.transform.localScale = new Vector3(scale, obj.transform.localScale.y, scale);
+
         spawnedObjects.Add(obj);
         return obj;
     }
@@ -1124,7 +1345,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     private void SetWalking(bool isWalking)
     {
-        animator?.SetBool(AnimWalking, isWalking);
+        if (knightAnimCtrl != null) knightAnimCtrl.SetWalking(isWalking);
     }
 
     private void PlaySFX(AudioClip clip, float vol = 1f)
@@ -1166,7 +1387,6 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
 
     private void OnDrawGizmosSelected()
     {
-        // Rangos generales
         Gizmos.color = Color.white;
         Gizmos.DrawWireSphere(transform.position, aggroRange);
 
@@ -1182,13 +1402,11 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         Gizmos.color = new Color(1f, 0f, 1f, 0.35f);
         Gizmos.DrawWireSphere(transform.position, scrapAuraRadius);
 
-        // Esfera de contacto del dash (preview en editor)
         Gizmos.color = new Color(1f, 0.55f, 0f, 0.55f);
-        Vector3 dashGizmoPos = (attackOrigin != null && attackOrigin != transform) 
+        Vector3 dashGizmoPos = (attackOrigin != null && attackOrigin != transform)
             ? attackOrigin.position : transform.position + Vector3.up * 0.6f;
         Gizmos.DrawWireSphere(dashGizmoPos, dashHitRadius);
 
-        // Escudo frontal Falla Estática
         Vector3 origin = transform.position + Vector3.up;
         float half = shieldAngle * 0.5f;
         Vector3 leftEdge = Quaternion.Euler(0f, -half, 0f) * transform.forward;
@@ -1199,7 +1417,6 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
         Gizmos.DrawRay(origin, leftEdge * 3.5f);
         Gizmos.DrawRay(origin, rightEdge * 3.5f);
 
-        // Arco del escudo (16 segmentos)
         int segs = 16;
         Vector3 prev = origin + Quaternion.Euler(0f, -half, 0f) * transform.forward * 3.5f;
         for (int i = 1; i <= segs; i++)
@@ -1210,7 +1427,6 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
             prev = pt;
         }
 
-        // Raycasts de Falla Divisoria
         if (player != null)
         {
             Vector3 toPlayer = player.position - transform.position;
@@ -1230,14 +1446,12 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker
     {
         if (!Application.isPlaying) return;
 
-        // Esfera de hit del dash activa durante la corrutina
         if (debugDashSphereActive)
         {
             Gizmos.color = new Color(1f, 0.4f, 0f, 0.85f);
             Gizmos.DrawWireSphere(debugDashSpherePos, dashHitRadius);
         }
 
-        // Línea de referencia jefe => jugador
         if (player != null)
         {
             Gizmos.color = new Color(1f, 1f, 0f, 0.35f);
