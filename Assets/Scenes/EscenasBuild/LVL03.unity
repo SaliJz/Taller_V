@@ -3143,25 +3143,28 @@ MonoBehaviour:
   - {fileID: -2013639086596557405, guid: dab15bd397f3eda4aa1500deeb993c33, type: 3}
   - {fileID: -2013639086596557405, guid: 1232650c93176974da0a4d8ea0c00726, type: 3}
   roomGenerationRules: []
-  roomTypeProbabilities:
-  - roomType: 1
-    probability: 90
-    roomPrefabs:
-    - {fileID: 8863224677180504647, guid: 53d35b6f260d8dd47a27cfbb411c9b4e, type: 3}
-    - {fileID: 8863224677180504647, guid: 63b3c4de720ab5b489fae79286378294, type: 3}
-    - {fileID: 8863224677180504647, guid: 002714279b74cc5498706553f63c3d68, type: 3}
-    - {fileID: 8863224677180504647, guid: 062e28f00e49d94428fcc596e6f09a71, type: 3}
-    roomDataList: []
-  - roomType: 4
-    probability: 10
-    roomPrefabs:
-    - {fileID: -2013639086596557405, guid: c250c216b2025824eb281a70914547a7, type: 3}
-    - {fileID: -2013639086596557405, guid: fca8b3385a8f516499a041ca914555a2, type: 3}
-    roomDataList: []
+  roomTypeProbabilities: []
   generationRules:
   - currentRoomType: 4
     allowedNextRoomTypes: 01000000
   progressionRules:
+  - useMultipleRoomTypes: 0
+    roomType: 1
+    multipleRoomTypes: []
+    useCustomPrefabs: 1
+    customRoomPrefabs:
+    - {fileID: 8863224677180504647, guid: 53d35b6f260d8dd47a27cfbb411c9b4e, type: 3}
+    - {fileID: 8863224677180504647, guid: 002714279b74cc5498706553f63c3d68, type: 3}
+    minRoomNumber: 1
+    maxRoomNumber: 1
+    isMandatory: 1
+    isProbableMandatory: 1
+    generateOnce: 0
+    allowMultipleDoorsOfSameType: 0
+    probability: 100
+    combatContent:
+      waves: []
+      timeBetweenWaves: 0
   - useMultipleRoomTypes: 1
     roomType: 4
     multipleRoomTypes: []
@@ -3170,8 +3173,42 @@ MonoBehaviour:
     minRoomNumber: 2
     maxRoomNumber: 2
     isMandatory: 1
-    isProbableMandatory: 0
-    generateOnce: 1
+    isProbableMandatory: 1
+    generateOnce: 0
+    allowMultipleDoorsOfSameType: 0
+    probability: 100
+    combatContent:
+      waves: []
+      timeBetweenWaves: 0
+  - useMultipleRoomTypes: 0
+    roomType: 1
+    multipleRoomTypes: []
+    useCustomPrefabs: 1
+    customRoomPrefabs:
+    - {fileID: 8863224677180504647, guid: 63b3c4de720ab5b489fae79286378294, type: 3}
+    - {fileID: 8863224677180504647, guid: 062e28f00e49d94428fcc596e6f09a71, type: 3}
+    minRoomNumber: 3
+    maxRoomNumber: 3
+    isMandatory: 1
+    isProbableMandatory: 1
+    generateOnce: 0
+    allowMultipleDoorsOfSameType: 0
+    probability: 100
+    combatContent:
+      waves: []
+      timeBetweenWaves: 0
+  - useMultipleRoomTypes: 0
+    roomType: 1
+    multipleRoomTypes: []
+    useCustomPrefabs: 1
+    customRoomPrefabs:
+    - {fileID: 8863224677180504647, guid: 24966cef20f994844b2d37bf1bf6addd, type: 3}
+    - {fileID: 8863224677180504647, guid: b328be56e66254841893c57283a4863a, type: 3}
+    minRoomNumber: 4
+    maxRoomNumber: 4
+    isMandatory: 1
+    isProbableMandatory: 1
+    generateOnce: 0
     allowMultipleDoorsOfSameType: 0
     probability: 100
     combatContent:
@@ -3186,9 +3223,9 @@ MonoBehaviour:
     - {fileID: -2013639086596557405, guid: fca8b3385a8f516499a041ca914555a2, type: 3}
     minRoomNumber: 5
     maxRoomNumber: 5
-    isMandatory: 0
+    isMandatory: 1
     isProbableMandatory: 1
-    generateOnce: 1
+    generateOnce: 0
     allowMultipleDoorsOfSameType: 0
     probability: 100
     combatContent:
@@ -3198,11 +3235,17 @@ MonoBehaviour:
     roomType: 1
     multipleRoomTypes: []
     useCustomPrefabs: 1
-    customRoomPrefabs: []
-    minRoomNumber: 1
-    maxRoomNumber: 1
+    customRoomPrefabs:
+    - {fileID: 8863224677180504647, guid: 53d35b6f260d8dd47a27cfbb411c9b4e, type: 3}
+    - {fileID: 8863224677180504647, guid: 63b3c4de720ab5b489fae79286378294, type: 3}
+    - {fileID: 8863224677180504647, guid: 24966cef20f994844b2d37bf1bf6addd, type: 3}
+    - {fileID: 8863224677180504647, guid: 002714279b74cc5498706553f63c3d68, type: 3}
+    - {fileID: 8863224677180504647, guid: 062e28f00e49d94428fcc596e6f09a71, type: 3}
+    - {fileID: 8863224677180504647, guid: b328be56e66254841893c57283a4863a, type: 3}
+    minRoomNumber: 6
+    maxRoomNumber: 6
     isMandatory: 1
-    isProbableMandatory: 0
+    isProbableMandatory: 1
     generateOnce: 0
     allowMultipleDoorsOfSameType: 0
     probability: 100

@@ -207,37 +207,32 @@ public class KnightPiece : BoardPiece
     private IEnumerator PatrolRoutine()
     {
         if (patrolPath.Count == 0)
-        {
             GenerateLongPatrolPath();
-        }
 
-        if (patrolPath.Count > 0)
+        while (patrolPath.Count > 0)
         {
             Vector2Int nextCoord = patrolPath[0];
 
-            if (boardManager.TileExists(nextCoord) && !boardManager.IsTileOccupied(nextCoord))
-            {
-                Vector2Int intermediate = GetIntermediateLPoint(currentCoord, nextCoord);
-                if (boardManager.TileExists(intermediate))
-                {
-                    patrolPath.RemoveAt(0);
-                    yield return StartCoroutine(MoveRoutine(nextCoord, patrolMoveSpeed));
-                }
-                else
-                {
-                    patrolPath.Clear();
-                    yield return new WaitForSeconds(detectionInterval);
-                }
-            }
-            else
+            if (!boardManager.TileExists(nextCoord) || boardManager.IsTileOccupied(nextCoord))
             {
                 patrolPath.Clear();
-                yield return new WaitForSeconds(detectionInterval);
+                break;
             }
-        }
-        else
-        {
+
+            Vector2Int intermediate = GetIntermediateLPoint(currentCoord, nextCoord);
+            if (!boardManager.TileExists(intermediate))
+            {
+                patrolPath.Clear();
+                break;
+            }
+
+            patrolPath.RemoveAt(0);
+            yield return StartCoroutine(MoveRoutine(nextCoord, patrolMoveSpeed));
             yield return new WaitForSeconds(detectionInterval);
+
+            Vector2Int playerCoord = boardManager.WorldPosToCoord(playerTransform.position);
+            if (boardManager.TileExists(playerCoord) && (CanSeePlayer(playerCoord) || IsPlayerNearby(playerTransform)))
+                yield break;
         }
     }
 
@@ -245,7 +240,7 @@ public class KnightPiece : BoardPiece
     {
         patrolPath.Clear();
         Vector2Int current = currentCoord;
-        int pathLength = Random.Range(3, 6);
+        int pathLength = Random.Range(6, 12);
 
         for (int i = 0; i < pathLength; i++)
         {
@@ -253,13 +248,11 @@ public class KnightPiece : BoardPiece
             foreach (var m in knightMoves)
             {
                 Vector2Int next = current + m;
-                if (boardManager.TileExists(next))
+                if (boardManager.TileExists(next) && !boardManager.IsTileOccupied(next))
                 {
                     Vector2Int intermediate = GetIntermediateLPoint(current, next);
                     if (boardManager.TileExists(intermediate))
-                    {
                         validMoves.Add(next);
-                    }
                 }
             }
 

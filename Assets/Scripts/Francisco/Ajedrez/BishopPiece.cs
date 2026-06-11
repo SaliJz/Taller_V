@@ -182,46 +182,25 @@ public class BishopPiece : BoardPiece
     private IEnumerator PatrolRoutine()
     {
         if (patrolPath.Count == 0)
-        {
             GenerateLongPatrolPath();
-        }
 
-        if (patrolPath.Count > 0)
+        while (patrolPath.Count > 0)
         {
-            int stepSize = Random.Range(1, patrolStepDist + 1);
-            stepSize = Mathf.Min(stepSize, patrolPath.Count);
+            Vector2Int next = patrolPath[0];
+            patrolPath.RemoveAt(0);
 
-            Vector2Int targetCoord = currentCoord;
-            int actualSteps = 0;
-
-            for (int i = 0; i < stepSize; i++)
-            {
-                Vector2Int nextCheck = patrolPath[i];
-                if (boardManager.TileExists(nextCheck) && !boardManager.IsTileOccupied(nextCheck))
-                {
-                    targetCoord = nextCheck;
-                    actualSteps++;
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            if (actualSteps > 0)
-            {
-                patrolPath.RemoveRange(0, actualSteps);
-                yield return StartCoroutine(MoveRoutine(targetCoord, patrolMoveSpeed));
-            }
-            else
+            if (!boardManager.TileExists(next) || boardManager.IsTileOccupied(next))
             {
                 patrolPath.Clear();
-                yield return new WaitForSeconds(detectionInterval);
+                break;
             }
-        }
-        else
-        {
+
+            yield return StartCoroutine(MoveRoutine(next, patrolMoveSpeed));
             yield return new WaitForSeconds(detectionInterval);
+
+            Vector2Int playerCoord = boardManager.WorldPosToCoord(playerTransform.position);
+            if (boardManager.TileExists(playerCoord) && (CanSeePlayer(playerCoord) || IsPlayerNearby(playerTransform)))
+                yield break;
         }
     }
 
@@ -229,42 +208,50 @@ public class BishopPiece : BoardPiece
     {
         patrolPath.Clear();
         Vector2Int current = currentCoord;
-        List<Vector2Int> preferredDirs = new List<Vector2Int>(moveDirs);
+        int segments = Random.Range(3, 7);
+        List<Vector2Int> availableDirs = new List<Vector2Int>(moveDirs);
+        Vector2Int lastDir = Vector2Int.zero;
 
-        int shuffles = preferredDirs.Count;
-        while (shuffles > 1)
+        for (int s = 0; s < segments; s++)
         {
-            shuffles--;
-            int k = Random.Range(0, shuffles + 1);
-            Vector2Int value = preferredDirs[k];
-            preferredDirs[k] = preferredDirs[shuffles];
-            preferredDirs[shuffles] = value;
-        }
-
-        foreach (var dir in preferredDirs)
-        {
-            int spacesFree = 0;
-            for (int i = 1; i <= patrolStepDist * 3; i++)
+            for (int i = availableDirs.Count - 1; i > 0; i--)
             {
-                Vector2Int test = current + (dir * i);
-                if (boardManager.TileExists(test))
-                {
-                    spacesFree++;
-                }
-                else
-                {
-                    break;
-                }
+                int k = Random.Range(0, i + 1);
+                Vector2Int tmp = availableDirs[k];
+                availableDirs[k] = availableDirs[i];
+                availableDirs[i] = tmp;
             }
 
-            if (spacesFree >= 1)
+            Vector2Int chosenDir = Vector2Int.zero;
+            int chosenDist = 0;
+
+            foreach (var dir in availableDirs)
             {
-                for (int i = 1; i <= spacesFree; i++)
+                if (dir == lastDir || dir == -lastDir) continue;
+
+                int maxDist = 0;
+                for (int i = 1; i <= 30; i++)
                 {
-                    patrolPath.Add(current + (dir * i));
+                    Vector2Int test = current + dir * i;
+                    if (boardManager.TileExists(test) && !boardManager.IsTileOccupied(test))
+                        maxDist = i;
+                    else
+                        break;
                 }
+
+                if (maxDist < 2) continue;
+
+                chosenDir = dir;
+                chosenDist = Random.Range(maxDist / 2, maxDist + 1);
                 break;
             }
+
+            if (chosenDir == Vector2Int.zero) break;
+
+            Vector2Int waypoint = current + chosenDir * chosenDist;
+            patrolPath.Add(waypoint);
+            lastDir = chosenDir;
+            current = waypoint;
         }
     }
     #endregion
