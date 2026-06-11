@@ -3143,7 +3143,17 @@ MonoBehaviour:
   - {fileID: -2013639086596557405, guid: dab15bd397f3eda4aa1500deeb993c33, type: 3}
   - {fileID: -2013639086596557405, guid: 1232650c93176974da0a4d8ea0c00726, type: 3}
   roomGenerationRules: []
-  roomTypeProbabilities: []
+  roomTypeProbabilities:
+  - roomType: 1
+    probability: 30
+    roomPrefabs:
+    - {fileID: 8863224677180504647, guid: 53d35b6f260d8dd47a27cfbb411c9b4e, type: 3}
+    - {fileID: 8863224677180504647, guid: 63b3c4de720ab5b489fae79286378294, type: 3}
+    - {fileID: 8863224677180504647, guid: 24966cef20f994844b2d37bf1bf6addd, type: 3}
+    - {fileID: 8863224677180504647, guid: 002714279b74cc5498706553f63c3d68, type: 3}
+    - {fileID: 8863224677180504647, guid: 062e28f00e49d94428fcc596e6f09a71, type: 3}
+    - {fileID: 8863224677180504647, guid: b328be56e66254841893c57283a4863a, type: 3}
+    roomDataList: []
   generationRules:
   - currentRoomType: 4
     allowedNextRoomTypes: 01000000
@@ -3169,7 +3179,9 @@ MonoBehaviour:
     roomType: 4
     multipleRoomTypes: []
     useCustomPrefabs: 0
-    customRoomPrefabs: []
+    customRoomPrefabs:
+    - {fileID: -2013639086596557405, guid: c250c216b2025824eb281a70914547a7, type: 3}
+    - {fileID: -2013639086596557405, guid: fca8b3385a8f516499a041ca914555a2, type: 3}
     minRoomNumber: 2
     maxRoomNumber: 2
     isMandatory: 1
