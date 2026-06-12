@@ -31,6 +31,12 @@ public class CameraOcclusionSystem : MonoBehaviour
 
             for (int i = 0; i < originalMaterials.Length; i++)
             {
+                if (originalMaterials[i] == null)
+                {
+                    fadedMaterials[i] = null;
+                    continue;
+                }
+
                 fadedMaterials[i] = new Material(originalMaterials[i]);
                 SetupFadeMaterial(fadedMaterials[i]);
             }
