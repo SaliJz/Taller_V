@@ -23,18 +23,27 @@ public class EspejoController : MonoBehaviour
     public GameObject nivel2;
     public GameObject nivel3;
 
-    [Header("Referencias")]
-    public GameObject Player;
+    [Header("Referencias de cámara")]
+    public GameObject MainCamera;
     public GameObject CameraEspejo;
 
-    [Header("Rotación del efecto espejo")]
-    public float rotacionMaxima = 45f;
-    public float sensibilidadRotacion = 80f;
+    [Header("Seguimiento de cámara espejo")]
+    public bool copiarRotacion = true;
+    public bool copiarMovimiento = true;
+
+    [Tooltip("Distancia máxima que CameraEspejo puede alejarse de su posición inicial.")]
+    public float limiteMovimiento = 10f;
+
+    [Tooltip("Suavizado del movimiento de CameraEspejo.")]
+    public float suavizadoMovimiento = 8f;
+
+    [Tooltip("Suavizado de la rotación de CameraEspejo.")]
     public float suavizadoRotacion = 8f;
 
     private MeshRenderer meshRenderer;
-    private Vector3 ultimaPosicionPlayer;
-    private float rotacionActualY;
+
+    private Vector3 posicionInicialMainCamera;
+    private Vector3 posicionInicialCameraEspejo;
 
     private EstadoEspejo ultimoEstado;
 
@@ -42,8 +51,24 @@ public class EspejoController : MonoBehaviour
     {
         meshRenderer = GetComponent<MeshRenderer>();
 
-        if (Player != null)
-            ultimaPosicionPlayer = Player.transform.position;
+        if (MainCamera == null)
+        {
+            MainCamera = GameObject.Find("Main Camera");
+        }
+
+        if (MainCamera != null)
+        {
+            posicionInicialMainCamera = MainCamera.transform.position;
+        }
+        else
+        {
+            Debug.LogWarning("No se encontró un GameObject llamado 'Main Camera'.", this);
+        }
+
+        if (CameraEspejo != null)
+        {
+            posicionInicialCameraEspejo = CameraEspejo.transform.position;
+        }
 
         ultimoEstado = estadoActual;
         AplicarEstado();
@@ -57,7 +82,7 @@ public class EspejoController : MonoBehaviour
             ultimoEstado = estadoActual;
         }
 
-        RotarCamaraSegunPlayer();
+        SincronizarCamaraEspejo();
     }
 
     private void AplicarEstado()
@@ -102,29 +127,37 @@ public class EspejoController : MonoBehaviour
             nivel3.SetActive(estadoActual == EstadoEspejo.Nivel3);
     }
 
-    private void RotarCamaraSegunPlayer()
+    private void SincronizarCamaraEspejo()
     {
-        if (Player == null || CameraEspejo == null) return;
+        if (MainCamera == null || CameraEspejo == null) return;
 
-        Vector3 posicionActual = Player.transform.position;
-        float movimientoX = posicionActual.x - ultimaPosicionPlayer.x;
-
-        float rotacionObjetivo = rotacionActualY;
-
-        if (Mathf.Abs(movimientoX) > 0.001f)
+        if (copiarMovimiento)
         {
-            rotacionObjetivo += -movimientoX * sensibilidadRotacion;
-            rotacionObjetivo = Mathf.Clamp(rotacionObjetivo, -rotacionMaxima, rotacionMaxima);
+            Vector3 desplazamientoMain = MainCamera.transform.position - posicionInicialMainCamera;
+
+            if (desplazamientoMain.magnitude > limiteMovimiento)
+            {
+                desplazamientoMain = desplazamientoMain.normalized * limiteMovimiento;
+            }
+
+            Vector3 posicionObjetivo = posicionInicialCameraEspejo + desplazamientoMain;
+
+            CameraEspejo.transform.position = Vector3.Lerp(
+                CameraEspejo.transform.position,
+                posicionObjetivo,
+                Time.deltaTime * suavizadoMovimiento
+            );
         }
 
-        rotacionActualY = Mathf.Lerp(
-            rotacionActualY,
-            rotacionObjetivo,
-            Time.deltaTime * suavizadoRotacion
-        );
+        if (copiarRotacion)
+        {
+            Quaternion rotacionObjetivo = MainCamera.transform.rotation;
 
-        CameraEspejo.transform.localRotation = Quaternion.Euler(0f, rotacionActualY, 0f);
-
-        ultimaPosicionPlayer = posicionActual;
+            CameraEspejo.transform.rotation = Quaternion.Lerp(
+                CameraEspejo.transform.rotation,
+                rotacionObjetivo,
+                Time.deltaTime * suavizadoRotacion
+            );
+        }
     }
 }

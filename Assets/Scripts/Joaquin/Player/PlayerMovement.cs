@@ -1385,18 +1385,21 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     private void PlayDashVFX(bool active)
     {
         if (dashDustVFX == null) return;
-        var emission = dashDustVFX.emission;
-        emission.enabled = active;
+        // var emission = dashDustVFX.emission;
+        // emission.enabled = active;
 
-        if (active)
-        {
-            if (!dashDustVFX.isPlaying) dashDustVFX.Play();
-        }
-        else
-        {
-            dashDustVFX.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
-            dashDustVFX.Clear(false);
-        }
+        // if (active)
+        // {
+        //     if (!dashDustVFX.isPlaying)
+        //     {
+        //         dashDustVFX.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        //         dashDustVFX.Play(true);
+        //     }
+        // }
+        // else
+        // {
+        //     if(!dashDustVFX.isStopped) dashDustVFX.Stop();
+        // }
     }
 
     /// <summary>

@@ -56,6 +56,10 @@ public class Room : MonoBehaviour
         if (roomType != RoomType.Combat)
         {
             UnlockAllTriggers();
+            for (int i = 0; i < connectionPoints.Length; i++)
+            {
+                OpenDoor(i);
+            }
         }
     }
 

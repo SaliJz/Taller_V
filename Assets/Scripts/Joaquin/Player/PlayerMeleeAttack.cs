@@ -1095,6 +1095,8 @@ public class PlayerMeleeAttack : MonoBehaviour
     public void PerformHitDetectionWithTracking()
     {
         bool hitAnyEnemy = false;
+        bool hasHitHealthThisFrame = false;
+        bool hasHitToughnessThisFrame = false;
 
         Vector3 damageSourcePos = hitPoint != null ? hitPoint.position : transform.position;
 
@@ -1126,6 +1128,16 @@ public class PlayerMeleeAttack : MonoBehaviour
 
             hitEnemiesThisCombo.Add(enemy);
             hitAnyEnemy = true;
+
+            EnemyToughness toughness = enemy.GetComponent<EnemyToughness>();
+            if (toughness != null && toughness.HasToughness)
+            {
+                hasHitToughnessThisFrame = true;
+            }
+            else
+            {
+                hasHitHealthThisFrame = true;
+            }
 
             if (hitAnyEnemy && playerAudioController != null) playerAudioController.PlayHitSound();
 
@@ -1198,6 +1210,16 @@ public class PlayerMeleeAttack : MonoBehaviour
             {
                 explosiveHead.StartPriming(true);
             }
+        }
+
+        // Ejecutar el Zoom global consolidado del frame
+        if (hasHitHealthThisFrame)
+        {
+            CameraHitZoomFeedback.Instance?.TriggerHitZoom(false);
+        }
+        else if (hasHitToughnessThisFrame)
+        {
+            CameraHitZoomFeedback.Instance?.TriggerHitZoom(true);
         }
 
         float displayDuration = gizmoDuration;
