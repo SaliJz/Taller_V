@@ -437,6 +437,8 @@ public class Shield : MonoBehaviour
         const AttackDamageType shieldDamageType = AttackDamageType.Ranged;
 
         bool hasHitAnyEnemy = false;
+        bool hasHitHealthThisFrame = false;
+        bool hasHitToughnessThisFrame = false;
 
         foreach (Collider enemy in hitEnemies)
         {
@@ -459,6 +461,16 @@ public class Shield : MonoBehaviour
             }
 
             hasHitAnyEnemy = true;
+
+            EnemyToughness toughness = enemy.GetComponent<EnemyToughness>();
+            if (toughness != null && toughness.HasToughness)
+            {
+                hasHitToughnessThisFrame = true;
+            }
+            else
+            {
+                hasHitHealthThisFrame = true;
+            }
 
             if (audioSource != null)
             {
@@ -509,8 +521,6 @@ public class Shield : MonoBehaviour
 
             if (currentLifeStage == PlayerHealth.LifeStage.Adult && knockbackForce > 0)
             {
-                EnemyToughness toughness = enemy.GetComponent<EnemyToughness>();
-
                 if (toughness == null || !toughness.HasToughness)
                 {
                     EnemyKnockbackHandler knockbackHandler = enemy.GetComponent<EnemyKnockbackHandler>();
@@ -541,6 +551,16 @@ public class Shield : MonoBehaviour
                 currentPierceCount++;
                 ReportDebug($"Pierce count: {currentPierceCount}/{maxPierceTargets}", 1);
             }
+        }
+
+        // Ejecutar el Zoom global consolidado del frame
+        if (hasHitHealthThisFrame)
+        {
+            CameraHitZoomFeedback.Instance?.TriggerHitZoom(false);
+        }
+        else if (hasHitToughnessThisFrame)
+        {
+            CameraHitZoomFeedback.Instance?.TriggerHitZoom(true);
         }
 
         if (!hasHitAnyEnemy)

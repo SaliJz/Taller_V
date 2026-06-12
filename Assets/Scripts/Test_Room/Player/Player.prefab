@@ -7816,6 +7816,7 @@ GameObject:
   - component: {fileID: 2676318613311582842}
   - component: {fileID: 530321809443592086}
   - component: {fileID: 4047647040947986490}
+  - component: {fileID: 8923847246354400208}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -7973,6 +7974,7 @@ MonoBehaviour:
   shaderCtrl: {fileID: 0}
   fallbackMaxHealth: 100
   damageInvulnerabilityTime: 0
+  shakeCooldown: 0.5
   sceneToLoadOnDeath: TransitionDead
   deathFadeColor: {r: 0, g: 0, b: 0, a: 1}
   playerModelTransform: {fileID: 5664821327038534799}
@@ -8576,6 +8578,23 @@ MonoBehaviour:
     DissipationDistance: 100
     PropagationSpeed: 343
   DefaultVelocity: {x: 0, y: -5, z: 0}
+--- !u!114 &8923847246354400208
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6679960082821164706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afffc389164e6f54d9c8980d2ff83c3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  vcam: {fileID: 0}
+  healthZoomAmount: 0.3
+  healthZoomDuration: 0.1
+  toughnessZoomAmount: 0.15
+  toughnessZoomDuration: 0.1
 --- !u!1 &6769764421561134128
 GameObject:
   m_ObjectHideFlags: 0
