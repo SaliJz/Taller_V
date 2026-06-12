@@ -35,9 +35,9 @@ MonoBehaviour:
           Count: 2
       - enemiesInWave:
         - EnemyPrefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
-          Count: 2
+          Count: 1
         - EnemyPrefab: {fileID: 4341688338486564527, guid: 7c14fd4f4969a51488ebc53d4cad8166, type: 3}
-          Count: 3
+          Count: 4
       timeBetweenWaves: 1
   - startRoomNumber: 3
     GenerationMode: 1
@@ -52,13 +52,19 @@ MonoBehaviour:
     - CombinationName: Wave002
       waves:
       - enemiesInWave:
-        - EnemyPrefab: {fileID: 4341688338486564527, guid: 7c14fd4f4969a51488ebc53d4cad8166, type: 3}
-          Count: 2
+        - EnemyPrefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
+          Count: 1
         - EnemyPrefab: {fileID: 1476206699395584079, guid: 724c4a4d2ac1ef14ba52a3f638420160, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 4341688338486564527, guid: 7d10c2752e7400349b8ec6c3fe1925e9, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
           Count: 1
       - enemiesInWave:
         - EnemyPrefab: {fileID: 4341688338486564527, guid: 7d10c2752e7400349b8ec6c3fe1925e9, type: 3}
           Count: 2
+        - EnemyPrefab: {fileID: 4341688338486564527, guid: 7c14fd4f4969a51488ebc53d4cad8166, type: 3}
+          Count: 1
         - EnemyPrefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
           Count: 1
         - EnemyPrefab: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
@@ -69,7 +75,7 @@ MonoBehaviour:
         - EnemyPrefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
           Count: 2
         - EnemyPrefab: {fileID: 3776010021068202972, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
-          Count: 2
+          Count: 1
       timeBetweenWaves: 1
   - startRoomNumber: 4
     GenerationMode: 1
@@ -87,8 +93,8 @@ MonoBehaviour:
         - EnemyPrefab: {fileID: 3776010021068202972, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
           Count: 1
         - EnemyPrefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
-          Count: 2
-        - EnemyPrefab: {fileID: 4341688338486564527, guid: 7d10c2752e7400349b8ec6c3fe1925e9, type: 3}
+          Count: 3
+        - EnemyPrefab: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
           Count: 1
       - enemiesInWave:
         - EnemyPrefab: {fileID: 3776010021068202972, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
@@ -96,18 +102,58 @@ MonoBehaviour:
         - EnemyPrefab: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
           Count: 1
         - EnemyPrefab: {fileID: 4341688338486564527, guid: 7c14fd4f4969a51488ebc53d4cad8166, type: 3}
-          Count: 3
+          Count: 4
       - enemiesInWave:
         - EnemyPrefab: {fileID: 3776010021068202972, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
           Count: 1
         - EnemyPrefab: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
           Count: 2
         - EnemyPrefab: {fileID: 1476206699395584079, guid: 724c4a4d2ac1ef14ba52a3f638420160, type: 3}
-          Count: 2
-        - EnemyPrefab: {fileID: 4341688338486564527, guid: 7d10c2752e7400349b8ec6c3fe1925e9, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
           Count: 1
         - EnemyPrefab: {fileID: 4341688338486564527, guid: 7c14fd4f4969a51488ebc53d4cad8166, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 4341688338486564527, guid: 7d10c2752e7400349b8ec6c3fe1925e9, type: 3}
+          Count: 1
+      timeBetweenWaves: 1
+  - startRoomNumber: 5
+    GenerationMode: 1
+    minWaves: 2
+    maxWaves: 4
+    timeBetweenWaves: 3
+    minEnemyCountPerWave: 4
+    maxEnemyCountPerWave: 5
+    availableEnemyPool: []
+    totalDifficultyMultiplier: 1
+    predefinedCombinations:
+    - CombinationName: Wave002
+      waves:
+      - enemiesInWave:
+        - EnemyPrefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 1476206699395584079, guid: 724c4a4d2ac1ef14ba52a3f638420160, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 4341688338486564527, guid: 7d10c2752e7400349b8ec6c3fe1925e9, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
+          Count: 1
+      - enemiesInWave:
+        - EnemyPrefab: {fileID: 4341688338486564527, guid: 7d10c2752e7400349b8ec6c3fe1925e9, type: 3}
           Count: 2
+        - EnemyPrefab: {fileID: 4341688338486564527, guid: 7c14fd4f4969a51488ebc53d4cad8166, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
+          Count: 1
+      - enemiesInWave:
+        - EnemyPrefab: {fileID: 4341688338486564527, guid: 7d10c2752e7400349b8ec6c3fe1925e9, type: 3}
+          Count: 3
+        - EnemyPrefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
+          Count: 2
+        - EnemyPrefab: {fileID: 3776010021068202972, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
+          Count: 1
       timeBetweenWaves: 1
   - startRoomNumber: 6
     GenerationMode: 1
@@ -117,25 +163,35 @@ MonoBehaviour:
     minEnemyCountPerWave: 4
     maxEnemyCountPerWave: 5
     availableEnemyPool: []
-    totalDifficultyMultiplier: 0
+    totalDifficultyMultiplier: 1
     predefinedCombinations:
-    - CombinationName: Wave004
+    - CombinationName: Wave003
       waves:
       - enemiesInWave:
+        - EnemyPrefab: {fileID: 3776010021068202972, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
+          Count: 1
         - EnemyPrefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
-          Count: 2
-        - EnemyPrefab: {fileID: 4341688338486564527, guid: 7c14fd4f4969a51488ebc53d4cad8166, type: 3}
           Count: 3
+        - EnemyPrefab: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
+          Count: 1
       - enemiesInWave:
+        - EnemyPrefab: {fileID: 3776010021068202972, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 4341688338486564527, guid: 7c14fd4f4969a51488ebc53d4cad8166, type: 3}
+          Count: 4
+      - enemiesInWave:
+        - EnemyPrefab: {fileID: 3776010021068202972, guid: 661e0a345a366c344b5106f0f2350244, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
+          Count: 2
+        - EnemyPrefab: {fileID: 1476206699395584079, guid: 724c4a4d2ac1ef14ba52a3f638420160, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
+          Count: 1
+        - EnemyPrefab: {fileID: 4341688338486564527, guid: 7c14fd4f4969a51488ebc53d4cad8166, type: 3}
+          Count: 1
         - EnemyPrefab: {fileID: 4341688338486564527, guid: 7d10c2752e7400349b8ec6c3fe1925e9, type: 3}
-          Count: 2
-        - EnemyPrefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
           Count: 1
-        - EnemyPrefab: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
-          Count: 1
-      - enemiesInWave:
-        - EnemyPrefab: {fileID: 1476206699395584079, guid: bfaea15f4b3faeb48ba3e939da0bd979, type: 3}
-          Count: 2
-        - EnemyPrefab: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
-          Count: 2
       timeBetweenWaves: 1
