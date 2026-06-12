@@ -41,6 +41,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [Tooltip("Vida maxima por defecto si no se encuentra PlayerStatsManager.")]
     [SerializeField][HideInInspector] private float fallbackMaxHealth = 100;
     [SerializeField] private float damageInvulnerabilityTime = 0.5f;
+    [SerializeField] private float shakeCooldown = 0.5f;
 
     [Header("Configuracion de Muerte")]
     [SerializeField] private string sceneToLoadOnDeath = "Tuto";
@@ -115,6 +116,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     // Status Flags
     private bool isShieldBlockReady = true;
     private bool isStunned = false;
+    private bool isShakeCooldown = false;
 
     // Coroutines
     private Coroutine temporaryHealthDecayCoroutine;
@@ -441,8 +443,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
                 _ => new Vector3(1.4f, -10f, 0f)
             };
 
-            _cinemachineShake.DefaultVelocity = customVelocity;
-            _cinemachineShake.GenerateImpulse();
+            if (!isShakeCooldown)
+            {
+                _cinemachineShake.DefaultVelocity = customVelocity;
+                _cinemachineShake.GenerateImpulse();
+                isShakeCooldown = true;
+                Invoke(nameof(ResetShakeCooldown), shakeCooldown);
+            }
 
             if (damageUIEffect != null) damageUIEffect.PrimeraHerida = true;
 
@@ -470,6 +477,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         UpdateLifeStage();
 
         UpdateTemporaryHealthUI();
+    }
+
+    private void ResetShakeCooldown()
+    {
+        isShakeCooldown = false;
     }
 
     /// <summary>

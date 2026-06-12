@@ -3154,6 +3154,12 @@ MonoBehaviour:
     - {fileID: 8863224677180504647, guid: 062e28f00e49d94428fcc596e6f09a71, type: 3}
     - {fileID: 8863224677180504647, guid: b328be56e66254841893c57283a4863a, type: 3}
     roomDataList: []
+  - roomType: 4
+    probability: 30
+    roomPrefabs:
+    - {fileID: -2013639086596557405, guid: c250c216b2025824eb281a70914547a7, type: 3}
+    - {fileID: -2013639086596557405, guid: fca8b3385a8f516499a041ca914555a2, type: 3}
+    roomDataList: []
   generationRules:
   - currentRoomType: 4
     allowedNextRoomTypes: 01000000
@@ -3175,18 +3181,18 @@ MonoBehaviour:
     combatContent:
       waves: []
       timeBetweenWaves: 0
-  - useMultipleRoomTypes: 1
+  - useMultipleRoomTypes: 0
     roomType: 4
     multipleRoomTypes: []
-    useCustomPrefabs: 0
+    useCustomPrefabs: 1
     customRoomPrefabs:
     - {fileID: -2013639086596557405, guid: c250c216b2025824eb281a70914547a7, type: 3}
     - {fileID: -2013639086596557405, guid: fca8b3385a8f516499a041ca914555a2, type: 3}
     minRoomNumber: 2
     maxRoomNumber: 2
     isMandatory: 1
-    isProbableMandatory: 1
-    generateOnce: 0
+    isProbableMandatory: 0
+    generateOnce: 1
     allowMultipleDoorsOfSameType: 0
     probability: 100
     combatContent:
