@@ -842,11 +842,11 @@ public class ShopManager : MonoBehaviour
             if (priceReduction > 0f && finalCost < baseCost)
                 costText = $"<s>{Mathf.RoundToInt(baseCost)} HP</s> -> <color=#00FF00>{Mathf.RoundToInt(finalCost)} HP</color> (-{priceReduction:F0}%)";
             else
-                costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: GRATIS";
+                costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: Aquí es gratis";
         }
         else
         {
-            costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: GRATIS";
+            costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: Aquí es gratis";
         }
 
         itemNameText.text = nameWithColor;

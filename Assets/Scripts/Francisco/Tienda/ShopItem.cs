@@ -216,8 +216,8 @@ public class ShopItem : ScriptableObject
                 return "Rebote del Escudo";
             case StatType.ShieldReboundRadius:
                 return "Radio de Rebote del Escudo";
-            case StatType.ShieldBlockUpgrade:
-                return "Vida del Escudo";
+            //case StatType.ShieldBlockUpgrade:
+            //    return "Vida del Escudo";
             case StatType.ShieldPushForce:
                 return "Empuje del Escudo a Distancia";
             case StatType.ShieldReturnSpeed:
