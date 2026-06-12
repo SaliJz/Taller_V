@@ -1,5 +1,7 @@
 using UnityEngine;
+#if UNITY_EDITOR
 using UnityEngine.SceneManagement;
+#endif
 
 public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
 {
@@ -15,6 +17,10 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
     {
         young, adult, old
     }
+
+    [Header("Referencias")]
+    [SerializeField] PlayerShaderCtrl shaderCtrl;
+    // [SerializeField] LayerMask groundMask;
 
     [Header("Player Custom Status")]
     public Age currentAge =Age.adult;
@@ -35,6 +41,8 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
     [SerializeField] GameObject[] VFX_meleeMid;
     [SerializeField] GameObject[] VFX_meleeLate;
     [SerializeField] ParticleSystem VFX_wallParticles;
+    [SerializeField] ParticleSystem VFX_Dash;
+    // [SerializeField] GameObject shadowPrefab;
 
     [Header("Debug")]
     [SerializeField] private bool debug = false;
@@ -220,6 +228,16 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         if(isDashing) return;
         isDashing = true;
         dashTimer = dashDuration;
+        
+        shaderCtrl?.ShineTrigger();
+        if(VFX_Dash != null)
+        {
+            VFX_Dash.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            VFX_Dash.Play(true);
+        }
+
+        // SpawnGoldenShadow();
+
         PlayState(PlayerState.dash, AnimPriority.dash);
     }
 
@@ -228,6 +246,9 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         isDashing = false;
         damageActive = false;
         currentPriority = AnimPriority.none;
+
+        if(!VFX_Dash.isStopped) VFX_Dash.Stop();
+
         PlayState(PlayerState.idle, AnimPriority.locomotion);
     }
 
@@ -335,6 +356,56 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
     }
     #endregion
 
+
+    // #region Spawn Golden Shadow in Dash [OPTIMIZAR]
+    // public void SpawnGoldenShadow()
+    // {
+    //     RaycastHit hit;
+    //     Vector3 shadowSpawnPoint = transform.position;
+    //     Vector3 rayOrigin = shadowSpawnPoint + Vector3.up * 0.5f;
+
+    //     if (Physics.Raycast(rayOrigin, Vector3.down, out hit, 50f, groundMask))
+    //     {
+    //         Vector3 spawnPos = hit.point + new Vector3(0, 0.1f, 0);
+    //         Quaternion spawnRotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+
+    //         GameObject goldenInstance = Instantiate(shadowPrefab, spawnPos, spawnRotation);
+    //         goldenInstance.transform.localScale = Vector3.one * 0.2f;
+            
+    //         SpriteRenderer sr = goldenInstance.transform.GetChild(0).GetComponent<SpriteRenderer>();
+    //         if (sr != null) StartCoroutine(GoldenShadowFade(sr, 0.5f));
+            
+    //         // goldenInstance.transform.SetParent(this.transform);
+    //         Debug.Log("Sombra spawneada");
+
+    //         Destroy(goldenInstance, 1.2f);
+    //     }
+    //     else
+    //     {
+    //         Debug.LogWarning($"[{gameObject.name}] No se encontró suelo para spawnear la sombra.");
+    //     }
+    // }
+
+    // IEnumerator GoldenShadowFade(SpriteRenderer sr, float duration)
+    // {
+    //     Material mat = sr.material;
+
+    //     Color colorOriginal = mat.GetColor("_Color");
+    //     Color colorFinal = colorOriginal;
+    //     colorFinal.a = 0f;
+
+    //     float t = 0;
+    //     while (t < duration)
+    //     {
+    //         t += Time.deltaTime;
+
+    //         mat.SetColor("_Color", Color.Lerp(colorOriginal, colorFinal, t/duration));
+    //         yield return null;
+    //     }
+
+    //     mat.SetColor("_Color", colorFinal);
+    // }
+    // #endregion
 
     #if UNITY_EDITOR
     private void DebugInputs()
