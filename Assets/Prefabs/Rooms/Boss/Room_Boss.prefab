@@ -287,7 +287,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: a41aeb65f92051a4e9456385966d1303, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: 9196e24f2f5364a48a226f4b2db5fefb, type: 2}
   m_BuildHeightMesh: 0
 --- !u!1 &4596212136797086397
 GameObject:
@@ -2075,7 +2075,8 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 2056132030662613235, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -2085,10 +2086,109 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2172493670236009434, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1314562542212859541}
+    - targetCorrespondingSourceObject: {fileID: 483701349559400435, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5017100419854927699}
+    - targetCorrespondingSourceObject: {fileID: 3307501471421102580, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3517370589845817313}
+    - targetCorrespondingSourceObject: {fileID: 1729694073139314742, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2332841613666820177}
+    - targetCorrespondingSourceObject: {fileID: 1505609137130531829, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4760925643405047433}
+    - targetCorrespondingSourceObject: {fileID: 1304842873423908290, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3381346674912823238}
     - targetCorrespondingSourceObject: {fileID: 2071308538576980160, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2952330977153906701}
   m_SourcePrefab: {fileID: 100100000, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
+--- !u!1 &817488719747992599 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3307501471421102580, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
+  m_PrefabInstance: {fileID: 2791904907837650403}
+  m_PrefabAsset: {fileID: 0}
+--- !u!208 &3517370589845817313
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 817488719747992599}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 1345.233, y: 3217.2283, z: 1133.102}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0.001, y: 0, z: 0}
+  m_TimeToStationary: 0.5
+--- !u!1 &2308276676121346576 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 483701349559400435, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
+  m_PrefabInstance: {fileID: 2791904907837650403}
+  m_PrefabAsset: {fileID: 0}
+--- !u!208 &5017100419854927699
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2308276676121346576}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 567.26904, y: 2313.0432, z: 567.26904}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0, z: -0.001}
+  m_TimeToStationary: 0.5
+--- !u!1 &3628257739348270614 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1505609137130531829, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
+  m_PrefabInstance: {fileID: 2791904907837650403}
+  m_PrefabAsset: {fileID: 0}
+--- !u!208 &4760925643405047433
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3628257739348270614}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 567.26904, y: 3129.3242, z: 567.26904}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0, z: -0.001}
+  m_TimeToStationary: 0.5
+--- !u!1 &3793558205078239265 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1304842873423908290, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
+  m_PrefabInstance: {fileID: 2791904907837650403}
+  m_PrefabAsset: {fileID: 0}
+--- !u!208 &3381346674912823238
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3793558205078239265}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 1491.603, y: 3153.8262, z: 1841.654}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0, z: 0}
+  m_TimeToStationary: 0.5
 --- !u!1 &4078266486939354681 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2172493670236009434, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
@@ -2143,6 +2243,27 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 0}
+--- !u!1 &4521558092147881429 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1729694073139314742, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
+  m_PrefabInstance: {fileID: 2791904907837650403}
+  m_PrefabAsset: {fileID: 0}
+--- !u!208 &2332841613666820177
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4521558092147881429}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 1620.258, y: 2297.071, z: 567.26904}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0.001, y: 0, z: 0}
+  m_TimeToStationary: 0.5
 --- !u!4 &5422984985994409335 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7925357484912148628, guid: dfdc0f2be8bc99a4a9987db9af216235, type: 3}
