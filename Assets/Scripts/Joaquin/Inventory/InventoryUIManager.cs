@@ -265,8 +265,22 @@ public class InventoryUIManager : MonoBehaviour
 
     public void ToggleInventory()
     {
-        // Evitar abrir/cerrar si el juego esta pausado por el menu de pausa u otro motivo
+        // Evita abrir/cerrar si el juego esta pausado por el menu de pausa u otro motivo
         if (PauseController.Instance != null && PauseController.IsGamePaused) return;
+
+        if (!isOpen)
+        {
+            if (DungeonGenerator.Instance != null && DungeonGenerator.Instance.IsTransitioning) return;
+            if (SceneController.Instance != null && SceneController.Instance.IsTransitioning) return;
+            if (RoomTransitionTrigger.IsTransitioning) return;
+            if (BossIntroDirector.IsPlayingCutscene) return;
+
+            var transitions = FindObjectsByType<TransitionInteractive>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            foreach (var t in transitions)
+            {
+                if (t.IsRunning) return;
+            }
+        }
 
         if (isOpen) CloseInventory();
         else OpenInventory();

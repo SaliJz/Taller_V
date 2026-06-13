@@ -98,9 +98,10 @@ public class PlayerStatsPanel : MonoBehaviour
         if (statsManager == null || statsTextDisplay == null) return;
         StringBuilder sb = new StringBuilder();
 
-        float baseRes = (1f - statsManager.GetBaseStat(StatType.DamageTaken)) * 100f;
-        float currRes = (1f - statsManager.GetCurrentStat(StatType.DamageTaken)) * 100f;
-        //sb.AppendLine(FormatCustomLine("Res. Daño", baseRes, currRes, isPercentage: true));
+        sb.AppendLine("<b><color=Yellow>Estadística <pos=50%>Base <pos=75%>Actual</color></b>");
+        // sb.AppendLine("-------------------------------------------------");
+
+        // sb.AppendLine(FormatCustomLine("Res. Daño", baseRes, currRes, isPercentage: true));
 
         sb.AppendLine(FormatStat("Vel. Mov.", StatType.MoveSpeed));
         sb.AppendLine(FormatStat("Alc. Dash", StatType.DashRangeMultiplier));
@@ -110,17 +111,17 @@ public class PlayerStatsPanel : MonoBehaviour
         sb.AppendLine(FormatStat("Vel. Melé", StatType.MeleeAttackSpeed));
         sb.AppendLine(FormatStat("Vel. Dist.", StatType.ShieldSpeed));
 
-        //sb.AppendLine(FormatStat("Emp. Melé", StatType.MeleePushForce)); 
+        // sb.AppendLine(FormatStat("Emp. Melé", StatType.MeleePushForce)); 
         sb.AppendLine(FormatStat("Emp. Dist.", StatType.ShieldPushForce));
 
-        //sb.AppendLine(FormatStat("Daño Ext. vs Superresistencia", StatType.ToughnessDamageMultiplier)); 
+        // sb.AppendLine(FormatStat("Daño Ext. vs Superresistencia", StatType.ToughnessDamageMultiplier)); 
 
         float realBaseRebounds = statsManager.GetBaseStat(StatType.ShieldMaxRebounds);
         float currentRebounds = statsManager.GetCurrentStat(StatType.ShieldMaxRebounds);
-        sb.AppendLine(FormatCustomLine("Reb. Escudo", 0, (currentRebounds - realBaseRebounds)));
+        sb.AppendLine(FormatCustomLine("Reb. Escudo", realBaseRebounds, currentRebounds));
 
         sb.AppendLine(FormatStat("Coste Bers.", StatType.HealthDrainAmount, inverseColors: true));
-        //sb.AppendLine(FormatStat("Bonus Bers.", StatType.BerserkerBonus));
+        // sb.AppendLine(FormatStat("Bonus Bers.", StatType.BerserkerBonus));
 
         sb.AppendLine(FormatStat("Robo Vida", StatType.LifestealOnKill));
 
@@ -138,27 +139,28 @@ public class PlayerStatsPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Función base de formateo. Permite inyectar matemáticas manuales (como el % de Resistencia o Rebotes).
+    /// Función base de formateo estructurada en 3 columnas.
     /// </summary>
     private string FormatCustomLine(string statName, float baseValue, float currentValue, bool isPercentage = false, bool inverseColors = false)
     {
-        float difference = currentValue - baseValue;
-        string diffString = "";
         string symbol = isPercentage ? "%" : "";
+        string changedString = $"{currentValue:0.##}{symbol}";
+        float difference = currentValue - baseValue;
 
         if (Mathf.Abs(difference) > 0.01f)
         {
             if (difference > 0)
             {
                 string color = inverseColors ? "red" : "green";
-                diffString = $"<color={color}>+{difference:0.##}{symbol}</color>";
+                changedString = $"<color={color}>{currentValue:0.##}{symbol}</color>";
             }
             else
             {
                 string color = inverseColors ? "green" : "red";
-                diffString = $"<color={color}>{difference:0.##}{symbol}</color>";
+                changedString = $"<color={color}>{currentValue:0.##}{symbol}</color>";
             }
         }
-        return $"{statName} <pos=65%>{baseValue:0.##}{symbol} <pos=85%>{diffString}";
+
+        return $"{statName} <pos=50%>{baseValue:0.##}{symbol} <pos=75%>{changedString}";
     }
 }

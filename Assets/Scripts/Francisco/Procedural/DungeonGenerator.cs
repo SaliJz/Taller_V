@@ -93,7 +93,7 @@ public class DungeonGenerator : MonoBehaviour
     public int currentRoomNumber { get; private set; } = 0;
     public Room CurrentRoom { get; private set; }
     public static DungeonGenerator Instance { get; private set; }
-
+    public bool IsTransitioning { get; private set; }
     private DevilManipulationManager devilManager;
 
     void Awake()
@@ -1171,6 +1171,13 @@ public class DungeonGenerator : MonoBehaviour
 
     public IEnumerator TransitionToNextRoom(ConnectionPoint entrancePoint, Transform playerTransform, bool cameFromElevator = false)
     {
+        IsTransitioning = true;
+
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen)
+        {
+            InventoryUIManager.Instance.CloseInventory();
+        }
+
         const float PlayerOffsetDistance = 0.75f;
 
         if (playerMovement == null)
@@ -1223,6 +1230,7 @@ public class DungeonGenerator : MonoBehaviour
                 playerMovement.SetCanMove(true);
             }
 
+            IsTransitioning = false;
             yield break;
         }
 
@@ -1246,6 +1254,7 @@ public class DungeonGenerator : MonoBehaviour
                 playerMovement.SetCanMove(true);
             }
 
+            IsTransitioning = false;
             yield break;
         }
 
@@ -1502,6 +1511,8 @@ public class DungeonGenerator : MonoBehaviour
                         OnRoomEntered?.Invoke(
                             newRoom.roomType);
                     }
+
+                    IsTransitioning = false;
                 }
             }
         );

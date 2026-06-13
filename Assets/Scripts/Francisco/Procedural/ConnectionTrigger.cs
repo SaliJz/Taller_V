@@ -31,6 +31,8 @@ public class ConnectionTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
+
         if (hasTriggered ||
             !isUnlocked ||
             connectionPoint == null ||
@@ -45,12 +47,18 @@ public class ConnectionTrigger : MonoBehaviour
         if (box != null) box.enabled = false;
 
         if (audioSource != null && transitionClip != null)
+        {
             audioSource.PlayOneShot(transitionClip);
+        }
 
         if (transition != null)
+        {
             dungeonGenerator.StartCoroutine(ElevatorThenTransition(other.transform));
+        }
         else
+        {
             dungeonGenerator.StartCoroutine(dungeonGenerator.TransitionToNextRoom(connectionPoint, other.transform));
+        }
     }
 
     private void OnTriggerExit(Collider other)
@@ -64,16 +72,14 @@ public class ConnectionTrigger : MonoBehaviour
 
     private IEnumerator ElevatorThenTransition(Transform playerTransform)
     {
-        var characterController =
-            playerTransform.GetComponent<CharacterController>();
+        var characterController = playerTransform.GetComponent<CharacterController>();
 
         if (characterController != null)
         {
             characterController.enabled = false;
         }
 
-        yield return dungeonGenerator.StartCoroutine(
-            transition.ExecuteSequence(playerTransform));
+        yield return dungeonGenerator.StartCoroutine(transition.ExecuteSequence(playerTransform));
 
         yield return dungeonGenerator.StartCoroutine(
             dungeonGenerator.TransitionToNextRoom(

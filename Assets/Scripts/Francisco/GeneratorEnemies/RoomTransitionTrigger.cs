@@ -24,6 +24,12 @@ public class RoomTransitionTrigger : MonoBehaviour
 
     #endregion
 
+    #region Public Properties
+
+    public static bool IsTransitioning { get; private set; }
+
+    #endregion
+
     #region Unity Lifecycle
 
     private void Awake()
@@ -58,6 +64,13 @@ public class RoomTransitionTrigger : MonoBehaviour
 
     private IEnumerator TransitionToNextRoomRoutine()
     {
+        IsTransitioning = true;
+
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen)
+        {
+            InventoryUIManager.Instance.CloseInventory();
+        }
+
         SetPlayerControls(false);
 
         Animator playerAnimator = playerGameObject != null ? playerGameObject.GetComponentInChildren<Animator>() : null;
@@ -92,6 +105,7 @@ public class RoomTransitionTrigger : MonoBehaviour
         yield return StartCoroutine(FadeController.Instance.FadeIn());
 
         SetPlayerControls(true);
+        IsTransitioning = false;
     }
 
     #endregion

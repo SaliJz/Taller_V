@@ -14,6 +14,8 @@ public class SceneController : MonoBehaviour
     [Header("Configuración Centralizada")]
     [SerializeField] private SceneShortcutData shortcutData;
 
+    public bool IsTransitioning { get; private set; }
+
     private void Awake()
     {
         if (Instance == null)
@@ -73,6 +75,13 @@ public class SceneController : MonoBehaviour
 
     private IEnumerator LoadSceneWithFade(string sceneName)
     {
+        IsTransitioning = true;
+
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen)
+        {
+            InventoryUIManager.Instance.CloseInventory();
+        }
+
         if (FadeController.Instance != null)
         {
             yield return FadeController.Instance.FadeOut();

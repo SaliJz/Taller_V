@@ -31,6 +31,12 @@ public class BossIntroDirector : MonoBehaviour
 
     #endregion
 
+    #region Public Properties
+
+    public static bool IsPlayingCutscene { get; private set; }
+
+    #endregion
+
     #region Unity Lifecycle
 
     private void Awake()
@@ -46,6 +52,12 @@ public class BossIntroDirector : MonoBehaviour
     {
         if (isIntroRunning) yield break;
         isIntroRunning = true;
+        IsPlayingCutscene = true;
+
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen)
+        {
+            InventoryUIManager.Instance.CloseInventory();
+        }
 
         if (introSequence != null)
         {
@@ -129,6 +141,7 @@ public class BossIntroDirector : MonoBehaviour
         }
 
         isIntroRunning = false;
+        IsPlayingCutscene = false;
     }
 
     #endregion

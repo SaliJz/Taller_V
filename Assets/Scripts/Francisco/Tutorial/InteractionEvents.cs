@@ -71,9 +71,18 @@ public class InteractionEvents : MonoBehaviour
             return;
         }
 
-        StartCoroutine(LoadSceneWithFade(sceneName));
+        if (SceneController.Instance != null)
+        {
+            SceneController.Instance.LoadSceneByName(sceneName);
+        }
+        else
+        {
+            Debug.LogWarning("SceneController.Instance no encontrado. Cargando de golpe.");
+            SceneManager.LoadScene(sceneName);
+        }
     }
 
+    /*
     private IEnumerator LoadSceneWithFade(string sceneName)
     {
         if (FadeController.Instance != null)
@@ -87,4 +96,6 @@ public class InteractionEvents : MonoBehaviour
 
         SceneManager.LoadScene(sceneName);
     }
+
+    */
 }
