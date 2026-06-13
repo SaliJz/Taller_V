@@ -62,7 +62,7 @@ public class PlayerShaderCtrl : MonoBehaviour
 
     #region Unity Lifecycle
 
-    private void Start()
+    private void Awake()
     {
         mpb = new MaterialPropertyBlock();
         targetRenderer.GetPropertyBlock(mpb);
@@ -168,10 +168,12 @@ public class PlayerShaderCtrl : MonoBehaviour
 
     private void SetColorID(int ID, float value)
     {
-        targetRenderer.GetPropertyBlock(mpb);
-        mpb.SetFloat(ID, value);
+        if (mpb == null) mpb = new MaterialPropertyBlock();
 
-        targetRenderer.SetPropertyBlock(mpb);
+        if (targetRenderer != null) targetRenderer.GetPropertyBlock(mpb);
+        if (mpb != null) mpb.SetFloat(ID, value);
+
+        if (targetRenderer != null) targetRenderer.SetPropertyBlock(mpb);
     }
 
     #endregion
