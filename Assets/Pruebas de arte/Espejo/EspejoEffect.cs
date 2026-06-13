@@ -83,6 +83,8 @@ public class EspejoController : MonoBehaviour
         }
 
         SincronizarCamaraEspejo();
+
+        testInputs();
     }
 
     private void AplicarEstado()
@@ -159,5 +161,13 @@ public class EspejoController : MonoBehaviour
                 Time.deltaTime * suavizadoRotacion
             );
         }
+    }
+
+    void testInputs()
+    {
+        if(Input.GetKeyDown(KeyCode.Alpha1)) estadoActual = EstadoEspejo.Nivel1;
+        if(Input.GetKeyDown(KeyCode.Alpha2)) estadoActual = EstadoEspejo.Nivel2;
+        if(Input.GetKeyDown(KeyCode.Alpha3)) estadoActual = EstadoEspejo.Nivel3;
+        if(Input.GetKeyDown(KeyCode.Space)) estadoActual = EstadoEspejo.Base;
     }
 }
