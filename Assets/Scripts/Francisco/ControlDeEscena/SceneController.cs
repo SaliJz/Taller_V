@@ -82,6 +82,13 @@ public class SceneController : MonoBehaviour
             InventoryUIManager.Instance.CloseInventory();
         }
 
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+        {
+            PlayerShieldController shieldController = playerObj.GetComponent<PlayerShieldController>();
+            if (shieldController != null) shieldController.ForceRecallShield();
+        }
+
         if (FadeController.Instance != null)
         {
             yield return FadeController.Instance.FadeOut();

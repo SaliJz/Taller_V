@@ -702,7 +702,9 @@ public class ShopManager : MonoBehaviour
             GameObject purchasedPrefab = availablePrefabs.FirstOrDefault(p =>
                 p?.GetComponent<ShopItemDisplay>()?.shopItemData == item);
             if (purchasedPrefab != null)
+            {
                 availablePrefabs.Remove(purchasedPrefab);
+            }
         }
 
         if (item.isAmulet || isRestrictedScene) _amuletPurchasedInRun = true;
@@ -832,7 +834,8 @@ public class ShopManager : MonoBehaviour
 
         shopUIPanel.SetActive(true);
 
-        string nameWithColor = $"<color=#{ColorUtility.ToHtmlStringRGB(itemData.GetRarityColor())}>{itemData.itemName.ToUpper()}</color>";
+        string nameWithColor = $"<color=#{ColorUtility.ToHtmlStringRGB(itemData.GetRarityColor())}" +
+            $">{itemData.itemName.ToUpper()}</color>";
         float baseCost = itemData.cost * merchantPriceModifier;
         string costText;
 
@@ -840,9 +843,14 @@ public class ShopManager : MonoBehaviour
         {
             float priceReduction = playerStatsManager.GetStat(StatType.ShopPriceReduction);
             if (priceReduction > 0f && finalCost < baseCost)
-                costText = $"<s>{Mathf.RoundToInt(baseCost)} HP</s> -> <color=#00FF00>{Mathf.RoundToInt(finalCost)} HP</color> (-{priceReduction:F0}%)";
+            {
+                costText = $"<s>{Mathf.RoundToInt(baseCost)} HP</s> " +
+                    $"-> <color=#00FF00>{Mathf.RoundToInt(finalCost)} HP</color> (-{priceReduction:F0}%)";
+            }
             else
+            {
                 costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: Aquí es gratis";
+            }
         }
         else
         {

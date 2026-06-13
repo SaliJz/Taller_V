@@ -114,6 +114,8 @@ public class PlayerShieldController : MonoBehaviour
     private int currentShieldDamage;
     private float currentShieldSpeed;
 
+    private Shield activeShield;
+
     #endregion
 
     #region Public Properties & Events
@@ -167,6 +169,7 @@ public class PlayerShieldController : MonoBehaviour
     private void OnDisable()
     {
         PlayerStatsManager.OnStatChanged -= HandleStatChanged;
+        ForceRecallShield();
     }
 
     private void OnDestroy()
@@ -277,6 +280,8 @@ public class PlayerShieldController : MonoBehaviour
     {
         if (!hasShield || isThrowingShield) yield break;
 
+        if (IsGameTransitioning()) yield break;
+
         if (playerMeleeAttack != null && playerMeleeAttack.IsAttacking)
         {
             ReportDebug("No se puede lanzar el escudo mientras se ataca en melee.", 1);
@@ -339,6 +344,8 @@ public class PlayerShieldController : MonoBehaviour
     private IEnumerator ThrowShieldSequence()
     {
         if (!hasShield || isThrowingShield) yield break;
+
+        if (IsGameTransitioning()) yield break;
 
         // Verificar que no este en medio de un ataque melee
         if (playerMeleeAttack != null && playerMeleeAttack.IsAttacking)
@@ -444,6 +451,7 @@ public class PlayerShieldController : MonoBehaviour
             ShieldConfig config = GetShieldConfigForCurrentStage();
 
             Shield shieldScript = shieldInstance.GetComponent<Shield>();
+            activeShield = shieldScript;
             shieldScript.Throw(
                 this,
                 direction,
@@ -500,6 +508,8 @@ public class PlayerShieldController : MonoBehaviour
     {
         hasShield = true;
 
+        activeShield = null;
+
         if (playerAnimCtrl != null)
         {
             playerAnimCtrl.HasShield = true;
@@ -517,7 +527,50 @@ public class PlayerShieldController : MonoBehaviour
 
     public bool CanThrowShield()
     {
+        if (IsGameTransitioning()) return false;
+
         return hasShield && !isThrowingShield;
+    }
+
+    /// <summary>
+    /// Fuerza el regreso inmediato del escudo si estaba en el aire.
+    /// </summary>
+    public void ForceRecallShield()
+    {
+        if (isThrowingShield)
+        {
+            CancelThrow();
+        }
+
+        if (activeShield != null)
+        {
+            activeShield.ForceDeactivate();
+            activeShield = null;
+        }
+        else if (!hasShield)
+        {
+            CatchShield();
+        }
+    }
+
+    /// <summary>
+    /// Verifica si el juego está en medio de alguna transición de sala, escena o secuencia.
+    /// </summary>
+    private bool IsGameTransitioning()
+    {
+        if (DungeonGenerator.Instance != null && DungeonGenerator.Instance.IsTransitioning) return true;
+        if (SceneController.Instance != null && SceneController.Instance.IsTransitioning) return true;
+        if (RoomTransitionTrigger.IsTransitioning) return true;
+        if (BossIntroDirector.IsPlayingCutscene) return true;
+
+        var transitions = UnityEngine.Object.FindObjectsByType<TransitionInteractive>
+            (FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        foreach (var t in transitions)
+        {
+            if (t.IsRunning) return true;
+        }
+
+        return false;
     }
 
     #endregion

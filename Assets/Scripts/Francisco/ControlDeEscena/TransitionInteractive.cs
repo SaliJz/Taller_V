@@ -49,15 +49,25 @@ public class TransitionInteractive : MonoBehaviour
         playerMovement = player.GetComponent<PlayerMovement>();
         playerAnimCtrl = player.GetComponentInChildren<PlayerAnimCtrl>();
 
+        PlayerShieldController shieldController = player.GetComponent<PlayerShieldController>();
+        if (shieldController != null)
+        {
+            shieldController.ForceRecallShield();
+        }
+
         isRunning = true;
 
         if (characterController != null)
+        {
             characterController.enabled = false;
+        }
 
         playerMovement?.SetCanMove(false);
 
         if (playerAnimCtrl != null)
+        {
             playerAnimCtrl.enabled = false;
+        }
 
         float elapsedTime = 0f;
         int nextPlayerIdx = 0;

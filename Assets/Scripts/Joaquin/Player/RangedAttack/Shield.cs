@@ -683,6 +683,34 @@ public class Shield : MonoBehaviour
         ReportDebug("Escudo retornando al jugador.", 1);
     }
 
+    /// <summary>
+    /// Fuerza la desactivación inmediata del escudo y lo devuelve al jugador.
+    /// </summary>
+    public void ForceDeactivate()
+    {
+        if (currentState == ShieldState.Inactive) return;
+
+        if (deactivationCoroutine != null)
+        {
+            StopCoroutine(deactivationCoroutine);
+            deactivationCoroutine = null;
+        }
+
+        currentState = ShieldState.Inactive;
+
+        if (isSandy) ExitSandyState();
+
+        VFXHelper.SafeStop(shieldTrailVFX, clear: true);
+        VFXHelper.SafeSetEmitting(shieldTrail, false);
+        if (shieldTrail != null) shieldTrail.Clear();
+
+        if (owner != null) owner.CatchShield();
+
+        PlayerCombatEvents.RaiseShieldLanded();
+
+        gameObject.SetActive(false);
+    }
+
     #endregion
 
     #region Visual & Audio Effects

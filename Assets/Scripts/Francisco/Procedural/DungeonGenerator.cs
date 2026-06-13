@@ -1178,6 +1178,12 @@ public class DungeonGenerator : MonoBehaviour
             InventoryUIManager.Instance.CloseInventory();
         }
 
+        PlayerShieldController shieldController = playerTransform.GetComponent<PlayerShieldController>();
+        if (shieldController != null)
+        {
+            shieldController.ForceRecallShield();
+        }
+
         const float PlayerOffsetDistance = 0.75f;
 
         if (playerMovement == null)

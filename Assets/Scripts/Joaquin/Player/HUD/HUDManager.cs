@@ -202,19 +202,24 @@ public class HUDManager : MonoBehaviour
     {
         PlayerHealth.OnHealthChanged += UpdateHealthBar;
         PlayerHealth.OnLifeStageChanged += UpdateLifeStageIcon;
-        handAnim.onSmashImpact += ApplyLifeStageIcon;
-        playerAbility.OnAbilityActivated += StartGearRotation;
-        playerAbility.OnAbilityDeactivated += StopGearRotation;
-        
+        if (handAnim != null) handAnim.onSmashImpact += ApplyLifeStageIcon;
+        if (playerAbility != null)
+        {
+            playerAbility.OnAbilityActivated += StartGearRotation;
+            playerAbility.OnAbilityDeactivated += StopGearRotation;
+        }
     }
 
     private void OnDisable()
     {
         PlayerHealth.OnHealthChanged -= UpdateHealthBar;
         PlayerHealth.OnLifeStageChanged -= UpdateLifeStageIcon;
-        handAnim.onSmashImpact -= ApplyLifeStageIcon;
-        playerAbility.OnAbilityActivated -= StartGearRotation;
-        playerAbility.OnAbilityDeactivated -= StopGearRotation;
+        if (handAnim != null) handAnim.onSmashImpact -= ApplyLifeStageIcon;
+        if (playerAbility != null)
+        {
+            playerAbility.OnAbilityActivated -= StartGearRotation;
+            playerAbility.OnAbilityDeactivated -= StopGearRotation;
+        }
         ShieldSkill.OnStaminaChanged -= HandleStaminaChange;
 
         if (healthBarFlashCoroutine != null) StopCoroutine(healthBarFlashCoroutine);
