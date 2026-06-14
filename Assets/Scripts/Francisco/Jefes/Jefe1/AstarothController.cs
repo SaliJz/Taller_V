@@ -148,6 +148,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     [SerializeField] private float _Attack1Damage = 9f;
 
     [Header("Attack 1 Timings")]
+    [SerializeField] private float _whipPreAttackDelay = 0.4f;
     [SerializeField] private float _whipDelay1 = 1.05f;
     [SerializeField] private float _whipDelay2 = 0.2f;
     [SerializeField] private float _whipDelay3 = 0.2f;
@@ -693,7 +694,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     {
         if (_isDead) return;
 
-        _animCtrl?.SetAttacking(false);
+        _animCtrl?.ReturnToIdle();
 
         DestroyWhipIndicator(_activeWhipIndicator);
         SetStompIndicatorsActive(false);
@@ -827,9 +828,8 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         if (_animCtrl != null)
         {
             _animCtrl.SetAnimatorSpeed(1f);
-            _animCtrl.SetAttacking(false);
+            _animCtrl.ReturnToIdle();
             _animCtrl.isWalking = false;
-            _animCtrl.SetExitSA(false);
             _animCtrl.PlayDeath();
         }
 
@@ -927,7 +927,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
         if (_trailRenderer != null) _trailRenderer.enabled = false;
 
-        _animCtrl?.SetAttacking(false);
+        _animCtrl?.ReturnToIdle();
 
         _currentState = BossState.SpecialAbility;
         _isSpecialAbilityPending = false;

@@ -46,6 +46,9 @@ public partial class AstarothController
 
         StartDefensiveBlockVisualFeedback();
 
+        if (_animCtrl != null) _animCtrl.isWalking = false;
+        if (_animCtrl != null) _animCtrl.PlayApisonador();
+
         Vector3 blockCenter = transform.position;
         Vector3 warningCenter = GetGroundPosition(blockCenter);
 
@@ -113,6 +116,8 @@ public partial class AstarothController
         }
 
         StopDefensiveBlockVisualFeedback();
+
+        if (_animCtrl != null) _animCtrl.ReturnToIdle();
 
         _isDefensiveBlocking = false;
         _currentState = BossState.Moving;

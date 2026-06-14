@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -27,7 +28,7 @@ public class TheWeightAnimCtrl : MonoBehaviour
     [SerializeField] float ghostVanishTime = 0.2f;
     [SerializeField] GameObject FleshPrefab;
     [SerializeField] int fleshCount;
-    [SerializeField] float fleshLifetime;
+    [SerializeField] float fleshLifetime = 2.5f;
 
     Animator formaBase_anim;
     Animator apisonador_anim;
@@ -145,8 +146,25 @@ public class TheWeightAnimCtrl : MonoBehaviour
 
             GameObject currentFlesh = Instantiate(FleshPrefab, worldPos, Random.rotation);
 
-            // currentFlesh.GetComponent<TheWeight_FleshVFX>().lifetime = fleshLifetime;
+            ParticleSystem fleshPS = currentFlesh.GetComponent<ParticleSystem>();
+            if (fleshPS == null) fleshPS = currentFlesh.GetComponentInChildren<ParticleSystem>();
+
+            if (fleshPS != null)
+            {
+                StartCoroutine(DestroyFleshAfterLifetime(fleshPS));
+            }
+            else
+            {
+                Destroy(currentFlesh, fleshLifetime);
+            }
         }
+    }
+
+    private IEnumerator DestroyFleshAfterLifetime(ParticleSystem fleshPS)
+    {
+        yield return new WaitForSeconds(fleshLifetime);
+
+        VFXHelper.StopAndDestroy(fleshPS);
     }
 
 
@@ -158,16 +176,6 @@ public class TheWeightAnimCtrl : MonoBehaviour
     public void PlayPrepareBaseAttack() => formaBase_anim.SetTrigger("PrepareAtk");
     public void PlayAttack() => formaBase_anim.Play(ANIM_BASE_ATTACK);
     public void PlayCanonShot() => canon_anim.SetTrigger("Shot");
-
-    public void SetAttacking(bool attacking)
-    {
-        formaBase_anim.SetBool("InsAttacking", attacking);
-    }
-
-    public void SetExitSA(bool exitSA)
-    {
-        formaBase_anim.SetBool("ExitSA", exitSA);
-    }
 
     public void SetAnimatorSpeed(float speed)
     {

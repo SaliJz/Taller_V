@@ -25,25 +25,28 @@ public partial class AstarothController
         if (_animCtrl != null) _animCtrl.isWalking = false;
         if (_animCtrl != null) _animCtrl.PlayPrepareBaseAttack();
 
+        yield return new WaitForSeconds(_whipPreAttackDelay);
+
         whipIndicator = CreatePersistentWhipIndicator();
 
         yield return new WaitForSeconds(_whipDelay1);
+        if (_animCtrl != null) _animCtrl.PlayAttack();
         PlayWhipSoundCrisp();
         CheckWhipHitbox("Golpe 1");
 
         yield return new WaitForSeconds(_whipDelay2);
+        if (_animCtrl != null) _animCtrl.PlayAttack();
         PlayWhipSoundCrisp();
         CheckWhipHitbox("Golpe 2");
 
         yield return new WaitForSeconds(_whipDelay3);
+        if (_animCtrl != null) _animCtrl.PlayAttack();
         PlayWhipSoundCrisp();
         CheckWhipHitbox("Golpe 3");
 
         yield return new WaitForSeconds(0.6f);
 
         DestroyWhipIndicator(whipIndicator);
-
-        _animCtrl?.SetAttacking(false);
 
         _isAttackingWithWhip = false;
     }
@@ -158,7 +161,7 @@ public partial class AstarothController
         BeginHeldSmashRock();
 
         if (_animCtrl != null) _animCtrl.isWalking = false;
-        if (_animCtrl != null) _animCtrl.SetAttacking(true);
+        if (_animCtrl != null) _animCtrl.PlayCanon();
 
         Coroutine indicatorRoutine = StartCoroutine(TrackSmashGroundIndicatorDuringAnimation());
 
@@ -192,7 +195,7 @@ public partial class AstarothController
 
         yield return new WaitForSeconds(0.25f);
 
-        _animCtrl?.SetAttacking(false);
+        if (_animCtrl != null) _animCtrl.ReturnToIdle();
 
         _isSmashing = false;
         ResetSmashVisuals();
@@ -285,6 +288,8 @@ public partial class AstarothController
     private IEnumerator ThrowSmashRockToTarget()
     {
         _smashRockInFlight = true;
+
+        if (_animCtrl != null) _animCtrl.PlayCanonShot();
 
         if (audioSource != null && smashAttackSFX != null)
         {
@@ -552,8 +557,7 @@ public partial class AstarothController
         }
 
         if (_animCtrl != null) _animCtrl.isWalking = false;
-        if (_animCtrl != null) _animCtrl.SetExitSA(false);
-        if (_animCtrl != null) _animCtrl.SetAttacking(true);
+        if (_animCtrl != null) _animCtrl.PlayPulpo();
 
         yield return new WaitForSeconds(_pulseDelay);
 
@@ -606,12 +610,9 @@ public partial class AstarothController
 
         ApplyEvolutionBuff();
 
-        _animCtrl?.SetExitSA(true);
-        _animCtrl?.SetAttacking(false);
+        if (_animCtrl != null) _animCtrl.ReturnToIdle();
 
         yield return new WaitForSeconds(1f);
-
-        _animCtrl?.SetExitSA(false);
 
         _isUsingSpecialAbility = false;
         _currentState = BossState.Moving;
@@ -742,6 +743,9 @@ public partial class AstarothController
 
         LookAtPlayer();
 
+        if (_animCtrl != null) _animCtrl.isWalking = false;
+        if (_animCtrl != null) _animCtrl.PlayApisonador();
+
         UpdateStompIndicators();
         SetStompIndicatorsActive(true);
 
@@ -750,6 +754,8 @@ public partial class AstarothController
         PerformStompImpact();
 
         SetStompIndicatorsActive(false);
+
+        if (_animCtrl != null) _animCtrl.ReturnToIdle();
 
         yield return new WaitForSeconds(0.15f);
 
