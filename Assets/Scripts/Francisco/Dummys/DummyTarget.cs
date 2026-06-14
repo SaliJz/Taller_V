@@ -83,7 +83,6 @@ public class DummyTarget : MonoBehaviour, IDamageable
     }
     #endregion
 
-
     #region CORE FUNCTIONALITY
     public virtual void TakeDamage(float damageAmount, bool isCritical = false, AttackDamageType attackDamageType = AttackDamageType.Melee)
     {
