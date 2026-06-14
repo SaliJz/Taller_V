@@ -304,6 +304,9 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     #region Animation
 
     private TheWeightAnimCtrl _animCtrl;
+    private string _pendingAnimEvent;
+
+    private const float ANIM_EVENT_TIMEOUT = 3f;
 
     #endregion
 
@@ -459,12 +462,36 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
     #region Animation Events
 
+    private const string ANIM_EVENT_WHIP_WINDUP_DONE = "WhipWindupDone";
+    private const string ANIM_EVENT_WHIP_IMPACT = "WhipImpact";
+    private const string ANIM_EVENT_APISONADOR_IMPACT = "ApisonadorImpact";
+    private const string ANIM_EVENT_PULSO_CARNAL_IMPACT = "PulsoCarnalImpact";
+    private const string ANIM_EVENT_CANON_RELEASE = "CanonRelease";
+
     public void HandleAnimEvents(string eventName)
     {
-        if (eventName == nameof(LaunchSmashRockToPlayer))
+        if (_pendingAnimEvent == eventName)
         {
-            LaunchSmashRockToPlayer();
+            _pendingAnimEvent = null;
         }
+    }
+
+    /// <summary>
+    /// Espera a que llegue un Anim Event con el nombre indicado, o hasta que
+    /// transcurra el timeout (fallback de seguridad si el clip no tiene el evento).
+    /// </summary>
+    private IEnumerator WaitForAnimEvent(string eventName, float timeout = ANIM_EVENT_TIMEOUT)
+    {
+        _pendingAnimEvent = eventName;
+        float elapsed = 0f;
+
+        while (_pendingAnimEvent == eventName && elapsed < timeout)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        _pendingAnimEvent = null;
     }
 
     private void CacheSmashRockTransform()

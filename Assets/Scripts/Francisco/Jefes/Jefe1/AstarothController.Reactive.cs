@@ -89,6 +89,8 @@ public partial class AstarothController
             Destroy(warning);
         }
 
+        yield return WaitForAnimEvent(ANIM_EVENT_APISONADOR_IMPACT, 0.5f);
+
         GameObject explosion = null;
         if (_defensiveBlockExplosionPrefab != null)
         {

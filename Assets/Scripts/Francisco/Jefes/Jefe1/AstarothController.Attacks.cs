@@ -25,22 +25,28 @@ public partial class AstarothController
         if (_animCtrl != null) _animCtrl.isWalking = false;
         if (_animCtrl != null) _animCtrl.PlayPrepareBaseAttack();
 
-        yield return new WaitForSeconds(_whipPreAttackDelay);
+        // Espera al final del wind-up antes del primer golpe.
+        yield return WaitForAnimEvent(ANIM_EVENT_WHIP_WINDUP_DONE, _whipPreAttackDelay);
 
         whipIndicator = CreatePersistentWhipIndicator();
 
-        yield return new WaitForSeconds(_whipDelay1);
+        // Golpe 1
         if (_animCtrl != null) _animCtrl.PlayAttack();
+        yield return WaitForAnimEvent(ANIM_EVENT_WHIP_IMPACT, _whipDelay1);
         PlayWhipSoundCrisp();
         CheckWhipHitbox("Golpe 1");
 
+        // Golpe 2
         yield return new WaitForSeconds(_whipDelay2);
         if (_animCtrl != null) _animCtrl.PlayAttack();
+        yield return WaitForAnimEvent(ANIM_EVENT_WHIP_IMPACT, _whipDelay1);
         PlayWhipSoundCrisp();
         CheckWhipHitbox("Golpe 2");
 
+        // Golpe 3
         yield return new WaitForSeconds(_whipDelay3);
         if (_animCtrl != null) _animCtrl.PlayAttack();
+        yield return WaitForAnimEvent(ANIM_EVENT_WHIP_IMPACT, _whipDelay1);
         PlayWhipSoundCrisp();
         CheckWhipHitbox("Golpe 3");
 
@@ -165,20 +171,24 @@ public partial class AstarothController
 
         Coroutine indicatorRoutine = StartCoroutine(TrackSmashGroundIndicatorDuringAnimation());
 
-        float safetyTimer = 0f;
-        float safetyLimit = Mathf.Max(2f, _smashDelay + _smashRockTravelDuration + 3f);
-
-        while (!_smashImpactCompleted && safetyTimer < safetyLimit)
+        float holdTimer = 0f;
+        while (holdTimer < _smashDelay)
         {
             FollowHeldSmashRock();
-            safetyTimer += Time.deltaTime;
+            holdTimer += Time.deltaTime;
             yield return null;
         }
+
+        if (_animCtrl != null) _animCtrl.PlayCanonShot();
+
+        yield return WaitForAnimEvent(ANIM_EVENT_CANON_RELEASE, _smashRockTravelDuration);
 
         if (!_smashImpactCompleted && !_smashRockInFlight)
         {
             LaunchSmashRockToPlayer();
         }
+
+        float safetyTimer = 0f;
 
         while (_smashRockInFlight)
         {
@@ -288,8 +298,6 @@ public partial class AstarothController
     private IEnumerator ThrowSmashRockToTarget()
     {
         _smashRockInFlight = true;
-
-        if (_animCtrl != null) _animCtrl.PlayCanonShot();
 
         if (audioSource != null && smashAttackSFX != null)
         {
@@ -559,7 +567,7 @@ public partial class AstarothController
         if (_animCtrl != null) _animCtrl.isWalking = false;
         if (_animCtrl != null) _animCtrl.PlayPulpo();
 
-        yield return new WaitForSeconds(_pulseDelay);
+        yield return WaitForAnimEvent(ANIM_EVENT_PULSO_CARNAL_IMPACT, _pulseDelay);
 
         Vector3 groundPos = GetGroundPosition(transform.position);
 
@@ -750,6 +758,8 @@ public partial class AstarothController
         SetStompIndicatorsActive(true);
 
         yield return PullPlayersToStompCenter();
+
+        yield return WaitForAnimEvent(ANIM_EVENT_APISONADOR_IMPACT, 0.5f);
 
         PerformStompImpact();
 
