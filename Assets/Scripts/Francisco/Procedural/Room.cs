@@ -11,13 +11,6 @@ public class DoorColliders
     public GameObject[] deactivateOnOpen;
 }
 
-[System.Serializable]
-public class SpecificSpawnPoint
-{
-    public string Code;
-    public Transform Point;
-}
-
 public class Room : MonoBehaviour
 {
     [Header("Connection Points")]
@@ -58,6 +51,11 @@ public class Room : MonoBehaviour
         {
             Debug.LogWarning("No se encontró AudioSource en Room ni en sus elementos hijos.");
         }
+
+        if (specificSpawnPoints == null || specificSpawnPoints.Length == 0)
+        {
+            specificSpawnPoints = GetComponentsInChildren<SpecificSpawnPoint>();
+        }
     }
 
     private void Start()
@@ -93,14 +91,25 @@ public class Room : MonoBehaviour
         currentRoomType = type;
     }
 
-    public Transform GetSpecificSpawnPoint(string code)
+    public SpecificSpawnPoint GetSpecificSpawnPointForEnemy(GameObject enemyPrefab)
     {
         if (specificSpawnPoints == null) return null;
-        foreach (var sp in specificSpawnPoints)
+
+        foreach (var spawnPointGroup in specificSpawnPoints)
         {
-            if (sp.Code == code) return sp.Point;
+            if (spawnPointGroup != null && spawnPointGroup.MatchesEnemyPrefab(enemyPrefab))
+            {
+                return spawnPointGroup;
+            }
         }
+
         return null;
+    }
+
+    public Transform[] GetSpawnPointsForEnemy(GameObject enemyPrefab)
+    {
+        SpecificSpawnPoint spawnPointGroup = GetSpecificSpawnPointForEnemy(enemyPrefab);
+        return spawnPointGroup != null ? spawnPointGroup.spawnPoints : null;
     }
 
     private void InitializeDoorStates()

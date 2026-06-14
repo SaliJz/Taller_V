@@ -1008,7 +1008,6 @@ public class DungeonGenerator : MonoBehaviour
         EnemyWave newWave = new EnemyWave();
         List<GameObject> waveEnemies = new List<GameObject>();
         List<EnemySpawnMode> waveModes = new List<EnemySpawnMode>();
-        List<string> waveCodes = new List<string>();
         int totalCount = 0;
 
         if (predefinedWave.enemiesInWave != null)
@@ -1021,8 +1020,8 @@ public class DungeonGenerator : MonoBehaviour
                     {
                         waveEnemies.Add(detail.EnemyPrefab);
                         waveModes.Add(detail.SpawnMode);
-                        waveCodes.Add(detail.SpawnMode == EnemySpawnMode.Specific ? detail.SpawnPointCode : "");
                     }
+
                     totalCount += detail.Count;
                 }
             }
@@ -1031,7 +1030,6 @@ public class DungeonGenerator : MonoBehaviour
         newWave.enemyPrefabs = waveEnemies.ToArray();
         newWave.enemyCount = totalCount;
         newWave.spawnModes = waveModes.ToArray();
-        newWave.spawnPointCodes = waveCodes.ToArray();
 
         return newWave;
     }

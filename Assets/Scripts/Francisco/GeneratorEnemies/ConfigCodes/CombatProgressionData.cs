@@ -16,7 +16,6 @@ public class EnemyWaveDetail
 
     [Header("Modo de Spawn")]
     public EnemySpawnMode SpawnMode = EnemySpawnMode.General;
-    public string SpawnPointCode = "";
 }
 
 [Serializable]
@@ -24,7 +23,6 @@ public class PredefinedWave
 {
     public List<EnemyWaveDetail> enemiesInWave;
 }
-
 
 [Serializable]
 public class PredefinedCombatCombination

@@ -168,8 +168,7 @@ public class EnemyManager : MonoBehaviour
                     {
                         enemyPrefabs = baseWave.enemyPrefabs,
                         enemyCount = baseWave.enemyCount,
-                        spawnModes = baseWave.spawnModes,
-                        spawnPointCodes = baseWave.spawnPointCodes
+                        spawnModes = baseWave.spawnModes
                     };
 
                     combatConfig.waves.Insert(combatConfig.waves.Count - 1, extraWave);
@@ -206,80 +205,79 @@ public class EnemyManager : MonoBehaviour
             yield break;
         }
 
-        var specificEntries = new List<(GameObject prefab, string code)>();
-        var generalPrefabs = new List<GameObject>();
+        var finalSpawnList = new List<(GameObject prefab, Vector3 position)>();
+        List<(GameObject effect, Vector3 pos)> allEffects = new List<(GameObject, Vector3)>();
+
+        var specificSpawnUsageCount = new Dictionary<SpecificSpawnPoint, int>();
 
         for (int i = 0; i < enemyCount; i++)
         {
-            GameObject prefab = prefabsToUse[i];
+            GameObject prefab = prefabsToUse[i % prefabsToUse.Length];
+
             EnemySpawnMode mode = (wave.spawnModes != null && i < wave.spawnModes.Length)
                 ? wave.spawnModes[i]
                 : EnemySpawnMode.General;
-            string code = (wave.spawnPointCodes != null && i < wave.spawnPointCodes.Length)
-                ? wave.spawnPointCodes[i]
-                : "";
 
-            if (mode == EnemySpawnMode.Specific && !string.IsNullOrEmpty(code))
-                specificEntries.Add((prefab, code));
-            else
-                generalPrefabs.Add(prefab);
-        }
+            Vector3 calculatedPosition = Vector3.zero;
+            bool positionFound = false;
 
-        var usedCodes = new HashSet<string>();
-        var specificSpawnList = new List<(GameObject prefab, Vector3 position)>();
-
-        foreach (var (prefab, code) in specificEntries)
-        {
-            if (usedCodes.Contains(code))
+            if (mode == EnemySpawnMode.Specific && prefab != null && parentRoom != null)
             {
-                ReportDebug($"SpawnPoint '{code}' ya ocupado por otro enemigo en esta wave. Se descarta uno de los específicos.", 2);
-                continue;
+                SpecificSpawnPoint spawnPointGroup = parentRoom.GetSpecificSpawnPointForEnemy(prefab);
+                Transform[] availableTransforms = spawnPointGroup != null ? spawnPointGroup.spawnPoints : null;
+
+                if (availableTransforms != null && availableTransforms.Length > 0)
+                {
+                    if (!specificSpawnUsageCount.ContainsKey(spawnPointGroup))
+                    {
+                        specificSpawnUsageCount[spawnPointGroup] = 0;
+                    }
+
+                    int indexToUse = specificSpawnUsageCount[spawnPointGroup] % availableTransforms.Length;
+                    Transform targetTransform = availableTransforms[indexToUse];
+
+                    if (targetTransform != null)
+                    {
+                        calculatedPosition = targetTransform.position;
+                        positionFound = true;
+                        specificSpawnUsageCount[spawnPointGroup]++;
+                    }
+                }
+
+                if (!positionFound)
+                {
+                    ReportDebug($"No se encontraron puntos Specific para el enemigo '{prefab.name}'. Pasando a spawn general.", 2);
+                }
             }
 
-            Transform point = parentRoom != null ? parentRoom.GetSpecificSpawnPoint(code) : null;
-            if (point == null)
+            if (!positionFound)
             {
-                ReportDebug($"No se encontró SpecificSpawnPoint con código '{code}' en la sala. Pasando a spawn general.", 2);
-                generalPrefabs.Add(prefab);
-                continue;
+                if (parentRoom != null && parentRoom.spawnAreas != null && parentRoom.spawnAreas.Length > 0)
+                {
+                    BoxCollider spawnArea = parentRoom.spawnAreas[UnityEngine.Random.Range(0, parentRoom.spawnAreas.Length)];
+
+                    calculatedPosition = new Vector3(
+                        UnityEngine.Random.Range(spawnArea.bounds.min.x, spawnArea.bounds.max.x),
+                        spawnArea.transform.position.y,
+                        UnityEngine.Random.Range(spawnArea.bounds.min.z, spawnArea.bounds.max.z)
+                    );
+                }
+                else
+                {
+                    calculatedPosition = transform.position;
+                }
             }
 
-            specificSpawnList.Add((prefab, point.position));
-            usedCodes.Add(code);
-        }
+            finalSpawnList.Add((prefab, calculatedPosition));
 
-        var generalSpawnPositions = new List<Vector3>();
-        foreach (var _ in generalPrefabs)
-        {
-            BoxCollider spawnArea = parentRoom.spawnAreas[Random.Range(0, parentRoom.spawnAreas.Length)];
-            generalSpawnPositions.Add(new Vector3(
-                Random.Range(spawnArea.bounds.min.x, spawnArea.bounds.max.x),
-                spawnArea.transform.position.y,
-                Random.Range(spawnArea.bounds.min.z, spawnArea.bounds.max.z)
-            ));
-        }
+            GameObject effect = spawnEffectPrefab != null
+                ? Instantiate(spawnEffectPrefab, calculatedPosition, Quaternion.identity)
+                : null;
 
-        List<(GameObject effect, Vector3 pos)> allEffects = new List<(GameObject, Vector3)>();
-
-        foreach (var (prefab, pos) in specificSpawnList)
-        {
-            GameObject effect = spawnEffectPrefab != null ? Instantiate(spawnEffectPrefab, pos, Quaternion.identity) : null;
-            allEffects.Add((effect, pos));
-        }
-
-        for (int i = 0; i < generalPrefabs.Count; i++)
-        {
-            Vector3 pos = generalSpawnPositions[i];
-            GameObject effect = spawnEffectPrefab != null ? Instantiate(spawnEffectPrefab, pos, Quaternion.identity) : null;
-            allEffects.Add((effect, pos));
+            allEffects.Add((effect, calculatedPosition));
         }
 
         yield return new WaitForSeconds(2.0f);
-
-        var finalSpawnList = new List<(GameObject prefab, Vector3 position)>();
-        finalSpawnList.AddRange(specificSpawnList);
-        for (int i = 0; i < generalPrefabs.Count; i++)
-            finalSpawnList.Add((generalPrefabs[i], generalSpawnPositions[i]));
 
         int totalFinal = finalSpawnList.Count;
 
@@ -287,8 +285,12 @@ public class EnemyManager : MonoBehaviour
         if (isAuraActiveInThisRoom && activeAura != DevilAuraType.None)
         {
             int numAuraEnemies = Mathf.CeilToInt(totalFinal * auraCoveragePercent);
-            ReportDebug($"Intentando aplicar {activeAura} a {numAuraEnemies} de {totalFinal} enemigos (Cobertura: {auraCoveragePercent}).", 1);
-            auraIndices = Enumerable.Range(0, totalFinal).OrderBy(x => Random.value).Take(numAuraEnemies).ToList();
+            ReportDebug($"Intentando aplicar {activeAura} a {numAuraEnemies} de {totalFinal} enemigos.", 1);
+
+            auraIndices = Enumerable.Range(0, totalFinal)
+                .OrderBy(x => UnityEngine.Random.value)
+                .Take(numAuraEnemies)
+                .ToList();
         }
 
         for (int i = 0; i < totalFinal; i++)
@@ -301,17 +303,14 @@ public class EnemyManager : MonoBehaviour
             var (enemyPrefab, spawnPos) = finalSpawnList[i];
             GameObject newEnemy = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
 
-            ReportDebug($"Spawneado enemigo {i + 1}/{totalFinal}: {enemyPrefab.name}", 1);
+            ReportDebug($"Spawneado enemigo {i + 1}/{totalFinal}: {enemyPrefab.name} en {spawnPos}", 1);
 
             if (newEnemy != null)
             {
-                if (!newEnemy.activeSelf)
-                {
-                    newEnemy.SetActive(true);
-                }
+                if (!newEnemy.activeSelf) newEnemy.SetActive(true);
 
                 EnemyHealth healthComponent = null;
-                bool hasHealthComponent = newEnemy.TryGetComponent<EnemyHealth>(out healthComponent);
+                bool hasHealthComponent = newEnemy.TryGetComponent(out healthComponent);
 
                 if (auraIndices.Contains(i))
                 {
@@ -326,18 +325,14 @@ public class EnemyManager : MonoBehaviour
 
                 if (hasHealthComponent)
                 {
-                    if (!healthComponent.enabled)
-                    {
-                        ReportDebug($"El enemigo '{newEnemy.name}' tiene EnemyHealth, ¡pero está deshabilitado! Habilitándolo.", 2);
-                        healthComponent.enabled = true;
-                    }
+                    if (!healthComponent.enabled) healthComponent.enabled = true;
 
                     activeEnemies.Add(newEnemy);
                     healthComponent.OnDeath += (enemyGO) => OnEnemyDeath(enemyGO);
                 }
                 else
                 {
-                    ReportDebug($"El enemigo '{newEnemy.name}' del prefab '{enemyPrefab.name}' no tiene componente 'EnemyHealth'. NO será contado para la limpieza de sala.", 3);
+                    ReportDebug($"El enemigo '{newEnemy.name}' no tiene 'EnemyHealth'. No contará para limpieza.", 3);
                 }
             }
         }
