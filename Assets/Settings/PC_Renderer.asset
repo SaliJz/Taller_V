@@ -83,48 +83,6 @@ MonoBehaviour:
       restoreCamera: 1
       offset: {x: 0, y: 0, z: 0, w: 0}
       cameraFieldOfView: 60
---- !u!114 &-447894999937404883
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b3d386ba5cd94485973aee1479b272e, type: 3}
-  m_Name: RFRenderOutlineMask
-  m_EditorClassIdentifier: 
-  m_Active: 0
-  settings:
-    passTag: RFRenderOutlineMask
-    Event: 550
-    filterSettings:
-      RenderQueueType: 0
-      LayerMask:
-        serializedVersion: 2
-        m_Bits: 8388608
-      PassNames: []
-    overrideMaterial: {fileID: 2100000, guid: 3cdd2d52922d97e48b8cff9b87063b1b, type: 2}
-    overrideMaterialPassIndex: 0
-    overrideShader: {fileID: 0}
-    overrideShaderPassIndex: 0
-    overrideMode: 0
-    overrideDepthState: 1
-    depthCompareFunction: 4
-    enableWrite: 0
-    stencilSettings:
-      overrideStencilState: 1
-      stencilReference: 1
-      stencilCompareFunction: 8
-      passOperation: 0
-      failOperation: 0
-      zFailOperation: 0
-    cameraSettings:
-      overrideCamera: 0
-      restoreCamera: 1
-      offset: {x: 0, y: 0, z: 0, w: 0}
-      cameraFieldOfView: 60
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -156,9 +114,7 @@ MonoBehaviour:
   - {fileID: -6680004132662025914}
   - {fileID: 1213643180032312615}
   - {fileID: 1871363823195453674}
-  - {fileID: -447894999937404883}
-  - {fileID: 5534854746931317922}
-  m_RendererFeatureMap: a40f302559322b0fe3e2182c34cdf2a2eb520a07069691f246e1892ea2db4ba327c5e6c50abad710eaf814777b6bf8192db00ee0dec1c8f9a2cc394211c1cf4c
+  m_RendererFeatureMap: a40f302559322b0fe3e2182c34cdf2a2eb520a07069691f246e1892ea2db4ba327c5e6c50abad710eaf814777b6bf819
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -241,26 +197,6 @@ MonoBehaviour:
   fetchColorBuffer: 1
   requirements: 0
   passMaterial: {fileID: 2100000, guid: b9f20b8c42893074997b68cfd9002933, type: 2}
-  passIndex: 0
-  bindDepthStencilAttachment: 0
-  m_Version: 1
---- !u!114 &5534854746931317922
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b00045f12942b46c698459096c89274e, type: 3}
-  m_Name: FullScreenPassRendererFeature
-  m_EditorClassIdentifier: 
-  m_Active: 0
-  injectionPoint: 600
-  fetchColorBuffer: 1
-  requirements: 0
-  passMaterial: {fileID: 2100000, guid: 06a130648e4a50d45ad39c798b5ab540, type: 2}
   passIndex: 0
   bindDepthStencilAttachment: 0
   m_Version: 1

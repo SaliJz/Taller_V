@@ -3,6 +3,7 @@ using UnityEngine;
 public class EstadoDeVida : MonoBehaviour
 {
     public Material estadoDeVidaMaterial;
+
     private const string PROP_CONDICION_DAÑO = "_Condicion";
     private const string PROP_TRANSPARENCIA = "_Transparencia";
     private const string PROP_INTENSIDAD_POSTERIZADO = "_IntensidadPosterizado";
@@ -12,21 +13,29 @@ public class EstadoDeVida : MonoBehaviour
     private const string PROP_LIMITE_DITHER = "_LimiteDither";
     private const string PROP_CONDICION_PIXEL = "_Condici_nPixel";
     private const string PROP_SIZE_PIXEL = "_SizePixel";
+    private const string CONDICION_BERSERKER = "_CondicionBerserker";
+    private const string COLOR_BERSERKER = "_ColorBerseker";
+    private const string COLOR_VENAS = "_ColorVenas";
 
     [Header("Recibir Daño")]
     [Tooltip("Activa efecto de primera herida (Capa1). Se auto-desactiva al terminar.")]
     public bool PrimeraHerida;
+
     [Tooltip("Activa efecto de heridas posteriores (Capa2). Se auto-desactiva al terminar.")]
-    public bool DemasHeridas;  // pal de progra cuando el jugador reciba mucho daño activar este bool, si recibe solo un golpe activar el anterior osea PrimeraHerida
+    public bool DemasHeridas;
+
     [Tooltip("Segundos que tardan Transparencia e IntensidadPosterizado en bajar a 0.")]
     [Min(0.01f)]
     public float TiempoHerida = 2f;
+
     [Tooltip("Valor maximo de Transparencia en el shader.")]
     [Range(0f, 100f)]
     public float Transparencia = 72f;
+
     [Tooltip("Valor maximo de IntensidadPosterizado en el shader.")]
     [Range(0f, 100f)]
     public float Posterizado = 0f;
+
     private bool _prevPrimeraHerida;
     private bool _prevDemasHeridas;
     private bool _dañoProcesando;
@@ -34,26 +43,59 @@ public class EstadoDeVida : MonoBehaviour
 
     [Header("Vida Baja")]
     [Tooltip("Activa o desactiva el efecto de vida baja.")]
-    public bool VidaBajaActiva;  // el de progra puede llamar LowHealthVignette(bool) o cambiar este bool directamente
+    public bool VidaBajaActiva;
+
     [Tooltip("Sincronizado con TiempoRespiracion del shader.")]
     [Range(1f, 6f)]
     public float TiempoRespiracion = 4f;
+
     [Tooltip("Sincronizado con TamanoDither del shader.")]
     [Range(0f, 100f)]
     public float TamañoDither = 24.5f;
+
     [Tooltip("Sincronizado con LimiteDither del shader.")]
     [Range(0f, 0.4f)]
     public float LimiteDither = 0.3f;
+
     private bool _prevVidaBajaActiva;
 
     [Header("Pixeleado")]
     [Tooltip("Si esta activo el juego esta pixeleado, si no, no.")]
-    public bool PixeladoActivo;  // el de progra activa esto en el cambio de etapa
+    public bool PixeladoActivo;
+
     [Tooltip("Sincronizado con SizePixel del shader.")]
     [Min(1f)]
     public float SizePixel = 150f;
+
     private bool _prevPixeladoActivo;
 
+    [Header("Berserker")]
+    [Tooltip("Activa o desactiva el efecto Berserker. El shader sube de 0 a 1 o baja de 1 a 0.")]
+    public bool CondicionBerserker;
+
+    [Tooltip("Activa la transicion gradual de ColorBerserker1 hacia ColorBerserker2.")]
+    public bool TransicionColorBerserker;
+
+    [Tooltip("Tiempo que tarda el efecto Berserker en subir/bajar y el color en pasar de Color 1 a Color 2.")]
+    [Min(0.01f)]
+    public float TiempoBerserker = 1.5f;
+
+    [Tooltip("Color inicial del efecto Berserker.")]
+    public Color ColorBerserker1 = Color.red;
+
+    [Tooltip("Color final del efecto Berserker.")]
+    public Color ColorBerserker2 = new Color(0.6f, 0f, 0f, 1f);
+
+    [Tooltip("Valor V en HSV para oscurecer las venas. Menor valor = venas mas oscuras.")]
+    [Range(0f, 1f)]
+    public float ValorVenas = 0.45f;
+
+    private bool _prevCondicionBerserker;
+    private bool _prevTransicionColorBerserker;
+
+    private float _berserkerValorActual;
+    private float _colorBerserkerElapsed;
+    private Color _colorBerserkerActual;
 
     private void Start()
     {
@@ -63,21 +105,37 @@ public class EstadoDeVida : MonoBehaviour
             enabled = false;
             return;
         }
+
         SetFloat(PROP_CONDICION_DAÑO, 0f);
         SetFloat(PROP_TRANSPARENCIA, Transparencia);
         SetFloat(PROP_INTENSIDAD_POSTERIZADO, Posterizado);
+
         SetFloat(PROP_CONDICION_VIDA, 0f);
         SetFloat(PROP_TIEMPO_RESPIRACION, TiempoRespiracion);
         SetFloat(PROP_TAMAÑO_DITHER, TamañoDither);
         SetFloat(PROP_LIMITE_DITHER, LimiteDither);
+
         SetFloat(PROP_CONDICION_PIXEL, 0f);
         SetFloat(PROP_SIZE_PIXEL, SizePixel);
+
+        _colorBerserkerActual = ColorBerserker1;
+        _berserkerValorActual = 0f;
+        _colorBerserkerElapsed = 0f;
+
+        SetFloat(CONDICION_BERSERKER, 0f);
+        SetColor(COLOR_BERSERKER, _colorBerserkerActual);
+        SetColor(COLOR_VENAS, CalcularColorVenas(_colorBerserkerActual));
 
         _prevPrimeraHerida = false;
         _prevDemasHeridas = false;
         _prevVidaBajaActiva = false;
         _prevPixeladoActivo = false;
+        _prevCondicionBerserker = false;
+        _prevTransicionColorBerserker = false;
+
         PixeladoActivo = false;
+        CondicionBerserker = false;
+        TransicionColorBerserker = false;
     }
 
     private void Update()
@@ -85,6 +143,8 @@ public class EstadoDeVida : MonoBehaviour
         HandleDaño();
         HandleVidaBaja();
         HandlePixelado();
+        HandleBerserker();
+
         SetFloat(PROP_TIEMPO_RESPIRACION, TiempoRespiracion);
         SetFloat(PROP_TAMAÑO_DITHER, TamañoDither);
         SetFloat(PROP_LIMITE_DITHER, LimiteDither);
@@ -156,7 +216,6 @@ public class EstadoDeVida : MonoBehaviour
 
     public void LowHealthVignette(bool active)
     {
-        // el de progra que llame a este metodo para la vida baja
         VidaBajaActiva = active;
     }
 
@@ -168,9 +227,71 @@ public class EstadoDeVida : MonoBehaviour
         _prevPixeladoActivo = PixeladoActivo;
     }
 
+    private void HandleBerserker()
+    {
+        float targetBerserker = CondicionBerserker ? 1f : 0f;
+
+        _berserkerValorActual = Mathf.MoveTowards(
+            _berserkerValorActual,
+            targetBerserker,
+            Time.deltaTime / TiempoBerserker
+        );
+
+        SetFloat(CONDICION_BERSERKER, _berserkerValorActual);
+
+        if (TransicionColorBerserker && !_prevTransicionColorBerserker)
+        {
+            _colorBerserkerElapsed = 0f;
+        }
+
+        if (TransicionColorBerserker)
+        {
+            _colorBerserkerElapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(_colorBerserkerElapsed / TiempoBerserker);
+
+            _colorBerserkerActual = Color.Lerp(ColorBerserker1, ColorBerserker2, t);
+        }
+        else
+        {
+            _colorBerserkerActual = ColorBerserker1;
+            _colorBerserkerElapsed = 0f;
+        }
+
+        SetColor(COLOR_BERSERKER, _colorBerserkerActual);
+        SetColor(COLOR_VENAS, CalcularColorVenas(_colorBerserkerActual));
+
+        _prevCondicionBerserker = CondicionBerserker;
+        _prevTransicionColorBerserker = TransicionColorBerserker;
+    }
+
+    public void Berserker(bool active)
+    {
+        CondicionBerserker = active;
+    }
+
+    public void BerserkerColorTransition(bool active)
+    {
+        TransicionColorBerserker = active;
+    }
+
+    private Color CalcularColorVenas(Color baseColor)
+    {
+        Color.RGBToHSV(baseColor, out float h, out float s, out float v);
+
+        Color colorVenas = Color.HSVToRGB(h, s, ValorVenas);
+        colorVenas.a = baseColor.a;
+
+        return colorVenas;
+    }
+
     private void SetFloat(string property, float value)
     {
         estadoDeVidaMaterial.SetFloat(property, value);
+    }
+
+    private void SetColor(string property, Color value)
+    {
+        estadoDeVidaMaterial.SetColor(property, value);
     }
 }
 
