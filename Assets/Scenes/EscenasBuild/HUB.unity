@@ -1333,6 +1333,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 358309867}
   m_CullTransparentMesh: 1
+--- !u!114 &387304080 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7344770113995066255, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
+  m_PrefabInstance: {fileID: 466431063}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2dc043c6a0bc96468fde1c2f38c2253, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &427305398
 GameObject:
   m_ObjectHideFlags: 0
@@ -1505,27 +1516,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1119466537940006116, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 9.608503e-37
+      value: -6.8068305e-21
       objectReference: {fileID: 0}
     - target: {fileID: 1119466537940006116, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -8.654574e-21
+      value: -5.4454644e-20
       objectReference: {fileID: 0}
     - target: {fileID: 1119466537940006116, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 6.3611065e-15
+      value: 7.277075e-15
       objectReference: {fileID: 0}
     - target: {fileID: 1845674593948489460, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
+      value: 0.0000018142689
       objectReference: {fileID: 0}
     - target: {fileID: 1845674593948489460, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -90
+      value: 3.3333259
       objectReference: {fileID: 0}
     - target: {fileID: 1845674593948489460, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: -85.577385
+      value: -69.48727
       objectReference: {fileID: 0}
     - target: {fileID: 2778009261814160037, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
       propertyPath: m_Name
@@ -1585,27 +1596,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6717312897532337466, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: -8.0378006e-16
+      value: -9.195241e-16
       objectReference: {fileID: 0}
     - target: {fileID: 6717312897532337466, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -7.513892e-15
+      value: -8.595891e-15
       objectReference: {fileID: 0}
     - target: {fileID: 6717312897532337466, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: -12.211709
+      value: -12.211708
       objectReference: {fileID: 0}
     - target: {fileID: 7408437311067142971, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 1.02372
+      value: 1.0237197
       objectReference: {fileID: 0}
     - target: {fileID: 7408437311067142971, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -0.25002265
+      value: -0.25002268
       objectReference: {fileID: 0}
     - target: {fileID: 7408437311067142971, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: -4.9121695
+      value: 16.949286
+      objectReference: {fileID: 0}
+    - target: {fileID: 8873926130153822821, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
+      propertyPath: m_UpdateMode
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4013,13 +4028,14 @@ MonoBehaviour:
   - "\u201C\xA1Otra vez\u2026 siempre otra vez!\u201D"
   - "\u201CNo hay descanso para los malditos.\u201D"
   - "\u201C\xA1D\xE9jame\u2026 por favor!\u201D"
-  invulnerabilityDuration: 0.5
+  invulnerabilityDuration: 0
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   hitColorDuration: 0.2
   logPanel: {fileID: 1381119955}
   logText: {fileID: 801782313}
   logPanelDisplayTime: 4
   dummyAnimator: {fileID: 349191452}
+  dummyAnimCtrl: {fileID: 387304080}
   hitTriggerName: OnHit
   transformToRotate: {fileID: 606324955}
   rotationSpeed: 10
@@ -4139,8 +4155,8 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 2
-  m_Height: 3
+  m_Radius: 2.53
+  m_Height: 3.28
   m_Direction: 1
   m_Center: {x: 0, y: 1, z: 0}
 --- !u!1 &949317953

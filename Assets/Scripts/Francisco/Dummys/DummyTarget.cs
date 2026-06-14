@@ -35,6 +35,7 @@ public class DummyTarget : MonoBehaviour, IDamageable
 
     [Header("Animation")]
     [SerializeField] protected Animator dummyAnimator;
+    [SerializeField] protected witnessAnimCtrl dummyAnimCtrl;
     [SerializeField] protected string hitTriggerName = "OnHit";
 
     [Header("Rotation Logic")]
@@ -96,7 +97,8 @@ public class DummyTarget : MonoBehaviour, IDamageable
 
         if (dummyAnimator != null)
         {
-            dummyAnimator.SetTrigger(hitTriggerName);
+            // dummyAnimator.SetTrigger(hitTriggerName);
+            dummyAnimCtrl?.PlayHit();
         }
 
         if (colorChangeCoroutine != null)
@@ -113,7 +115,7 @@ public class DummyTarget : MonoBehaviour, IDamageable
 
         ShowNextLineCyclic();
 
-        Debug.Log($"Maniquí golpeado. Daño: {damageAmount} (Crítico: {isCritical}). Nueva línea de diálogo.");
+        Debug.Log($"Maniquï¿½ golpeado. Daï¿½o: {damageAmount} (Crï¿½tico: {isCritical}). Nueva lï¿½nea de diï¿½logo.");
     }
 
     protected IEnumerator HitCooldown()
@@ -126,7 +128,7 @@ public class DummyTarget : MonoBehaviour, IDamageable
     {
         if (dialogueLines == null || dialogueLines.Length == 0)
         {
-            if (logText != null) logText.text = "No hay líneas de diálogo configuradas.";
+            if (logText != null) logText.text = "No hay lï¿½neas de diï¿½logo configuradas.";
             return;
         }
 
