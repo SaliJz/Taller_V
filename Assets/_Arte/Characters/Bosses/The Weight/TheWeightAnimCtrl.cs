@@ -146,26 +146,28 @@ public class TheWeightAnimCtrl : MonoBehaviour
 
             GameObject currentFlesh = Instantiate(FleshPrefab, worldPos, Random.rotation);
 
-            ParticleSystem fleshPS = currentFlesh.GetComponent<ParticleSystem>();
-            if (fleshPS == null) fleshPS = currentFlesh.GetComponentInChildren<ParticleSystem>();
+            // currentFlesh.GetComponent<TheWeight_FleshVFX>().lifetime = fleshLifetime;
 
-            if (fleshPS != null)
-            {
-                StartCoroutine(DestroyFleshAfterLifetime(fleshPS));
-            }
-            else
-            {
-                Destroy(currentFlesh, fleshLifetime);
-            }
+            //ParticleSystem fleshPS = currentFlesh.GetComponent<ParticleSystem>();
+            //if (fleshPS == null) fleshPS = currentFlesh.GetComponentInChildren<ParticleSystem>();
+
+            //if (fleshPS != null)
+            //{
+            //    StartCoroutine(DestroyFleshAfterLifetime(fleshPS));
+            //}
+            //else
+            //{
+            //    Destroy(currentFlesh, fleshLifetime);
+            //}
         }
     }
 
-    private IEnumerator DestroyFleshAfterLifetime(ParticleSystem fleshPS)
-    {
-        yield return new WaitForSeconds(fleshLifetime);
+    //private IEnumerator DestroyFleshAfterLifetime(ParticleSystem fleshPS)
+    //{
+    //    yield return new WaitForSeconds(fleshLifetime);
 
-        VFXHelper.StopAndDestroy(fleshPS);
-    }
+    //    VFXHelper.StopAndDestroy(fleshPS);
+    //}
 
 
     #region Funcionas publicas
