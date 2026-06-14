@@ -7,5 +7,4 @@ public class EnemyWave
     public int enemyCount = 3;
 
     public EnemySpawnMode[] spawnModes;
-    public string[] spawnPointCodes;
 }
