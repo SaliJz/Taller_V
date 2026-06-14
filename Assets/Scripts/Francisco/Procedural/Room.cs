@@ -11,6 +11,13 @@ public class DoorColliders
     public GameObject[] deactivateOnOpen;
 }
 
+[System.Serializable]
+public class SpecificSpawnPoint
+{
+    public string Code;
+    public Transform Point;
+}
+
 public class Room : MonoBehaviour
 {
     [Header("Connection Points")]
@@ -27,6 +34,9 @@ public class Room : MonoBehaviour
     [Header("Room Components")]
     public GameObject[] connectionDoors;
     public BoxCollider[] spawnAreas;
+
+    [Header("Specific Spawn Points")]
+    public SpecificSpawnPoint[] specificSpawnPoints;
 
     [Header("Animated Doors")]
     public Animator[] animatedDoors;
@@ -80,7 +90,17 @@ public class Room : MonoBehaviour
 
     public void Initialize(RoomType type)
     {
-        currentRoomType = type; 
+        currentRoomType = type;
+    }
+
+    public Transform GetSpecificSpawnPoint(string code)
+    {
+        if (specificSpawnPoints == null) return null;
+        foreach (var sp in specificSpawnPoints)
+        {
+            if (sp.Code == code) return sp.Point;
+        }
+        return null;
     }
 
     private void InitializeDoorStates()

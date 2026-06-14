@@ -167,7 +167,9 @@ public class EnemyManager : MonoBehaviour
                     EnemyWave extraWave = new EnemyWave
                     {
                         enemyPrefabs = baseWave.enemyPrefabs,
-                        enemyCount = baseWave.enemyCount
+                        enemyCount = baseWave.enemyCount,
+                        spawnModes = baseWave.spawnModes,
+                        spawnPointCodes = baseWave.spawnPointCodes
                     };
 
                     combatConfig.waves.Insert(combatConfig.waves.Count - 1, extraWave);
@@ -204,48 +206,102 @@ public class EnemyManager : MonoBehaviour
             yield break;
         }
 
-        List<GameObject> instantiatedEffects = new List<GameObject>();
-        List<Vector3> spawnPositions = new List<Vector3>();
+        var specificEntries = new List<(GameObject prefab, string code)>();
+        var generalPrefabs = new List<GameObject>();
 
         for (int i = 0; i < enemyCount; i++)
         {
+            GameObject prefab = prefabsToUse[i];
+            EnemySpawnMode mode = (wave.spawnModes != null && i < wave.spawnModes.Length)
+                ? wave.spawnModes[i]
+                : EnemySpawnMode.General;
+            string code = (wave.spawnPointCodes != null && i < wave.spawnPointCodes.Length)
+                ? wave.spawnPointCodes[i]
+                : "";
+
+            if (mode == EnemySpawnMode.Specific && !string.IsNullOrEmpty(code))
+                specificEntries.Add((prefab, code));
+            else
+                generalPrefabs.Add(prefab);
+        }
+
+        var usedCodes = new HashSet<string>();
+        var specificSpawnList = new List<(GameObject prefab, Vector3 position)>();
+
+        foreach (var (prefab, code) in specificEntries)
+        {
+            if (usedCodes.Contains(code))
+            {
+                ReportDebug($"SpawnPoint '{code}' ya ocupado por otro enemigo en esta wave. Se descarta uno de los específicos.", 2);
+                continue;
+            }
+
+            Transform point = parentRoom != null ? parentRoom.GetSpecificSpawnPoint(code) : null;
+            if (point == null)
+            {
+                ReportDebug($"No se encontró SpecificSpawnPoint con código '{code}' en la sala. Pasando a spawn general.", 2);
+                generalPrefabs.Add(prefab);
+                continue;
+            }
+
+            specificSpawnList.Add((prefab, point.position));
+            usedCodes.Add(code);
+        }
+
+        var generalSpawnPositions = new List<Vector3>();
+        foreach (var _ in generalPrefabs)
+        {
             BoxCollider spawnArea = parentRoom.spawnAreas[Random.Range(0, parentRoom.spawnAreas.Length)];
-            Vector3 spawnPosition = new Vector3(
+            generalSpawnPositions.Add(new Vector3(
                 Random.Range(spawnArea.bounds.min.x, spawnArea.bounds.max.x),
                 spawnArea.transform.position.y,
                 Random.Range(spawnArea.bounds.min.z, spawnArea.bounds.max.z)
-            );
-            spawnPositions.Add(spawnPosition);
+            ));
+        }
 
-            if (spawnEffectPrefab != null)
-            {
-                GameObject effectInstance = Instantiate(spawnEffectPrefab, spawnPosition, Quaternion.identity);
-                instantiatedEffects.Add(effectInstance);
-            }
+        List<(GameObject effect, Vector3 pos)> allEffects = new List<(GameObject, Vector3)>();
+
+        foreach (var (prefab, pos) in specificSpawnList)
+        {
+            GameObject effect = spawnEffectPrefab != null ? Instantiate(spawnEffectPrefab, pos, Quaternion.identity) : null;
+            allEffects.Add((effect, pos));
+        }
+
+        for (int i = 0; i < generalPrefabs.Count; i++)
+        {
+            Vector3 pos = generalSpawnPositions[i];
+            GameObject effect = spawnEffectPrefab != null ? Instantiate(spawnEffectPrefab, pos, Quaternion.identity) : null;
+            allEffects.Add((effect, pos));
         }
 
         yield return new WaitForSeconds(2.0f);
 
+        var finalSpawnList = new List<(GameObject prefab, Vector3 position)>();
+        finalSpawnList.AddRange(specificSpawnList);
+        for (int i = 0; i < generalPrefabs.Count; i++)
+            finalSpawnList.Add((generalPrefabs[i], generalSpawnPositions[i]));
+
+        int totalFinal = finalSpawnList.Count;
+
         List<int> auraIndices = new List<int>();
         if (isAuraActiveInThisRoom && activeAura != DevilAuraType.None)
         {
-            int numAuraEnemies = Mathf.CeilToInt(enemyCount * auraCoveragePercent);
-            ReportDebug($"Intentando aplicar {activeAura} a {numAuraEnemies} de {enemyCount} enemigos (Cobertura: {auraCoveragePercent}).", 1);
-            List<int> allIndices = Enumerable.Range(0, enemyCount).ToList();
-            auraIndices = allIndices.OrderBy(x => Random.value).Take(numAuraEnemies).ToList();
+            int numAuraEnemies = Mathf.CeilToInt(totalFinal * auraCoveragePercent);
+            ReportDebug($"Intentando aplicar {activeAura} a {numAuraEnemies} de {totalFinal} enemigos (Cobertura: {auraCoveragePercent}).", 1);
+            auraIndices = Enumerable.Range(0, totalFinal).OrderBy(x => Random.value).Take(numAuraEnemies).ToList();
         }
 
-        for (int i = 0; i < enemyCount; i++)
+        for (int i = 0; i < totalFinal; i++)
         {
-            if (i < instantiatedEffects.Count && instantiatedEffects[i] != null)
+            if (i < allEffects.Count && allEffects[i].effect != null)
             {
-                Destroy(instantiatedEffects[i]);
+                Destroy(allEffects[i].effect);
             }
 
-            GameObject enemyPrefab = prefabsToUse[i];
-            GameObject newEnemy = Instantiate(enemyPrefab, spawnPositions[i], Quaternion.identity);
+            var (enemyPrefab, spawnPos) = finalSpawnList[i];
+            GameObject newEnemy = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
 
-            ReportDebug($"Spawneado enemigo {i + 1}/{enemyCount}: {enemyPrefab.name}", 1);
+            ReportDebug($"Spawneado enemigo {i + 1}/{totalFinal}: {enemyPrefab.name}", 1);
 
             if (newEnemy != null)
             {
