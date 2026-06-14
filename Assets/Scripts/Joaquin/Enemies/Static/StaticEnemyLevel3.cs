@@ -132,8 +132,19 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
             if (distanceToPlayer <= attackRange)
             {
                 ForceFacePlayer();
+
+                isAttacking = true;
                 if (animCtrl != null) animCtrl.PlayShoot();
                 //ExecuteProjectileSpawn();
+
+                float safetyTimeout = 2.0f;
+                while (isAttacking && safetyTimeout > 0 && !isDead && !isInHitStun)
+                {
+                    safetyTimeout -= Time.deltaTime;
+                    yield return null;
+                }
+
+                isAttacking = false;
             }
         }
 

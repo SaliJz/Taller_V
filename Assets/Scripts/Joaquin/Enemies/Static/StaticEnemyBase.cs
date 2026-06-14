@@ -171,6 +171,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
     protected bool isDead = false;
     protected bool isReady = false;
     protected bool isInAnticipation = false;
+    protected bool isAttacking = false;
 
     protected Coroutine hitStunCoroutine;
     protected Coroutine currentBehaviorCoroutine = null;
@@ -408,6 +409,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
     protected virtual IEnumerator HitStunRoutine()
     {
         isInHitStun = true;
+        isAttacking = false;
         stateBeforeHitStun = currentState;
 
         CancelAnticipation();
@@ -870,6 +872,8 @@ public abstract class StaticEnemyBase : MonoBehaviour
         firePoint.rotation = Quaternion.LookRotation(directionToAim);
 
         InstantiateAndInitializeProjectile();
+
+        isAttacking = false;
     }
 
     protected virtual void InstantiateAndInitializeProjectile()
