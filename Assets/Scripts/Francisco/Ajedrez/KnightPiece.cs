@@ -103,7 +103,7 @@ public class KnightPiece : BoardPiece
                     {
                         Vector2Int nextMove = GetBestMoveTowards(playerCoord);
                         if (nextMove != currentCoord)
-                            yield return StartCoroutine(MoveRoutine(nextMove, patrolMoveSpeed));
+                            yield return StartCoroutine(MoveRoutine(nextMove, patrolMoveSpeed, true));
                     }
                     break;
 
@@ -117,12 +117,12 @@ public class KnightPiece : BoardPiece
     #endregion
 
     #region Movement & L-Logic
-    private IEnumerator MoveRoutine(Vector2Int targetCoord, float speed)
+    private IEnumerator MoveRoutine(Vector2Int targetCoord, float speed, bool interruptForAttack = false)
     {
         if (!boardManager.TileExists(targetCoord) || boardManager.IsTileOccupied(targetCoord)) yield break;
 
         Vector2Int intermediateCoord = GetIntermediateLPoint(currentCoord, targetCoord);
-        if (!boardManager.TileExists(intermediateCoord)) yield break; 
+        if (!boardManager.TileExists(intermediateCoord)) yield break;
 
         isMoving = true;
 
@@ -132,24 +132,57 @@ public class KnightPiece : BoardPiece
         finalPos.y = transform.position.y;
 
         currentTargetWorldPos = intermediatePos;
+
         while (Vector3.Distance(transform.position, intermediatePos) > 0.05f)
         {
             if (isStunned) { isMoving = false; yield break; }
-            transform.position = Vector3.MoveTowards(transform.position, intermediatePos, speed * Time.deltaTime);
+
+            transform.position = Vector3.MoveTowards(
+                transform.position,
+                intermediatePos,
+                speed * Time.deltaTime
+            );
+
             yield return null;
         }
 
+        transform.position = intermediatePos;
+        UpdateBoardPosition(intermediateCoord);
+        isMoving = false;
+
+        if (interruptForAttack && ShouldInterruptForAttack())
+            yield break;
+
+        isMoving = true;
         currentTargetWorldPos = finalPos;
+
         while (Vector3.Distance(transform.position, finalPos) > 0.05f)
         {
             if (isStunned) { isMoving = false; yield break; }
-            transform.position = Vector3.MoveTowards(transform.position, finalPos, speed * Time.deltaTime);
+
+            transform.position = Vector3.MoveTowards(
+                transform.position,
+                finalPos,
+                speed * Time.deltaTime
+            );
+
             yield return null;
         }
 
         transform.position = finalPos;
         UpdateBoardPosition(targetCoord);
         isMoving = false;
+
+        if (interruptForAttack && ShouldInterruptForAttack())
+            yield break;
+    }
+
+    private bool ShouldInterruptForAttack()
+    {
+        if (playerTransform == null || boardManager == null) return false;
+
+        Vector2Int playerCoord = boardManager.WorldPosToCoord(playerTransform.position);
+        return boardManager.TileExists(playerCoord) && CanSeePlayer(playerCoord);
     }
 
     private Vector2Int GetIntermediateLPoint(Vector2Int start, Vector2Int end)
@@ -227,7 +260,7 @@ public class KnightPiece : BoardPiece
             }
 
             patrolPath.RemoveAt(0);
-            yield return StartCoroutine(MoveRoutine(nextCoord, patrolMoveSpeed));
+            yield return StartCoroutine(MoveRoutine(nextCoord, patrolMoveSpeed, true));
             yield return new WaitForSeconds(detectionInterval);
 
             Vector2Int playerCoord = boardManager.WorldPosToCoord(playerTransform.position);

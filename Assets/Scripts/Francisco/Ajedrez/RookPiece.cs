@@ -106,7 +106,7 @@ public class RookPiece : BoardPiece
                     {
                         Vector2Int approach = GetBestMoveTowards(playerCoord);
                         if (approach != currentCoord)
-                            yield return StartCoroutine(MoveRoutine(approach, patrolMoveSpeed));
+                            yield return StartCoroutine(MoveRoutine(approach, patrolMoveSpeed, true));
                         else
                             yield return new WaitForSeconds(detectionInterval);
                     }
@@ -174,7 +174,7 @@ public class RookPiece : BoardPiece
     #endregion
 
     #region Movement
-    private IEnumerator MoveRoutine(Vector2Int targetCoord, float speed)
+    private IEnumerator MoveRoutine(Vector2Int targetCoord, float speed, bool interruptForAttack = false)
     {
         if (!boardManager.TileExists(targetCoord)) yield break;
         if (boardManager.IsTileOccupied(targetCoord)) yield break;
@@ -183,26 +183,48 @@ public class RookPiece : BoardPiece
         Vector2Int dir = new Vector2Int(
             diff.x == 0 ? 0 : (int)Mathf.Sign(diff.x),
             diff.y == 0 ? 0 : (int)Mathf.Sign(diff.y));
-        Vector2Int check = currentCoord + dir;
-        while (check != targetCoord)
-        {
-            if (!boardManager.TileExists(check)) yield break;
-            check += dir;
-        }
 
-        isMoving = true;
-        currentTargetWorldPos = boardManager.GetWorldPosFromCoord(targetCoord);
-        currentTargetWorldPos.y = transform.position.y;
-        UpdateBoardPosition(targetCoord);
+        if (dir == Vector2Int.zero) yield break;
 
-        while (Vector3.Distance(transform.position, currentTargetWorldPos) > 0.05f)
+        while (currentCoord != targetCoord)
         {
-            if (isStunned) { isMoving = false; yield break; }
-            transform.position = Vector3.MoveTowards(transform.position, currentTargetWorldPos, speed * Time.deltaTime);
-            yield return null;
+            Vector2Int nextCoord = currentCoord + dir;
+
+            if (!boardManager.TileExists(nextCoord)) yield break;
+            if (nextCoord != targetCoord && boardManager.IsTileOccupied(nextCoord)) yield break;
+
+            isMoving = true;
+            currentTargetWorldPos = boardManager.GetWorldPosFromCoord(nextCoord);
+            currentTargetWorldPos.y = transform.position.y;
+            UpdateBoardPosition(nextCoord);
+
+            while (Vector3.Distance(transform.position, currentTargetWorldPos) > 0.05f)
+            {
+                if (isStunned) { isMoving = false; yield break; }
+
+                transform.position = Vector3.MoveTowards(
+                    transform.position,
+                    currentTargetWorldPos,
+                    speed * Time.deltaTime
+                );
+
+                yield return null;
+            }
+
+            transform.position = currentTargetWorldPos;
+            isMoving = false;
+
+            if (interruptForAttack && ShouldInterruptForAttack())
+                yield break;
         }
-        transform.position = currentTargetWorldPos;
-        isMoving = false;
+    }
+
+    private bool ShouldInterruptForAttack()
+    {
+        if (playerTransform == null || boardManager == null) return false;
+
+        Vector2Int playerCoord = boardManager.WorldPosToCoord(playerTransform.position);
+        return boardManager.TileExists(playerCoord) && CanSeePlayer(playerCoord);
     }
 
     private IEnumerator PatrolRoutine()
@@ -221,7 +243,7 @@ public class RookPiece : BoardPiece
                 break;
             }
 
-            yield return StartCoroutine(MoveRoutine(next, patrolMoveSpeed));
+            yield return StartCoroutine(MoveRoutine(next, patrolMoveSpeed, true));
             yield return new WaitForSeconds(detectionInterval);
 
             Vector2Int playerCoord = boardManager.WorldPosToCoord(playerTransform.position);
