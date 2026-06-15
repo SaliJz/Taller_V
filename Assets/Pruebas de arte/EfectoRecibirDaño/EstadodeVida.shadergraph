@@ -59,6 +59,9 @@
         },
         {
             "m_Id": "a58210decca746259b2d385b35f5cba1"
+        },
+        {
+            "m_Id": "2d00ca63a2e4439f8ec0304f4ae22322"
         }
     ],
     "m_Keywords": [],
@@ -473,6 +476,9 @@
         },
         {
             "m_Id": "8e0cfe05eea6493fa9b14f912af74752"
+        },
+        {
+            "m_Id": "cb2df175c90d406faf30e66e60bdaa1c"
         }
     ],
     "m_GroupDatas": [
@@ -2105,6 +2111,48 @@
         {
             "m_OutputSlot": {
                 "m_Node": {
+                    "m_Id": "cb2df175c90d406faf30e66e60bdaa1c"
+                },
+                "m_SlotId": 0
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "2da5b017ee164fcc85d3ec2ee1689817"
+                },
+                "m_SlotId": 1
+            }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "cb2df175c90d406faf30e66e60bdaa1c"
+                },
+                "m_SlotId": 0
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "2da5b017ee164fcc85d3ec2ee1689817"
+                },
+                "m_SlotId": 2
+            }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "cb2df175c90d406faf30e66e60bdaa1c"
+                },
+                "m_SlotId": 0
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "2da5b017ee164fcc85d3ec2ee1689817"
+                },
+                "m_SlotId": 3
+            }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
                     "m_Id": "cc0b161a39e14d21b9ea54bc0a6dfbb0"
                 },
                 "m_SlotId": 6
@@ -2930,6 +2978,9 @@
         },
         {
             "m_Id": "a58210decca746259b2d385b35f5cba1"
+        },
+        {
+            "m_Id": "2d00ca63a2e4439f8ec0304f4ae22322"
         }
     ]
 }
@@ -4983,6 +5034,34 @@
         "y": 0.0,
         "z": 0.0,
         "w": 0.0
+    }
+}
+
+{
+    "m_SGVersion": 1,
+    "m_Type": "UnityEditor.ShaderGraph.Internal.Vector1ShaderProperty",
+    "m_ObjectId": "2d00ca63a2e4439f8ec0304f4ae22322",
+    "m_Guid": {
+        "m_GuidSerialized": "4d817dc2-90e7-463a-8a91-9ba5c87295ef"
+    },
+    "m_Name": "Oscuridad",
+    "m_DefaultRefNameVersion": 1,
+    "m_RefNameGeneratedByDisplayName": "Oscuridad",
+    "m_DefaultReferenceName": "_Oscuridad",
+    "m_OverrideReferenceName": "",
+    "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
+    "m_DismissedVersion": 0,
+    "m_Precision": 0,
+    "overrideHLSLDeclaration": false,
+    "hlslDeclarationOverride": 0,
+    "m_Hidden": false,
+    "m_Value": 0.4000000059604645,
+    "m_FloatType": 1,
+    "m_RangeValues": {
+        "x": 0.4000000059604645,
+        "y": 0.5
     }
 }
 
@@ -12958,6 +13037,21 @@
 
 {
     "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
+    "m_ObjectId": "a654abd65bf441498d397193270ecf29",
+    "m_Id": 0,
+    "m_DisplayName": "Oscuridad",
+    "m_SlotType": 1,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "Out",
+    "m_StageCapability": 3,
+    "m_Value": 0.0,
+    "m_DefaultValue": 0.0,
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.DynamicValueMaterialSlot",
     "m_ObjectId": "a6ee5fd8dc354c9eb72f30274b51d0a4",
     "m_Id": 0,
@@ -15155,6 +15249,42 @@
     },
     "m_Property": {
         "m_Id": "24005242e8114fea9cb82ceeb970f287"
+    }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.PropertyNode",
+    "m_ObjectId": "cb2df175c90d406faf30e66e60bdaa1c",
+    "m_Group": {
+        "m_Id": ""
+    },
+    "m_Name": "Property",
+    "m_DrawState": {
+        "m_Expanded": true,
+        "m_Position": {
+            "serializedVersion": "2",
+            "x": -931.5401000976563,
+            "y": 3091.413330078125,
+            "width": 0.0,
+            "height": 0.0
+        }
+    },
+    "m_Slots": [
+        {
+            "m_Id": "a654abd65bf441498d397193270ecf29"
+        }
+    ],
+    "synonyms": [],
+    "m_Precision": 0,
+    "m_PreviewExpanded": true,
+    "m_DismissedVersion": 0,
+    "m_PreviewMode": 0,
+    "m_CustomColors": {
+        "m_SerializableColors": []
+    },
+    "m_Property": {
+        "m_Id": "2d00ca63a2e4439f8ec0304f4ae22322"
     }
 }
 
