@@ -257,6 +257,25 @@ public class InventoryUIManager : MonoBehaviour
             slot.Initialize(this);
             list.Add(slot);
         }
+
+        list.Sort((a, b) =>
+        {
+            RectTransform rtA = a.GetComponent<RectTransform>();
+            RectTransform rtB = b.GetComponent<RectTransform>();
+
+            if (rtA != null && rtB != null)
+            {
+                int yComparison = rtB.anchoredPosition.y.CompareTo(rtA.anchoredPosition.y);
+
+                if (Mathf.Abs(rtB.anchoredPosition.y - rtA.anchoredPosition.y) > 0.1f)
+                {
+                    return yComparison;
+                }
+
+                return rtA.anchoredPosition.x.CompareTo(rtB.anchoredPosition.x);
+            }
+            return 0;
+        });
     }
 
     #endregion
