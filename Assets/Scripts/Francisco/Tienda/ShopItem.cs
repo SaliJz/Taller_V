@@ -36,31 +36,33 @@ public class ShopItem : ScriptableObject
     public List<ItemEffect> benefits;
     public List<ItemEffect> drawbacks;
 
-    [Header("Categorización")]
+    [Header("Categorizaciï¿½n")]
     public ItemCategory category = ItemCategory.AttributeModifiers;
     public ItemRarity rarity = ItemRarity.Normal;
 
-    [Tooltip("Probabilidad individual de ser seleccionado DENTRO de su rareza. Mayor número = más probable.")]
+    [Tooltip("Probabilidad individual de ser seleccionado DENTRO de su rareza. Mayor nï¿½mero = mï¿½s probable.")]
     public float individualRarityWeight = 1.0f; 
 
     [Header("Tipo de Item")]
     public bool isAmulet = false;
     public bool isTemporary = false;
     public bool isByRooms = false;
-    [Tooltip("Duración en segundos (si es temporal por tiempo)")]
+    [Tooltip("Duraciï¿½n en segundos (si es temporal por tiempo)")]
     public float temporaryDuration = 0f;
-    [Tooltip("Duración en rooms (si es temporal por rooms)")]
+    [Tooltip("Duraciï¿½n en rooms (si es temporal por rooms)")]
     public int temporaryRooms = 0;
 
-    [Header("Categoría de Efecto")]
+    [Header("Categorï¿½a de Efecto")]
     public bool hasEffectCategory = false;
     public TypeEffect effectCategory = TypeEffect.Melee;
 
     public bool IsEffectItem => hasEffectCategory && behavioralEffects != null && behavioralEffects.Count > 0;
 
     [Header("Visual")]
-    [Tooltip("Sprite del ítem para el inventario")]
+    [Tooltip("Sprite del ï¿½tem para el inventario")]
     public Sprite itemIcon;
+    [Tooltip("Modelo 3D o Sprite a instanciar en la tienda")]
+    public GameObject ShopItemPrefab;
 
     [Header("Comportamientos/Efectos Eventuales")]
     public List<ItemEffectBase> behavioralEffects;
@@ -168,9 +170,9 @@ public class ShopItem : ScriptableObject
         switch (statType)
         {
             case StatType.MaxHealth:
-                return "Salud Máxima";
+                return "Salud Mï¿½xima";
             case StatType.DamageTaken:
-                return "Daño Recibido";
+                return "Daï¿½o Recibido";
             case StatType.HealthDrainAmount:
                 return "Drenaje de Vida";
 
@@ -188,11 +190,11 @@ public class ShopItem : ScriptableObject
                 return "Consumo de Aguante/Estamina";
 
             case StatType.AttackDamage:
-                return "Daño a Melee y Distancia";
+                return "Daï¿½o a Melee y Distancia";
             case StatType.AttackSpeed:
                 return "Velocidad de Ataque a Melee y Distancia";
             case StatType.MeleeAttackDamage:
-                return "Daño a Melee";
+                return "Daï¿½o a Melee";
             case StatType.MeleeAttackSpeed:
                 return "Velocidad de Ataque a Melee";
             case StatType.MeleeRadius:
@@ -200,14 +202,14 @@ public class ShopItem : ScriptableObject
             case StatType.MeleeComboDisplacement:
                 return "Desplazamiento al Golpear";
             case StatType.CriticalChance:
-                return "Probabilidad de Crítico";
+                return "Probabilidad de Crï¿½tico";
             case StatType.CriticalDamageMultiplier:
-                return "Multiplicador de Daño Crítico";
+                return "Multiplicador de Daï¿½o Crï¿½tico";
             case StatType.LifestealOnKill:
-                return "Robo de Vida por Eliminación";
+                return "Robo de Vida por Eliminaciï¿½n";
 
             case StatType.ShieldAttackDamage:
-                return "Daño a Distancia";
+                return "Daï¿½o a Distancia";
             case StatType.ShieldSpeed:
                 return "Velocidad de Lanzamiento del Escudo";
             case StatType.ShieldMaxDistance:
@@ -226,11 +228,11 @@ public class ShopItem : ScriptableObject
             case StatType.LuckStack:
                 return "Suerte Acumulada";
             case StatType.EssenceCostReduction:
-                return "Reducción de Costo de Esencia";
+                return "Reducciï¿½n de Costo de Esencia";
             case StatType.ShopPriceReduction:
-                return "Reducción de Precio en Tienda";
+                return "Reducciï¿½n de Precio en Tienda";
             case StatType.HealthPerRoomRegen:
-                return "Regeneración por Sala";
+                return "Regeneraciï¿½n por Sala";
 
             default:
                 return statType.ToString();

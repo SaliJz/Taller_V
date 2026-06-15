@@ -5,20 +5,55 @@ public class VeynarAnimCtrl : MonoBehaviour
 {
     [SerializeField] private Animator anim;
     [SerializeField] private SkinnedMeshRenderer mesh;
+    private MaterialPropertyBlock propBlock;
+
+    #region  private variables
 
     private const string CamouProperty = "_Camou_Amount";
+    private readonly string ANIM_SPAWNING = "A_Spawning";
 
-    private MaterialPropertyBlock propBlock;
+    private bool _isInvulnerable;
+    private bool _isSpawning;
+
+    #endregion
+
+    #region public variables
+
+    public bool isInvulnerable
+    {
+        get => _isInvulnerable;
+        set
+        {
+            _isInvulnerable = value;
+            anim.SetBool("Protected", _isInvulnerable);
+        }
+    }
+
+    public bool isSpawning
+    {
+        get => _isSpawning;
+        set
+        {
+            _isSpawning = value;
+            anim.SetBool("Spawning",_isSpawning);
+        }
+    }
+
+    #endregion
+
 
     private void Start()
     {
         propBlock = new MaterialPropertyBlock();
     }
 
+    #if UNITY_EDITOR
     private void Update()
     {
-        // testInput();
+        if(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "AndreiNew")
+        testInput();
     }
+    #endif
 
     public void UpdateCamou(float value)
     {
@@ -48,6 +83,22 @@ public class VeynarAnimCtrl : MonoBehaviour
         anim.SetBool("IsTraveling", false);
     }
 
+    public void PlayDeath()
+    {
+        anim.SetTrigger("Death");
+    }
+
+    public void PlaySpawning()
+    {
+        anim.Play(ANIM_SPAWNING);
+        anim.SetBool("Spawning",true);
+    }
+
+    private void StopSpawningBool()
+    {
+        anim.SetBool("Spawning",false);
+    }
+
     public IEnumerator WaitForMoveOut()
     {
         yield return null;
@@ -70,5 +121,10 @@ public class VeynarAnimCtrl : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Keypad1)) UpdateCamou(0f);
         if (Input.GetKeyDown(KeyCode.Keypad2)) UpdateCamou(0.5f);
         if (Input.GetKeyDown(KeyCode.Keypad3)) UpdateCamou(1f);
+
+        if(Input.GetKeyDown(KeyCode.D)) PlayDeath();
+        if (Input.GetKeyDown(KeyCode.H)) PlaySpawning();
+        if(Input.GetKeyDown(KeyCode.O)) isInvulnerable = true;
+        else if (Input.GetKeyUp(KeyCode.O)) isInvulnerable = false;
     }
 }

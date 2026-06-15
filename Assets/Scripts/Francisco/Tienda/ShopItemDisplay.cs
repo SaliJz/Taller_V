@@ -37,6 +37,17 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
             Debug.LogError("ShopManager no encontrado. El item de la tienda no funcionara correctamente.");
         }
 
+        if(shopItemData.ShopItemPrefab != null)
+        {
+            // Debug.LogWarning("Ola Instancie un item yei");
+            MeshRenderer m = GetComponent<MeshRenderer>();
+            m.enabled = false;
+
+            GameObject itemInstance = Instantiate(shopItemData.ShopItemPrefab, transform);
+            // itemInstance.transform.SetParent(transform);
+            itemInstance.transform.localPosition = Vector3.zero;
+        }
+
         playerControls = new PlayerControlls();
         playerControls.Interactions.SetCallbacks(this);
     }
@@ -164,7 +175,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     private void AttemptPurchase()
     {
-        Debug.Log($"[ShopItemDisplay] Interacción detectada para: {shopItemData.itemName}.");
+        Debug.Log($"[ShopItemDisplay] Interacciï¿½n detectada para: {shopItemData.itemName}.");
         if (!shopManager.CanAttemptPurchase()) return;
 
         bool purchaseSuccessful = shopManager.PurchaseItem(shopItemData);
@@ -183,7 +194,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     private void OnPurchaseCancelled()
     {
-        // En caso el jugador canceló el reemplazo, reactiva para que pueda reintentar
+        // En caso el jugador cancelï¿½ el reemplazo, reactiva para que pueda reintentar
         isPlayerInProximity = true;
     }
 

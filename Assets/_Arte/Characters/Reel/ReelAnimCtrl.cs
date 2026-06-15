@@ -29,8 +29,16 @@ public class ReelAnimCtrl : MonoBehaviour
     #region Inspector - Anticipation Shake
 
     [Header("Anticipation Shake")]
-    [SerializeField] private float shakeIntensity = 0.2f;
+    [SerializeField] private float anticipationShakeIntensity = 0.2f;
     [SerializeField] private float shakeFrequency = 2f;
+
+    #endregion
+
+    #region  Inspector - Connected Shake
+
+    [Header("Connected Shake")]
+    [SerializeField] private float connectedShakeIntensity = 0.1f;
+    [SerializeField] private bool connectedShakeContinous = true;
 
     #endregion
 
@@ -38,12 +46,42 @@ public class ReelAnimCtrl : MonoBehaviour
 
     private Coroutine shakeCoroutine;
     private Vector3 originalLocalPosition;
+    private bool _isConnected;
+    private bool _walking;
+    private bool hasTarget;
 
     #endregion
 
     #region Public Properties And Events
 
-    public bool walking; //Conectar con el bool 
+    public bool walking  //Conectar con el bool 
+    {
+        get => _walking;
+        set
+        {
+            _walking = value;
+            anim.SetBool("isWalking", _walking);
+        }
+    }
+    public bool isConnected
+    {
+        get => _isConnected;
+        set
+        {
+            _isConnected = value;
+            anim.SetBool("IsConnected", _isConnected);
+
+            if (_isConnected)
+            {
+                StopAnticipationShake();
+                shakeCoroutine = StartCoroutine(ShakeRoutine(connectedShakeContinous? 0:1, connectedShakeIntensity));
+            }
+            else
+            {
+                StopAnticipationShake();
+            }
+        }
+    }
 
     #endregion
 
@@ -56,20 +94,19 @@ public class ReelAnimCtrl : MonoBehaviour
 
     private void Update()
     {
-        anim.SetBool("isWalking", walking);
+        // anim.SetBool("isWalking", walking);
 
-        if (leftLookAt.Target != null || rightLookAt.Target != null)
+        bool currentHasTarget = leftLookAt.Target != null || rightLookAt.Target != null;
+
+        if (currentHasTarget != hasTarget)
         {
-            mesh.SetBlendShapeWeight(0, 100);
-        }
-        else
-        {
-            mesh.SetBlendShapeWeight(0, 0);
+            mesh.SetBlendShapeWeight(0, currentHasTarget? 100:0);
+            hasTarget = currentHasTarget;
         }
 
-#if UNITY_EDITOR
+        #if UNITY_EDITOR
         if (SceneManager.GetActiveScene().name == "AndreiNew") TestInputs();
-#endif
+        #endif
     }
 
     #endregion
@@ -156,7 +193,7 @@ public class ReelAnimCtrl : MonoBehaviour
     public void PlayAnticipationShake(float duration)
     {
         StopAnticipationShake();
-        shakeCoroutine = StartCoroutine(ShakeRoutine(duration));
+        shakeCoroutine = StartCoroutine(ShakeRoutine(duration, anticipationShakeIntensity));
     }
 
     public void StopAnticipationShake()
@@ -169,13 +206,18 @@ public class ReelAnimCtrl : MonoBehaviour
         transform.localPosition = originalLocalPosition;
     }
 
-    private System.Collections.IEnumerator ShakeRoutine(float duration)
+    private System.Collections.IEnumerator ShakeRoutine(float duration, float intensity)
     {
         float elapsed = 0f;
-        while (elapsed < duration)
+        bool infinite = duration <= 0f;
+
+        while (infinite || elapsed < duration)
         {
-            float offsetX = Mathf.Sin(elapsed * shakeFrequency * Mathf.PI * 2f) * shakeIntensity;
-            float offsetZ = Mathf.Cos(elapsed * shakeFrequency * Mathf.PI * 2.3f) * shakeIntensity * 0.6f;
+            Debug.Log("shakie shakie ñam ñam");
+            Debug.Log($"shakie shakie ñam ñam - elapsed: {elapsed}");
+
+            float offsetX = Mathf.Sin(elapsed * shakeFrequency * Mathf.PI * 2f) * intensity;
+            float offsetZ = Mathf.Cos(elapsed * shakeFrequency * Mathf.PI * 2.3f) * intensity * 0.6f;
             transform.localPosition = originalLocalPosition + new Vector3(offsetX, 0f, offsetZ);
             elapsed += Time.deltaTime;
             yield return null;
@@ -186,6 +228,7 @@ public class ReelAnimCtrl : MonoBehaviour
 
     #endregion
 
+    #if UNITY_EDITOR
     #region Debug And Testing
 
     private void TestInputs()
@@ -194,7 +237,12 @@ public class ReelAnimCtrl : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.H)) PlayDeath();
         if (Input.GetKeyDown(KeyCode.O)) anim.Play("Idle");
         if (Input.GetKeyDown(KeyCode.P)) shieldCtrl.Escudo = true;
+        if (Input.GetKeyDown(KeyCode.L)) isConnected = true;
+        else if (Input.GetKeyUp(KeyCode.L)) isConnected = false;
+        if (Input.GetKey(KeyCode.G)) walking = true;
+        else if (Input.GetKeyUp(KeyCode.G)) walking = false;
     }
 
     #endregion
+    #endif
 }
