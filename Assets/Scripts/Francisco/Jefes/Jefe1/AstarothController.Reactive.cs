@@ -49,6 +49,8 @@ public partial class AstarothController
         if (_animCtrl != null) _animCtrl.isWalking = false;
         if (_animCtrl != null) _animCtrl.PlayApisonador();
 
+        yield return PlayAttackAnticipation(apisonadorAnticipationDuration, apisonadorLooseScrewsSFX);
+
         Vector3 blockCenter = transform.position;
         Vector3 warningCenter = GetGroundPosition(blockCenter);
 

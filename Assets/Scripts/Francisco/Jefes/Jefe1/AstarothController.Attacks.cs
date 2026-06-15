@@ -183,6 +183,8 @@ public partial class AstarothController
 
         yield return WaitForAnimEvent(ANIM_EVENT_CANON_RELEASE, _smashRockTravelDuration);
 
+        yield return PlayAttackAnticipation(canonAnticipationDuration, canonChargeSFX);
+
         if (!_smashImpactCompleted && !_smashRockInFlight)
         {
             LaunchSmashRockToPlayer();
@@ -569,6 +571,8 @@ public partial class AstarothController
 
         yield return WaitForAnimEvent(ANIM_EVENT_PULSO_CARNAL_IMPACT, _pulseDelay);
 
+        yield return PlayAttackAnticipation(pulsoCarnalAnticipationDuration, pulsoCarnalViscousSFX);
+
         Vector3 groundPos = GetGroundPosition(transform.position);
 
         if (_headsTransform != null)
@@ -760,6 +764,8 @@ public partial class AstarothController
         yield return PullPlayersToStompCenter();
 
         yield return WaitForAnimEvent(ANIM_EVENT_APISONADOR_IMPACT, 0.5f);
+
+        yield return PlayAttackAnticipation(apisonadorAnticipationDuration, apisonadorLooseScrewsSFX);
 
         PerformStompImpact();
 

@@ -28,12 +28,23 @@ public class TheWeightAnimCtrl : MonoBehaviour
     [SerializeField] float ghostVanishTime = 0.2f;
     [SerializeField] GameObject FleshPrefab;
     [SerializeField] int fleshCount;
-    [SerializeField] float fleshLifetime = 2.5f;
+    [SerializeField] float fleshLifetime;
 
     Animator formaBase_anim;
     Animator apisonador_anim;
     Animator canon_anim;
     Animator pulpo_anim;
+
+    [Header("Anticipation Shake")]
+    [SerializeField] private float shakeIntensity = 0.2f;
+    [SerializeField] private float shakeFrequency = 2f;
+
+    private Coroutine shakeCoroutine;
+    private Vector3 originalLocalPosition;
+    private bool originalPositionCaptured = false;
+
+    private bool isAnimationPaused = false;
+    private float speedBeforePause = 1f;
 
     private bool internalWalking;
     public bool isWalking
@@ -64,7 +75,25 @@ public class TheWeightAnimCtrl : MonoBehaviour
         canon_anim = canonModel.GetComponent<Animator>();
         pulpo_anim = pulpoModel.GetComponent<Animator>();
 
+        originalLocalPosition = transform.localPosition;
+        originalPositionCaptured = true;
+
         ReturnToIdle();
+    }
+
+    /// <summary>
+    /// Animator de la forma actualmente activa (la única que realmente
+    /// se está reproduciendo, ya que las otras 3 están desactivadas).
+    /// </summary>
+    private Animator GetActiveAnimator()
+    {
+        switch (currentForm)
+        {
+            case SwapForms.apisonador: return apisonador_anim;
+            case SwapForms.canon: return canon_anim;
+            case SwapForms.pulpo: return pulpo_anim;
+            default: return formaBase_anim;
+        }
     }
 
     private void SwapTo(SwapForms newForm)
@@ -146,28 +175,28 @@ public class TheWeightAnimCtrl : MonoBehaviour
 
             GameObject currentFlesh = Instantiate(FleshPrefab, worldPos, Random.rotation);
 
-            // currentFlesh.GetComponent<TheWeight_FleshVFX>().lifetime = fleshLifetime;
+            ParticleSystem fleshPS = currentFlesh.GetComponent<ParticleSystem>();
+            if (fleshPS == null) fleshPS = currentFlesh.GetComponentInChildren<ParticleSystem>();
 
-            //ParticleSystem fleshPS = currentFlesh.GetComponent<ParticleSystem>();
-            //if (fleshPS == null) fleshPS = currentFlesh.GetComponentInChildren<ParticleSystem>();
-
-            //if (fleshPS != null)
-            //{
-            //    StartCoroutine(DestroyFleshAfterLifetime(fleshPS));
-            //}
-            //else
-            //{
-            //    Destroy(currentFlesh, fleshLifetime);
-            //}
+            if (fleshPS != null)
+            {
+                StartCoroutine(DestroyFleshAfterLifetime(fleshPS));
+            }
+            else
+            {
+                Destroy(currentFlesh, fleshLifetime);
+            }
         }
     }
 
-    //private IEnumerator DestroyFleshAfterLifetime(ParticleSystem fleshPS)
-    //{
-    //    yield return new WaitForSeconds(fleshLifetime);
+    private IEnumerator DestroyFleshAfterLifetime(ParticleSystem fleshPS)
+    {
+        yield return new WaitForSeconds(fleshLifetime);
 
-    //    VFXHelper.StopAndDestroy(fleshPS);
-    //}
+        // Stop + destroy seguros: evita el "JobTempAlloc has allocations..." leak
+        // que ocurre al destruir un ParticleSystem mientras sus jobs siguen activos.
+        VFXHelper.StopAndDestroy(fleshPS);
+    }
 
 
     #region Funcionas publicas
@@ -196,6 +225,72 @@ public class TheWeightAnimCtrl : MonoBehaviour
     {
         formaBase_anim.ResetTrigger("DeathTrigger");
         formaBase_anim.SetTrigger("DeathTrigger");
+    }
+
+    /// <summary>
+    /// Congela el animator de la forma activa en su pose actual
+    /// (usado durante la pausa de anticipación de ataque).
+    /// </summary>
+    public void PauseAnimation()
+    {
+        Animator anim = GetActiveAnimator();
+        if (anim == null || isAnimationPaused) return;
+
+        speedBeforePause = anim.speed;
+        anim.speed = 0f;
+        isAnimationPaused = true;
+    }
+
+    /// <summary>
+    /// Restaura la velocidad que tenía el animator de la forma activa
+    /// antes de PauseAnimation (respeta multiplicadores de Enrage/MudWave).
+    /// </summary>
+    public void ResumeAnimation()
+    {
+        Animator anim = GetActiveAnimator();
+        if (anim == null || !isAnimationPaused) return;
+
+        anim.speed = speedBeforePause;
+        isAnimationPaused = false;
+    }
+
+    /// <summary>
+    /// Tiembla la raíz del modelo (la forma activa) durante la anticipación
+    /// de un ataque, sin alterar la pose congelada por PauseAnimation.
+    /// </summary>
+    public void PlayAnticipationShake(float duration)
+    {
+        StopAnticipationShake();
+        shakeCoroutine = StartCoroutine(ShakeRoutine(duration));
+    }
+
+    public void StopAnticipationShake()
+    {
+        if (shakeCoroutine != null)
+        {
+            StopCoroutine(shakeCoroutine);
+            shakeCoroutine = null;
+        }
+
+        if (originalPositionCaptured)
+        {
+            transform.localPosition = originalLocalPosition;
+        }
+    }
+
+    private IEnumerator ShakeRoutine(float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            float offsetX = Mathf.Sin(elapsed * shakeFrequency * Mathf.PI * 2f) * shakeIntensity;
+            float offsetZ = Mathf.Cos(elapsed * shakeFrequency * Mathf.PI * 2.3f) * shakeIntensity * 0.6f;
+            transform.localPosition = originalLocalPosition + new Vector3(offsetX, 0f, offsetZ);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        transform.localPosition = originalLocalPosition;
+        shakeCoroutine = null;
     }
 
     #endregion

@@ -294,6 +294,22 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
     #endregion
 
+    #region Attack Anticipation
+
+    [Header("Anticipación - Ataque Caos (Cañón)")]
+    [SerializeField] private AudioClip canonChargeSFX;
+    [SerializeField, Range(0.5f, 0.8f)] private float canonAnticipationDuration = 0.65f;
+
+    [Header("Anticipación - Apisonador (Stomp / Block)")]
+    [SerializeField] private AudioClip apisonadorLooseScrewsSFX;
+    [SerializeField, Range(0.2f, 0.5f)] private float apisonadorAnticipationDuration = 0.35f;
+
+    [Header("Anticipación - Pulso Carnal (Pulpo)")]
+    [SerializeField] private AudioClip pulsoCarnalViscousSFX;
+    [SerializeField, Range(0.5f, 0.8f)] private float pulsoCarnalAnticipationDuration = 0.65f;
+
+    #endregion
+
     #region Debug
 
     [Header("Debug")]
@@ -470,6 +486,10 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
     public void HandleAnimEvents(string eventName)
     {
+        // Si alguna corrutina está esperando justo este evento, libérala.
+        // La lógica (daño, lanzamientos, etc.) se ejecuta en la propia
+        // corrutina justo después del yield, evitando doble disparo si
+        // además se activa el fallback por timeout.
         if (_pendingAnimEvent == eventName)
         {
             _pendingAnimEvent = null;
@@ -492,6 +512,30 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         }
 
         _pendingAnimEvent = null;
+    }
+
+    private IEnumerator PlayAttackAnticipation(float duration, AudioClip sfx)
+    {
+        if (_animCtrl != null) _animCtrl.PauseAnimation();
+
+        if (audioSource != null && sfx != null)
+        {
+            audioSource.PlayOneShot(sfx);
+        }
+
+        if (_enemyVisualEffects != null)
+        {
+            _enemyVisualEffects.PlayAnticipationBlink(duration);
+        }
+
+        if (_animCtrl != null)
+        {
+            _animCtrl.PlayAnticipationShake(duration);
+        }
+
+        yield return new WaitForSeconds(duration);
+
+        if (_animCtrl != null) _animCtrl.ResumeAnimation();
     }
 
     private void CacheSmashRockTransform()
@@ -720,6 +764,12 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     private void ResetAttackState()
     {
         if (_isDead) return;
+
+        // Si la corrutina de ataque fue interrumpida a mitad de la pausa de
+        // anticipación, asegurar que el animator no quede congelado ni el
+        // shake siga corriendo en un GameObject que ya no aplica.
+        _animCtrl?.StopAnticipationShake();
+        _animCtrl?.ResumeAnimation();
 
         _animCtrl?.ReturnToIdle();
 
