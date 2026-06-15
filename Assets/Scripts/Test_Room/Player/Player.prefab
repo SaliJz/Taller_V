@@ -13692,7 +13692,7 @@ Transform:
   m_GameObject: {fileID: 6991594973495407509}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.9659258, z: -0.2588191, w: 0}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.25, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -13830,10 +13830,6 @@ MonoBehaviour:
   currentDirection: down
   currentPriority: 0
   shaderCtrl: {fileID: 1469489433089181258}
-  shadowScript: {fileID: 0}
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 8
   currentAge: 1
   nextAge: 0
   HasShield: 1
@@ -13856,7 +13852,6 @@ MonoBehaviour:
   - {fileID: 9101019140945644396}
   VFX_wallParticles: {fileID: 719970239290014593}
   VFX_Dash: {fileID: 1256911051565278685}
-  shadowPrefab: {fileID: 4558005614469577162, guid: e760d38748e722e4fa8a14a704aff052, type: 3}
   debug: 0
 --- !u!114 &1469489433089181258
 MonoBehaviour:
@@ -13911,6 +13906,12 @@ MonoBehaviour:
   LimiteDither: 0.3
   PixeladoActivo: 0
   SizePixel: 150
+  CondicionBerserker: 0
+  TransicionColorBerserker: 0
+  TiempoBerserker: 1.5
+  ColorBerserker1: {r: 1, g: 0, b: 0, a: 1}
+  ColorBerserker2: {r: 0.6, g: 0, b: 0, a: 1}
+  ValorVenas: 0.45
 --- !u!114 &7606585880973531162
 MonoBehaviour:
   m_ObjectHideFlags: 0
