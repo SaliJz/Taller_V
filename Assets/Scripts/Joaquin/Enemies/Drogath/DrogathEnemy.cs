@@ -742,6 +742,11 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
         activeBonds.Add(bond);
 
+        if (animCtrl != null && activeBonds.Count > 0)
+        {
+            animCtrl.isConnected = true;
+        }
+
         if (audioSource != null && bondActivateSFX != null)
         {
             audioSource.PlayOneShot(bondActivateSFX, 0.75f);
@@ -777,6 +782,11 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
         activeBonds.RemoveAt(index);
 
+        if (animCtrl != null && activeBonds.Count == 0)
+        {
+            animCtrl.isConnected = false;
+        }
+
         if (audioSource != null && bondBreakSFX != null)
         {
             audioSource.PlayOneShot(bondBreakSFX, 0.75f);
@@ -793,7 +803,13 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker, IAnimEventHandler
                 Destroy(bond.lineRenderer.gameObject);
             }
         }
+
         activeBonds.Clear();
+
+        if (animCtrl != null)
+        {
+            animCtrl.isConnected = false;
+        }
     }
 
     private void RegenerateBondedAlliesToughness()
