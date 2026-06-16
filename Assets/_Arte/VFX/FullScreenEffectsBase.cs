@@ -49,7 +49,7 @@ public class FullScreenEffectsBase : MonoBehaviour
     {
         if (MaterialOriginal == null)
         {
-            Debug.LogError("[Estado de Vida] No hay Material Asignado");
+            Debug.LogError($"[{GetType().Name}] No hay Material Asignado");
             return false;
         }
 
@@ -69,12 +69,12 @@ public class FullScreenEffectsBase : MonoBehaviour
         return true;
     }
 
-    private static FullScreenPassRendererFeature SearchFeatureByName(string name)
+    private FullScreenPassRendererFeature SearchFeatureByName(string name)
     {
         var urpAsset = UniversalRenderPipeline.asset;
         if(urpAsset == null)
         {
-            Debug.LogError("[FullScreenBase] El pipeline activo no tiene URP o no hay UniversalRenderPipelineAsset asignado");
+            Debug.LogError($"[{GetType().Name}] El pipeline activo no tiene URP o no hay UniversalRenderPipelineAsset asignado");
             return null;
         }
 
