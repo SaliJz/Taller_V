@@ -179,12 +179,23 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
     [SerializeField] private float hitStunDuration = 0.3f;
     [SerializeField] private float forceIdleDuration = 0.8f;
-    [SerializeField] private float anticipationPauseDuration = 1f;
+    [SerializeField] private float anticipationPauseDuration = 0.5f;
+
+    [Header("SFX Hit Stun")]
+    [SerializeField] private AudioClip hitStunSFX;
 
     [Header("SFX Anticipación y Daño")]
-    [SerializeField] private AudioClip hitStunSFX;
+    [Tooltip("SFX genérico de anticipación, usado como respaldo si un ataque no define el suyo.")]
     [SerializeField] private AudioClip anticipationSFX;
     [SerializeField] private float anticipationSFXPitch = 1.0f;
+
+    [Header("SFX Anticipación por Ataque")]
+    [Tooltip("Si está vacío, se usa el SFX genérico de Anticipación de arriba.")]
+    [SerializeField] private AudioClip staticFailureAnticipationSFX;
+    [SerializeField] private AudioClip brokenChargeAnticipationSFX;
+    [SerializeField] private AudioClip scrapRamAnticipationSFX;
+    [SerializeField] private AudioClip divisoryAnticipationSFX;
+    [SerializeField] private AudioClip drownedHandsAnticipationSFX;
 
     #endregion
 
@@ -241,6 +252,9 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
     private bool isInAnticipation = false;
     private bool isInHitStun = false;
     private float hitStunRecoveryCooldown = 0f;
+    private AudioClip pendingAnticipationSFX;
+
+    private int actionToken = 0;
 
     #endregion
 
@@ -519,6 +533,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
     private IEnumerator ExecuteStaticFailureRoutine()
     {
+        int myToken = ++actionToken;
         interruptionActive = true; // Bloquea superposiciones
         state = BossState.StaticFailureWindup;
         rearHitsDuringWindup = 0;
@@ -534,14 +549,15 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             staticFailureWarningPrefab
         );
 
+        pendingAnticipationSFX = staticFailureAnticipationSFX;
         PlaySFX(staticChargeSFX);
 
-        yield return new WaitForSeconds(staticFailureWindup);
+        yield return WaitRespectingAnticipation(staticFailureWindup);
 
-        if (isDead || state != BossState.StaticFailureWindup)
+        if (isDead || state != BossState.StaticFailureWindup || myToken != actionToken)
         {
             if (warning != null) Destroy(warning);
-            interruptionActive = false;
+            if (myToken == actionToken) interruptionActive = false;
             yield break;
         }
 
@@ -550,11 +566,11 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
         try
         {
-            yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.StaticFailureWindup);
+            yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.StaticFailureWindup || myToken != actionToken);
 
             if (warning != null) Destroy(warning);
 
-            if (isDead || state != BossState.StaticFailureWindup) yield break;
+            if (isDead || state != BossState.StaticFailureWindup || myToken != actionToken) yield break;
 
             state = BossState.StaticFailureRelease;
 
@@ -570,11 +586,14 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             if (knightAnimCtrl != null) knightAnimCtrl.SetAttackEnded(true);
             if (warning != null) Destroy(warning);
 
-            if (state == BossState.StaticFailureRelease || state == BossState.StaticFailureWindup)
+            if (myToken == actionToken)
             {
-                state = BossState.Idle;
+                if (state == BossState.StaticFailureRelease || state == BossState.StaticFailureWindup)
+                {
+                    state = BossState.Idle;
+                }
+                interruptionActive = false; // Libera el bloqueo
             }
-            interruptionActive = false; // Libera el bloqueo
         }
     }
 
@@ -621,6 +640,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
     {
         if (state != BossState.StaticFailureWindup) yield break;
 
+        int myToken = ++actionToken;
         interruptionActive = true;
         state = BossState.Stunned;
 
@@ -633,8 +653,11 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
         yield return new WaitForSeconds(interruptStunDuration);
 
-        interruptionActive = false;
-        state = BossState.Idle;
+        if (myToken == actionToken)
+        {
+            interruptionActive = false;
+            state = BossState.Idle;
+        }
     }
 
     private void TriggerFrontShieldBlock(Vector3 attackerPos)
@@ -660,6 +683,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
     private IEnumerator ExecuteBrokenChargeRoutine()
     {
+        int myToken = ++actionToken;
         interruptionActive = true; // Bloquea superposiciones
         state = BossState.BrokenCharge;
         nextBrokenChargeTime = Time.time + brokenChargeCooldown;
@@ -668,11 +692,12 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
         for (int i = 0; i < brokenChargeDashCount; i++)
         {
-            if (isDead || state != BossState.BrokenCharge) break;
+            if (isDead || state != BossState.BrokenCharge || myToken != actionToken) break;
 
             FacePlayerInstant();
 
             attackExecuteTriggered = false;
+            pendingAnticipationSFX = brokenChargeAnticipationSFX;
 
             if (knightAnimCtrl != null) knightAnimCtrl.PlayBrokenCharge();
 
@@ -682,9 +707,11 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
             yield return DashRoutine(target, timePerDash * 0.65f, brokenChargeDashSpeed, dealContactDamage: false, spawnCrystalOnWallHit: true);
 
-            yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.BrokenCharge);
+            if (myToken != actionToken) break;
 
-            if (isDead || state != BossState.BrokenCharge) break;
+            yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.BrokenCharge || myToken != actionToken);
+
+            if (isDead || state != BossState.BrokenCharge || myToken != actionToken) break;
 
             if (attackExecuteTriggered)
             {
@@ -695,14 +722,17 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             yield return new WaitForSeconds(rest);
         }
 
-        StopAgent();
-        SetWalking(false);
-
-        if (state == BossState.BrokenCharge)
+        if (myToken == actionToken)
         {
-            state = BossState.Idle;
+            StopAgent();
+            SetWalking(false);
+
+            if (state == BossState.BrokenCharge)
+            {
+                state = BossState.Idle;
+            }
+            interruptionActive = false; // Libera el bloqueo
         }
-        interruptionActive = false; // Libera el bloqueo
     }
 
     private Vector3 ComputeZigzagTarget(int dashIndex)
@@ -726,6 +756,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
     private IEnumerator ExecuteScrapRamRoutine()
     {
+        int myToken = ++actionToken;
         interruptionActive = true; // Bloquea superposiciones
         if (isDead) yield break;
 
@@ -735,13 +766,14 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         FacePlayerInstant();
 
         attackExecuteTriggered = false;
+        pendingAnticipationSFX = scrapRamAnticipationSFX;
         if (knightAnimCtrl != null) knightAnimCtrl.PlayScrapRam();
 
-        yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.ScrapRam);
+        yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.ScrapRam || myToken != actionToken);
 
-        if (isDead || state != BossState.ScrapRam)
+        if (isDead || state != BossState.ScrapRam || myToken != actionToken)
         {
-            interruptionActive = false;
+            if (myToken == actionToken) interruptionActive = false;
             yield break;
         }
 
@@ -755,7 +787,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
         while (elapsed < scrapRamDuration)
         {
-            if (state != BossState.ScrapRam) break;
+            if (state != BossState.ScrapRam || myToken != actionToken || isInHitStun) break;
 
             transform.position += transform.forward * scrapRamSpeed * Time.deltaTime;
 
@@ -783,8 +815,11 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             yield return null;
         }
 
+        if (myToken != actionToken) yield break;
+
         if (hitPlayer)
         {
+            playerHealth?.TakeDamage(0f);
             playerHealth?.ApplyStun(scrapRamPlayerStun);
         }
         else if (hitWall)
@@ -805,11 +840,14 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             yield return new WaitForSeconds(0.25f);
         }
 
-        if (state == BossState.ScrapRam)
+        if (myToken == actionToken)
         {
-            state = BossState.Idle;
+            if (state == BossState.ScrapRam)
+            {
+                state = BossState.Idle;
+            }
+            interruptionActive = false; // Libera el bloqueo
         }
-        interruptionActive = false; // Libera el bloqueo
     }
 
     #endregion
@@ -818,6 +856,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
     private IEnumerator ExecuteDivisoryFailureRoutine()
     {
+        int myToken = ++actionToken;
         interruptionActive = true; // Bloquea superposiciones
         if (isDead) yield break;
 
@@ -827,24 +866,25 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         StopAgent();
         FacePlayerInstant();
 
+        pendingAnticipationSFX = divisoryAnticipationSFX;
         PlaySFX(divisorySFX);
 
-        yield return new WaitForSeconds(divisoryCastTime);
+        yield return WaitRespectingAnticipation(divisoryCastTime);
 
-        if (isDead || state != BossState.DivisoryFailure)
+        if (isDead || state != BossState.DivisoryFailure || myToken != actionToken)
         {
-            interruptionActive = false;
+            if (myToken == actionToken) interruptionActive = false;
             yield break;
         }
 
         attackExecuteTriggered = false;
         if (knightAnimCtrl != null) knightAnimCtrl.PlayHandAttack();
 
-        yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.DivisoryFailure);
+        yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.DivisoryFailure || myToken != actionToken);
 
-        if (isDead || state != BossState.DivisoryFailure)
+        if (isDead || state != BossState.DivisoryFailure || myToken != actionToken)
         {
-            interruptionActive = false;
+            if (myToken == actionToken) interruptionActive = false;
             yield break;
         }
 
@@ -860,11 +900,14 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
         yield return new WaitForSeconds(0.2f);
 
-        if (state == BossState.DivisoryFailure)
+        if (myToken == actionToken)
         {
-            state = BossState.Idle;
+            if (state == BossState.DivisoryFailure)
+            {
+                state = BossState.Idle;
+            }
+            interruptionActive = false; // Libera el bloqueo
         }
-        interruptionActive = false; // Libera el bloqueo
     }
 
     private bool TryComputeDivisoryWall(out Vector3 wallCenter, out Quaternion wallRotation, out float wallLength)
@@ -915,6 +958,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
     private IEnumerator ExecuteDrownedHandsRoutine(bool usePredictive)
     {
+        int myToken = ++actionToken;
         interruptionActive = true; // Bloquea superposiciones
         state = BossState.DrownedHands;
 
@@ -922,14 +966,15 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         {
             for (int i = 0; i < drownedHitCount; i++)
             {
-                if (isDead) break;
+                if (isDead || myToken != actionToken) break;
 
                 attackExecuteTriggered = false;
+                pendingAnticipationSFX = drownedHandsAnticipationSFX;
                 if (knightAnimCtrl != null) knightAnimCtrl.PlayHandAttack();
 
-                yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.DrownedHands);
+                yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.DrownedHands || myToken != actionToken);
 
-                if (isDead || state != BossState.DrownedHands) break;
+                if (isDead || state != BossState.DrownedHands || myToken != actionToken) break;
 
                 Vector3 target = ComputeHandsTarget(usePredictive);
                 SpawnSoulHand(target);
@@ -940,11 +985,14 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         }
         finally
         {
-            if (state == BossState.DrownedHands)
+            if (myToken == actionToken)
             {
-                state = BossState.Idle;
+                if (state == BossState.DrownedHands)
+                {
+                    state = BossState.Idle;
+                }
+                interruptionActive = false; // Libera el bloqueo
             }
-            interruptionActive = false; // Libera el bloqueo
         }
     }
 
@@ -978,6 +1026,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         if (phaseCollapsed || isDead) yield break;
 
         phaseCollapsed = true;
+        int myToken = ++actionToken;
         interruptionActive = true; // Bloquea superposiciones
         state = BossState.PhaseTransition;
 
@@ -1007,8 +1056,11 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             spawnedObjects.Add(aura);
         }
 
-        state = BossState.Idle;
-        interruptionActive = false; // Libera el bloqueo
+        if (myToken == actionToken)
+        {
+            state = BossState.Idle;
+            interruptionActive = false; // Libera el bloqueo
+        }
     }
 
     private void TickScrapAura()
@@ -1031,6 +1083,11 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
         while (elapsed < duration && !isDead)
         {
+            if (isInHitStun)
+            {
+                break;
+            }
+
             if (isInAnticipation)
             {
                 yield return null;
@@ -1190,10 +1247,13 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
         if (knightAnimCtrl != null) knightAnimCtrl.PauseAnimation();
 
-        if (audioSource != null && anticipationSFX != null)
+        AudioClip sfx = pendingAnticipationSFX != null ? pendingAnticipationSFX : anticipationSFX;
+        pendingAnticipationSFX = null;
+
+        if (audioSource != null && sfx != null)
         {
             audioSource.pitch = anticipationSFXPitch;
-            audioSource.PlayOneShot(anticipationSFX);
+            audioSource.PlayOneShot(sfx);
             audioSource.pitch = 1f;
         }
 
@@ -1213,6 +1273,19 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
         isInAnticipation = false;
         anticipationCoroutine = null;
+    }
+
+    private IEnumerator WaitRespectingAnticipation(float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            if (!isInAnticipation)
+            {
+                elapsed += Time.deltaTime;
+            }
+            yield return null;
+        }
     }
 
     private void CancelAnticipation()
@@ -1245,14 +1318,18 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             || state == BossState.StaticFailureRelease)
             return;
 
+        actionToken++;
+        isInHitStun = true;
+
         if (hitStunCoroutine != null) StopCoroutine(hitStunCoroutine);
         hitStunCoroutine = StartCoroutine(HitStunRoutine());
     }
 
     private IEnumerator HitStunRoutine()
     {
+        int myToken = actionToken; // ya incrementado en HandleDamageTaken
+
         state = BossState.Stunned;
-        isInHitStun = true;
         interruptionActive = true;
 
         CancelAnticipation();
@@ -1270,7 +1347,10 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             audioSource.PlayOneShot(hitStunSFX);
         }
 
+        // HIT STUN: 0.3s donde no inicia ni continúa ningún ataque/movimiento.
         yield return new WaitForSeconds(hitStunDuration);
+
+        // Vuelta a Idle mínimo por 0.8s antes de devolver el control al cerebro.
         yield return new WaitForSeconds(forceIdleDuration);
 
         if (knightAnimCtrl != null) knightAnimCtrl.SetAttackEnded(false);
@@ -1279,8 +1359,11 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         hitStunCoroutine = null;
         hitStunRecoveryCooldown = 0.1f;
 
-        interruptionActive = false;
-        state = BossState.Idle;
+        if (myToken == actionToken)
+        {
+            interruptionActive = false;
+            state = BossState.Idle;
+        }
     }
 
     #endregion

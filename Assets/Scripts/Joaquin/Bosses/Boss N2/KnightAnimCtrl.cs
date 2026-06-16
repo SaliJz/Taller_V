@@ -31,11 +31,15 @@ public class KnightAnimCtrl : MonoBehaviour
     private Vector3 originalLocalPosition;
     private bool originalPositionCaptured = false;
 
+    private IAnimEventHandler ownerEventHandler;
+
     #endregion
 
     private void Awake()
     {
         if (anim == null) anim = GetComponent<Animator>();
+
+        ownerEventHandler = GetComponentInParent<IAnimEventHandler>();
 
         originalLocalPosition = transform.localPosition;
         originalPositionCaptured = true;
@@ -98,6 +102,20 @@ public class KnightAnimCtrl : MonoBehaviour
 
     #endregion
 
+    #region Animation Events Relay
+
+    public void AnimEvent_AnticipationPause()
+    {
+        ownerEventHandler?.HandleAnimEvents("AnimEvent_AnticipationPause");
+    }
+
+    public void AnimEvent_AttackExecute()
+    {
+        ownerEventHandler?.HandleAnimEvents("AnimEvent_AttackExecute");
+    }
+
+    #endregion
+
     #region Anticipation Shake
 
     public void PlayAnticipationShake(float duration)
@@ -108,12 +126,12 @@ public class KnightAnimCtrl : MonoBehaviour
 
     public void StopAnticipationShake()
     {
-        if (shakeCoroutine != null) 
-        { 
-            StopCoroutine(shakeCoroutine); 
-            shakeCoroutine = null; 
+        if (shakeCoroutine != null)
+        {
+            StopCoroutine(shakeCoroutine);
+            shakeCoroutine = null;
         }
-        
+
         if (originalPositionCaptured)
         {
             transform.localPosition = originalLocalPosition;
