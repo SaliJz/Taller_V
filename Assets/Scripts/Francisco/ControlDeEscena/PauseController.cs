@@ -13,7 +13,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     [SerializeField] private GameObject firstSelectedButton;
 
     [Header("SFX / Music Sources")]
-    [Tooltip("Fuente dedicada para reproducir la música o ambientación del menú de pausa.")]
+    [Tooltip("Fuente dedicada para reproducir la mï¿½sica o ambientaciï¿½n del menï¿½ de pausa.")]
     [SerializeField] private AudioSource pauseMusicSource;
     [Tooltip("Fuente dedicada para reproducir SFX (botones, clicks).")]
     [SerializeField] private AudioSource sfxSource;
@@ -62,7 +62,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
             statsManager = FindAnyObjectByType<PlayerStatsManager>();
         }
 
-        // Seguridad: si no se asignó ninguna source, intentamos buscar alguna en el mismo GameObject
+        // Seguridad: si no se asignï¿½ ninguna source, intentamos buscar alguna en el mismo GameObject
         if (pauseMusicSource == null)
         {
             pauseMusicSource = GetComponent<AudioSource>();
@@ -100,7 +100,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     {
         playerControls?.UI.Disable();
 
-        // Si el componente se desactiva mientras está en pausa, restauramos los audio para evitar que queden desactivados permanentemente.
+        // Si el componente se desactiva mientras estï¿½ en pausa, restauramos los audio para evitar que queden desactivados permanentemente.
         if (isPaused)
         {
             Time.timeScale = previousTimeScale;
@@ -138,7 +138,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     public void PauseGame()
     {
         if (isPaused) return;
-        // No pausar si el inventario está abierto
+        // No pausar si el inventario estï¿½ abierto
         if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
 
         DisableOtherAudioSources();
@@ -232,7 +232,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     {
         if (settingsPanel == null)
         {
-            Debug.LogError("[PauseController] No se pudo abrir Settings: 'Settings Panel' no está asignado.");
+            Debug.LogError("[PauseController] No se pudo abrir Settings: 'Settings Panel' no estï¿½ asignado.");
             return;
         }
 
@@ -306,7 +306,8 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         // Antes de hacer fade / carga, nos aseguramos de restaurar los AudioSources.
         RestoreAudioSources();
 
-        if (FadeController.Instance != null && FadeController.Instance.fade != null)
+        // if (FadeController.Instance != null && FadeController.Instance.fade != null)
+        if (FadeController.Instance != null)
         {
             if (pausePanel != null) pausePanel.SetActive(false);
             if (settingsPanel != null) settingsPanel.gameObject.SetActive(false);
@@ -337,7 +338,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         SceneManager.LoadScene(sceneName);
     }
 
-    // Helper para reproducir SFX de click sin interferir con la música de pausa
+    // Helper para reproducir SFX de click sin interferir con la mï¿½sica de pausa
     private void PlayClickSFX()
     {
         if (clickButtonSFX == null) return;
@@ -381,7 +382,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     {
         previousAudioStates.Clear();
 
-        // Incluir AudioSources inactivos también (requiere Unity 2020.1+)
+        // Incluir AudioSources inactivos tambiï¿½n (requiere Unity 2020.1+)
         AudioSource[] allSources = FindObjectsByType<AudioSource>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
         foreach (AudioSource src in allSources)
@@ -399,7 +400,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
             {
                 if (src.isPlaying && src.clip != null)
                 {
-                    // Guardamos la posición de reproducción
+                    // Guardamos la posiciï¿½n de reproducciï¿½n
                     state.timeSamples = src.timeSamples;
                 }
             }
@@ -411,7 +412,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 
             previousAudioStates[src] = state;
 
-            // Desactivar el componente para silenciar (esto también detiene la reproducción)
+            // Desactivar el componente para silenciar (esto tambiï¿½n detiene la reproducciï¿½n)
             try
             {
                 src.enabled = false;
@@ -427,7 +428,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     {
         if (previousAudioStates == null || previousAudioStates.Count == 0) return;
 
-        // Hacemos una copia de las claves para evitar problemas si la colección cambia
+        // Hacemos una copia de las claves para evitar problemas si la colecciï¿½n cambia
         var keys = new List<AudioSource>(previousAudioStates.Keys);
         foreach (AudioSource src in keys)
         {
@@ -440,12 +441,12 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
                 // Restaurar el enabled tal como estaba
                 src.enabled = prev.enabled;
 
-                // Si antes estaba reproduciéndose, y ahora el componente y el GameObject están activos, reanudar
+                // Si antes estaba reproduciï¿½ndose, y ahora el componente y el GameObject estï¿½n activos, reanudar
                 if (prev.wasPlaying)
                 {
                     if (src.enabled && src.gameObject.activeInHierarchy && src.clip != null)
                     {
-                        // Restauramos la posición y reanudamos
+                        // Restauramos la posiciï¿½n y reanudamos
                         try
                         {
                             src.timeSamples = prev.timeSamples;
@@ -678,7 +679,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 //    {
 //        if (settingsPanel == null)
 //        {
-//            Debug.LogError("[PauseController] No se pudo abrir Settings: 'Settings Panel' no está asignado.");
+//            Debug.LogError("[PauseController] No se pudo abrir Settings: 'Settings Panel' no estï¿½ asignado.");
 //            return;
 //        }
 

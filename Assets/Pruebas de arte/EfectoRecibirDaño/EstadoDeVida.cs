@@ -1,8 +1,8 @@
 using UnityEngine;
-
-public class EstadoDeVida : MonoBehaviour
+public class EstadoDeVida : FullScreenEffectsBase
 {
-    public Material estadoDeVidaMaterial;
+
+    #region Variables Shader
 
     private const string PROP_CONDICION_DAÑO = "_Condicion";
     private const string PROP_TRANSPARENCIA = "_Transparencia";
@@ -16,6 +16,10 @@ public class EstadoDeVida : MonoBehaviour
     private const string CONDICION_BERSERKER = "_CondicionBerserker";
     private const string COLOR_BERSERKER = "_ColorBerseker";
     private const string COLOR_VENAS = "_ColorVenas";
+
+    #endregion
+
+    #region Inspector Feedback de Daño
 
     [Header("Recibir Daño")]
     [Tooltip("Activa efecto de primera herida (Capa1). Se auto-desactiva al terminar.")]
@@ -41,6 +45,10 @@ public class EstadoDeVida : MonoBehaviour
     private bool _dañoProcesando;
     private float _dañoElapsed;
 
+    #endregion
+
+    #region Feedback Baja Vida
+
     [Header("Vida Baja")]
     [Tooltip("Activa o desactiva el efecto de vida baja.")]
     public bool VidaBajaActiva;
@@ -57,6 +65,10 @@ public class EstadoDeVida : MonoBehaviour
     [Range(0f, 0.4f)]
     public float LimiteDither = 0.3f;
 
+    #endregion
+
+    #region Feedback Cambio de Etapa
+
     private bool _prevVidaBajaActiva;
 
     [Header("Pixeleado")]
@@ -68,6 +80,10 @@ public class EstadoDeVida : MonoBehaviour
     public float SizePixel = 150f;
 
     private bool _prevPixeladoActivo;
+
+    #endregion
+
+    #region Feedback Berserker
 
     [Header("Berserker")]
     [Tooltip("Activa o desactiva el efecto Berserker. El shader sube de 0 a 1 o baja de 1 a 0.")]
@@ -97,14 +113,22 @@ public class EstadoDeVida : MonoBehaviour
     private float _colorBerserkerElapsed;
     private Color _colorBerserkerActual;
 
-    private void Start()
+    #endregion
+
+    #region Unity Lifecycle
+
+    protected override void Start()
     {
-        if (estadoDeVidaMaterial == null)
-        {
-            Debug.LogError("[EstadoDeVida] No hay Material asignado en estadoDeVidaMaterial.", this);
-            enabled = false;
-            return;
-        }
+        // if (estadoDeVidaMaterial == null))
+        // {
+        //     Debug.LogError("[EstadoDeVida] No hay Material asignado en estadoDeVidaMaterial.", this);
+        //     enabled = false;
+        //     return;
+        // }
+
+        base.Start();
+
+        if(!enabled) return;
 
         SetFloat(PROP_CONDICION_DAÑO, 0f);
         SetFloat(PROP_TRANSPARENCIA, Transparencia);
@@ -138,6 +162,8 @@ public class EstadoDeVida : MonoBehaviour
         TransicionColorBerserker = false;
     }
 
+    
+
     private void Update()
     {
         HandleDaño();
@@ -150,6 +176,11 @@ public class EstadoDeVida : MonoBehaviour
         SetFloat(PROP_LIMITE_DITHER, LimiteDither);
         SetFloat(PROP_SIZE_PIXEL, SizePixel);
     }
+
+    #endregion
+
+
+    #region Metodos FB Daño
 
     private void HandleDaño()
     {
@@ -206,6 +237,10 @@ public class EstadoDeVida : MonoBehaviour
         SetFloat(PROP_INTENSIDAD_POSTERIZADO, Posterizado);
     }
 
+    #endregion
+
+    #region Metodos Vida Baja
+
     private void HandleVidaBaja()
     {
         if (VidaBajaActiva == _prevVidaBajaActiva) return;
@@ -219,6 +254,10 @@ public class EstadoDeVida : MonoBehaviour
         VidaBajaActiva = active;
     }
 
+    #endregion
+
+    #region Metodos Pixelizado
+
     private void HandlePixelado()
     {
         if (PixeladoActivo == _prevPixeladoActivo) return;
@@ -226,6 +265,10 @@ public class EstadoDeVida : MonoBehaviour
         SetFloat(PROP_CONDICION_PIXEL, PixeladoActivo ? 100f : 0f);
         _prevPixeladoActivo = PixeladoActivo;
     }
+
+    #endregion
+
+    #region Metodos Berserker
 
     private void HandleBerserker()
     {
@@ -284,14 +327,6 @@ public class EstadoDeVida : MonoBehaviour
         return colorVenas;
     }
 
-    private void SetFloat(string property, float value)
-    {
-        estadoDeVidaMaterial.SetFloat(property, value);
-    }
-
-    private void SetColor(string property, Color value)
-    {
-        estadoDeVidaMaterial.SetColor(property, value);
-    }
+    #endregion
 }
 

@@ -20,7 +20,8 @@ public class PassScene : MonoBehaviour
 
     private IEnumerator FadeAndReloadScene(string sceneName)
     {
-        if (FadeController.Instance != null && FadeController.Instance.fade != null)
+        // if (FadeController.Instance != null && FadeController.Instance.fade != null)
+        if (FadeController.Instance != null)
         {
             yield return StartCoroutine(FadeController.Instance.FadeOut());
         }
