@@ -139,6 +139,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9f6d686c00f33944a8d939130c4301dd, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7344770113995066255}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9f6d686c00f33944a8d939130c4301dd, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7798179191978226520}
   m_SourcePrefab: {fileID: 100100000, guid: 9f6d686c00f33944a8d939130c4301dd, type: 3}
 --- !u!1 &2778009261814160037 stripped
 GameObject:
@@ -157,3 +160,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2dc043c6a0bc96468fde1c2f38c2253, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &7798179191978226520
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2778009261814160037}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0aac80912e5b0246b0c4161d40e77a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowPrefab: {fileID: 4558005614469577162, guid: 5486048298c515f41913b1617b0f5cc5, type: 3}
+  GroundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  shadowPosition: {fileID: 0}
+  shadowScale: 2
+  spawnYoffset: 0.02
+  checkInterval: 0.1
+  checkShadows: 0
