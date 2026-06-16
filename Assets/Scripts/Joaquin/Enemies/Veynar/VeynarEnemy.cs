@@ -209,6 +209,8 @@ public class VeynarEnemy : MonoBehaviour
 
     private void SpawnHive()
     {
+        animCtrl?.PlaySpawning();
+
         Vector2 randomCircle = Random.insideUnitCircle.normalized * Random.Range(minHiveSpawnRadius, maxHiveSpawnRadius);
         Vector3 spawnPosition = transform.position + new Vector3(randomCircle.x, 0, randomCircle.y);
         spawnPosition.y = -0.4f;
@@ -266,6 +268,8 @@ public class VeynarEnemy : MonoBehaviour
         // Camuflaje = 1: completamente oculto.
         animCtrl?.UpdateCamou(1.0f);
 
+        if (animCtrl != null) animCtrl.isInvulnerable = true;
+
         Debug.Log("[VeynarEnemy] Estado inicial aplicado: Invulnerable (100%) y oculto (camou = 1).");
     }
 
@@ -277,9 +281,11 @@ public class VeynarEnemy : MonoBehaviour
     {
         if (!hasLostFirstHive) return;
 
+        activeHives.RemoveAll(hive => hive == null);
+
         int currentHives = activeHives.Count;
         float statePercent = (maxActiveHives - currentHives) / (float)maxActiveHives;
-        float damageReduction = 1.0f - statePercent; // 1 = máx reducción/camuflaje
+        float damageReduction = 1.0f - statePercent; // 1 = max reducción/camuflaje
         float visibility = statePercent; // 1 = totalmente visible
 
         if (enemyHealth != null)
@@ -288,6 +294,8 @@ public class VeynarEnemy : MonoBehaviour
         }
 
         animCtrl?.UpdateCamou(damageReduction);
+
+        if (animCtrl != null) animCtrl.isInvulnerable = (damageReduction > 0f);
 
         // Teletransporte al volver a tener el máximo de colmenas activas.
         if (currentHives == maxActiveHives && previousHiveCount < maxActiveHives)
@@ -370,6 +378,8 @@ public class VeynarEnemy : MonoBehaviour
 
         StopAllCoroutines();
         PlaySFX(deathSFX);
+
+        animCtrl?.PlayDeath();
 
         foreach (var hive in new List<Hive>(activeHives))
         {
