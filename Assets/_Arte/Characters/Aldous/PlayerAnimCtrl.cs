@@ -180,6 +180,18 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         return state == PlayerState.idle || state == PlayerState.run;
     }
 
+    public void ResetToGameplayState()
+    {
+        isForcedAnim = false;
+        currentPriority = AnimPriority.none;
+
+        damageActive = false;
+        isDashing = false;
+        isBlocking = false;
+
+        PlayState(PlayerState.idle, AnimPriority.locomotion, true);
+    }
+
     #endregion
 
     #region Public Actions

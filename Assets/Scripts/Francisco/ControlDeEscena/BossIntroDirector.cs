@@ -1,6 +1,8 @@
 using System.Collections;
-using UnityEngine;
 using Unity.Cinemachine;
+using UnityEngine;
+using static BaseAnimCtrl<PlayerAnimCtrl.PlayerState>;
+using static PlayerAnimCtrl;
 
 public class BossIntroDirector : MonoBehaviour
 {
@@ -54,6 +56,8 @@ public class BossIntroDirector : MonoBehaviour
         isIntroRunning = true;
         IsPlayingCutscene = true;
 
+        PlayerAnimCtrl playerAnimator = playerTransform.GetComponentInChildren<PlayerAnimCtrl>();
+
         if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen)
         {
             InventoryUIManager.Instance.CloseInventory();
@@ -68,15 +72,15 @@ public class BossIntroDirector : MonoBehaviour
                 yield return null;
             }
 
-            Animator playerAnimator = playerTransform.GetComponentInChildren<Animator>();
             if (playerAnimator != null)
             {
-                playerAnimator.SetFloat("Speed", 0f);
-                playerAnimator.Play("Idle");
+                playerAnimator.SetInputAxes(0f, 0f);
+
+                playerAnimator.PlayState(PlayerState.idle, AnimPriority.dash, true);
             }
         }
 
-        DisablePlayerLogicScripts(playerTransform);
+        DisablePlayerControls(playerTransform, false);
         FindActiveCinemachineCamera();
         DisableBossLogicScripts();
 
@@ -133,11 +137,16 @@ public class BossIntroDirector : MonoBehaviour
         }
 
         EnableBossLogicScripts();
-        EnablePlayerLogicScripts(playerTransform);
+        DisablePlayerControls(playerTransform, true);
 
         if (introSequence != null)
         {
             introSequence.RestoreControl();
+        }
+
+        if (playerAnimator != null)
+        {
+            playerAnimator.ResetToGameplayState();
         }
 
         isIntroRunning = false;
@@ -212,31 +221,37 @@ public class BossIntroDirector : MonoBehaviour
         }
     }
 
-    private void DisablePlayerLogicScripts(Transform playerTransform)
+    private void DisablePlayerControls(Transform playerTransform, bool state)
     {
         if (playerTransform == null) return;
 
-        MonoBehaviour[] scripts = playerTransform.GetComponents<MonoBehaviour>();
+        MonoBehaviour[] scripts = playerTransform.GetComponentsInChildren<MonoBehaviour>();
         foreach (MonoBehaviour script in scripts)
         {
-            if (script == null || script.GetType().Namespace?.StartsWith("UnityEngine") == true)
+            if (script == null || script == this)
                 continue;
 
-            script.enabled = false;
+            if (script.GetType().Namespace?.StartsWith("UnityEngine") == true)
+                continue;
+
+            if (script is PlayerAnimCtrl ||
+                script.GetType().Name.Contains("SpriteAnimator") ||
+                script.GetType().Name.Contains("AnimationEvent"))
+            {
+                continue;
+            }
+
+            string scriptName = script.GetType().Name;
+            if (scriptName.Contains("Cinemachine") || scriptName.Contains("Feedback") || scriptName.Contains("Distortion"))
+                continue;
+
+            script.enabled = state;
         }
-    }
 
-    private void EnablePlayerLogicScripts(Transform playerTransform)
-    {
-        if (playerTransform == null) return;
-
-        MonoBehaviour[] scripts = playerTransform.GetComponents<MonoBehaviour>();
-        foreach (MonoBehaviour script in scripts)
+        CharacterController cc = playerTransform.GetComponent<CharacterController>();
+        if (cc != null)
         {
-            if (script == null || script.GetType().Namespace?.StartsWith("UnityEngine") == true)
-                continue;
-
-            script.enabled = true;
+            cc.enabled = state;
         }
     }
 

@@ -66,7 +66,12 @@ public class TransitionInteractive : MonoBehaviour
 
         if (playerAnimCtrl != null)
         {
-            playerAnimCtrl.enabled = false;
+            playerAnimCtrl.SetInputAxes(0f, 0f);
+            playerAnimCtrl.PlayState(
+                PlayerAnimCtrl.PlayerState.idle,
+                BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.dash,
+                true
+            );
         }
 
         float elapsedTime = 0f;
@@ -85,64 +90,49 @@ public class TransitionInteractive : MonoBehaviour
                nextFadeIdx < fadeEvents.Count ||
                nextAnimIdx < animationEvents.Count)
         {
-            while (nextAnimIdx < animationEvents.Count &&
-                   elapsedTime >= animationEvents[nextAnimIdx].timeTrigger)
+            while (nextAnimIdx < animationEvents.Count && elapsedTime >= animationEvents[nextAnimIdx].timeTrigger)
             {
                 var ev = animationEvents[nextAnimIdx];
-
                 if (ev.animator != null && !string.IsNullOrEmpty(ev.paramName))
                     ev.animator.SetBool(ev.paramName, ev.value);
-
                 nextAnimIdx++;
             }
 
-            while (nextFadeIdx < fadeEvents.Count &&
-                   elapsedTime >= fadeEvents[nextFadeIdx].timeTrigger)
+            while (nextFadeIdx < fadeEvents.Count && elapsedTime >= fadeEvents[nextFadeIdx].timeTrigger)
             {
                 if (FadeController.Instance != null)
                     yield return StartCoroutine(FadeController.Instance.FadeOut(null, null));
-
                 nextFadeIdx++;
             }
 
-            if (nextPlatformIdx < platformNodes.Count &&
-                elapsedTime >= platformNodes[nextPlatformIdx].timeTrigger)
+            if (nextPlatformIdx < platformNodes.Count && elapsedTime >= platformNodes[nextPlatformIdx].timeTrigger)
             {
                 PlatformNode currentPlatform = platformNodes[nextPlatformIdx];
-
                 if (!isPlayerAttached)
                 {
                     playerTransform.SetParent(transform);
                     isPlayerAttached = true;
                 }
-
                 StartCoroutine(MovePlatformRoutine(currentPlatform));
                 nextPlatformIdx++;
             }
 
             if (!playerMovementFinished &&
-                nextPlayerIdx < playerNodes.Count &&
-                elapsedTime >= playerNodes[nextPlayerIdx].timeTrigger)
+                 nextPlayerIdx < playerNodes.Count &&
+                 elapsedTime >= playerNodes[nextPlayerIdx].timeTrigger)
             {
                 PlayerNode currentPlayer = playerNodes[nextPlayerIdx];
-
                 Vector3 startPos = playerTransform.position;
-
-                Vector3 targetPos = currentPlayer.nodeTransform != null
-                    ? currentPlayer.nodeTransform.position
-                    : startPos;
+                Vector3 targetPos = currentPlayer.nodeTransform != null ? currentPlayer.nodeTransform.position : startPos;
 
                 if (!currentPlayer.useYAxis)
                     targetPos.y = startPos.y;
 
-                float speed = currentPlayer.speed > 0f
-                    ? currentPlayer.speed
-                    : 3f;
+                float speed = currentPlayer.speed > 0f ? currentPlayer.speed : 3f;
 
                 while (Vector3.Distance(playerTransform.position, targetPos) > 0.05f)
                 {
                     elapsedTime += Time.deltaTime;
-
                     Vector3 prevPos = playerTransform.position;
 
                     playerTransform.position = Vector3.MoveTowards(
@@ -156,27 +146,36 @@ public class TransitionInteractive : MonoBehaviour
                     if (moveDir.sqrMagnitude > 0.001f)
                     {
                         moveDir.Normalize();
-
-                        playerTransform.rotation =
-                            Quaternion.LookRotation(moveDir, Vector3.up);
+                        playerTransform.rotation = Quaternion.LookRotation(moveDir, Vector3.up);
 
                         SetAnimDir(moveDir);
 
                         playerAnimCtrl?.PlayState(
                             PlayerAnimCtrl.PlayerState.run,
-                            BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.locomotion,
+                            BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.dash,
                             false);
                     }
 
-                    ProcessTimelineTriggers(
-                        ref nextAnimIdx,
-                        ref nextFadeIdx,
-                        elapsedTime);
-
+                    ProcessTimelineTriggers(ref nextAnimIdx, ref nextFadeIdx, elapsedTime);
                     yield return null;
                 }
 
                 playerTransform.position = targetPos;
+
+                if (nextPlayerIdx == playerNodes.Count - 1)
+                {
+                    if (playerAnimCtrl != null)
+                    {
+                        playerAnimCtrl.SetInputAxes(0f, 0f);
+                        playerAnimCtrl.UpdateDirection(0f, 0f);
+
+                        playerAnimCtrl.PlayState(
+                            PlayerAnimCtrl.PlayerState.idle,
+                            BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.dash,
+                            true 
+                        );
+                    }
+                }
 
                 nextPlayerIdx++;
 
@@ -186,8 +185,11 @@ public class TransitionInteractive : MonoBehaviour
                 }
             }
 
-            elapsedTime += Time.deltaTime;
-            yield return null;
+            if (playerMovementFinished || nextPlayerIdx >= playerNodes.Count || elapsedTime < playerNodes[nextPlayerIdx].timeTrigger)
+            {
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
         }
 
         if (playerTransform != null && playerTransform.parent == transform)
@@ -197,14 +199,8 @@ public class TransitionInteractive : MonoBehaviour
 
         if (playerAnimCtrl != null)
         {
-            playerAnimCtrl.enabled = true;
-
             playerAnimCtrl.SetInputAxes(0f, 0f);
-
-            playerAnimCtrl.PlayState(
-                PlayerAnimCtrl.PlayerState.idle,
-                BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.locomotion,
-                true);
+            playerAnimCtrl.ResetToGameplayState();
         }
 
         if (playerMovement != null)
@@ -293,18 +289,6 @@ public class TransitionInteractive : MonoBehaviour
     #endregion
 
     #region Lógica Interna
-
-    private void ForcePlayerIdle()
-    {
-        if (playerAnimCtrl == null) return;
-
-        playerAnimCtrl.SetInputAxes(0f, 0f);
-        playerAnimCtrl.UpdateDirection(0f, 0f);
-        playerAnimCtrl.PlayState(
-            PlayerAnimCtrl.PlayerState.idle,
-            BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.locomotion
-        );
-    }
 
     private void ProcessTimelineTriggers(ref int nextAnimIdx, ref int nextFadeIdx, float currentElapsedTime)
     {
