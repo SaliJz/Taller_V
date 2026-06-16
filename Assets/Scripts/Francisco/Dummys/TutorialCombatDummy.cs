@@ -117,7 +117,7 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
     [SerializeField] private float rotationSpeed = 10f;
     [SerializeField] private float rotationYOffset = 0f;
     private Coroutine rotationCoroutine;
-    private Transform playerTransform;
+    [SerializeField] private Transform playerTransform;
     private Quaternion initialRotation;
 
     #endregion
@@ -428,20 +428,28 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
 
     private IEnumerator RotateTowardsPlayer()
     {
-        if (transformToRotate == null || playerTransform == null) yield break;
+        if (transformToRotate == null || playerTransform == null)
+        {
+            rotationCoroutine = null;
+            yield break;
+        }
 
         Vector3 direction = (playerTransform.position - transformToRotate.position).normalized;
         direction.y = 0;
 
-        if (direction == Vector3.zero) yield break;
+        if (direction == Vector3.zero)
+        {
+            rotationCoroutine = null;
+            yield break;
+        }
 
         Quaternion targetRotation = Quaternion.LookRotation(direction);
         targetRotation *= Quaternion.Euler(0, rotationYOffset, 0);
 
         float elapsedTime = 0f;
-        float maxRotationTime = 2f;
+        float maxRotationTime = 0.4f;  
 
-        while (Quaternion.Angle(transformToRotate.rotation, targetRotation) > 0.1f && elapsedTime < maxRotationTime)
+        while (Quaternion.Angle(transformToRotate.rotation, targetRotation) > 1.0f && elapsedTime < maxRotationTime)
         {
             transformToRotate.rotation = Quaternion.Slerp(
                 transformToRotate.rotation,
