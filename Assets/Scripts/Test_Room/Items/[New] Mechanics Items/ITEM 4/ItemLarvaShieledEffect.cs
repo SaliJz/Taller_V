@@ -26,7 +26,7 @@ public class ItemLarvaShieledEffect : ItemEffectBase
     {
         Vector3 spawnPos = enemy.transform.position;
 
-        if (damageType != AttackDamageType.Melee)
+        if (damageType == AttackDamageType.Ranged)
         {
             for (int i = 0; i < 2; i++)
             {
@@ -48,9 +48,13 @@ public class ItemLarvaShieledEffect : ItemEffectBase
         larva.transform.rotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
 
         if (larva.TryGetComponent<ResurrectedLarva>(out var res))
+        {
             res.Initialize(damageValue);
+        }
         else if (larva.TryGetComponent<CurativeLarva>(out var cur))
+        {
             cur.Initialize(damageValue);
+        }
     }
     #endregion
 }

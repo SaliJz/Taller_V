@@ -25,6 +25,8 @@ public class TripleLarvaImpactEffect : ItemEffectBase
     #region Event Handlers
     private void HandleKilledEnemy(GameObject enemy, AttackDamageType damageType)
     {
+        if (damageType == AttackDamageType.Nothing) return;
+
         Vector3 spawnPos = enemy.transform.position;
 
         if (damageType == AttackDamageType.Melee)
