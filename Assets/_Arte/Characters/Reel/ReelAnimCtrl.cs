@@ -213,8 +213,8 @@ public class ReelAnimCtrl : MonoBehaviour
 
         while (infinite || elapsed < duration)
         {
-            Debug.Log("shakie shakie ñam ñam");
-            Debug.Log($"shakie shakie ñam ñam - elapsed: {elapsed}");
+            // Debug.Log("shakie shakie ñam ñam");
+            // Debug.Log($"shakie shakie ñam ñam - elapsed: {elapsed}");
 
             float offsetX = Mathf.Sin(elapsed * shakeFrequency * Mathf.PI * 2f) * intensity;
             float offsetZ = Mathf.Cos(elapsed * shakeFrequency * Mathf.PI * 2.3f) * intensity * 0.6f;
