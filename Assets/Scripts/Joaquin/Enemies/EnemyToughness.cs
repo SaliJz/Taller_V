@@ -102,7 +102,7 @@ public class EnemyToughness : MonoBehaviour
 
     private void Awake()
     {
-        enemyHealth = GetComponent<EnemyHealth>();
+        if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
         if (enemyHealth == null)
         {
             ReportDebug("EnemyHealth no encontrado. EnemyToughnessSystem requiere EnemyHealth.", 3);

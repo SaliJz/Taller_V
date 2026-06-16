@@ -4,46 +4,70 @@ using UnityEngine;
 
 /// <summary>
 /// Mano que emerge del suelo para el ataque "Manos de los Ahogados".
+/// Controlador principal lógico de la mano.
+/// Delega el apartado visual a Boss2_HandAttackCtrl.
 /// </summary>
 public class SoulHand : MonoBehaviour
 {
     #region Inspector - References
 
+    [Header("Referencias")]
+    [Tooltip("El script que controla la animación visual, situado en el objeto hijo.")]
+    [SerializeField] private Boss2_HandAttackCtrl visualController;
+
     [Header("VFX")]
+    [Tooltip("El prefab del efecto de explosion")]
     [SerializeField] private GameObject explosionVFXPrefab;
 
     #endregion
 
-    #region Inspector - Dano
+    #region Inspector - Daño
 
     [Header("Dano")]
+    [Tooltip("El daño que inflige la mano al jugador.")]
     [SerializeField] private float damage = 15f;
+    [Tooltip("El radio de detección para infligir daño al jugador.")]
     [SerializeField] private float radius = 1.5f;
-
-    #endregion
-
-    #region Inspector - Tiempos de Animacion
-
-    [Header("Tiempos de animacion")]
-    [SerializeField] private float emergeDuration = 0.5f; // Sube del suelo
-    [SerializeField] private float activeWindow = 0.6f; // Ventana de impacto
-    [SerializeField] private float retreatDuration = 0.3f; // Baja si no conecta
 
     #endregion
 
     #region Internal State
 
     private bool hasExploded;
-
     private readonly List<GameObject> vfxInstances = new();
 
     #endregion
 
     #region Unity Lifecycle
 
+    private void Awake()
+    {
+        if (visualController == null)
+        {
+            visualController = GetComponentInChildren<Boss2_HandAttackCtrl>();
+        }
+    }
+
+    private void OnEnable()
+    {
+        if (visualController != null)
+        {
+            visualController.OnAttack.AddListener(EvaluateDamage);
+            visualController.OnSequenceEnd.AddListener(HandleSequenceEnd);
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (visualController != null)
+        {
+            visualController.OnAttack.RemoveListener(EvaluateDamage);
+            visualController.OnSequenceEnd.RemoveListener(HandleSequenceEnd);
+        }
+    }
+
     private void OnDestroy()
     {
-        StopAllCoroutines();
         foreach (var vfx in vfxInstances)
         {
             if (vfx != null) Destroy(vfx);
@@ -55,59 +79,48 @@ public class SoulHand : MonoBehaviour
 
     #region Initialization
 
-    /// <summary>
-    /// Inicializa la mano con dano y radio, luego inicia la secuencia de emergencia.
-    /// </summary>
     public void Initialize(float damageAmount, float grabRadius)
     {
         damage = damageAmount;
         radius = grabRadius;
-        StartCoroutine(EmergenceRoutine());
+
+        if (visualController != null)
+        {
+            visualController.TriggerAttackSequence();
+        }
+        else
+        {
+            Debug.LogError("SoulHand no tiene referenciado su Boss2_HandAttackCtrl.");
+        }
     }
 
     #endregion
 
-    #region Core Logic
+    #region Event Handlers
 
-    private IEnumerator EmergenceRoutine()
+    private void EvaluateDamage()
     {
-        // 1. Emerge desde el suelo
-        float elapsed = 0f;
-        while (elapsed < emergeDuration)
+        Collider[] hits = Physics.OverlapSphere(transform.position, radius);
+        foreach (var hit in hits)
         {
-            transform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * radius, elapsed / emergeDuration);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-        transform.localScale = Vector3.one * radius;
+            if (!hit.CompareTag("Player")) continue;
 
-        // 2. Ventana de impacto activa
-        float activeTimer = 0f;
-        while (activeTimer < activeWindow)
-        {
-            Collider[] hits = Physics.OverlapSphere(transform.position, radius);
-            foreach (var hit in hits)
-            {
-                if (!hit.CompareTag("Player")) continue;
-                TriggerExplosion(hit.gameObject);
-                yield break;
-            }
-            activeTimer += Time.deltaTime;
-            yield return null;
+            TriggerExplosion(hit.gameObject);
+            break;
         }
-
-        // 3. Retrocede si no conecto
-        elapsed = 0f;
-        Vector3 currentScale = transform.localScale;
-        while (elapsed < retreatDuration)
-        {
-            transform.localScale = Vector3.Lerp(currentScale, Vector3.zero, elapsed / retreatDuration);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        Destroy(gameObject);
     }
+
+    private void HandleSequenceEnd()
+    {
+        if (!hasExploded)
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    #endregion
+
+    #region Core Logic & VFX
 
     private void TriggerExplosion(GameObject player)
     {
@@ -117,12 +130,9 @@ public class SoulHand : MonoBehaviour
         player.GetComponent<PlayerHealth>()?.TakeDamage(damage);
 
         SpawnExplosionVFX();
+
         Destroy(gameObject, 0.5f);
     }
-
-    #endregion
-
-    #region Visual Effects
 
     private void SpawnExplosionVFX()
     {
