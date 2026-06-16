@@ -1318,6 +1318,8 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             || state == BossState.StaticFailureRelease)
             return;
 
+        if (hitStunDuration <= 0) return;
+
         actionToken++;
         isInHitStun = true;
 
