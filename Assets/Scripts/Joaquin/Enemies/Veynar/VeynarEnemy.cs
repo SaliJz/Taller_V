@@ -281,9 +281,11 @@ public class VeynarEnemy : MonoBehaviour
     {
         if (!hasLostFirstHive) return;
 
+        activeHives.RemoveAll(hive => hive == null);
+
         int currentHives = activeHives.Count;
         float statePercent = (maxActiveHives - currentHives) / (float)maxActiveHives;
-        float damageReduction = 1.0f - statePercent; // 1 = máx reducción/camuflaje
+        float damageReduction = 1.0f - statePercent; // 1 = max reducción/camuflaje
         float visibility = statePercent; // 1 = totalmente visible
 
         if (enemyHealth != null)
