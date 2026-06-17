@@ -472,6 +472,50 @@ public partial class PlayerStatsManager : MonoBehaviour
         }
     }
 
+    private float GetStatMinimum(StatType type)
+    {
+        switch (type)
+        {
+            case StatType.MaxHealth:
+            case StatType.MeleeAttackDamage:
+            case StatType.ShieldAttackDamage:
+            case StatType.AttackDamage:
+            case StatType.ShieldMaxRebounds:
+            case StatType.ShieldMaxDistance:
+                return 1f;
+
+            case StatType.MoveSpeed:
+            case StatType.MeleeAttackSpeed:
+            case StatType.AttackSpeed:
+            case StatType.ShieldSpeed:
+            case StatType.ShieldReturnSpeed:
+            case StatType.DashRangeMultiplier:
+            case StatType.KnockbackReceived:
+            case StatType.MeleeComboDisplacement:
+            case StatType.StaminaConsumption:
+            case StatType.DashCooldownPost:
+            case StatType.DamageTaken:
+                return 0.1f;
+
+            case StatType.MeleeRadius:
+            case StatType.ShieldReboundRadius:
+            case StatType.ShieldPushForce:
+            case StatType.LuckStack:
+            case StatType.EssenceCostReduction:
+            case StatType.ShopPriceReduction:
+            case StatType.HealthPerRoomRegen:
+            case StatType.CriticalChance:
+            case StatType.CriticalDamageMultiplier:
+            case StatType.LifestealOnKill:
+            case StatType.HealthDrainAmount:
+            case StatType.Gravity:
+                return 0f;
+
+            default:
+                return 0f;
+        }
+    }
+
     /// <summary>
     /// Aplica un buff/debuff al stat especificado.
     /// </summary>
@@ -499,19 +543,17 @@ public partial class PlayerStatsManager : MonoBehaviour
             modifierValue = baseStats[type] * percentageFactor;
         }
 
-        // registra valor previo para calcular delta visual
         float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
 
-        currentStats[type] += modifierValue;
+        currentStats[type] = Mathf.Max(prev + modifierValue, GetStatMinimum(type));
 
         float delta = currentStats[type] - prev;
         MarkVisualStateFromDelta(type, delta);
 
         if (float.IsNaN(currentStats[type]) || float.IsInfinity(currentStats[type]))
         {
-            Debug.LogError($"[PlayerStatsManager] Stat '{type}' result en un valor invlido ({currentStats[type]}). Se ha reseteado al valor base.");
+            Debug.LogError($"[PlayerStatsManager] Stat '{type}' resultó en un valor inválido ({currentStats[type]}). Se ha reseteado al valor base.");
             currentStats[type] = baseStats.ContainsKey(type) ? baseStats[type] : 0f;
-            // Al resetear por seguridad, ajustamos visual a neutro
             statVisualState[type] = 0;
         }
 
@@ -541,14 +583,14 @@ public partial class PlayerStatsManager : MonoBehaviour
 
         float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;
 
-        currentStats[type] += modifierValue;
+        currentStats[type] = Mathf.Max(prev + modifierValue, GetStatMinimum(type));
 
         float delta = currentStats[type] - prev;
         MarkVisualStateFromDelta(type, delta);
 
         if (float.IsNaN(currentStats[type]) || float.IsInfinity(currentStats[type]))
         {
-            Debug.LogError($"[PlayerStatsManager] Stat permanente '{type}' result en un valor invlido ({currentStats[type]}). Se ha reseteado al valor base.");
+            Debug.LogError($"[PlayerStatsManager] Stat permanente '{type}' resultó en un valor inválido ({currentStats[type]}). Se ha reseteado al valor base.");
             currentStats[type] = baseStats.ContainsKey(type) ? baseStats[type] : 0f;
             statVisualState[type] = 0;
         }
