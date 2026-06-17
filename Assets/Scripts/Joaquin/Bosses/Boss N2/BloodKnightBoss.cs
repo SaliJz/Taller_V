@@ -1329,7 +1329,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
     private IEnumerator HitStunRoutine()
     {
-        int myToken = actionToken; // ya incrementado en HandleDamageTaken
+        int myToken = actionToken;
 
         state = BossState.Stunned;
         interruptionActive = true;
@@ -1349,10 +1349,8 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             audioSource.PlayOneShot(hitStunSFX);
         }
 
-        // HIT STUN: 0.3s donde no inicia ni continúa ningún ataque/movimiento.
         yield return new WaitForSeconds(hitStunDuration);
 
-        // Vuelta a Idle mínimo por 0.8s antes de devolver el control al cerebro.
         yield return new WaitForSeconds(forceIdleDuration);
 
         if (knightAnimCtrl != null) knightAnimCtrl.SetAttackEnded(false);

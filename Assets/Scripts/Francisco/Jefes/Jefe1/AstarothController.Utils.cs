@@ -273,6 +273,12 @@ public partial class AstarothController
             Gizmos.DrawSphere(_roomCenter, 0.5f);
             Gizmos.DrawWireSphere(_roomCenter, _roomMaxRadius);
         }
+
+        //if (_stompPullRadius > 0)
+        //{
+        //    Gizmos.color = Color.green;
+        //    Gizmos.DrawSphere(transform.position, _stompPullRadius);
+        //}
     }
 
     private void OnDrawGizmosSelected()
