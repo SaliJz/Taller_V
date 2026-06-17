@@ -112,6 +112,12 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
     [SerializeField] private float divisoryWallThickness = 1.2f;
     [SerializeField] private float divisoryWallHeight = 3.5f;
     [SerializeField] private float divisoryRayMaxLength = 40f;
+    [Tooltip("Velocidad de reposicionamiento al centro de la sala antes del golpe.")]
+    [SerializeField] private float divisoryRepositionSpeed = 9f;
+    [Tooltip("Radio NavMesh de muestreo para el centro de sala.")]
+    [SerializeField] private float divisoryNavSampleRadius = 3f;
+    [Tooltip("Distancia al punto central a partir de la cual se considera 'llegado'.")]
+    [SerializeField] private float divisoryArrivalThreshold = 0.6f;
     #endregion
 
     #region Inspector - Manos de los Ahogados
@@ -255,6 +261,9 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
     private AudioClip pendingAnticipationSFX;
 
     private int actionToken = 0;
+
+    private Vector3 cachedRoomCenter;
+    private bool roomCenterCached = false;
 
     #endregion
 
@@ -425,8 +434,16 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             {
                 state = BossState.Patrol;
                 SetWalking(false);
+                roomCenterCached = false; // invalidar si sale del rango
                 yield return null;
                 continue;
+            }
+
+            // Cachear el centro de sala una sola vez al entrar en aggro.
+            if (!roomCenterCached)
+            {
+                cachedRoomCenter = ComputeRoomCenter();
+                roomCenterCached = true;
             }
 
             state = BossState.Review;
@@ -509,12 +526,14 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
         if (dist > divisoryTriggerDist && Time.time >= nextDivisoryTime)
         {
+            interruptionActive = true;
             StartCoroutine(ExecuteDivisoryFailureRoutine());
             return;
         }
 
         if (dist <= scrapRamActiveDist && (Time.time - lastDamageInRangeTime) >= scrapRamNoDamageWindow)
         {
+            interruptionActive = true;
             lastDamageInRangeTime = Time.time;
             StartCoroutine(ExecuteScrapRamRoutine());
             return;
@@ -522,6 +541,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
         if (playerDashCount >= predictiveDashThreshold && dist <= drownedRange && Time.time >= nextDrownedTime && state == BossState.Chase)
         {
+            interruptionActive = true;
             nextDrownedTime = Time.time + drownedCooldown;
             StartCoroutine(ExecuteDrownedHandsRoutine(usePredictive: true));
         }
@@ -874,6 +894,19 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         state = BossState.DivisoryFailure;
         nextDivisoryTime = Time.time + divisoryCooldown;
 
+        // Fase 1: ir al centro de la sala
+        // Usar el centro cacheado; si por algún motivo no está disponible,
+        // calcularlo ahora como fallback.
+        Vector3 roomCenter = roomCenterCached ? cachedRoomCenter : ComputeRoomCenter();
+        yield return RepositionToCenterRoutine(roomCenter, myToken);
+
+        if (isDead || state != BossState.DivisoryFailure || myToken != actionToken)
+        {
+            if (myToken == actionToken) interruptionActive = false;
+            yield break;
+        }
+
+        // Fase 2: orientarse al jugador y cargar
         StopAgent();
         FacePlayerInstant();
 
@@ -888,6 +921,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             yield break;
         }
 
+        // Fase 3: ejecutar el golpe y crear el muro
         attackExecuteTriggered = false;
         if (knightAnimCtrl != null) knightAnimCtrl.PlayHandAttack();
 
@@ -919,6 +953,125 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             }
             interruptionActive = false; // Libera el bloqueo
         }
+    }
+
+    /// <summary>
+    /// Calcula el centro navegable de la sala muestreando cuánto puede
+    /// caminar el agente en 8 direcciones antes de que el path falle.
+    /// Funciona con salas procedurales porque usa CalculatePath sobre el
+    /// NavMesh real del agente, no rayos físicos ni NavMesh.Raycast.
+    /// Se llama una sola vez al entrar en aggro; el resultado se guarda en
+    /// <see cref="cachedRoomCenter"/> para no repetir el cálculo.
+    /// </summary>
+    private Vector3 ComputeRoomCenter()
+    {
+        if (agent == null || !agent.enabled) return transform.position;
+
+        Vector3 origin = transform.position;
+
+        // 8 direcciones: cardinales + diagonales
+        Vector3[] dirs = {
+            Vector3.forward,
+            (Vector3.forward + Vector3.right).normalized,
+            Vector3.right,
+            (Vector3.back   + Vector3.right).normalized,
+            Vector3.back,
+            (Vector3.back   + Vector3.left).normalized,
+            Vector3.left,
+            (Vector3.forward + Vector3.left).normalized,
+        };
+
+        Vector3 sum = Vector3.zero;
+        int validHits = 0;
+        NavMeshPath path = new NavMeshPath();
+
+        foreach (Vector3 dir in dirs)
+        {
+            // Búsqueda binaria: ¿hasta qué distancia es el path completo?
+            float lo = 0f;
+            float hi = divisoryRayMaxLength;
+
+            for (int iter = 0; iter < 7; iter++) // ~divisoryRayMaxLength / 128 de precisión
+            {
+                float mid = (lo + hi) * 0.5f;
+                Vector3 probe = origin + dir * mid;
+
+                if (NavMesh.SamplePosition(probe, out NavMeshHit navHit, 1.5f, agent.areaMask))
+                {
+                    agent.CalculatePath(navHit.position, path);
+                    if (path.status == NavMeshPathStatus.PathComplete)
+                        lo = mid;
+                    else
+                        hi = mid;
+                }
+                else
+                {
+                    hi = mid;
+                }
+            }
+
+            if (lo > 0.5f)
+            {
+                sum += origin + dir * lo;
+                validHits++;
+            }
+        }
+
+        if (validHits == 0) return origin;
+
+        Vector3 candidate = sum / validHits;
+        candidate.y = origin.y;
+
+        if (NavMesh.SamplePosition(candidate, out NavMeshHit finalHit, divisoryNavSampleRadius, agent.areaMask))
+            return finalHit.position;
+
+        return origin;
+    }
+
+    /// <summary>
+    /// Mueve al jefe hacia <paramref name="destination"/> usando el NavMeshAgent
+    /// y cede el control hasta llegar o hasta que el token de acción sea invalidado.
+    /// </summary>
+    private IEnumerator RepositionToCenterRoutine(Vector3 destination, int myToken)
+    {
+        // Validación isOnNavMesh para prevenir cuelgues si el agente quedó fuera de la malla.
+        if (agent == null || !agent.enabled || !agent.isOnNavMesh) yield break;
+
+        // Si el destino calculado coincide con la posición actual (fallback),
+        // no hay nada que recorrer.
+        if ((destination - transform.position).sqrMagnitude < 0.01f) yield break;
+
+        MoveTowards(destination, divisoryRepositionSpeed);
+
+        // Esperar un frame para que el NavMeshAgent calcule el path y
+        // agent.velocity deje de ser Vector3.zero antes de activar la animación.
+        yield return null;
+        SetWalking(true);
+
+        float sqrThreshold = divisoryArrivalThreshold * divisoryArrivalThreshold;
+        float safetyTimer = 0f; // Temporizador de seguridad
+
+        while (!isDead && myToken == actionToken && state == BossState.DivisoryFailure)
+        {
+            // Prevención de cuelgues si la ruta es inalcanzable.
+            if (agent.remainingDistance == float.PositiveInfinity) break;
+
+            // Temporizador límite para forzar el rompimiento del bucle si tarda más de 5 segundos.
+            safetyTimer += Time.deltaTime;
+            if (safetyTimer >= 5f) break;
+
+            Vector3 flat = transform.position; flat.y = 0f;
+            Vector3 flatDest = destination; flatDest.y = 0f;
+
+            if ((flat - flatDest).sqrMagnitude <= sqrThreshold) break;
+            if (!agent.pathPending && agent.remainingDistance <= divisoryArrivalThreshold) break;
+
+            FacePlayer(6f);
+            yield return null;
+        }
+
+        StopAgent();
+        SetWalking(false);
     }
 
     private bool TryComputeDivisoryWall(out Vector3 wallCenter, out Quaternion wallRotation, out float wallLength)
@@ -1141,6 +1294,12 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         }
 
         debugDashSphereActive = false;
+
+        // Resincronización del agente después de terminar el movimiento manual.
+        if (agent != null && agent.enabled && agent.isOnNavMesh)
+        {
+            agent.Warp(transform.position);
+        }
     }
 
     private bool DealContactDamageDuringDash()
@@ -1497,6 +1656,9 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
     private void OnDrawGizmosSelected()
     {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, divisoryNavSampleRadius);
+
         Gizmos.color = Color.white;
         Gizmos.DrawWireSphere(transform.position, aggroRange);
 
@@ -1596,6 +1758,10 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         GUILayout.Label($"CD CargaQuebrados: {Mathf.Max(0f, nextBrokenChargeTime - Time.time):F1}s", lbl);
         GUILayout.Label($"CD ManosAhogados : {Mathf.Max(0f, nextDrownedTime - Time.time):F1}s", lbl);
         GUILayout.Label($"CD FallaDivisoria: {Mathf.Max(0f, nextDivisoryTime - Time.time):F1}s", lbl);
+        GUILayout.Space(4);
+        GUILayout.Label($"RoomCenter cached : {roomCenterCached}", lbl);
+        if (roomCenterCached)
+            GUILayout.Label($"RoomCenter       : {cachedRoomCenter:F1}", lbl);
         GUILayout.EndArea();
     }
 
