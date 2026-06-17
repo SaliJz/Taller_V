@@ -1,6 +1,9 @@
+using System.Collections;
 using UnityEngine;
 public class EstadoDeVida : FullScreenEffectsBase
 {
+    [Header("Referencias")]
+    [SerializeField] ShieldSkill berserkerScript;
 
     #region Variables Shader
 
@@ -74,12 +77,17 @@ public class EstadoDeVida : FullScreenEffectsBase
     [Header("Pixeleado")]
     [Tooltip("Si esta activo el juego esta pixeleado, si no, no.")]
     public bool PixeladoActivo;
+    [SerializeField] float minPixelSize = 100f;
+    [SerializeField] float normalPixelSize = 1000f;
+    [SerializeField] float PixelizeDuration = 0.3f;
+    [SerializeField] AnimationCurve pixelEase;
 
     [Tooltip("Sincronizado con SizePixel del shader.")]
     [Min(1f)]
-    public float SizePixel = 150f;
+    // public float SizePixel = 150f;
 
     private bool _prevPixeladoActivo;
+    private Coroutine currentPixelRutine;
 
     #endregion
 
@@ -130,6 +138,8 @@ public class EstadoDeVida : FullScreenEffectsBase
 
         if(!enabled) return;
 
+        PixeladoActivo = true;
+
         SetFloat(PROP_CONDICION_DAÑO, 0f);
         SetFloat(PROP_TRANSPARENCIA, Transparencia);
         SetFloat(PROP_INTENSIDAD_POSTERIZADO, Posterizado);
@@ -139,8 +149,8 @@ public class EstadoDeVida : FullScreenEffectsBase
         SetFloat(PROP_TAMAÑO_DITHER, TamañoDither);
         SetFloat(PROP_LIMITE_DITHER, LimiteDither);
 
-        SetFloat(PROP_CONDICION_PIXEL, 0f);
-        SetFloat(PROP_SIZE_PIXEL, SizePixel);
+        SetFloat(PROP_CONDICION_PIXEL, 100f);
+        // SetFloat(PROP_SIZE_PIXEL, SizePixel);
 
         _colorBerserkerActual = ColorBerserker1;
         _berserkerValorActual = 0f;
@@ -153,11 +163,11 @@ public class EstadoDeVida : FullScreenEffectsBase
         _prevPrimeraHerida = false;
         _prevDemasHeridas = false;
         _prevVidaBajaActiva = false;
-        _prevPixeladoActivo = false;
+        // _prevPixeladoActivo = false;
         _prevCondicionBerserker = false;
         _prevTransicionColorBerserker = false;
 
-        PixeladoActivo = false;
+        // PixeladoActivo = false;
         CondicionBerserker = false;
         TransicionColorBerserker = false;
     }
@@ -168,13 +178,29 @@ public class EstadoDeVida : FullScreenEffectsBase
     {
         HandleDaño();
         HandleVidaBaja();
-        HandlePixelado();
+        // HandlePixelado();
         HandleBerserker();
 
         SetFloat(PROP_TIEMPO_RESPIRACION, TiempoRespiracion);
         SetFloat(PROP_TAMAÑO_DITHER, TamañoDither);
         SetFloat(PROP_LIMITE_DITHER, LimiteDither);
-        SetFloat(PROP_SIZE_PIXEL, SizePixel);
+        // SetFloat(PROP_SIZE_PIXEL, SizePixel);
+    }
+
+    private void OnEnable()
+    {
+        berserkerScript.OnAbilityActivated += ActiveBerserker;
+        berserkerScript.OnAbilityDeactivated += DeactiveBerserker;
+        ShieldSkill.OnStaminaChanged += BerserkerColorTransition;
+        PlayerHealth.OnLifeStageChanged += Pixelizado;
+    }
+
+    private void OnDisable()
+    {
+        berserkerScript.OnAbilityActivated -= ActiveBerserker;
+        berserkerScript.OnAbilityDeactivated -= DeactiveBerserker;
+        ShieldSkill.OnStaminaChanged -= BerserkerColorTransition;
+        PlayerHealth.OnLifeStageChanged -= Pixelizado;
     }
 
     #endregion
@@ -258,12 +284,39 @@ public class EstadoDeVida : FullScreenEffectsBase
 
     #region Metodos Pixelizado
 
-    private void HandlePixelado()
+    private void Pixelizado(PlayerHealth.LifeStage lifeStage)
     {
-        if (PixeladoActivo == _prevPixeladoActivo) return;
+        // if (PixeladoActivo == _prevPixeladoActivo) return;
 
-        SetFloat(PROP_CONDICION_PIXEL, PixeladoActivo ? 100f : 0f);
-        _prevPixeladoActivo = PixeladoActivo;
+        // // SetFloat(PROP_CONDICION_PIXEL, PixeladoActivo ? 100f : 0f);
+        // _prevPixeladoActivo = PixeladoActivo;
+
+        if (currentPixelRutine != null)
+        {
+            StopCoroutine(currentPixelRutine);
+            currentPixelRutine = null;
+        }
+        
+        currentPixelRutine = StartCoroutine(StageChange(PixelizeDuration));
+    }
+
+    private IEnumerator StageChange(float duration)
+    {
+        Debug.LogError("Corrutine de cambio de vida vfx");
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+
+            float t = pixelEase.Evaluate(elapsed/duration);
+            SetFloat(PROP_SIZE_PIXEL, Mathf.Lerp(minPixelSize, normalPixelSize, t));
+            yield return null;
+        }
+
+        SetFloat(PROP_SIZE_PIXEL, normalPixelSize);
+        
+        currentPixelRutine = null;
     }
 
     #endregion
@@ -307,14 +360,20 @@ public class EstadoDeVida : FullScreenEffectsBase
         _prevTransicionColorBerserker = TransicionColorBerserker;
     }
 
-    public void Berserker(bool active)
+    public void ActiveBerserker()
     {
-        CondicionBerserker = active;
+        TransicionColorBerserker = false;
+        CondicionBerserker = true;
     }
 
-    public void BerserkerColorTransition(bool active)
+    public void DeactiveBerserker()
     {
-        TransicionColorBerserker = active;
+        CondicionBerserker = false;
+    }
+
+    public void BerserkerColorTransition(float current, float max)
+    {
+        TransicionColorBerserker = current <= 0? true: false;
     }
 
     private Color CalcularColorVenas(Color baseColor)

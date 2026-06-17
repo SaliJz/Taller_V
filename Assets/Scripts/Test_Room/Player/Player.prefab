@@ -13896,6 +13896,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   featureNombre: FullScreenFeedback
   MaterialOriginal: {fileID: 2100000, guid: b9f20b8c42893074997b68cfd9002933, type: 2}
+  berserkerScript: {fileID: 8984845218185550205}
   PrimeraHerida: 0
   DemasHeridas: 0
   TiempoHerida: 0.3
@@ -13905,14 +13906,49 @@ MonoBehaviour:
   TiempoRespiracion: 4
   "Tama\xF1oDither": 24.5
   LimiteDither: 0.3
-  PixeladoActivo: 0
-  SizePixel: 150
+  PixeladoActivo: 1
+  minPixelSize: 20
+  normalPixelSize: 5000
+  PixelizeDuration: 2.5
+  pixelEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0.64597565
+      outSlope: 0.64597565
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.3099684
+      value: 0.20023204
+      inSlope: 0.90250325
+      outSlope: 0.90250325
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1.1590309
+      outSlope: 1.1590309
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   CondicionBerserker: 0
   TransicionColorBerserker: 0
-  TiempoBerserker: 1.5
-  ColorBerserker1: {r: 1, g: 0, b: 0, a: 1}
-  ColorBerserker2: {r: 0.6, g: 0, b: 0, a: 1}
-  ValorVenas: 0.45
+  TiempoBerserker: 0.2
+  ColorBerserker1: {r: 1, g: 0.9394192, b: 0.3820755, a: 1}
+  ColorBerserker2: {r: 0.8679245, g: 0, b: 0, a: 1}
+  ValorVenas: 0.722
 --- !u!114 &7606585880973531162
 MonoBehaviour:
   m_ObjectHideFlags: 0
