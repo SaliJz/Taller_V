@@ -146,7 +146,7 @@ public class HUDManager : MonoBehaviour
             screenFlashOverlay.raycastTarget = false; // No bloquear interacciones
         }
 
-        handAnim.onSmashImpact += ApplyLifeStageIcon;
+        if (handAnim != null) handAnim.onSmashImpact += ApplyLifeStageIcon;
         ShieldSkill.OnStaminaChanged += HandleStaminaChange;
 
         GameObject player = GameObject.FindWithTag("Player");

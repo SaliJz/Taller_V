@@ -715,7 +715,18 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
             if (attackExecuteTriggered)
             {
-                DealAoEDamage(attackOrigin.position, dashHitRadius * 1.25f, brokenChargeHitDamage);
+                // Comprobación principal: radio desde attackOrigin frente del jefe.
+                bool hit = TryDealBrokenChargeDamage(attackOrigin.position, dashHitRadius * 1.25f);
+
+                // Comprobación secundaria: jugador muy cercano.
+                if (!hit && player != null)
+                {
+                    float closeRangeDist = dashHitRadius * 2f;
+                    if (Vector3.Distance(transform.position, player.position) <= closeRangeDist)
+                    {
+                        TryDealBrokenChargeDamage(transform.position + Vector3.up * 0.6f, closeRangeDist);
+                    }
+                }
             }
 
             float rest = timePerDash * 0.35f;
@@ -1213,6 +1224,22 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             c.GetComponent<PlayerHealth>()?.TakeDamage(dmg);
             return;
         }
+    }
+
+    /// <summary>
+    /// Versión con retorno booleano para Carga de los Quebrados.
+    /// Devuelve true si llegó a aplicar daño.
+    /// </summary>
+    private bool TryDealBrokenChargeDamage(Vector3 center, float radius)
+    {
+        Collider[] hits = Physics.OverlapSphere(center, radius, playerLayer);
+        foreach (var c in hits)
+        {
+            if (!c.CompareTag("Player")) continue;
+            c.GetComponent<PlayerHealth>()?.TakeDamage(brokenChargeHitDamage);
+            return true;
+        }
+        return false;
     }
 
     #endregion
