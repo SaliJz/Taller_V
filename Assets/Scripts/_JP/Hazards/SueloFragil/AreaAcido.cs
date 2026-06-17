@@ -5,8 +5,8 @@ using UnityEngine;
 
 /// <summary>
 /// AreaAcido (3D): colocado en el prefab del hueco (Collider con IsTrigger).
-/// Escala inicial y final completas (X,Y,Z) y transición fluida entre ellas.
-/// Añade opciones para alinear la posición/rotación local al iniciarse (útil cuando
+/// Escala inicial y final completas (X,Y,Z) y transiciï¿½n fluida entre ellas.
+/// Aï¿½ade opciones para alinear la posiciï¿½n/rotaciï¿½n local al iniciarse (ï¿½til cuando
 /// el prefab tiene children con offsets y lo instancias desde otro objeto).
 /// </summary>
 public class AreaAcido : MonoBehaviour
@@ -24,10 +24,10 @@ public class AreaAcido : MonoBehaviour
     public ParticleSystem psEnter;
 
     [Header("Escalado (X,Y,Z)")]
-    [Tooltip("Si está activado, se aplicará un escalado al Start desde 'escalaInicial' hasta 'escalaFinal'.")]
+    [Tooltip("Si estï¿½ activado, se aplicarï¿½ un escalado al Start desde 'escalaInicial' hasta 'escalaFinal'.")]
     public bool scaleOnStart = true;
 
-    [Tooltip("Si true, la escala inicial se tomará de 'escalaInicial'. Si false, la escala inicial será la escala actual del transform.")]
+    [Tooltip("Si true, la escala inicial se tomarï¿½ de 'escalaInicial'. Si false, la escala inicial serï¿½ la escala actual del transform.")]
     public bool usarEscalaInicialExplicita = true;
 
     [Tooltip("Escala inicial (X,Y,Z).")]
@@ -36,26 +36,26 @@ public class AreaAcido : MonoBehaviour
     [Tooltip("Escala final (X,Y,Z).")]
     public Vector3 escalaFinal = new Vector3(1f, 1f, 1f);
 
-    [Tooltip("Duración del escalado en segundos. Si <= 0 se aplica instantáneamente.")]
+    [Tooltip("Duraciï¿½n del escalado en segundos. Si <= 0 se aplica instantï¿½neamente.")]
     public float escalaDuration = 0.5f;
 
-    [Tooltip("Curva de easing para el escalado (0..1). Si es null se usará ease in/out por defecto.")]
+    [Tooltip("Curva de easing para el escalado (0..1). Si es null se usarï¿½ ease in/out por defecto.")]
     public AnimationCurve escalaCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Tooltip("Retardo antes de comenzar el escalado en segundos.")]
     public float scaleDelay = 0f;
 
     [Header("Posicionamiento al instanciar")]
-    [Tooltip("Si está activado y el objeto tiene padre al iniciar en runtime, se ajustará la posición/rotación local.")]
+    [Tooltip("Si estï¿½ activado y el objeto tiene padre al iniciar en runtime, se ajustarï¿½ la posiciï¿½n/rotaciï¿½n local.")]
     public bool alignToParentOnStart = true;
 
-    [Tooltip("Offset local de posición que se aplicará cuando se alinee (localPosition = offset).")]
+    [Tooltip("Offset local de posiciï¿½n que se aplicarï¿½ cuando se alinee (localPosition = offset).")]
     public Vector3 localPositionOffset = Vector3.zero;
 
-    [Tooltip("Offset local de rotación (Euler) que se aplicará cuando se alinee (localEulerAngles = offset).")]
+    [Tooltip("Offset local de rotaciï¿½n (Euler) que se aplicarï¿½ cuando se alinee (localEulerAngles = offset).")]
     public Vector3 localEulerOffset = Vector3.zero;
 
-    // Mapa de coroutines por jugador (para aplicar daño periódico)
+    // Mapa de coroutines por jugador (para aplicar daï¿½o periï¿½dico)
     private Dictionary<GameObject, Coroutine> coroutinesPorJugador = new Dictionary<GameObject, Coroutine>();
 
     // Guarda la referencia de la coroutine de escalado para poder detenerla sin afectar otras coroutines
@@ -70,15 +70,16 @@ public class AreaAcido : MonoBehaviour
         localAudioSource = GetComponent<AudioSource>();
         if (localAudioSource == null)
         {
-            Debug.LogWarning($"[AreaAcido] No se encontró AudioSource en '{gameObject.name}'. Usará PlayClipAtPoint como fallback.");
+            Debug.LogWarning($"[AreaAcido] No se encontrï¿½ AudioSource en '{gameObject.name}'. Usarï¿½ PlayClipAtPoint como fallback.");
         }
 
-        // Alineado de posición/rotación local si fue instanciado como hijo en runtime
+        // Alineado de posiciï¿½n/rotaciï¿½n local si fue instanciado como hijo en runtime
         if (Application.isPlaying && alignToParentOnStart && transform.parent != null)
         {
             transform.localPosition = localPositionOffset;
-            transform.localEulerAngles = localEulerOffset;
+            // transform.localEulerAngles = localEulerOffset;
         }
+        
 
         Vector3 current = transform.localScale;
 
@@ -100,13 +101,13 @@ public class AreaAcido : MonoBehaviour
     }
 
     /// <summary>
-    /// Forzar alineado inmediatamente (útil si instancias y quieres ajustar desde el creador).
+    /// Forzar alineado inmediatamente (ï¿½til si instancias y quieres ajustar desde el creador).
     /// </summary>
     public void ForceAlignNow()
     {
         if (transform.parent == null) return;
         transform.localPosition = localPositionOffset;
-        transform.localEulerAngles = localEulerOffset;
+        // transform.localEulerAngles = localEulerOffset;
     }
 
     private IEnumerator RutinaEscalar(Vector3 from, Vector3 to, float duration, float delay, AnimationCurve curve)
@@ -190,7 +191,7 @@ public class AreaAcido : MonoBehaviour
                 ph.TakeDamage(dps * tickInterval);
             }
 
-            // Reproducir SFX de daño por tick usando AudioSource local si existe, si no fallback a PlayClipAtPoint
+            // Reproducir SFX de daï¿½o por tick usando AudioSource local si existe, si no fallback a PlayClipAtPoint
             if (sfxDanoTick != null)
             {
                 if (localAudioSource != null)
