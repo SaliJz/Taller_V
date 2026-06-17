@@ -302,7 +302,7 @@ public class EstadoDeVida : FullScreenEffectsBase
 
     private IEnumerator StageChange(float duration)
     {
-        Debug.LogError("Corrutine de cambio de vida vfx");
+        // Debug.LogError("Corrutine de cambio de vida vfx");
         float elapsed = 0f;
 
         while (elapsed < duration)
