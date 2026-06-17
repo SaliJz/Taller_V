@@ -765,9 +765,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     {
         if (_isDead) return;
 
-        // Si la corrutina de ataque fue interrumpida a mitad de la pausa de
-        // anticipación, asegurar que el animator no quede congelado ni el
-        // shake siga corriendo en un GameObject que ya no aplica.
         _animCtrl?.StopAnticipationShake();
         _animCtrl?.ResumeAnimation();
 

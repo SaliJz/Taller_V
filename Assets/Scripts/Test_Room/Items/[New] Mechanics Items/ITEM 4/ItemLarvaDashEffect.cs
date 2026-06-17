@@ -10,8 +10,12 @@ public class ItemLarvaDashEffect : ItemEffectBase
     public GameObject attackLarvaPrefab;
     public GameObject curativeLarvaPrefab;
 
-    [Header("Ciclo")]
-    [SerializeField] private float resetIdleTime = 2f; 
+    [Header("Larva stats")]
+    [SerializeField] private float larvaHealth = 15f;
+
+    [Header("Larva lifecycle")]
+    [SerializeField] private float resetIdleTime = 2f;
+    [SerializeField] private float larvaCooldown = 1.5f;
 
     #endregion
 
@@ -19,6 +23,7 @@ public class ItemLarvaDashEffect : ItemEffectBase
 
     private int dashCount = 0;
     private float lastDashTime = -999f;
+    private float nextAvailableTime = -999f;
 
     #endregion
 
@@ -34,6 +39,7 @@ public class ItemLarvaDashEffect : ItemEffectBase
     {
         dashCount = 0;
         lastDashTime = -999f;
+        nextAvailableTime = -999f;
         PlayerCombatEvents.OnDashStarted += HandleDashStarted;
     }
 
@@ -50,10 +56,12 @@ public class ItemLarvaDashEffect : ItemEffectBase
     {
         float now = Time.time;
 
-        if (now - lastDashTime > resetIdleTime)
-            dashCount = 0;
+        if (now < nextAvailableTime) return;
+
+        if (now - lastDashTime > resetIdleTime) dashCount = 0;
 
         lastDashTime = now;
+        nextAvailableTime = now + larvaCooldown;
         dashCount++;
 
         Vector3 spawnPos = playerPosition;
@@ -61,7 +69,7 @@ public class ItemLarvaDashEffect : ItemEffectBase
         switch (dashCount)
         {
             case 1:
-                SpawnLarva(curativeLarvaPrefab, spawnPos); 
+                SpawnLarva(curativeLarvaPrefab, spawnPos);
                 break;
             case 2:
                 SpawnLarva(curativeLarvaPrefab, spawnPos); 
@@ -90,9 +98,13 @@ public class ItemLarvaDashEffect : ItemEffectBase
         larva.transform.rotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
 
         if (larva.TryGetComponent<ResurrectedLarva>(out var res))
-            res.Initialize(15f);
+        {
+            res.Initialize(larvaHealth);
+        }
         else if (larva.TryGetComponent<CurativeLarva>(out var cur))
-            cur.Initialize(15f);
+        {
+            cur.Initialize(larvaHealth);
+        }
     }
 
     #endregion
