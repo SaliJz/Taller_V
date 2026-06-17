@@ -397,7 +397,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             ReportDebug($"<color=red>Marca consumida: El jugador recibe el doble de daño ({damageAmount}).</color>", 1);
         }
 
-        float damageToApply = damageAmount;
+        float damageToApply = ApplyDamageTakenStat(damageAmount, isCostDamage);
 
         // Primero aplica el daño a la vida temporal si el jugador tiene.
         if (currentTemporaryHealth > 0f)
@@ -477,6 +477,22 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         UpdateLifeStage();
 
         UpdateTemporaryHealthUI();
+    }
+
+    private float ApplyDamageTakenStat(float damageAmount, bool isCostDamage)
+    {
+        if (isCostDamage || statsManager == null) return damageAmount;
+
+        float damageReduction = statsManager.GetStat(StatType.DamageTaken);
+
+        if (damageReduction > 1f)
+        {
+            damageReduction /= 100f;
+        }
+
+        damageReduction = Mathf.Clamp01(damageReduction);
+
+        return Mathf.Max(0f, damageAmount * (1f - damageReduction));
     }
 
     private void ResetShakeCooldown()

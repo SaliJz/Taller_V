@@ -302,12 +302,7 @@ public class Shield : MonoBehaviour
         currentReturnSpeedMultiplier = baseReturnSpeedMultiplier * returnSpeedMod;
 
         float pushForceMod = cachedStatsManager.GetStat(StatType.ShieldPushForce);
-
-        if (knockbackForce > 0f)
-        {
-            knockbackForce += pushForceMod;
-            knockbackForce = Mathf.Max(0f, knockbackForce);
-        }
+        knockbackForce = Mathf.Max(0f, knockbackForce + pushForceMod);
 
         ReportDebug($"Stats dinamicos actualizados: ReturnSpeed={currentReturnSpeedMultiplier}x, KnockbackForce={knockbackForce} (+{pushForceMod})", 1);
     }

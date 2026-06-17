@@ -722,8 +722,8 @@ public class PlayerShieldController : MonoBehaviour
                     speed = youngShieldSpeed * totalSpeedFactor,
                     maxDistance = shieldMaxDistance,
                     canRebound = true,
-                    maxRebounds = youngMaxRebounds,
-                    reboundRadius = youngReboundRadius,
+                    maxRebounds = shieldMaxRebounds,
+                    reboundRadius = shieldReboundRadius,
                     canPierce = false,
                     maxPierceTargets = 0,
                     knockbackForce = 0f

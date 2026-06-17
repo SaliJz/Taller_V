@@ -36,30 +36,30 @@ public class ShopItem : ScriptableObject
     public List<ItemEffect> benefits;
     public List<ItemEffect> drawbacks;
 
-    [Header("Categorizaci�n")]
+    [Header("Categorización")]
     public ItemCategory category = ItemCategory.AttributeModifiers;
     public ItemRarity rarity = ItemRarity.Normal;
 
-    [Tooltip("Probabilidad individual de ser seleccionado DENTRO de su rareza. Mayor n�mero = m�s probable.")]
-    public float individualRarityWeight = 1.0f; 
+    [Tooltip("Probabilidad individual de ser seleccionado DENTRO de su rareza. Mayor número = más probable.")]
+    public float individualRarityWeight = 1.0f;
 
     [Header("Tipo de Item")]
     public bool isAmulet = false;
     public bool isTemporary = false;
     public bool isByRooms = false;
-    [Tooltip("Duraci�n en segundos (si es temporal por tiempo)")]
+    [Tooltip("Duración en segundos (si es temporal por tiempo)")]
     public float temporaryDuration = 0f;
-    [Tooltip("Duraci�n en rooms (si es temporal por rooms)")]
+    [Tooltip("Duración en rooms (si es temporal por rooms)")]
     public int temporaryRooms = 0;
 
-    [Header("Categor�a de Efecto")]
+    [Header("Categoría de Efecto")]
     public bool hasEffectCategory = false;
     public TypeEffect effectCategory = TypeEffect.Melee;
 
     public bool IsEffectItem => hasEffectCategory && behavioralEffects != null && behavioralEffects.Count > 0;
 
     [Header("Visual")]
-    [Tooltip("Sprite del �tem para el inventario")]
+    [Tooltip("Sprite del ítem para el inventario")]
     public Sprite itemIcon;
     [Tooltip("Modelo 3D o Sprite a instanciar en la tienda")]
     public GameObject ShopItemPrefab;
@@ -170,9 +170,9 @@ public class ShopItem : ScriptableObject
         switch (statType)
         {
             case StatType.MaxHealth:
-                return "Salud M�xima";
+                return "Salud Máxima";
             case StatType.DamageTaken:
-                return "Da�o Recibido";
+                return "Daño Recibido";
             case StatType.HealthDrainAmount:
                 return "Drenaje de Vida";
 
@@ -190,26 +190,26 @@ public class ShopItem : ScriptableObject
                 return "Consumo de Aguante/Estamina";
 
             case StatType.AttackDamage:
-                return "Da�o a Melee y Distancia";
+                return "Daño a Melee y Distancia";
             case StatType.AttackSpeed:
                 return "Velocidad de Ataque a Melee y Distancia";
             case StatType.MeleeAttackDamage:
-                return "Da�o a Melee";
+                return "Daño a Melee";
             case StatType.MeleeAttackSpeed:
                 return "Velocidad de Ataque a Melee";
             case StatType.MeleeRadius:
-                return "Radio de Ataque Cicular a Melee";
+                return "Radio de Ataque Circular a Melee";
             case StatType.MeleeComboDisplacement:
                 return "Desplazamiento al Golpear";
             case StatType.CriticalChance:
-                return "Probabilidad de Cr�tico";
+                return "Probabilidad de Crítico";
             case StatType.CriticalDamageMultiplier:
-                return "Multiplicador de Da�o Cr�tico";
+                return "Multiplicador de Daño Crítico";
             case StatType.LifestealOnKill:
-                return "Robo de Vida por Eliminaci�n";
+                return "Robo de Vida por Eliminación";
 
             case StatType.ShieldAttackDamage:
-                return "Da�o a Distancia";
+                return "Daño a Distancia";
             case StatType.ShieldSpeed:
                 return "Velocidad de Lanzamiento del Escudo";
             case StatType.ShieldMaxDistance:
@@ -228,11 +228,11 @@ public class ShopItem : ScriptableObject
             case StatType.LuckStack:
                 return "Suerte Acumulada";
             case StatType.EssenceCostReduction:
-                return "Reducci�n de Costo de Esencia";
+                return "Reducción de Costo de Esencia";
             case StatType.ShopPriceReduction:
-                return "Reducci�n de Precio en Tienda";
+                return "Reducción de Precio en Tienda";
             case StatType.HealthPerRoomRegen:
-                return "Regeneraci�n por Sala";
+                return "Regeneración por Sala";
 
             default:
                 return statType.ToString();

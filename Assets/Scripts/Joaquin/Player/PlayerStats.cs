@@ -46,4 +46,13 @@ public class PlayerStats : ScriptableObject
     public float criticalChanceBase = 0f;
     public float criticalDamageMultiplierBase = 0f; 
     public float dashRangeMultiplierBase = 1f;
+
+    [Header("Stats de combate")]
+    public float damageTakenBase = 0f;
+    public float knockbackReceivedBase = 1f;
+    public float dashCooldownPostBase = 0f;
+    public float meleeComboDisplacementBase = 1f;
+    public float shieldPushForceBase = 0f;
+    public float shieldReturnSpeedBase = 1f;
+    public float staminaConsumptionBase = 1f;
 }

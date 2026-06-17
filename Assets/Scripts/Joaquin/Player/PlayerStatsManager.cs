@@ -229,7 +229,6 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.LuckStack: return statsSO.luckStackBase;
             case StatType.ShopPriceReduction: return statsSO.shopPriceReductionBase;
             case StatType.HealthPerRoomRegen: return statsSO.healthPerRoomRegenBase;
-
             case StatType.CriticalChance: return statsSO.criticalChanceBase;
 
             case StatType.CriticalDamageMultiplier:
@@ -238,22 +237,29 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.DashRangeMultiplier:
                 return statsSO.dashRangeMultiplierBase > 0f ? statsSO.dashRangeMultiplierBase : 1.0f;
 
-            case StatType.KnockbackReceived: return 1.0f;
+            case StatType.DamageTaken:
+                return statsSO.damageTakenBase;
 
-            case StatType.DashCooldownPost: return 0f;
+            case StatType.KnockbackReceived:
+                return statsSO.knockbackReceivedBase > 0f ? statsSO.knockbackReceivedBase : 1.0f;
 
-            case StatType.MeleeComboDisplacement: return 1.0f;
+            case StatType.DashCooldownPost:
+                return statsSO.dashCooldownPostBase;
 
-            case StatType.ShieldPushForce: return 0f;
+            case StatType.MeleeComboDisplacement:
+                return statsSO.meleeComboDisplacementBase > 0f ? statsSO.meleeComboDisplacementBase : 1.0f;
 
-            case StatType.ShieldReturnSpeed: return 1.0f;
+            case StatType.ShieldPushForce:
+                return statsSO.shieldPushForceBase;
 
-            case StatType.StaminaConsumption: return 1.0f;
+            case StatType.ShieldReturnSpeed:
+                return statsSO.shieldReturnSpeedBase > 0f ? statsSO.shieldReturnSpeedBase : 1.0f;
 
-            case StatType.DamageTaken: return 0f;
+            case StatType.StaminaConsumption:
+                return statsSO.staminaConsumptionBase > 0f ? statsSO.staminaConsumptionBase : 1.0f;
 
             default:
-                Debug.LogWarning($"El StatType {type} no está mapeado en GetStatFromSO. Retornando 0.");
+                Debug.LogWarning($"El StatType {type} no esta mapeado en GetStatFromSO. Retornando 0.");
                 return 0f;
         }
     }
@@ -324,20 +330,25 @@ public partial class PlayerStatsManager : MonoBehaviour
         target.meleeSpeed = sourceStats.meleeSpeed;
         target.meleeRadius = sourceStats.meleeRadius;
 
-        // Stats de Escudo
         target.shieldAttackDamage = sourceStats.shieldAttackDamage;
         target.shieldSpeed = sourceStats.shieldSpeed;
         target.shieldMaxDistance = sourceStats.shieldMaxDistance;
         target.shieldMaxRebounds = sourceStats.shieldMaxRebounds;
         target.shieldReboundRadius = sourceStats.shieldReboundRadius;
         target.isShieldBlockUpgradeActive = sourceStats.isShieldBlockUpgradeActive;
+
         target.luckStackBase = sourceStats.luckStackBase;
-
-        //target.essenceCostReductionBase = source.essenceCostReductionBase; 
-
         target.criticalChanceBase = sourceStats.criticalChanceBase;
         target.criticalDamageMultiplierBase = sourceStats.criticalDamageMultiplierBase;
         target.dashRangeMultiplierBase = sourceStats.dashRangeMultiplierBase;
+
+        target.damageTakenBase = sourceStats.damageTakenBase;
+        target.knockbackReceivedBase = sourceStats.knockbackReceivedBase;
+        target.dashCooldownPostBase = sourceStats.dashCooldownPostBase;
+        target.meleeComboDisplacementBase = sourceStats.meleeComboDisplacementBase;
+        target.shieldPushForceBase = sourceStats.shieldPushForceBase;
+        target.shieldReturnSpeedBase = sourceStats.shieldReturnSpeedBase;
+        target.staminaConsumptionBase = sourceStats.staminaConsumptionBase;
     }
 
     #endregion
@@ -431,16 +442,15 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.ShopPriceReduction: so.shopPriceReductionBase = value; break;
             case StatType.LifestealOnKill: so.lifestealOnKillAmount = value; break;
             case StatType.LuckStack: so.luckStackBase = value; break;
-            //case StatType.EssenceCostReduction: so.essenceCostReductionBase = value; break; 
 
-            case StatType.MeleeAttackDamage: so.meleeAttackDamage = (int)value; break;
+            case StatType.MeleeAttackDamage: so.meleeAttackDamage = Mathf.RoundToInt(value); break;
             case StatType.MeleeAttackSpeed: so.meleeSpeed = value; break;
             case StatType.MeleeRadius: so.meleeRadius = value; break;
 
-            case StatType.ShieldAttackDamage: so.shieldAttackDamage = (int)value; break;
+            case StatType.ShieldAttackDamage: so.shieldAttackDamage = Mathf.RoundToInt(value); break;
             case StatType.ShieldSpeed: so.shieldSpeed = value; break;
             case StatType.ShieldMaxDistance: so.shieldMaxDistance = value; break;
-            case StatType.ShieldMaxRebounds: so.shieldMaxRebounds = (int)value; break;
+            case StatType.ShieldMaxRebounds: so.shieldMaxRebounds = Mathf.RoundToInt(value); break;
             case StatType.ShieldReboundRadius: so.shieldReboundRadius = value; break;
             case StatType.ShieldBlockUpgrade: so.isShieldBlockUpgradeActive = value > 0.5f; break;
 
@@ -448,17 +458,16 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.CriticalDamageMultiplier: so.criticalDamageMultiplierBase = value; break;
             case StatType.DashRangeMultiplier: so.dashRangeMultiplierBase = value; break;
 
-            case StatType.DamageTaken: break;
-
-            case StatType.KnockbackReceived: break;
-            case StatType.DashCooldownPost: break;
-            case StatType.MeleeComboDisplacement: break;
-            case StatType.ShieldPushForce: break;
-            case StatType.ShieldReturnSpeed: break;
-            case StatType.StaminaConsumption: break;
+            case StatType.DamageTaken: so.damageTakenBase = value; break;
+            case StatType.KnockbackReceived: so.knockbackReceivedBase = value; break;
+            case StatType.DashCooldownPost: so.dashCooldownPostBase = value; break;
+            case StatType.MeleeComboDisplacement: so.meleeComboDisplacementBase = value; break;
+            case StatType.ShieldPushForce: so.shieldPushForceBase = value; break;
+            case StatType.ShieldReturnSpeed: so.shieldReturnSpeedBase = value; break;
+            case StatType.StaminaConsumption: so.staminaConsumptionBase = value; break;
 
             default:
-                Debug.LogWarning($"El StatType {type} no está mapeado para la modificación directa del SO.");
+                Debug.LogWarning($"El StatType {type} no esta mapeado para la modificacion directa del SO.");
                 break;
         }
     }
