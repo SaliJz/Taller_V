@@ -44,6 +44,11 @@ public class BossIntroDirector : MonoBehaviour
     private void Awake()
     {
         canvasCamera = FindNonMainCamera();
+
+        if (canvasCamera != null)
+        {
+            canvasCamera.cullingMask = 0;
+        }
     }
 
     #endregion
@@ -75,7 +80,6 @@ public class BossIntroDirector : MonoBehaviour
             if (playerAnimator != null)
             {
                 playerAnimator.SetInputAxes(0f, 0f);
-
                 playerAnimator.PlayState(PlayerState.idle, AnimPriority.dash, true);
             }
         }
@@ -87,6 +91,7 @@ public class BossIntroDirector : MonoBehaviour
         if (canvasCamera == null) canvasCamera = FindNonMainCamera();
         if (canvasCamera != null)
         {
+            canvasCamera.cullingMask = LayerMask.GetMask("Enemy");
             canvasCamera.gameObject.SetActive(true);
         }
 
@@ -127,7 +132,7 @@ public class BossIntroDirector : MonoBehaviour
 
         if (canvasCamera != null)
         {
-            canvasCamera.gameObject.SetActive(false);
+            canvasCamera.cullingMask = 0;
         }
 
         if (activeCinemachineCamera != null && originalCameraTarget != null)
