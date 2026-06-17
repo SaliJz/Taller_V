@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(MeshRenderer))]
@@ -47,6 +48,12 @@ public class EspejoController : MonoBehaviour
 
     private EstadoEspejo ultimoEstado;
 
+    [Header("Mask Alpha Settings")]
+    [SerializeField] private float maskAlphaSpeed = 1f;
+    private Coroutine maskAlphaCoroutine;
+    private static readonly int MaskAplha_PROP = Shader.PropertyToID("_Mask_Alpha");
+    private Material materialInstance;
+
     private void Awake()
     {
         meshRenderer = GetComponent<MeshRenderer>();
@@ -91,6 +98,7 @@ public class EspejoController : MonoBehaviour
     {
         AplicarMaterial();
         ActivarNivel();
+        ActualizarMaskAplhaCoroutine();
     }
 
     private void AplicarMaterial()
@@ -115,6 +123,7 @@ public class EspejoController : MonoBehaviour
         }
 
         meshRenderer.materials = materiales;
+        materialInstance = materiales[2];
     }
 
     private void ActivarNivel()
@@ -163,11 +172,63 @@ public class EspejoController : MonoBehaviour
         }
     }
 
+    private void ActualizarMaskAplhaCoroutine()
+    {
+        bool activo = estadoActual != EstadoEspejo.Base;
+
+        if (maskAlphaCoroutine != null)
+        {
+            StopCoroutine(maskAlphaCoroutine);
+            maskAlphaCoroutine = null;
+        }
+
+        if (activo)
+        {
+            maskAlphaCoroutine = StartCoroutine(MaskAlphaRoutine());
+        }
+        else SetMaskAlpha(0f);
+    }
+
+    private IEnumerator MaskAlphaRoutine()
+    {
+        while (true)
+        {
+            yield return LerpMaskAlpha(0, 1, maskAlphaSpeed);
+            yield return LerpMaskAlpha(1, 0, maskAlphaSpeed);
+            yield return new WaitForSeconds(0.5f);
+        }
+    }
+
+    private IEnumerator LerpMaskAlpha(float Start, float End, float duration = 1f)
+    {
+        float elapse = 0f;
+
+        while (elapse < duration)
+        {
+            elapse += Time.deltaTime;
+            float t = Mathf.Clamp01(elapse/duration);
+
+            SetMaskAlpha(Mathf.Lerp(Start, End, t));
+            yield return null;
+        }
+
+        SetMaskAlpha(End);
+    }
+
+    private void SetMaskAlpha (float value)
+    {
+        if (materialInstance == null) return;
+        if (materialInstance.HasProperty(MaskAplha_PROP))
+        {
+            materialInstance.SetFloat(MaskAplha_PROP, value);
+        }
+    }
+
     void testInputs()
     {
-        if(Input.GetKeyDown(KeyCode.Alpha1)) estadoActual = EstadoEspejo.Nivel1;
-        if(Input.GetKeyDown(KeyCode.Alpha2)) estadoActual = EstadoEspejo.Nivel2;
-        if(Input.GetKeyDown(KeyCode.Alpha3)) estadoActual = EstadoEspejo.Nivel3;
-        if(Input.GetKeyDown(KeyCode.Space)) estadoActual = EstadoEspejo.Base;
+        if(Input.GetKeyDown(KeyCode.Keypad1)) estadoActual = EstadoEspejo.Nivel1;
+        if(Input.GetKeyDown(KeyCode.Keypad2)) estadoActual = EstadoEspejo.Nivel2;
+        if(Input.GetKeyDown(KeyCode.Keypad3)) estadoActual = EstadoEspejo.Nivel3;
+        if(Input.GetKeyDown(KeyCode.Keypad4)) estadoActual = EstadoEspejo.Base;
     }
 }
