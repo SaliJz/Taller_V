@@ -1121,6 +1121,12 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         foreach (Collider enemy in hitEnemies)
         {
+            if (enemy.TryGetComponent<GlassShardDamage>(out var shard))
+            {
+                shard.Shatter();
+                continue;
+            }
+
             if (hitEnemiesThisCombo.Contains(enemy))
             {
                 continue;

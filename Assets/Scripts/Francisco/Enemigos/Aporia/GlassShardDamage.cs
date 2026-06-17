@@ -14,17 +14,25 @@ public class GlassShardDamage : MonoBehaviour
         if (other.TryGetComponent<PlayerHealth>(out var pHealth))
         {
             pHealth.TakeDamage(damagePerSecond * Time.deltaTime);
+
             if (effectDeath)       
             {
                 Vector3 dir = (other.transform.position - transform.position).normalized;
                 dir.y = 0;
                 pHealth.ApplyKnockback(dir, 4, 1f);
             }
+
+            Shatter();
         }
     }
 
     private void Start()
     {
         Destroy(gameObject, shardDeathDuration);
+    }
+
+    public void Shatter()
+    {
+        Destroy(gameObject);
     }
 }

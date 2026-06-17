@@ -442,6 +442,12 @@ public class Shield : MonoBehaviour
 
         foreach (Collider enemy in hitEnemies)
         {
+            if (enemy.TryGetComponent<GlassShardDamage>(out var shard))
+            {
+                shard.Shatter();
+                continue;
+            }
+
             if (canPierce && currentLifeStage == PlayerHealth.LifeStage.Elder)
             {
                 if (currentPierceCount >= maxPierceTargets)
