@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEditor.PlayerSettings;
 
 public partial class AstarothController
 {
@@ -736,6 +737,42 @@ public partial class AstarothController
 
     #region Defensive Stomp
 
+    private void StartStompPullVFX()
+    {
+        if (_stompPullVFXPrefab == null) return;
+
+        float verticalOffset = 0.05f;
+        int groundLayer = LayerMask.GetMask("Ground");
+        Vector3 pos = transform.position;
+        Vector3 rayOrigin = new Vector3(pos.x, pos.y + 50f, pos.z);
+
+        if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, 100f, groundLayer))
+        {
+            pos.y = hit.point.y + verticalOffset;
+        }
+
+        _activeStompPullVFX = Instantiate(_stompPullVFXPrefab, pos, Quaternion.identity);
+    }
+
+    private void StopStompPullVFX()
+    {
+        if (_activeStompPullVFX == null) return;
+
+        ParticleSystem ps = _activeStompPullVFX.GetComponent<ParticleSystem>();
+        if (ps == null) ps = _activeStompPullVFX.GetComponentInChildren<ParticleSystem>();
+
+        if (ps != null)
+        {
+            VFXHelper.StopAndDestroy(ps);
+        }
+        else
+        {
+            Destroy(_activeStompPullVFX);
+        }
+
+        _activeStompPullVFX = null;
+    }
+
     private void InterruptAndPerformStomp()
     {
         PrepareCombatInterrupt();
@@ -818,6 +855,11 @@ public partial class AstarothController
             _stompImpactIndicatorObject.transform.position = groundPosition + Vector3.up * 0.01f;
             _stompImpactIndicatorObject.transform.localScale = GetIndicatorScaleFromRadius(_stompRadius);
         }
+
+        if (_activeStompPullVFX != null)
+        {
+            _activeStompPullVFX.transform.position = groundPosition;
+        }
     }
 
     private Vector3 GetIndicatorScaleFromRadius(float radius)
@@ -828,6 +870,8 @@ public partial class AstarothController
     private IEnumerator PullPlayersToStompCenter()
     {
         float elapsed = 0f;
+
+        StartStompPullVFX();
 
         while (elapsed < _stompPullDuration)
         {
@@ -851,6 +895,8 @@ public partial class AstarothController
             elapsed += Time.deltaTime;
             yield return null;
         }
+
+        StopStompPullVFX();
     }
 
     private void PullPlayerTowardStompCenter(GameObject target)

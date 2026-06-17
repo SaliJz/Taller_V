@@ -71,6 +71,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     [SerializeField] private float _stompPullDuration = 0.5f;
     [SerializeField] private float _stompPullSpeed = 12f;
     [SerializeField] private GameObject _stompPullIndicatorObject;
+    [SerializeField] private GameObject _stompPullVFXPrefab;
 
     [Header("Apisonador - Impact")]
     [SerializeField] private bool _enableStompDamage = true;
@@ -82,6 +83,8 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
     private float _stompTimer = 0f;
     private bool _isStomping = false;
+
+    private GameObject _activeStompPullVFX;
 
     #endregion
 
@@ -808,6 +811,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         ResetAttackState();
 
         if (_trailRenderer != null) _trailRenderer.enabled = false;
+        StopStompPullVFX();
 
         if (_navMeshAgent != null && _navMeshAgent.enabled)
         {
@@ -890,6 +894,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         _smashRockInFlight = false;
         _smashImpactCompleted = false;
         SetStompIndicatorsActive(false);
+        StopStompPullVFX();
         ResetSmashVisuals();
         StopDefensiveBlockVisualFeedback();
         _recentPlayerHitTimes.Clear();

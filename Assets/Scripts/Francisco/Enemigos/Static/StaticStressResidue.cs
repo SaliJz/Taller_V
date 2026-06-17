@@ -3,14 +3,19 @@ using UnityEngine;
 
 public class StaticStressResidue : MonoBehaviour
 {
-    #region Private State
+    #region Public States
 
-    private float duration;
-    private float dps;
-    private float radius;
-    private float tickInterval = 0.1f;
+    public float duration = 4f;
+    public float dps = 2f;
+    public float radius = 2f;
+    public float tickInterval = 0.1f;
 
     #endregion
+
+    void OnEnable()
+    {
+        Initialize(duration, dps, radius);
+    }
 
     public void Initialize(float inDuration, float inDPS, float inRadius)
     {

@@ -193,8 +193,6 @@ public class TheWeightAnimCtrl : MonoBehaviour
     {
         yield return new WaitForSeconds(fleshLifetime);
 
-        // Stop + destroy seguros: evita el "JobTempAlloc has allocations..." leak
-        // que ocurre al destruir un ParticleSystem mientras sus jobs siguen activos.
         VFXHelper.StopAndDestroy(fleshPS);
     }
 
