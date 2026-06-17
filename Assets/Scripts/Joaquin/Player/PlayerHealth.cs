@@ -481,18 +481,32 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private float ApplyDamageTakenStat(float damageAmount, bool isCostDamage)
     {
-        if (isCostDamage || statsManager == null) return damageAmount;
-
-        float damageReduction = statsManager.GetStat(StatType.DamageTaken);
-
-        if (damageReduction > 1f)
+        if (isCostDamage)
         {
-            damageReduction /= 100f;
+            Debug.LogWarning($"[DAÑO] El daño es de tipo 'isCostDamage', ignorando reducciones. Daño aplicado: {damageAmount}");
+            return damageAmount;
         }
 
-        damageReduction = Mathf.Clamp01(damageReduction);
+        if (statsManager == null)
+        {
+            Debug.LogError("[DAÑO] ¡statsManager es NULL! No se puede leer la reducción de daño.");
+            return damageAmount;
+        }
 
-        return Mathf.Max(0f, damageAmount * (1f - damageReduction));
+        float damageMultiplier = statsManager.GetCurrentStat(StatType.DamageTaken);
+
+        Debug.Log($"[DAÑO] Daño Base Enemigo: {damageAmount} | Valor de DamageTaken en StatsManager: {damageMultiplier}");
+
+        if (damageMultiplier > 10f)
+            damageMultiplier /= 100f;
+
+        if (damageMultiplier < 0f) damageMultiplier = 0f;
+
+        float finalDamage = damageAmount * damageMultiplier;
+
+        Debug.Log($"[DAÑO] Resultado Final -> {damageAmount} x {damageMultiplier} = {finalDamage}");
+
+        return finalDamage;
     }
 
     private void ResetShakeCooldown()
