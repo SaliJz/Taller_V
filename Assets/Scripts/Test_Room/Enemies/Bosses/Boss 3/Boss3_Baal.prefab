@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6323181816140914314}
   - component: {fileID: 3623920608074400880}
   - component: {fileID: 7982883188819811114}
+  - component: {fileID: 4714272111537595144}
   m_Layer: 7
   m_Name: Boss3_HUD
   m_TagString: Untagged
@@ -117,6 +118,36 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MainCamera: {fileID: 0}
+--- !u!114 &4714272111537595144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 57867408609977151}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36f6c0e864360314a9b0c8dd8fb00b98, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  chargeSlots:
+  - root: {fileID: 7416056867955920450}
+    background: {fileID: 1669930509379357246}
+    radialFill: {fileID: 2197517979009062700}
+    icon: {fileID: 1608958696343645244}
+  - root: {fileID: 2770968178003247955}
+    background: {fileID: 5167985332951135358}
+    radialFill: {fileID: 2514602805212813009}
+    icon: {fileID: 3482411719769249988}
+  - root: {fileID: 2009504180674829595}
+    background: {fileID: 9217955400733166992}
+    radialFill: {fileID: 1331968250169954152}
+    icon: {fileID: 893360387781977191}
+  heightOffset: 2.5
+  activeColor: {r: 1, g: 0.45, b: 0.1, a: 1}
+  inactiveColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.4}
+  fillColor: {r: 1, g: 0.8, b: 0.1, a: 1}
+  canForcedTransform: 1
 --- !u!1 &97632754016888401
 GameObject:
   m_ObjectHideFlags: 0
