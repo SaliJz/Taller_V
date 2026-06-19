@@ -9,6 +9,7 @@ public class Boss2_HandAttackCtrl : MonoBehaviour
     [Header("Referencias")]
     [SerializeField] private Transform handTransform;
     [SerializeField] private SpriteRenderer handRend;
+    [SerializeField] private Animator anim;
 
     #endregion
 
@@ -44,8 +45,29 @@ public class Boss2_HandAttackCtrl : MonoBehaviour
     private Vector3 originalLocalPosition;
     private MaterialPropertyBlock mpb;
     private Coroutine currentRoutine;
+    private bool canGoDown = false;
+    private bool _damageAchived = false;
+
+    private static readonly string ANIMCLIP_ATTACK = "A_Attack";
+    private static readonly int ANIMBOOL_DAMAGE_ACHIVED = Animator.StringToHash("DamageAchived");
+    private static readonly string ANIMCLIP_RISSING = "A_Rissing";
 
     #endregion
+
+    #region Public Variables
+
+    public bool damageAchived //Este bool debe volverse TRUE si la mano logra hacerle daño al jugador
+    {
+        get => _damageAchived;
+        set
+        {
+            _damageAchived = value;
+            anim.SetBool(ANIMBOOL_DAMAGE_ACHIVED, _damageAchived);
+        }
+    }
+
+    #endregion
+
 
     #region Unity Lifecycle
 
@@ -60,6 +82,7 @@ public class Boss2_HandAttackCtrl : MonoBehaviour
         mpb = new MaterialPropertyBlock();
     }
 
+    #if UNITY_EDITOR
     void LateUpdate()
     {
         if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "AndreiNew")
@@ -68,8 +91,14 @@ public class Boss2_HandAttackCtrl : MonoBehaviour
             {
                 TriggerAttackSequence();
             }
+
+            if (Input.GetKeyDown(KeyCode.P))
+            {
+                damageAchived = !damageAchived;
+            }
         }
     }
+    #endif
 
     #endregion
 
@@ -84,6 +113,17 @@ public class Boss2_HandAttackCtrl : MonoBehaviour
         currentRoutine = StartCoroutine(AttackSequence());
     }
 
+    public void OnAttackEvent()
+    {
+        OnAttack?.Invoke();
+        StartCoroutine(ShakeRoutine(0.1f, false));
+    }
+
+    public void CanGoDownEvent()
+    {
+        canGoDown = true;
+    }
+
     #endregion
 
     #region Secuencia Principal
@@ -91,16 +131,24 @@ public class Boss2_HandAttackCtrl : MonoBehaviour
     private IEnumerator AttackSequence()
     {
         yield return RiseRoutine();
+        canGoDown = false;
+        // anim.Play(ANIMCLIP_RISSING);
 
-        yield return ShakeRoutine();
+        yield return ShakeRoutine(shakeDuration, true);
+        anim.Play(ANIMCLIP_ATTACK); //En esta animacion debe haber el evento OnAttackEvent() :))))
 
-        OnAttack?.Invoke();
+        // OnAttack?.Invoke();
 
         handRend.GetPropertyBlock(mpb);
         mpb.SetFloat("_Amount", 0);
         handRend.SetPropertyBlock(mpb);
 
-        yield return new WaitForSeconds(waitToGoDown);
+        // yield return new WaitForSeconds(waitToGoDown);
+
+        while (!canGoDown) //La idea es que un evento hace true el boll canGoDown, esto es para que se espere ese momento
+        {
+            yield return null; //:D
+        }
 
         yield return ReturnDownRutine();
 
@@ -118,6 +166,8 @@ public class Boss2_HandAttackCtrl : MonoBehaviour
         Vector3 endPos = new Vector3(originalLocalPosition.x, targetY, originalLocalPosition.z);
         if (handTransform != null) handTransform.localPosition = startPos;
 
+        anim.Play(ANIMCLIP_RISSING);
+
         while (elapse < riseDuration)
         {
             elapse += Time.deltaTime;
@@ -130,12 +180,12 @@ public class Boss2_HandAttackCtrl : MonoBehaviour
         if (handTransform != null) handTransform.localPosition = endPos;
     }
 
-    private IEnumerator ShakeRoutine()
+    private IEnumerator ShakeRoutine(float duration, bool needRedColor)
     {
         float elapsed = 0f;
-        while (elapsed < shakeDuration)
+        while (elapsed < duration)
         {
-            float t = elapsed / shakeDuration;
+            float t = elapsed / duration;
 
             float offsetX = Mathf.Sin(elapsed * shakeFrequency * Mathf.PI * 2f) * shakeIntensity;
             float offsetZ = Mathf.Cos(elapsed * shakeFrequency * Mathf.PI * 2.3f) * shakeIntensity * 0.6f;
@@ -145,10 +195,13 @@ public class Boss2_HandAttackCtrl : MonoBehaviour
                 handTransform.localPosition = new Vector3(originalLocalPosition.x 
                     + offsetX, targetY, originalLocalPosition.z + offsetZ);
             }
-            
-            if ( handRend != null) handRend.GetPropertyBlock(mpb);
-            if (mpb != null) mpb.SetFloat("_Amount", Mathf.Lerp(0f, 1f, t));
-            if (handRend != null) handRend.SetPropertyBlock(mpb);
+
+            if (needRedColor)
+            {    
+                if ( handRend != null) handRend.GetPropertyBlock(mpb);
+                if (mpb != null) mpb.SetFloat("_Amount", Mathf.Lerp(0f, 1f, t));
+                if (handRend != null) handRend.SetPropertyBlock(mpb);
+            }
 
             elapsed += Time.deltaTime;
             yield return null;
