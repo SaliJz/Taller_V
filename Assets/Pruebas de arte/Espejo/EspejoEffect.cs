@@ -222,7 +222,13 @@ public class EspejoController : MonoBehaviour
         {
             materialInstance.SetFloat(MaskAplha_PROP, value);
         }
-    }
+    } 
+
+    public void ActivarNivel1() => estadoActual = EstadoEspejo.Nivel1;
+    public void ActivarNivel2() => estadoActual = EstadoEspejo.Nivel2;
+    public void ActivarNivel3() => estadoActual = EstadoEspejo.Nivel3;
+    public void Resetear() => estadoActual = EstadoEspejo.Base;
+
 
     void testInputs()
     {

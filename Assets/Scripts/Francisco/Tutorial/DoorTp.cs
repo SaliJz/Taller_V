@@ -10,11 +10,12 @@ public class DoorTp : MonoBehaviour
     [SerializeField]
     private Transform destinationDoor;
 
+    [Header("Optional Sequence")]
+    [SerializeField] private SequenceTransition sequenceTransition;
+
     [Header("Transition Settings")]
-    [SerializeField]
-    private float preTeleportMoveDistance = 3f;
-    [SerializeField]
-    private float playerMoveDuration = 0.5f;
+    [SerializeField] private float preTeleportMoveDistance = 3f;
+    [SerializeField] private float playerMoveDuration = 0.5f;
 
     [Header("Debug/Gizmos")]
     public float gizmoRadius = 1f;
@@ -27,6 +28,7 @@ public class DoorTp : MonoBehaviour
 
     private PlayerMovement playerMovement;
     private PlayerHealth playerHealth;
+    private PlayerAnimCtrl playerAnimCtrl;
     private Transform playerTransform;
     private bool isTransitioning = false;
 
@@ -64,6 +66,7 @@ public class DoorTp : MonoBehaviour
         playerMovement = FindAnyObjectByType<PlayerMovement>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
         playerTransform = FindAnyObjectByType<PlayerMovement>()?.transform;
+        playerAnimCtrl = playerTransform != null ? playerTransform.GetComponentInChildren<PlayerAnimCtrl>() : null;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -98,6 +101,12 @@ public class DoorTp : MonoBehaviour
 
     private IEnumerator TransitionCoroutine()
     {
+        if (sequenceTransition != null)
+        {
+            yield return SequenceTransitionCoroutine();
+            yield break;
+        }
+
         if (playerMovement != null)
         {
             playerMovement.SetCanMove(false);
@@ -174,6 +183,77 @@ public class DoorTp : MonoBehaviour
             }
             isTransitioning = false;
         }
+    }
+
+    private IEnumerator SequenceTransitionCoroutine()
+    {
+        yield return StartCoroutine(sequenceTransition.ExecuteSequence(playerTransform));
+
+        while (sequenceTransition.IsSequenceRunning)
+        {
+            yield return null;
+        }
+
+        if (playerAnimCtrl != null)
+        {
+            playerAnimCtrl.SetInputAxes(0f, 0f);
+            playerAnimCtrl.PlayState(PlayerAnimCtrl.PlayerState.idle, BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.dash, true);
+        }
+
+        if (playerMovement != null)
+        {
+            playerMovement.SetCanMove(false);
+        }
+
+        float originalPlayerY = playerTransform.position.y;
+
+        if (FadeController.Instance != null)
+        {
+            yield return FadeController.Instance.FadeOut(
+                onStart: null,
+                onComplete: () =>
+                {
+                    Vector3 spawnPosition = new Vector3(destinationDoor.position.x, originalPlayerY, destinationDoor.position.z);
+
+                    if (playerMovement != null)
+                    {
+                        playerMovement.TeleportTo(spawnPosition);
+                    }
+                    else
+                    {
+                        playerTransform.position = spawnPosition;
+                    }
+                }
+            );
+
+            yield return FadeController.Instance.FadeIn(null, null);
+        }
+        else
+        {
+            Vector3 spawnPosition = new Vector3(destinationDoor.position.x, originalPlayerY, destinationDoor.position.z);
+            if (playerMovement != null)
+            {
+                playerMovement.TeleportTo(spawnPosition);
+            }
+            else
+            {
+                playerTransform.position = spawnPosition;
+            }
+        }
+
+        sequenceTransition.RestoreControl();
+
+        if (playerMovement != null)
+        {
+            playerMovement.SetCanMove(true);
+        }
+
+        if (playerAnimCtrl != null)
+        {
+            playerAnimCtrl.ResetToGameplayState();
+        }
+
+        isTransitioning = false;
     }
 
     private Vector3 CalculateOrthogonalDirection(Vector3 origin, Vector3 destination)
@@ -260,7 +340,7 @@ public class DoorTp : MonoBehaviour
             Gizmos.DrawSphere(endPathIn, gizmoRadius * 0.3f);
 
             Vector3 startPathOut = destinationDoor.position;
-            Vector3 endPathOut = startPathOut + orthogonalDirection * preTeleportMoveDistance; 
+            Vector3 endPathOut = startPathOut + orthogonalDirection * preTeleportMoveDistance;
 
             Gizmos.color = pathColor;
             Gizmos.DrawLine(startPathOut, endPathOut);

@@ -84,6 +84,11 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
     {
         if (!context.started) return;
 
+        if (DialogManager.Instance != null && DialogManager.Instance.IsActive)
+        {
+            return;
+        }
+
         if (InventoryUIManager.Instance != null &&
             InventoryUIManager.Instance.IsOpen &&
             !InventoryUIManager.Instance.IsConfirmPanelOpen)
