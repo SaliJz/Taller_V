@@ -34,7 +34,10 @@ public class RompiblePorEscombros : MonoBehaviour
 
     [Header("Física")]
     [Tooltip("Fuerza principal hacia afuera.")]
-    public float fuerzaHaciaAfuera = 8f;
+    public float fuerzaHaciaAfuera = 2f;
+
+    [Tooltip("Fuerza principal hacia arriba.")]
+    public float fuerzaHaciaArriba = 5f;
 
     [Tooltip("Fuerza de rotación de cada escombro.")]
     public float fuerzaRotacion = 4f;
@@ -125,7 +128,7 @@ public class RompiblePorEscombros : MonoBehaviour
 
             Vector3 fuerzaFinal =
                 direccionAfuera * fuerzaHaciaAfuera +
-                Vector3.up * (fuerzaHaciaAfuera / 3f);
+                Vector3.up * (fuerzaHaciaArriba);
 
             rb.AddForce(fuerzaFinal, modoFuerza);
             rb.AddTorque(Random.insideUnitSphere * fuerzaRotacion, modoFuerza);
