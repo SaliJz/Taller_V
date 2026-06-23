@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7347343003198640111}
   - component: {fileID: 498394067786209828}
   - component: {fileID: -5634977248023331941}
+  - component: {fileID: 3223211432545694904}
   m_Layer: 0
   m_Name: ShieldStrenght_Item
   m_TagString: Untagged
@@ -109,3 +110,24 @@ MonoBehaviour:
   directionX: 1
   directionY: 1
   directionZ: 1
+--- !u!114 &3223211432545694904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1976161808643649286}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0aac80912e5b0246b0c4161d40e77a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowPrefab: {fileID: 4558005614469577162, guid: 5486048298c515f41913b1617b0f5cc5, type: 3}
+  GroundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  shadowPosition: {fileID: 0}
+  shadowScale: 1
+  spawnYoffset: 0.02
+  checkInterval: 0.1
+  checkShadows: 0

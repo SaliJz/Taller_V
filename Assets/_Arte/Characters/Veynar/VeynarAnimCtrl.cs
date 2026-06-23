@@ -5,6 +5,7 @@ public class VeynarAnimCtrl : MonoBehaviour
 {
     [SerializeField] private Animator anim;
     [SerializeField] private SkinnedMeshRenderer mesh;
+    [SerializeField] private EscudoController shieldCtrl;
     private MaterialPropertyBlock propBlock;
 
     #region  private variables
@@ -112,6 +113,11 @@ public class VeynarAnimCtrl : MonoBehaviour
         while (stateInfo.IsName("Move Out") && stateInfo.normalizedTime < 1f);
     }
 
+    public void PlayInvulnerabilityVFX()
+    {
+        if (shieldCtrl != null) shieldCtrl.Escudo = true;
+    }
+
     private void testInput()
     {
         if (Input.GetKeyDown(KeyCode.K)) PlayDamage();
@@ -126,5 +132,7 @@ public class VeynarAnimCtrl : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.H)) PlaySpawning();
         if(Input.GetKeyDown(KeyCode.O)) isInvulnerable = true;
         else if (Input.GetKeyUp(KeyCode.O)) isInvulnerable = false;
+
+        if(Input.GetKeyDown(KeyCode.Y)) PlayInvulnerabilityVFX();
     }
 }

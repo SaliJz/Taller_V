@@ -1,5 +1,4 @@
 using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -29,6 +28,10 @@ public class TheWeightAnimCtrl : MonoBehaviour
     [SerializeField] GameObject FleshPrefab;
     [SerializeField] int fleshCount;
     [SerializeField] float fleshLifetime;
+
+    [Header("General VFX")]
+    [SerializeField] private GameObject canonShotSmoke;
+    [SerializeField] private Transform canonShotSmokePos;
 
     Animator formaBase_anim;
     Animator apisonador_anim;
@@ -204,7 +207,11 @@ public class TheWeightAnimCtrl : MonoBehaviour
     public void ReturnToIdle() => SwapTo(SwapForms.formaBase);
     public void PlayPrepareBaseAttack() => formaBase_anim.SetTrigger("PrepareAtk");
     public void PlayAttack() => formaBase_anim.Play(ANIM_BASE_ATTACK);
-    public void PlayCanonShot() => canon_anim.SetTrigger("Shot");
+    public void PlayCanonShot() 
+    {
+        canon_anim.SetTrigger("Shot");
+        InstantiateCanonShotVFX();
+    }
 
     public void SetAnimatorSpeed(float speed)
     {
@@ -306,5 +313,10 @@ public class TheWeightAnimCtrl : MonoBehaviour
         float h = Input.GetAxisRaw("Horizontal");
         float y = Input.GetAxisRaw("Vertical");
         isWalking = h != 0 || y != 0;
+    }
+
+    private void InstantiateCanonShotVFX()
+    {
+        Instantiate(canonShotSmoke, canonShotSmokePos.position, canonShotSmokePos.localRotation);
     }
 }

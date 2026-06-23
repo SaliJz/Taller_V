@@ -16,10 +16,12 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
+  m_CustomRenderQueue: 2000
+  stringTagMap:
+    RenderType: Opaque
   disabledShaderPasses:
   - MOTIONVECTORS
+  - SHADOWCASTER
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -92,6 +94,7 @@ Material:
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
+    - _CastShadows: 0
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Core_Height: 0.5
@@ -131,7 +134,9 @@ Material:
     - _UV_Scroll_W: 0
     - _Width: 0.5
     - _WorkflowMode: 1
+    - _ZTest: 4
     - _ZWrite: 1
+    - _ZWriteControl: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 2.9960785, g: 2.9223404, b: 0.21198668, a: 1}
@@ -139,6 +144,7 @@ Material:
     - _Distorsion_Speed: {r: 1, g: 0.5, b: 0, a: 0}
     - _Distorsion_TIling: {r: 1, g: 1, b: 0, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _Mask_Size: {r: 0.5, g: 0.5, b: 0, a: 0}
     - _Outer_Color: {r: 0.8, g: 0, b: 0.6940567, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _Start_Color: {r: 2, g: 1.553969, b: 0.02830184, a: 0}

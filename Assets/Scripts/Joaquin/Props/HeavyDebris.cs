@@ -10,13 +10,13 @@ public class HeavyDebris : MonoBehaviour
     [SerializeField] private AudioClip impactSound;
     [SerializeField] private LayerMask groundLayer;
 
-    [Header("Configuración de Daño")]
+    [Header("Configuraciï¿½n de Daï¿½o")]
     [SerializeField] private bool canDamaged = true;
     [SerializeField] private LayerMask enemyLayers;
     [SerializeField] private float impactRadius = 5f;
     [SerializeField] private float damageToEnemies = 10f;
 
-    [Header("Configuración de Encogimiento")]
+    [Header("Configuraciï¿½n de Encogimiento")]
     [SerializeField] private float shrinkScaleFactor = 0.25f;
     [SerializeField] private float shrinkDuration = 2.5f;
     [SerializeField] private float shrinkDelay = 1f;
@@ -101,15 +101,15 @@ public class HeavyDebris : MonoBehaviour
 
             hitTargets.Add(hit.transform);
 
-            // Evitar dañarse a sí mismo si el pilar estuviera en esa layer
+            // Evitar daï¿½arse a sï¿½ mismo si el pilar estuviera en esa layer
             if (hit.gameObject == this.gameObject) continue;
 
             // Buscar componente de vida en el enemigo
             if (hit.TryGetComponent(out EnemyHealth enemyHealth))
             {
-                // Aplicar daño.
+                // Aplicar daï¿½o.
                 enemyHealth.TakeDamage(damageToEnemies, AttackDamageType.Nothing, transform.position);
-                Debug.Log($"Pilar dañó a {hit.name} por la caída de escombros.");
+                Debug.Log($"Pilar daï¿½ï¿½ a {hit.name} por la caï¿½da de escombros.");
             }
         }
     }
@@ -121,7 +121,7 @@ public class HeavyDebris : MonoBehaviour
         // Si el tiempo restante es menor al tiempo de encogimiento, no hacer nada
         if (duration >= debrisLifetime - delay) yield break;
 
-        // Verificar si el objeto aún existe
+        // Verificar si el objeto aï¿½n existe
         if (!this) yield break;
 
         Vector3 initialScale = transform.localScale;
