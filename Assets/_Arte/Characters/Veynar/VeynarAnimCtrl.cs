@@ -42,6 +42,7 @@ public class VeynarAnimCtrl : MonoBehaviour
 
     #endregion
 
+    #region Unity Lifecycle
 
     private void Start()
     {
@@ -55,6 +56,10 @@ public class VeynarAnimCtrl : MonoBehaviour
         testInput();
     }
     #endif
+
+    #endregion
+
+    #region Public Methods
 
     public void UpdateCamou(float value)
     {
@@ -113,10 +118,19 @@ public class VeynarAnimCtrl : MonoBehaviour
         while (stateInfo.IsName("Move Out") && stateInfo.normalizedTime < 1f);
     }
 
+    #endregion
+
+    #region Invulnerability
+
     public void PlayInvulnerabilityVFX()
     {
         if (shieldCtrl != null) shieldCtrl.Escudo = true;
     }
+
+    #endregion
+
+    #if UNITY_EDITOR
+    #region Testing
 
     private void testInput()
     {
@@ -135,4 +149,7 @@ public class VeynarAnimCtrl : MonoBehaviour
 
         if(Input.GetKeyDown(KeyCode.Y)) PlayInvulnerabilityVFX();
     }
+
+    #endregion
+    #endif
 }
