@@ -21,10 +21,15 @@ public class JitterAnimCtrl : MonoBehaviour
     [SerializeField] private float shakeIntensity = 0.2f;
     [SerializeField] private float shakeFrequency = 2f;
 
+    [Header("VFX Settings")]
+    [SerializeField] ParticleSystem[] HandSlashes;
+    [SerializeField] ParticleSystem AttackImpactVFX;
+
     private Coroutine shakeCoroutine;
     private Vector3 originalLocalPosition;
     private bool originalPositionCaptured = false;
 
+    #region Unity Lifecycle
     private void Awake()
     {
         anim = GetComponent<Animator>();
@@ -42,8 +47,12 @@ public class JitterAnimCtrl : MonoBehaviour
         if(isOnFuryMode) ElectricPulse();
         else ElectricityReset();
 
-        // testImputs();
+        #if UNITY_EDITOR
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "AndreiNew") testImputs();
+        #endif
     }
+
+    #endregion
 
     private void HandleMovement()
     {
@@ -158,6 +167,48 @@ public class JitterAnimCtrl : MonoBehaviour
 
     #endregion    
 
+    #region VFX Handlers
+
+    public void ActivateNormalAttackVFX()
+    {
+        // if (!HandSlashes[0].isPlaying) 
+        HandSlashes[0].Stop();
+        HandSlashes[0].Play();
+        // Debug.Log($"Playing slash: {HandSlashes[0]}");
+    }
+
+    public void ActivateFuryAttackVFX()
+    {
+        for(int i = 0; i < HandSlashes.Length; i++)
+        {
+            // if(!HandSlashes[i].isPlaying) 
+            HandSlashes[i].Stop();
+            HandSlashes[i].Play();
+            // Debug.Log($"Playing slash: {HandSlashes[i]}");
+        }
+    }
+
+    public void DeactivateSlashes()
+    {
+        for(int i = 0; i < HandSlashes.Length; i++)
+        {
+            if(!HandSlashes[i].isStopped) HandSlashes[i].Stop();
+            // Debug.Log("Ana Stop");
+        }
+    }
+
+    public void PlayImpactVFX()
+    {
+        if(AttackImpactVFX == null) return;
+        AttackImpactVFX.Stop();
+        AttackImpactVFX.Play();
+    }
+
+    #endregion
+
+    #if UNITY_EDITOR
+    #region testing
+
     private void testImputs()
     {
         if (Input.GetKeyDown(KeyCode.W)) isWalking = true;
@@ -171,4 +222,7 @@ public class JitterAnimCtrl : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.K)) PlayDeath();
     }
+
+    #endregion
+    #endif
 }

@@ -1099,6 +1099,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 339849680240992270}
   - {fileID: 594357002662487536}
   - {fileID: 1479005398696197702}
   - {fileID: 2278228998598436477}
@@ -2637,6 +2638,22 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -57.62878
       objectReference: {fileID: 0}
+    - target: {fileID: 8599253210685323657, guid: e2ec77b09f78ddd4592170f4bda26aae, type: 3}
+      propertyPath: AttackImpactVFX
+      value: 
+      objectReference: {fileID: 9019747765030724425}
+    - target: {fileID: 8599253210685323657, guid: e2ec77b09f78ddd4592170f4bda26aae, type: 3}
+      propertyPath: HandSlashes.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8599253210685323657, guid: e2ec77b09f78ddd4592170f4bda26aae, type: 3}
+      propertyPath: 'HandSlashes.Array.data[0]'
+      value: 
+      objectReference: {fileID: 1954521426615443442}
+    - target: {fileID: 8599253210685323657, guid: e2ec77b09f78ddd4592170f4bda26aae, type: 3}
+      propertyPath: 'HandSlashes.Array.data[1]'
+      value: 
+      objectReference: {fileID: 7489096053782735789}
     - target: {fileID: 9153107244582969692, guid: e2ec77b09f78ddd4592170f4bda26aae, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: -8.200442
@@ -2660,6 +2677,11 @@ PrefabInstance:
 --- !u!4 &1479005398696197702 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3925542777271959467, guid: e2ec77b09f78ddd4592170f4bda26aae, type: 3}
+  m_PrefabInstance: {fileID: 2520942433765605869}
+  m_PrefabAsset: {fileID: 0}
+--- !u!198 &1954521426615443442 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 4171447235185434143, guid: e2ec77b09f78ddd4592170f4bda26aae, type: 3}
   m_PrefabInstance: {fileID: 2520942433765605869}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &2291676069932803324 stripped
@@ -2690,6 +2712,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 118dd44faaae1274b9627fd501c9ea46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!198 &7489096053782735789 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 4977237247191493184, guid: e2ec77b09f78ddd4592170f4bda26aae, type: 3}
+  m_PrefabInstance: {fileID: 2520942433765605869}
+  m_PrefabAsset: {fileID: 0}
 --- !u!137 &8955495561997107440 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 6824184933714624797, guid: e2ec77b09f78ddd4592170f4bda26aae, type: 3}
@@ -2765,4 +2792,79 @@ Transform:
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5098343639695547559, guid: c05c0abf231487f44b5c864e37ce8f8e, type: 3}
   m_PrefabInstance: {fileID: 2949988247424318596}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3967229877338636955
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3425788958060345074}
+    m_Modifications:
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.15256357
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1.0000002
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 2.115044
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5342107262533083602, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5342107262533083602, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: moveWithTransform
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7988865868457753275, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_Name
+      value: EfectoGolpeKronus 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+--- !u!4 &339849680240992270 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+  m_PrefabInstance: {fileID: 3967229877338636955}
+  m_PrefabAsset: {fileID: 0}
+--- !u!198 &9019747765030724425 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 5342107262533083602, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+  m_PrefabInstance: {fileID: 3967229877338636955}
   m_PrefabAsset: {fileID: 0}
