@@ -647,7 +647,7 @@ MonoBehaviour:
   isDashing: 1
   dashDuration: 0.5
   AttackVFX: {fileID: 2368388069150567917}
-  ImpactVFX: {fileID: 0}
+  ImpactVFX: {fileID: 71892577049297524}
   h: 0
   v: -1
   shakeIntensity: 0.2
@@ -1531,6 +1531,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 6744214327713405530}
   - {fileID: 3959726841109705992}
   - {fileID: 3677715631091257306}
   - {fileID: 8547942259560842064}
@@ -2722,6 +2723,81 @@ Transform:
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5098343639695547559, guid: c05c0abf231487f44b5c864e37ce8f8e, type: 3}
   m_PrefabInstance: {fileID: 1424893146871076526}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7935710625524119759
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 9137907807618677906}
+    m_Modifications:
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 2.78
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5342107262533083602, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: moveWithTransform
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7988865868457753275, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_Name
+      value: EfectoGolpeKronus 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7988865868457753275, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+--- !u!1 &71892577049297524 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7988865868457753275, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+  m_PrefabInstance: {fileID: 7935710625524119759}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &6744214327713405530 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3727025517222519445, guid: c197e31198cf9a54591ea203463c4551, type: 3}
+  m_PrefabInstance: {fileID: 7935710625524119759}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8337866744350084021
 PrefabInstance:
