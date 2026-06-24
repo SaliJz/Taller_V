@@ -46,6 +46,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
             GameObject itemInstance = Instantiate(shopItemData.ShopItemPrefab, transform);
             // itemInstance.transform.SetParent(transform);
             itemInstance.transform.localPosition = Vector3.zero;
+            shopItemData.ApplyOutlineMaterial(itemInstance);
         }
 
         playerControls = new PlayerControlls();

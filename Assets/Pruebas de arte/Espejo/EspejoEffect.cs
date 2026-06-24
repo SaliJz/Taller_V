@@ -122,8 +122,11 @@ public class EspejoController : MonoBehaviour
             materiales[2] = EspejoMaterial;
         }
 
+
+        materialInstance = new Material(materiales[2]);
+        materiales[2] = materialInstance;
         meshRenderer.materials = materiales;
-        materialInstance = materiales[2];
+        // materialInstance = materiales[2];
     }
 
     private void ActivarNivel()

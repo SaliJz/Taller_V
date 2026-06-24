@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Text;
+using Unity.VisualScripting.Antlr3.Runtime;
 
 [System.Serializable]
 public struct ItemEffect
@@ -63,6 +64,11 @@ public class ShopItem : ScriptableObject
     public Sprite itemIcon;
     [Tooltip("Modelo 3D o Sprite a instanciar en la tienda")]
     public GameObject ShopItemPrefab;
+
+    [Header("Rarity Materials")]
+    public Material outlineNormal;
+    public Material outlineRaro;
+    public Material outlineSuperRaro;
 
     [Header("Comportamientos/Efectos Eventuales")]
     public List<ItemEffectBase> behavioralEffects;
@@ -237,5 +243,27 @@ public class ShopItem : ScriptableObject
             default:
                 return statType.ToString();
         }
+    }
+
+    public void ApplyOutlineMaterial(GameObject instance)
+    {
+        Renderer renderer = instance.GetComponentInChildren<Renderer>();
+
+        if (renderer == null) return;
+
+        Material outlineMat = rarity switch
+        {
+            ItemRarity.Raro => outlineRaro,
+            ItemRarity.SuperRaro => outlineSuperRaro,
+            _ => outlineNormal
+        };
+
+        if (outlineMat == null) return;
+
+        Material[] mats = renderer.materials;
+        if (mats.Length < 2) return;
+
+        mats[1] = outlineMat;
+        renderer.materials = mats;
     }
 }

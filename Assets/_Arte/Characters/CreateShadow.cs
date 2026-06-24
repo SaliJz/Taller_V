@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public class CreateShadow : MonoBehaviour
 {
@@ -8,6 +7,7 @@ public class CreateShadow : MonoBehaviour
     [SerializeField] LayerMask GroundLayer;
     [Tooltip("Si este field esta vacio, el script tomará la posicion central del objeto")]
     [SerializeField] Transform shadowPosition;
+    [SerializeField] bool setParentInParent = false;
 
     [Header("Configuración")]
     public float shadowScale = 1f;
@@ -49,15 +49,23 @@ public class CreateShadow : MonoBehaviour
         Vector3 shadowSpawnPoint = shadowPosition? shadowPosition.position : transform.position;
         Vector3 rayOrigin = shadowSpawnPoint + Vector3.up * 0.5f;
 
-        if (Physics.Raycast(rayOrigin, Vector3.down, out hit, 50f, GroundLayer))
+        if (Physics.Raycast(rayOrigin, Vector3.down, out hit, 50f, GroundLayer, QueryTriggerInteraction.Collide))
         {
             Vector3 spawnPos = hit.point + new Vector3(0, spawnYoffset, 0);
             Quaternion spawnRotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
 
             shadowInstance = Instantiate(shadowPrefab, spawnPos, spawnRotation);
             shadowInstance.transform.localScale = Vector3.one * shadowScale * 0.1f;
-            if(shadowPosition != null) shadowInstance.transform.SetParent(shadowPosition.transform);
-            else shadowInstance.transform.SetParent(this.transform);
+
+            if(!setParentInParent)
+            {
+                if(shadowPosition != null) shadowInstance.transform.SetParent(shadowPosition.transform);
+                else shadowInstance.transform.SetParent(this.transform);
+            }
+            else
+            {
+                shadowInstance.transform.SetParent(transform.parent);
+            }
             Debug.Log("Sombra spawneada");
         }
         else
@@ -80,7 +88,7 @@ public class CreateShadow : MonoBehaviour
         Vector3 shadowSpawnPoint = shadowPosition? shadowPosition.position : transform.position;
 
         Vector3 rayOrigin = shadowSpawnPoint + Vector3.up * 0.5f;
-        bool hasGround = Physics.Raycast(rayOrigin, Vector3.down, 50f, GroundLayer);
+        bool hasGround = Physics.Raycast(rayOrigin, Vector3.down, 50f, GroundLayer, QueryTriggerInteraction.Collide);
         shadowInstance.SetActive(hasGround);
     }
 }

@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 2846309641880146763}
   - component: {fileID: 1128420222221688719}
   - component: {fileID: 7331083983591596361}
+  - component: {fileID: -6871678153317958165}
   m_Layer: 10
   m_Name: UniversalLarvaShield
   m_TagString: Untagged
@@ -262,6 +263,28 @@ MonoBehaviour:
   shopItemData: {fileID: 11400000, guid: 5019235cea7e26049b2116696b9aac40, type: 2}
   audioSource: {fileID: 0}
   purchaseSound: {fileID: 8300000, guid: 839aa402b089e9c4e942251c37f125d4, type: 3}
+--- !u!114 &-6871678153317958165
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2790493699222432776}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0aac80912e5b0246b0c4161d40e77a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowPrefab: {fileID: 4558005614469577162, guid: 5486048298c515f41913b1617b0f5cc5, type: 3}
+  GroundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  shadowPosition: {fileID: 0}
+  setParentInParent: 0
+  shadowScale: 2.3
+  spawnYoffset: 0.02
+  checkInterval: 0.1
+  checkShadows: 0
 --- !u!1 &7649819580551975441
 GameObject:
   m_ObjectHideFlags: 0
