@@ -270,8 +270,12 @@ public class EnemyManager : MonoBehaviour
 
             finalSpawnList.Add((prefab, calculatedPosition));
 
-            GameObject effect = spawnEffectPrefab != null
-                ? Instantiate(spawnEffectPrefab, calculatedPosition, Quaternion.identity)
+            GameObject effectToUse = dungeonGenerator != null
+                ? dungeonGenerator.GetSpawnEffectForEnemy(prefab != null ? prefab.name : null)
+                : spawnEffectPrefab;
+
+            GameObject effect = effectToUse != null
+                ? Instantiate(effectToUse, calculatedPosition, Quaternion.identity)
                 : null;
 
             allEffects.Add((effect, calculatedPosition));

@@ -6,6 +6,13 @@ using UnityEngine;
 
 using static RoomProgressionLevel;
 
+[System.Serializable]
+public struct EnemySpawnEffectMapping
+{
+    public string nameContains;
+    public GameObject effectPrefab;
+}
+
 public class DungeonGenerator : MonoBehaviour
 {
     [Header("Room Prefabs")]
@@ -27,6 +34,7 @@ public class DungeonGenerator : MonoBehaviour
 
     [Header("Visual Effects")]
     public GameObject spawnEffectPrefab;
+    public EnemySpawnEffectMapping[] enemySpawnEffects;
 
     [Header("Door Preview")]
     public bool enableDoorPreview = true;
@@ -244,6 +252,22 @@ public class DungeonGenerator : MonoBehaviour
         }
 
         OnCombatRoomCleared(currentRoom, entrancePoint);
+    }
+
+    public GameObject GetSpawnEffectForEnemy(string enemyPrefabName)
+    {
+        if (!string.IsNullOrEmpty(enemyPrefabName) && enemySpawnEffects != null)
+        {
+            foreach (var mapping in enemySpawnEffects)
+            {
+                if (!string.IsNullOrEmpty(mapping.nameContains) && enemyPrefabName.Contains(mapping.nameContains))
+                {
+                    return mapping.effectPrefab;
+                }
+            }
+        }
+
+        return spawnEffectPrefab;
     }
 
     void GenerateInitialRoom()

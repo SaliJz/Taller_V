@@ -296,6 +296,7 @@ public class DungeonGeneratorInspector : Editor
         DrawPropertyIfExists("endRoomPrefabs", "Salas Finales", true);
         DrawPropertyIfExists("enemyPrefabs", "Prefabs de Enemigos", true);
         DrawPropertyIfExists("spawnEffectPrefab", "Efecto de Spawn");
+        DrawPropertyIfExists("enemySpawnEffects", "Efectos por Enemigo (Override)", true);
         EditorGUILayout.EndVertical();
 
         EditorGUILayout.Space(4);
@@ -1267,6 +1268,7 @@ public class DungeonGeneratorEditorWindow : EditorWindow
 
         EditorGUILayout.LabelField("Visual Effects", EditorStyles.boldLabel);
         DrawSerializedProperty("spawnEffectPrefab", "Efecto de Spawn");
+        DrawSerializedProperty("enemySpawnEffects", "Efectos por Enemigo (Override)", true);
 
         EditorGUILayout.EndVertical();
 
