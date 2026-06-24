@@ -11,6 +11,7 @@ public struct EnemySpawnEffectMapping
 {
     public string nameContains;
     public GameObject effectPrefab;
+    public float yOffset;
 }
 
 public class DungeonGenerator : MonoBehaviour
@@ -34,6 +35,7 @@ public class DungeonGenerator : MonoBehaviour
 
     [Header("Visual Effects")]
     public GameObject spawnEffectPrefab;
+    public float defaultSpawnEffectYOffset;
     public EnemySpawnEffectMapping[] enemySpawnEffects;
 
     [Header("Door Preview")]
@@ -254,7 +256,7 @@ public class DungeonGenerator : MonoBehaviour
         OnCombatRoomCleared(currentRoom, entrancePoint);
     }
 
-    public GameObject GetSpawnEffectForEnemy(string enemyPrefabName)
+    public GameObject GetSpawnEffectForEnemy(string enemyPrefabName, out float yOffset)
     {
         if (!string.IsNullOrEmpty(enemyPrefabName) && enemySpawnEffects != null)
         {
@@ -262,11 +264,13 @@ public class DungeonGenerator : MonoBehaviour
             {
                 if (!string.IsNullOrEmpty(mapping.nameContains) && enemyPrefabName.Contains(mapping.nameContains))
                 {
+                    yOffset = mapping.yOffset;
                     return mapping.effectPrefab;
                 }
             }
         }
 
+        yOffset = defaultSpawnEffectYOffset;
         return spawnEffectPrefab;
     }
 
