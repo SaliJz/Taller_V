@@ -61,6 +61,8 @@ public class DialogManager : MonoBehaviour
 
     #region Private Fields
 
+    public static System.Action OnAnyDialogEnded;
+
     private Queue<DialogLine> dialogQueue = new Queue<DialogLine>();
     private bool isDialogActive = false;
     private bool isTyping = false;
@@ -357,6 +359,8 @@ public class DialogManager : MonoBehaviour
         }
         LockPlayerControl(false);
         DisablePlayerScripts(false);
+
+        OnAnyDialogEnded?.Invoke();
 
         tempEvent?.Invoke();
     }

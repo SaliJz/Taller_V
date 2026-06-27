@@ -15,12 +15,15 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip purchaseSound;
 
+    [Header("Grace Period Settings")]
+    private float dialogueGracePeriod = 1.0f;
+    private float dialogueEndTime = -1f;
+
     private bool isPlayerInProximity = false;
 
     private void Awake()
     {
         shopManager = FindAnyObjectByType<ShopManager>();
-
         merchantRoomManager = GetComponentInParent<MerchantRoomManager>();
 
         if (merchantRoomManager != null)
@@ -37,14 +40,12 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
             Debug.LogError("ShopManager no encontrado. El item de la tienda no funcionara correctamente.");
         }
 
-        if(shopItemData.ShopItemPrefab != null)
+        if (shopItemData.ShopItemPrefab != null)
         {
-            // Debug.LogWarning("Ola Instancie un item yei");
             MeshRenderer m = GetComponent<MeshRenderer>();
             m.enabled = false;
 
             GameObject itemInstance = Instantiate(shopItemData.ShopItemPrefab, transform);
-            // itemInstance.transform.SetParent(transform);
             itemInstance.transform.localPosition = Vector3.zero;
             shopItemData.ApplyOutlineMaterial(itemInstance);
         }
@@ -56,11 +57,15 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
     private void OnEnable()
     {
         playerControls?.Interactions.Enable();
+
+        DialogManager.OnAnyDialogEnded += RecordDialogueEndTime;
     }
 
     private void OnDisable()
     {
         playerControls?.Interactions.Disable();
+
+        DialogManager.OnAnyDialogEnded -= RecordDialogueEndTime;
 
         if (shopManager != null && isPlayerInProximity)
         {
@@ -81,12 +86,24 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
         playerControls?.Dispose();
     }
 
+    private void RecordDialogueEndTime()
+    {
+        dialogueEndTime = Time.unscaledTime;
+        Debug.Log($"[ShopItemDisplay] Fin de diálogo registrado por Evento Seguro en unscaledTime: {dialogueEndTime}");
+    }
+
     public void OnInteract(InputAction.CallbackContext context)
     {
         if (!context.started) return;
 
         if (DialogManager.Instance != null && DialogManager.Instance.IsActive)
         {
+            return;
+        }
+
+        if (dialogueEndTime > 0 && (Time.unscaledTime - dialogueEndTime) < dialogueGracePeriod)
+        {
+            Debug.Log($"[ShopItemDisplay] Compra cancelada por seguridad. Evitando compra accidental por spam.");
             return;
         }
 
@@ -105,13 +122,11 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     public void OnAdvanceDialogue(InputAction.CallbackContext context)
     {
-
     }
 
     public void DisplayFixedInfo()
     {
         if (shopManager == null) return;
-
         shopManager.LockAndDisplayItemDetails(shopItemData);
     }
 
@@ -137,6 +152,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
             }
         }
     }
+
     private void OnTriggerStay(Collider other)
     {
         if (shopManager != null && shopManager.InteractionMode != ShopInteractionMode.TriggerProximity)
@@ -151,7 +167,6 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
             float finalCost = shopManager.CalculateFinalCost(shopItemData.cost);
             shopManager.UpdateCostBar(finalCost);
             shopManager.LockAndDisplayItemDetails(shopItemData);
-
         }
     }
 
@@ -181,7 +196,7 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     private void AttemptPurchase()
     {
-        Debug.Log($"[ShopItemDisplay] Interacci�n detectada para: {shopItemData.itemName}.");
+        Debug.Log($"[ShopItemDisplay] Interacción detectada para: {shopItemData.itemName}.");
         if (!shopManager.CanAttemptPurchase()) return;
 
         bool purchaseSuccessful = shopManager.PurchaseItem(shopItemData);
@@ -200,7 +215,6 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     private void OnPurchaseCancelled()
     {
-        // En caso el jugador cancel� el reemplazo, reactiva para que pueda reintentar
         isPlayerInProximity = true;
     }
 
