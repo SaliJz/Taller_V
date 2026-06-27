@@ -20,11 +20,17 @@ public class LearningEncounterController : MonoBehaviour
         Phase4_Completed
     }
     private EncounterState currentState = EncounterState.Phase1_Intro;
+    private bool hasRevivedOnce = false;
 
     [Header("Dependencies")]
     [SerializeField] private DummyArmor slimeArmor;
     [SerializeField] private MonoBehaviour playerAbilityScript;
     private IPlayerSpecialAbility playerAbility;
+
+    [Header("Objeto por Muerte Incorrecta")]
+    [SerializeField] private GameObject specialObjectToActivate;
+    [SerializeField] private float activationDuration = 2f;
+    private Coroutine objectDeactivationCoroutine;
 
     [Header("Phase 1: Superarmor Intro")]
     [SerializeField] private int requiredInitialHits = 3;
@@ -65,6 +71,11 @@ public class LearningEncounterController : MonoBehaviour
         {
             enabled = false;
             return;
+        }
+
+        if (specialObjectToActivate != null)
+        {
+            specialObjectToActivate.SetActive(false);
         }
 
         slimeArmor.OnHitByPlayer += HandleSlimeHit;
@@ -126,10 +137,13 @@ public class LearningEncounterController : MonoBehaviour
             case EncounterState.Phase2_AwaitingSkill:
                 OnDisplaySkillReminder?.Invoke();
                 break;
+
             case EncounterState.Phase3_LearningCombat:
                 if (specialAbilityTimerCoroutine != null) StopCoroutine(specialAbilityTimerCoroutine);
-                OnDisplayMeleeReminderBefore?.Invoke();
+
+                if (!hasRevivedOnce) OnDisplayMeleeReminderBefore?.Invoke();
                 break;
+
             case EncounterState.Phase4_Completed:
                 if (specialAbilityTimerCoroutine != null) StopCoroutine(specialAbilityTimerCoroutine);
                 break;
@@ -228,8 +242,33 @@ public class LearningEncounterController : MonoBehaviour
 
     private void ReviveSlime()
     {
+        if (specialObjectToActivate != null)
+        {
+            specialObjectToActivate.SetActive(true);
+
+            if (objectDeactivationCoroutine != null)
+            {
+                StopCoroutine(objectDeactivationCoroutine);
+            }
+            objectDeactivationCoroutine = StartCoroutine(DeactivateSpecialObjectAfterTime());
+        }
+
+        hasRevivedOnce = true;
+
         slimeArmor.ResetArmorState();
         currentHitCount = 0;
         SetState(EncounterState.Phase3_LearningCombat);
+    }
+
+    private IEnumerator DeactivateSpecialObjectAfterTime()
+    {
+        yield return new WaitForSeconds(activationDuration);
+
+        if (specialObjectToActivate != null)
+        {
+            specialObjectToActivate.SetActive(false);
+        }
+
+        objectDeactivationCoroutine = null;
     }
 }
