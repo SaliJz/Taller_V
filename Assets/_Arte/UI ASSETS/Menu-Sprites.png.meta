@@ -105,7 +105,7 @@ TextureImporter:
         width: 202
         height: 17
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -127,7 +127,7 @@ TextureImporter:
         width: 202
         height: 17
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -149,7 +149,7 @@ TextureImporter:
         width: 77
         height: 3
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -171,7 +171,7 @@ TextureImporter:
         width: 7
         height: 8
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -185,15 +185,15 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Menu-Sprites_4
+      name: Handle_Sprite
       rect:
         serializedVersion: 2
-        x: 9
+        x: 7
         y: 9
-        width: 26
-        height: 27
+        width: 30
+        height: 29
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -202,6 +202,50 @@ TextureImporter:
       bones: []
       spriteID: 2e2d0041ba57c6c4993eb5d78b3bc418
       internalID: -2091712244
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HandleSelected_sprite
+      rect:
+        serializedVersion: 2
+        x: 60
+        y: 9
+        width: 30
+        height: 29
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7cd42817955c24848b7523b55e629f03
+      internalID: 1850820639
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: HandleHighlighted-Sprite
+      rect:
+        serializedVersion: 2
+        x: 98
+        y: 9
+        width: 30
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 213558f00f279724a8828fbbb2ee3a92
+      internalID: -1296187181
       vertices: []
       indices: 
       edges: []
@@ -221,7 +265,9 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       Deco Menu: 533888792
-      Menu-Sprites_4: -2091712244
+      HandleHighlighted-Sprite: -1296187181
+      HandleSelected_sprite: 1850820639
+      Handle_Sprite: -2091712244
       Selected Option: 1887698465
       Slider-Fill: -282688763
       SliderBackground: 207908514
