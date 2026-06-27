@@ -239,9 +239,9 @@ MonoBehaviour:
   currentCoord: {x: 0, y: 0}
   cellSize: 1
   stunDuration: 1.5
-  detectionRadius: 10
-  detectionInterval: 0.5
-  chaseGracePeriod: 2
+  detectionRadius: 25
+  detectionInterval: 0.2
+  chaseGracePeriod: 1
   trailHeight: 1
   trailStartWidth: 1
   trailEndWidth: 1
@@ -256,10 +256,10 @@ MonoBehaviour:
   gizmosAnchor: 1.38
   gizmosLenght: 2
   playerTransform: {fileID: 0}
-  patrolMoveSpeed: 10
-  attackMoveSpeed: 16
+  patrolMoveSpeed: 12
+  attackMoveSpeed: 18
   rotationSpeed: 15
-  attackWindupTime: 1
+  attackWindupTime: 0.8
 --- !u!114 &6180529269801073315
 MonoBehaviour:
   m_ObjectHideFlags: 0
