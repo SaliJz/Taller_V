@@ -142,8 +142,12 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     private float _mudWaveCooldownTimer;
 
     #endregion
-
+    [Header("Ola de Lodo - Recovery")]
+    [SerializeField] private float _mudWaveRecoveryTime = 1f;
     #region Ability: Attack 1 (Whip)
+    [Header("Tiempos del Ciclo de Combate")]
+    [SerializeField] private float _shortMoveDuration = 3f;
+    [SerializeField] private float _longMoveDuration = 5f;
 
     [Header("Attack 1: Latigazo Desgarrador")]
     [SerializeField] private Transform _whipDamageOrigin;
@@ -628,7 +632,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     {
         if (!_skipNextCombatLoopDelay)
         {
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(_mudWaveRecoveryTime);
         }
 
         _skipNextCombatLoopDelay = false;
@@ -676,7 +680,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
                     break;
 
                 case CombatPatternStep.ShortMove:
-                    yield return MoveForDuration(3f, _originalSpeed);
+                    yield return MoveForDuration(_shortMoveDuration, _originalSpeed);
                     _combatPatternStep = CombatPatternStep.Smash;
                     break;
 
@@ -688,7 +692,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
                     break;
 
                 case CombatPatternStep.LongMove:
-                    yield return AggressivePursuitMove(5f);
+                    yield return AggressivePursuitMove(_longMoveDuration);
                     _combatPatternStep = CombatPatternStep.Whip;
                     break;
             }

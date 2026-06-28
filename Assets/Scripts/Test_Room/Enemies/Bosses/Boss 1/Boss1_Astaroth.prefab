@@ -792,7 +792,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1926294932068586014
 Transform:
   m_ObjectHideFlags: 0
@@ -1556,8 +1556,8 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 2.5
-  m_Speed: 15
-  m_Acceleration: 9
+  m_Speed: 7
+  m_Acceleration: 5
   avoidancePriority: 50
   m_AngularSpeed: 360
   m_StoppingDistance: 0
@@ -1585,21 +1585,21 @@ MonoBehaviour:
   _maxHealth: 500
   _currentHealth: 0
   _stoppingDistance: 4
-  _safeDistance: 2.5
+  _safeDistance: 4
   _stompTriggerDistance: 5
-  _stompCooldown: 6
-  _stompPullRadius: 8
-  _stompPullDuration: 0.5
-  _stompPullSpeed: 10
+  _stompCooldown: 2
+  _stompPullRadius: 24
+  _stompPullDuration: 2
+  _stompPullSpeed: 7
   _stompPullIndicatorObject: {fileID: 0}
   _stompPullVFXPrefab: {fileID: 4105424550780138075, guid: 7637db6da5dfc934490372e47d5af89c, type: 3}
   _enableStompDamage: 1
-  _stompDamage: 7.5
-  _stompRadius: 4
-  _stompKnockbackForce: 5
+  _stompDamage: 10
+  _stompRadius: 8
+  _stompKnockbackForce: 10
   _stompImpactIndicatorObject: {fileID: 6967666018307541542}
   _stompVFXPrefab: {fileID: 0}
-  _enableDefensiveBlock: 1
+  _enableDefensiveBlock: 0
   _defensiveBlockHitLimit: 4
   _defensiveBlockHitWindow: 3
   _defensiveBlockInvulnerableDuration: 1.5
@@ -1608,35 +1608,38 @@ MonoBehaviour:
   _defensiveBlockExplosionRadius: 8.5
   _defensiveBlockKnockbackForce: 10
   _defensiveBlockCooldown: 8
-  _defensiveBlockCanTriggerAnytime: 1
+  _defensiveBlockCanTriggerAnytime: 0
   _defensiveBlockWarningPrefab: {fileID: 356800748809167506, guid: bf656853fe45a28478947726e3813e8c, type: 3}
   _defensiveBlockExplosionPrefab: {fileID: 5460280037415485855, guid: 305641f2b748d164ab7c12d1bc6018cd, type: 3}
   _enableMudWave: 1
   _mudWaveTriggerDistance: 10
-  _mudWaveFleeDuration: 0.65
-  _mudWaveChargeSpeed: 32
-  _mudWaveMinChargeDistance: 22
-  _mudWaveOvershootDistance: 8
+  _mudWaveFleeDuration: 0
+  _mudWaveChargeSpeed: 50
+  _mudWaveMinChargeDistance: 35
+  _mudWaveOvershootDistance: 10
   _mudWaveCooldown: 5
   _mudWaveWarningTime: 0.45
   _mudWaveDamage: 15
-  _mudWaveHitRadius: 3
-  _mudWaveKnockbackForce: 10
+  _mudWaveHitRadius: 5
+  _mudWaveKnockbackForce: 15
   _mudWaveAnimatorSpeedMultiplier: 1.4
   _mudWaveWarningPrefab: {fileID: 4420126913089400018, guid: 58e3111c53fc3904c8e8dd1d4ed19f40, type: 3}
   _mudWaveWindVFXRoot: {fileID: 1903618004850249334}
+  _mudWaveRecoveryTime: 0.5
+  _shortMoveDuration: 7.5
+  _longMoveDuration: 7.5
   _whipDamageOrigin: {fileID: 6711169147769174049}
   _whipHitRadius: 10
   _Attack1Damage: 10
-  _whipPreAttackDelay: 0.4
+  _whipPreAttackDelay: 1
   _whipDelay1: 1.54
   _whipDelay2: 0.42
   _whipDelay3: 0.42
   _smashRockObject: {fileID: 4634992738900687444}
   _smashRockHeldFollowTarget: {fileID: 4103773840209656309}
-  _smashRockScale: 6
-  _smashRockHitRadius: 1.5
-  _smashRockTravelDuration: 0.35
+  _smashRockScale: 7
+  _smashRockHitRadius: 7
+  _smashRockTravelDuration: 0.25
   _smashRockTravelCurve:
     serializedVersion: 2
     m_Curve:
@@ -1662,10 +1665,10 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   _Attack2Damage: 20
-  _smashRadius: 6
-  _smashDetectionRadius: 12
+  _smashRadius: 7
+  _smashDetectionRadius: 7
   _smashRadiusPrefab: {fileID: 858073966183631630, guid: 50f8bfdafefbba447b7bfe665ac766b0, type: 3}
-  _smashDelay: 2.2
+  _smashDelay: 2
   _smashGroundIndicator: {fileID: 0}
   _smashGroundIndicatorPrefab: {fileID: 4975376767033560840, guid: a982d5c75bea16248b26ebb1b1a3ad21, type: 3}
   _smashTargetLockBeforeImpact: 0.5
@@ -1983,7 +1986,7 @@ Transform:
   m_GameObject: {fileID: 6420094035896458318}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 3.5, z: 3.25}
+  m_LocalPosition: {x: 0, y: 3.5, z: 8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
