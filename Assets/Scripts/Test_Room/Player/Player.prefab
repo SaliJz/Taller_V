@@ -12858,7 +12858,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67589ffbda4f8574b9562cc587738cee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  statsManager: {fileID: 7736777102245202428}
+  playerStatsManager: {fileID: 0}
   controller: {fileID: 6801291884961726868}
   mainCameraTransform: {fileID: 0}
   playerAnimCtrl: {fileID: 0}
@@ -12867,7 +12867,7 @@ MonoBehaviour:
   inputModifier: {fileID: 530321809443592086}
   moveSpeed: 0
   gravity: -9.81
-  level: 1
+  level: 0
   stepInterval: 0.35
   baseDashDistance: 10
   baseDashCooldown: 0.15
@@ -12884,7 +12884,7 @@ MonoBehaviour:
   dashGroundProbeHeight: 1.5
   dashGroundProbeDistance: 3
   dashGroundedGrace: 0.12
-  dashStepOffsetOverride: 0.02
+  dashStepOffsetOverride: 0.125
   dashObstacleSkin: 0.08
   gapDashBonusDistance: 5
   groundLayerMask:
@@ -12898,7 +12898,6 @@ MonoBehaviour:
   edgeSampleStepDistance: 0.2
   minHorizontalMagnitude: 0.01
   groundTolerance: 0.15
-  relaxedGroundHitsRequired: 5
   afterimagePrefab: {fileID: 1529516632308541924, guid: 5813d161b87a73e46926413d2ef586b9, type: 3}
   afterimageAlpha: 0.5
   afterimageLifetime: 0.5
@@ -13966,6 +13965,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   shadowPosition: {fileID: 0}
+  setParentInParent: 0
   shadowScale: 2
   spawnYoffset: 0.02
   checkInterval: 0.02

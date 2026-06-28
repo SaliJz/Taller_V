@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using static UnityEditor.PlayerSettings;
 
 public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 {
@@ -9,7 +10,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
     [Header("References")]
     [Tooltip("Controlador principal de las estadisticas (salud, velocidad, etc).")]
-    [SerializeField] private PlayerStatsManager statsManager;
+    [SerializeField] private PlayerStatsManager playerStatsManager;
     [Tooltip("Componente fisico que mueve y detecta colisiones del jugador.")]
     [SerializeField] private CharacterController controller;
     [Tooltip("La camara principal que sigue al jugador.")]
@@ -108,8 +109,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [SerializeField] private float minHorizontalMagnitude = 0.01f;
     [Tooltip("Distancia de tolerancia para considerar que el jugador sigue tocando el suelo.")]
     [SerializeField] private float groundTolerance = 0.15f;
-    [Tooltip("Cantidad minima de puntos con suelo requeridos para aceptar un borde en modo relajado.")]
-    [SerializeField] private int relaxedGroundHitsRequired = 5;
 
     #endregion
 
@@ -166,6 +165,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     private float currentDashCooldown;
     private bool isDashDisabled = false;
     private Coroutine _dashDisableCoroutine;
+    private readonly Vector3[] safeCheckDirections = new Vector3[9];
 
     // VFX & Audio State
     private Material dashVFXMaterialInstance;
@@ -212,25 +212,34 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     {
         playerControls = new PlayerControlls();
         playerControls.Movement.SetCallbacks(this);
-    }
-
-    private void Start()
-    {
-        statsManager = GetComponent<PlayerStatsManager>();
-        if (statsManager == null) ReportDebug("StatsManager no está asignado en PlayerMovement. Usando valores de fallback.", 2);
 
         controller = GetComponent<CharacterController>();
-        mainCameraTransform = Camera.main != null ? Camera.main.transform : mainCameraTransform;
+        playerStatsManager = GetComponent<PlayerStatsManager>();
         playerAnimCtrl = GetComponentInChildren<PlayerAnimCtrl>();
         playerHealth = GetComponent<PlayerHealth>();
         playerAudioController = GetComponent<PlayerAudioController>();
 
-        playerLayer = LayerMask.NameToLayer("Player");
+        mainCameraTransform = Camera.main != null ? Camera.main.transform : mainCameraTransform;
 
-        float moveSpeedStat = statsManager != null ? statsManager.GetStat(StatType.MoveSpeed) : fallbackMoveSpeed;
+        playerLayer = LayerMask.NameToLayer("Player");
+    }
+
+    private void Start()
+    {
+        safeCheckDirections[0] = Vector3.zero;
+        safeCheckDirections[1] = Vector3.forward;
+        safeCheckDirections[2] = Vector3.back;
+        safeCheckDirections[3] = Vector3.right;
+        safeCheckDirections[4] = Vector3.left;
+        safeCheckDirections[5] = Vector3.forward + Vector3.right;
+        safeCheckDirections[6] = Vector3.forward + Vector3.left;
+        safeCheckDirections[7] = Vector3.back + Vector3.right;
+        safeCheckDirections[8] = Vector3.back + Vector3.left;
+
+        float moveSpeedStat = playerStatsManager != null ? playerStatsManager.GetStat(StatType.MoveSpeed) : fallbackMoveSpeed;
         moveSpeed = moveSpeedStat;
 
-        float gravityStat = statsManager != null ? statsManager.GetStat(StatType.Gravity) : fallbackGravity;
+        float gravityStat = playerStatsManager != null ? playerStatsManager.GetStat(StatType.Gravity) : fallbackGravity;
         gravity = gravityStat;
 
         lastMoveY = -1;
@@ -340,19 +349,19 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     /// </summary>
     private void UpdateDashStatsFromManager()
     {
-        if (statsManager == null)
+        if (playerStatsManager == null)
         {
             currentDashDistance = baseDashDistance;
             currentDashCooldown = baseDashCooldown;
             return;
         }
 
-        float dashRangeMultiplier = statsManager.GetStat(StatType.DashRangeMultiplier);
+        float dashRangeMultiplier = playerStatsManager.GetStat(StatType.DashRangeMultiplier);
         if (dashRangeMultiplier <= 0f) dashRangeMultiplier = 1f;
 
         currentDashDistance = baseDashDistance * dashRangeMultiplier;
 
-        float dashCooldownMod = statsManager.GetStat(StatType.DashCooldownPost);
+        float dashCooldownMod = playerStatsManager.GetStat(StatType.DashCooldownPost);
         currentDashCooldown = Mathf.Max(0.1f, baseDashCooldown + dashCooldownMod);
 
         ReportDebug($"Dash Stats actualizados: Distancia={currentDashDistance} (base:{baseDashDistance} x {dashRangeMultiplier}), Cooldown={currentDashCooldown} (base:{baseDashCooldown} + {dashCooldownMod}s)", 1);
@@ -1134,22 +1143,10 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         float checkRadius = controller.radius * 0.95f;
         float rayLength = controller.height + 1.0f;
 
-        Vector3[] checkPoints = new Vector3[]
+        for (int i = 0; i < safeCheckDirections.Length; i++)
         {
-        pos,
-        pos + Vector3.forward * checkRadius,
-        pos + Vector3.back * checkRadius,
-        pos + Vector3.right * checkRadius,
-        pos + Vector3.left * checkRadius,
-        pos + (Vector3.forward + Vector3.right).normalized * checkRadius,
-        pos + (Vector3.forward + Vector3.left).normalized * checkRadius,
-        pos + (Vector3.back + Vector3.right).normalized * checkRadius,
-        pos + (Vector3.back + Vector3.left).normalized * checkRadius
-        };
-
-        foreach (var p in checkPoints)
-        {
-            Vector3 origin = p + Vector3.up * edgeRaycastHeight;
+            Vector3 checkPos = pos + safeCheckDirections[i] * checkRadius;
+            Vector3 origin = checkPos + Vector3.up * edgeRaycastHeight;
             if (!Physics.Raycast(origin, Vector3.down, rayLength, groundLayerMask, QueryTriggerInteraction.Ignore))
             {
                 return false;
