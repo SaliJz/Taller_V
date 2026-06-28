@@ -3,14 +3,17 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Gestiona la visualización de la barra de estamina de la habilidad especial.
-/// Se actualiza automáticamente mediante eventos del ShieldSkill.
+/// Gestiona la visualizaciï¿½n de la barra de estamina de la habilidad especial.
+/// Se actualiza automï¿½ticamente mediante eventos del ShieldSkill.
 /// </summary>
 public class StaminaBarUI : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private Slider staminaSlider;
+    [SerializeField] private Image staminaBackground;
     [SerializeField] private Image staminaFillImage;
+    [SerializeField] private Sprite eyeNormalSprite;
+    [SerializeField] private Sprite eyeNoStaminaSprite;
     [SerializeField] private TextMeshProUGUI staminaText;
     [SerializeField] private GameObject staminaBarContainer;
 
@@ -25,9 +28,9 @@ public class StaminaBarUI : MonoBehaviour
     [SerializeField] private float midStaminaThreshold = 0.5f; // 50%
 
     [Header("Animation Settings")]
-    [SerializeField] private bool useSmoothing = true; // Usar interpolación suave
+    [SerializeField] private bool useSmoothing = true; // Usar interpolaciï¿½n suave
     [SerializeField] private float smoothSpeed = 5f;
-    [SerializeField] private bool pulseWhenLow = true; // Pulsar cuando la estamina está baja
+    [SerializeField] private bool pulseWhenLow = true; // Pulsar cuando la estamina estï¿½ baja
     [SerializeField] private float pulseSpeed = 2f;
     [SerializeField] private float pulseMinScale = 0.95f;
     [SerializeField] private float pulseMaxScale = 1.05f;
@@ -36,7 +39,7 @@ public class StaminaBarUI : MonoBehaviour
     [SerializeField] private bool showText = true; // Mostrar texto de estamina
     [SerializeField] private bool showPercentage = true; // Mostrar porcentaje
     [SerializeField] private bool showActualValues = false; // Mostrar valores actuales/maximos
-    [SerializeField] private bool hideWhenFull = false; // Ocultar barra cuando está llena
+    [SerializeField] private bool hideWhenFull = false; // Ocultar barra cuando estï¿½ llena
     [SerializeField] private float hideDelay = 2f; 
 
     private float currentDisplayFill = 1f;
@@ -89,7 +92,7 @@ public class StaminaBarUI : MonoBehaviour
             }
         }
 
-        // Efecto de pulso cuando la estamina está baja
+        // Efecto de pulso cuando la estamina estï¿½ baja
         if (pulseWhenLow && isLowStamina && staminaBarContainer != null)
         {
             float scale = Mathf.Lerp(pulseMinScale, pulseMaxScale, (Mathf.Sin(Time.time * pulseSpeed * Mathf.PI) + 1f) * 0.5f);
@@ -100,7 +103,7 @@ public class StaminaBarUI : MonoBehaviour
             staminaBarContainer.transform.localScale = originalScale;
         }
 
-        // Ocultar barra cuando está llena (si está habilitado)
+        // Ocultar barra cuando estï¿½ llena (si estï¿½ habilitado)
         if (hideWhenFull && staminaBarContainer != null)
         {
             if (targetFill >= 0.99f)
@@ -143,13 +146,13 @@ public class StaminaBarUI : MonoBehaviour
             }
         }
 
-        // Actualizar color según el nivel de estamina
+        // Actualizar color segï¿½n el nivel de estamina
         UpdateStaminaColor(targetFill);
 
         // Actualizar texto
         UpdateStaminaText(targetFill);
 
-        // Verificar si está baja
+        // Verificar si estï¿½ baja
         isLowStamina = targetFill <= lowStaminaThreshold && targetFill > 0f;
 
         // Resetear el timer de ocultar
@@ -157,7 +160,7 @@ public class StaminaBarUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Actualiza el color de la barra según el nivel de estamina.
+    /// Actualiza el color de la barra segï¿½n el nivel de estamina.
     /// </summary>
     private void UpdateStaminaColor(float fillAmount)
     {
@@ -168,25 +171,30 @@ public class StaminaBarUI : MonoBehaviour
         if (fillAmount <= 0.01f)
         {
             targetColor = emptyStaminaColor;
-        }
-        else if (fillAmount <= lowStaminaThreshold)
-        {
-            targetColor = lowStaminaColor;
-        }
-        else if (fillAmount <= midStaminaThreshold)
-        {
-            // Interpolación entre rojo y amarillo
-            float t = (fillAmount - lowStaminaThreshold) / (midStaminaThreshold - lowStaminaThreshold);
-            targetColor = Color.Lerp(lowStaminaColor, midStaminaColor, t);
+            staminaBackground.sprite = eyeNoStaminaSprite;
         }
         else
         {
-            // Interpolación entre amarillo y azul
-            float t = (fillAmount - midStaminaThreshold) / (1f - midStaminaThreshold);
-            targetColor = Color.Lerp(midStaminaColor, fullStaminaColor, t);
+            staminaBackground.sprite = eyeNormalSprite;
         }
+        // else if (fillAmount <= lowStaminaThreshold)
+        // {
+        //     targetColor = lowStaminaColor;
+        // }
+        // else if (fillAmount <= midStaminaThreshold)
+        // {
+        //     // Interpolaciï¿½n entre rojo y amarillo
+        //     float t = (fillAmount - lowStaminaThreshold) / (midStaminaThreshold - lowStaminaThreshold);
+        //     targetColor = Color.Lerp(lowStaminaColor, midStaminaColor, t);
+        // }
+        // else
+        // {
+        //     // Interpolaciï¿½n entre amarillo y azul
+        //     float t = (fillAmount - midStaminaThreshold) / (1f - midStaminaThreshold);
+        //     targetColor = Color.Lerp(midStaminaColor, fullStaminaColor, t);
+        // }
 
-        staminaFillImage.color = targetColor;
+        // staminaFillImage.color = targetColor;
     }
 
     /// <summary>
@@ -220,7 +228,7 @@ public class StaminaBarUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Método público para forzar la actualización de la barra.
+    /// Mï¿½todo pï¿½blico para forzar la actualizaciï¿½n de la barra.
     /// </summary>
     public void ForceUpdate(float current, float max)
     {
