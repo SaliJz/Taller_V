@@ -19,6 +19,11 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
     private float dialogueGracePeriod = 1.0f;
     private float dialogueEndTime = -1f;
 
+    [Header("VFX de Compra")]
+    [SerializeField] private GameObject purchaseVfxPrefab;
+
+    private static GameObject defaultPurchaseVfx;
+
     private bool isPlayerInProximity = false;
 
     private void Awake()
@@ -237,6 +242,27 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
             cachedBlockSystem = null;
         }
 
+        GameObject vfxToSpawn = purchaseVfxPrefab != null ? purchaseVfxPrefab : GetDefaultPurchaseVfx();
+        if (vfxToSpawn != null)
+        {
+            Instantiate(vfxToSpawn, transform.position, Quaternion.identity);
+        }
+
         Destroy(gameObject);
+    }
+
+    private static GameObject GetDefaultPurchaseVfx()
+    {
+        if (defaultPurchaseVfx == null)
+        {
+            defaultPurchaseVfx = Resources.Load<GameObject>("VFX/VFX-Buy");
+
+            if (defaultPurchaseVfx == null)
+            {
+                Debug.LogWarning("[ShopItemDisplay] No se encontró VFX-Buy en Resources/VFX/. Verifica la ruta o asigna purchaseVfxPrefab manualmente.");
+            }
+        }
+
+        return defaultPurchaseVfx;
     }
 }
