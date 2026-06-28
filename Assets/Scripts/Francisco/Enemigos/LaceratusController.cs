@@ -577,6 +577,14 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
     private IEnumerator ExecuteFuryJump(Vector3 direction, float distance)
     {
+        if (furyJumpDuration <= 0f || distance <= 0f)
+        {
+            Debug.LogWarning("Jitter: ExecuteFuryJump abortado - furyJumpDuration o distance son 0 o negativos.");
+            isPerformingJump = false;
+            furyJumpCoroutine = null;
+            yield break;
+        }
+
         isPerformingJump = true;
 
         if (audioSource != null && furyJumpSFX != null) audioSource.PlayOneShot(furyJumpSFX);
@@ -1086,6 +1094,9 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         if (agent != null && agent.enabled)
         {
             agent.isStopped = false;
+            agent.updatePosition = true;
+            agent.updateRotation = true;
+            agent.ResetPath();
         }
 
         isInHitStun = false;
