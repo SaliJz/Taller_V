@@ -553,21 +553,9 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     /// </summary>
     private bool CanActivateSkill()
     {
-        if (requireFullStaminaToActivate)
-        {
-            return currentStamina >= maxStamina;
-        }
-        else
-        {
-            if (hasStaminaBeenFullyDepleted)
-            {
-                return currentStamina >= maxStamina;
-            }
-            else
-            {
-                return currentStamina >= minStaminaToActivate;
-            }
-        }
+        return requireFullStaminaToActivate
+        ? currentStamina >= maxStamina
+        : currentStamina >= minStaminaToActivate;
     }
 
     /// <summary>
@@ -587,7 +575,12 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         if (previousStamina > 0f && currentStamina <= 0f)
         {
             hasStaminaBeenFullyDepleted = true;
-            Debug.Log("[ShieldSkill] !Estamina completamente agotada! Requerira recarga total para reactivar.");
+
+            string logMessage = requireFullStaminaToActivate
+                ? "Requerirá recarga total para reactivar."
+                : $"Requerirá un mínimo de {minStaminaToActivate} de estamina para reactivar.";
+
+            Debug.Log($"[ShieldSkill] Estamina completamente agotada {logMessage}");
         }
 
         OnStaminaChanged?.Invoke(currentStamina, maxStamina);
@@ -604,13 +597,21 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
             currentStamina += staminaRechargeRate * Time.deltaTime;
             currentStamina = Mathf.Min(maxStamina, currentStamina);
 
-            if (hasStaminaBeenFullyDepleted && currentStamina >= maxStamina)
+            if (hasStaminaBeenFullyDepleted)
             {
-                hasStaminaBeenFullyDepleted = false;
-                Debug.Log("[ShieldSkill] Estamina completamente recuperada. Habilidad disponible nuevamente.");
+                // Verifica si ya alcanza el umbral necesario
+                bool hasReachedRequiredThreshold = requireFullStaminaToActivate
+                    ? currentStamina >= maxStamina
+                    : currentStamina >= minStaminaToActivate;
+
+                if (hasReachedRequiredThreshold)
+                {
+                    hasStaminaBeenFullyDepleted = false;
+                    Debug.Log("[ShieldSkill] Estamina recuperada al umbral necesario. Habilidad disponible nuevamente.");
+                }
             }
 
-            // Notificar cambio de estamina
+            // Notifica cambio de estamina
             OnStaminaChanged?.Invoke(currentStamina, maxStamina);
         }
     }
