@@ -226,7 +226,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
     private float _currentEvolutionMultiplier = 1.0f;
     private bool _isUsingSpecialAbility;
-    private readonly float[] _healthThresholdsForPulse = { 0.67f, 0.34f };
+    private readonly float[] _healthThresholdsForPulse = { 0.7f, 0.4f };
     private bool _isSpecialAbilityPending = false;
     private List<GameObject> _instantiatedEffects = new List<GameObject>();
     private Vector3 _roomCenter = Vector3.zero;
