@@ -82,6 +82,8 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
     [SerializeField] private float brokenChargeCooldown = 14f;
     [SerializeField] private float zigzagSideOffset = 3.5f;
     [SerializeField] private float dashHitRadius = 1.35f;
+    [SerializeField] private float brokenChargePause = 0.7f;
+    [SerializeField] private float brokenChargeDurationDash = 0.7f;
 
     #endregion
 
@@ -708,7 +710,8 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         state = BossState.BrokenCharge;
         nextBrokenChargeTime = Time.time + brokenChargeCooldown;
 
-        float timePerDash = brokenChargeDuration / Mathf.Max(1, brokenChargeDashCount);
+        //float timePerDash = brokenChargeDuration / Mathf.Max(1, brokenChargeDashCount);
+        float timePerDash = brokenChargeDurationDash;
 
         for (int i = 0; i < brokenChargeDashCount; i++)
         {
@@ -725,7 +728,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             Vector3 target = ComputeZigzagTarget(i);
             PlaySFX(dashSFX);
 
-            yield return DashRoutine(target, timePerDash * 0.65f, brokenChargeDashSpeed, dealContactDamage: false, spawnCrystalOnWallHit: true);
+            yield return DashRoutine(target, timePerDash /** 0.65f*/, brokenChargeDashSpeed, dealContactDamage: false, spawnCrystalOnWallHit: true);
 
             if (myToken != actionToken) break;
 
@@ -736,21 +739,23 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             if (attackExecuteTriggered)
             {
                 // Comprobación principal: radio desde attackOrigin frente del jefe.
-                bool hit = TryDealBrokenChargeDamage(attackOrigin.position, dashHitRadius * 1.25f);
+                bool hit = TryDealBrokenChargeDamage(attackOrigin.position, dashHitRadius /** 1.25f*/);
 
                 // Comprobación secundaria: jugador muy cercano.
                 if (!hit && player != null)
                 {
-                    float closeRangeDist = dashHitRadius * 2f;
+                    float closeRangeDist = dashHitRadius /** 2f*/;
                     if (Vector3.Distance(transform.position, player.position) <= closeRangeDist)
                     {
-                        TryDealBrokenChargeDamage(transform.position + Vector3.up * 0.6f, closeRangeDist);
+                        //TryDealBrokenChargeDamage(transform.position + Vector3.up * 0.6f, closeRangeDist);
+                        TryDealBrokenChargeDamage(attackOrigin.position, dashHitRadius /** 1.25f*/);
                     }
                 }
             }
 
-            float rest = timePerDash * 0.35f;
-            yield return new WaitForSeconds(rest);
+            //float rest = timePerDash * 0.35f;
+            //yield return new WaitForSeconds(rest);
+            yield return new WaitForSeconds(brokenChargePause);
         }
 
         if (myToken == actionToken)

@@ -462,7 +462,7 @@ Transform:
   m_GameObject: {fileID: 1249434104661182340}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.5, z: 2.5}
+  m_LocalPosition: {x: 0, y: 1, z: 5.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6884,12 +6884,14 @@ MonoBehaviour:
   backHitsToInterrupt: 2
   interruptStunDuration: 2.5
   brokenChargeDuration: 10
-  brokenChargeDashCount: 10
-  brokenChargeDashSpeed: 13.5
+  brokenChargeDashCount: 7
+  brokenChargeDashSpeed: 26.5
   brokenChargeHitDamage: 7
-  brokenChargeCooldown: 14
-  zigzagSideOffset: 3.5
-  dashHitRadius: 2.7
+  brokenChargeCooldown: 2
+  zigzagSideOffset: 0
+  dashHitRadius: 5.5
+  brokenChargePause: 0.1
+  brokenChargeDurationDash: 1.2
   scrapRamSpeed: 14
   scrapRamMaxTurnRate: 20
   scrapRamDuration: 2.2
@@ -6947,7 +6949,7 @@ MonoBehaviour:
   enemyVisualEffects: {fileID: 0}
   hitStunDuration: 0
   forceIdleDuration: 0
-  anticipationPauseDuration: 0.25
+  anticipationPauseDuration: 0.15
   hitStunSFX: {fileID: 0}
   anticipationSFX: {fileID: 0}
   anticipationSFXPitch: 1
