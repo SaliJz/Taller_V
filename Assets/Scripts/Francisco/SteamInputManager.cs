@@ -237,6 +237,7 @@ public class SteamInputManager : MonoBehaviour
     public bool GetMenuSelectPressed() => GetDigital(menuSelectHandle);
     public bool GetMenuCancelPressed() => GetDigital(menuCancelHandle);
     public bool GetMenuSubmitPressed() => GetDigital(menuSubmitHandle);
+    public bool GetPauseMenuPressed() => GetDigital(pauseMenuHandle);
 
     private bool GetDigital(InputDigitalActionHandle_t handle)
     {
