@@ -430,8 +430,22 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         if (PauseController.Instance != null && PauseController.IsGamePaused) return;
         if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
 
-        float moveX = currentInputVector.x;
-        float moveY = currentInputVector.y;
+        Vector2 inputVector = currentInputVector;
+
+        if (SteamInputManager.Instance != null)
+        {
+            Vector2 steamMove = SteamInputManager.Instance.GetMoveAxis();
+
+            if (steamMove.sqrMagnitude > 0.0001f)
+            {
+                inputVector = inputModifier != null
+                    ? inputModifier.ProcessInput(steamMove)
+                    : steamMove;
+            }
+        }
+
+        float moveX = inputVector.x;
+        float moveY = inputVector.y;
 
         Vector3 cameraForward = mainCameraTransform != null ? mainCameraTransform.forward : Vector3.forward;
         Vector3 cameraRight = mainCameraTransform != null ? mainCameraTransform.right : Vector3.right;

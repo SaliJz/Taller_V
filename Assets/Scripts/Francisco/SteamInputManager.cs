@@ -18,6 +18,19 @@ public class SteamInputManager : MonoBehaviour
     private InputDigitalActionHandle_t dashHandle;
     private InputDigitalActionHandle_t pauseMenuHandle;
     private InputAnalogActionHandle_t moveHandle;
+    private InputDigitalActionHandle_t interactHandle;
+    private InputDigitalActionHandle_t inventoryHandle;
+    private InputDigitalActionHandle_t activateSkillHandle;
+    private InputDigitalActionHandle_t defenseHandle;
+    private InputDigitalActionHandle_t menuUpHandle;
+    private InputDigitalActionHandle_t menuDownHandle;
+    private InputDigitalActionHandle_t menuLeftHandle;
+    private InputDigitalActionHandle_t menuRightHandle;
+    private InputDigitalActionHandle_t menuSelectHandle;
+    private InputDigitalActionHandle_t menuCancelHandle;
+    private InputDigitalActionHandle_t menuSubmitHandle;
+    private InputAnalogActionHandle_t aimHandle;
+    private bool inGameSetActivated;
     #endregion
 
     #region Ciclo De Vida
@@ -74,8 +87,20 @@ public class SteamInputManager : MonoBehaviour
         dashHandle = SteamInput.GetDigitalActionHandle("dash");
         pauseMenuHandle = SteamInput.GetDigitalActionHandle("pause_menu");
         moveHandle = SteamInput.GetAnalogActionHandle("Move");
+        interactHandle = SteamInput.GetDigitalActionHandle("interact");
+        inventoryHandle = SteamInput.GetDigitalActionHandle("inventory");
+        activateSkillHandle = SteamInput.GetDigitalActionHandle("activate_skill");
+        defenseHandle = SteamInput.GetDigitalActionHandle("defense");
 
-        ActivateInGameSet();
+        menuUpHandle = SteamInput.GetDigitalActionHandle("menu_up");
+        menuDownHandle = SteamInput.GetDigitalActionHandle("menu_down");
+        menuLeftHandle = SteamInput.GetDigitalActionHandle("menu_left");
+        menuRightHandle = SteamInput.GetDigitalActionHandle("menu_right");
+        menuSelectHandle = SteamInput.GetDigitalActionHandle("menu_select");
+        menuCancelHandle = SteamInput.GetDigitalActionHandle("menu_cancel");
+        menuSubmitHandle = SteamInput.GetDigitalActionHandle("menu_submit");
+
+        aimHandle = SteamInput.GetAnalogActionHandle("Aim");
     }
 
     private void Update()
@@ -84,6 +109,13 @@ public class SteamInputManager : MonoBehaviour
 
         SteamInput.RunFrame();
         RefreshControllers();
+
+        if (!inGameSetActivated && activeControllerCount > 0 && inGameSetHandle != default(InputActionSetHandle_t))
+        {
+            ActivateInGameSet();
+            inGameSetActivated = true;
+            Debug.Log("[SteamInput] InGameControls activado");
+        }
     }
 
     private void OnDestroy()
@@ -114,7 +146,18 @@ public class SteamInputManager : MonoBehaviour
     public void ActivateInGameSet()
     {
         InputHandle_t controller = GetFirstController();
-        if (controller == default(InputHandle_t)) return;
+
+        if (controller == default(InputHandle_t))
+        {
+            Debug.LogWarning("[SteamInput] No hay control para activar InGameControls");
+            return;
+        }
+
+        if (inGameSetHandle == default(InputActionSetHandle_t))
+        {
+            Debug.LogError("[SteamInput] InGameControls handle es 0");
+            return;
+        }
 
         SteamInput.ActivateActionSet(controller, inGameSetHandle);
     }
@@ -122,7 +165,18 @@ public class SteamInputManager : MonoBehaviour
     public void ActivateMenuSet()
     {
         InputHandle_t controller = GetFirstController();
-        if (controller == default(InputHandle_t)) return;
+
+        if (controller == default(InputHandle_t))
+        {
+            Debug.LogWarning("[SteamInput] No hay control para activar MenuControls");
+            return;
+        }
+
+        if (menuSetHandle == default(InputActionSetHandle_t))
+        {
+            Debug.LogError("[SteamInput] MenuControls handle es 0");
+            return;
+        }
 
         SteamInput.ActivateActionSet(controller, menuSetHandle);
     }
@@ -160,6 +214,37 @@ public class SteamInputManager : MonoBehaviour
 
         InputAnalogActionData_t data = SteamInput.GetAnalogActionData(controller, moveHandle);
         return new Vector2(data.x, data.y);
+    }
+
+    public Vector2 GetAimAxis()
+    {
+        InputHandle_t controller = GetFirstController();
+        if (controller == default(InputHandle_t)) return Vector2.zero;
+
+        InputAnalogActionData_t data = SteamInput.GetAnalogActionData(controller, aimHandle);
+        return new Vector2(data.x, data.y);
+    }
+
+    public bool GetInteractPressed() => GetDigital(interactHandle);
+    public bool GetInventoryPressed() => GetDigital(inventoryHandle);
+    public bool GetActivateSkillPressed() => GetDigital(activateSkillHandle);
+    public bool GetDefensePressed() => GetDigital(defenseHandle);
+
+    public bool GetMenuUpPressed() => GetDigital(menuUpHandle);
+    public bool GetMenuDownPressed() => GetDigital(menuDownHandle);
+    public bool GetMenuLeftPressed() => GetDigital(menuLeftHandle);
+    public bool GetMenuRightPressed() => GetDigital(menuRightHandle);
+    public bool GetMenuSelectPressed() => GetDigital(menuSelectHandle);
+    public bool GetMenuCancelPressed() => GetDigital(menuCancelHandle);
+    public bool GetMenuSubmitPressed() => GetDigital(menuSubmitHandle);
+
+    private bool GetDigital(InputDigitalActionHandle_t handle)
+    {
+        InputHandle_t controller = GetFirstController();
+        if (controller == default(InputHandle_t)) return false;
+        if (handle == default(InputDigitalActionHandle_t)) return false;
+
+        return SteamInput.GetDigitalActionData(controller, handle).bState != 0;
     }
     #endregion
 }

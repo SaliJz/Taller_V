@@ -14,6 +14,9 @@ public class GamepadPointer : MonoBehaviour
     private const float CursorFollowSpeed = 30f;
     private const float RightStickDeadZone = 0.2f;
 
+    private float ignoreMouseInputUntilTime;
+    private const float MouseWarpIgnoreDuration = 0.08f;
+
     private InputSystemUIInputModule uiInputModule;
     private RectTransform canvasRect;
     private Camera canvasCamera;
@@ -100,13 +103,21 @@ public class GamepadPointer : MonoBehaviour
             currentGamepad = Gamepad.current;
         }
 
-        bool isMouseMovedSignificantly = Mouse.current != null &&
+        bool canReadMouseInput = Time.unscaledTime >= ignoreMouseInputUntilTime;
+
+        bool isMouseMovedSignificantly = canReadMouseInput &&
+                                 Mouse.current != null &&
                                  Mouse.current.delta.ReadValue().magnitude > 0.1f;
 
-        bool isMouseOrKeyInteracting = (Mouse.current != null &&
+        bool isMouseClickInteracting = canReadMouseInput &&
+                               Mouse.current != null &&
                                (Mouse.current.leftButton.wasPressedThisFrame ||
-                                Mouse.current.rightButton.wasPressedThisFrame)) ||
-                               (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame);
+                                Mouse.current.rightButton.wasPressedThisFrame);
+
+        bool isKeyboardInteracting = Keyboard.current != null &&
+                               Keyboard.current.anyKey.wasPressedThisFrame;
+
+        bool isMouseOrKeyInteracting = isMouseClickInteracting || isKeyboardInteracting;
 
         bool isMouseOrKeyboardActive = isMouseMovedSignificantly || isMouseOrKeyInteracting;
 
@@ -255,6 +266,8 @@ public class GamepadPointer : MonoBehaviour
                 {
                     Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(canvasCamera, virtualCursor.position);
                     Mouse.current.WarpCursorPosition(screenPoint);
+                    ignoreMouseInputUntilTime = Time.unscaledTime + MouseWarpIgnoreDuration;
+                    Cursor.visible = false;
                 }
             }
             else if (shouldFollowSelected)
@@ -287,6 +300,8 @@ public class GamepadPointer : MonoBehaviour
                     {
                         Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(canvasCamera, virtualCursor.position);
                         Mouse.current.WarpCursorPosition(screenPoint);
+                        ignoreMouseInputUntilTime = Time.unscaledTime + MouseWarpIgnoreDuration;
+                        Cursor.visible = false;
                     }
                 }
                 else

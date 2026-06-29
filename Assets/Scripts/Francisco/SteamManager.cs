@@ -9,6 +9,8 @@ public class SteamManager : MonoBehaviour
     private bool isInitialized;
 
     public static bool Initialized => instance != null && instance.isInitialized;
+    public static bool OverlayActive { get; private set; }
+    private Callback<GameOverlayActivated_t> gameOverlayActivatedCallback;
     #endregion
 
     #region Ciclo De Vida
@@ -78,7 +80,11 @@ public class SteamManager : MonoBehaviour
             return;
         }
 
-        if (!isInitialized)
+        if (isInitialized)
+        {
+            gameOverlayActivatedCallback = Callback<GameOverlayActivated_t>.Create(OnGameOverlayActivated);
+        }
+        else
         {
             HandleInitFailure("SteamAPI.Init() returned false");
         }
@@ -88,6 +94,26 @@ public class SteamManager : MonoBehaviour
     {
         Debug.LogError($"[Steamworks] Init failed: {reason}");
         isInitialized = false;
+    }
+
+    private void OnGameOverlayActivated(GameOverlayActivated_t callback)
+    {
+        OverlayActive = callback.m_bActive != 0;
+
+        if (OverlayActive)
+        {
+            Time.timeScale = 0f;
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+            Debug.Log("[Steamworks] Overlay abierto. Juego pausado.");
+        }
+        else
+        {
+            Time.timeScale = 1f;
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Confined;
+            Debug.Log("[Steamworks] Overlay cerrado. Juego reanudado.");
+        }
     }
     #endregion
 }
