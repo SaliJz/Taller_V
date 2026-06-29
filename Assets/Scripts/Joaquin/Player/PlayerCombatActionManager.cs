@@ -90,6 +90,14 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
         if (playerBlockSystem == null) ReportDebug("PlayerBlockSystem no encontrado.", 3);
     }
 
+    private void Update()
+    {
+        if (SteamInputManager.Instance != null && SteamInputManager.Instance.GetMeleeAttackPressed())
+        {
+            ProcessCombatInput(CombatActionType.MeleeAttack);
+        }
+    }
+
     private void OnEnable()
     {
         playerControls.Combat.Enable();
@@ -112,10 +120,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     public void OnMelee(InputAction.CallbackContext context)
     {
         if (isMeleeAttackBlocked) return;
-
         if (PauseController.Instance != null && PauseController.IsGamePaused) return;
         if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
-
         if (!context.started) return;
 
         ProcessCombatInput(CombatActionType.MeleeAttack);
