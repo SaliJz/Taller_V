@@ -48,8 +48,6 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
 
     #region Internal State
 
-    private Coroutine dashCoroutine;
-    private Coroutine attackCoroutine;
     private Coroutine deathCoroutine;
 
     #endregion
@@ -158,10 +156,10 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
 
             if (agent != null && agent.enabled) agent.nextPosition = transform.position;
 
-            distanceCovered += Vector3.Distance(lastShardPos, transform.position);
+            distanceCovered += Vector3.Distance(transform.position, lastShardPos);
             if (distanceCovered >= shardDashSpacing)
             {
-                SpawnGlassShard(glassShardDashPrefab, lastShardPos,
+                SpawnGlassShard(glassShardDashPrefab, transform.position,
                                 shardDashDamagePerSec, shardDashDuration);
                 lastShardPos = transform.position;
                 distanceCovered = 0;
@@ -186,16 +184,16 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
 
         CancelAnticipation();
 
-        if (hitStunCoroutine != null) 
-        { 
-            StopCoroutine(hitStunCoroutine); 
-            hitStunCoroutine = null; 
+        if (hitStunCoroutine != null)
+        {
+            StopCoroutine(hitStunCoroutine);
+            hitStunCoroutine = null;
         }
 
-        if (attackSequenceCoroutine != null) 
-        { 
-            StopCoroutine(attackSequenceCoroutine); 
-            attackSequenceCoroutine = null; 
+        if (attackSequenceCoroutine != null)
+        {
+            StopCoroutine(attackSequenceCoroutine);
+            attackSequenceCoroutine = null;
         }
 
         isAttacking = false;
@@ -204,9 +202,6 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
 
     private IEnumerator DeathSequence()
     {
-        if (dashCoroutine != null) StopCoroutine(dashCoroutine);
-        if (attackCoroutine != null) StopCoroutine(attackCoroutine);
-
         if (agent != null && agent.enabled && agent.isOnNavMesh) agent.isStopped = true;
         if (agent != null) agent.enabled = false;
         isAttacking = true;

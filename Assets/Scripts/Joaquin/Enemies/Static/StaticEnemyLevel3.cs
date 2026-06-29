@@ -44,12 +44,13 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
     [SerializeField] private Enemies enemiesSheet;
     [SerializeField] private int ENEMY_ID = 9;
 
+    [Header("Stats - Level 3")]
+    [SerializeField] private float projectileDamage = 13;
+    //[SerializeField] private float swarmDPS;
+
     #endregion
 
     #region Internal State
-
-    private float projectileDamage = 13;
-    // private float swarmDPS;
 
     private static readonly int shaderBorderColorId = Shader.PropertyToID("_BorderColor");
     private static readonly int shaderShowIconId = Shader.PropertyToID("_ShowIcon");
@@ -125,6 +126,7 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
         if (useRandomFireRate) fireRate = Random.Range(minFireRate, maxFireRate);
 
         yield return new WaitForSeconds(fireRate);
+        //yield return new WaitForSeconds(animTeleportDelay);
 
         if (!isDead && currentState != StaticState.Patrol && currentState != StaticState.Repositioning)
         {

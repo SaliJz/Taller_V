@@ -495,7 +495,7 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
     {
         if (agent == null || !agent.enabled || !agent.isOnNavMesh) return;
 
-        agent.speed = normalSpeed;
+        if (agent.speed != normalSpeed) agent.speed = normalSpeed;
         agent.SetDestination(playerTransform.position);
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);

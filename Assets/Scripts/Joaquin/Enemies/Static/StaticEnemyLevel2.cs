@@ -6,8 +6,10 @@ public class StaticEnemyLevel2 : StaticEnemyBase, IAnimEventHandler
     [Header("QuickSheet Balance")]
     [SerializeField] private Enemies enemiesSheet;
     [SerializeField] private int ENEMY_ID = 5;
-    private float projectileDamage = 7;
-    private float mineDamage = 15;
+
+    [Header("Stats - Level 2")]
+    [SerializeField] private float projectileDamage = 7;
+    [SerializeField] private float mineDamage = 15;
 
     protected override void Awake()
     {
@@ -48,6 +50,7 @@ public class StaticEnemyLevel2 : StaticEnemyBase, IAnimEventHandler
         if (useRandomFireRate) fireRate = Random.Range(minFireRate, maxFireRate);
 
         yield return new WaitForSeconds(fireRate);
+        //yield return new WaitForSeconds(animTeleportDelay);
 
         if (!isDead && currentState != StaticState.Patrol && currentState != StaticState.Repositioning)
         {

@@ -126,7 +126,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
     #region Inspector - VFX Settings
 
     [Header("VFX Teletransporte")]
-    [SerializeField] protected float animTeleportDelay = 1f;
+    //[SerializeField] protected float animTeleportDelay = 1f;
     [SerializeField] protected GameObject teleportVFX;
     [SerializeField] protected float teleportVFXHeightOffset = 1.5f;
     [SerializeField] protected float teleportVFXDurationToDestroy = 1.5f;
@@ -835,7 +835,7 @@ public abstract class StaticEnemyBase : MonoBehaviour
         if (useRandomFireRate) fireRate = Random.Range(minFireRate, maxFireRate);
 
         yield return new WaitForSeconds(fireRate);
-        yield return new WaitForSeconds(animTeleportDelay);
+        //yield return new WaitForSeconds(animTeleportDelay);
 
         if (!isDead && currentState != StaticState.Patrol && currentState != StaticState.Repositioning)
         {

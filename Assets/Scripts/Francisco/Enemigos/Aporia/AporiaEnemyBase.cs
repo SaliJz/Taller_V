@@ -275,6 +275,11 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             agent.speed = moveSpeed;
             agent.stoppingDistance = attackRadius;
         }
+
+        if (attackRadius >= dashActivationDistance)
+        {
+            Debug.LogWarning($"[{GetType().Name}] '{name}': attackRadius ({attackRadius}) >= dashActivationDistance ({dashActivationDistance}). El dash nunca se activará. Revisar valores en el Inspector.");
+        }
     }
 
     protected virtual void SetupPools() { }
@@ -432,12 +437,12 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             return;
         }
 
-        Vector3 moveDir = isAttacking ? transform.forward : agent.velocity;
-        if (moveDir.sqrMagnitude < 0.01f) 
-        { 
-            animCtrl.h = 0; 
-            animCtrl.v = 0; 
-            return; 
+        Vector3 moveDir = agent.velocity;
+        if (moveDir.sqrMagnitude < 0.01f)
+        {
+            animCtrl.h = 0;
+            animCtrl.v = 0;
+            return;
         }
 
         float angle = Mathf.Atan2(moveDir.x, moveDir.z) * Mathf.Rad2Deg - 45f;
@@ -553,9 +558,9 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         }
         isAttacking = false;
 
-        if (IsAgentReady) 
-        { 
-            agent.isStopped = true; 
+        if (IsAgentReady)
+        {
+            agent.isStopped = true;
             agent.ResetPath();
             agent.updatePosition = true;
             agent.updateRotation = true;
@@ -676,16 +681,16 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
         CancelAnticipation();
 
-        if (hitStunCoroutine != null) 
-        { 
-            StopCoroutine(hitStunCoroutine); 
-            hitStunCoroutine = null; 
+        if (hitStunCoroutine != null)
+        {
+            StopCoroutine(hitStunCoroutine);
+            hitStunCoroutine = null;
         }
 
-        if (attackSequenceCoroutine != null) 
-        { 
-            StopCoroutine(attackSequenceCoroutine); 
-            attackSequenceCoroutine = null; 
+        if (attackSequenceCoroutine != null)
+        {
+            StopCoroutine(attackSequenceCoroutine);
+            attackSequenceCoroutine = null;
         }
 
         isInHitStun = false;

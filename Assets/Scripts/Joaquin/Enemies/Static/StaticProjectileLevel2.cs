@@ -9,10 +9,9 @@ public class StaticProjectileLevel2 : StaticProjectileBase
 
     public void InitializeLevel2(float pSpeed, float pDamage, string pWord, float pMineDmg)
     {
-        base.Initialize(speed, pDamage, pWord);
+        base.Initialize(pSpeed, pDamage, pWord);
         this.storedMineDamage = pMineDmg;
     }
-
 
     protected override void OnPlayerHit(GameObject player)
     {
