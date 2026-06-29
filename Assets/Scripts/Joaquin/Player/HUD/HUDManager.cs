@@ -92,6 +92,13 @@ public class HUDManager : MonoBehaviour
     [SerializeField] private float HUDnoStamiShakeIntensity = 4f;
     #endregion
 
+    #region  Inspector - Healing UI Effect
+
+    [SerializeField] private Image heallingBorder;
+    [SerializeField] private float healMaxAlpha;
+
+    #endregion
+
     #region Internal State
 
     private float ghostFill = 1f;
@@ -114,6 +121,7 @@ public class HUDManager : MonoBehaviour
     Vector2 HUDOriginalPos;
     float currentShakeIntensity;
     bool isInitialize = false;
+    Coroutine currentHealingRoutine;
 
     #endregion
 
@@ -154,6 +162,9 @@ public class HUDManager : MonoBehaviour
         else Debug.LogWarning("[HUD Manager] No se encontró player para obtener ShieldSkill");
 
         playerAbility = berserkerScript;
+
+        //Efecto de heal en HUD completamente transparente
+        heallingBorder.color = new Color (heallingBorder.color.r, heallingBorder.color.g, heallingBorder.color.b, 0f);
     }
 
     private void Start()
@@ -208,6 +219,7 @@ public class HUDManager : MonoBehaviour
             playerAbility.OnAbilityActivated += StartGearRotation;
             playerAbility.OnAbilityDeactivated += StopGearRotation;
         }
+        PlayerHealth.onHealling += DoHeallingUIEffect;
     }
 
     private void OnDisable()
@@ -221,6 +233,7 @@ public class HUDManager : MonoBehaviour
             playerAbility.OnAbilityDeactivated -= StopGearRotation;
         }
         ShieldSkill.OnStaminaChanged -= HandleStaminaChange;
+        PlayerHealth.onHealling -= DoHeallingUIEffect;
 
         if (healthBarFlashCoroutine != null) StopCoroutine(healthBarFlashCoroutine);
         if (screenFlashCoroutine != null) StopCoroutine(screenFlashCoroutine);
@@ -558,6 +571,39 @@ public class HUDManager : MonoBehaviour
             // Esperar antes del siguiente flash
             yield return new WaitForSeconds(screenFlashInterval * 0.5f);
         }
+    }
+
+    #endregion
+
+    #region UI Healing Effect
+
+    private IEnumerator HealingFlash(float duration = 0.3f)
+    {
+        float elapsed = 0;
+        float alphaStart = healMaxAlpha/225f;
+
+        while (elapsed < duration)
+        {
+            Debug.LogWarning("curanding");
+            elapsed += Time.deltaTime;
+            float t = elapsed/duration;
+            Color color = new Color (heallingBorder.color.r, heallingBorder.color.g, heallingBorder.color.b, Mathf.Lerp(alphaStart, 0f, t));
+            heallingBorder.color = color;
+            yield return null;
+        }
+
+        heallingBorder.color = new Color (heallingBorder.color.r, heallingBorder.color.g, heallingBorder.color.b, 0f);
+
+    }
+
+    public void DoHeallingUIEffect()
+    {
+        if (currentHealingRoutine != null)
+        {
+            StopCoroutine(currentHealingRoutine);
+        }
+
+        currentHealingRoutine = StartCoroutine(HealingFlash());
     }
 
     #endregion

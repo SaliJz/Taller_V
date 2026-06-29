@@ -182,6 +182,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     public static event Action<LifeStage> OnLifeStageChanged;
     public static event Action<PlayerHealth> OnPlayerInstantiated;
     public event Action<float> OnDamageReceived;
+    public static event Action onHealling;
 
     #endregion
 
@@ -552,6 +553,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         UpdateLifeStage();
         UpdateTemporaryHealthUI();
+
+        onHealling?.Invoke();
 
         // if (currentHealth == maxHealth)
         shaderCtrl?.HealingTrigger();
