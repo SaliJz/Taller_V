@@ -10313,17 +10313,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyHealth: {fileID: 4183819049308804750}
   emergenceDepth: 3
-  emergenceDuration: 1.5
+  emergenceDuration: 2
   navObstacle: {fileID: 8585920139361007808}
-  safeSpawnRadius: 2
+  safeSpawnRadius: 2.5
   projectilePrefab: {fileID: 7913098823340033937, guid: 508f6d7bfbfb8cc4bb7c2f62e28a6359, type: 3}
-  projectileSpeed: 15
-  projectileDmgMin: 4
-  projectileDmgMax: 8
-  projScaleStart: 4
-  projScaleMax: 16
+  projectileSpeed: 18
+  projectileDmgMin: 10
+  projectileDmgMax: 10
+  projScaleStart: 100
+  projScaleMax: 200
   fireInterval: 1.5
-  larvaPrefab: {fileID: 2070855010256960706, guid: 289b9892947974a41a4ff607ab1d8da9, type: 3}
+  larvaPrefab: {fileID: 2070855010256960706, guid: d77c866a58ba6f84c818e09b699bd71c, type: 3}
   larvaInterval: 5
   fireVFX: {fileID: 0}
   audioSource: {fileID: 8498830364032888782}
@@ -10347,8 +10347,8 @@ MonoBehaviour:
   healthPercentageText: {fileID: 0}
   healthMultiplierText: {fileID: 0}
   toughnessSystem: {fileID: 0}
-  maxHealth: 25
-  currentHealth: 0
+  maxHealth: 30
+  currentHealth: 30
   canDieAfterCooldown: 1
   deathCooldown: 2
   canDestroy: 1
@@ -10385,9 +10385,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 120953a634ec616478c5722a12285e45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  meshRenderers:
-  - {fileID: 8885071257216537802}
-  spriteRenderers: []
+  renderers: []
   damageNumberPrefab: {fileID: 3347622852007741979, guid: 0fe22b1b42159b843b8867448643daea, type: 3}
   damageNumberParent: {fileID: 7704264365160314057}
   audioSource: {fileID: 8498830364032888782}
@@ -10396,7 +10394,6 @@ MonoBehaviour:
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
   useAmountFlash: 0
-  amountFlashRenderer: {fileID: 0}
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
