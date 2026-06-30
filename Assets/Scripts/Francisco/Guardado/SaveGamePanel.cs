@@ -171,7 +171,9 @@ public class SaveGamePanel : MonoBehaviour
 
         GameObject buttonToFocus = firstSelectedButton != null ? firstSelectedButton : (playButton != null ? playButton.gameObject : null);
 
-        if (buttonToFocus != null)
+        bool isGamepadModeActive = GamepadPointer.Instance != null && GamepadPointer.Instance.IsGamepadMode();
+
+        if (buttonToFocus != null && isGamepadModeActive)
         {
             EventSystem.current.SetSelectedGameObject(buttonToFocus);
         }

@@ -530,22 +530,21 @@ public class CreditsPanel : MonoBehaviour
 
     #region [ Gamepad Focus Control ]
 
-    private void SetInitialFocus()
+  private void SetInitialFocus()
+{
+    if (firstSelectedButton == null) return;
+
+    bool isGamepadModeActive = GamepadPointer.Instance != null && GamepadPointer.Instance.IsGamepadMode();
+
+    if (!isGamepadModeActive) return;
+
+    if (EventSystem.current != null)
     {
-        if (firstSelectedButton == null) return;
-
-        bool hasNativeGamepad = Gamepad.current != null;
-        bool hasSteamInput = SteamInputManager.Instance != null;
-
-        if (!hasNativeGamepad && !hasSteamInput) return;
-
-        if (EventSystem.current != null)
-        {
-            EventSystem.current.SetSelectedGameObject(null);
-        }
-        ResetInputDevices();
-        EventSystem.current.SetSelectedGameObject(firstSelectedButton);
+        EventSystem.current.SetSelectedGameObject(null);
     }
+    ResetInputDevices();
+    EventSystem.current.SetSelectedGameObject(firstSelectedButton);
+}
 
     private void ResetInputDevices()
     {

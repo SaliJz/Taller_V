@@ -2,6 +2,7 @@ using Steamworks;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 
 #region Configuracion
@@ -80,8 +81,15 @@ public class SteamInputManager : MonoBehaviour
 
         if (inGameSetHandle == default(InputActionSetHandle_t))
         {
-            Debug.LogError("[SteamInput] No se pudo cargar InGameControls. Revisa que Steam esté abierto, que el AppID sea 4858720 y reinicia Unity después de forceinputappid.");
+            Debug.LogError("[SteamInput] No se pudo cargar InGameControls...");
             return;
+        }
+
+        InputSystemUIInputModule uiInputModule = FindAnyObjectByType<InputSystemUIInputModule>();
+        if (uiInputModule != null)
+        {
+            uiInputModule.enabled = false;
+            Debug.Log("[SteamInputManager] UI Input Module restringido. Steam gobernará el mando en los menús.");
         }
     }
 
@@ -108,10 +116,6 @@ public class SteamInputManager : MonoBehaviour
         if (IsMenuScene())
         {
             ActivateMenuSet();
-        }
-        else
-        {
-            ActivateInGameSet();
         }
     }
 
@@ -148,20 +152,31 @@ public class SteamInputManager : MonoBehaviour
     private void HandleMenuNavigation()
     {
         if (!IsMenuScene()) return;
+        if (EventSystem.current == null) return;
+
+        bool inputDetectado = GetMenuUpHeld() || GetMenuDownHeld() || GetMenuLeftHeld() || GetMenuRightHeld() ||
+                              GetMenuSelectPressed() || GetMenuCancelPressed() || GetMenuSubmitPressed();
+
+        if (inputDetectado)
+        {
+            if (EventSystem.current.currentSelectedGameObject == null)
+            {
+                ControlMenu controlMenu = FindAnyObjectByType<ControlMenu>();
+                if (controlMenu != null)
+                {
+                    controlMenu.FirstSelected();
+                }
+            }
+        }
+
+        if (EventSystem.current.currentSelectedGameObject == null) return;
 
         Vector2 input = Vector2.zero;
 
-
-        if (GetMenuUpHeld())
-            input = Vector2.up;
-        else if (GetMenuDownHeld())
-            input = Vector2.down;
-        else if (GetMenuLeftHeld())
-            input = Vector2.left;
-        else if (GetMenuRightHeld())
-            input = Vector2.right;
-
-
+        if (GetMenuUpHeld()) input = Vector2.up;
+        else if (GetMenuDownHeld()) input = Vector2.down;
+        else if (GetMenuLeftHeld()) input = Vector2.left;
+        else if (GetMenuRightHeld()) input = Vector2.right;
 
         if (input != Vector2.zero)
         {
@@ -170,19 +185,14 @@ public class SteamInputManager : MonoBehaviour
                 heldMenuDirection = input;
                 menuRepeatTimer = 0;
                 menuRepeatIntervalTimer = 0;
-
                 NavigateUI(input);
             }
             else
             {
                 menuRepeatTimer += Time.unscaledDeltaTime;
-
-
                 if (menuRepeatTimer >= MenuRepeatDelay)
                 {
                     menuRepeatIntervalTimer += Time.unscaledDeltaTime;
-
-
                     if (menuRepeatIntervalTimer >= MenuRepeatInterval)
                     {
                         NavigateUI(input);
@@ -198,16 +208,8 @@ public class SteamInputManager : MonoBehaviour
             menuRepeatIntervalTimer = 0;
         }
 
-        if (GetMenuSelectPressed())
-        {
-            SubmitUI();
-        }
-
-
-        if (GetMenuCancelPressed())
-        {
-            CancelUI();
-        }
+        if (GetMenuSelectPressed() || GetMenuSubmitPressed()) SubmitUI();
+        if (GetMenuCancelPressed()) CancelUI();
     }
 
     private void NavigateUI(Vector2 dir)

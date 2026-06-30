@@ -18,17 +18,18 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
 
     private void OnEnable()
     {
+        if (SteamInputManager.Instance != null && SteamManager.Initialized)
+        {
+            Invoke(nameof(ForceFirstSelectionPassive), 0.03f);
+            return;
+        }
+
         playerControls?.UI.Enable();
 
         if (GamepadPointer.Instance != null && GamepadPointer.Instance.GetCurrentGamepad() != null
-            || SteamInputManager.Instance != null)
+            || Gamepad.current != null)
         {
-            if (firstSelectedButton != null)
-            {
-                EventSystem.current?.SetSelectedGameObject(null);
-                EventSystem.current?.SetSelectedGameObject(firstSelectedButton);
-                lastSelected = firstSelectedButton;
-            }
+            FirstSelected();
         }
     }
 
@@ -45,7 +46,10 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
             }
             else
             {
-                EventSystem.current.SetSelectedGameObject(null);
+                if (GamepadPointer.Instance != null && GamepadPointer.Instance.IsGamepadMode())
+                {
+                    EventSystem.current.SetSelectedGameObject(null);
+                }
             }
         }
 
@@ -59,8 +63,15 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
 
     private void LateUpdate()
     {
-        if (SteamInputManager.Instance == null) return;
         if (EventSystem.current == null) return;
+
+        if (SteamInputManager.Instance != null && SteamManager.Initialized) return;
+
+        if (GamepadPointer.Instance == null || !GamepadPointer.Instance.IsGamepadMode())
+        {
+            lastSelected = EventSystem.current.currentSelectedGameObject;
+            return;
+        }
 
         GameObject current = EventSystem.current.currentSelectedGameObject;
 
@@ -82,7 +93,7 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
     }
     #endregion
 
-    #region Input Callbacks
+    #region Input Callbacks Nativos 
     public void OnCancel(InputAction.CallbackContext context) { }
     public void OnNavigate(InputAction.CallbackContext context) { }
     public void OnSubmit(InputAction.CallbackContext context) { }
@@ -103,6 +114,16 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
         EventSystem.current?.SetSelectedGameObject(null);
         EventSystem.current?.SetSelectedGameObject(firstSelectedButton);
         lastSelected = firstSelectedButton;
+    }
+
+    private void ForceFirstSelectionPassive()
+    {
+        if (firstSelectedButton == null || EventSystem.current == null) return;
+        if (EventSystem.current.currentSelectedGameObject == null)
+        {
+            EventSystem.current.SetSelectedGameObject(firstSelectedButton);
+            lastSelected = firstSelectedButton;
+        }
     }
     #endregion
 }
