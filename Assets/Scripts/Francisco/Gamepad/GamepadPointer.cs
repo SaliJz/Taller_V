@@ -27,6 +27,7 @@ public class GamepadPointer : MonoBehaviour
     private Gamepad currentGamepad;
     private InputDevice lastReportedDevice = null;
     private bool isSteamGamepadActive = false;
+    private bool wasGamepadMode = false;
 
     private GameObject lastSelectedObject = null;
     private SettingsPanel settingsPanel;
@@ -101,6 +102,11 @@ public class GamepadPointer : MonoBehaviour
 
     private void Update()
     {
+        if (SteamManager.OverlayActive)
+        {
+            return;
+        }
+
         if (currentGamepad == null)
             currentGamepad = Gamepad.current;
 
@@ -192,26 +198,21 @@ public class GamepadPointer : MonoBehaviour
             }
         }
 
-        if (currentActiveDevice != lastReportedDevice || isSteamGamepadActive != (lastReportedDevice == currentGamepad))
+        bool currentGamepadMode = IsGamepadMode();
+        if (currentGamepadMode != wasGamepadMode)
         {
-            string deviceName;
-            if (isCurrentDeviceGamepad)
+            if (currentGamepadMode)
             {
-                deviceName = "GAMEPAD (Control de Mando)";
+                Debug.Log("[GamepadPointer] Control activo cambiado a: GAMEPAD (Control de Mando)");
                 Cursor.visible = false;
-            }
-            else if (currentActiveDevice == Mouse.current)
-            {
-                deviceName = "MOUSE (Ratón)";
-                Cursor.visible = true;
             }
             else
             {
-                deviceName = "KEYBOARD (Teclado)";
-                Cursor.visible = true;
+                string deviceName = currentActiveDevice == Mouse.current ? "MOUSE (Ratón)" : "KEYBOARD (Teclado)";
+                Debug.Log($"[GamepadPointer] Control activo cambiado a: {deviceName}");
+                Cursor.visible = currentActiveDevice != null;
             }
-
-            Debug.Log($"[GamepadPointer] Control activo cambiado a: {deviceName}");
+            wasGamepadMode = currentGamepadMode;
             lastReportedDevice = currentActiveDevice;
         }
 
@@ -325,6 +326,11 @@ public class GamepadPointer : MonoBehaviour
             if (menuSlider == slider) return true;
 
         return false;
+    }
+
+    public bool IsGamepadMode()
+    {
+        return isSteamGamepadActive || (currentActiveDevice == currentGamepad && currentGamepad != null);
     }
 
     public InputDevice GetCurrentActiveDevice() => currentActiveDevice;

@@ -613,7 +613,7 @@ public class PlayerShieldController : MonoBehaviour
 
         if (!manualAimDirection.HasValue &&
             GamepadPointer.Instance != null &&
-            GamepadPointer.Instance.GetCurrentActiveDevice() == GamepadPointer.Instance.GetCurrentGamepad())
+            GamepadPointer.Instance.IsGamepadMode())
         {
             isUsingGamepad = true;
             Vector2 stickAim = GamepadPointer.Instance.GetAimDirectionValue();

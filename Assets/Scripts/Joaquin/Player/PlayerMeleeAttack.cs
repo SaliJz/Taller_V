@@ -461,11 +461,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         }
         else
         {
-            bool isGamepadActive = false;
-            if (gamepadPointer != null)
-            {
-                isGamepadActive = (gamepadPointer.GetCurrentActiveDevice() == gamepadPointer.GetCurrentGamepad());
-            }
+            bool isGamepadActive = gamepadPointer != null && gamepadPointer.IsGamepadMode();
 
             if (isGamepadActive)
             {
@@ -553,7 +549,7 @@ public class PlayerMeleeAttack : MonoBehaviour
             bool isUsingGamepad = false;
             Vector3? manualAimDirection = null;
 
-            if (gamepadPointer != null && gamepadPointer.GetCurrentActiveDevice() == gamepadPointer.GetCurrentGamepad())
+            if (gamepadPointer != null && gamepadPointer.IsGamepadMode())
             {
                 isUsingGamepad = true;
 
@@ -573,9 +569,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
                         Vector3 targetDirection = camForward * stickAim.y + camRight * stickAim.x;
                         if (targetDirection.sqrMagnitude > 0.0001f)
-                        {
                             manualAimDirection = targetDirection.normalized;
-                        }
                     }
                 }
             }

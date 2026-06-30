@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8281690028683332065}
   - component: {fileID: 5199788221403939763}
-  - component: {fileID: 8443136458559871781}
   - component: {fileID: 1759012219357236142}
   m_Layer: 0
   m_Name: CameraEspejo
@@ -85,14 +84,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!81 &8443136458559871781
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1276301623448633070}
-  m_Enabled: 1
 --- !u!114 &1759012219357236142
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -244,11 +235,14 @@ MonoBehaviour:
   nivel1: {fileID: 0}
   nivel2: {fileID: 0}
   nivel3: {fileID: 0}
-  Player: {fileID: 0}
+  MainCamera: {fileID: 0}
   CameraEspejo: {fileID: 1276301623448633070}
-  rotacionMaxima: 45
-  sensibilidadRotacion: 30
+  copiarRotacion: 1
+  copiarMovimiento: 1
+  limiteMovimiento: 10
+  suavizadoMovimiento: 8
   suavizadoRotacion: 5
+  maskAlphaSpeed: 1
 --- !u!1 &5903927763166404437
 GameObject:
   m_ObjectHideFlags: 0

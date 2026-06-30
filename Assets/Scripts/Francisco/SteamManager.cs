@@ -109,10 +109,19 @@ public class SteamManager : MonoBehaviour
         }
         else
         {
-            Time.timeScale = 1f;
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Confined;
-            Debug.Log("[Steamworks] Overlay cerrado. Juego reanudado.");
+            if (PauseController.IsGamePaused)
+            {
+                Time.timeScale = 0f;
+                Cursor.visible = false;
+                Debug.Log("[Steamworks] Overlay cerrado. Se mantiene pausa del juego.");
+            }
+            else
+            {
+                Time.timeScale = 1f;
+                Cursor.visible = false;
+                Cursor.lockState = CursorLockMode.Confined;
+                Debug.Log("[Steamworks] Overlay cerrado. Juego reanudado.");
+            }
         }
     }
     #endregion

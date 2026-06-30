@@ -45,7 +45,6 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     public static bool IsGamePaused => isPaused;
     public static PauseController Instance { get; private set; }
 
-    #region Ciclo De Vida
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -116,9 +115,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 
         pauseButtonPressedLastFrame = pausePressed;
     }
-    #endregion
 
-    #region Input Callbacks
     public void OnCancel(InputAction.CallbackContext context)
     {
         if (context.performed && canTogglePause)
@@ -142,9 +139,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     public void OnTrackedDevicePosition(InputAction.CallbackContext context) { }
     public void OnTrackedDeviceOrientation(InputAction.CallbackContext context) { }
     public void OnToggleInventory(InputAction.CallbackContext context) { }
-    #endregion
 
-    #region Pausa
     public void PauseGame()
     {
         if (isPaused) return;
@@ -235,9 +230,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 
         SteamInputManager.Instance?.ActivateInGameSet();
     }
-    #endregion
 
-    #region Settings
     public void OpenSettings()
     {
         if (settingsPanel == null) return;
@@ -258,9 +251,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         if (IsGamepadActive())
             SetFocus(firstSelectedButton, "Settings Close");
     }
-    #endregion
 
-    #region Escenas
     public void ResetGame()
     {
         PlayClickSFX();
@@ -308,9 +299,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 
         SceneManager.LoadScene(sceneName);
     }
-    #endregion
 
-    #region Utilidades
     private bool IsGamepadActive()
     {
         return (SteamInputManager.Instance != null) || (Gamepad.current != null);
@@ -331,10 +320,6 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         {
             EventSystem.current.SetSelectedGameObject(null);
             EventSystem.current.SetSelectedGameObject(focusObject);
-        }
-        else
-        {
-            Debug.LogWarning($"[{context} - PauseController] EventSystem.current es nulo.");
         }
     }
 
@@ -407,7 +392,6 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 
         previousAudioStates.Clear();
     }
-    #endregion
 }
 
 //using UnityEngine;
