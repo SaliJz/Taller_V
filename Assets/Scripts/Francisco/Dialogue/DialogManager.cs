@@ -114,15 +114,31 @@ public class DialogManager : MonoBehaviour
             voiceAudioSource.volume = voiceVolume;
         }
     }
-
     private void OnAdvanceDialogue(InputAction.CallbackContext context)
+    {
+        AdvanceFromSteam();
+    }
+
+    private void Update()
+    {
+        if (SteamInputManager.Instance == null) return;
+
+        if (SteamInputManager.Instance.GetInteractPressed())
+        {
+            AdvanceFromSteam();
+        }
+    }
+
+    #endregion
+
+    #region Core Dialog Logic
+
+    private void AdvanceFromSteam()
     {
         if (!isDialogActive) return;
 
         if (Time.time < lastInputTime + inputBufferTime)
-        {
             return;
-        }
 
         lastInputTime = Time.time;
 
@@ -133,14 +149,11 @@ public class DialogManager : MonoBehaviour
             lineText.maxVisibleCharacters = int.MaxValue;
 
             if (voiceAudioSource != null && voiceAudioSource.isPlaying)
-            {
                 voiceAudioSource.Stop();
-            }
 
             if (isMerchantFlow)
-            {
                 onDialogFinishedEvent?.Invoke();
-            }
+
             return;
         }
 
@@ -149,20 +162,17 @@ public class DialogManager : MonoBehaviour
         if (dialogQueue.Count > 0)
         {
             DialogLine currentLine = dialogQueue.Peek();
+
             if (currentLine.WaitForInput)
             {
                 DisplayNextLine();
             }
         }
-        else if (dialogQueue.Count == 0)
+        else
         {
             EndDialog();
         }
     }
-
-    #endregion
-
-    #region Core Dialog Logic
 
     public void StartDialog(DialogLine[] lines, UnityEvent onFinished = null, bool isMerchant = false)
     {

@@ -182,26 +182,35 @@ public class InventoryUIManager : MonoBehaviour
             return;
         }
 
-        // Teclado: Tab
-        if (Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame)
+        // TOGGLE INVENTORY (unificado)
+        if (ShouldToggleInventory())
         {
             ToggleInventory();
             return;
-        }
-
-        // Gamepad: Select 
-        if (Gamepad.current != null)
-        {
-            if (Gamepad.current.selectButton.wasPressedThisFrame)
-            {
-                ToggleInventory();
-            }
         }
 
         if (isOpen)
         {
             UpdateGamepadNavigation();
         }
+    }
+
+    private bool ShouldToggleInventory()
+    {
+        // Teclado
+        if (Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame)
+            return true;
+
+        // Gamepad (Input System)
+        if (Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame)
+            return true;
+
+        // Steam Input (fallback o adicional)
+        if (SteamInputManager.Instance != null &&
+            SteamInputManager.Instance.GetInventoryPressed())
+            return true;
+
+        return false;
     }
 
     #endregion

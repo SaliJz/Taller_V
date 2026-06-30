@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
-using System.Linq; 
+using System.Linq;
 
 public class InputIconManager : MonoBehaviour
 {
@@ -42,25 +42,18 @@ public class InputIconManager : MonoBehaviour
     {
         if (GamepadPointer.Instance != null)
         {
-            InputDevice newDevice = GamepadPointer.Instance.GetCurrentActiveDevice();
+            bool isGamepadMode = GamepadPointer.Instance.IsGamepadMode();
 
-            if (currentActiveIconSet == null || !IsCorrectSetForDevice(currentActiveIconSet, newDevice))
+            if (currentActiveIconSet == null || !IsCorrectSetForMode(currentActiveIconSet, isGamepadMode))
             {
                 UpdateIconSet();
             }
         }
     }
 
-    private bool IsCorrectSetForDevice(InputIconData iconSet, InputDevice device)
+    private bool IsCorrectSetForMode(InputIconData iconSet, bool isGamepadMode)
     {
-        if (iconSet.isKeyboardScheme)
-        {
-            return !(device is Gamepad);
-        }
-        else
-        {
-            return (device is Gamepad);
-        }
+        return iconSet.isKeyboardScheme != isGamepadMode;
     }
 
     private InputIconData GetBestGamepadIconSet()
@@ -78,7 +71,7 @@ public class InputIconManager : MonoBehaviour
 
             if (specificSet != null)
             {
-                return specificSet; 
+                return specificSet;
             }
         }
 
@@ -107,16 +100,16 @@ public class InputIconManager : MonoBehaviour
             return InputIconData.GamepadType.Nintendo;
         }
 
-        return InputIconData.GamepadType.Generic; 
+        return InputIconData.GamepadType.Generic;
     }
 
     public void UpdateIconSet()
     {
         if (GamepadPointer.Instance == null) return;
 
-        InputDevice currentDevice = GamepadPointer.Instance.GetCurrentActiveDevice();
+        bool isGamepadMode = GamepadPointer.Instance.IsGamepadMode();
 
-        if (currentDevice is Gamepad)
+        if (isGamepadMode)
         {
             currentActiveIconSet = GetBestGamepadIconSet();
         }
@@ -138,7 +131,7 @@ public class InputIconManager : MonoBehaviour
             UpdateIconSet();
             if (currentActiveIconSet == null)
             {
-                return $"[{actionName}]"; 
+                return $"[{actionName}]";
             }
         }
 
