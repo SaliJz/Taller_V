@@ -1,5 +1,6 @@
 using UnityEngine;
 using Steamworks;
+using UnityEngine.SceneManagement;
 
 #region Configuracion
 public class SteamInputManager : MonoBehaviour
@@ -9,6 +10,7 @@ public class SteamInputManager : MonoBehaviour
 
     private InputHandle_t[] controllerHandles = new InputHandle_t[Constants.STEAM_INPUT_MAX_COUNT];
     private int activeControllerCount;
+    private bool actionsInitialized;
 
     private InputActionSetHandle_t inGameSetHandle;
     private InputActionSetHandle_t menuSetHandle;
@@ -30,7 +32,6 @@ public class SteamInputManager : MonoBehaviour
     private InputDigitalActionHandle_t menuCancelHandle;
     private InputDigitalActionHandle_t menuSubmitHandle;
     private InputAnalogActionHandle_t aimHandle;
-    private bool inGameSetActivated;
     #endregion
 
     #region Ciclo De Vida
@@ -81,12 +82,46 @@ public class SteamInputManager : MonoBehaviour
         }
 
         Debug.Log($"[SteamInput] InGameSet handle: {inGameSetHandle}");
+    }
 
+    private void Update()
+    {
+        if (!SteamManager.Initialized) return;
+
+        SteamInput.RunFrame();
+        RefreshControllers();
+
+        if (activeControllerCount <= 0) return;
+
+        if (!actionsInitialized)
+        {
+            InitializeActions();
+            actionsInitialized = true;
+        }
+
+        if (SteamManager.OverlayActive) return;
+
+        if (IsMenuScene())
+        {
+            ActivateMenuSet();
+        }
+        else
+        {
+            ActivateInGameSet();
+        }
+    }
+
+
+    private void InitializeActions()
+    {
         meleeAttackHandle = SteamInput.GetDigitalActionHandle("melee_attack");
         shieldThrowHandle = SteamInput.GetDigitalActionHandle("shield_throw");
         dashHandle = SteamInput.GetDigitalActionHandle("dash");
         pauseMenuHandle = SteamInput.GetDigitalActionHandle("pause_menu");
+
         moveHandle = SteamInput.GetAnalogActionHandle("Move");
+        aimHandle = SteamInput.GetAnalogActionHandle("Aim");
+
         interactHandle = SteamInput.GetDigitalActionHandle("interact");
         inventoryHandle = SteamInput.GetDigitalActionHandle("inventory");
         activateSkillHandle = SteamInput.GetDigitalActionHandle("activate_skill");
@@ -100,22 +135,7 @@ public class SteamInputManager : MonoBehaviour
         menuCancelHandle = SteamInput.GetDigitalActionHandle("menu_cancel");
         menuSubmitHandle = SteamInput.GetDigitalActionHandle("menu_submit");
 
-        aimHandle = SteamInput.GetAnalogActionHandle("Aim");
-    }
-
-    private void Update()
-    {
-        if (!SteamManager.Initialized) return;
-
-        SteamInput.RunFrame();
-        RefreshControllers();
-
-        if (!inGameSetActivated && activeControllerCount > 0 && inGameSetHandle != default(InputActionSetHandle_t))
-        {
-            ActivateInGameSet();
-            inGameSetActivated = true;
-            Debug.Log("[SteamInput] InGameControls activado");
-        }
+        Debug.Log("[SteamInput] Actions inicializadas correctamente");
     }
 
     private void OnDestroy()
@@ -130,6 +150,47 @@ public class SteamInputManager : MonoBehaviour
     }
     #endregion
 
+    #region Escenas Menu
+
+    [SerializeField] private string[] menuScenes;
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        foreach (string menuScene in menuScenes)
+        {
+            if (scene.name == menuScene)
+            {
+                ActivateMenuSet();
+                Debug.Log("[SteamInput] MenuControls activado en escena: " + scene.name);
+                return;
+            }
+        }
+
+        ActivateInGameSet();
+        Debug.Log("[SteamInput] InGameControls activado en escena: " + scene.name);
+    }
+
+    private bool IsMenuScene()
+    {
+        foreach (string s in menuScenes)
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == s)
+                return true;
+
+        return false;
+    }
+    #endregion
+
     #region Controladores
     private void RefreshControllers()
     {
@@ -138,6 +199,9 @@ public class SteamInputManager : MonoBehaviour
 
     private InputHandle_t GetFirstController()
     {
+        if (activeControllerCount <= 0)
+            activeControllerCount = SteamInput.GetConnectedControllers(controllerHandles);
+
         return activeControllerCount > 0 ? controllerHandles[0] : default(InputHandle_t);
     }
     #endregion
@@ -185,43 +249,53 @@ public class SteamInputManager : MonoBehaviour
     #region Lecturas Publicas
     public bool GetMeleeAttackPressed()
     {
+        if (SteamManager.OverlayActive) return false;
         InputHandle_t controller = GetFirstController();
         if (controller == default(InputHandle_t)) return false;
-
         return SteamInput.GetDigitalActionData(controller, meleeAttackHandle).bState != 0;
     }
 
     public bool GetShieldThrowPressed()
     {
+        if (SteamManager.OverlayActive) return false;
         InputHandle_t controller = GetFirstController();
         if (controller == default(InputHandle_t)) return false;
-
         return SteamInput.GetDigitalActionData(controller, shieldThrowHandle).bState != 0;
     }
 
     public bool GetDashPressed()
     {
+        if (SteamManager.OverlayActive) return false;
         InputHandle_t controller = GetFirstController();
         if (controller == default(InputHandle_t)) return false;
-
         return SteamInput.GetDigitalActionData(controller, dashHandle).bState != 0;
     }
 
     public Vector2 GetMoveAxis()
     {
+        if (SteamManager.OverlayActive) return Vector2.zero;
+        if (moveHandle == default(InputAnalogActionHandle_t)) return Vector2.zero;
+
         InputHandle_t controller = GetFirstController();
         if (controller == default(InputHandle_t)) return Vector2.zero;
 
         InputAnalogActionData_t data = SteamInput.GetAnalogActionData(controller, moveHandle);
+        if (data.bActive == 0) return Vector2.zero;
+
         return new Vector2(data.x, data.y);
     }
 
     public Vector2 GetAimAxis()
     {
+        if (SteamManager.OverlayActive) return Vector2.zero;
+        if (aimHandle == default(InputAnalogActionHandle_t)) return Vector2.zero;
+
         InputHandle_t controller = GetFirstController();
         if (controller == default(InputHandle_t)) return Vector2.zero;
 
         InputAnalogActionData_t data = SteamInput.GetAnalogActionData(controller, aimHandle);
+        if (data.bActive == 0) return Vector2.zero;
+
         return new Vector2(data.x, data.y);
     }
 
@@ -241,6 +315,8 @@ public class SteamInputManager : MonoBehaviour
 
     private bool GetDigital(InputDigitalActionHandle_t handle)
     {
+        if (SteamManager.OverlayActive) return false;
+
         InputHandle_t controller = GetFirstController();
         if (controller == default(InputHandle_t)) return false;
         if (handle == default(InputDigitalActionHandle_t)) return false;

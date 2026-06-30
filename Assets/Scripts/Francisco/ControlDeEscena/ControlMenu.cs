@@ -7,6 +7,7 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
     [SerializeField] private GameObject firstSelectedButton;
     private PlayerControlls playerControls;
     private GameObject previousSelectedGameObject;
+    private GameObject lastSelected;
 
     private bool upPressedLastFrame;
     private bool downPressedLastFrame;
@@ -39,6 +40,7 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
             {
                 EventSystem.current?.SetSelectedGameObject(null);
                 EventSystem.current?.SetSelectedGameObject(firstSelectedButton);
+                lastSelected = firstSelectedButton;
             }
         }
     }
@@ -59,6 +61,8 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
                 EventSystem.current.SetSelectedGameObject(null);
             }
         }
+
+        lastSelected = null;
     }
 
     private void OnDestroy()
@@ -120,6 +124,30 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
         selectPressedLastFrame = select;
         cancelPressedLastFrame = cancel;
     }
+
+    private void LateUpdate()
+    {
+        if (SteamInputManager.Instance == null) return;
+        if (EventSystem.current == null) return;
+
+        GameObject current = EventSystem.current.currentSelectedGameObject;
+
+        if (current != null)
+        {
+            lastSelected = current;
+            return;
+        }
+
+        GameObject target = (lastSelected != null && lastSelected.activeInHierarchy)
+            ? lastSelected
+            : firstSelectedButton;
+
+        if (target != null)
+        {
+            EventSystem.current.SetSelectedGameObject(target);
+            lastSelected = target;
+        }
+    }
     #endregion
 
     #region Input Callbacks
@@ -142,11 +170,12 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
         if (firstSelectedButton == null) return;
         EventSystem.current?.SetSelectedGameObject(null);
         EventSystem.current?.SetSelectedGameObject(firstSelectedButton);
+        lastSelected = firstSelectedButton;
     }
 
     private void SendNavigate(Vector2 direction)
     {
-        if (EventSystem.current == null) return;
+        if (EventSystem.current == null || EventSystem.current.currentSelectedGameObject == null) return;
 
         AxisEventData eventData = new AxisEventData(EventSystem.current);
         eventData.moveVector = direction;
@@ -156,6 +185,9 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
                                             : MoveDirection.Left;
 
         ExecuteEvents.Execute(EventSystem.current.currentSelectedGameObject, eventData, ExecuteEvents.moveHandler);
+
+        if (EventSystem.current.currentSelectedGameObject != null)
+            lastSelected = EventSystem.current.currentSelectedGameObject;
     }
 
     private void SendSubmit()

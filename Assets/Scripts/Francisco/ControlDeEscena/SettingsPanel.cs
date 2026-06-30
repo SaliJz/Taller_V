@@ -243,7 +243,10 @@ public class SettingsPanel : MonoBehaviour
     {
         if (firstSelectedButton == null) return;
 
-        if (Gamepad.current == null) return;
+        bool hasNativeGamepad = Gamepad.current != null;
+        bool hasSteamInput = SteamInputManager.Instance != null;
+
+        if (!hasNativeGamepad && !hasSteamInput) return;
 
         if (EventSystem.current != null)
         {
