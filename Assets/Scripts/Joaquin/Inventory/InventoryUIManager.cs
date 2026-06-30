@@ -95,6 +95,10 @@ public class InventoryUIManager : MonoBehaviour
     [Tooltip("Cooldown en segundos entre repeticiones del joystick izquierdo")]
     [SerializeField] private float joystickRepeatCooldown = 0.2f;
 
+
+    private float nextToggleTime = 0f;
+    private const float InventoryInputCooldown = 0.25f; 
+
     //[Header("Registro de items Mecanicos")]
     //[SerializeField] private List<MechanicItemEntry> mechanicRegistry = new List<MechanicItemEntry>();
 
@@ -176,15 +180,18 @@ public class InventoryUIManager : MonoBehaviour
 
     private void Update()
     {
+        if (Time.unscaledTime < nextToggleTime) return;
+
         if (isConfirmPanelOpen)
         {
             UpdateGamepadConfirmNavigation();
             return;
         }
 
-        // TOGGLE INVENTORY (unificado)
         if (ShouldToggleInventory())
         {
+            nextToggleTime = Time.unscaledTime + InventoryInputCooldown;
+
             ToggleInventory();
             return;
         }

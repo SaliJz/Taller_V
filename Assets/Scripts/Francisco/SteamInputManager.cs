@@ -2,6 +2,7 @@ using Steamworks;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 
@@ -45,6 +46,8 @@ public class SteamInputManager : MonoBehaviour
 
     private const float MenuRepeatDelay = 0.35f;
     private const float MenuRepeatInterval = 0.12f;
+
+    private string ultimoModoDebug = "Ninguno";
     #endregion
 
     #region Ciclo De Vida
@@ -91,6 +94,18 @@ public class SteamInputManager : MonoBehaviour
             uiInputModule.enabled = false;
             Debug.Log("[SteamInputManager] UI Input Module restringido. Steam gobernará el mando en los menús.");
         }
+
+        InputSystem.settings.updateMode = InputSettings.UpdateMode.ProcessEventsInFixedUpdate;
+
+        foreach (var device in InputSystem.devices)
+        {
+            if (device is Gamepad)
+            {
+                InputSystem.DisableDevice(device);
+            }
+        }
+
+        Debug.Log("<color=#00FFCC>[SteamInputManager]</color> Escudo de hardware total: Todos los gamepads nativos de Unity han sido desactivados.");
     }
 
     private void Update()
@@ -151,7 +166,7 @@ public class SteamInputManager : MonoBehaviour
 
     private void HandleMenuNavigation()
     {
-        if (!IsMenuScene()) return;
+        if (!IsMenuScene() && !PauseController.IsGamePaused) return;
         if (EventSystem.current == null) return;
 
         bool inputDetectado = GetMenuUpHeld() || GetMenuDownHeld() || GetMenuLeftHeld() || GetMenuRightHeld() ||
@@ -210,6 +225,15 @@ public class SteamInputManager : MonoBehaviour
 
         if (GetMenuSelectPressed() || GetMenuSubmitPressed()) SubmitUI();
         if (GetMenuCancelPressed()) CancelUI();
+    }
+
+    private void LogCambioDeSet(string nuevoModo)
+    {
+        if (ultimoModoDebug != nuevoModo)
+        {
+            ultimoModoDebug = nuevoModo;
+            Debug.Log($"<color=#00FFCC>[SteamInput Debug]</color> Cambiando a Modo: <b>{nuevoModo}</b> (Escena Actual: {SceneManager.GetActiveScene().name}, Pausa: {PauseController.IsGamePaused})");
+        }
     }
 
     private void NavigateUI(Vector2 dir)
@@ -378,6 +402,7 @@ public class SteamInputManager : MonoBehaviour
         if (inGameSetHandle == default(InputActionSetHandle_t)) return;
 
         SteamInput.ActivateActionSet(controller, inGameSetHandle);
+        LogCambioDeSet("GAME CONTROLS (InGame)");
     }
 
     public void ActivateMenuSet()
@@ -387,6 +412,7 @@ public class SteamInputManager : MonoBehaviour
         if (menuSetHandle == default(InputActionSetHandle_t)) return;
 
         SteamInput.ActivateActionSet(controller, menuSetHandle);
+        LogCambioDeSet("MENU CONTROLS (Menus/Pausa)");
     }
     #endregion
 
