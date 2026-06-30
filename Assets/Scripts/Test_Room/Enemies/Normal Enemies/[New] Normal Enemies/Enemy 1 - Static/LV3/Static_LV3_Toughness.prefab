@@ -2229,7 +2229,6 @@ MonoBehaviour:
   teleportSFX: {fileID: 8300000, guid: dba0835f84fbe3a46bcf0eee2b14fe91, type: 3}
   deathSFX: {fileID: 0}
   shootSFX: {fileID: 8300000, guid: d1719458c74f17f4285b31c476c02335, type: 3}
-  animTeleportDelay: 0
   teleportVFX: {fileID: 0}
   teleportVFXHeightOffset: 1.5
   teleportVFXDurationToDestroy: 1.5
@@ -2256,6 +2255,7 @@ MonoBehaviour:
   retaliatoryShootSFX: {fileID: 0}
   enemiesSheet: {fileID: 11400000, guid: 566256d046a94d049b6d208905123b1f, type: 2}
   ENEMY_ID: 10
+  projectileDamage: 13
 --- !u!114 &5838588693334080987
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2290,8 +2290,8 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeathByMelee: 6.5
-  lifestealAmountOnDeathByDistance: 4.5
+  lifestealAmountOnDeathByMelee: 5
+  lifestealAmountOnDeathByDistance: 5
   deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   deathVFXSpawnPoint: {fileID: 5674723051236638625}
   deathVFXOffsetFallBack: {x: 0, y: 1, z: 0}
