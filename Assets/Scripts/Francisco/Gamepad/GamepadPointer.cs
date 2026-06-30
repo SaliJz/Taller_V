@@ -306,7 +306,10 @@ public class GamepadPointer : MonoBehaviour
             if (virtualCursor != null && virtualCursor.gameObject.activeSelf)
                 virtualCursor.gameObject.SetActive(false);
 
-            if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null
+            bool steamControllingMenu = SteamInputManager.Instance != null;
+
+            if (!steamControllingMenu &&
+                EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null
                 && (currentActiveDevice == Mouse.current || currentActiveDevice == Keyboard.current))
             {
                 EventSystem.current.SetSelectedGameObject(null);
