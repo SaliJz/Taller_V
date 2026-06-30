@@ -856,16 +856,16 @@ public partial class PlayerStatsManager : MonoBehaviour
 
             case LifeStage.Adult:
                 ApplyLifeStageMod(StatType.MoveSpeed, -0.05f);
-                ApplyLifeStageMod(StatType.MeleeAttackSpeed, -0.17f);
-                ApplyLifeStageMod(StatType.MeleeAttackDamage, 0.5f);
+                ApplyLifeStageMod(StatType.MeleeAttackSpeed, -0.06f);
+                ApplyLifeStageMod(StatType.MeleeAttackDamage, 0.33f);
                 ApplyLifeStageMod(StatType.ShieldSpeed, 0f);
                 ApplyLifeStageMod(StatType.ShieldAttackDamage, 0f);
                 break;
 
             case LifeStage.Elder:
                 ApplyLifeStageMod(StatType.MoveSpeed, -0.1f);
-                ApplyLifeStageMod(StatType.MeleeAttackSpeed, -0.34f);
-                ApplyLifeStageMod(StatType.MeleeAttackDamage, 2f);
+                ApplyLifeStageMod(StatType.MeleeAttackSpeed, -0.12f);
+                ApplyLifeStageMod(StatType.MeleeAttackDamage, 0.77f);
                 ApplyLifeStageMod(StatType.ShieldSpeed, 0f);
                 ApplyLifeStageMod(StatType.ShieldAttackDamage, 0f);
                 break;
