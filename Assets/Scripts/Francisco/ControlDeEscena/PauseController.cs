@@ -302,7 +302,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 
     private bool IsGamepadActive()
     {
-        return (SteamInputManager.Instance != null) || (Gamepad.current != null);
+        return GamepadPointer.Instance != null && GamepadPointer.Instance.IsGamepadMode();
     }
 
     private IEnumerator PauseCooldown()

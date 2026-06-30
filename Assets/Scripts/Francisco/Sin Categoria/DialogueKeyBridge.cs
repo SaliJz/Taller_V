@@ -11,6 +11,17 @@ public class DialogueInputBridge : MonoBehaviour
         WaitForInput
     }
 
+    public enum SteamInputAction
+    {
+        Interact,
+        MenuSelect,
+        MenuCancel,
+        Dash,
+        Attack,
+        Inventory,
+        Skill
+    }
+
     [System.Serializable]
     public struct SequenceStep
     {
@@ -23,6 +34,7 @@ public class DialogueInputBridge : MonoBehaviour
 
         [Header("Input Settings")]
         public InputActionReference actionToWait;
+        public SteamInputAction steamAction;
         public int requiredPresses;
         public float maxTimeBetweenPresses;
 
@@ -106,16 +118,15 @@ public class DialogueInputBridge : MonoBehaviour
 
     private IEnumerator WaitForInputSequence(SequenceStep step)
     {
-        if (step.actionToWait == null || step.actionToWait.action == null) yield break;
-
-        step.actionToWait.action.Enable();
         currentPresses = 0;
         float timer = 0f;
-        int targetPresses = Mathf.Max(1, step.requiredPresses);
 
+        int targetPresses = Mathf.Max(1, step.requiredPresses);
         while (currentPresses < targetPresses)
         {
-            if (step.actionToWait.action.WasPressedThisFrame())
+            bool pressed = GetInput(step);
+
+            if (pressed)
             {
                 currentPresses++;
                 timer = 0f;
@@ -134,8 +145,56 @@ public class DialogueInputBridge : MonoBehaviour
 
             yield return null;
         }
+    }
 
-        step.actionToWait.action.Disable();
+    private bool GetInput(SequenceStep step)
+    {
+        bool inputSystemPressed =
+            step.actionToWait != null &&
+            step.actionToWait.action != null &&
+            step.actionToWait.action.WasPressedThisFrame();
+
+        bool steamPressed = false;
+
+        if (SteamInputManager.Instance != null)
+        {
+            steamPressed = CheckSteamInput(step.steamAction);
+        }
+
+        return inputSystemPressed || steamPressed;
+    }
+
+
+    private bool CheckSteamInput(SteamInputAction action)
+    {
+        if (SteamInputManager.Instance == null)
+            return false;
+
+        switch (action)
+        {
+            case SteamInputAction.Interact:
+                return SteamInputManager.Instance.GetInteractPressed();
+
+            case SteamInputAction.MenuSelect:
+                return SteamInputManager.Instance.GetMenuSelectPressed();
+
+            case SteamInputAction.MenuCancel:
+                return SteamInputManager.Instance.GetMenuCancelPressed();
+
+            case SteamInputAction.Dash:
+                return SteamInputManager.Instance.GetDashPressed();
+
+            case SteamInputAction.Attack:
+                return SteamInputManager.Instance.GetMeleeAttackPressed();
+
+            case SteamInputAction.Inventory:
+                return SteamInputManager.Instance.GetInventoryPressed();
+
+            case SteamInputAction.Skill:
+                return SteamInputManager.Instance.GetActivateSkillPressed();
+        }
+
+        return false;
     }
 
     public void ResetSequence()

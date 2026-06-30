@@ -86,6 +86,16 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
         }
     }
 
+    private void Update()
+    {
+        if (SteamInputManager.Instance == null) return;
+
+        if (SteamInputManager.Instance.GetInteractPressed())
+        {
+            VerifityShop(); 
+        }
+    }
+
     private void OnDestroy()
     {
         playerControls?.Dispose();
@@ -101,28 +111,35 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
     {
         if (!context.started) return;
 
+        VerifityShop();
+    }
+
+    private bool VerifityShop()
+    {
         if (DialogManager.Instance != null && DialogManager.Instance.IsActive)
         {
-            return;
+            return false;
         }
 
         if (dialogueEndTime > 0 && (Time.unscaledTime - dialogueEndTime) < dialogueGracePeriod)
         {
             Debug.Log($"[ShopItemDisplay] Compra cancelada por seguridad. Evitando compra accidental por spam.");
-            return;
+            return false;
         }
 
         if (InventoryUIManager.Instance != null &&
             InventoryUIManager.Instance.IsOpen &&
             !InventoryUIManager.Instance.IsConfirmPanelOpen)
         {
-            return;
+            return false;
         }
 
         if (isPlayerInProximity && shopManager != null)
         {
             AttemptPurchase();
         }
+
+        return true;
     }
 
     public void OnAdvanceDialogue(InputAction.CallbackContext context)

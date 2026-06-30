@@ -164,6 +164,7 @@ public class HUDManager : MonoBehaviour
         playerAbility = berserkerScript;
 
         //Efecto de heal en HUD completamente transparente
+        if(heallingBorder != null)
         heallingBorder.color = new Color (heallingBorder.color.r, heallingBorder.color.g, heallingBorder.color.b, 0f);
     }
 
