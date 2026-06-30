@@ -99,6 +99,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     private const float LOW_HEALTH_THRESHOLD = 10f;
     private float currentStaminaDrainRate;
     private bool canDeactivate = true;
+    private bool wasSteamActivateSkillPressed;
 
     private PlayerControlls playerControls;
     private PlayerHealth playerHealth;
@@ -192,6 +193,8 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
 
     private void Update()
     {
+        ReadSteamSkillInput();
+
         if (!isForcedActive)
         {
             bool isHealthLowNow = playerHealth.CurrentHealth <= LOW_HEALTH_THRESHOLD;
@@ -251,6 +254,36 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         {
             Destroy(currentWarningMessage);
         }
+    }
+
+    private void ReadSteamSkillInput()
+    {
+        if (SteamInputManager.Instance == null) return;
+        if (PauseController.IsGamePaused) return;
+
+        bool pressed = SteamInputManager.Instance.GetActivateSkillPressed();
+
+        if (pressed && !wasSteamActivateSkillPressed)
+        {
+            if (inputBlocked)
+            {
+                Debug.Log("[ShieldSkill] Input bloqueado durante tutorial.");
+                wasSteamActivateSkillPressed = pressed;
+                return;
+            }
+
+            if (LOW_HEALTH_THRESHOLD >= playerHealth.CurrentHealth)
+            {
+                Debug.Log("[ShieldSkill] Salud del jugador demasiado baja. La habilidad no puede activarse.");
+                ShowLowHealthWarning();
+                wasSteamActivateSkillPressed = pressed;
+                return;
+            }
+
+            ToggleSkill();
+        }
+
+        wasSteamActivateSkillPressed = pressed;
     }
 
     #endregion

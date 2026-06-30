@@ -13,9 +13,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     [SerializeField] private GameObject firstSelectedButton;
 
     [Header("SFX / Music Sources")]
-    [Tooltip("Fuente dedicada para reproducir la m�sica o ambientaci�n del men� de pausa.")]
     [SerializeField] private AudioSource pauseMusicSource;
-    [Tooltip("Fuente dedicada para reproducir SFX (botones, clicks).")]
     [SerializeField] private AudioSource sfxSource;
 
     [Header("SFX Clips")]
@@ -42,6 +40,8 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 
     [SerializeField] private PlayerStatsManager statsManager;
     private float previousTimeScale;
+    private bool pauseButtonPressedLastFrame = false;
+
     public static bool IsGamePaused => isPaused;
     public static PauseController Instance { get; private set; }
 
@@ -58,15 +58,10 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         playerControls.UI.SetCallbacks(this);
 
         if (statsManager == null)
-        {
             statsManager = FindAnyObjectByType<PlayerStatsManager>();
-        }
 
-        // Seguridad: si no se asign� ninguna source, intentamos buscar alguna en el mismo GameObject
         if (pauseMusicSource == null)
-        {
             pauseMusicSource = GetComponent<AudioSource>();
-        }
 
         if (pausePanel != null) pausePanel.SetActive(false);
     }
@@ -75,24 +70,13 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     {
         playerControls?.UI.Enable();
 
-        if (Gamepad.current != null)
+        if (IsGamepadActive())
         {
             if (firstSelectedButton != null)
             {
-                if (EventSystem.current != null)
-                {
-                    EventSystem.current.SetSelectedGameObject(null);
-                    EventSystem.current.SetSelectedGameObject(firstSelectedButton);
-                }
+                EventSystem.current?.SetSelectedGameObject(null);
+                EventSystem.current?.SetSelectedGameObject(firstSelectedButton);
             }
-            else
-            {
-                Debug.LogWarning("[ControlMenu] No se pudo establecer el foco inicial. Asigna 'First Selected Button' en el Inspector.");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("[ControlMenu] No se pudo establecer el foco inicial. Asigna 'First Selected Button' en el Inspector.");
         }
     }
 
@@ -100,7 +84,6 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     {
         playerControls?.UI.Disable();
 
-        // Si el componente se desactiva mientras est� en pausa, restauramos los audio para evitar que queden desactivados permanentemente.
         if (isPaused)
         {
             Time.timeScale = previousTimeScale;
@@ -113,32 +96,53 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         playerControls?.Dispose();
     }
 
+    private void Update()
+    {
+        if (SteamInputManager.Instance == null) return;
+        if (!canTogglePause) return;
+
+        bool pausePressed = SteamInputManager.Instance.GetPauseMenuPressed();
+
+        if (pausePressed && !pauseButtonPressedLastFrame)
+        {
+            if (isSettingsOpen)
+                CloseSettings();
+            else if (isPaused)
+                ResumeGame();
+            else if (InventoryUIManager.Instance == null || !InventoryUIManager.Instance.IsOpen)
+                PauseGame();
+        }
+
+        pauseButtonPressedLastFrame = pausePressed;
+    }
+
     public void OnCancel(InputAction.CallbackContext context)
     {
         if (context.performed && canTogglePause)
         {
             if (isSettingsOpen)
-            {
                 CloseSettings();
-            }
             else if (isPaused)
-            {
                 ResumeGame();
-            }
             else if (InventoryUIManager.Instance == null || !InventoryUIManager.Instance.IsOpen)
-            {
                 PauseGame();
-            }
         }
     }
 
     public void OnNavigate(InputAction.CallbackContext context) { }
     public void OnSubmit(InputAction.CallbackContext context) { }
+    public void OnPoint(InputAction.CallbackContext context) { }
+    public void OnClick(InputAction.CallbackContext context) { }
+    public void OnScrollWheel(InputAction.CallbackContext context) { }
+    public void OnMiddleClick(InputAction.CallbackContext context) { }
+    public void OnRightClick(InputAction.CallbackContext context) { }
+    public void OnTrackedDevicePosition(InputAction.CallbackContext context) { }
+    public void OnTrackedDeviceOrientation(InputAction.CallbackContext context) { }
+    public void OnToggleInventory(InputAction.CallbackContext context) { }
 
     public void PauseGame()
     {
         if (isPaused) return;
-        // No pausar si el inventario est� abierto
         if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
 
         DisableOtherAudioSources();
@@ -150,7 +154,6 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
                 pauseMusicSource.clip = openPauseClip;
                 pauseMusicSource.loop = true;
             }
-
             if (!pauseMusicSource.isPlaying) pauseMusicSource.Play();
         }
 
@@ -177,13 +180,13 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         if (pausePanel != null)
         {
             pausePanel.SetActive(true);
-
-            if (Gamepad.current != null)
-            { 
-                SetFocus(firstSelectedButton, "PauseController"); 
-            }
-            else EventSystem.current?.SetSelectedGameObject(null);
+            if (IsGamepadActive())
+                SetFocus(firstSelectedButton, "PauseController");
+            else
+                EventSystem.current?.SetSelectedGameObject(null);
         }
+
+        SteamInputManager.Instance?.ActivateMenuSet();
     }
 
     public void ResumeGame()
@@ -191,7 +194,6 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         if (!isPaused) return;
 
         PlayClickSFX();
-
         if (isSettingsOpen) return;
 
         EventSystem.current?.SetSelectedGameObject(null);
@@ -224,20 +226,16 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
             playerControls.Combat.Enable();
         }
 
-        if (pausePanel != null)
-            pausePanel.SetActive(false);
+        if (pausePanel != null) pausePanel.SetActive(false);
+
+        SteamInputManager.Instance?.ActivateInGameSet();
     }
 
     public void OpenSettings()
     {
-        if (settingsPanel == null)
-        {
-            Debug.LogError("[PauseController] No se pudo abrir Settings: 'Settings Panel' no est� asignado.");
-            return;
-        }
+        if (settingsPanel == null) return;
 
         PlayClickSFX();
-
         settingsPanel.OpenPanel();
         isSettingsOpen = true;
     }
@@ -247,14 +245,64 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         if (settingsPanel == null || !isSettingsOpen) return;
 
         PlayClickSFX();
-
         settingsPanel.ClosePanel();
         isSettingsOpen = false;
 
-        if (Gamepad.current != null)
-        {
+        if (IsGamepadActive())
             SetFocus(firstSelectedButton, "Settings Close");
+    }
+
+    public void ResetGame()
+    {
+        PlayClickSFX();
+        Time.timeScale = 1f;
+        StartCoroutine(FadeAndReloadScene(SceneManager.GetActiveScene().name));
+    }
+
+    public void LoadMainMenu()
+    {
+        PlayClickSFX();
+        Time.timeScale = 1f;
+        MerchantDialogHandler.ResetReputationState();
+        StartCoroutine(FadeAndReloadScene("MainMenu"));
+    }
+
+    private IEnumerator FadeAndReloadScene(string sceneName)
+    {
+        isPaused = false;
+        isSettingsOpen = false;
+
+        RestoreAudioSources();
+
+        if (FadeController.Instance != null)
+        {
+            if (pausePanel != null) pausePanel.SetActive(false);
+            if (settingsPanel != null) settingsPanel.gameObject.SetActive(false);
+
+            yield return StartCoroutine(FadeController.Instance.FadeOut());
         }
+
+        Time.timeScale = 1f;
+
+        if (statsManager != null)
+        {
+            statsManager.ResetRunStatsToDefaults();
+            statsManager.ResetStatsOnDeath();
+
+            float maxHealth = statsManager.GetStat(StatType.MaxHealth);
+            if (statsManager._currentStatSO != null)
+                statsManager._currentStatSO.currentHealth = maxHealth;
+        }
+
+        InventoryManager inventory = FindAnyObjectByType<InventoryManager>();
+        if (inventory != null) inventory.ClearInventory();
+
+        SceneManager.LoadScene(sceneName);
+    }
+
+    private bool IsGamepadActive()
+    {
+        return (SteamInputManager.Instance != null) || (Gamepad.current != null);
     }
 
     private IEnumerator PauseCooldown()
@@ -273,108 +321,23 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
             EventSystem.current.SetSelectedGameObject(null);
             EventSystem.current.SetSelectedGameObject(focusObject);
         }
-        else
-        {
-            Debug.LogWarning($"[{context} - PauseController] EventSystem.current es nulo. No se pudo establecer el foco.");
-        }
     }
 
-    public void ResetGame()
-    {
-        PlayClickSFX();
-
-        Time.timeScale = 1f;
-        StartCoroutine(FadeAndReloadScene(SceneManager.GetActiveScene().name));
-    }
-
-    public void LoadMainMenu()
-    {
-        PlayClickSFX();
-
-        Time.timeScale = 1f;
-
-        MerchantDialogHandler.ResetReputationState();
-
-        StartCoroutine(FadeAndReloadScene("MainMenu"));
-    }
-
-    private IEnumerator FadeAndReloadScene(string sceneName)
-    {
-        isPaused = false;
-        isSettingsOpen = false;
-
-        // Antes de hacer fade / carga, nos aseguramos de restaurar los AudioSources.
-        RestoreAudioSources();
-
-        // if (FadeController.Instance != null && FadeController.Instance.fade != null)
-        if (FadeController.Instance != null)
-        {
-            if (pausePanel != null) pausePanel.SetActive(false);
-            if (settingsPanel != null) settingsPanel.gameObject.SetActive(false);
-
-            yield return StartCoroutine(FadeController.Instance.FadeOut());
-        }
-
-        Time.timeScale = 1f;
-
-        if (statsManager != null)
-        {
-            statsManager.ResetRunStatsToDefaults();
-            statsManager.ResetStatsOnDeath();
-
-            float maxHealth = statsManager.GetStat(StatType.MaxHealth);
-            if (statsManager._currentStatSO != null)
-            {
-                statsManager._currentStatSO.currentHealth = maxHealth;
-            }
-        }
-
-        InventoryManager inventory = FindAnyObjectByType<InventoryManager>();
-        if (inventory != null)
-        {
-            inventory.ClearInventory();
-        }
-
-        SceneManager.LoadScene(sceneName);
-    }
-
-    // Helper para reproducir SFX de click sin interferir con la m�sica de pausa
     private void PlayClickSFX()
     {
         if (clickButtonSFX == null) return;
 
         if (sfxSource != null)
-        {
             sfxSource.PlayOneShot(clickButtonSFX);
-        }
         else if (pauseMusicSource != null)
-        {
-            // Fallback: si no hay sfxSource, intentamos reproducir con pauseMusicSource
-            if (pauseMusicSource.clip == null || pauseMusicSource.clip != clickButtonSFX)
-            {
-                pauseMusicSource.PlayOneShot(clickButtonSFX);
-            }
-        }
-        else
-        {
-            Debug.LogWarning("[PauseController] No hay AudioSource asignado para SFX. Asigna 'SFX Source' en el Inspector.");
-        }
+            pauseMusicSource.PlayOneShot(clickButtonSFX);
     }
 
     private bool ShouldIgnoreAudioSource(AudioSource src)
     {
         if (src == null) return true;
-
         if (src == pauseMusicSource || src == sfxSource) return true;
-
-        if (!string.IsNullOrEmpty(ignorePauseTag))
-        {
-            if (src.gameObject.CompareTag(ignorePauseTag))
-            {
-                return true;
-            }
-        }
-
+        if (!string.IsNullOrEmpty(ignorePauseTag) && src.gameObject.CompareTag(ignorePauseTag)) return true;
         return false;
     }
 
@@ -382,45 +345,24 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     {
         previousAudioStates.Clear();
 
-        // Incluir AudioSources inactivos tambi�n (requiere Unity 2020.1+)
         AudioSource[] allSources = FindObjectsByType<AudioSource>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
         foreach (AudioSource src in allSources)
         {
-            if (src == null) continue;
+            if (src == null || ShouldIgnoreAudioSource(src)) continue;
 
-            if (ShouldIgnoreAudioSource(src)) continue;
-
-            // Guardar estado previo y si estaba reproduciendo
             AudioState state = new AudioState();
             state.enabled = src.enabled;
             state.wasPlaying = src.isPlaying;
             state.timeSamples = 0;
-            try
-            {
-                if (src.isPlaying && src.clip != null)
-                {
-                    // Guardamos la posici�n de reproducci�n
-                    state.timeSamples = src.timeSamples;
-                }
-            }
-            catch
-            {
-                // En caso de error al leer timeSamples (por ejemplo clip null), dejamos 0
-                state.timeSamples = 0;
-            }
+
+            try { if (src.isPlaying && src.clip != null) state.timeSamples = src.timeSamples; }
+            catch { }
 
             previousAudioStates[src] = state;
 
-            // Desactivar el componente para silenciar (esto tambi�n detiene la reproducci�n)
-            try
-            {
-                src.enabled = false;
-            }
-            catch
-            {
-                // ignorar si hubo un problema (objeto destruido, etc.)
-            }
+            try { src.enabled = false; }
+            catch { }
         }
     }
 
@@ -428,7 +370,6 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     {
         if (previousAudioStates == null || previousAudioStates.Count == 0) return;
 
-        // Hacemos una copia de las claves para evitar problemas si la colecci�n cambia
         var keys = new List<AudioSource>(previousAudioStates.Keys);
         foreach (AudioSource src in keys)
         {
@@ -438,49 +379,19 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 
             try
             {
-                // Restaurar el enabled tal como estaba
                 src.enabled = prev.enabled;
 
-                // Si antes estaba reproduci�ndose, y ahora el componente y el GameObject est�n activos, reanudar
-                if (prev.wasPlaying)
+                if (prev.wasPlaying && src.enabled && src.gameObject.activeInHierarchy && src.clip != null)
                 {
-                    if (src.enabled && src.gameObject.activeInHierarchy && src.clip != null)
-                    {
-                        // Restauramos la posici�n y reanudamos
-                        try
-                        {
-                            src.timeSamples = prev.timeSamples;
-                        }
-                        catch
-                        {
-                            // algunos tipos de clips pueden no soportar timeSamples; en ese caso rompemos y solo Play()
-                        }
-
-                        src.Play();
-                    }
-                    else
-                    {
-                        // Si no es posible reanudar (gameObject inactivo), dejamos como estaba habilitado y no reproducimos.
-                    }
+                    try { src.timeSamples = prev.timeSamples; } catch { }
+                    src.Play();
                 }
             }
-            catch
-            {
-                // ignorar errores (objeto destruido, etc.)
-            }
+            catch { }
         }
 
         previousAudioStates.Clear();
     }
-
-    public void OnPoint(InputAction.CallbackContext context) { }
-    public void OnClick(InputAction.CallbackContext context) { }
-    public void OnScrollWheel(InputAction.CallbackContext context) { }
-    public void OnMiddleClick(InputAction.CallbackContext context) { }
-    public void OnRightClick(InputAction.CallbackContext context) { }
-    public void OnTrackedDevicePosition(InputAction.CallbackContext context) { }
-    public void OnTrackedDeviceOrientation(InputAction.CallbackContext context) { }
-    public void OnToggleInventory(InputAction.CallbackContext context) { }
 }
 
 //using UnityEngine;

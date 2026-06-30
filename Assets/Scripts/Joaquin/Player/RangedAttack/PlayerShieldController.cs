@@ -580,10 +580,40 @@ public class PlayerShieldController : MonoBehaviour
     private bool TryGetAimDirection(out Vector3 outDir)
     {
         outDir = transform.forward;
+
         bool isUsingGamepad = false;
         Vector3? manualAimDirection = null;
 
-        if (GamepadPointer.Instance != null && GamepadPointer.Instance.GetCurrentActiveDevice() == GamepadPointer.Instance.GetCurrentGamepad())
+        if (SteamInputManager.Instance != null)
+        {
+            Vector2 steamAim = SteamInputManager.Instance.GetAimAxis();
+
+            if (steamAim.sqrMagnitude > 0.0001f)
+            {
+                Camera camera = Camera.main;
+                if (camera == null) return false;
+
+                Vector3 camForward = camera.transform.forward;
+                camForward.y = 0f;
+                camForward.Normalize();
+
+                Vector3 camRight = camera.transform.right;
+                camRight.y = 0f;
+                camRight.Normalize();
+
+                Vector3 targetDirection = camForward * steamAim.y + camRight * steamAim.x;
+
+                if (targetDirection.sqrMagnitude > 0.0001f)
+                {
+                    isUsingGamepad = true;
+                    manualAimDirection = targetDirection.normalized;
+                }
+            }
+        }
+
+        if (!manualAimDirection.HasValue &&
+            GamepadPointer.Instance != null &&
+            GamepadPointer.Instance.IsGamepadMode())
         {
             isUsingGamepad = true;
             Vector2 stickAim = GamepadPointer.Instance.GetAimDirectionValue();
@@ -609,18 +639,21 @@ public class PlayerShieldController : MonoBehaviour
                 }
             }
         }
-        else
+
+        if (!isUsingGamepad)
         {
             Camera cam = Camera.main;
             if (cam == null) return false;
 
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
             Plane plane = new Plane(Vector3.up, transform.position);
+
             if (plane.Raycast(ray, out float enter))
             {
                 Vector3 worldPoint = ray.GetPoint(enter);
                 Vector3 dir = worldPoint - transform.position;
                 dir.y = 0f;
+
                 if (dir.sqrMagnitude > 0.0001f)
                 {
                     outDir = dir.normalized;

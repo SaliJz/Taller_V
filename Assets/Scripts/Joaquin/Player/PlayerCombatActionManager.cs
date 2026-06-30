@@ -63,6 +63,10 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     // private float queuedActionTimestamp = -Mathf.Infinity;
     private GameObject currentWarning;
 
+    private bool wasSteamMeleePressed;
+    private bool wasSteamShieldThrowPressed;
+    private bool wasSteamDashPressed;
+
     #endregion
 
     #region Public Properties & Events
@@ -90,6 +94,44 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
         if (playerBlockSystem == null) ReportDebug("PlayerBlockSystem no encontrado.", 3);
     }
 
+    private void Update()
+    {
+        if (SteamInputManager.Instance == null) return;
+
+        ReadSteamCombatInput();
+    }
+
+    private void ReadSteamCombatInput()
+    {
+        if (SteamInputManager.Instance == null) return;
+
+        if (PauseController.Instance != null && PauseController.IsGamePaused) return;
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
+
+        bool meleePressed = SteamInputManager.Instance.GetMeleeAttackPressed();
+        bool shieldThrowPressed = SteamInputManager.Instance.GetShieldThrowPressed();
+        bool dashPressed = SteamInputManager.Instance.GetDashPressed();
+
+        if (meleePressed && !wasSteamMeleePressed && !isMeleeAttackBlocked)
+        {
+            ProcessCombatInput(CombatActionType.MeleeAttack);
+        }
+
+        if (shieldThrowPressed && !wasSteamShieldThrowPressed && !isShieldThrowBlocked)
+        {
+            ProcessCombatInput(CombatActionType.ShieldThrow);
+        }
+
+        if (dashPressed && !wasSteamDashPressed && !isDashBlocked)
+        {
+            ProcessCombatInput(CombatActionType.Dash);
+        }
+
+        wasSteamMeleePressed = meleePressed;
+        wasSteamShieldThrowPressed = shieldThrowPressed;
+        wasSteamDashPressed = dashPressed;
+    }
+
     private void OnEnable()
     {
         playerControls.Combat.Enable();
@@ -112,10 +154,8 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     public void OnMelee(InputAction.CallbackContext context)
     {
         if (isMeleeAttackBlocked) return;
-
         if (PauseController.Instance != null && PauseController.IsGamePaused) return;
         if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
-
         if (!context.started) return;
 
         ProcessCombatInput(CombatActionType.MeleeAttack);
