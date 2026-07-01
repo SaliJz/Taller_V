@@ -96,8 +96,8 @@ public class InventoryUIManager : MonoBehaviour
     [SerializeField] private Image confirmButtonImage;
     [Tooltip("Fondo del boton cancelar para iluminarlo al navegar con mando.")]
     [SerializeField] private Image cancelButtonImage;
-    [Tooltip("Color base de los botones del panel de confirmacion cuando no estan seleccionados.")]
-    [SerializeField] private Color confirmButtonDefaultColor = new Color(0.2f, 0.2f, 0.2f, 1f);
+    // [Tooltip("Color base de los botones del panel de confirmacion cuando no estan seleccionados.")]
+    // [SerializeField] private Color confirmButtonDefaultColor = new Color(0.2f, 0.2f, 0.2f, 1f);
 
     [Header("Lock Settings")]
     [Tooltip("Define si el jugador tiene permitido cerrar el inventario en el estado actual.")]
