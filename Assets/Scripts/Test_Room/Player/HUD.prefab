@@ -993,7 +993,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 6804200140465411501}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 2
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -1003,8 +1003,8 @@ MonoBehaviour:
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
   m_SpriteState:
-    m_HighlightedSprite: {fileID: 0}
-    m_PressedSprite: {fileID: 0}
+    m_HighlightedSprite: {fileID: -1296187181, guid: f454c77f8a8719d439355e093c9b492f, type: 3}
+    m_PressedSprite: {fileID: 1850820639, guid: f454c77f8a8719d439355e093c9b492f, type: 3}
     m_SelectedSprite: {fileID: 0}
     m_DisabledSprite: {fileID: 0}
   m_AnimationTriggers:
@@ -1214,6 +1214,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 5039883319632020984}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &633198215353523770
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -2085,6 +2086,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 4131337852564102249}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &1465355957753950380
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -3277,6 +3279,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 2876589840403369959}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!1 &993635338145969685
 GameObject:
   m_ObjectHideFlags: 0
@@ -4509,6 +4512,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 8021787661144360368}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &2438823355180768927
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -4910,6 +4914,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 5921149979069076312}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &1948748372603452257
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -5708,7 +5713,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 3329622519375456013}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 2
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -5718,8 +5723,8 @@ MonoBehaviour:
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
   m_SpriteState:
-    m_HighlightedSprite: {fileID: 0}
-    m_PressedSprite: {fileID: 0}
+    m_HighlightedSprite: {fileID: -1296187181, guid: f454c77f8a8719d439355e093c9b492f, type: 3}
+    m_PressedSprite: {fileID: 1850820639, guid: f454c77f8a8719d439355e093c9b492f, type: 3}
     m_SelectedSprite: {fileID: 0}
     m_DisabledSprite: {fileID: 0}
   m_AnimationTriggers:
@@ -7155,6 +7160,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 3209543234225953584}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &5238709154760382169
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -7340,7 +7346,7 @@ MonoBehaviour:
   HUDShakeIntensity: 1.5
   HUDnoStamiShakeIntensity: 8
   heallingBorder: {fileID: 2161510012756631599}
-  healMaxAlpha: 0
+  healMaxAlpha: 75
 --- !u!114 &6992182797086318901
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7706,6 +7712,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 1839614328386702075}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &8512892192984826805
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -8080,7 +8087,6 @@ MonoBehaviour:
   highlightColor: {r: 1, g: 1, b: 1, a: 1}
   confirmButtonImage: {fileID: 2816951584934335103}
   cancelButtonImage: {fileID: 3588661829761167852}
-  confirmButtonDefaultColor: {r: 0.3019608, g: 0, b: 0, a: 1}
   canCloseInventory: 1
   slotRevealDuration: 0.12
   slotStagger: 0.04
@@ -8323,7 +8329,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 2713461663668817575}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 2
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -8333,8 +8339,8 @@ MonoBehaviour:
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
   m_SpriteState:
-    m_HighlightedSprite: {fileID: 0}
-    m_PressedSprite: {fileID: 0}
+    m_HighlightedSprite: {fileID: -1296187181, guid: f454c77f8a8719d439355e093c9b492f, type: 3}
+    m_PressedSprite: {fileID: 1850820639, guid: f454c77f8a8719d439355e093c9b492f, type: 3}
     m_SelectedSprite: {fileID: 0}
     m_DisabledSprite: {fileID: 0}
   m_AnimationTriggers:
@@ -12449,6 +12455,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 2327638339058090804}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &6780363304118031624
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -13386,6 +13393,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 6154070123608535560}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!1 &4219803410549893261
 GameObject:
   m_ObjectHideFlags: 0
@@ -14530,6 +14538,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 784717138629731621}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &1522601705607848821
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -15635,6 +15644,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 2251374441399269317}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &2599346734147978240
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -18852,6 +18862,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 3760273186648467860}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &461173623061501877
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -22280,6 +22291,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 627891933992761036}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &7909599750703097016
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -23141,6 +23153,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 237038614799113874}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &2164622880949221066
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -23575,6 +23588,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 5449156444791264941}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!1 &7045386439361455999
 GameObject:
   m_ObjectHideFlags: 0
@@ -23895,6 +23909,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 7886916603277677194}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &2224470904509198634
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -25176,6 +25191,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 6578149100977229554}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &2943452787348129874
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -25499,6 +25515,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 1003201214094534160}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &6488075806779419348
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -26339,6 +26356,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 3422116671334224956}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &6283763873811019851
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -26487,6 +26505,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 6690714895547597547}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &8598137410520508600
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -27238,6 +27257,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 8121026544274112966}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &5860595005713917165
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -27385,6 +27405,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 2526934864178423291}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &7474141157446814209
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -27909,6 +27930,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 3329497813462248777}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &3103069968630105144
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -30594,6 +30616,7 @@ MonoBehaviour:
   pulseGlowImage: {fileID: 8188907821665239294}
   pulseSpeed: 2
   pulseIntensity: 0.3
+  hoverScale: 1.2
 --- !u!225 &3115304669193324543
 CanvasGroup:
   m_ObjectHideFlags: 0
