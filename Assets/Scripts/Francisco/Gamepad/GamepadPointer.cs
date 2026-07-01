@@ -34,6 +34,8 @@ public class GamepadPointer : MonoBehaviour
     private Vector2 lastWarpedScreenPoint = Vector2.zero;
     private bool hasWarpedOnce = false;
 
+    private bool IsSteamActive => SteamManager.Initialized && SteamInputManager.Instance != null;
+
     public static GamepadPointer Instance { get; private set; }
 
     #region Ciclo De Vida
@@ -80,12 +82,19 @@ public class GamepadPointer : MonoBehaviour
     {
         currentGamepad = Gamepad.current;
 
-        if (SteamInputManager.Instance != null || currentGamepad != null)
+        if (IsSteamActive)
         {
-            isSteamGamepadActive = SteamInputManager.Instance != null;
+            isSteamGamepadActive = true;
             currentActiveDevice = currentGamepad;
             wasGamepadMode = true;
             SetUIMode(false);
+        }
+        else if (currentGamepad != null)
+        {
+            isSteamGamepadActive = false;
+            currentActiveDevice = currentGamepad;
+            wasGamepadMode = false;
+            SetUIMode(true);
         }
         else
         {
@@ -167,18 +176,22 @@ public class GamepadPointer : MonoBehaviour
         else if (isGamepadActive)
         {
             currentActiveDevice = (InputDevice)currentGamepad ?? Mouse.current;
-            isSteamGamepadActive = SteamInputManager.Instance != null;
+            isSteamGamepadActive = IsSteamActive;
 
             if (!wasGamepadMode)
             {
                 Debug.Log("[GamepadPointer] Control activo cambiado a: GAMEPAD");
-                SetUIMode(false);
                 wasGamepadMode = true;
-                RevertToLastSelected();
+
+                if (IsSteamActive)
+                {
+                    SetUIMode(false);
+                    RevertToLastSelected();
+                }
             }
         }
 
-        bool isCurrentDeviceGamepad = IsGamepadMode();
+        bool isCurrentDeviceGamepad = isSteamGamepadActive; 
 
         if (isCurrentDeviceGamepad && EventSystem.current?.currentSelectedGameObject != null)
         {
