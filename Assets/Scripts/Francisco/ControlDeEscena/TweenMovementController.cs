@@ -4,7 +4,7 @@ using UnityEngine.Events;
 
 public class TweenMovementController : MonoBehaviour
 {
-    #region Configuration Fields 
+    #region Configuration Fields
     [Header("Movement Settings")]
     [SerializeField] private Vector3 _endPosition = new Vector3(5f, 0f, 0f);
     [SerializeField] private float _duration = 2.0f;
@@ -12,6 +12,9 @@ public class TweenMovementController : MonoBehaviour
     [SerializeField] private bool _isLocal = true;
     [SerializeField] private bool _startOnAwake = false;
     [SerializeField] private bool _faceDirection = false;
+
+    [Header("Prefab Support")]
+    [SerializeField] private bool _relativeToStart = false;
 
     [Header("Events")]
     [SerializeField] private UnityEvent OnMovementFinished;
@@ -38,27 +41,29 @@ public class TweenMovementController : MonoBehaviour
     }
     #endregion
 
-    #region Public 
+    #region Public
     public void StartMovement()
     {
         transform.DOKill(true);
 
+        Vector3 currentPosition = _isLocal ? transform.localPosition : transform.position;
+        Vector3 targetPosition = _relativeToStart ? currentPosition + _endPosition : _endPosition;
+
         Tween myTween;
+
         if (_isLocal)
         {
-            myTween = transform.DOLocalMove(_endPosition, _duration).SetEase(_easeType);
+            myTween = transform.DOLocalMove(targetPosition, _duration).SetEase(_easeType);
         }
         else
         {
-            myTween = transform.DOMove(_endPosition, _duration).SetEase(_easeType);
+            myTween = transform.DOMove(targetPosition, _duration).SetEase(_easeType);
         }
 
         if (_faceDirection)
         {
-            Vector3 startPos = _isLocal ? transform.localPosition : transform.position;
-            Vector3 direction = (_endPosition - startPos).normalized;
+            Vector3 direction = (targetPosition - currentPosition).normalized;
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-
             transform.DORotate(new Vector3(0, 0, angle), _duration).SetEase(_easeType);
         }
 
@@ -78,13 +83,30 @@ public class TweenMovementController : MonoBehaviour
         Vector3 gizmoStartPosition = transform.position;
         Vector3 gizmoEndPosition;
 
-        if (_isLocal && transform.parent != null)
+        if (_relativeToStart)
         {
-            gizmoEndPosition = transform.parent.TransformPoint(_endPosition);
+            if (_isLocal)
+            {
+                Vector3 localTarget = transform.localPosition + _endPosition;
+                gizmoEndPosition = transform.parent != null
+                    ? transform.parent.TransformPoint(localTarget)
+                    : localTarget;
+            }
+            else
+            {
+                gizmoEndPosition = transform.position + _endPosition;
+            }
         }
         else
         {
-            gizmoEndPosition = _endPosition;
+            if (_isLocal && transform.parent != null)
+            {
+                gizmoEndPosition = transform.parent.TransformPoint(_endPosition);
+            }
+            else
+            {
+                gizmoEndPosition = _endPosition;
+            }
         }
 
         Gizmos.color = _gizmoColor;
@@ -97,9 +119,7 @@ public class TweenMovementController : MonoBehaviour
         }
 
         Gizmos.DrawSphere(gizmoEndPosition, 0.1f);
-
         DrawArrow2D(gizmoEndPosition, direction.normalized, _gizmoColor, _arrowLength);
-
         Gizmos.color = Color.white;
     }
 
@@ -107,7 +127,6 @@ public class TweenMovementController : MonoBehaviour
     {
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         Quaternion rotation = Quaternion.Euler(0, 0, angle);
-
         Vector3 rightWing = rotation * Quaternion.Euler(0, 0, -150) * Vector3.right * length;
         Vector3 leftWing = rotation * Quaternion.Euler(0, 0, 150) * Vector3.right * length;
 
