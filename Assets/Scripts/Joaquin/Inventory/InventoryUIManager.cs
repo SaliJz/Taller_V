@@ -653,6 +653,12 @@ public class InventoryUIManager : MonoBehaviour
     /// </summary>
     public void RefreshDisplay()
     {
+        goldenSlots.RemoveAll(s => s == null);
+        col2Slots.RemoveAll(s => s == null);
+        col3Slots.RemoveAll(s => s == null);
+        col1AboveSlots.RemoveAll(s => s == null);
+        col1BelowSlots.RemoveAll(s => s == null);
+
         foreach (var s in goldenSlots) s.ClearSlot();
         foreach (var s in col2Slots) s.ClearSlot();
         foreach (var s in col3Slots) s.ClearSlot();
