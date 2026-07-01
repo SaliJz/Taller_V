@@ -86,7 +86,7 @@ public class SteamManager : MonoBehaviour
 
     private void HandleInitFailure(string reason)
     {
-        Debug.LogError($"[Steamworks] Init failed: {reason}");
+        Debug.Log($"[Steamworks] Init failed: {reason}"); 
         isInitialized = false;
     }
 

@@ -106,7 +106,8 @@ public class GamepadPointer : MonoBehaviour
 
     private void Update()
     {
-        if (SteamManager.OverlayActive) return;
+        if (SteamManager.Initialized && SteamManager.OverlayActive) 
+            return;
 
         if (currentGamepad == null)
             currentGamepad = Gamepad.current;
