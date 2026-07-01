@@ -75,7 +75,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
     #region Inspector - Carga de los Quebrados
 
     [Header("Carga de los Quebrados")]
-    [SerializeField] private float brokenChargeDuration = 10f;
+    //[SerializeField] private float brokenChargeDuration = 10f;
     [SerializeField] private int brokenChargeDashCount = 10;
     [SerializeField] private float brokenChargeDashSpeed = 13.5f;
     [SerializeField] private float brokenChargeHitDamage = 7f;
@@ -91,10 +91,12 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
     [Header("Embestida de Chatarra")]
     [SerializeField] private float scrapRamSpeed = 14f;
-    [SerializeField] private float scrapRamMaxTurnRate = 20f;
+    //[SerializeField] private float scrapRamMaxTurnRate = 20f;
     [SerializeField] private float scrapRamDuration = 2.2f;
     [SerializeField] private float scrapRamBossStun = 2f;
-    [SerializeField] private float scrapRamPlayerStun = 3f;
+    [SerializeField] private float scrapRamDamage = 15f;
+    [SerializeField] private float scrapRamKnockbackForce = 15f;
+    //[SerializeField] private float scrapRamPlayerStun = 3f;
     [SerializeField] private int scrapRamMineBurst = 5;
     [SerializeField] private float scrapRamActiveDist = 15f;
     [SerializeField] private float scrapRamNoDamageWindow = 10f;
@@ -728,7 +730,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             Vector3 target = ComputeZigzagTarget(i);
             PlaySFX(dashSFX);
 
-            yield return DashRoutine(target, timePerDash /** 0.65f*/, brokenChargeDashSpeed, dealContactDamage: false, spawnCrystalOnWallHit: true);
+            yield return DashRoutine(target, timePerDash, brokenChargeDashSpeed, dealContactDamage: false, spawnCrystalOnWallHit: true);
 
             if (myToken != actionToken) break;
 
@@ -739,16 +741,16 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             if (attackExecuteTriggered)
             {
                 // Comprobación principal: radio desde attackOrigin frente del jefe.
-                bool hit = TryDealBrokenChargeDamage(attackOrigin.position, dashHitRadius /** 1.25f*/);
+                bool hit = TryDealBrokenChargeDamage(attackOrigin.position, dashHitRadius);
 
                 // Comprobación secundaria: jugador muy cercano.
                 if (!hit && player != null)
                 {
-                    float closeRangeDist = dashHitRadius /** 2f*/;
+                    float closeRangeDist = dashHitRadius;
                     if (Vector3.Distance(transform.position, player.position) <= closeRangeDist)
                     {
                         //TryDealBrokenChargeDamage(transform.position + Vector3.up * 0.6f, closeRangeDist);
-                        TryDealBrokenChargeDamage(attackOrigin.position, dashHitRadius /** 1.25f*/);
+                        TryDealBrokenChargeDamage(attackOrigin.position, dashHitRadius);
                     }
                 }
             }
@@ -820,6 +822,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         bool hitPlayer = false;
         bool hitWall = false;
         Vector3 wallHitPos = Vector3.zero;
+        GameObject hitPlayerTarget = null; // Referencia al jugador para el empuje
 
         while (elapsed < scrapRamDuration)
         {
@@ -835,8 +838,11 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             {
                 if (!c.CompareTag("Player")) continue;
                 hitPlayer = true;
+                hitPlayerTarget = c.transform.root != null ? c.transform.root.gameObject : c.gameObject;
                 break;
             }
+
+            // Si choca al jugador, detiene el desplazamiento de inmediato
             if (hitPlayer) break;
 
             if (Physics.SphereCast(transform.position + Vector3.up * 0.75f,
@@ -853,10 +859,17 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
         if (myToken != actionToken) yield break;
 
-        if (hitPlayer)
+        if (hitPlayer && hitPlayerTarget != null)
         {
-            playerHealth?.TakeDamage(0f);
-            playerHealth?.ApplyStun(scrapRamPlayerStun);
+            PlayerHealth ph = hitPlayerTarget.GetComponent<PlayerHealth>();
+            if (ph != null)
+            {
+                ph.TakeDamage(scrapRamDamage); // Aplica el nuevo daño 
+                //ph.ApplyStun(scrapRamPlayerStun);
+            }
+
+            // Aplica el empuje seguro
+            ApplySafeKnockback(hitPlayerTarget, transform.position, scrapRamKnockbackForce);
         }
         else if (hitWall)
         {
@@ -1248,7 +1261,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
     private IEnumerator DashRoutine(Vector3 target, float duration, float speed, bool dealContactDamage, bool spawnCrystalOnWallHit)
     {
         float elapsed = 0f;
-        bool hasHitPlayer = false;
+        //bool hasHitPlayer = false;
 
         while (elapsed < duration && !isDead)
         {
@@ -1284,19 +1297,22 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
                 break;
             }
 
-            //float dist = target != null
-            //? Vector3.Distance(transform.position, target)
-            //: float.MaxValue;
+            float dist = target != null
+            ? Vector3.Distance(transform.position, target)
+            : float.MaxValue;
 
-            transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
-
-            if (dealContactDamage && !hasHitPlayer)
+            if (dist >= dashHitRadius - 0.25f)
             {
-                if (DealContactDamageDuringDash())
-                {
-                    hasHitPlayer = true;
-                }
+                transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
             }
+
+            //if (dealContactDamage && !hasHitPlayer)
+            //{
+            //    if (DealContactDamageDuringDash())
+            //    {
+            //        hasHitPlayer = true;
+            //    }
+            //}
 
             elapsed += Time.deltaTime;
             yield return null;
@@ -1311,28 +1327,28 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         }
     }
 
-    private bool DealContactDamageDuringDash()
-    {
-        Vector3 center = attackOrigin != null ? attackOrigin.position : transform.position + Vector3.up * 0.6f;
+    //private bool DealContactDamageDuringDash()
+    //{
+    //    Vector3 center = attackOrigin != null ? attackOrigin.position : transform.position + Vector3.up * 0.6f;
 
-        debugDashSpherePos = center;
-        debugDashSphereActive = true;
+    //    debugDashSpherePos = center;
+    //    debugDashSphereActive = true;
 
-        Collider[] hits = Physics.OverlapSphere(center, dashHitRadius, playerLayer);
+    //    Collider[] hits = Physics.OverlapSphere(center, dashHitRadius, playerLayer);
 
-        foreach (var c in hits)
-        {
-            if (!c.CompareTag("Player")) continue;
+    //    foreach (var c in hits)
+    //    {
+    //        if (!c.CompareTag("Player")) continue;
 
-            PlayerHealth ph = c.GetComponent<PlayerHealth>();
-            if (ph == null) return false;
+    //        PlayerHealth ph = c.GetComponent<PlayerHealth>();
+    //        if (ph == null) return false;
 
-            ph.TakeDamage(brokenChargeHitDamage);
-            return true;
-        }
+    //        ph.TakeDamage(brokenChargeHitDamage);
+    //        return true;
+    //    }
 
-        return false;
-    }
+    //    return false;
+    //}
 
     private void MoveTowards(Vector3 destination, float speed)
     {
@@ -1408,6 +1424,45 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             return true;
         }
         return false;
+    }
+
+    private void ApplySafeKnockback(GameObject target, Vector3 explosionCenter, float force)
+    {
+        PlayerMovement playerMove = target.GetComponent<PlayerMovement>();
+        if (playerMove != null && playerMove.IsDashing) return;
+
+        Vector3 direction = (target.transform.position - explosionCenter).normalized;
+        direction.y = 0f;
+
+        CharacterController cc = target.GetComponent<CharacterController>();
+        if (cc != null)
+        {
+            StartCoroutine(KnockbackCCRoutine(cc, direction, force, 0.5f, playerMove));
+            return;
+        }
+
+        Rigidbody rb = target.GetComponent<Rigidbody>();
+        if (rb != null && !rb.isKinematic)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.AddForce(direction * force, ForceMode.Impulse);
+        }
+    }
+
+    private IEnumerator KnockbackCCRoutine(CharacterController cc, Vector3 direction, float force, float duration, PlayerMovement playerMove = null)
+    {
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            if (cc == null) yield break;
+            if (playerMove != null && playerMove.IsDashing) yield break;
+
+            if (cc.enabled) cc.SimpleMove(direction * force);
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
     }
 
     #endregion

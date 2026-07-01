@@ -1,14 +1,14 @@
-using UnityEngine;
+//using UnityEngine;
 
-public class MorlockAnimationEventHandler : MonoBehaviour
-{
-    [SerializeField] private MorlockEnemy morlockEnemy;
+//public class MorlockAnimationEventHandler : MonoBehaviour
+//{
+//    [SerializeField] private MorlockEnemy morlockEnemy;
 
-    public void CallMorlockShoot()
-    {
-        //if (morlockEnemy != null)
-        //{
-        //    morlockEnemy.Shoot();
-        //}
-    }
-}
+//    public void CallMorlockShoot()
+//    {
+//        //if (morlockEnemy != null)
+//        //{
+//        //    morlockEnemy.Shoot();
+//        //}
+//    }
+//}

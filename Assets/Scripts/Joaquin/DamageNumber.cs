@@ -16,7 +16,7 @@ public class DamageNumber : MonoBehaviour
 
     [Header("Configuration")]
     [SerializeField] private float floatSpeed = 2f;
-    [SerializeField] private float fadeSpeed = 2f;
+    //[SerializeField] private float fadeSpeed = 2f;
     [SerializeField] private float lifetime = 2f;
     [SerializeField] private float gravity = 9.8f;
     [SerializeField] private float lateralSpeed = 0.5f;

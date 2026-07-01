@@ -163,7 +163,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     [Header("Attack 2 Ground Indicator")]
     [SerializeField] private Transform _smashGroundIndicator;
     [SerializeField] private GameObject _smashGroundIndicatorPrefab;
-    [SerializeField] private float _smashTargetLockBeforeImpact = 0.5f;
+    //[SerializeField] private float _smashTargetLockBeforeImpact = 0.5f;
     [SerializeField] private float _smashIndicatorGroundOffset = 0.08f;
 
     private bool _isSmashing;
