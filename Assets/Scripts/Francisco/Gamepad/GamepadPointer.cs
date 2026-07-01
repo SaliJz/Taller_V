@@ -117,7 +117,7 @@ public class GamepadPointer : MonoBehaviour
         Vector2 stickValue = Vector2.zero;
         bool isGamepadActive = false;
 
-        if (SteamInputManager.Instance != null)
+        if (IsSteamActive) 
         {
             Vector2 moveAxis = SteamInputManager.Instance.GetMoveAxis();
             Vector2 aimAxis = SteamInputManager.Instance.GetAimAxis();

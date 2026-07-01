@@ -69,7 +69,10 @@ public class ControlMenu : MonoBehaviour, PlayerControlls.IUIActions
 
         if (GamepadPointer.Instance == null || !GamepadPointer.Instance.IsGamepadMode())
         {
-            lastSelected = EventSystem.current.currentSelectedGameObject;
+            GameObject currentSel = EventSystem.current.currentSelectedGameObject;
+            if (currentSel != null)
+                lastSelected = currentSel;
+
             return;
         }
 
