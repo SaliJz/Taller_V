@@ -584,7 +584,7 @@ public class PlayerShieldController : MonoBehaviour
         bool isUsingGamepad = false;
         Vector3? manualAimDirection = null;
 
-        if (SteamInputManager.Instance != null)
+        if (SteamManager.Initialized && SteamInputManager.Instance != null)
         {
             Vector2 steamAim = SteamInputManager.Instance.GetAimAxis();
 

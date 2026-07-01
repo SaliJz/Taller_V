@@ -34,7 +34,7 @@ public class GamepadPointer : MonoBehaviour
     private Vector2 lastWarpedScreenPoint = Vector2.zero;
     private bool hasWarpedOnce = false;
 
-    private bool IsSteamActive => SteamManager.Initialized && SteamInputManager.Instance != null;
+    public bool IsSteamActive => SteamManager.Initialized && SteamInputManager.Instance != null;
 
     public static GamepadPointer Instance { get; private set; }
 
@@ -183,22 +183,20 @@ public class GamepadPointer : MonoBehaviour
                 Debug.Log("[GamepadPointer] Control activo cambiado a: GAMEPAD");
                 wasGamepadMode = true;
 
-                if (IsSteamActive)
-                {
-                    SetUIMode(false);
-                    RevertToLastSelected();
-                }
+                SetUIMode(false);       
+                RevertToLastSelected(); 
             }
         }
 
-        bool isCurrentDeviceGamepad = isSteamGamepadActive; 
+        bool isAnyGamepadActive = IsGamepadMode();       
+        bool isVirtualCursorActive = isSteamGamepadActive;
 
-        if (isCurrentDeviceGamepad && EventSystem.current?.currentSelectedGameObject != null)
+        if (isAnyGamepadActive && EventSystem.current?.currentSelectedGameObject != null)
         {
             lastSelectedObject = EventSystem.current.currentSelectedGameObject;
         }
 
-        if (isCurrentDeviceGamepad && virtualCursor != null)
+        if (isVirtualCursorActive && virtualCursor != null)
         {
             if (stickValue.magnitude > RightStickDeadZone)
             {
@@ -276,10 +274,19 @@ public class GamepadPointer : MonoBehaviour
         }
         else
         {
-            uiInputModule.enabled = false;
             Cursor.visible = false;
-            if (virtualCursor != null) virtualCursor.gameObject.SetActive(true);
-            hasWarpedOnce = false;
+
+            if (IsSteamActive)
+            {
+                uiInputModule.enabled = false;
+                if (virtualCursor != null) virtualCursor.gameObject.SetActive(true);
+                hasWarpedOnce = false;
+            }
+            else
+            {
+                uiInputModule.enabled = true;
+                if (virtualCursor != null) virtualCursor.gameObject.SetActive(false);
+            }
         }
     }
 
@@ -340,7 +347,7 @@ public class GamepadPointer : MonoBehaviour
 
     public Vector2 GetAimDirectionValue()
     {
-        if (SteamInputManager.Instance != null)
+        if (IsSteamActive)
         {
             Vector2 aim = SteamInputManager.Instance.GetAimAxis();
             if (aim.magnitude > RightStickDeadZone) return aim.normalized;
