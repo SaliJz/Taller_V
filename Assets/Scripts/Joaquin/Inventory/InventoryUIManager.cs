@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
-/// Gestor principal del UI del inventario.
+/// Gestiona la interfaz principal del inventario.
 /// </summary>
 public class InventoryUIManager : MonoBehaviour
 {
@@ -21,97 +21,115 @@ public class InventoryUIManager : MonoBehaviour
     #region Inspector - References
 
     [Header("Referencias")]
+    [Tooltip("Referencia al panel general de items de la interfaz.")]
     [SerializeField] private GameObject itemUIPanel;
+    [Tooltip("Referencia al panel de botones de interaccion.")]
     [SerializeField] private GameObject interactionButtonUIPanel;
-    [Tooltip("Canvas padre del inventario, necesario para posicionar tooltip y panel con mando")]
+    [Tooltip("Canvas padre del inventario requerido para posicionar los elementos dinamicos.")]
     [SerializeField] private Canvas inventoryCanvas;
 
     [Header("Raices de visibilidad")]
-    [Tooltip("Contiene los 3 slots dorados siempre visible")]
+    [Tooltip("Contenedor de los 3 slots dorados que siempre se mantienen visibles.")]
     [SerializeField] private Transform goldenSlotsContainer;
-    [Tooltip("Contiene col1 pasivos + col2 + col3 oculto cuando cerrado")]
+    [Tooltip("Contenedor de las columnas expandibles que se ocultan al cerrar el inventario.")]
     [SerializeField] private GameObject inventoryExpandRoot;
 
     [Header("Formato de Interfaz")]
-    [Tooltip("Activa para usar el formato antiguo (21 slots). Desactiva para el nuevo formato (9 slots).")]
+    [Tooltip("Alterna entre el formato antiguo de 21 slots (activo) y el nuevo de 9 slots (inactivo).")]
     [SerializeField] private bool useLegacyFormat = true;
 
-    [Header("Contenedores de Columnas (Formato Clásico)")]
-    [SerializeField] private Transform col1AboveContainer;  // 2 slots encima de los dorados
-    [SerializeField] private Transform col1BelowContainer;  // 2 slots debajo de los dorados
+    [Header("Contenedores de Columnas (Formato Clasico)")]
+    [Tooltip("Referencia a los 2 slots ubicados sobre los dorados.")]
+    [SerializeField] private Transform col1AboveContainer;
+    [Tooltip("Referencia a los 2 slots ubicados debajo de los dorados.")]
+    [SerializeField] private Transform col1BelowContainer;
+    [Tooltip("Referencia a la segunda columna de slots.")]
     [SerializeField] private Transform column2Container;
+    [Tooltip("Referencia a la tercera columna de slots.")]
     [SerializeField] private Transform column3Container;
 
     [Header("Panel de Detalle")]
+    [Tooltip("Objeto principal del panel flotante de detalles del item.")]
     [SerializeField] private GameObject detailPanel;
+    [Tooltip("Transform del panel flotante para controlar su posicion en pantalla.")]
+    [SerializeField] private RectTransform detailPanelRect;
+    [Tooltip("Texto para mostrar el nombre del item seleccionado o enfocado.")]
     [SerializeField] private TextMeshProUGUI detailName;
+    [Tooltip("Texto para mostrar la descripcion detallada del item.")]
     [SerializeField] private TextMeshProUGUI detailDescription;
+    [Tooltip("Imagen para renderizar el icono del item.")]
     [SerializeField] private Image detailIcon;
 
+    [Header("Panel de Detalle - Posicionamiento (Hover)")]
+    [Tooltip("Desplazamiento del panel respecto a la posicion del cursor del raton.")]
+    [SerializeField] private Vector2 detailMouseOffset = new Vector2(12f, -12f);
+    [Tooltip("Desplazamiento del panel respecto al centro del slot al usar mando.")]
+    [SerializeField] private Vector2 detailGamepadOffset = new Vector2(0f, 80f);
+    [Tooltip("Tiempo de retraso en segundos antes de mostrar el panel de detalle al hacer hover.")]
+    [SerializeField] private float detailShowDelay = 0.25f;
+
     [Header("Panel de Confirmacion de Reemplazo")]
+    [Tooltip("Panel UI para confirmar el reemplazo de items al comprar o equipar.")]
     [SerializeField] private GameObject replaceConfirmPanel;
+    [Tooltip("Texto descriptivo que indica que item se va a reemplazar.")]
     [SerializeField] private TextMeshProUGUI replaceConfirmText;
+    [Tooltip("Boton para aceptar el reemplazo propuesto.")]
     [SerializeField] private Button confirmReplaceButton;
+    [Tooltip("Boton para cancelar el reemplazo y mantener el item actual.")]
     [SerializeField] private Button cancelReplaceButton;
 
     #endregion
 
     #region Inspector - Settings
 
-    //[Header("Prefab de Slot")]
-    //[SerializeField] private GameObject inventorySlotPrefab;
-    //[Tooltip("Tamano de cada slot instanciado en runtime")]
-    //[SerializeField] private float slotSize = 80f;
-
     [Header("Slots Dorados")]
+    [Tooltip("Color aplicado para resaltar visualmente los slots dorados.")]
     [SerializeField] private Color goldenSlotColor = new Color(1f, 0.84f, 0f);
 
     [Header("Hover Highlight")]
+    [Tooltip("Color aplicado al slot cuando el cursor o mando pasa por encima.")]
     [SerializeField] private Color highlightColor = new Color(0.6f, 0.1f, 0.1f);
 
     [Header("Panel de Confirmacion - Mando")]
-    [Tooltip("Imagen de fondo del boton Confirmar (para aplicar highlight con mando)")]
+    [Tooltip("Fondo del boton confirmar para iluminarlo al navegar con mando.")]
     [SerializeField] private Image confirmButtonImage;
-    [Tooltip("Imagen de fondo del boton Cancelar (para aplicar highlight con mando)")]
+    [Tooltip("Fondo del boton cancelar para iluminarlo al navegar con mando.")]
     [SerializeField] private Image cancelButtonImage;
-    [Tooltip("Color de fondo normal de los botones del panel de confirmacion")]
+    [Tooltip("Color base de los botones del panel de confirmacion cuando no estan seleccionados.")]
     [SerializeField] private Color confirmButtonDefaultColor = new Color(0.2f, 0.2f, 0.2f, 1f);
 
     [Header("Lock Settings")]
+    [Tooltip("Define si el jugador tiene permitido cerrar el inventario en el estado actual.")]
     [SerializeField] private bool canCloseInventory = true;
 
     [Header("Animacion de Reveal")]
+    [Tooltip("Tiempo de duracion de la transicion de aparicion para cada slot individual.")]
     [SerializeField] private float slotRevealDuration = 0.12f;
-    [SerializeField] private float slotStagger = 0.04f; // delay entre slots consecutivos
-    [SerializeField] private float columnDelay = 0.08f; // delay antes de cada columna
-    [SerializeField] private float slideOffsetY = 35f; // px col1 pasivos
-    [SerializeField] private float slideOffsetX = 50f; // px col2/col3
+    [Tooltip("Tiempo de espera entre la aparicion de slots consecutivos.")]
+    [SerializeField] private float slotStagger = 0.04f;
+    [Tooltip("Tiempo de espera antes de iniciar la animacion de la siguiente columna.")]
+    [SerializeField] private float columnDelay = 0.08f;
+    [Tooltip("Distancia en pixeles del desplazamiento vertical inicial durante la animacion.")]
+    [SerializeField] private float slideOffsetY = 35f;
+    [Tooltip("Distancia en pixeles del desplazamiento horizontal inicial durante la animacion.")]
+    [SerializeField] private float slideOffsetX = 50f;
 
     [Header("Feedback de item Anadido")]
+    [Tooltip("Multiplicador de escala maxima durante la animacion de rebote de un slot.")]
     [SerializeField] private float bouncePeak = 1.2f;
+    [Tooltip("Duracion total en segundos de la animacion de rebote.")]
     [SerializeField] private float bounceDuration = 0.25f;
 
     [Header("Mando - Navegacion")]
-    [Tooltip("Cooldown en segundos entre repeticiones del joystick izquierdo")]
+    [Tooltip("Tiempo de bloqueo entre movimientos del joystick para evitar desplazamientos multiples indeseados.")]
     [SerializeField] private float joystickRepeatCooldown = 0.2f;
 
-
     private float nextToggleTime = 0f;
-    private const float InventoryInputCooldown = 0.25f; 
-
-    //[Header("Registro de items Mecanicos")]
-    //[SerializeField] private List<MechanicItemEntry> mechanicRegistry = new List<MechanicItemEntry>();
+    private const float InventoryInputCooldown = 0.25f;
 
     #endregion
 
     #region Internal State
-
-    // Estructura de columnas
-    // Col1: [Abovex2] [Goldenx3] [Belowx2]
-    //private const int COL1_ABOVE_COUNT = 2;
-    //private const int COL1_BELOW_COUNT = 2;
-    //private const int COL2_COUNT = 8;
-    //private const int COL3_COUNT = 9;
 
     private readonly List<InventorySlot> goldenSlots = new List<InventorySlot>();
     private readonly List<InventorySlot> col1AboveSlots = new List<InventorySlot>();
@@ -131,21 +149,23 @@ public class InventoryUIManager : MonoBehaviour
     private bool isOpen;
     private bool isConfirmPanelOpen;
     private bool wasInventoryOpenBeforeConfirm;
-    private int confirmNavIndex; // 0 = Confirmar, 1 = Cancelar
-    private bool confirmPanelJustOpened; // true durante 1 frame para ignorar el input que abrió el panel
+    private int confirmNavIndex;
+    private bool confirmPanelJustOpened;
     private ShopItem pendingReplaceItem;
     private ShopManager pendingShopManager;
     private int pendingReplaceSlotIndex;
     private Coroutine revealCoroutine;
+    private bool lastInputWasGamepad; // Rastrear que dispositivo abrio el inventario
 
-    // Slot cuyo panel descriptivo esta actualmente visible
-    private InventorySlot selectedSlot;
+    // Slot fijado comentado
+    // private InventorySlot selectedSlot;
 
-    /// <summary>
-    /// Grilla de navegacion con mando:
-    /// [0] = col1 (above + golden + below), [1] = col2, [2] = col3.
-    /// Cada sublista esta ordenada de arriba a abajo.
-    /// </summary>
+    private bool detailPanelIsGamepadMode;
+    private Vector2 detailGamepadAnchorLocal;
+    private bool detailShowPending;
+    private float detailShowTimer;
+    private Camera detailUICamera;
+
     private List<List<InventorySlot>> navGrid;
     private int navCol;
     private int navRow;
@@ -158,18 +178,32 @@ public class InventoryUIManager : MonoBehaviour
 
     private void Awake()
     {
+        // Inicializa el Singleton de forma segura y destruye duplicados.
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
 
-        // Intentar obtener el canvas del padre si no fue asignado en el Inspector
         if (inventoryCanvas == null) inventoryCanvas = GetComponentInParent<Canvas>();
+
+        if (detailPanelRect == null && detailPanel != null)
+        {
+            detailPanelRect = detailPanel.GetComponent<RectTransform>();
+        }
+
+        if (inventoryCanvas != null &&
+            (inventoryCanvas.renderMode == RenderMode.ScreenSpaceCamera ||
+             inventoryCanvas.renderMode == RenderMode.WorldSpace))
+        {
+            detailUICamera = inventoryCanvas.worldCamera;
+        }
     }
 
     private void Start()
     {
+        // Recolecta todos los slots de la escena y establece el estado inicial oculto.
         CollectSlots();
         inventoryExpandRoot?.SetActive(false);
         detailPanel?.SetActive(false);
+        detailShowPending = false;
         replaceConfirmPanel?.SetActive(false);
 
         confirmReplaceButton?.onClick.AddListener(OnConfirmReplace);
@@ -191,7 +225,6 @@ public class InventoryUIManager : MonoBehaviour
         if (ShouldToggleInventory())
         {
             nextToggleTime = Time.unscaledTime + InventoryInputCooldown;
-
             ToggleInventory();
             return;
         }
@@ -199,23 +232,64 @@ public class InventoryUIManager : MonoBehaviour
         if (isOpen)
         {
             UpdateGamepadNavigation();
+            UpdateDetailPanelHoverPosition();
         }
     }
 
+    /// <summary>
+    /// Limpia corrutinas activas y restaura la escala de tiempo si el objeto se desactiva mientras los paneles estan abiertos, previniendo cuelgues del juego.
+    /// </summary>
+    private void OnDisable()
+    {
+        if (revealCoroutine != null)
+        {
+            StopCoroutine(revealCoroutine);
+            revealCoroutine = null;
+        }
+
+        if (isConfirmPanelOpen)
+        {
+            Time.timeScale = confirmPreviousTimeScale;
+            isConfirmPanelOpen = false;
+        }
+        else if (isOpen && canCloseInventory)
+        {
+            Time.timeScale = inventoryPreviousTimeScale;
+        }
+
+        isOpen = false;
+
+        // Desfija logica comentada
+        // selectedSlot?.SetSelected(false);
+        // selectedSlot = null;
+
+        HideItemDetails(); // Limpieza forzada del panel al desactivarse abruptamente
+        focusedSlot = null;
+    }
+
+    /// <summary>
+    /// Evalua los inputs de teclado, mando nativo y Steam Input para determinar si se debe alternar la visibilidad del inventario.
+    /// </summary>
     private bool ShouldToggleInventory()
     {
-        // Teclado
         if (Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame)
+        {
+            lastInputWasGamepad = false;
             return true;
+        }
 
-        // Gamepad (Input System)
         if (Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame)
+        {
+            lastInputWasGamepad = true;
             return true;
+        }
 
-        // Steam Input (fallback o adicional)
         if (SteamInputManager.Instance != null &&
             SteamInputManager.Instance.GetInventoryPressed())
+        {
+            lastInputWasGamepad = true;
             return true;
+        }
 
         return false;
     }
@@ -225,8 +299,7 @@ public class InventoryUIManager : MonoBehaviour
     #region Initialization & Data Sync
 
     /// <summary>
-    /// Recoge los InventorySlot ya existentes en cada contenedor de la jerarquia.
-    /// Los slots deben estar colocados manualmente en el Editor.
+    /// Almacena las referencias de los slots fisicos ubicados en los contenedores de la jerarquia.
     /// </summary>
     private void CollectSlots()
     {
@@ -248,6 +321,9 @@ public class InventoryUIManager : MonoBehaviour
         foreach (var s in goldenSlots) s.SetGolden(true, goldenSlotColor);
     }
 
+    /// <summary>
+    /// Itera sobre un contenedor padre, inicializa los slots hijos encontrados y los ordena segun su posicion espacial en la interfaz.
+    /// </summary>
     private void CollectFromContainer(Transform container, List<InventorySlot> list)
     {
         if (container == null) return;
@@ -298,9 +374,11 @@ public class InventoryUIManager : MonoBehaviour
 
     #region Inventory Open/Close Logic
 
+    /// <summary>
+    /// Alterna el estado del inventario tras verificar que no existan cinematicas, transiciones u otros eventos que bloqueen la interaccion.
+    /// </summary>
     public void ToggleInventory()
     {
-        // Evita abrir/cerrar si el juego esta pausado por el menu de pausa u otro motivo
         if (PauseController.Instance != null && PauseController.IsGamePaused) return;
 
         if (!isOpen)
@@ -325,13 +403,14 @@ public class InventoryUIManager : MonoBehaviour
     {
         isOpen = true;
 
+        // Limpieza forzada: Oculta el panel para matar cualquier estado fantasma previo antes de abrir.
+        HideItemDetails();
+
         if (canCloseInventory)
         {
             inventoryPreviousTimeScale = Time.timeScale;
             Time.timeScale = 0f;
         }
-        //Cursor.visible = true;
-        //Cursor.lockState = CursorLockMode.None;
 
         RefreshDisplay();
 
@@ -348,8 +427,7 @@ public class InventoryUIManager : MonoBehaviour
             pendingShopManager?.SetInteractionPromptActive(isOpen);
             pendingShopManager?.ResetCostBar();
             pendingShopManager?.LockAndDisplayItemDetails(null);
-            ReportDebug("Abriendo inventario con una compra pendiente de confirmacion. " +
-                "Mostrando el panel de confirmacion de reemplazo si no se mostro ya.", 1);
+            ReportDebug("Abriendo inventario con una compra pendiente. Mostrando panel de confirmacion.", 1);
         }
 
         if (revealCoroutine != null) StopCoroutine(revealCoroutine);
@@ -358,13 +436,14 @@ public class InventoryUIManager : MonoBehaviour
         InventoryAudioManager.Instance?.PlayOpenSound();
 
         BuildNavGrid();
-        if (Gamepad.current != null)
+
+        // Solo aplica auto-foco si se abrio especificamente utilizando un mando.
+        if (Gamepad.current != null && lastInputWasGamepad)
         {
             joystickCooldownTimer = 0f;
             focusedSlot = null;
             navCol = 0;
             navRow = 0;
-            // Pequeno delay para que el reveal empiece antes del foco visual
             StartCoroutine(FocusFirstSlotNextFrame());
         }
     }
@@ -373,7 +452,7 @@ public class InventoryUIManager : MonoBehaviour
     {
         if (!canCloseInventory)
         {
-            Debug.Log("[InventoryUIManager] El cierre del inventario está bloqueado en este momento.");
+            Debug.Log("[InventoryUIManager] El cierre del inventario esta bloqueado actualmente.");
             return;
         }
 
@@ -390,22 +469,17 @@ public class InventoryUIManager : MonoBehaviour
         isOpen = false;
         Time.timeScale = inventoryPreviousTimeScale;
 
-        //Cursor.visible = false;
-        //Cursor.lockState = CursorLockMode.Locked;
-
         if (focusedSlot != null)
         {
             focusedSlot.SimulatePointerExit();
             focusedSlot = null;
         }
 
-        selectedSlot?.SetSelected(false);
-        selectedSlot = null;
+        // selectedSlot?.SetSelected(false);
+        // selectedSlot = null;
 
-        detailPanel?.SetActive(false);
+        HideItemDetails(); // Limpieza forzada al cerrar
         replaceConfirmPanel?.SetActive(false);
-        InventoryTooltip.Instance?.Hide();
-        InventoryTooltip.Instance?.SetDetailPanelOpen(false);
 
         if (revealCoroutine != null) StopCoroutine(revealCoroutine);
         revealCoroutine = StartCoroutine(RevealSequence(opening: false));
@@ -413,13 +487,15 @@ public class InventoryUIManager : MonoBehaviour
         InventoryAudioManager.Instance?.PlayCloseSound();
     }
 
-    /// <summary>Espera un frame para aplicar el foco, dejando que el reveal inicie primero.</summary>
+    /// <summary>
+    /// Retrasa la asignacion del foco inicial del mando por un frame para permitir 
+    /// que la cuadricula y animaciones se inicialicen correctamente.
+    /// </summary>
     private IEnumerator FocusFirstSlotNextFrame()
     {
         yield return null;
         if (navGrid == null || navGrid.Count == 0) yield break;
 
-        // Encontrar la primera columna y fila con item
         for (int c = 0; c < navGrid.Count; c++)
         {
             int r = FindNearestOccupiedRow(navGrid[c], 0);
@@ -442,6 +518,9 @@ public class InventoryUIManager : MonoBehaviour
 
     #region Visual & Audio Effects
 
+    /// <summary>
+    /// Encadena y coordina las secuencias de escalado y opacidad para mostrar u ocultar las columnas de inventario de forma progresiva.
+    /// </summary>
     private IEnumerator RevealSequence(bool opening)
     {
         if (opening)
@@ -496,6 +575,9 @@ public class InventoryUIManager : MonoBehaviour
         yield return new WaitForSecondsRealtime(slotRevealDuration);
     }
 
+    /// <summary>
+    /// Interpola la posicion local y la transparencia de un RectTransform especifico a lo largo del tiempo establecido por el RevealSequence.
+    /// </summary>
     private IEnumerator TweenSlot(RectTransform rt, Vector2 hiddenOffset, bool opening)
     {
         if (rt == null) yield break;
@@ -503,7 +585,6 @@ public class InventoryUIManager : MonoBehaviour
         var cg = rt.GetComponent<CanvasGroup>();
         if (cg == null) cg = rt.gameObject.AddComponent<CanvasGroup>();
 
-        // Usar siempre la posicion rest original, nunca la posicion actual
         if (!restPositions.TryGetValue(rt, out Vector2 restPos))
         {
             restPos = rt.anchoredPosition;
@@ -532,9 +613,6 @@ public class InventoryUIManager : MonoBehaviour
         cg.alpha = toAlpha;
     }
 
-    /// <summary>
-    /// Llamar desde ShopManager cuando se anade un item al inventario.
-    /// </summary>
     public void NotifyItemAdded(ShopItem item)
     {
         RefreshDisplay();
@@ -546,7 +624,6 @@ public class InventoryUIManager : MonoBehaviour
         }
         else
         {
-            // Bounce solo en el slot dorado que recibio el item
             var goldenSlot = goldenSlots.Find(gs => gs.CurrentItem == item);
             if (goldenSlot != null) StartCoroutine(BounceTransform(goldenSlot.transform));
         }
@@ -570,6 +647,9 @@ public class InventoryUIManager : MonoBehaviour
 
     #region Display & Item Management
 
+    /// <summary>
+    /// Limpia todos los contenedores visuales y los vuelve a poblar iterando sobre la lista actual de items almacenada en el InventoryManager.
+    /// </summary>
     public void RefreshDisplay()
     {
         foreach (var s in goldenSlots) s.ClearSlot();
@@ -652,7 +732,7 @@ public class InventoryUIManager : MonoBehaviour
     #region Mechanic Slots & Replace Logic
 
     /// <summary>
-    /// Retorna el indice de ranura (0=Melee, 1=Ranged, 2=Dash) usando los datos del propio ShopItem.
+    /// Traduce la enumeracion del tipo de efecto de un ShopItem a un indice entero correspondiente a su ranura especifica.
     /// </summary>
     public int GetMechanicSlotIndex(ShopItem item)
     {
@@ -667,9 +747,7 @@ public class InventoryUIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Llamado desde ShopManager antes de ejecutar la compra.
-    /// Si ya hay un item en esa ranura, muestra el panel de confirmacion y retorna false.
-    /// Si la ranura esta libre, retorna true para que la compra proceda.
+    /// Verifica si un slot de equipamiento esta ocupado durante una compra y despliega la confirmacion de reemplazo si es necesario.
     /// </summary>
     public bool RequestMechanicItemPurchase(ShopItem newItem, int slotIndex, ShopManager caller)
     {
@@ -681,8 +759,7 @@ public class InventoryUIManager : MonoBehaviour
             pendingReplaceSlotIndex = slotIndex;
             pendingShopManager = caller;
             ShowReplaceConfirm(newItem, mechanicSlots[slotIndex]);
-            ReportDebug($"Solicitando compra de {newItem.itemName} para slot {slotIndex}, " +
-                $"pero ya hay {mechanicSlots[slotIndex].itemName}. Mostrando confirmacion de reemplazo.", 1);
+            ReportDebug($"Compra solicitada ocupa un espacio lleno. Desplegando confirmacion de reemplazo.", 1);
             return false;
         }
         return true;
@@ -692,7 +769,7 @@ public class InventoryUIManager : MonoBehaviour
     {
         if (replaceConfirmPanel == null)
         {
-            ReportDebug("No se asigno el panel de confirmacion de reemplazo en el inspector.", 2);
+            ReportDebug("Falta asignar el panel de confirmacion en el inspector.", 2);
             return;
         }
 
@@ -726,8 +803,7 @@ public class InventoryUIManager : MonoBehaviour
         if (pendingReplaceItem != null)
         {
             ShopItem oldItem = mechanicSlots[pendingReplaceSlotIndex];
-            ReportDebug($"Jugador confirmo reemplazo: {oldItem.itemName} => {pendingReplaceItem.itemName} " +
-                $"en slot {pendingReplaceSlotIndex}. Ejecutando reemplazo.", 1);
+            ReportDebug($"Reemplazo ejecutado: {oldItem.itemName} por {pendingReplaceItem.itemName}.", 1);
             pendingShopManager?.ExecuteReplacement(oldItem, pendingReplaceItem);
             pendingReplaceItem = null;
             pendingShopManager = null;
@@ -747,7 +823,7 @@ public class InventoryUIManager : MonoBehaviour
 
     private void OnCancelReplace()
     {
-        ReportDebug("Jugador cancela el reemplazo de item mecanico. No se realizara ningun cambio.", 1);
+        ReportDebug("Reemplazo de item cancelado por el usuario.", 1);
 
         var shopRef = pendingShopManager;
         pendingReplaceItem = null;
@@ -766,9 +842,6 @@ public class InventoryUIManager : MonoBehaviour
         Time.timeScale = confirmPreviousTimeScale;
     }
 
-    /// <summary>
-    /// Devuelve dinámicamente la cantidad de slots normales activos.
-    /// </summary>
     public int GetNormalSlotsCount()
     {
         int count = col2Slots.Count + col3Slots.Count;
@@ -783,90 +856,164 @@ public class InventoryUIManager : MonoBehaviour
 
     #region Detail Panel Logic
 
-    /// <summary>
-    /// Si se hace clic en el slot ya seleccionado => cierra el panel.
-    /// Si se hace clic en un slot diferente => cambia al nuevo en UN solo clic.
-    /// </summary>
-    /// <param name="slot">Slot que recibio el clic.</param>
-    /// <param name="isGamepad">True si el clic viene del mando (Button North).</param>
+    /* Logica de fijado por clic comentada a peticion
     public void OnSlotClicked(InventorySlot slot, bool isGamepad = false)
     {
-        if (slot == null || !slot.HasItem) return;
-
-        if (selectedSlot == slot)
-        {
-            selectedSlot.SetSelected(false);
-            selectedSlot = null;
-            HideItemDetails();
-        }
-        else
-        {
-            selectedSlot?.SetSelected(false);
-            selectedSlot = slot;
-            selectedSlot.SetSelected(true);
-            ShowItemDetails(slot.CurrentItem, slotRect: null);
-        }
+        ...
     }
 
+    private void PinItemDetails(ShopItem item)
+    {
+        ...
+    }
+    */
+
     /// <summary>
-    /// Muestra el panel descriptivo del item.
+    /// Inicia el temporizador para desplegar el panel flotante y formatea la informacion del item al pasar el puntero o enfocar con mando.
     /// </summary>
-    /// <paramref name="slotRect"/> si no es null, posiciona el panel centrado sobre ese slot (modo mando).
     public void ShowItemDetails(ShopItem item, RectTransform slotRect = null)
     {
         if (detailPanel == null || item == null) return;
 
-        // Posicionar el panel respecto al slot si venimos del mando
-        if (slotRect != null && inventoryCanvas != null)
+        if (detailPanelRect == null)
         {
-            PositionPanelAtSlot(detailPanel.GetComponent<RectTransform>(), slotRect);
+            ReportDebug("detailPanelRect nulo, imposible alinear al puntero.", 2);
+            detailPanel.SetActive(true);
+            if (detailName != null) { detailName.text = item.itemName; detailName.color = item.GetRarityColor(); }
+            if (detailDescription != null) detailDescription.text = item.GetFormattedDescriptionAndStats();
+            if (detailIcon != null) { detailIcon.sprite = item.itemIcon; detailIcon.enabled = item.itemIcon != null; }
+            return;
         }
 
-        detailPanel.SetActive(true);
+        detailPanelIsGamepadMode = slotRect != null;
+
+        if (detailPanelIsGamepadMode)
+        {
+            if (inventoryCanvas != null) CalculateGamepadAnchor(slotRect);
+            else ReportDebug("inventoryCanvas nulo, imposible anclar con mando.", 2);
+        }
 
         if (detailName != null) { detailName.text = item.itemName; detailName.color = item.GetRarityColor(); }
         if (detailDescription != null) detailDescription.text = item.GetFormattedDescriptionAndStats();
         if (detailIcon != null) { detailIcon.sprite = item.itemIcon; detailIcon.enabled = item.itemIcon != null; }
 
-        // Ocultar el tooltip mientras el panel este abierto
-        InventoryTooltip.Instance?.SetDetailPanelOpen(true);
+        if (detailPanel.activeSelf)
+        {
+            detailShowPending = false;
+            UpdateDetailPanelPosition();
+            return;
+        }
+
+        detailShowPending = true;
+        detailShowTimer = 0f;
+
+        if (detailShowDelay <= 0f)
+        {
+            detailShowPending = false;
+            detailPanel.SetActive(true);
+            Canvas.ForceUpdateCanvases();
+            if (detailPanelRect != null) LayoutRebuilder.ForceRebuildLayoutImmediate(detailPanelRect);
+            UpdateDetailPanelPosition();
+        }
     }
 
     public void HideItemDetails()
     {
         detailPanel?.SetActive(false);
-        selectedSlot = null;
+        // selectedSlot = null; // Comentado
+        detailShowPending = false;
+        detailShowTimer = 0f;
+    }
 
-        // Reactivar el tooltip al cerrar el panel descriptivo
-        InventoryTooltip.Instance?.SetDetailPanelOpen(false);
+    public void HideItemDetailsIfNotSelected(InventorySlot slot)
+    {
+        // Validaciones de seleccionado comentadas a peticion
+        // if (selectedSlot != null && selectedSlot == slot) return;
+        // if (selectedSlot != null) return;
+
+        detailPanel?.SetActive(false);
+        detailShowPending = false;
+        detailShowTimer = 0f;
     }
 
     /// <summary>
-    /// Centra el panel sobre el slot dado, dentro de los limites del canvas.
+    /// Controla la logica de retardo y llama a la actualizacion de posicionamiento del panel de detalles 
+    /// en cada frame mientras permanezca visible.
     /// </summary>
-    private void PositionPanelAtSlot(RectTransform panelRect, RectTransform slotRect)
+    private void UpdateDetailPanelHoverPosition()
     {
-        if (panelRect == null || slotRect == null || inventoryCanvas == null) return;
+        if (detailPanel == null) return;
 
-        Camera cam = (inventoryCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
-            ? null
-            : inventoryCanvas.worldCamera;
+        // if (selectedSlot != null) return; // Comentado a peticion
 
+        if (detailShowPending)
+        {
+            detailShowTimer += Time.unscaledDeltaTime;
+            if (detailShowTimer >= detailShowDelay)
+            {
+                detailShowPending = false;
+                detailPanel.SetActive(true);
+                Canvas.ForceUpdateCanvases();
+                if (detailPanelRect != null) LayoutRebuilder.ForceRebuildLayoutImmediate(detailPanelRect);
+                UpdateDetailPanelPosition();
+            }
+            return;
+        }
+
+        if (detailPanel.activeSelf)
+        {
+            UpdateDetailPanelPosition();
+        }
+    }
+
+    /// <summary>
+    /// Aplica dinamicamente las transformaciones de posicion al panel dependiendo del periferico de entrada activo 
+    /// (raton o mando) respetando los margenes.
+    /// </summary>
+    private void UpdateDetailPanelPosition()
+    {
+        if (detailPanelRect == null || inventoryCanvas == null) return;
+
+        if (detailPanelIsGamepadMode)
+        {
+            detailPanelRect.localPosition = detailGamepadAnchorLocal + detailGamepadOffset;
+        }
+        else
+        {
+            Camera cam = (inventoryCanvas.renderMode == RenderMode.ScreenSpaceOverlay) ? null : detailUICamera;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                inventoryCanvas.transform as RectTransform,
+                Input.mousePosition,
+                cam,
+                out Vector2 local);
+            detailPanelRect.localPosition = local + detailMouseOffset;
+        }
+
+        ClampRectToCanvas(detailPanelRect);
+    }
+
+    private void CalculateGamepadAnchor(RectTransform slotRect)
+    {
+        if (slotRect == null)
+        {
+            ReportDebug("slotRect nulo en CalculateGamepadAnchor, manteniendo anclaje previo.", 2);
+            return;
+        }
+        if (inventoryCanvas == null) return;
+
+        Camera cam = (inventoryCanvas.renderMode == RenderMode.ScreenSpaceOverlay) ? null : detailUICamera;
         Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(cam, slotRect.position);
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             inventoryCanvas.transform as RectTransform,
             screenPoint,
             cam,
-            out Vector2 localPoint);
-
-        panelRect.localPosition = new Vector3(localPoint.x, localPoint.y, panelRect.localPosition.z);
-
-        // Clamp para que no salga del canvas
-        Canvas.ForceUpdateCanvases();
-        LayoutRebuilder.ForceRebuildLayoutImmediate(panelRect);
-        ClampRectToCanvas(panelRect);
+            out detailGamepadAnchorLocal);
     }
 
+    /// <summary>
+    /// Calcula las posiciones de los vertices del objeto flotante y del canvas 
+    /// para corregir las coordenadas si este excede los limites de la pantalla.
+    /// </summary>
     private void ClampRectToCanvas(RectTransform rect)
     {
         if (rect == null || inventoryCanvas == null) return;
@@ -890,11 +1037,8 @@ public class InventoryUIManager : MonoBehaviour
     #region Gamepad Navigation
 
     /// <summary>
-    /// Construye la grilla de navegacion con mando organizando los slots por columna,
-    /// de arriba a abajo:
-    /// columna 0 => col1Above + goldenSlots + col1Below
-    /// columna 1 => col2Slots
-    /// columna 2 => col3Slots
+    /// Genera la matriz matricial de navegacion agrupando las listas visuales 
+    /// en columnas logicas para que el mando pueda moverse entre ellas.
     /// </summary>
     private void BuildNavGrid()
     {
@@ -911,8 +1055,8 @@ public class InventoryUIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Procesa el input del mando para la navegacion por el inventario.
-    /// Llamado cada frame desde Update() solo mientras el inventario este abierto.
+    /// Captura y aplica intervalos a la lectura direccional del joystick o D-pad 
+    /// para emular un comportamiento paso a paso en la matriz.
     /// </summary>
     private void UpdateGamepadNavigation()
     {
@@ -922,13 +1066,11 @@ public class InventoryUIManager : MonoBehaviour
 
         int dCol = 0, dRow = 0;
 
-        // D-pad: respuesta inmediata
         if (Gamepad.current.dpad.up.wasPressedThisFrame) dRow = -1;
         else if (Gamepad.current.dpad.down.wasPressedThisFrame) dRow = +1;
         else if (Gamepad.current.dpad.left.wasPressedThisFrame) dCol = -1;
         else if (Gamepad.current.dpad.right.wasPressedThisFrame) dCol = +1;
 
-        // Joystick izquierdo: con cooldown para evitar scroll demasiado rapido
         if (dCol == 0 && dRow == 0 && joystickCooldownTimer <= 0f)
         {
             Vector2 stick = Gamepad.current.leftStick.ReadValue();
@@ -943,7 +1085,6 @@ public class InventoryUIManager : MonoBehaviour
             NavigateGamepadTo(navCol + dCol, navRow + dRow);
         }
 
-        // Button North (Y / Triangulo): actua como clic sobre el slot enfocado
         if (Gamepad.current.buttonNorth.wasPressedThisFrame && focusedSlot != null)
         {
             focusedSlot.SimulateClick();
@@ -951,8 +1092,8 @@ public class InventoryUIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Mueve el foco del mando a la celda (col, row) de la grilla de navegacion.
-    /// Los indices se clampean a los limites validos.
+    /// Evalua los comandos de direccion entrantes y translada la seleccion visual actual a un nuevo indice 
+    /// garantizando que caiga sobre un elemento util.
     /// </summary>
     private void NavigateGamepadTo(int col, int row)
     {
@@ -962,28 +1103,22 @@ public class InventoryUIManager : MonoBehaviour
         List<InventorySlot> column = navGrid[col];
         if (column.Count == 0) return;
 
-        // Determinar direccion de movimiento vertical
         int dRow = (row > navRow) ? 1 : (row < navRow) ? -1 : 0;
         int dCol = (col > navCol) ? 1 : (col < navCol) ? -1 : 0;
 
-        // Clonar posicion destino y buscar el proximo slot con item
         int targetRow = Mathf.Clamp(row, 0, column.Count - 1);
 
-        // Si se cambia de columna, intentar mantener fila o buscar la mas cercana con item
         if (dCol != 0)
         {
-            // Buscar desde la fila actual hacia arriba y abajo en la nueva columna
             targetRow = FindNearestOccupiedRow(column, navRow);
-            if (targetRow < 0) return; // columna sin items, no navegar
+            if (targetRow < 0) return;
         }
         else if (dRow != 0)
         {
-            // Buscar en la direccion presionada, saltear vacios
             targetRow = FindNextOccupiedRow(column, navRow, dRow);
-            if (targetRow < 0) return; // no hay mas slots con item en esa direccion
+            if (targetRow < 0) return;
         }
 
-        // Verificar que el destino final es el mismo que ya esta
         if (col == navCol && targetRow == navRow && focusedSlot == column[targetRow]) return;
 
         bool oldIsGolden = focusedSlot != null && goldenSlots.Contains(focusedSlot);
@@ -1002,7 +1137,9 @@ public class InventoryUIManager : MonoBehaviour
         }
     }
 
-    /// <summary>Busca la fila ocupada mas cercana a 'fromRow' en ambas direcciones.</summary>
+    /// <summary>
+    /// Escanea bidireccionalmente el eje Y de una columna partiendo de un punto de origen para localizar el slot ocupado mas inmediato.
+    /// </summary>
     private int FindNearestOccupiedRow(List<InventorySlot> column, int fromRow)
     {
         if (column == null || column.Count == 0) return -1;
@@ -1020,7 +1157,7 @@ public class InventoryUIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Busca el siguiente slot con item desde 'fromRow' en la direccion 'dir' (+1 o -1).
+    /// Escanea unicamente en una direccion de la columna Y para buscar el siguiente slot equipado ignorando las celdas vacias.
     /// </summary>
     private int FindNextOccupiedRow(List<InventorySlot> column, int fromRow, int dir)
     {
@@ -1028,20 +1165,16 @@ public class InventoryUIManager : MonoBehaviour
         {
             if (column[i].HasItem) return i;
         }
-        return -1; // no encontro slot con item en esa direccion
+        return -1;
     }
 
     /// <summary>
-    /// Navegacion con mando dentro del panel de confirmacion de reemplazo.
-    /// Izquierda/Derecha (D-pad o joystick) alterna entre Confirmar y Cancelar.
-    /// Button South (A/Cruz) o Button North (Y/Triangulo) ejecutan la opcion enfocada.
+    /// Restringe la lectura del mando exclusivamente a opciones binarias izquierda o derecha para controlar los botones de advertencia.
     /// </summary>
     private void UpdateGamepadConfirmNavigation()
     {
         if (Gamepad.current == null) return;
 
-        // Ignorar todo input durante el frame en que se abrió el panel,
-        // para que el botón que desencadenó la compra no confirme inmediatamente.
         if (confirmPanelJustOpened)
         {
             confirmPanelJustOpened = false;
@@ -1072,8 +1205,6 @@ public class InventoryUIManager : MonoBehaviour
             ApplyConfirmButtonHighlight(confirmNavIndex);
         }
 
-        // Al navegar por primera vez también aplicamos highlight si aún no se ha hecho
-        // (primera pulsación después del frame de gracia)
         bool pressed = Gamepad.current.buttonSouth.wasPressedThisFrame
                     || Gamepad.current.buttonNorth.wasPressedThisFrame;
         if (pressed)
@@ -1083,9 +1214,6 @@ public class InventoryUIManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Aplica el color de highlight al boton enfocado y restaura el color normal al otro.
-    /// </summary>
     private void ApplyConfirmButtonHighlight(int focusIndex)
     {
         if (confirmButtonImage != null)
@@ -1109,6 +1237,10 @@ public class InventoryUIManager : MonoBehaviour
     #region Helpers
 
     public Color GetHighlightColor() => highlightColor;
+
+    // Propiedad y metodo comentados a peticion
+    // public bool HasSelectedSlot => selectedSlot != null;
+    // public void ClearSelectedSlotIfThis(InventorySlot slot) { ... }
 
     #endregion
 

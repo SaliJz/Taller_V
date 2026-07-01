@@ -27,11 +27,11 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     [Tooltip("Intensidad del pulso (0.3 = 30% de variacion en alpha)")]
     [SerializeField] private float pulseIntensity = 0.3f;
 
-    [Header("Efecto de Seleccion")]
-    [Tooltip("Escala del icono cuando el slot esta seleccionado (ej: 1.25)")]
-    [SerializeField] private float selectedIconScale = 1.25f;
-    [Tooltip("Duracion del tween de escala en segundos")]
-    [SerializeField] private float selectedScaleDuration = 0.15f;
+    // [Header("Efecto de Seleccion")]
+    // [Tooltip("Escala del icono cuando el slot esta seleccionado (ej: 1.25)")]
+    // [SerializeField] private float selectedIconScale = 1.25f;
+    // [Tooltip("Duracion del tween de escala en segundos")]
+    // [SerializeField] private float selectedScaleDuration = 0.15f;
 
     #endregion
 
@@ -44,8 +44,10 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     private bool hasItem;
     private bool isGoldenSlot;
     private Coroutine pulseCoroutine;
-    private bool isSelected;
-    private Coroutine selectScaleCoroutine;
+
+    // Variables de seleccion comentadas
+    // private bool isSelected;
+    // private Coroutine selectScaleCoroutine;
 
     #endregion
 
@@ -78,6 +80,11 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     private void OnDisable()
     {
         if (pulseCoroutine != null) { StopCoroutine(pulseCoroutine); pulseCoroutine = null; }
+
+        // if (selectScaleCoroutine != null) { StopCoroutine(selectScaleCoroutine); selectScaleCoroutine = null; }
+
+        // Fuerza la limpieza del estado visual cuando el inventario se apaga de golpe.
+        ApplyHoverExit();
     }
 
     #endregion
@@ -158,19 +165,26 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
 
         HideTemporalEffect();
 
-        isSelected = false;
+        // Limpieza de seleccion comentada
+        // isSelected = false;
+        // if (selectScaleCoroutine != null)
+        // {
+        //     StopCoroutine(selectScaleCoroutine);
+        //     selectScaleCoroutine = null;
+        // }
+
         if (iconImage != null) iconImage.transform.localScale = Vector3.one;
-        if (selectScaleCoroutine != null)
-        {
-            StopCoroutine(selectScaleCoroutine);
-            selectScaleCoroutine = null;
-        }
+
+        // Restaura el color y la escala base para evitar que el estado visual de hover quede atascado tras recargar la UI.
+        if (backgroundImage != null) backgroundImage.color = originalBackgroundColor;
+        transform.localScale = Vector3.one;
     }
 
     #endregion
 
     #region Visual & Audio Effects
 
+    /* Logica de animacion de fijado comentada a peticion
     public void SetSelected(bool selected)
     {
         if (isSelected == selected) return;
@@ -185,7 +199,15 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         if (iconImage == null) return;
 
         float targetScale = selected ? selectedIconScale : 1f;
-        selectScaleCoroutine = StartCoroutine(TweenIconScale(targetScale));
+        
+        if (gameObject.activeInHierarchy)
+        {
+            selectScaleCoroutine = StartCoroutine(TweenIconScale(targetScale));
+        }
+        else
+        {
+            iconImage.transform.localScale = Vector3.one * targetScale;
+        }
     }
 
     private IEnumerator TweenIconScale(float targetScale)
@@ -207,6 +229,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         iconImage.transform.localScale = toScale;
         selectScaleCoroutine = null;
     }
+    */
 
     private void ShowTemporalEffect()
     {
@@ -274,21 +297,23 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         }
         transform.localScale = Vector3.one * 1.05f;
 
-        if (gamepadMode) InventoryTooltip.Instance?.ShowForSlot(itemData, SlotRect);
-        else InventoryTooltip.Instance?.Show(itemData);
+        // Mostrar el panel descriptivo directamente al hacer hover
+        inventoryManager?.ShowItemDetails(itemData, gamepadMode ? SlotRect : null);
 
         if (isGoldenSlot) InventoryAudioManager.Instance?.PlayGoldenSlotHoverSound();
         else InventoryAudioManager.Instance?.PlayCommonSlotHoverSound();
     }
 
     /// <summary>
-    /// Aplica el estado visual de "hover exit" y oculta el tooltip.
+    /// Aplica el estado visual de "hover exit" y oculta el panel de detalles.
     /// </summary>
     private void ApplyHoverExit()
     {
         if (backgroundImage != null) backgroundImage.color = originalBackgroundColor;
         transform.localScale = Vector3.one;
-        InventoryTooltip.Instance?.Hide();
+
+        // Ocultar el panel descriptivo al salir del hover
+        inventoryManager?.HideItemDetailsIfNotSelected(this);
     }
 
     /// <summary>
@@ -310,7 +335,8 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     public void SimulateClick()
     {
         if (!hasItem) return;
-        inventoryManager?.OnSlotClicked(this, isGamepad: true);
+
+        // inventoryManager?.OnSlotClicked(this, isGamepad: true);
         InventoryAudioManager.Instance?.PlayClickSound();
         InventoryAudioManager.Instance?.PlayRaritySound(itemData.rarity);
     }
@@ -326,15 +352,12 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         ApplyHoverExit();
     }
 
-    /// <summary>
-    /// Delega la logica de seleccion al manager en lugar de manejar isClicked localmente.
-    /// </summary>
     public void OnPointerClick(PointerEventData eventData)
     {
         if (!hasItem) return;
         if (eventData.button != PointerEventData.InputButton.Left) return;
 
-        inventoryManager?.OnSlotClicked(this, isGamepad: false);
+        // inventoryManager?.OnSlotClicked(this, isGamepad: false);
         InventoryAudioManager.Instance?.PlayClickSound();
         InventoryAudioManager.Instance?.PlayRaritySound(itemData.rarity);
     }

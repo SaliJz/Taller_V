@@ -13,6 +13,8 @@ public class DeathBoss : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (_BossDeath != null || _Boss == null) return; 
+        
         _BossDeath.transform.position = new Vector3(
             _Boss.transform.position.x + _offsetX,
             _Boss.transform.position.y + _offsetY,
