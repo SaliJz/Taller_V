@@ -64,6 +64,9 @@ public class SteamManager : MonoBehaviour
             return;
         }
 
+        System.Environment.SetEnvironmentVariable("SteamAppId", "4858720");
+        System.Environment.SetEnvironmentVariable("RestartAppIfNecessary", "false");
+
         try
         {
             isInitialized = SteamAPI.Init();
@@ -77,6 +80,7 @@ public class SteamManager : MonoBehaviour
         if (isInitialized)
         {
             gameOverlayActivatedCallback = Callback<GameOverlayActivated_t>.Create(OnGameOverlayActivated);
+            Debug.Log("[Steamworks] Inicializado correctamente con el ID: " + SteamUtils.GetAppID());
         }
         else
         {
