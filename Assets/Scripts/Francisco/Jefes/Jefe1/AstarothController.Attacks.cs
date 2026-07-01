@@ -620,8 +620,6 @@ public partial class AstarothController
             Destroy(crackEffect, 2f);
         }
 
-        ApplyEvolutionBuff();
-
         if (_animCtrl != null) _animCtrl.ReturnToIdle();
 
         yield return new WaitForSeconds(1f);
@@ -632,18 +630,6 @@ public partial class AstarothController
         if (_isDead) yield break;
 
         StartCombatLoop();
-    }
-
-    private void ApplyEvolutionBuff()
-    {
-        _currentEvolutionMultiplier += _speedBuffPerPulse;
-
-        if (_navMeshAgent != null)
-        {
-            _navMeshAgent.speed *= 1f + _speedBuffPerPulse;
-        }
-
-        _animCtrl?.SetAnimatorSpeed(_currentEvolutionMultiplier);
     }
 
     private IEnumerator MoveToCenter(Vector3 targetCenter)

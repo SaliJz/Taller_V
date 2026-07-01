@@ -13,7 +13,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         Moving,
         Attacking,
         SpecialAbility,
-        DefensiveBlock,
         MudWave
     }
 
@@ -88,35 +87,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
     #endregion
 
-    #region Ability: Defensive Block
-
-    [Header("Ability: Bloqueo Defensivo")]
-    [SerializeField] private bool _enableDefensiveBlock = true;
-    [SerializeField] private int _defensiveBlockHitLimit = 3;
-    [SerializeField] private float _defensiveBlockHitWindow = 3f;
-    [SerializeField] private float _defensiveBlockInvulnerableDuration = 1.5f;
-    [SerializeField] private float _defensiveBlockExplosionExpandDuration = 0.35f;
-    [SerializeField] private float _defensiveBlockExplosionDamage = 15f;
-    [SerializeField] private float _defensiveBlockExplosionRadius = 6f;
-    [SerializeField] private float _defensiveBlockKnockbackForce = 10f;
-    [SerializeField] private float _defensiveBlockCooldown = 8f;
-    [SerializeField] private bool _defensiveBlockCanTriggerAnytime = true;
-    [SerializeField] private GameObject _defensiveBlockWarningPrefab;
-    [SerializeField] private GameObject _defensiveBlockExplosionPrefab;
-
-    private bool _defensiveBlockPending;
-    private float _defensiveBlockCooldownTimer;
-    private readonly Queue<float> _recentPlayerHitTimes = new Queue<float>();
-    private EnemyVisualEffects _enemyVisualEffects;
-    private Renderer[] _bossRenderers;
-    private Color[] _bossOriginalColors;
-    private bool _isDefensiveBlocking;
-    private bool _defensiveBlockWindowActive;
-    private int _hitsAfterStomp;
-    private float _defensiveBlockWindowStart;
-
-    #endregion
-
     #region Ability: Mud Wave
 
     [Header("Ability: Ola de Lodo")]
@@ -142,8 +112,10 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     private float _mudWaveCooldownTimer;
 
     #endregion
+
     [Header("Ola de Lodo - Recovery")]
     [SerializeField] private float _mudWaveRecoveryTime = 1f;
+
     #region Ability: Attack 1 (Whip)
     [Header("Tiempos del Ciclo de Combate")]
     [SerializeField] private float _shortMoveDuration = 3f;
@@ -221,10 +193,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     [SerializeField] private float _movementSpeedForPulse = 10f;
     [SerializeField] private float _pulseDelay = 1.05f;
 
-    [Header("Evolucion Pulso Carnal")]
-    [SerializeField] private float _speedBuffPerPulse = 0.20f;
-
-    private float _currentEvolutionMultiplier = 1.0f;
     private bool _isUsingSpecialAbility;
     private readonly float[] _healthThresholdsForPulse = { 0.7f, 0.4f };
     private bool _isSpecialAbilityPending = false;
@@ -307,7 +275,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     [SerializeField] private AudioClip canonChargeSFX;
     [SerializeField, Range(0.5f, 0.8f)] private float canonAnticipationDuration = 0.65f;
 
-    [Header("Anticipación - Apisonador (Stomp / Block)")]
+    [Header("Anticipación - Apisonador (Stomp)")]
     [SerializeField] private AudioClip apisonadorLooseScrewsSFX;
     [SerializeField, Range(0.2f, 0.5f)] private float apisonadorAnticipationDuration = 0.35f;
 
@@ -333,6 +301,14 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
     #endregion
 
+    #region Internal State Variables
+
+    private EnemyVisualEffects _enemyVisualEffects;
+    private Renderer[] _bossRenderers;
+    private Color[] _bossOriginalColors;
+
+    #endregion
+
     #region Unity Lifecycle
 
     private void Awake()
@@ -340,8 +316,8 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         if (_enemyHealth == null) _enemyHealth = GetComponent<EnemyHealth>();
         if (_navMeshAgent == null) _navMeshAgent = GetComponent<NavMeshAgent>();
         if (_animCtrl == null) _animCtrl = GetComponentInChildren<TheWeightAnimCtrl>();
-        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
         if (_enemyVisualEffects == null) _enemyVisualEffects = GetComponent<EnemyVisualEffects>();
+        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
 
         if (_vcam == null)
         {
@@ -419,7 +395,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
                 _navMeshAgent.isStopped = true;
                 _navMeshAgent.velocity = Vector3.zero;
             }
-
             return;
         }
 
@@ -444,17 +419,15 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
         float distanceToPlayer = Vector3.Distance(transform.position, _player.position);
 
-        UpdateDefensiveBlockWindow();
         UpdateMudWaveTrigger(distanceToPlayer);
 
-        if (_isDefensiveBlocking || _isMudWaving) return;
+        if (_isMudWaving) return;
 
         if (distanceToPlayer < _stompTriggerDistance &&
             _stompTimer <= 0f &&
             !_isStomping &&
             !_isAttackingWithWhip &&
             !_isSmashing &&
-            !_isDefensiveBlocking &&
             !_isMudWaving)
         {
             InterruptAndPerformStomp();
@@ -463,7 +436,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
         if (!_isCombatLoopActive &&
             !_isStomping &&
-            !_isDefensiveBlocking &&
             !_isMudWaving &&
             !_isAttackingWithWhip &&
             !_isSmashing &&
@@ -474,11 +446,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         }
 
         _stompTimer -= Time.deltaTime;
-
-        if (_defensiveBlockCooldownTimer > 0f)
-        {
-            _defensiveBlockCooldownTimer -= Time.deltaTime;
-        }
     }
 
     #endregion
@@ -639,21 +606,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
         while (true)
         {
-            if (_defensiveBlockPending && !_isDefensiveBlocking)
-            {
-                _defensiveBlockPending = false;
-                _currentState = BossState.DefensiveBlock;
-
-                yield return DefensiveBlockSequence();
-
-                ResetAttackState();
-
-                _currentState = BossState.Moving;
-                _combatPatternStep = _resumeCombatStep;
-
-                continue;
-            }
-
             if (_player != null && _currentState == BossState.Moving)
             {
                 float distanceToPlayer = Vector3.Distance(transform.position, _player.position);
@@ -837,34 +789,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         }
 
         _hitsReceivedFromPlayer++;
-        RegisterDefensiveBlockHit();
-    }
-
-    private void RegisterDefensiveBlockHit()
-    {
-        if (!_enableDefensiveBlock) return;
-        if (_isDead) return;
-        if (_isDefensiveBlocking) return;
-        if (_defensiveBlockPending) return;
-        if (_currentState == BossState.SpecialAbility) return;
-        if (_defensiveBlockCooldownTimer > 0f) return;
-
-        float now = Time.time;
-
-        _recentPlayerHitTimes.Enqueue(now);
-
-        while (_recentPlayerHitTimes.Count > 0 &&
-               now - _recentPlayerHitTimes.Peek() > _defensiveBlockHitWindow)
-        {
-            _recentPlayerHitTimes.Dequeue();
-        }
-
-        if (_recentPlayerHitTimes.Count <= _defensiveBlockHitLimit) return;
-
-        _recentPlayerHitTimes.Clear();
-        _defensiveBlockPending = true;
-        _defensiveBlockCooldownTimer = _defensiveBlockCooldown;
-        _resumeCombatStep = _combatPatternStep;
     }
 
     private void HandleEnemyHealthChange(float newCurrentHealth, float newMaxHealth)
@@ -887,7 +811,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         _isSmashing = false;
         _isUsingSpecialAbility = false;
         _isEnraged = false;
-        _isDefensiveBlocking = false;
         _isMudWaving = false;
 
         if (_enemyHealth != null) _enemyHealth.SetDynamicVulnerability(0f);
@@ -900,8 +823,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         SetStompIndicatorsActive(false);
         StopStompPullVFX();
         ResetSmashVisuals();
-        StopDefensiveBlockVisualFeedback();
-        _recentPlayerHitTimes.Clear();
 
         if (_navMeshAgent != null)
         {
@@ -938,7 +859,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
                 bool attackInProgress =
                     _isAttackingWithWhip ||
                     _isSmashing ||
-                    _isDefensiveBlocking ||
                     _isMudWaving ||
                     _isStomping;
 
@@ -968,7 +888,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         {
             if (!_isAttackingWithWhip &&
                 !_isSmashing &&
-                !_isDefensiveBlocking &&
                 !_isMudWaving &&
                 !_isStomping)
             {
@@ -992,7 +911,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
         _isAttackingWithWhip = false;
         _isSmashing = false;
-        _isDefensiveBlocking = false;
         _isMudWaving = false;
         _smashRockInFlight = false;
         _smashImpactCompleted = false;

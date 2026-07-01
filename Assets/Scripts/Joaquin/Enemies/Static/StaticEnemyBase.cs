@@ -219,9 +219,41 @@ public abstract class StaticEnemyBase : MonoBehaviour
             playerTransform = playerGameObject.transform;
             playerCharacterController = playerGameObject.GetComponent<CharacterController>();
         }
+        else
+        {
+            ReportDebug("Jugador no encontrado en Start. Reintentando busqueda.", 2);
+            StartCoroutine(RetryFindPlayerRoutine());
+        }
 
         InitializedEnemy();
         ResetIdleTimer();
+    }
+
+    protected virtual IEnumerator RetryFindPlayerRoutine()
+    {
+        float elapsed = 0f;
+        const float retryInterval = 0.5f;
+        const float retryTimeout = 5f;
+
+        while (playerTransform == null && elapsed < retryTimeout)
+        {
+            yield return new WaitForSeconds(retryInterval);
+            elapsed += retryInterval;
+
+            var playerGameObject = GameObject.FindGameObjectWithTag("Player");
+            if (playerGameObject != null)
+            {
+                playerTransform = playerGameObject.transform;
+                playerCharacterController = playerGameObject.GetComponent<CharacterController>();
+                ReportDebug("Jugador encontrado tras reintento.", 1);
+                yield break;
+            }
+        }
+
+        if (playerTransform == null)
+        {
+            ReportDebug("Jugador no encontrado tras agotar reintentos. El enemigo quedara inactivo.", 3);
+        }
     }
 
     protected virtual void OnEnable()
@@ -330,6 +362,11 @@ public abstract class StaticEnemyBase : MonoBehaviour
 
     protected virtual void InitializedEnemy()
     {
+        if (enemyHealth == null)
+        {
+            ReportDebug("EnemyHealth no encontrado en el GameObject. El enemigo no puede inicializar su vida.", 3);
+        }
+
         if (stats != null)
         {
             health = stats.health;
@@ -339,14 +376,13 @@ public abstract class StaticEnemyBase : MonoBehaviour
             fireRate = stats.fireRate;
             minDamageIncrease = stats.projectileDamage;
             projectileSpeed = stats.projectileSpeed;
-            enemyHealth.SetMaxHealth(stats.health);
         }
         else
         {
             ReportDebug("MorlockStats no asignado. Usando valores por defecto.", 2);
         }
 
-        enemyHealth.SetMaxHealth(health);
+        if (enemyHealth != null) enemyHealth.SetMaxHealth(health);
 
         if (agent != null)
         {
@@ -853,6 +889,13 @@ public abstract class StaticEnemyBase : MonoBehaviour
     protected virtual void ExecuteProjectileSpawn()
     {
         if (enemyHealth != null && enemyHealth.IsStunned || isDead) return;
+
+        if (projectilePrefab == null || firePoint == null)
+        {
+            ReportDebug("projectilePrefab o firePoint no asignado. No se puede disparar.", 3);
+            isAttacking = false;
+            return;
+        }
 
         SpawnAttackVFX();
 

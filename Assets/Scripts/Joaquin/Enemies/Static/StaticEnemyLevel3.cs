@@ -191,6 +191,14 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
 
         while (shootCoroutine != null || isInAnticipation) yield return null;
 
+        if (playerTransform == null)
+        {
+            ReportDebug("playerTransform es null en ReactiveEvasionRoutine. Abortando evasion.", 3);
+            evasionOnCooldown = false;
+            evasionReady = true;
+            yield break;
+        }
+
         Vector3 escapeDir = (transform.position - playerTransform.position).normalized;
         Vector3 evasionTarget = transform.position + escapeDir * evasionTeleportDistance;
 
@@ -221,6 +229,12 @@ public class StaticEnemyLevel3 : StaticEnemyBase, IAnimEventHandler
 
         if (distance <= maxDistanceForDamageIncrease) return maxDamageIncrease;
         if (distance >= maxDistanceForDamageStart) return minDamageIncrease;
+
+        if (Mathf.Approximately(maxDistanceForDamageStart, maxDistanceForDamageIncrease))
+        {
+            ReportDebug("maxDistanceForDamageStart y maxDistanceForDamageIncrease son iguales. Evitando division por cero.", 2);
+            return minDamageIncrease;
+        }
 
         float t = (distance - maxDistanceForDamageIncrease) / (maxDistanceForDamageStart - maxDistanceForDamageIncrease);
         return Mathf.Lerp(maxDamageIncrease, minDamageIncrease, t);

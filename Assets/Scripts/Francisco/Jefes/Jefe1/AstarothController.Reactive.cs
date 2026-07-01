@@ -5,168 +5,6 @@ using UnityEngine.AI;
 
 public partial class AstarothController
 {
-    #region Defensive Block
-
-    private void OpenDefensiveBlockWindow()
-    {
-        if (!_enableDefensiveBlock) return;
-
-        _defensiveBlockWindowActive = true;
-        _hitsAfterStomp = 0;
-        _defensiveBlockWindowStart = Time.time;
-    }
-
-    private void UpdateDefensiveBlockWindow()
-    {
-        if (!_defensiveBlockWindowActive) return;
-
-        if (Time.time - _defensiveBlockWindowStart > _defensiveBlockHitWindow)
-        {
-            _defensiveBlockWindowActive = false;
-            _hitsAfterStomp = 0;
-        }
-    }
-
-    private void InterruptAndPerformDefensiveBlock()
-    {
-        if (_isDead) return;
-        if (_isDefensiveBlocking) return;
-        if (_defensiveBlockPending) return;
-
-        _defensiveBlockPending = true;
-        _resumeCombatStep = _combatPatternStep;
-    }
-
-    private IEnumerator DefensiveBlockSequence()
-    {
-        if (_isDead) yield break;
-
-        _isDefensiveBlocking = true;
-        _currentState = BossState.DefensiveBlock;
-
-        StartDefensiveBlockVisualFeedback();
-
-        if (_animCtrl != null) _animCtrl.isWalking = false;
-        if (_animCtrl != null) _animCtrl.PlayApisonador();
-
-        yield return PlayAttackAnticipation(apisonadorAnticipationDuration, apisonadorLooseScrewsSFX);
-
-        Vector3 blockCenter = transform.position;
-        Vector3 warningCenter = GetGroundPosition(blockCenter);
-
-        if (_navMeshAgent != null && _navMeshAgent.enabled)
-        {
-            _navMeshAgent.isStopped = true;
-            _navMeshAgent.velocity = Vector3.zero;
-            _navMeshAgent.ResetPath();
-        }
-
-        if (_enemyHealth != null) _enemyHealth.SetDynamicVulnerability(1f);
-
-        GameObject warning = null;
-        if (_defensiveBlockWarningPrefab != null)
-        {
-            warning = Instantiate(_defensiveBlockWarningPrefab, warningCenter, Quaternion.identity);
-            warning.transform.localScale = new Vector3(_defensiveBlockExplosionRadius * 2f, 0.1f, _defensiveBlockExplosionRadius * 2f);
-            _instantiatedEffects.Add(warning);
-        }
-
-        float waitTimer = 0f;
-        while (waitTimer < _defensiveBlockInvulnerableDuration)
-        {
-            if (_navMeshAgent != null && _navMeshAgent.enabled)
-            {
-                _navMeshAgent.isStopped = true;
-                _navMeshAgent.velocity = Vector3.zero;
-            }
-
-            transform.position = blockCenter;
-            waitTimer += Time.deltaTime;
-            yield return null;
-        }
-
-        if (warning != null)
-        {
-            _instantiatedEffects.Remove(warning);
-            Destroy(warning);
-        }
-
-        yield return WaitForAnimEvent(ANIM_EVENT_APISONADOR_IMPACT, 0.5f);
-
-        GameObject explosion = null;
-        if (_defensiveBlockExplosionPrefab != null)
-        {
-            explosion = Instantiate(_defensiveBlockExplosionPrefab, blockCenter, Quaternion.identity);
-            explosion.transform.localScale = Vector3.zero;
-            _instantiatedEffects.Add(explosion);
-        }
-
-        ShakeCamera(0.3f, 2.5f, 2f);
-
-        yield return StartCoroutine(ExpandDefensiveBlockExplosion(explosion, blockCenter));
-
-        if (explosion != null)
-        {
-            _instantiatedEffects.Remove(explosion);
-            Destroy(explosion, 0.2f);
-        }
-
-        if (_enemyHealth != null) _enemyHealth.SetDynamicVulnerability(0f);
-
-        if (_navMeshAgent != null && _navMeshAgent.enabled)
-        {
-            _navMeshAgent.Warp(blockCenter);
-            _navMeshAgent.isStopped = false;
-        }
-
-        StopDefensiveBlockVisualFeedback();
-
-        if (_animCtrl != null) _animCtrl.ReturnToIdle();
-
-        _isDefensiveBlocking = false;
-        _currentState = BossState.Moving;
-
-        _combatPatternStep = _resumeCombatStep;
-        if (_isDead) yield break;
-
-        StartCombatLoop();
-    }
-
-    private IEnumerator ExpandDefensiveBlockExplosion(GameObject explosion, Vector3 blockCenter)
-    {
-        float elapsed = 0f;
-        HashSet<GameObject> damagedTargets = new HashSet<GameObject>();
-
-        while (elapsed < _defensiveBlockExplosionExpandDuration)
-        {
-            if (_navMeshAgent != null && _navMeshAgent.enabled)
-            {
-                _navMeshAgent.isStopped = true;
-                _navMeshAgent.velocity = Vector3.zero;
-            }
-
-            transform.position = blockCenter;
-
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / _defensiveBlockExplosionExpandDuration);
-            float currentRadius = Mathf.Lerp(0f, _defensiveBlockExplosionRadius, t);
-
-            if (explosion != null)
-            {
-                explosion.transform.position = blockCenter;
-                explosion.transform.localScale = Vector3.one * (currentRadius * 2f);
-            }
-
-            DealAreaDamageOnce(blockCenter, currentRadius, _defensiveBlockExplosionDamage, _defensiveBlockKnockbackForce, damagedTargets);
-
-            yield return null;
-        }
-
-        DealAreaDamageOnce(blockCenter, _defensiveBlockExplosionRadius, _defensiveBlockExplosionDamage, _defensiveBlockKnockbackForce, damagedTargets);
-    }
-
-    #endregion
-
     #region Mud Wave
 
     private void UpdateMudWaveTrigger(float distanceToPlayer)
@@ -175,7 +13,6 @@ public partial class AstarothController
 
         if (!_enableMudWave ||
             _isMudWaving ||
-            _isDefensiveBlocking ||
             _isStomping ||
             _isAttackingWithWhip ||
             _isSmashing ||
@@ -285,7 +122,11 @@ public partial class AstarothController
 
             transform.rotation = Quaternion.LookRotation(chargeDirection);
 
-            CheckMudWaveHit(hitPlayers);
+            // Se detiene la embestida si se impacta al jugador
+            if (CheckMudWaveHit(hitPlayers))
+            {
+                break;
+            }
 
             if (Vector3.Distance(transform.position, finalTarget) <= 0.2f)
             {
@@ -295,8 +136,6 @@ public partial class AstarothController
             safetyTimer += Time.deltaTime;
             yield return null;
         }
-
-        CheckMudWaveHit(hitPlayers);
 
         StopMudWaveWindVFX();
 
@@ -343,9 +182,11 @@ public partial class AstarothController
         return origin;
     }
 
-    private void CheckMudWaveHit(HashSet<GameObject> hitPlayers)
+    // Retorna true si se impactó a un jugador, false en caso contrario
+    private bool CheckMudWaveHit(HashSet<GameObject> hitPlayers)
     {
         Collider[] hits = Physics.OverlapSphere(transform.position, _mudWaveHitRadius, LayerMask.GetMask("Player"));
+        bool hitAny = false;
 
         foreach (var hit in hits)
         {
@@ -355,7 +196,9 @@ public partial class AstarothController
             hitPlayers.Add(target);
             ExecuteAttack(target, transform.position, _mudWaveDamage);
             ApplySafeKnockback(target, transform.position, _mudWaveKnockbackForce);
+            hitAny = true;
         }
+        return hitAny;
     }
 
     private void PlayMudWaveWindVFX()
