@@ -111,12 +111,12 @@ public class Sala6MerchantFlow : MonoBehaviour
 
         shopUnlocked = true;
 
+        yield return StartCoroutine(PlayDialog(malgorShopUnlockLines));
+
         if (shopManager != null && roomInitializer != null && manager != null)
         {
             roomInitializer.InitializeMerchantRoom();
         }
-
-        yield return StartCoroutine(PlayDialog(malgorShopUnlockLines));
 
         shopWatchdogCoroutine = StartCoroutine(WaitForShopPurchase());
 
