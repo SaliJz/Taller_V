@@ -282,6 +282,8 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     [SerializeField] private AudioClip canonChargeSFX;
     [SerializeField] private float canonAnticipationDuration = 0.65f;
 
+    bool smashAnticipationEnded;
+
     [Header("Anticipación - Apisonador (Stomp)")]
     [SerializeField] private AudioClip apisonadorLooseScrewsSFX;
     [SerializeField] private float apisonadorAnticipationDuration = 0.35f;

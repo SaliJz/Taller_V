@@ -153,6 +153,7 @@ public partial class AstarothController
         _smashRockInFlight = false;
         _smashImpactCompleted = false;
         _showSmashOverlapGizmo = false;
+        smashAnticipationEnded = false;
 
         if (_navMeshAgent != null)
         {
@@ -187,6 +188,8 @@ public partial class AstarothController
             yield return null;
         }
         yield return new WaitUntil(() => !_isInAnticipation);
+
+        smashAnticipationEnded = true;
 
         if (_animCtrl != null) _animCtrl.PlayCanonShot();
 
@@ -256,9 +259,9 @@ public partial class AstarothController
         indicator.gameObject.SetActive(true);
         indicator.localScale = new Vector3(_smashRadius * 2f, 0.05f, _smashRadius * 2f);
 
-        while (_isSmashing && !_smashImpactCompleted)
+        while (_isSmashing && !_smashRockInFlight! && !_smashImpactCompleted)
         {
-            if (_player != null && !_smashRockInFlight)
+            if (_player != null && !smashAnticipationEnded)
             {
                 _smashTargetPoint = _player.position;
             }

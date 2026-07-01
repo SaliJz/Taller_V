@@ -1284,6 +1284,10 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
                 break;
             }
 
+            //float dist = target != null
+            //? Vector3.Distance(transform.position, target)
+            //: float.MaxValue;
+
             transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
 
             if (dealContactDamage && !hasHitPlayer)
