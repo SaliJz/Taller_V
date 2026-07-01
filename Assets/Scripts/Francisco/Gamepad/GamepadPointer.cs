@@ -34,6 +34,7 @@ public class GamepadPointer : MonoBehaviour
     private Vector2 lastWarpedScreenPoint = Vector2.zero;
     private bool hasWarpedOnce = false;
 
+    public bool IsSteamActive => SteamManager.Initialized && SteamInputManager.Instance != null;
     public static GamepadPointer Instance { get; private set; }
 
     #region Ciclo De Vida
@@ -370,7 +371,7 @@ public class GamepadPointer : MonoBehaviour
 
     public Vector2 GetAimDirectionValue()
     {
-        if (SteamInputManager.Instance != null)
+        if (IsSteamActive)
         {
             Vector2 aim = SteamInputManager.Instance.GetAimAxis();
             if (aim.magnitude > RightStickDeadZone) return aim.normalized;
