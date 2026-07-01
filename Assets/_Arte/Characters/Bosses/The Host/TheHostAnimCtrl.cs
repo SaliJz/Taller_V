@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEngine.SceneManagement;
+using UnityEngine.VFX;
 #endif
 
 public class TheHostAnimCtrl : MonoBehaviour
@@ -20,6 +21,7 @@ public class TheHostAnimCtrl : MonoBehaviour
     [SerializeField] float _bufferAnticipationTime = 1f;
     [SerializeField] float _bufferDuration = 3f;
     [SerializeField] float bufferShakeIntensity = 3f;
+    [SerializeField] VisualEffect VFX_GroundBreak;
 
     #endregion
 
@@ -172,6 +174,17 @@ public class TheHostAnimCtrl : MonoBehaviour
         transform.localPosition = originalPos;
 
         anim.SetBool(ATK_BLOQ, false);
+    }
+
+    //EVENTOS PARA EL EFFECTO DE ROCAS DEL BUFFER/EMBESTIDA
+    public void OnPlayBufferVFX()
+    {
+        VFX_GroundBreak.Play();
+    }
+
+    public void OnStopBufferVFX()
+    {
+        VFX_GroundBreak.Stop();
     }
 
     #region Testing
