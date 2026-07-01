@@ -216,14 +216,21 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
 
         if (animCtrl) animCtrl.PlayDeath();
 
-        GameObject shard = Instantiate(glassShardDeathPrefab, transform.position, Quaternion.identity);
-        shard.transform.localScale = Vector3.one * (shardDeathRadius * 2f);
-
-        if (shard.TryGetComponent<GlassShardDamage>(out var dmg))
+        if (glassShardDeathPrefab == null)
         {
-            dmg.damagePerSecond = shardDeathDamagePerSec;
-            dmg.playerLayer = playerLayer;
-            dmg.shardDeathDuration = shardDeathDuration;
+            Debug.LogWarning($"[{GetType().Name}] '{name}': glassShardDeathPrefab no está asignado. No se generarán vidrios de muerte.");
+        }
+        else
+        {
+            GameObject shard = Instantiate(glassShardDeathPrefab, transform.position, Quaternion.identity);
+            shard.transform.localScale = Vector3.one * (shardDeathRadius * 2f);
+
+            if (shard.TryGetComponent<GlassShardDamage>(out var dmg))
+            {
+                dmg.damagePerSecond = shardDeathDamagePerSec;
+                dmg.playerLayer = playerLayer;
+                dmg.shardDeathDuration = shardDeathDuration;
+            }
         }
 
         this.enabled = false;
@@ -258,6 +265,10 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
             dmg.damagePerSecond = damagePerSec;
             dmg.playerLayer = playerLayer;
         }
+        else
+        {
+            Debug.LogWarning($"[{GetType().Name}] '{name}': el prefab '{prefab.name}' no tiene componente GlassShardDamage. El área de vidrio no hará daño.");
+        }
     }
 
     private void SpawnGlassShard(GameObject prefab, Vector3 position,
@@ -271,6 +282,10 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
             dmg.damagePerSecond = damagePerSec;
             dmg.playerLayer = playerLayer;
             dmg.shardDeathDuration = duration;
+        }
+        else
+        {
+            Debug.LogWarning($"[{GetType().Name}] '{name}': el prefab '{prefab.name}' no tiene componente GlassShardDamage. El shard de estela no hará daño.");
         }
     }
 

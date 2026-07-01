@@ -15,6 +15,11 @@ public class AporiaNest : MonoBehaviour
     #region Unity Events
     private void OnEnable()
     {
+        if (larvaPrefab == null)
+        {
+            Debug.LogWarning($"[AporiaNest] '{name}': larvaPrefab no está asignado. El nido no generará larvas al eclosionar.");
+        }
+
         StartCoroutine(LifeCycle());
     }
 

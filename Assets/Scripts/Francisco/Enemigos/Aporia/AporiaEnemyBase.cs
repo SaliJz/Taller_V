@@ -167,6 +167,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
         SpriteAnimator animator = GetComponentInChildren<SpriteAnimator>();
         if (animator != null) animator.onAnimEvent += HandleAnimEvents;
+        else Debug.LogWarning($"[{GetType().Name}] '{name}': no se encontró SpriteAnimator en los hijos. El evento OnAttackHit nunca se disparará y el enemigo no hará daño.");
 
         InitializeEnemy();
         SetupPools();
@@ -280,6 +281,22 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         {
             Debug.LogWarning($"[{GetType().Name}] '{name}': attackRadius ({attackRadius}) >= dashActivationDistance ({dashActivationDistance}). El dash nunca se activará. Revisar valores en el Inspector.");
         }
+
+        if (dashDuration <= 0f)
+        {
+            Debug.LogWarning($"[{GetType().Name}] '{name}': dashDuration ({dashDuration}) es <= 0. Esto causaría una división por cero durante el dash. Forzando a 0.1s.");
+            dashDuration = 0.1f;
+        }
+
+        if (health <= 0f)
+        {
+            Debug.LogWarning($"[{GetType().Name}] '{name}': health ({health}) es <= 0. El enemigo morirá inmediatamente al spawnear.");
+        }
+
+        if (moveSpeed <= 0f)
+        {
+            Debug.LogWarning($"[{GetType().Name}] '{name}': moveSpeed ({moveSpeed}) es <= 0. El enemigo no podrá moverse.");
+        }
     }
 
     protected virtual void SetupPools() { }
@@ -374,7 +391,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
             if (agent != null && agent.enabled) agent.nextPosition = transform.position;
 
-            if (Vector3.Distance(transform.position, playerTransform.position) < 1.2f)
+            if (playerTransform != null && Vector3.Distance(transform.position, playerTransform.position) < 1.2f)
             {
                 break;
             }
@@ -386,7 +403,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
     {
         if (groundIndicator)
         {
-            groundIndicator.transform.position = hitPoint.position;
+            groundIndicator.transform.position = hitPoint != null ? hitPoint.position : transform.position;
             groundIndicator.SetActive(true);
         }
 
@@ -412,7 +429,8 @@ public abstract class AporiaEnemyBase : MonoBehaviour
 
         if (audioSource && attackSFX) audioSource.PlayOneShot(attackSFX);
 
-        Collider[] targets = Physics.OverlapSphere(hitPoint.position, attackRadius, playerLayer);
+        Vector3 hitOrigin = hitPoint != null ? hitPoint.position : transform.position;
+        Collider[] targets = Physics.OverlapSphere(hitOrigin, attackRadius, playerLayer);
         foreach (var t in targets)
         {
             if (t.TryGetComponent<PlayerHealth>(out var pHealth))
@@ -699,7 +717,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         if (audioSource && deathSFX) audioSource.PlayOneShot(deathSFX);
         if (animCtrl != null) animCtrl.PlayDeath();
 
-        agent.enabled = false;
+        if (agent != null) agent.enabled = false;
         this.enabled = false;
     }
 

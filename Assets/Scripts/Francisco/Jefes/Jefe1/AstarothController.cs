@@ -273,16 +273,15 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
     [Header("Anticipación - Ataque Caos (Cañón)")]
     [SerializeField] private AudioClip canonChargeSFX;
-    [SerializeField, Range(0.5f, 0.8f)] private float canonAnticipationDuration = 0.65f;
+    [SerializeField] private float canonAnticipationDuration = 0.65f;
 
     [Header("Anticipación - Apisonador (Stomp)")]
     [SerializeField] private AudioClip apisonadorLooseScrewsSFX;
-    [SerializeField, Range(0.2f, 0.5f)] private float apisonadorAnticipationDuration = 0.35f;
+    [SerializeField] private float apisonadorAnticipationDuration = 0.35f;
 
     [Header("Anticipación - Pulso Carnal (Pulpo)")]
     [SerializeField] private AudioClip pulsoCarnalViscousSFX;
-    [SerializeField, Range(0.5f, 0.8f)] private float pulsoCarnalAnticipationDuration = 0.65f;
-
+    [SerializeField] private float pulsoCarnalAnticipationDuration = 0.65f;
     #endregion
 
     #region Debug

@@ -75,17 +75,25 @@ public class AporiaEnemyLevel3 : AporiaEnemyBase
 
     protected override void SetupPools()
     {
-        if (tongueVFXPrefab) 
-        { 
-            pooledTongue = Instantiate(tongueVFXPrefab); 
-            pooledTongue.SetActive(false); 
+        if (tongueVFXPrefab)
+        {
+            pooledTongue = Instantiate(tongueVFXPrefab);
+            pooledTongue.SetActive(false);
         }
 
         if (nestPrefab)
         {
-            pooledNest = Instantiate(nestPrefab); 
+            pooledNest = Instantiate(nestPrefab);
             pooledNest.SetActive(false);
-            pooledNest.GetComponent<AporiaNest>()?.SetRateSpawn(currentLarvaSpawnRate); // Configura la tasa de spawn en el AporiaNest
+
+            if (pooledNest.TryGetComponent<AporiaNest>(out var nestComp))
+            {
+                nestComp.SetRateSpawn(currentLarvaSpawnRate);
+            }
+            else
+            {
+                Debug.LogWarning($"[{GetType().Name}] '{name}': nestPrefab '{nestPrefab.name}' no tiene componente AporiaNest. La tasa de spawn de larvas no se configurará.");
+            }
         }
     }
 
@@ -101,7 +109,7 @@ public class AporiaEnemyLevel3 : AporiaEnemyBase
 
         if (audioSource && attackSFX) audioSource.PlayOneShot(attackSFX);
 
-        Vector3 spawnPosition = hitPoint.position;
+        Vector3 spawnPosition = hitPoint != null ? hitPoint.position : transform.position;
 
         if (pooledTongue)
         {
@@ -123,6 +131,11 @@ public class AporiaEnemyLevel3 : AporiaEnemyBase
 
         if (pooledNest)
         {
+            if (pooledNest.activeSelf)
+            {
+                Debug.LogWarning($"[{GetType().Name}] '{name}': el nido ya estaba activo y fue reiniciado antes de completar su ciclo (posible eclosión de larvas perdida).");
+            }
+
             pooledNest.SetActive(false);
             pooledNest.transform.position = spawnPosition;
             pooledNest.SetActive(true);
