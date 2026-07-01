@@ -25,12 +25,6 @@ public class SteamManager : MonoBehaviour
         instance = this;
         DontDestroyOnLoad(gameObject);
 
-        if (SteamAPI.RestartAppIfNecessary(gameAppId))
-        {
-            Application.Quit();
-            return;
-        }
-
         InitializeSteam();
     }
 
