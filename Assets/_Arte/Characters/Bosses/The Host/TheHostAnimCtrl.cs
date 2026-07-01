@@ -2,8 +2,8 @@ using System.Collections;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEngine.SceneManagement;
-using UnityEngine.VFX;
 #endif
+using UnityEngine.VFX;
 
 public class TheHostAnimCtrl : MonoBehaviour
 {
