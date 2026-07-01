@@ -179,11 +179,18 @@ public partial class AstarothController
             yield return null;
         }
 
+        float anticipationTimeout = canonAnticipationDuration + 2f;
+        float anticipationSafetyTimer = 0f;
+        while (!_isInAnticipation && anticipationSafetyTimer < anticipationTimeout)
+        {
+            anticipationSafetyTimer += Time.deltaTime;
+            yield return null;
+        }
+        yield return new WaitUntil(() => !_isInAnticipation);
+
         if (_animCtrl != null) _animCtrl.PlayCanonShot();
 
         yield return WaitForAnimEvent(ANIM_EVENT_CANON_RELEASE, _smashRockTravelDuration);
-
-        yield return PlayAttackAnticipation(canonAnticipationDuration, canonChargeSFX);
 
         if (!_smashImpactCompleted && !_smashRockInFlight)
         {
@@ -249,12 +256,9 @@ public partial class AstarothController
         indicator.gameObject.SetActive(true);
         indicator.localScale = new Vector3(_smashRadius * 2f, 0.05f, _smashRadius * 2f);
 
-        float elapsed = 0f;
-        float lockTime = Mathf.Max(0f, _smashDelay - _smashTargetLockBeforeImpact);
-
-        while (_isSmashing && !_smashRockInFlight && !_smashImpactCompleted)
+        while (_isSmashing && !_smashImpactCompleted)
         {
-            if (_player != null && elapsed < lockTime)
+            if (_player != null && !_smashRockInFlight)
             {
                 _smashTargetPoint = _player.position;
             }
@@ -263,7 +267,6 @@ public partial class AstarothController
             ground.y += _smashIndicatorGroundOffset;
             indicator.position = ground;
 
-            elapsed += Time.deltaTime;
             yield return null;
         }
 
@@ -569,9 +572,19 @@ public partial class AstarothController
         if (_animCtrl != null) _animCtrl.isWalking = false;
         if (_animCtrl != null) _animCtrl.PlayPulpo();
 
-        yield return WaitForAnimEvent(ANIM_EVENT_PULSO_CARNAL_IMPACT, _pulseDelay);
+        // Espera a que AnimEvent_AnticipationPause llegue desde A_Pulpo_Pre
+        // (frame donde los tentáculos están listos para traspasar el suelo)
+        // y que la pausa de anticipación termine.
+        float pulpoAnticipationTimeout = pulsoCarnalAnticipationDuration + 2f;
+        float pulpoAnticipationSafetyTimer = 0f;
+        while (!_isInAnticipation && pulpoAnticipationSafetyTimer < pulpoAnticipationTimeout)
+        {
+            pulpoAnticipationSafetyTimer += Time.deltaTime;
+            yield return null;
+        }
+        yield return new WaitUntil(() => !_isInAnticipation);
 
-        yield return PlayAttackAnticipation(pulsoCarnalAnticipationDuration, pulsoCarnalViscousSFX);
+        yield return WaitForAnimEvent(ANIM_EVENT_PULSO_CARNAL_IMPACT, _pulseDelay);
 
         Vector3 groundPos = GetGroundPosition(transform.position);
 
@@ -760,6 +773,8 @@ public partial class AstarothController
 
     private void InterruptAndPerformStomp()
     {
+        _stompProximityTimer = 0f;
+
         PrepareCombatInterrupt();
         DestroyAllInstantiatedEffects();
         ResetSmashVisuals();
@@ -781,17 +796,34 @@ public partial class AstarothController
         if (_animCtrl != null) _animCtrl.PlayApisonador();
 
         UpdateStompIndicators();
+
+        float stompAnticipationTimeout = apisonadorAnticipationDuration + 2f;
+        float stompAnticipationSafetyTimer = 0f;
+        while (!_isInAnticipation && stompAnticipationSafetyTimer < stompAnticipationTimeout)
+        {
+            stompAnticipationSafetyTimer += Time.deltaTime;
+            yield return null;
+        }
+        yield return new WaitUntil(() => !_isInAnticipation);
+
         SetStompIndicatorsActive(true);
+        Coroutine pullCoroutine = StartCoroutine(PullPlayersToStompCenter());
 
-        yield return PullPlayersToStompCenter();
-
-        yield return WaitForAnimEvent(ANIM_EVENT_APISONADOR_IMPACT, 0.5f);
-
-        yield return PlayAttackAnticipation(apisonadorAnticipationDuration, apisonadorLooseScrewsSFX);
+        yield return WaitForAnimEvent(ANIM_EVENT_APISONADOR_IMPACT, 0.8f);
 
         PerformStompImpact();
 
+        if (pullCoroutine != null)
+        {
+            StopCoroutine(pullCoroutine);
+            if (_activeStompPullVFX != null)
+            {
+                StopStompPullVFX();
+            }
+        }
         SetStompIndicatorsActive(false);
+
+        yield return new WaitForSeconds(0.5f);
 
         if (_animCtrl != null) _animCtrl.ReturnToIdle();
 
