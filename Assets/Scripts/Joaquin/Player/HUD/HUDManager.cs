@@ -85,6 +85,8 @@ public class HUDManager : MonoBehaviour
     #endregion
 
     #region Inspector - Estado Berserker
+
+    [Header("Berserker Effect")]
     [SerializeField] private RectTransform gearSprite;
     [SerializeField] private ShieldSkill berserkerScript;
     [SerializeField] private float gearRotationSpeed = 90f;
@@ -94,6 +96,7 @@ public class HUDManager : MonoBehaviour
 
     #region  Inspector - Healing UI Effect
 
+    [Header("Healing Effect")]
     [SerializeField] private Image heallingBorder;
     [SerializeField] private float healMaxAlpha;
 

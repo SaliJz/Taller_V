@@ -19,13 +19,13 @@ public class StaminaBarUI : MonoBehaviour
 
     [Header("Visual Settings")]
     [SerializeField] private Color fullStaminaColor = new Color(0.2f, 0.8f, 1f); // Azul
-    [SerializeField] private Color midStaminaColor = new Color(1f, 0.8f, 0f); // Amarillo
-    [SerializeField] private Color lowStaminaColor = new Color(1f, 0.2f, 0.2f); // Rojo
+    //[SerializeField] private Color midStaminaColor = new Color(1f, 0.8f, 0f); // Amarillo
+    //[SerializeField] private Color lowStaminaColor = new Color(1f, 0.2f, 0.2f); // Rojo
     [SerializeField] private Color emptyStaminaColor = new Color(0.5f, 0.5f, 0.5f); // Gris
     [Range(0f, 1f)]
     [SerializeField] private float lowStaminaThreshold = 0.25f; // 25%
     [Range(0f, 1f)]
-    [SerializeField] private float midStaminaThreshold = 0.5f; // 50%
+    //[SerializeField] private float midStaminaThreshold = 0.5f; // 50%
 
     [Header("Animation Settings")]
     [SerializeField] private bool useSmoothing = true; // Usar interpolaci�n suave

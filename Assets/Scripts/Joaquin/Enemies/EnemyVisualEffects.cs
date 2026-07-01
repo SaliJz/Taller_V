@@ -56,7 +56,7 @@ public class EnemyVisualEffects : MonoBehaviour
     [SerializeField] private Color toughnessColor = Color.cyan;
 
     [Header("Anticipation Telegraph Blink")]
-    [SerializeField] private float anticipationBlinkInterval = 0.04f;
+    //[SerializeField] private float anticipationBlinkInterval = 0.04f;
     [SerializeField] private Color anticipationBlinkColor = Color.red;
 
     [Header("Damage Visual Settings")]
