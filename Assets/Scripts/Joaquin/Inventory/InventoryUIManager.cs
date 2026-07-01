@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -1216,20 +1217,31 @@ public class InventoryUIManager : MonoBehaviour
 
     private void ApplyConfirmButtonHighlight(int focusIndex)
     {
-        if (confirmButtonImage != null)
+        // if (confirmButtonImage != null)
+        // {
+        //     confirmButtonImage.color = (focusIndex == 0) ? highlightColor : confirmButtonDefaultColor;
+        // }
+        // if (cancelButtonImage != null)
+        // {
+        //     cancelButtonImage.color = (focusIndex == 1) ? highlightColor : confirmButtonDefaultColor;
+        // }
+
+        Button target = (focusIndex == 0) ? confirmReplaceButton : cancelReplaceButton;
+        if (target != null && EventSystem.current != null)
         {
-            confirmButtonImage.color = (focusIndex == 0) ? highlightColor : confirmButtonDefaultColor;
-        }
-        if (cancelButtonImage != null)
-        {
-            cancelButtonImage.color = (focusIndex == 1) ? highlightColor : confirmButtonDefaultColor;
+            EventSystem.current.SetSelectedGameObject(target.gameObject);
         }
     }
 
     private void ResetConfirmButtonHighlights()
     {
-        if (confirmButtonImage != null) confirmButtonImage.color = confirmButtonDefaultColor;
-        if (cancelButtonImage != null) cancelButtonImage.color = confirmButtonDefaultColor;
+        // if (confirmButtonImage != null) confirmButtonImage.color = confirmButtonDefaultColor;
+        // if (cancelButtonImage != null) cancelButtonImage.color = confirmButtonDefaultColor;
+
+        if (EventSystem.current != null)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+        }
     }
 
     #endregion

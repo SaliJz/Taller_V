@@ -26,6 +26,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     [SerializeField] private float pulseSpeed = 2f;
     [Tooltip("Intensidad del pulso (0.3 = 30% de variacion en alpha)")]
     [SerializeField] private float pulseIntensity = 0.3f;
+    [SerializeField] private float hoverScale = 1.2f;
 
     // [Header("Efecto de Seleccion")]
     // [Tooltip("Escala del icono cuando el slot esta seleccionado (ej: 1.25)")]
@@ -173,7 +174,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         //     selectScaleCoroutine = null;
         // }
 
-        if (iconImage != null) iconImage.transform.localScale = Vector3.one;
+        // if (iconImage != null) iconImage.transform.localScale = Vector3.one;
 
         // Restaura el color y la escala base para evitar que el estado visual de hover quede atascado tras recargar la UI.
         if (backgroundImage != null) backgroundImage.color = originalBackgroundColor;
@@ -295,7 +296,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
             backgroundImage.color = Color.Lerp(originalBackgroundColor,
                                                 inventoryManager.GetHighlightColor(), 0.5f);
         }
-        transform.localScale = Vector3.one * 1.05f;
+        transform.localScale = Vector3.one * hoverScale;
 
         // Mostrar el panel descriptivo directamente al hacer hover
         inventoryManager?.ShowItemDetails(itemData, gamepadMode ? SlotRect : null);
