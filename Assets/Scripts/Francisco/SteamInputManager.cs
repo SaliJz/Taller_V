@@ -65,7 +65,13 @@ public class SteamInputManager : MonoBehaviour
 
     private void Start()
     {
-        if (!SteamManager.Initialized) return;
+        if (!SteamManager.Initialized)
+        {
+            Debug.Log("<color=green>[SteamInput] Steam no detectado. Modo Nativo Unity activo. Todo funciona igual que siempre.</color>");
+            return; 
+        }
+
+        Debug.Log("<color=cyan>[SteamInput] Steam detectado. Activando escudo de hardware.</color>");
 
 #if UNITY_EDITOR
         Application.OpenURL("steam://forceinputappid/4858720");
@@ -89,14 +95,8 @@ public class SteamInputManager : MonoBehaviour
         }
 
         InputSystemUIInputModule uiInputModule = FindAnyObjectByType<InputSystemUIInputModule>();
-        if (uiInputModule != null)
-        {
-            uiInputModule.enabled = false;
-            Debug.Log("[SteamInputManager] UI Input Module restringido. Steam gobernará el mando en los menús.");
-        }
-
-        InputSystem.settings.updateMode = InputSettings.UpdateMode.ProcessEventsInFixedUpdate;
-
+        if (uiInputModule != null) uiInputModule.enabled = false;
+        
         foreach (var device in InputSystem.devices)
         {
             if (device is Gamepad)
@@ -105,7 +105,7 @@ public class SteamInputManager : MonoBehaviour
             }
         }
 
-        Debug.Log("<color=#00FFCC>[SteamInputManager]</color> Escudo de hardware total: Todos los gamepads nativos de Unity han sido desactivados.");
+        Debug.Log("<color=#00FFCC>[SteamInputManager]</color> Escudo de hardware aplicado: Control exclusivo para Steam.");
     }
 
     private void Update()

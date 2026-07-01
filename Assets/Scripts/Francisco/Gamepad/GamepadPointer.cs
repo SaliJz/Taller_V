@@ -34,8 +34,6 @@ public class GamepadPointer : MonoBehaviour
     private Vector2 lastWarpedScreenPoint = Vector2.zero;
     private bool hasWarpedOnce = false;
 
-    public bool IsSteamActive => SteamManager.Initialized && SteamInputManager.Instance != null;
-
     public static GamepadPointer Instance { get; private set; }
 
     #region Ciclo De Vida
@@ -82,19 +80,12 @@ public class GamepadPointer : MonoBehaviour
     {
         currentGamepad = Gamepad.current;
 
-        if (IsSteamActive)
+        if (SteamInputManager.Instance != null || currentGamepad != null)
         {
-            isSteamGamepadActive = true;
+            isSteamGamepadActive = SteamInputManager.Instance != null;
             currentActiveDevice = currentGamepad;
             wasGamepadMode = true;
             SetUIMode(false);
-        }
-        else if (currentGamepad != null)
-        {
-            isSteamGamepadActive = false;
-            currentActiveDevice = currentGamepad;
-            wasGamepadMode = false;
-            SetUIMode(true);
         }
         else
         {
@@ -106,7 +97,13 @@ public class GamepadPointer : MonoBehaviour
 
     private void Update()
     {
-        if (SteamManager.Initialized && SteamManager.OverlayActive) 
+        if (!SteamManager.Initialized)
+        {
+            if (uiInputModule != null && !uiInputModule.enabled)
+                uiInputModule.enabled = true;
+        }
+
+        if (SteamManager.Initialized && SteamManager.OverlayActive)
             return;
 
         if (currentGamepad == null)
@@ -118,86 +115,118 @@ public class GamepadPointer : MonoBehaviour
         Vector2 stickValue = Vector2.zero;
         bool isGamepadActive = false;
 
-        if (IsSteamActive) 
+        if (SteamManager.Initialized && SteamInputManager.Instance != null)
         {
             Vector2 moveAxis = SteamInputManager.Instance.GetMoveAxis();
             Vector2 aimAxis = SteamInputManager.Instance.GetAimAxis();
+
             stickValue = aimAxis;
 
-            bool isStickMoving = moveAxis.magnitude > RightStickDeadZone || aimAxis.magnitude > RightStickDeadZone;
-            bool isButtonPressed = SteamInputManager.Instance.GetMeleeAttackPressed()
-                || SteamInputManager.Instance.GetDashPressed()
-                || SteamInputManager.Instance.GetMenuSelectPressed()
-                || SteamInputManager.Instance.GetMenuCancelPressed()
-                || SteamInputManager.Instance.GetMenuUpHeld()
-                || SteamInputManager.Instance.GetMenuDownHeld()
-                || SteamInputManager.Instance.GetMenuLeftHeld()
-                || SteamInputManager.Instance.GetMenuRightHeld();
+            bool isStickMoving =
+                moveAxis.magnitude > RightStickDeadZone ||
+                aimAxis.magnitude > RightStickDeadZone;
+
+            bool isButtonPressed =
+                SteamInputManager.Instance.GetMeleeAttackPressed() ||
+                SteamInputManager.Instance.GetDashPressed() ||
+                SteamInputManager.Instance.GetMenuSelectPressed() ||
+                SteamInputManager.Instance.GetMenuCancelPressed() ||
+                SteamInputManager.Instance.GetMenuUpHeld() ||
+                SteamInputManager.Instance.GetMenuDownHeld() ||
+                SteamInputManager.Instance.GetMenuLeftHeld() ||
+                SteamInputManager.Instance.GetMenuRightHeld();
 
             isGamepadActive = isStickMoving || isButtonPressed;
         }
         else if (currentGamepad != null)
         {
             stickValue = currentGamepad.rightStick.ReadValue();
-            bool isStickMoving = stickValue.magnitude > RightStickDeadZone || currentGamepad.leftStick.ReadValue().magnitude > RightStickDeadZone;
-            bool isButtonPressed = currentGamepad.dpad.IsActuated()
-                || currentGamepad.buttonSouth.wasPressedThisFrame
-                || currentGamepad.buttonEast.wasPressedThisFrame;
+
+            bool isStickMoving =
+                stickValue.magnitude > RightStickDeadZone ||
+                currentGamepad.leftStick.ReadValue().magnitude > RightStickDeadZone;
+
+            bool isButtonPressed =
+                currentGamepad.dpad.IsActuated() ||
+                currentGamepad.buttonSouth.wasPressedThisFrame ||
+                currentGamepad.buttonEast.wasPressedThisFrame;
 
             isGamepadActive = isStickMoving || isButtonPressed;
         }
 
+
         bool isMouseMovedReal = false;
 
-        if (Mouse.current != null)
+        if (Mouse.current != null && canReadMouseInput)
         {
-            if (canReadMouseInput)
-            {
-                isMouseMovedReal = Mouse.current.delta.ReadValue().sqrMagnitude > 0.001f;
-            }
+            isMouseMovedReal =
+                Mouse.current.delta.ReadValue().sqrMagnitude > 0.001f;
         }
 
-        bool isMouseClick = canReadMouseInput && Mouse.current != null && (Mouse.current.leftButton.wasPressedThisFrame || Mouse.current.rightButton.wasPressedThisFrame);
-        bool isKeyboardPressed = Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame;
 
-        bool isMouseOrKeyboardActive = isMouseMovedReal || isMouseClick || isKeyboardPressed;
+        bool isMouseClick =
+            canReadMouseInput &&
+            Mouse.current != null &&
+            (
+                Mouse.current.leftButton.wasPressedThisFrame ||
+                Mouse.current.rightButton.wasPressedThisFrame
+            );
+
+
+        bool isKeyboardPressed =
+            Keyboard.current != null &&
+            Keyboard.current.anyKey.wasPressedThisFrame;
+
+
+        bool isMouseOrKeyboardActive =
+            isMouseMovedReal ||
+            isMouseClick ||
+            isKeyboardPressed;
+
 
         if (isMouseOrKeyboardActive && !isGamepadActive)
         {
-            currentActiveDevice = (isMouseMovedReal || isMouseClick) ? Mouse.current : (InputDevice)Keyboard.current;
+            currentActiveDevice =
+                (isMouseMovedReal || isMouseClick)
+                ? Mouse.current
+                : Keyboard.current;
+
             isSteamGamepadActive = false;
 
             if (wasGamepadMode)
             {
-                Debug.Log($"[GamepadPointer] Control activo cambiado a: RATÓN/TECLADO");
+                Debug.Log("[GamepadPointer] Control activo cambiado a: RATÓN/TECLADO");
+
                 SetUIMode(true);
+
+                EventSystem.current?.SetSelectedGameObject(null);
+
                 wasGamepadMode = false;
             }
         }
         else if (isGamepadActive)
         {
-            currentActiveDevice = (InputDevice)currentGamepad ?? Mouse.current;
-            isSteamGamepadActive = IsSteamActive;
+            currentActiveDevice = currentGamepad;
+            isSteamGamepadActive = SteamManager.Initialized;
 
             if (!wasGamepadMode)
             {
                 Debug.Log("[GamepadPointer] Control activo cambiado a: GAMEPAD");
-                wasGamepadMode = true;
 
-                SetUIMode(false);       
-                RevertToLastSelected(); 
+                SetUIMode(false);
+                wasGamepadMode = true;
+                RevertToLastSelected();
             }
         }
 
-        bool isAnyGamepadActive = IsGamepadMode();       
-        bool isVirtualCursorActive = isSteamGamepadActive;
+        bool isCurrentDeviceGamepad = IsGamepadMode();
 
-        if (isAnyGamepadActive && EventSystem.current?.currentSelectedGameObject != null)
+        if (isCurrentDeviceGamepad && EventSystem.current?.currentSelectedGameObject != null)
         {
             lastSelectedObject = EventSystem.current.currentSelectedGameObject;
         }
 
-        if (isVirtualCursorActive && virtualCursor != null)
+        if (isCurrentDeviceGamepad && virtualCursor != null)
         {
             if (stickValue.magnitude > RightStickDeadZone)
             {
@@ -267,27 +296,20 @@ public class GamepadPointer : MonoBehaviour
         if (enableMouseMode)
         {
             uiInputModule.enabled = true;
-            Cursor.visible = true;
-            if (virtualCursor != null) virtualCursor.gameObject.SetActive(false);
 
-            if (EventSystem.current != null)
-                EventSystem.current.SetSelectedGameObject(null);
+            Cursor.visible = true;
+
+            if (virtualCursor != null)
+                virtualCursor.gameObject.SetActive(false);
         }
         else
         {
+            uiInputModule.enabled = false;
+
             Cursor.visible = false;
 
-            if (IsSteamActive)
-            {
-                uiInputModule.enabled = false;
-                if (virtualCursor != null) virtualCursor.gameObject.SetActive(true);
-                hasWarpedOnce = false;
-            }
-            else
-            {
-                uiInputModule.enabled = true;
-                if (virtualCursor != null) virtualCursor.gameObject.SetActive(false);
-            }
+            if (virtualCursor != null)
+                virtualCursor.gameObject.SetActive(true);
         }
     }
 
@@ -348,7 +370,7 @@ public class GamepadPointer : MonoBehaviour
 
     public Vector2 GetAimDirectionValue()
     {
-        if (IsSteamActive)
+        if (SteamInputManager.Instance != null)
         {
             Vector2 aim = SteamInputManager.Instance.GetAimAxis();
             if (aim.magnitude > RightStickDeadZone) return aim.normalized;
