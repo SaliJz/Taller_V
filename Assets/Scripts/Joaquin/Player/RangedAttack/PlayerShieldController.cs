@@ -16,8 +16,6 @@ public class PlayerShieldController : MonoBehaviour
         public bool canRebound;
         public int maxRebounds;
         public float reboundRadius;
-        public bool canPierce;
-        public int maxPierceTargets;
         public float knockbackForce;
     }
 
@@ -55,7 +53,7 @@ public class PlayerShieldController : MonoBehaviour
     [SerializeField] private float shieldMaxDistance = 30f;
 
     [Tooltip("Cantidad maxima de rebotes del escudo por defecto si no se encuentra PlayerStatsManager.")]
-    [HideInInspector] private int fallbackshieldMaxRebounds = 2;
+    [HideInInspector] private int fallbackshieldMaxRebounds = 1;
     [SerializeField] private int shieldMaxRebounds = 2;
 
     [Tooltip("Radio de rebote del escudo por defecto si no se encuentra PlayerStatsManager.")]
@@ -69,28 +67,31 @@ public class PlayerShieldController : MonoBehaviour
 
     [Header("Configuracion por Etapa - JOVEN")]
     [SerializeField] private int youngShieldDamage = 4;
-    [SerializeField] private float youngShieldSpeed = 30f;
-    [SerializeField] private int youngMaxRebounds = 2;
-    [SerializeField] private float youngReboundRadius = 15f;
+    [SerializeField] private float youngShieldSpeed = 32f;
 
     #endregion
 
     #region Inspector - Configuracion por Etapa ADULTO
 
     [Header("Configuracion por Etapa - ADULTO")]
-    [SerializeField] private int adultShieldDamage = 7;
-    [SerializeField] private float adultShieldSpeed = 25f;
-    [SerializeField] private float adultKnockbackForce = 1.5f;
+    [SerializeField] private int adultShieldDamage = 6;
+    [SerializeField] private float adultShieldSpeed = 20f;
 
     #endregion
 
     #region Inspector - Configuracion por Etapa VIEJO
 
     [Header("Configuracion por Etapa - VIEJO")]
-    [SerializeField] private int elderShieldDamage = 12;
-    [SerializeField] private float elderShieldSpeed = 20f;
-    [SerializeField] private bool elderCanPierce = true;
-    [SerializeField] private int elderMaxPierceTargets = 5;
+    [SerializeField] private int elderShieldDamage = 9;
+    [SerializeField] private float elderShieldSpeed = 16.66f;
+
+    #endregion
+
+    #region Inspector - Empuje del Escudo (compartido por las 3 etapas)
+
+    [Header("Empuje del Escudo")]
+    [Tooltip("Fuerza de empuje base del escudo. Es la misma para Young/Adult/Elder.")]
+    [SerializeField] private float basePushForce = 1.5f;
 
     #endregion
 
@@ -461,8 +462,6 @@ public class PlayerShieldController : MonoBehaviour
                 config.damage,
                 config.speed,
                 config.maxDistance,
-                config.canPierce,
-                config.maxPierceTargets,
                 config.knockbackForce,
                 playerHealth.CurrentLifeStage,
                 isBerserker,
@@ -737,12 +736,10 @@ public class PlayerShieldController : MonoBehaviour
                 damage = Mathf.RoundToInt(finalAttackDamage * damagePowerFactor),
                 speed = finalAttackSpeed * speedPowerFactor,
                 maxDistance = shieldMaxDistance,
-                canRebound = true,
-                maxRebounds = 2,
-                reboundRadius = 15f,
-                canPierce = false,
-                maxPierceTargets = 0,
-                knockbackForce = 0f
+                canRebound = canShieldRebound,
+                maxRebounds = shieldMaxRebounds,
+                reboundRadius = shieldReboundRadius,
+                knockbackForce = basePushForce
             };
         }
 
@@ -754,12 +751,10 @@ public class PlayerShieldController : MonoBehaviour
                     damage = Mathf.RoundToInt(youngShieldDamage * totalDamageFactor),
                     speed = youngShieldSpeed * totalSpeedFactor,
                     maxDistance = shieldMaxDistance,
-                    canRebound = true,
+                    canRebound = canShieldRebound,
                     maxRebounds = shieldMaxRebounds,
                     reboundRadius = shieldReboundRadius,
-                    canPierce = false,
-                    maxPierceTargets = 0,
-                    knockbackForce = 0f
+                    knockbackForce = basePushForce
                 };
 
             case PlayerHealth.LifeStage.Adult:
@@ -768,12 +763,10 @@ public class PlayerShieldController : MonoBehaviour
                     damage = Mathf.RoundToInt(adultShieldDamage * totalDamageFactor),
                     speed = adultShieldSpeed * totalSpeedFactor,
                     maxDistance = shieldMaxDistance,
-                    canRebound = true,
+                    canRebound = canShieldRebound,
                     maxRebounds = shieldMaxRebounds,
-                    reboundRadius = 0f,
-                    canPierce = false,
-                    maxPierceTargets = 0,
-                    knockbackForce = adultKnockbackForce
+                    reboundRadius = shieldReboundRadius,
+                    knockbackForce = basePushForce
                 };
 
             case PlayerHealth.LifeStage.Elder:
@@ -782,12 +775,10 @@ public class PlayerShieldController : MonoBehaviour
                     damage = Mathf.RoundToInt(elderShieldDamage * totalDamageFactor),
                     speed = elderShieldSpeed * totalSpeedFactor,
                     maxDistance = shieldMaxDistance,
-                    canRebound = true,
+                    canRebound = canShieldRebound,
                     maxRebounds = shieldMaxRebounds,
-                    reboundRadius = 0f,
-                    canPierce = elderCanPierce,
-                    maxPierceTargets = elderMaxPierceTargets,
-                    knockbackForce = 0f
+                    reboundRadius = shieldReboundRadius,
+                    knockbackForce = basePushForce
                 };
 
             default:
@@ -796,12 +787,10 @@ public class PlayerShieldController : MonoBehaviour
                     damage = Mathf.RoundToInt(finalAttackDamage * damagePowerFactor),
                     speed = finalAttackSpeed * speedPowerFactor,
                     maxDistance = shieldMaxDistance,
-                    canRebound = true,
-                    maxRebounds = 2,
-                    reboundRadius = 15f,
-                    canPierce = false,
-                    maxPierceTargets = 0,
-                    knockbackForce = 0f
+                    canRebound = canShieldRebound,
+                    maxRebounds = shieldMaxRebounds,
+                    reboundRadius = shieldReboundRadius,
+                    knockbackForce = basePushForce
                 };
         }
     }

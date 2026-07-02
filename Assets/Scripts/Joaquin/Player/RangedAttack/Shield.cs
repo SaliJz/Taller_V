@@ -39,29 +39,28 @@ public class Shield : MonoBehaviour
 
     #endregion
 
+    #region Rebound Damage Scaling
+
+    // Multiplicador de daño según el número de golpe en la secuencia (indice 0 = impacto inicial = 100%).
+    // Índice 1 = primer rebote (50%), índice 2 = segundo rebote (25%), índice 3+ = 25% (se clampea al último valor).
+    private static readonly float[] hitDamageMultipliers = { 1f, 0.5f, 0.25f };
+
+    #endregion
+
     #region Inspector - Rebound Settings
 
     [Header("Rebound Settings")]
     [SerializeField] private bool canRebound = true;
     [SerializeField] private int reboundCount = 0;
-    [SerializeField] private int maxRebounds = 2;
+    [SerializeField] private int maxRebounds = 1;
     [SerializeField] private float reboundDetectionRadius = 15f;
     [SerializeField] private LayerMask enemyLayer;
 
     #endregion
 
-    #region Inspector - Pierce Settings
-
-    [Header("Pierce Settings (Elder)")]
-    [SerializeField] private bool canPierce = false;
-    [SerializeField] private int maxPierceTargets = 5;
-    [SerializeField] private int currentPierceCount = 0;
-
-    #endregion
-
     #region Inspector - Knockback Settings
 
-    [Header("Knockback Settings (Adult)")]
+    [Header("Knockback Settings (Young/Adult/Elder)")]
     [SerializeField] private float knockbackForce = 0f;
 
     #endregion
@@ -318,8 +317,7 @@ public class Shield : MonoBehaviour
     /// <param name="direction"> Orientacion del escudo en la direccion del lanzamiento </param>
     /// <param name="canRebound"> Indica si el escudo puede rebotar entre enemigos </param>
     public void Throw(PlayerShieldController owner, Vector3 direction, bool canRebound, int maxRebounds,
-        float reboundDetectionRadius, float damage, float speed, float distance,
-        bool canPierce, int maxPierceTargets, float knockbackForce, PlayerHealth.LifeStage lifeStage,
+        float reboundDetectionRadius, float damage, float speed, float distance, float knockbackForce, PlayerHealth.LifeStage lifeStage,
         bool isBerserker, float toughnessBonus)
     {
         if (deactivationCoroutine != null)
@@ -344,10 +342,6 @@ public class Shield : MonoBehaviour
         this.canRebound = canRebound;
         this.maxRebounds = maxRebounds;
         this.reboundDetectionRadius = reboundDetectionRadius;
-
-        this.canPierce = canPierce;
-        this.maxPierceTargets = maxPierceTargets;
-        currentPierceCount = 0;
 
         this.knockbackForce = knockbackForce;
         this.currentLifeStage = lifeStage;
@@ -377,7 +371,7 @@ public class Shield : MonoBehaviour
 
         PlayTrailVFX(true);
 
-        ReportDebug($"Escudo lanzado en modo {lifeStage}: Dano={damage}, Pierce={canPierce}, Rebote={canRebound}, ReturnSpeed={currentReturnSpeedMultiplier}x", 1);
+        ReportDebug($"Escudo lanzado en modo {lifeStage}: Dano={damage}, Rebote={canRebound}, ReturnSpeed={currentReturnSpeedMultiplier}x", 1);
     }
 
     #endregion
@@ -443,23 +437,11 @@ public class Shield : MonoBehaviour
                 continue;
             }
 
-            if (canPierce && currentLifeStage == PlayerHealth.LifeStage.Elder)
+            if (hitTargets.Contains(enemy.transform))
             {
-                if (currentPierceCount >= maxPierceTargets)
-                {
-                    ReportDebug($"Maximo de atravesamientos alcanzado ({maxPierceTargets}).", 1);
-                    StartReturning();
-                    return;
-                }
+                continue;
             }
-            else
-            {
-                if (hitTargets.Contains(enemy.transform))
-                {
-                    continue;
-                }
-                hitTargets.Add(enemy.transform);
-            }
+            hitTargets.Add(enemy.transform);
 
             hasHitAnyEnemy = true;
 
@@ -485,8 +467,13 @@ public class Shield : MonoBehaviour
             Vector3 vfxPos = enemyHealth != null ? enemyHealth.ImpactVFXPosition : enemy.transform.position;
             PlayImpactVFX(vfxPos);
 
+            // reboundCount refleja cuántos rebotes ya ocurrieron antes de dicho golpe:
+            // 0 = impacto inicial (100%), 1 = tras el primer rebote (50%), 2 = tras el segundo (25%), 3+ = 25%.
+            int hitMultiplierIndex = Mathf.Min(reboundCount, hitDamageMultipliers.Length - 1);
+            float scaledAttackDamage = attackDamage * hitDamageMultipliers[hitMultiplierIndex];
+
             bool isCritical;
-            float finalDamage = CriticalHitSystem.CalculateDamage(attackDamage, transform, enemy.transform, out isCritical);
+            float finalDamage = CriticalHitSystem.CalculateDamage(scaledAttackDamage, transform, enemy.transform, out isCritical);
 
             IDamageable damageable = enemy.GetComponent<IDamageable>();
             if (damageable != null)
@@ -515,12 +502,12 @@ public class Shield : MonoBehaviour
                 }
                 else
                 {
-                    ExecuteAttack(enemy.gameObject, attackDamage);
-                    ReportDebug($"Golpe a {enemy.name}: Enviando {attackDamage:F2} de dano de tipo {shieldDamageType}", 1);
+                    ExecuteAttack(enemy.gameObject, scaledAttackDamage);
+                    ReportDebug($"Golpe a {enemy.name}: Enviando {scaledAttackDamage:F2} de dano de tipo {shieldDamageType} (multiplicador de golpe x{hitDamageMultipliers[hitMultiplierIndex]})", 1);
                 }
             }
 
-            if (currentLifeStage == PlayerHealth.LifeStage.Adult && knockbackForce > 0)
+            if (knockbackForce > 0)
             {
                 if (toughness == null || !toughness.HasToughness)
                 {
@@ -546,12 +533,6 @@ public class Shield : MonoBehaviour
             {
                 explosiveHead.StartPriming(true);
             }
-
-            if (canPierce && currentLifeStage == PlayerHealth.LifeStage.Elder)
-            {
-                currentPierceCount++;
-                ReportDebug($"Pierce count: {currentPierceCount}/{maxPierceTargets}", 1);
-            }
         }
 
         // Ejecutar el Zoom global consolidado del frame
@@ -570,16 +551,7 @@ public class Shield : MonoBehaviour
             return;
         }
 
-        if (canPierce && currentLifeStage == PlayerHealth.LifeStage.Elder)
-        {
-            if (currentPierceCount >= maxPierceTargets)
-            {
-                StartReturning();
-            }
-            return;
-        }
-
-        if (canRebound && currentLifeStage == PlayerHealth.LifeStage.Young)
+        if (canRebound)
         {
             Transform nextTarget = FindNextReboundTarget();
             if (nextTarget != null)
@@ -657,21 +629,13 @@ public class Shield : MonoBehaviour
             }
 
             float distanceToTarget = Vector3.Distance(transform.position, targetCollider.transform.position);
-            float distanceToPlayer = Vector3.Distance(transform.position, returnTarget.position);
 
-            // El rebote es valido solo si el enemigo esta mas cerca que el jugador
-            if (distanceToTarget < distanceToPlayer)
+            // Cualquier enemigo no golpeado dentro del radio de deteccion es un candidato valido.
+            if (distanceToTarget < closestDistance)
             {
-                if (distanceToTarget < closestDistance)
-                {
-                    closestDistance = distanceToTarget;
-                    bestTarget = targetCollider.transform;
-                    ReportDebug("Candidato a rebote: " + bestTarget.name + " a " + distanceToTarget + "m", 1);
-                }
-            }
-            else
-            {
-                ReportDebug("Enemigo " + targetCollider.name + " omitido (mas lejos que el jugador).", 1);
+                closestDistance = distanceToTarget;
+                bestTarget = targetCollider.transform;
+                ReportDebug("Candidato a rebote: " + bestTarget.name + " a " + distanceToTarget + "m", 1);
             }
         }
 
