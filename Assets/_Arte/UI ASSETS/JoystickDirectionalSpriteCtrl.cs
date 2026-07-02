@@ -1,3 +1,5 @@
+using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -8,21 +10,38 @@ using UnityEngine.InputSystem.Controls;
 /// </summary>
 public class JoystickDirectionalSpriteCtrl : MonoBehaviour
 {
+    #region References
+
     [Header ("References")]
     [SerializeField] GameObject directionalObject;
     [SerializeField] Transform directionalTransform;
+
+    #endregion
+
+    #region Inspector - Settings
 
     [Header("Directional Sprite Settings")]
     [SerializeField] private float deadzone = 0.2f;
     [SerializeField] private float rotationSmoothSpeed = 20f;
     [SerializeField] private float angleOffset = 0f;
+    [SerializeField] private float timeToVanish = 1f;
 
+    #endregion
+
+    #region Internal Variables
+
+    SpriteRenderer r;
     private bool lastInputWasGamepad;
     private float currentAngle;
     private float targetAngle;
     private bool hasValidDirection;
     private float baseEulerX;
     private float baseEulerY;
+    private Coroutine delayToVanishRoutine;
+
+    #endregion
+
+    #region Unity Lifecycle
 
     void Awake()
     {
@@ -30,6 +49,8 @@ public class JoystickDirectionalSpriteCtrl : MonoBehaviour
 
         baseEulerX = directionalTransform.localEulerAngles.x;
         baseEulerY = directionalTransform.localEulerAngles.y;
+
+        r = directionalObject.GetComponent<SpriteRenderer>();
 
     }
 
@@ -41,7 +62,7 @@ public class JoystickDirectionalSpriteCtrl : MonoBehaviour
         hasValidDirection = stick.magnitude >= deadzone;
 
         bool shouldShow = lastInputWasGamepad && hasValidDirection;
-        SetDirectionalVisible(shouldShow);
+        HandleVisiblity(shouldShow);
 
         if (!shouldShow) return;
 
@@ -52,6 +73,10 @@ public class JoystickDirectionalSpriteCtrl : MonoBehaviour
 
         directionalTransform.rotation = Quaternion.Euler(baseEulerX, baseEulerY, currentAngle);
     }
+
+    #endregion
+
+    #region Internal Methods
 
     private void DetectLastInput()
     {
@@ -64,6 +89,24 @@ public class JoystickDirectionalSpriteCtrl : MonoBehaviour
             Mouse.current.rightButton.wasPressedThisFrame)))
         {
             lastInputWasGamepad = false;
+        }
+    }
+
+    private void HandleVisiblity(bool shouldShow)
+    {
+        if (shouldShow)
+        {
+            if (delayToVanishRoutine != null)
+            {
+                StopCoroutine(delayToVanishRoutine);
+                delayToVanishRoutine = null;
+            }
+            SetDirectionalVisible(true);
+            r.color = Color.white;
+        }
+        else if (directionalObject != null && directionalObject.activeSelf && delayToVanishRoutine == null)
+        {
+            delayToVanishRoutine = StartCoroutine(DelayDeactivateDirectional(timeToVanish));
         }
     }
 
@@ -86,5 +129,24 @@ public class JoystickDirectionalSpriteCtrl : MonoBehaviour
         }
     }
 
+    private IEnumerator DelayDeactivateDirectional(float duration)
+    {
+        float elapse = 0;
 
+        while (elapse < duration)
+        {
+            elapse += Time.deltaTime;
+            float t = elapse/duration;
+            float alpha = Mathf.Lerp(1, 0, t);
+            r.color = new Color(r.color.r, r.color.g, r.color.b, alpha);
+
+            yield return null;
+        }
+
+        r.color = new Color(r.color.r, r.color.g, r.color.b, 0);
+        SetDirectionalVisible(false);
+        delayToVanishRoutine = null;
+    }
+
+    #endregion
 }
