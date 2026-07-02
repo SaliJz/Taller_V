@@ -42,6 +42,7 @@ public class ShopManager : MonoBehaviour
 
     [Header("Mechanic Item Guarantee")]
     [SerializeField, Range(0, 3)] private int minimumMechanicItems = 1;
+    [SerializeField, Range(1, 3)] private int maximumMechanicItems = 2;
 
     [Header("UI References")]
     [SerializeField] private GameObject shopUIPanel;
@@ -76,6 +77,11 @@ public class ShopManager : MonoBehaviour
 
     [Header("Purchase Cooldown")]
     [SerializeField] private float purchaseCooldown = 0.5f;
+
+    [Header("=== DEBUG ===")]
+    [SerializeField] private List<ShopItem> debugAvailableItems = new();
+    [SerializeField] private List<ShopItem> debugCurrentShopItems = new();
+    [SerializeField] private List<ShopItem> debugPurchasedItems = new();
 
     #endregion
 
@@ -141,8 +147,12 @@ public class ShopManager : MonoBehaviour
         playerStatsManager = FindAnyObjectByType<PlayerStatsManager>();
         inventoryManager = FindAnyObjectByType<InventoryManager>();
 
-        if (shopUIPanel != null) shopUIPanel.SetActive(false);
+        if (shopUIPanel != null)
+            shopUIPanel.SetActive(false);
+
         ResetCostBar();
+
+        UpdateDebugLists();
     }
 
     private void OnEnable()
@@ -177,12 +187,25 @@ public class ShopManager : MonoBehaviour
         foreach (GameObject prefab in shopItemPrefabs)
         {
             if (prefab == null) continue;
+
             ShopItemDisplay display = prefab.GetComponent<ShopItemDisplay>();
-            if (display != null && display.shopItemData != null && !display.shopItemData.isAmulet)
+
+            if (display != null &&
+                display.shopItemData != null &&
+                !display.shopItemData.isAmulet)
             {
                 availablePrefabs.Add(prefab);
             }
         }
+
+        availablePrefabs.RemoveAll(prefab =>
+        {
+            ShopItemDisplay display = prefab.GetComponent<ShopItemDisplay>();
+            return display != null &&
+                   InventoryManager.CurrentRunItems.Contains(display.shopItemData);
+        });
+
+        UpdateDebugLists();
     }
 
     public void InitializeGachaponEffectPool()
@@ -236,6 +259,27 @@ public class ShopManager : MonoBehaviour
     public void SetMerchantPriceModifier(float modifier)
     {
         merchantPriceModifier = modifier;
+    }
+
+    private void UpdateDebugLists()
+    {
+        debugAvailableItems.Clear();
+        debugCurrentShopItems.Clear();
+        debugPurchasedItems.Clear();
+
+        foreach (GameObject prefab in availablePrefabs)
+        {
+            if (prefab == null) continue;
+
+            ShopItemDisplay display = prefab.GetComponent<ShopItemDisplay>();
+            if (display != null && display.shopItemData != null)
+                debugAvailableItems.Add(display.shopItemData);
+        }
+
+        if (currentShopItems != null)
+            debugCurrentShopItems.AddRange(currentShopItems);
+
+        debugPurchasedItems.AddRange(InventoryManager.CurrentRunItems);
     }
 
     public ShopItem GetRandomRewardItem()
@@ -362,15 +406,25 @@ public class ShopManager : MonoBehaviour
     {
         _shopSpawnLocations = spawnLocations;
         currentShopItems = new List<ShopItem>();
+        spawnedPrefabs.Clear();
+        _spawnedItemObjects.Clear();
 
-        if (spawnLocations == null || spawnLocations.Count == 0 || availablePrefabs.Count == 0)
+        if (spawnLocations == null || spawnLocations.Count == 0)
         {
-            Debug.LogWarning("[ShopManager] No spawn locations or no prefabs available.");
+            Debug.LogWarning("[ShopManager] No spawn locations.");
             return;
         }
 
+        if (availablePrefabs.Count == 0)
+        {
+            Debug.Log("[ShopManager] Todos los items fueron comprados. Reiniciando pool.");
+
+            InventoryManager.CurrentRunItems.Clear();
+            InitializeShopItemPools();
+        }
+
         List<GameObject> prefabsToSpawn = new List<GameObject>();
-        int itemsToSelectCount = Mathf.Min(spawnLocations.Count, availablePrefabs.Count); 
+        int itemsToSelectCount = Mathf.Min(spawnLocations.Count, availablePrefabs.Count);
 
         List<GameObject> mechanicPool = availablePrefabs
             .Where(p => p != null && p.GetComponent<ShopItemDisplay>()?.shopItemData?.IsEffectItem == true)
@@ -386,7 +440,7 @@ public class ShopManager : MonoBehaviour
         {
             bool spawnMechanic = false;
 
-            if (mechanicItemsGenerated >= 2)
+            if (mechanicItemsGenerated >= maximumMechanicItems)
             {
                 spawnMechanic = false;
             }
@@ -411,9 +465,8 @@ public class ShopManager : MonoBehaviour
 
             if (picked != null)
             {
-                prefabsToSpawn.Add(picked);
-                availablePrefabs.Remove(picked); 
-                targetPool.Remove(picked);      
+                prefabsToSpawn.Add(picked);  
+                targetPool.Remove(picked);   
 
                 if (spawnMechanic)
                 {
@@ -421,6 +474,8 @@ public class ShopManager : MonoBehaviour
                 }
             }
         }
+
+        EnsureMinimumMechanicItems(prefabsToSpawn, mechanicPool, ref mechanicItemsGenerated);
 
         for (int i = 0; i < prefabsToSpawn.Count; i++)
         {
@@ -431,6 +486,30 @@ public class ShopManager : MonoBehaviour
 
             ShopItem data = prefab.GetComponent<ShopItemDisplay>()?.shopItemData;
             if (data != null) currentShopItems.Add(data);
+        }
+
+        UpdateDebugLists();
+    }
+
+    private void EnsureMinimumMechanicItems(List<GameObject> prefabsToSpawn, List<GameObject> mechanicPool, ref int mechanicItemsGenerated)
+    {
+        if (mechanicItemsGenerated >= minimumMechanicItems) return;
+
+        for (int i = prefabsToSpawn.Count - 1; i >= 0 && mechanicItemsGenerated < minimumMechanicItems; i--)
+        {
+            GameObject candidate = prefabsToSpawn[i];
+            bool isMechanic = candidate.GetComponent<ShopItemDisplay>()?.shopItemData?.IsEffectItem == true;
+            if (isMechanic) continue;
+
+            GameObject replacement = SelectWeightedPrefab(mechanicPool);
+            if (replacement == null) break;
+
+            prefabsToSpawn[i] = replacement;
+            availablePrefabs.Remove(replacement);
+            mechanicPool.Remove(replacement);
+            availablePrefabs.Add(candidate);
+
+            mechanicItemsGenerated++;
         }
     }
 
@@ -549,6 +628,7 @@ public class ShopManager : MonoBehaviour
         }
         _spawnedItemObjects.Clear();
         spawnedPrefabs.Clear();
+        UpdateDebugLists();
     }
 
     public void RerollShop(List<Transform> spawnLocations, Transform parent)
@@ -563,9 +643,9 @@ public class ShopManager : MonoBehaviour
         }
 
         playerHealth.TakeDamage(baseRerollCost, true);
-        availablePrefabs.AddRange(spawnedPrefabs);
         DestroyCurrentItems();
         GenerateShopItems(spawnLocations, parent);
+        UpdateDebugLists();
     }
 
     public void DisableRemainingItems()
@@ -699,11 +779,12 @@ public class ShopManager : MonoBehaviour
 
         if (!item.isAmulet)
         {
-            GameObject purchasedPrefab = availablePrefabs.FirstOrDefault(p =>
+            GameObject purchasedPrefab = shopItemPrefabs?.FirstOrDefault(p =>
                 p?.GetComponent<ShopItemDisplay>()?.shopItemData == item);
             if (purchasedPrefab != null)
             {
                 availablePrefabs.Remove(purchasedPrefab);
+                spawnedPrefabs.Remove(purchasedPrefab);
             }
         }
 
@@ -721,6 +802,7 @@ public class ShopManager : MonoBehaviour
         }
 
         InventoryUIManager.Instance?.NotifyItemAdded(item);
+        UpdateDebugLists();
         return true;
     }
 
