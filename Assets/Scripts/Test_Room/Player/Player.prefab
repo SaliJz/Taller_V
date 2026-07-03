@@ -12642,7 +12642,6 @@ GameObject:
   - component: {fileID: 9211243997880812482}
   - component: {fileID: 8984845218185550205}
   - component: {fileID: 7736777102245202428}
-  - component: {fileID: 3496064612389669479}
   - component: {fileID: 2888951513960009550}
   - component: {fileID: 4602725535163461728}
   - component: {fileID: 1443727538697155938}
@@ -12803,7 +12802,7 @@ MonoBehaviour:
   sprtRenderer: {fileID: 0}
   statsManager: {fileID: 7736777102245202428}
   combatActionManager: {fileID: 0}
-  blockSystem: {fileID: 3496064612389669479}
+  blockSystem: {fileID: 0}
   audioController: {fileID: 0}
   animCtrl: {fileID: 0}
   shaderCtrl: {fileID: 0}
@@ -12846,7 +12845,7 @@ MonoBehaviour:
   meleeAttack: {fileID: 9211243997880812482}
   shieldController: {fileID: 3158206734398763717}
   playerMovement: {fileID: 595312439969399503}
-  playerBlockSystem: {fileID: 3496064612389669479}
+  playerBlockSystem: {fileID: 0}
   playerHealth: {fileID: 6110564483166717353}
 --- !u!114 &595312439969399503
 MonoBehaviour:
@@ -13081,60 +13080,6 @@ MonoBehaviour:
   guiCornerPadding: 8
   guiPersistPosition: 1
   guiPrefsKey: PlayerStatsManager_DebugGUI_Pos
---- !u!114 &3496064612389669479
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6679960082821164706}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7afed240824c20d4396387fd63ed0d81, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerAudioController: {fileID: 2888951513960009550}
-  playerHealth: {fileID: 6110564483166717353}
-  playerAnimCtrl: {fileID: 0}
-  shieldForwardOverride: {fileID: 301956730850477674}
-  durabilitySlider: {fileID: 8835140165235724630}
-  durabilityFillImage: {fileID: 2798298684343753190}
-  durabilityPercentageText: {fileID: 0}
-  durabilityUIGroup: {fileID: 794747590875115879}
-  blockParticles: {fileID: 0}
-  blockVFX: {fileID: 0}
-  blockBreakVFX: {fileID: 0}
-  blockingEnabled: 0
-  frontBlockAngle: 330
-  useMouseRotation: 1
-  rotationSpeed: 30
-  counterRotationDuration: 0.25
-  maxDurability: 32
-  currentDurability: 0
-  durabilityRechargeTime: 1.5
-  durabilityDrainRate: 7.5
-  minimumDurabilityToUse: 0
-  rechargeDelay: 0.5
-  drainDelay: 0.5
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 128
-  autoAimRange: 20
-  stunDurationYoung: 0
-  stunDurationAdult: 0
-  stunDurationElder: 0
-  hideDelay: 2
-  useSmoothing: 1
-  smoothSpeed: 5
-  pulseWhenLow: 1
-  pulseSpeed: 2
-  pulseMinScale: 0.95
-  pulseMaxScale: 1.05
-  fullDurabilityColor: {r: 0, g: 1, b: 0.9843745, a: 1}
-  midDurabilityColor: {r: 0, g: 0.7058824, b: 0.7058824, a: 1}
-  lowDurabilityColor: {r: 0, g: 0.627451, b: 0.627451, a: 1}
-  emptyDurabilityColor: {r: 0, g: 0.19607843, b: 0.19607843, a: 1}
-  debugMode: 1
 --- !u!114 &2888951513960009550
 MonoBehaviour:
   m_ObjectHideFlags: 0
