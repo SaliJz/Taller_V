@@ -25,12 +25,6 @@ public class SteamManager : MonoBehaviour
         instance = this;
         DontDestroyOnLoad(gameObject);
 
-        if (SteamAPI.RestartAppIfNecessary(gameAppId))
-        {
-            Application.Quit();
-            return;
-        }
-
         InitializeSteam();
     }
 
@@ -70,6 +64,9 @@ public class SteamManager : MonoBehaviour
             return;
         }
 
+        System.Environment.SetEnvironmentVariable("SteamAppId", "4858720");
+        System.Environment.SetEnvironmentVariable("RestartAppIfNecessary", "false");
+
         try
         {
             isInitialized = SteamAPI.Init();
@@ -83,6 +80,7 @@ public class SteamManager : MonoBehaviour
         if (isInitialized)
         {
             gameOverlayActivatedCallback = Callback<GameOverlayActivated_t>.Create(OnGameOverlayActivated);
+            Debug.Log("[Steamworks] Inicializado correctamente con el ID: " + SteamUtils.GetAppID());
         }
         else
         {
@@ -92,7 +90,7 @@ public class SteamManager : MonoBehaviour
 
     private void HandleInitFailure(string reason)
     {
-        Debug.LogError($"[Steamworks] Init failed: {reason}");
+        Debug.Log($"[Steamworks] Init failed: {reason}"); 
         isInitialized = false;
     }
 

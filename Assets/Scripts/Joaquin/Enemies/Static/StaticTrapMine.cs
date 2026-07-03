@@ -24,6 +24,12 @@ public class StaticTrapMine : BaseTrapMine
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+
+        if (rb == null)
+        {
+            Debug.LogError($"[{name}] Falta el componente Rigidbody en la mina.", this);
+            enabled = false;
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -47,6 +53,15 @@ public class StaticTrapMine : BaseTrapMine
     /// <param name="SpawnVFX">VFX se instancia
     public void InitializeTrap(string wordToDisplay, float dmg, bool SpawnVFX = true)
     {
+        if (rb == null)
+        {
+            Debug.LogError($"[{name}] InitializeTrap llamado sin Rigidbody valido. Destruyendo mina.", this);
+            Destroy(gameObject);
+            return;
+        }
+
+        CancelInvoke(nameof(ExplodePublic)); // seguridad ante reuso por pooling
+
         rb.useGravity = true;
         rb.isKinematic = false;
 
@@ -55,7 +70,7 @@ public class StaticTrapMine : BaseTrapMine
         Vector3 randomBounce = new Vector3(Random.Range(-2f, 2f), 3f, Random.Range(-2f, 2f));
         rb.AddForce(randomBounce, ForceMode.Impulse);
 
-        if(!SpawnVFX) explosionSpherePrefab = null;
+        if (!SpawnVFX) explosionSpherePrefab = null;
 
         Invoke(nameof(ExplodePublic), duration);
     }

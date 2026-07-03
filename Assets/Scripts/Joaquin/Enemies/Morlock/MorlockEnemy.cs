@@ -1,3 +1,4 @@
+/*
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -983,7 +984,8 @@ public class MorlockEnemy : MonoBehaviour
     //{
     //    ChangeState(MorlockState.Pursue3);
     //}
-    */
+    
 
     #endregion
 }
+*/

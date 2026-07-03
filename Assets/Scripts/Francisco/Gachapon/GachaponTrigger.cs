@@ -144,6 +144,17 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         }
     }
 
+    private void Update()
+    {
+        if (SteamInputManager.Instance != null && SteamInputManager.Instance.GetInteractPressed())
+        {
+            if (playerIsNear && !isActivated && !isAnimating)
+            {
+                StartCoroutine(AnimateAndPull());
+            }
+        }
+    }
+
     public void OnInteract(InputAction.CallbackContext context)
     {
         if (!context.started) return;

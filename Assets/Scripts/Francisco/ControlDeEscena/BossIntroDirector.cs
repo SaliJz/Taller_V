@@ -19,6 +19,9 @@ public class BossIntroDirector : MonoBehaviour
     [Header("User Interface")]
     [SerializeField] private GameObject bossIntroCanvas;
 
+    [Header("Camera Configuration")]
+    [SerializeField] private string canvasCameraName = "BossIntroCamera"; 
+
     [Header("Shake Settings")]
     [SerializeField] private float shakeDelayAfterUiActive = 0.5f;
 
@@ -43,7 +46,7 @@ public class BossIntroDirector : MonoBehaviour
 
     private void Awake()
     {
-        canvasCamera = FindNonMainCamera();
+        canvasCamera = FindCameraByName();
 
         if (canvasCamera != null)
         {
@@ -88,7 +91,7 @@ public class BossIntroDirector : MonoBehaviour
         FindActiveCinemachineCamera();
         DisableBossLogicScripts();
 
-        if (canvasCamera == null) canvasCamera = FindNonMainCamera();
+        if (canvasCamera == null) canvasCamera = FindCameraByName();
         if (canvasCamera != null)
         {
             canvasCamera.cullingMask = LayerMask.GetMask("Enemy");
@@ -173,14 +176,28 @@ public class BossIntroDirector : MonoBehaviour
         }
     }
 
-    private Camera FindNonMainCamera()
+    private Camera FindCameraByName()
     {
-        Camera[] allCameras = Camera.allCameras;
-        foreach (Camera cam in allCameras)
+        if (string.IsNullOrEmpty(canvasCameraName))
         {
-            if (!cam.CompareTag("MainCamera"))
-                return cam;
+            Debug.LogWarning($"[{name}] El nombre de la cámara no está configurado en el inspector.");
+            return null;
         }
+
+        GameObject camObject = GameObject.Find(canvasCameraName);
+
+        if (camObject != null)
+        {
+            Camera cam = camObject.GetComponent<Camera>();
+            if (cam != null) return cam;
+
+            Debug.LogError($"[{name}] Se encontró el objeto '{canvasCameraName}', pero no tiene un componente Camera adjunto.");
+        }
+        else
+        {
+            Debug.LogWarning($"[{name}] No se pudo encontrar ninguna cámara con el nombre '{canvasCameraName}' en la jerarquía.");
+        }
+
         return null;
     }
 

@@ -90,6 +90,12 @@ public class TransitionInteractive : MonoBehaviour
                nextFadeIdx < fadeEvents.Count ||
                nextAnimIdx < animationEvents.Count)
         {
+            if (Time.timeScale == 0f)
+            {
+                yield return null;
+                continue;
+            }
+
             while (nextAnimIdx < animationEvents.Count && elapsedTime >= animationEvents[nextAnimIdx].timeTrigger)
             {
                 var ev = animationEvents[nextAnimIdx];
@@ -101,7 +107,15 @@ public class TransitionInteractive : MonoBehaviour
             while (nextFadeIdx < fadeEvents.Count && elapsedTime >= fadeEvents[nextFadeIdx].timeTrigger)
             {
                 if (FadeController.Instance != null)
-                    yield return StartCoroutine(FadeController.Instance.FadeOut(null, null));
+                {
+                    yield return StartCoroutine(FadeController.Instance.FadeOut(
+                        onStart: null,
+                        onUpdate: null,
+                        onComplete: null,
+                        fadeColor: null,
+                        respectPause: true
+                    ));
+                }
                 nextFadeIdx++;
             }
 
@@ -172,7 +186,7 @@ public class TransitionInteractive : MonoBehaviour
                         playerAnimCtrl.PlayState(
                             PlayerAnimCtrl.PlayerState.idle,
                             BaseAnimCtrl<PlayerAnimCtrl.PlayerState>.AnimPriority.dash,
-                            true 
+                            true
                         );
                     }
                 }
@@ -300,7 +314,16 @@ public class TransitionInteractive : MonoBehaviour
         }
         while (nextFadeIdx < fadeEvents.Count && currentElapsedTime >= fadeEvents[nextFadeIdx].timeTrigger)
         {
-            if (FadeController.Instance != null) StartCoroutine(FadeController.Instance.FadeOut(null, null));
+            if (FadeController.Instance != null)
+            {
+                StartCoroutine(FadeController.Instance.FadeOut(
+                    onStart: null,
+                    onUpdate: null,
+                    onComplete: null,
+                    fadeColor: null,
+                    respectPause: true
+                ));
+            }
             nextFadeIdx++;
         }
     }
@@ -323,8 +346,8 @@ public class TransitionInteractive : MonoBehaviour
         camFwd.y = 0f;
         camFwd.Normalize();
 
-        float h = Vector3.Dot(worldDir, camRight);   
-        float v = Vector3.Dot(worldDir, camFwd);     
+        float h = Vector3.Dot(worldDir, camRight);
+        float v = Vector3.Dot(worldDir, camFwd);
 
         h = Mathf.Abs(h) > 0.3f ? Mathf.Sign(h) : 0f;
         v = Mathf.Abs(v) > 0.3f ? Mathf.Sign(v) : 0f;

@@ -27,7 +27,6 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
     [SerializeField] private PlayerMeleeAttack meleeAttack;
     [SerializeField] private PlayerShieldController shieldController;
     [SerializeField] private PlayerMovement playerMovement;
-    [SerializeField] private PlayerBlockSystem playerBlockSystem;
     [SerializeField] private PlayerHealth playerHealth;
 
     #endregion
@@ -86,12 +85,10 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
         meleeAttack = GetComponent<PlayerMeleeAttack>();
         shieldController = GetComponent<PlayerShieldController>();
         playerMovement = GetComponent<PlayerMovement>();
-        playerBlockSystem = GetComponent<PlayerBlockSystem>();
 
         if (meleeAttack == null) ReportDebug("PlayerMeleeAttack no encontrado.", 3);
         if (shieldController == null) ReportDebug("PlayerShieldController no encontrado.", 3);
         if (playerMovement == null) ReportDebug("PlayerMovement no encontrado.", 3);
-        if (playerBlockSystem == null) ReportDebug("PlayerBlockSystem no encontrado.", 3);
     }
 
     private void Update()
@@ -284,18 +281,6 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
             }
         }
 
-        if (playerBlockSystem != null && playerBlockSystem.IsStunned())
-        {
-            ReportDebug("Accion bloqueada: Jugador aturdido por rotura de escudo.", 2);
-            return;
-        }
-
-        if (playerBlockSystem != null && playerBlockSystem.IsBlockingState())
-        {
-            ReportDebug("Accion bloqueada: No se puede esquivar mientras se bloquea.", 2);
-            return;
-        }
-
         if (meleeAttack != null && meleeAttack.CanAttack())
         {
             StartCoroutine(ExecuteActionRoutine(CombatActionType.MeleeAttack, meleeAttack.ExecuteAttackFromManager()));
@@ -317,18 +302,6 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
                 ReportDebug("Accion bloqueada: Jugador muerto.", 2);
                 return;
             }
-        }
-
-        if (playerBlockSystem != null && playerBlockSystem.IsStunned())
-        {
-            ReportDebug("Accion bloqueada: Jugador aturdido por rotura de escudo.", 2);
-            return;
-        }
-
-        if (playerBlockSystem != null && playerBlockSystem.IsBlockingState())
-        {
-            ReportDebug("Accion bloqueada: No se puede esquivar mientras se bloquea.", 2);
-            return;
         }
 
         if (shieldController != null && shieldController.HasShield)
@@ -355,18 +328,6 @@ public class PlayerCombatActionManager : MonoBehaviour, PlayerControlls.ICombatA
                 ReportDebug("Accion bloqueada: Jugador muerto.", 2);
                 return;
             }
-        }
-
-        if (playerBlockSystem != null && playerBlockSystem.IsStunned())
-        {
-            ReportDebug("Accion bloqueada: Jugador aturdido por rotura de escudo.", 2);
-            return;
-        }
-
-        if (playerBlockSystem != null && playerBlockSystem.IsBlockingState())
-        {
-            ReportDebug("Accion bloqueada: No se puede esquivar mientras se bloquea.", 2);
-            return;
         }
 
         if (CanQueueDash())

@@ -82,22 +82,6 @@ public partial class AstarothController
         }
     }
 
-    private void StartDefensiveBlockVisualFeedback()
-    {
-        if (_enemyVisualEffects != null)
-        {
-            _enemyVisualEffects.StartArmorGlow();
-        }
-    }
-
-    private void StopDefensiveBlockVisualFeedback()
-    {
-        if (_enemyVisualEffects != null)
-        {
-            _enemyVisualEffects.StopArmorGlow();
-        }
-    }
-
     private void ExecuteAttack(GameObject target, Vector3 position, float damageAmount)
     {
         if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
@@ -273,12 +257,6 @@ public partial class AstarothController
             Gizmos.DrawSphere(_roomCenter, 0.5f);
             Gizmos.DrawWireSphere(_roomCenter, _roomMaxRadius);
         }
-
-        //if (_stompPullRadius > 0)
-        //{
-        //    Gizmos.color = Color.green;
-        //    Gizmos.DrawSphere(transform.position, _stompPullRadius);
-        //}
     }
 
     private void OnDrawGizmosSelected()
@@ -293,9 +271,6 @@ public partial class AstarothController
 
             Gizmos.color = new Color(0.8f, 0.55f, 0.2f, 0.5f);
             Gizmos.DrawRay(transform.position, transform.forward * _mudWaveMinChargeDistance);
-
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawWireSphere(transform.position, _defensiveBlockExplosionRadius);
         }
     }
 

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -95,8 +96,8 @@ public class InventoryUIManager : MonoBehaviour
     [SerializeField] private Image confirmButtonImage;
     [Tooltip("Fondo del boton cancelar para iluminarlo al navegar con mando.")]
     [SerializeField] private Image cancelButtonImage;
-    [Tooltip("Color base de los botones del panel de confirmacion cuando no estan seleccionados.")]
-    [SerializeField] private Color confirmButtonDefaultColor = new Color(0.2f, 0.2f, 0.2f, 1f);
+    // [Tooltip("Color base de los botones del panel de confirmacion cuando no estan seleccionados.")]
+    // [SerializeField] private Color confirmButtonDefaultColor = new Color(0.2f, 0.2f, 0.2f, 1f);
 
     [Header("Lock Settings")]
     [Tooltip("Define si el jugador tiene permitido cerrar el inventario en el estado actual.")]
@@ -652,6 +653,12 @@ public class InventoryUIManager : MonoBehaviour
     /// </summary>
     public void RefreshDisplay()
     {
+        goldenSlots.RemoveAll(s => s == null);
+        col2Slots.RemoveAll(s => s == null);
+        col3Slots.RemoveAll(s => s == null);
+        col1AboveSlots.RemoveAll(s => s == null);
+        col1BelowSlots.RemoveAll(s => s == null);
+
         foreach (var s in goldenSlots) s.ClearSlot();
         foreach (var s in col2Slots) s.ClearSlot();
         foreach (var s in col3Slots) s.ClearSlot();
@@ -1216,20 +1223,31 @@ public class InventoryUIManager : MonoBehaviour
 
     private void ApplyConfirmButtonHighlight(int focusIndex)
     {
-        if (confirmButtonImage != null)
+        // if (confirmButtonImage != null)
+        // {
+        //     confirmButtonImage.color = (focusIndex == 0) ? highlightColor : confirmButtonDefaultColor;
+        // }
+        // if (cancelButtonImage != null)
+        // {
+        //     cancelButtonImage.color = (focusIndex == 1) ? highlightColor : confirmButtonDefaultColor;
+        // }
+
+        Button target = (focusIndex == 0) ? confirmReplaceButton : cancelReplaceButton;
+        if (target != null && EventSystem.current != null)
         {
-            confirmButtonImage.color = (focusIndex == 0) ? highlightColor : confirmButtonDefaultColor;
-        }
-        if (cancelButtonImage != null)
-        {
-            cancelButtonImage.color = (focusIndex == 1) ? highlightColor : confirmButtonDefaultColor;
+            EventSystem.current.SetSelectedGameObject(target.gameObject);
         }
     }
 
     private void ResetConfirmButtonHighlights()
     {
-        if (confirmButtonImage != null) confirmButtonImage.color = confirmButtonDefaultColor;
-        if (cancelButtonImage != null) cancelButtonImage.color = confirmButtonDefaultColor;
+        // if (confirmButtonImage != null) confirmButtonImage.color = confirmButtonDefaultColor;
+        // if (cancelButtonImage != null) cancelButtonImage.color = confirmButtonDefaultColor;
+
+        if (EventSystem.current != null)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+        }
     }
 
     #endregion

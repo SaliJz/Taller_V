@@ -13,7 +13,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         Moving,
         Attacking,
         SpecialAbility,
-        DefensiveBlock,
         MudWave
     }
 
@@ -66,6 +65,9 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     [SerializeField] private float _stompTriggerDistance = 5f;
     [SerializeField] private float _stompCooldown = 8f;
 
+    [Header("Apisonador - Proximity Timer")]
+    [SerializeField] private float _stompProximityRequiredTime = 1.5f;
+
     [Header("Apisonador - Pull")]
     [SerializeField] private float _stompPullRadius = 8f;
     [SerializeField] private float _stompPullDuration = 0.5f;
@@ -82,38 +84,12 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     [SerializeField] private GameObject _stompVFXPrefab;
 
     private float _stompTimer = 0f;
+    private float _stompProximityTimer = 0f;
     private bool _isStomping = false;
+    private bool _isInAnticipation = false;
+    private Coroutine _anticipationCoroutine = null;
 
     private GameObject _activeStompPullVFX;
-
-    #endregion
-
-    #region Ability: Defensive Block
-
-    [Header("Ability: Bloqueo Defensivo")]
-    [SerializeField] private bool _enableDefensiveBlock = true;
-    [SerializeField] private int _defensiveBlockHitLimit = 3;
-    [SerializeField] private float _defensiveBlockHitWindow = 3f;
-    [SerializeField] private float _defensiveBlockInvulnerableDuration = 1.5f;
-    [SerializeField] private float _defensiveBlockExplosionExpandDuration = 0.35f;
-    [SerializeField] private float _defensiveBlockExplosionDamage = 15f;
-    [SerializeField] private float _defensiveBlockExplosionRadius = 6f;
-    [SerializeField] private float _defensiveBlockKnockbackForce = 10f;
-    [SerializeField] private float _defensiveBlockCooldown = 8f;
-    [SerializeField] private bool _defensiveBlockCanTriggerAnytime = true;
-    [SerializeField] private GameObject _defensiveBlockWarningPrefab;
-    [SerializeField] private GameObject _defensiveBlockExplosionPrefab;
-
-    private bool _defensiveBlockPending;
-    private float _defensiveBlockCooldownTimer;
-    private readonly Queue<float> _recentPlayerHitTimes = new Queue<float>();
-    private EnemyVisualEffects _enemyVisualEffects;
-    private Renderer[] _bossRenderers;
-    private Color[] _bossOriginalColors;
-    private bool _isDefensiveBlocking;
-    private bool _defensiveBlockWindowActive;
-    private int _hitsAfterStomp;
-    private float _defensiveBlockWindowStart;
 
     #endregion
 
@@ -134,6 +110,9 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     [SerializeField] private float _mudWaveAnimatorSpeedMultiplier = 1.8f;
     [SerializeField] private GameObject _mudWaveWarningPrefab;
 
+    [Header("Ola de Lodo - Recovery")]
+    [SerializeField] private float _mudWaveRecoveryTime = 1f;
+
     [Header("Ola de Lodo - Wind VFX")]
     [SerializeField] private GameObject _mudWaveWindVFXRoot;
 
@@ -142,9 +121,9 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     private float _mudWaveCooldownTimer;
 
     #endregion
-    [Header("Ola de Lodo - Recovery")]
-    [SerializeField] private float _mudWaveRecoveryTime = 1f;
+
     #region Ability: Attack 1 (Whip)
+
     [Header("Tiempos del Ciclo de Combate")]
     [SerializeField] private float _shortMoveDuration = 3f;
     [SerializeField] private float _longMoveDuration = 5f;
@@ -184,7 +163,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     [Header("Attack 2 Ground Indicator")]
     [SerializeField] private Transform _smashGroundIndicator;
     [SerializeField] private GameObject _smashGroundIndicatorPrefab;
-    [SerializeField] private float _smashTargetLockBeforeImpact = 0.5f;
+    //[SerializeField] private float _smashTargetLockBeforeImpact = 0.5f;
     [SerializeField] private float _smashIndicatorGroundOffset = 0.08f;
 
     private bool _isSmashing;
@@ -221,10 +200,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     [SerializeField] private float _movementSpeedForPulse = 10f;
     [SerializeField] private float _pulseDelay = 1.05f;
 
-    [Header("Evolucion Pulso Carnal")]
-    [SerializeField] private float _speedBuffPerPulse = 0.20f;
-
-    private float _currentEvolutionMultiplier = 1.0f;
     private bool _isUsingSpecialAbility;
     private readonly float[] _healthThresholdsForPulse = { 0.7f, 0.4f };
     private bool _isSpecialAbilityPending = false;
@@ -305,15 +280,17 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
     [Header("Anticipación - Ataque Caos (Cañón)")]
     [SerializeField] private AudioClip canonChargeSFX;
-    [SerializeField, Range(0.5f, 0.8f)] private float canonAnticipationDuration = 0.65f;
+    [SerializeField] private float canonAnticipationDuration = 0.65f;
 
-    [Header("Anticipación - Apisonador (Stomp / Block)")]
+    bool smashAnticipationEnded;
+
+    [Header("Anticipación - Apisonador (Stomp)")]
     [SerializeField] private AudioClip apisonadorLooseScrewsSFX;
-    [SerializeField, Range(0.2f, 0.5f)] private float apisonadorAnticipationDuration = 0.35f;
+    [SerializeField] private float apisonadorAnticipationDuration = 0.35f;
 
     [Header("Anticipación - Pulso Carnal (Pulpo)")]
     [SerializeField] private AudioClip pulsoCarnalViscousSFX;
-    [SerializeField, Range(0.5f, 0.8f)] private float pulsoCarnalAnticipationDuration = 0.65f;
+    [SerializeField] private float pulsoCarnalAnticipationDuration = 0.65f;
 
     #endregion
 
@@ -333,6 +310,14 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
     #endregion
 
+    #region Internal State Variables
+
+    private EnemyVisualEffects _enemyVisualEffects;
+    private Renderer[] _bossRenderers;
+    private Color[] _bossOriginalColors;
+
+    #endregion
+
     #region Unity Lifecycle
 
     private void Awake()
@@ -340,8 +325,8 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         if (_enemyHealth == null) _enemyHealth = GetComponent<EnemyHealth>();
         if (_navMeshAgent == null) _navMeshAgent = GetComponent<NavMeshAgent>();
         if (_animCtrl == null) _animCtrl = GetComponentInChildren<TheWeightAnimCtrl>();
-        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
         if (_enemyVisualEffects == null) _enemyVisualEffects = GetComponent<EnemyVisualEffects>();
+        if (audioSource == null) audioSource = GetComponentInChildren<AudioSource>();
 
         if (_vcam == null)
         {
@@ -419,7 +404,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
                 _navMeshAgent.isStopped = true;
                 _navMeshAgent.velocity = Vector3.zero;
             }
-
             return;
         }
 
@@ -444,26 +428,35 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
         float distanceToPlayer = Vector3.Distance(transform.position, _player.position);
 
-        UpdateDefensiveBlockWindow();
         UpdateMudWaveTrigger(distanceToPlayer);
 
-        if (_isDefensiveBlocking || _isMudWaving) return;
+        if (_isMudWaving) return;
 
-        if (distanceToPlayer < _stompTriggerDistance &&
+        bool playerIsClose = distanceToPlayer < _stompTriggerDistance &&
             _stompTimer <= 0f &&
             !_isStomping &&
             !_isAttackingWithWhip &&
             !_isSmashing &&
-            !_isDefensiveBlocking &&
-            !_isMudWaving)
+            !_isMudWaving;
+
+        if (playerIsClose)
         {
-            InterruptAndPerformStomp();
-            return;
+            _stompProximityTimer += Time.deltaTime;
+
+            if (_stompProximityTimer >= _stompProximityRequiredTime)
+            {
+                _stompProximityTimer = 0f;
+                InterruptAndPerformStomp();
+                return;
+            }
+        }
+        else
+        {
+            _stompProximityTimer = 0f;
         }
 
         if (!_isCombatLoopActive &&
             !_isStomping &&
-            !_isDefensiveBlocking &&
             !_isMudWaving &&
             !_isAttackingWithWhip &&
             !_isSmashing &&
@@ -474,17 +467,13 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         }
 
         _stompTimer -= Time.deltaTime;
-
-        if (_defensiveBlockCooldownTimer > 0f)
-        {
-            _defensiveBlockCooldownTimer -= Time.deltaTime;
-        }
     }
 
     #endregion
 
     #region Animation Events
 
+    private const string ANIM_EVENT_ANTICIPATION_PAUSE = "AnimEvent_AnticipationPause";
     private const string ANIM_EVENT_WHIP_WINDUP_DONE = "WhipWindupDone";
     private const string ANIM_EVENT_WHIP_IMPACT = "WhipImpact";
     private const string ANIM_EVENT_APISONADOR_IMPACT = "ApisonadorImpact";
@@ -493,36 +482,49 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
     public void HandleAnimEvents(string eventName)
     {
-        // Si alguna corrutina está esperando justo este evento, libérala.
-        // La lógica (daño, lanzamientos, etc.) se ejecuta en la propia
-        // corrutina justo después del yield, evitando doble disparo si
-        // además se activa el fallback por timeout.
+        if (eventName == ANIM_EVENT_ANTICIPATION_PAUSE)
+        {
+            StartAnticipationPause();
+            return;
+        }
+
         if (_pendingAnimEvent == eventName)
         {
             _pendingAnimEvent = null;
         }
     }
 
-    /// <summary>
-    /// Espera a que llegue un Anim Event con el nombre indicado, o hasta que
-    /// transcurra el timeout (fallback de seguridad si el clip no tiene el evento).
-    /// </summary>
-    private IEnumerator WaitForAnimEvent(string eventName, float timeout = ANIM_EVENT_TIMEOUT)
+    private void StartAnticipationPause()
     {
-        _pendingAnimEvent = eventName;
-        float elapsed = 0f;
+        if (_isDead) return;
 
-        while (_pendingAnimEvent == eventName && elapsed < timeout)
-        {
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        _pendingAnimEvent = null;
+        if (_anticipationCoroutine != null) StopCoroutine(_anticipationCoroutine);
+        _anticipationCoroutine = StartCoroutine(AnticipationRoutine());
     }
 
-    private IEnumerator PlayAttackAnticipation(float duration, AudioClip sfx)
+    private IEnumerator AnticipationRoutine()
     {
+        _isInAnticipation = true;
+
+        float duration;
+        AudioClip sfx;
+
+        if (_isSmashing)
+        {
+            duration = canonAnticipationDuration;
+            sfx = canonChargeSFX;
+        }
+        else if (_isStomping)
+        {
+            duration = apisonadorAnticipationDuration;
+            sfx = apisonadorLooseScrewsSFX;
+        }
+        else
+        {
+            duration = pulsoCarnalAnticipationDuration;
+            sfx = pulsoCarnalViscousSFX;
+        }
+
         if (_animCtrl != null) _animCtrl.PauseAnimation();
 
         if (audioSource != null && sfx != null)
@@ -543,6 +545,42 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         yield return new WaitForSeconds(duration);
 
         if (_animCtrl != null) _animCtrl.ResumeAnimation();
+
+        _isInAnticipation = false;
+        _anticipationCoroutine = null;
+    }
+
+    private void CancelAnticipation()
+    {
+        if (_anticipationCoroutine != null)
+        {
+            StopCoroutine(_anticipationCoroutine);
+            _anticipationCoroutine = null;
+        }
+
+        if (_animCtrl != null) _animCtrl.ResumeAnimation();
+        if (_animCtrl != null) _animCtrl.StopAnticipationShake();
+        if (_enemyVisualEffects != null) _enemyVisualEffects.CancelAnticipationBlink();
+
+        _isInAnticipation = false;
+    }
+
+    /// <summary>
+    /// Espera a que llegue un Anim Event con el nombre indicado, o hasta que
+    /// transcurra el timeout (fallback de seguridad si el clip no tiene el evento).
+    /// </summary>
+    private IEnumerator WaitForAnimEvent(string eventName, float timeout = ANIM_EVENT_TIMEOUT)
+    {
+        _pendingAnimEvent = eventName;
+        float elapsed = 0f;
+
+        while (_pendingAnimEvent == eventName && elapsed < timeout)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        _pendingAnimEvent = null;
     }
 
     private void CacheSmashRockTransform()
@@ -639,21 +677,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
         while (true)
         {
-            if (_defensiveBlockPending && !_isDefensiveBlocking)
-            {
-                _defensiveBlockPending = false;
-                _currentState = BossState.DefensiveBlock;
-
-                yield return DefensiveBlockSequence();
-
-                ResetAttackState();
-
-                _currentState = BossState.Moving;
-                _combatPatternStep = _resumeCombatStep;
-
-                continue;
-            }
-
             if (_player != null && _currentState == BossState.Moving)
             {
                 float distanceToPlayer = Vector3.Distance(transform.position, _player.position);
@@ -837,34 +860,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         }
 
         _hitsReceivedFromPlayer++;
-        RegisterDefensiveBlockHit();
-    }
-
-    private void RegisterDefensiveBlockHit()
-    {
-        if (!_enableDefensiveBlock) return;
-        if (_isDead) return;
-        if (_isDefensiveBlocking) return;
-        if (_defensiveBlockPending) return;
-        if (_currentState == BossState.SpecialAbility) return;
-        if (_defensiveBlockCooldownTimer > 0f) return;
-
-        float now = Time.time;
-
-        _recentPlayerHitTimes.Enqueue(now);
-
-        while (_recentPlayerHitTimes.Count > 0 &&
-               now - _recentPlayerHitTimes.Peek() > _defensiveBlockHitWindow)
-        {
-            _recentPlayerHitTimes.Dequeue();
-        }
-
-        if (_recentPlayerHitTimes.Count <= _defensiveBlockHitLimit) return;
-
-        _recentPlayerHitTimes.Clear();
-        _defensiveBlockPending = true;
-        _defensiveBlockCooldownTimer = _defensiveBlockCooldown;
-        _resumeCombatStep = _combatPatternStep;
     }
 
     private void HandleEnemyHealthChange(float newCurrentHealth, float newMaxHealth)
@@ -887,7 +882,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         _isSmashing = false;
         _isUsingSpecialAbility = false;
         _isEnraged = false;
-        _isDefensiveBlocking = false;
         _isMudWaving = false;
 
         if (_enemyHealth != null) _enemyHealth.SetDynamicVulnerability(0f);
@@ -900,8 +894,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         SetStompIndicatorsActive(false);
         StopStompPullVFX();
         ResetSmashVisuals();
-        StopDefensiveBlockVisualFeedback();
-        _recentPlayerHitTimes.Clear();
 
         if (_navMeshAgent != null)
         {
@@ -938,7 +930,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
                 bool attackInProgress =
                     _isAttackingWithWhip ||
                     _isSmashing ||
-                    _isDefensiveBlocking ||
                     _isMudWaving ||
                     _isStomping;
 
@@ -968,7 +959,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
         {
             if (!_isAttackingWithWhip &&
                 !_isSmashing &&
-                !_isDefensiveBlocking &&
                 !_isMudWaving &&
                 !_isStomping)
             {
@@ -992,7 +982,6 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
         _isAttackingWithWhip = false;
         _isSmashing = false;
-        _isDefensiveBlocking = false;
         _isMudWaving = false;
         _smashRockInFlight = false;
         _smashImpactCompleted = false;

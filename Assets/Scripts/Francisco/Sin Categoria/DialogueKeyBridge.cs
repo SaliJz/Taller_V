@@ -121,6 +121,13 @@ public class DialogueInputBridge : MonoBehaviour
         currentPresses = 0;
         float timer = 0f;
 
+        bool weEnabledAction = false;
+        if (step.actionToWait != null && step.actionToWait.action != null && !step.actionToWait.action.enabled)
+        {
+            step.actionToWait.action.Enable();
+            weEnabledAction = true;
+        }
+
         int targetPresses = Mathf.Max(1, step.requiredPresses);
         while (currentPresses < targetPresses)
         {
@@ -145,21 +152,22 @@ public class DialogueInputBridge : MonoBehaviour
 
             yield return null;
         }
+
+        if (weEnabledAction && step.actionToWait.action != null)
+        {
+            step.actionToWait.action.Disable();
+        }
     }
 
     private bool GetInput(SequenceStep step)
     {
-        bool inputSystemPressed =
-            step.actionToWait != null &&
-            step.actionToWait.action != null &&
-            step.actionToWait.action.WasPressedThisFrame();
-
-        bool steamPressed = false;
-
-        if (SteamInputManager.Instance != null)
+        bool inputSystemPressed = false;
+        if (step.actionToWait != null && step.actionToWait.action != null && step.actionToWait.action.enabled)
         {
-            steamPressed = CheckSteamInput(step.steamAction);
+            inputSystemPressed = step.actionToWait.action.WasPressedThisFrame();
         }
+
+        bool steamPressed = SteamInputManager.Instance != null && CheckSteamInput(step.steamAction);
 
         return inputSystemPressed || steamPressed;
     }

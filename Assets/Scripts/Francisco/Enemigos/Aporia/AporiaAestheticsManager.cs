@@ -47,7 +47,11 @@ public class AporiaAestheticsManager : MonoBehaviour
     {
         float t = 0;
         MeshRenderer mr = target.GetComponent<MeshRenderer>();
-        if (mr == null) yield break;
+        if (mr == null)
+        {
+            Debug.LogWarning($"[AporiaAestheticsManager] '{name}': no se encontró MeshRenderer en '{target.name}'. El efecto Glitch no se reproducirá (¿usa SkinnedMeshRenderer u otro renderer?).");
+            yield break;
+        }
 
         while (t < dur)
         {

@@ -6378,11 +6378,8 @@ MonoBehaviour:
   staminaText: {fileID: 0}
   staminaBarContainer: {fileID: 2619967812660916852}
   fullStaminaColor: {r: 1, g: 1, b: 1, a: 1}
-  midStaminaColor: {r: 1, g: 0.78431374, b: 0, a: 1}
-  lowStaminaColor: {r: 1, g: 0.5882353, b: 0, a: 1}
   emptyStaminaColor: {r: 1, g: 0.39215687, b: 0, a: 1}
   lowStaminaThreshold: 0.25
-  midStaminaThreshold: 0.5
   useSmoothing: 1
   smoothSpeed: 5
   pulseWhenLow: 1
@@ -12645,7 +12642,6 @@ GameObject:
   - component: {fileID: 9211243997880812482}
   - component: {fileID: 8984845218185550205}
   - component: {fileID: 7736777102245202428}
-  - component: {fileID: 3496064612389669479}
   - component: {fileID: 2888951513960009550}
   - component: {fileID: 4602725535163461728}
   - component: {fileID: 1443727538697155938}
@@ -12653,6 +12649,7 @@ GameObject:
   - component: {fileID: 530321809443592086}
   - component: {fileID: 4047647040947986490}
   - component: {fileID: 8923847246354400208}
+  - component: {fileID: 6243466924862909791}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -12675,6 +12672,7 @@ Transform:
   m_Children:
   - {fileID: 7848094727345952618}
   - {fileID: 3328275919596765956}
+  - {fileID: 8275344029547401978}
   - {fileID: 3969153631071029061}
   - {fileID: 5494151711966022061}
   - {fileID: 301956730850477674}
@@ -12804,7 +12802,7 @@ MonoBehaviour:
   sprtRenderer: {fileID: 0}
   statsManager: {fileID: 7736777102245202428}
   combatActionManager: {fileID: 0}
-  blockSystem: {fileID: 3496064612389669479}
+  blockSystem: {fileID: 0}
   audioController: {fileID: 0}
   animCtrl: {fileID: 0}
   shaderCtrl: {fileID: 0}
@@ -12847,7 +12845,7 @@ MonoBehaviour:
   meleeAttack: {fileID: 9211243997880812482}
   shieldController: {fileID: 3158206734398763717}
   playerMovement: {fileID: 595312439969399503}
-  playerBlockSystem: {fileID: 3496064612389669479}
+  playerBlockSystem: {fileID: 0}
   playerHealth: {fileID: 6110564483166717353}
 --- !u!114 &595312439969399503
 MonoBehaviour:
@@ -12874,7 +12872,6 @@ MonoBehaviour:
   stepInterval: 0.35
   baseDashDistance: 10
   baseDashCooldown: 0.15
-  dashDistance: 7.5
   dashDuration: 0.35
   traversableLayers:
     serializedVersion: 2
@@ -12885,7 +12882,6 @@ MonoBehaviour:
   minEffectiveDashDistance: 0.75
   dashGroundSampleStep: 0.2
   dashGroundProbeHeight: 1.5
-  dashGroundProbeDistance: 3
   dashGroundedGrace: 0.12
   dashStepOffsetOverride: 0.125
   dashObstacleSkin: 0.08
@@ -12936,15 +12932,11 @@ MonoBehaviour:
   canShieldRebound: 1
   youngShieldDamage: 4
   youngShieldSpeed: 24
-  youngMaxRebounds: 1
-  youngReboundRadius: 15
   adultShieldDamage: 6
   adultShieldSpeed: 20
-  adultKnockbackForce: 0
   elderShieldDamage: 9
   elderShieldSpeed: 16.66
-  elderCanPierce: 0
-  elderMaxPierceTargets: 5
+  basePushForce: 1.5
   throwAnimationDuration: 0.15
 --- !u!114 &9211243997880812482
 MonoBehaviour:
@@ -13088,60 +13080,6 @@ MonoBehaviour:
   guiCornerPadding: 8
   guiPersistPosition: 1
   guiPrefsKey: PlayerStatsManager_DebugGUI_Pos
---- !u!114 &3496064612389669479
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6679960082821164706}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7afed240824c20d4396387fd63ed0d81, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerAudioController: {fileID: 2888951513960009550}
-  playerHealth: {fileID: 6110564483166717353}
-  playerAnimCtrl: {fileID: 0}
-  shieldForwardOverride: {fileID: 301956730850477674}
-  durabilitySlider: {fileID: 8835140165235724630}
-  durabilityFillImage: {fileID: 2798298684343753190}
-  durabilityPercentageText: {fileID: 0}
-  durabilityUIGroup: {fileID: 794747590875115879}
-  blockParticles: {fileID: 0}
-  blockVFX: {fileID: 0}
-  blockBreakVFX: {fileID: 0}
-  blockingEnabled: 0
-  frontBlockAngle: 330
-  useMouseRotation: 1
-  rotationSpeed: 30
-  counterRotationDuration: 0.25
-  maxDurability: 32
-  currentDurability: 0
-  durabilityRechargeTime: 1.5
-  durabilityDrainRate: 7.5
-  minimumDurabilityToUse: 0
-  rechargeDelay: 0.5
-  drainDelay: 0.5
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 128
-  autoAimRange: 20
-  stunDurationYoung: 0
-  stunDurationAdult: 0
-  stunDurationElder: 0
-  hideDelay: 2
-  useSmoothing: 1
-  smoothSpeed: 5
-  pulseWhenLow: 1
-  pulseSpeed: 2
-  pulseMinScale: 0.95
-  pulseMaxScale: 1.05
-  fullDurabilityColor: {r: 0, g: 1, b: 0.9843745, a: 1}
-  midDurabilityColor: {r: 0, g: 0.7058824, b: 0.7058824, a: 1}
-  lowDurabilityColor: {r: 0, g: 0.627451, b: 0.627451, a: 1}
-  emptyDurabilityColor: {r: 0, g: 0.19607843, b: 0.19607843, a: 1}
-  debugMode: 1
 --- !u!114 &2888951513960009550
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13430,6 +13368,24 @@ MonoBehaviour:
   healthZoomDuration: 0.1
   toughnessZoomAmount: 0.15
   toughnessZoomDuration: 0.1
+--- !u!114 &6243466924862909791
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6679960082821164706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d17894ec0b575f74d9fdb68dbda2629f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  directionalObject: {fileID: 8830273621205229298}
+  directionalTransform: {fileID: 8275344029547401978}
+  deadzone: 0.2
+  rotationSmoothSpeed: 20
+  angleOffset: 45
+  timeToVanish: 1
 --- !u!1 &6769764421561134128
 GameObject:
   m_ObjectHideFlags: 0
@@ -14605,6 +14561,93 @@ MonoBehaviour:
   panelRect: {fileID: 8580119628922800193}
   statsTextDisplay: {fileID: 903914064942595187}
   worldOffset: {x: 10, y: -3.5, z: 0}
+--- !u!1 &8830273621205229298
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8275344029547401978}
+  - component: {fileID: 8791173245146366913}
+  m_Layer: 0
+  m_Name: DirectionalGamePadSprite
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8275344029547401978
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8830273621205229298}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0.7071068, w: 0}
+  m_LocalPosition: {x: 0, y: -0.54, z: 0}
+  m_LocalScale: {x: 3.6943464, y: 3.6943464, z: 3.6943464}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4792795074512361542}
+  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 180}
+--- !u!212 &8791173245146366913
+SpriteRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8830273621205229298}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -1
+  m_Sprite: {fileID: 21300000, guid: 6586a06646f7f7347846d318ffe45a45, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_MaskInteraction: 0
+  m_SpriteSortPoint: 0
 --- !u!1 &9014051762720541307
 GameObject:
   m_ObjectHideFlags: 0

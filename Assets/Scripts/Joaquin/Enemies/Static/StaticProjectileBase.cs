@@ -27,6 +27,14 @@ public abstract class StaticProjectileBase : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         wordTrail = GetComponent<MorlockProjectileWordTrail>();
+
+        if (rb == null)
+        {
+            Debug.LogError($"[{name}] Falta el componente Rigidbody en el proyectil.", this);
+            enabled = false;
+            return;
+        }
+
         rb.useGravity = false;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         originPosition = transform.position;
@@ -37,6 +45,14 @@ public abstract class StaticProjectileBase : MonoBehaviour
         speed = pSpeed;
         damage = pDamage;
         if (wordTrail != null) wordTrail.InitializeWord(pWord);
+
+        if (rb == null)
+        {
+            Debug.LogError($"[{name}] Initialize llamado sin Rigidbody valido. Destruyendo proyectil.", this);
+            Destroy(gameObject);
+            return;
+        }
+
         rb.linearVelocity = transform.forward * speed;
         Destroy(gameObject, lifetime);
     }

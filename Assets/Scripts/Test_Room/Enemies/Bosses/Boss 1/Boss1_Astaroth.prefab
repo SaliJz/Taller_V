@@ -1588,6 +1588,7 @@ MonoBehaviour:
   _safeDistance: 4
   _stompTriggerDistance: 5
   _stompCooldown: 2
+  _stompProximityRequiredTime: 1.5
   _stompPullRadius: 24
   _stompPullDuration: 2
   _stompPullSpeed: 7
@@ -1599,18 +1600,6 @@ MonoBehaviour:
   _stompKnockbackForce: 10
   _stompImpactIndicatorObject: {fileID: 6967666018307541542}
   _stompVFXPrefab: {fileID: 0}
-  _enableDefensiveBlock: 0
-  _defensiveBlockHitLimit: 4
-  _defensiveBlockHitWindow: 3
-  _defensiveBlockInvulnerableDuration: 1.5
-  _defensiveBlockExplosionExpandDuration: 0.45
-  _defensiveBlockExplosionDamage: 15
-  _defensiveBlockExplosionRadius: 8.5
-  _defensiveBlockKnockbackForce: 10
-  _defensiveBlockCooldown: 8
-  _defensiveBlockCanTriggerAnytime: 0
-  _defensiveBlockWarningPrefab: {fileID: 356800748809167506, guid: bf656853fe45a28478947726e3813e8c, type: 3}
-  _defensiveBlockExplosionPrefab: {fileID: 5460280037415485855, guid: 305641f2b748d164ab7c12d1bc6018cd, type: 3}
   _enableMudWave: 1
   _mudWaveTriggerDistance: 10
   _mudWaveFleeDuration: 0
@@ -1624,8 +1613,8 @@ MonoBehaviour:
   _mudWaveKnockbackForce: 15
   _mudWaveAnimatorSpeedMultiplier: 1.4
   _mudWaveWarningPrefab: {fileID: 4420126913089400018, guid: 58e3111c53fc3904c8e8dd1d4ed19f40, type: 3}
-  _mudWaveWindVFXRoot: {fileID: 1903618004850249334}
   _mudWaveRecoveryTime: 0.5
+  _mudWaveWindVFXRoot: {fileID: 1903618004850249334}
   _shortMoveDuration: 7.5
   _longMoveDuration: 7.5
   _whipDamageOrigin: {fileID: 6711169147769174049}
@@ -1639,7 +1628,7 @@ MonoBehaviour:
   _smashRockHeldFollowTarget: {fileID: 4103773840209656309}
   _smashRockScale: 7
   _smashRockHitRadius: 7
-  _smashRockTravelDuration: 0.25
+  _smashRockTravelDuration: 0.75
   _smashRockTravelCurve:
     serializedVersion: 2
     m_Curve:
@@ -1687,7 +1676,6 @@ MonoBehaviour:
   _calculateRoomRadiusOnStart: 1
   _movementSpeedForPulse: 10
   _pulseDelay: 2.25
-  _speedBuffPerPulse: 0
   _stompWarningPrefab: {fileID: 6660308544926178198, guid: 4819f89c015191d42947f71035b9aaf3, type: 3}
   _whipTelegraphPrefab: {fileID: 6660308544926178198, guid: 4819f89c015191d42947f71035b9aaf3, type: 3}
   _smashWarningPrefab: {fileID: 6660308544926178198, guid: 4819f89c015191d42947f71035b9aaf3, type: 3}
@@ -2476,7 +2464,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 141235832004141871, guid: 06560b28426f4104095c3e679515fab3, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 24.681526
+      value: -9.237322
       objectReference: {fileID: 0}
     - target: {fileID: 222941028517763162, guid: 06560b28426f4104095c3e679515fab3, type: 3}
       propertyPath: m_Layer

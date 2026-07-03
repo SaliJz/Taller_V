@@ -26,10 +26,18 @@ public class StaticProjectileLevel2 : StaticProjectileBase
             if (mineInstance.TryGetComponent<StaticTrapMine>(out var trapScript))
             {
                 //Instancia de explosión distinta al colisionar con el player
-                Instantiate(PlayerImpactVFX, transform.position, PlayerImpactVFX.transform.rotation);
+                if (PlayerImpactVFX != null)
+                {
+                    Instantiate(PlayerImpactVFX, transform.position, PlayerImpactVFX.transform.rotation);
+                }
 
                 string currentWord = wordTrail != null ? wordTrail.GetWord() : "STATIC";
                 trapScript.InitializeTrap(currentWord, storedMineDamage, false);
+            }
+            else
+            {
+                Debug.LogWarning($"[{name}] minePrefab no tiene StaticTrapMine. Destruyendo instancia huerfana.", this);
+                Destroy(mineInstance);
             }
         }
 
@@ -48,10 +56,18 @@ public class StaticProjectileLevel2 : StaticProjectileBase
             if (mineInstance.TryGetComponent<StaticTrapMine>(out var trapScript))
             {
                 //Instancia el efecto de impacto al crear minas
-                Instantiate(proyectileImpactVFX, transform.position, proyectileImpactVFX.transform.rotation);
+                if (proyectileImpactVFX != null)
+                {
+                    Instantiate(proyectileImpactVFX, transform.position, proyectileImpactVFX.transform.rotation);
+                }
 
                 string currentWord = wordTrail != null ? wordTrail.GetWord() : "STATIC";
                 trapScript.InitializeTrap(currentWord, storedMineDamage);
+            }
+            else
+            {
+                Debug.LogWarning($"[{name}] minePrefab no tiene StaticTrapMine. Destruyendo instancia huerfana.", this);
+                Destroy(mineInstance);
             }
         }
 

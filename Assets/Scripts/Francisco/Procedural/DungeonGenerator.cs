@@ -1356,7 +1356,8 @@ public class DungeonGenerator : MonoBehaviour
                             playerMoveDuration,
                             directionOutOfOldRoom));
                 },
-                onComplete: null
+                onComplete: null,
+                respectPause: true
             );
         }
 
@@ -1548,7 +1549,8 @@ public class DungeonGenerator : MonoBehaviour
 
                     IsTransitioning = false;
                 }
-            }
+            },
+            respectPause: true
         );
     }
 

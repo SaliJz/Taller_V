@@ -2,7 +2,8 @@ using UnityEngine;
 using System;
 using System.Collections;
 
-public class FadeController : FullScreenEffectsBase{
+public class FadeController : FullScreenEffectsBase
+{
     #region Singleton
     public static FadeController Instance;
     #endregion
@@ -41,7 +42,7 @@ public class FadeController : FullScreenEffectsBase{
     protected override void Start()
     {
         base.Start();
-        if(!enabled) return;
+        if (!enabled) return;
 
         SetupInitialState();
 
@@ -64,7 +65,8 @@ public class FadeController : FullScreenEffectsBase{
         Action onStart = null,
         Action<float> onUpdate = null,
         Action onComplete = null,
-        Color? fadeColor = null)
+        Color? fadeColor = null,
+        bool respectPause = false)
     {
         IsFading = true;
 
@@ -81,6 +83,12 @@ public class FadeController : FullScreenEffectsBase{
 
         while (timer < fadeDuration)
         {
+            if (respectPause && Time.timeScale == 0f)
+            {
+                yield return null;
+                continue;
+            }
+
             timer += Time.unscaledDeltaTime;
 
             float t = timer / fadeDuration;
@@ -102,7 +110,8 @@ public class FadeController : FullScreenEffectsBase{
     public IEnumerator FadeIn(
         Action onStart = null,
         Action<float> onUpdate = null,
-        Action onComplete = null)
+        Action onComplete = null,
+        bool respectPause = false)
     {
         IsFading = true;
 
@@ -114,6 +123,12 @@ public class FadeController : FullScreenEffectsBase{
 
         while (timer < fadeDuration)
         {
+            if (respectPause && Time.timeScale == 0f)
+            {
+                yield return null;
+                continue;
+            }
+
             timer += Time.unscaledDeltaTime;
 
             float t = timer / fadeDuration;
@@ -141,7 +156,7 @@ public class FadeController : FullScreenEffectsBase{
 
     private void FinalizeState(bool isFullDark)
     {
-        SetFloat(ProgressProp, isFullDark? 0f: 1f);
+        SetFloat(ProgressProp, isFullDark ? 0f : 1f);
     }
     #endregion
 }

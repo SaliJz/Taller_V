@@ -93,6 +93,7 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 
     private void OnDestroy()
     {
+        if (Instance == this) Instance = null;
         playerControls?.Dispose();
     }
 
@@ -263,7 +264,6 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     {
         PlayClickSFX();
         Time.timeScale = 1f;
-        MerchantDialogHandler.ResetReputationState();
         StartCoroutine(FadeAndReloadScene("MainMenu"));
     }
 
@@ -284,8 +284,14 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 
         Time.timeScale = 1f;
 
+        InventoryManager inventory = FindAnyObjectByType<InventoryManager>();
+
         if (statsManager != null)
         {
+            if (inventory != null && inventory.ActiveBehavioralEffects != null)
+                statsManager.RemoveAllBehavioralEffects(inventory.ActiveBehavioralEffects);
+
+            statsManager.ClearAllNamedModifiers();
             statsManager.ResetRunStatsToDefaults();
             statsManager.ResetStatsOnDeath();
 
@@ -294,8 +300,10 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
                 statsManager._currentStatSO.currentHealth = maxHealth;
         }
 
-        InventoryManager inventory = FindAnyObjectByType<InventoryManager>();
         if (inventory != null) inventory.ClearInventory();
+
+        MerchantDialogHandler.ResetReputationState();
+        MerchantRoomManager.ResetPactsForNewLevel();
 
         SceneManager.LoadScene(sceneName);
     }

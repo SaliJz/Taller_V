@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Función que maneja las estadísticas del jugador.
+/// Funcion que maneja las estadisticas del jugador.
 /// </summary>
 [CreateAssetMenu(fileName = "NewEntityStats", menuName = "Stats/Player Stats")]
 public class PlayerStats : ScriptableObject
@@ -27,7 +27,7 @@ public class PlayerStats : ScriptableObject
     public int shieldAttackDamage = 10;
     public float shieldSpeed = 20f;
     public float shieldMaxDistance = 30f;
-    public int shieldMaxRebounds = 2;
+    public int shieldMaxRebounds = 1;
     public float shieldReboundRadius = 15f;
 
     [Header("Habilidades")]
@@ -39,12 +39,12 @@ public class PlayerStats : ScriptableObject
     [Header("Generales")]
     public float shopPriceReductionBase = 0f;
     public float luckStackBase = 0f;
-    // --- VARIABLES DE STATS PENDIENTES DE CONEXIÓN ---
+    // --- VARIABLES DE STATS PENDIENTES DE CONEXION ---
     /*
     public float essenceCostReductionBase = 0f;
     */
     public float criticalChanceBase = 0f;
-    public float criticalDamageMultiplierBase = 0f; 
+    public float criticalDamageMultiplierBase = 0f;
     public float dashRangeMultiplierBase = 1f;
 
     [Header("Stats de combate")]

@@ -54,8 +54,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [SerializeField] private float baseDashDistance = 10f;
     [Tooltip("Tiempo de espera para poder usar el dash de nuevo.")]
     [SerializeField] private float baseDashCooldown = 0.3f;
-    [Tooltip("Distancia final del dash despues de aplicar mejoras u objetos.")]
-    [SerializeField] private float dashDistance = 10f;
+    //[Tooltip("Distancia final del dash despues de aplicar mejoras u objetos.")]
+    //[SerializeField] private float dashDistance = 10f;
     //[Tooltip("Cooldown actual del dash despues de aplicar modificadores.")]
     //[SerializeField] private float dashCooldown = 0.3f;
     [Tooltip("Cuanto tiempo dura la animacion y el movimiento del dash.")]
@@ -72,8 +72,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [SerializeField] private float dashGroundSampleStep = 0.2f;
     [Tooltip("Altura desde donde se comprueba el suelo durante el dash.")]
     [SerializeField] private float dashGroundProbeHeight = 1.5f;
-    [Tooltip("Distancia maxima del raycast hacia abajo durante el dash.")]
-    [SerializeField] private float dashGroundProbeDistance = 3f;
+    //[Tooltip("Distancia maxima del raycast hacia abajo durante el dash.")]
+    //[SerializeField] private float dashGroundProbeDistance = 3f;
     [Tooltip("Tolerancia extra para considerar grounded en el arranque del dash.")]
     [SerializeField] private float dashGroundedGrace = 0.12f;
     [Tooltip("stepOffset reducido durante el dash para evitar trepar colliders grandes de enemigos.")]
