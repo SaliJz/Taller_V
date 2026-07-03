@@ -202,6 +202,12 @@ public class GamepadPointer : MonoBehaviour
 
                 EventSystem.current?.SetSelectedGameObject(null);
 
+                if (uiInputModule != null)
+                {
+                    uiInputModule.DeactivateModule();
+                    uiInputModule.ActivateModule();
+                }
+
                 wasGamepadMode = false;
             }
         }
