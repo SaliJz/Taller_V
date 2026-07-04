@@ -465,7 +465,7 @@ public class SteamInputManager : MonoBehaviour
     public bool GetMenuCancelPressed() => IsJustPressed(menuCancelHandle);
     public bool GetMenuSubmitPressed() => IsJustPressed(menuSubmitHandle);
     public bool GetPauseMenuPressed() => IsJustPressed(pauseMenuHandle);
-
+    public bool GetInteractJustPressed() => IsJustPressed(interactHandle);
     public bool GetMenuUpHeld() => IsHeld(menuUpHandle);
     public bool GetMenuDownHeld() => IsHeld(menuDownHandle);
     public bool GetMenuLeftHeld() => IsHeld(menuLeftHandle);

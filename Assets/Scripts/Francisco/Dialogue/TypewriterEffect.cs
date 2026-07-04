@@ -3,6 +3,7 @@ using TMPro;
 using System.Collections;
 using System;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 
 public class TypewriterEffect : MonoBehaviour
 {
@@ -103,7 +104,7 @@ public class TypewriterEffect : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(advanceKey))
+        if (AdvanceOrSkipPressed())
         {
             if (isTyping && canSkipEffect)
             {
@@ -119,11 +120,45 @@ public class TypewriterEffect : MonoBehaviour
         {
             bool triggerCondition = requiresTrigger ? playerIsInRange : true;
 
-            if (triggerCondition && Input.GetKeyDown(triggerStartKey))
+            if (triggerCondition && TriggerStartPressed())
             {
                 StartDialogue();
             }
         }
+    }
+
+    private bool AdvanceOrSkipPressed()
+    {
+        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+            return true;
+
+        if (SteamInputManager.Instance != null && SteamInputManager.Instance.GetInteractPressed())
+            return true;
+
+        if (GamepadPointer.Instance != null && GamepadPointer.Instance.IsGamepadMode() && !GamepadPointer.Instance.IsSteamActive)
+        {
+            if (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool TriggerStartPressed()
+    {
+        if (Keyboard.current != null && Keyboard.current[Key.E].wasPressedThisFrame)
+            return true;
+
+        if (SteamInputManager.Instance != null && SteamInputManager.Instance.GetInteractJustPressed())
+            return true;
+
+        if (GamepadPointer.Instance != null && GamepadPointer.Instance.IsGamepadMode() && !GamepadPointer.Instance.IsSteamActive)
+        {
+            if (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame)
+                return true;
+        }
+
+        return false;
     }
 
     private void OnTriggerEnter2D(Collider2D other)
