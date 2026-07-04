@@ -40,6 +40,8 @@ public class CinematicSkipController : MonoBehaviour
         canvasGroup.blocksRaycasts = true;
 
         if (fillImage != null) fillImage.fillAmount = 0f;
+
+        if (skipButton != null) skipButton.interactable = false;
     }
 
     private void Start()
