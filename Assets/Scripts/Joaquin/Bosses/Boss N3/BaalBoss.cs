@@ -3,192 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
+/// <summary>
+/// Gestiona el comportamiento de IA, fases y ataques del jefe 3 Baal/HOST.
+/// </summary>
 public class BaalBoss : MonoBehaviour, IAnimEventHandler
 {
-    #region Inspector – References
-
-    [Header("Core References")]
-    [SerializeField] private Transform hitPoint;
-    [SerializeField] private EnemyHealth enemyHealth;
-    [SerializeField] private NavMeshAgent agent;
-    [SerializeField] private TheHostAnimCtrl animController;
-    [SerializeField] private Transform player;
-
-    [Header("Audio")]
-    [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip exceptionAnticipationSFX;
-    [SerializeField] private AudioClip bufferOverrunChargeSFX;
-    [SerializeField] private AudioClip bufferOverrunImpactSFX;
-    [SerializeField] private AudioClip teleportSFX;
-    [SerializeField] private AudioClip damagedSFX;
-    [SerializeField] private AudioClip deathSFX;
-
-    [Header("VFX Prefabs")]
-    [SerializeField] private GameObject exceptionProjectilePrefab;
-    [SerializeField] private GameObject necroticClusterPrefab;
-    [SerializeField] private GameObject larvaPrefab;
-    [SerializeField] private GameObject memoryLeakPrefab;
-    [SerializeField] private GameObject teleportVFXPrefab;
-    [SerializeField] private GameObject bufferOverrunImpactVFXPrefab;
-    [Tooltip("Prefab indicador de trayectoria en el suelo durante la embestida (opcional).")]
-    [SerializeField] private GameObject bufferOverrunTrailIndicatorPrefab;
-    [SerializeField] private GameObject nodePurulentosPrefab;
-    [SerializeField] private ParticleSystem phaseTransitionVFX;
-
-    #endregion
-
-    #region Inspector – Base Statistics
-
-    [Header("Base Stats")]
-    [SerializeField] private float maxHealth = 120f;
-    [SerializeField] private float moveSpeed = 3.5f;
-
-    #endregion
-
-    #region Inspector – NavMesh
-
-    [Header("NavMesh")]
-    [Tooltip("Radio seguro para instanciar larvas fuera del obstáculo.")]
-    [SerializeField] private float safeSpawnRadius = 3f;
-
-    #endregion
-
-    #region Inspector – Excepción Fatal
-
-    [Header("Excepción Fatal")]
-    [Tooltip("Daño mínimo.")]
-    [SerializeField] private float exceptionDamageMin = 2f;
-    [Tooltip("Daño máximo.")]
-    [SerializeField] private float exceptionDamageMax = 4f;
-    [Tooltip("Velocidad de los proyectiles.")]
-    [SerializeField] private float exceptionProjectileSpeed = 15f;
-    [Tooltip("Distancia desde la que empieza a escalar el daño.")]
-    [SerializeField] private float exceptionScaleStartDist = 6f;
-    [Tooltip("Distancia en la que se alcanza el daño máximo.")]
-    [SerializeField] private float exceptionScaleMaxDist = 20f;
-    [Tooltip("Duración total del brillo de anticipación. Las flechas del suelo aparecen en los últimos exceptionDirPreviewTime.")]
-    [SerializeField] private float exceptionAnticipationTime = 1.2f;
-    [Tooltip("Segundos en que las trayectorias se proyectan en el suelo antes de disparar.")]
-    [SerializeField] private float exceptionDirPreviewTime = 0.8f;
-    [Tooltip("Pausa estática tras el disparo antes de continuar el ciclo.")]
-    [SerializeField] private float exceptionShortRecovery = 1.5f;
-
-    #endregion
-
-    #region Inspector – Buffer Overrun + Clúster Necrótico
-
-    [Header("Buffer Overrun")]
-    [SerializeField] private float bufferOverrunDamage = 10f;
-    [SerializeField] private float bufferOverrunDashDistance = 7.5f;
-    [SerializeField] private float bufferOverrunAttackRange = 7.5f;
-    [Tooltip("Tiempo de carga / anticipación.")]
-    [SerializeField] private float bufferOverrunChargeDuration = 1f;
-    [Tooltip("Tiempo de ejecución del dash.")]
-    [SerializeField] private float bufferOverrunDashDuration = 1f;
-    [Tooltip("Pausa larga tras el impacto mientras el clúster está activo.")]
-    [SerializeField] private float bufferOverrunLongRecovery = 3f;
-    [Tooltip("Espera adicional tras la recuperación larga antes de reiniciar el ciclo.")]
-    [SerializeField] private float cycleRepeatDelay = 2f;
-    [Tooltip("Cooldown de reutilización dinámica.")]
-    [SerializeField] private float bufferOverrunCooldown = 8.5f;
-
-    [Header("Clúster Necrótico")]
-    [Tooltip("Segundos que dura el clúster antes de colapsar.")]
-    [SerializeField] private float clusterDuration = 3f;
-    [SerializeField] private float clusterDPS = 1f;
-    [SerializeField] private float clusterRadius = 1.5f;
-    [Tooltip("Larvas liberadas al colapsar el clúster.")]
-    [SerializeField] private int clusterLarvaCount = 2;
-    [Tooltip("Fracción de velocidad eliminada al jugador dentro del clúster (0.2 = 20%).")]
-    [SerializeField] private float clusterSlowFraction = 0.2f;
-    [Tooltip("Si false, el clúster ralentiza pero no aplica daño.")]
-    [SerializeField] private bool clusterDealDamage = true;
-
-    #endregion
-
-    #region Inspector – Desfragmentación Evasiva
-
-    [Header("Desfragmentación Evasiva")]
-    [Tooltip("Golpes necesarios para activar la evasión.")]
-    [SerializeField] private int defragHitThreshold = 3;
-    [Tooltip("Ventana de tiempo en la que se cuentan los golpes.")]
-    [SerializeField] private float defragHitWindow = 2f;
-    [Tooltip("Distancia máxima del jugador al recibir los golpes.")]
-    [SerializeField] private float defragActivationRange = 3f;
-    [Tooltip("Distancia a la que el jefe se aleja al evadir.")]
-    [SerializeField] private float defragTeleportDist = 7f;
-    [SerializeField] private float defragCooldown = 6f;
-
-    #endregion
-
-    #region Inspector – Fuga de Memoria
-
-    [Header("Fuga de Memoria")]
-    [SerializeField] private float memoryLeakDuration = 4f;
-    [SerializeField] private float memoryLeakDPS = 2f;
-    [SerializeField] private float memoryLeakRadius = 2f;
-    [Tooltip("Segundos tras el TP hasta que el charco aparece (da tiempo a ver el indicador).")]
-    [SerializeField] private float memoryLeakFormationDelay = 0.35f;
-    [Tooltip("Prefab indicador de suelo para el charco de Desfragmentación (opcional).")]
-    [SerializeField] private GameObject memoryLeakIndicatorPrefab;
-
-    #endregion
-
-    #region Inspector – Latencia Cero
-
-    [Header("Latencia Cero")]
-    [Tooltip("Segundos fuera de rango para activar la habilidad.")]
-    [SerializeField] private float latenciaActivationTime = 10f;
-    [Tooltip("Distancia mínima del jugador que activa el contador.")]
-    [SerializeField] private float latenciaActivationRange = 6f;
-    [SerializeField] private float latenciaDamage = 5f;
-    [SerializeField] private float latenciaCooldown = 8f;
-    [Tooltip("Pausa de anticipación visible tras el TP antes del impacto (el indicador de suelo dura este tiempo).")]
-    [SerializeField] private float latenciaAnticipationDuration = 0.6f;
-    [Tooltip("Prefab indicador de suelo para la anticipación de Latencia Cero.")]
-    [SerializeField] private GameObject latenciaGroundIndicatorPrefab;
-
-    #endregion
-
-    #region Inspector – Arquitectura Distribuida (50 %)
-
-    [Header("Arquitectura Distribuida (50% HP)")]
-    [Tooltip("Radio en que se distribuyen los nodos alrededor del jefe.")]
-    [SerializeField] private float nodeSpawnRadius = 5f;
-    [SerializeField] private int maxNodes = 3;
-    [Tooltip("Porcentaje del blindaje que se quita al destruir un nodo.")]
-    [SerializeField] private float shieldReductionPerNode = 0.33f;
-
-    #endregion
-
-
-
-    #region Inspector – Attack Anticipation
-
-    [Header("Anticipación - Excepción Fatal")]
-    [SerializeField] private AudioClip exceptionFatalAnticipationSFX;
-    [SerializeField] private float exceptionFatalAnticipationDuration = 0.5f;
-
-    [Header("Anticipación - Buffer Overrun")]
-    [SerializeField] private AudioClip bufferOverrunAnticipationSFX;
-    [SerializeField] private float bufferOverrunAnticipationDuration = 0.6f;
-
-    [Header("Anticipación - Latencia Cero (post-TP)")]
-    [SerializeField] private AudioClip latenciaAnticipationSFX;
-
-    [Header("Anticipación - Enemy Visual Effects")]
-    [SerializeField] private EnemyVisualEffects enemyVisualEffects;
-
-    #endregion
-
-    #region Inspector – Debug
-
-    [Header("Debug")]
-    [SerializeField] private bool showDebugGUI = false;
-
-    #endregion
-
-    #region Internal State
+    #region Enums
 
     private enum BossState
     {
@@ -199,60 +19,236 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         Dead
     }
 
+    #endregion
+
+    #region Inspector - References
+
+    [Header("Core References")]
+    [Tooltip("Referencia al punto exacto donde se registran o aplican los impactos fisicos.")]
+    [SerializeField] private Transform hitPoint;
+    [Tooltip("Referencia al componente de salud principal del jefe.")]
+    [SerializeField] private EnemyHealth enemyHealth;
+    [Tooltip("Referencia al agente de navegacion para el movimiento en el mapa.")]
+    [SerializeField] private NavMeshAgent agent;
+    [Tooltip("Referencia al controlador de animaciones especifico del jefe.")]
+    [SerializeField] private TheHostAnimCtrl animController;
+    [Tooltip("Referencia al transform del jugador objetivo.")]
+    [SerializeField] private Transform player;
+    [Tooltip("Referencia al componente de efectos visuales propio de este enemigo.")]
+    [SerializeField] private EnemyVisualEffects enemyVisualEffects;
+
+    [Header("Audio")]
+    [Tooltip("Fuente de audio principal emisora de los efectos de sonido.")]
+    [SerializeField] private AudioSource audioSource;
+    [Tooltip("Clip de sonido reproducido durante la anticipacion del ataque Excepcion Fatal.")]
+    [SerializeField] private AudioClip exceptionAnticipationSFX;
+    [Tooltip("Clip de sonido para advertir la carga de Excepcion Fatal.")]
+    [SerializeField] private AudioClip exceptionFatalAnticipationSFX;
+    [Tooltip("Clip de sonido reproducido al cargar el ataque Buffer Overrun.")]
+    [SerializeField] private AudioClip bufferOverrunChargeSFX;
+    [Tooltip("Clip de sonido para advertir la carga de Buffer Overrun.")]
+    [SerializeField] private AudioClip bufferOverrunAnticipationSFX;
+    [Tooltip("Clip de sonido reproducido al impactar con el ataque Buffer Overrun.")]
+    [SerializeField] private AudioClip bufferOverrunImpactSFX;
+    [Tooltip("Clip de sonido reproducido al ejecutar un teletransporte.")]
+    [SerializeField] private AudioClip teleportSFX;
+    [Tooltip("Clip de sonido reproducido al preparar el impacto tras un teletransporte lejano.")]
+    [SerializeField] private AudioClip latenciaAnticipationSFX;
+    [Tooltip("Clip de sonido reproducido al recibir dano.")]
+    [SerializeField] private AudioClip damagedSFX;
+    [Tooltip("Clip de sonido reproducido al morir.")]
+    [SerializeField] private AudioClip deathSFX;
+
+    [Header("VFX Prefabs")]
+    [Tooltip("Prefab del proyectil disparado en el ataque Excepcion Fatal.")]
+    [SerializeField] private GameObject exceptionProjectilePrefab;
+    [Tooltip("Prefab del area de efecto que genera el Cluster Necrotico.")]
+    [SerializeField] private GameObject necroticClusterPrefab;
+    [Tooltip("Prefab del enemigo menor larva invocado por varios ataques.")]
+    [SerializeField] private GameObject larvaPrefab;
+    [Tooltip("Prefab del charco de dano dejado por Fuga de Memoria.")]
+    [SerializeField] private GameObject memoryLeakPrefab;
+    [Tooltip("Prefab visual instanciado en el suelo para previsualizar el charco antes de que inflija dano.")]
+    [SerializeField] private GameObject memoryLeakIndicatorPrefab;
+    [Tooltip("Prefab del efecto visual instanciado al entrar y salir del teletransporte.")]
+    [SerializeField] private GameObject teleportVFXPrefab;
+    [Tooltip("Prefab del efecto visual instanciado tras el impacto de Buffer Overrun.")]
+    [SerializeField] private GameObject bufferOverrunImpactVFXPrefab;
+    [Tooltip("Prefab del indicador proyectado en el suelo para previsualizar la embestida.")]
+    [SerializeField] private GameObject bufferOverrunTrailIndicatorPrefab;
+    [Tooltip("Prefab del indicador proyectado en el area de impacto para dar advertencia visual.")]
+    [SerializeField] private GameObject latenciaGroundIndicatorPrefab;
+    [Tooltip("Prefab del nodo instanciado durante la fase de Arquitectura Distribuida.")]
+    [SerializeField] private GameObject nodePurulentosPrefab;
+    [Tooltip("Efecto de particulas ejecutado al cambiar a la fase del 50 por ciento de salud.")]
+    [SerializeField] private ParticleSystem phaseTransitionVFX;
+
+    #endregion
+
+    #region Inspector - Base Statistics
+
+    [Header("Base Stats")]
+    [Tooltip("Cantidad maxima de puntos de vida del jefe.")]
+    [SerializeField] private float maxHealth = 120f;
+    [Tooltip("Velocidad de movimiento base al desplazarse por el NavMesh.")]
+    [SerializeField] private float moveSpeed = 3.5f;
+
+    [Header("NavMesh")]
+    [Tooltip("Radio de seguridad utilizado para buscar una posicion valida en el NavMesh al instanciar enemigos.")]
+    [SerializeField] private float safeSpawnRadius = 3f;
+
+    #endregion
+
+    #region Inspector - Habilidades y Comportamientos
+
+    [Header("Excepcion Fatal")]
+    [Tooltip("Valor de dano minimo aplicado por los proyectiles.")]
+    [SerializeField] private float exceptionDamageMin = 2f;
+    [Tooltip("Valor de dano maximo aplicado por los proyectiles.")]
+    [SerializeField] private float exceptionDamageMax = 4f;
+    [Tooltip("Velocidad de traslacion de los proyectiles en el espacio.")]
+    [SerializeField] private float exceptionProjectileSpeed = 15f;
+    [Tooltip("Distancia a partir de la cual el dano del proyectil comienza a incrementar.")]
+    [SerializeField] private float exceptionScaleStartDist = 6f;
+    [Tooltip("Distancia necesaria para que el proyectil alcance su valor maximo de dano.")]
+    [SerializeField] private float exceptionScaleMaxDist = 20f;
+    [Tooltip("Tiempo de duracion del efecto visual de anticipacion antes de lanzar los proyectiles.")]
+    [SerializeField] private float exceptionAnticipationTime = 1.2f;
+    [Tooltip("Tiempo previo al disparo durante el cual las flechas de direccion son visibles en el suelo.")]
+    [SerializeField] private float exceptionDirPreviewTime = 0.8f;
+    [Tooltip("Tiempo de pausa de la IA luego de ejecutar el ataque antes de continuar su ciclo.")]
+    [SerializeField] private float exceptionShortRecovery = 1.5f;
+    [Tooltip("Tiempo durante el cual el jefe pausa animaciones antes de lanzar Excepcion Fatal.")]
+    [SerializeField] private float exceptionFatalAnticipationDuration = 0.5f;
+
+    [Header("Buffer Overrun")]
+    [Tooltip("Cantidad de dano infligido al impactar con la embestida.")]
+    [SerializeField] private float bufferOverrunDamage = 10f;
+    [Tooltip("Distancia maxima que recorre la IA al realizar la embestida.")]
+    [SerializeField] private float bufferOverrunDashDistance = 7.5f;
+    [Tooltip("Radio del area de efecto para evaluar si el jugador recibio impacto.")]
+    [SerializeField] private float bufferOverrunAttackRange = 7.5f;
+    [Tooltip("Tiempo de pausa de carga previa antes de ejecutar el movimiento de dash.")]
+    [SerializeField] private float bufferOverrunChargeDuration = 1f;
+    [Tooltip("Tiempo total requerido para completar la animacion y traslacion del dash.")]
+    [SerializeField] private float bufferOverrunDashDuration = 1f;
+    [Tooltip("Tiempo de pausa de la IA tras finalizar el impacto mientras el cluster opera.")]
+    [SerializeField] private float bufferOverrunLongRecovery = 3f;
+    [Tooltip("Tiempo adicional de espera luego de la recuperacion antes de reiniciar la secuencia principal.")]
+    [SerializeField] private float cycleRepeatDelay = 2f;
+    [Tooltip("Tiempo de espera para permitir nuevamente el ataque dinamico de Buffer Overrun.")]
+    [SerializeField] private float bufferOverrunCooldown = 8.5f;
+    [Tooltip("Tiempo durante el cual el jefe pausa animaciones antes de iniciar la embestida.")]
+    [SerializeField] private float bufferOverrunAnticipationDuration = 0.6f;
+
+    [Header("Cluster Necrotico")]
+    [Tooltip("Duracion en segundos del area antes de colapsar y generar las larvas.")]
+    [SerializeField] private float clusterDuration = 3f;
+    [Tooltip("Cantidad de dano infligido por segundo a los objetivos dentro del area.")]
+    [SerializeField] private float clusterDPS = 1f;
+    [Tooltip("Radio fisico del area de efecto del cluster en el suelo.")]
+    [SerializeField] private float clusterRadius = 1.5f;
+    [Tooltip("Numero total de larvas instanciadas cuando finaliza la vida del cluster.")]
+    [SerializeField] private int clusterLarvaCount = 2;
+    [Tooltip("Porcentaje de velocidad restado al jugador al pisar el area (ej: 0.2 es un 20 por ciento menos).")]
+    [SerializeField] private float clusterSlowFraction = 0.2f;
+    [Tooltip("Determina si el cluster aplica dano continuo o si unicamente ralentiza al objetivo.")]
+    [SerializeField] private bool clusterDealDamage = true;
+
+    [Header("Desfragmentacion Evasiva")]
+    [Tooltip("Cantidad de impactos requeridos para detonar el teletransporte defensivo.")]
+    [SerializeField] private int defragHitThreshold = 3;
+    [Tooltip("Tiempo maximo permitido entre impactos para que sumen al contador de activacion.")]
+    [SerializeField] private float defragHitWindow = 2f;
+    [Tooltip("Distancia maxima del jugador permitida para contabilizar sus impactos cuerpo a cuerpo.")]
+    [SerializeField] private float defragActivationRange = 3f;
+    [Tooltip("Distancia lineal utilizada para alejar al jefe del jugador tras el teletransporte.")]
+    [SerializeField] private float defragTeleportDist = 7f;
+    [Tooltip("Tiempo de espera necesario antes de permitir que la habilidad se active nuevamente.")]
+    [SerializeField] private float defragCooldown = 6f;
+
+    [Header("Fuga de Memoria")]
+    [Tooltip("Duracion en segundos del area de daño en el suelo.")]
+    [SerializeField] private float memoryLeakDuration = 4f;
+    [Tooltip("Cantidad de dano aplicado por segundo a entidades sobre el charco.")]
+    [SerializeField] private float memoryLeakDPS = 2f;
+    [Tooltip("Radio que ocupa el charco toxico instanciado.")]
+    [SerializeField] private float memoryLeakRadius = 2f;
+    [Tooltip("Tiempo de demora tras completar un teletransporte antes de que aparezca el charco.")]
+    [SerializeField] private float memoryLeakFormationDelay = 0.35f;
+
+    [Header("Latencia Cero")]
+    [Tooltip("Tiempo en segundos que el jugador debe permanecer lejos para forzar este comportamiento.")]
+    [SerializeField] private float latenciaActivationTime = 10f;
+    [Tooltip("Distancia limite a partir de la cual se considera al jugador fuera de rango.")]
+    [SerializeField] private float latenciaActivationRange = 6f;
+    //[Tooltip("Dano infligido por el impacto de esta habilidad especifica.")]
+    //[SerializeField] private float latenciaDamage = 5f;
+    [Tooltip("Tiempo de recarga antes de permitir otro castigador por distancia.")]
+    [SerializeField] private float latenciaCooldown = 8f;
+    [Tooltip("Tiempo de inmovilidad del jefe tras teletransportarse y antes de efectuar el dano.")]
+    [SerializeField] private float latenciaAnticipationDuration = 0.6f;
+
+    [Header("Arquitectura Distribuida (50 Porciento HP)")]
+    [Tooltip("Radio de separacion entre el centro de la sala y los nodos defensivos creados.")]
+    [SerializeField] private float nodeSpawnRadius = 5f;
+    [Tooltip("Cantidad maxima de nodos defensivos instanciados al mismo tiempo.")]
+    [SerializeField] private int maxNodes = 3;
+    [Tooltip("Porcentaje de vulnerabilidad restaurado al jefe por cada nodo destruido por el jugador.")]
+    [SerializeField] private float shieldReductionPerNode = 0.33f;
+
+    #endregion
+
+    #region Inspector - Debug
+
+    [Header("Debug")]
+    [Tooltip("Activa la renderizacion visual en el editor de zonas de rango y estados en pantalla.")]
+    [SerializeField] private bool showDebugGUI = false;
+
+    #endregion
+
+    #region Internal State
+
+    private const string ANIM_EVENT_ANTICIPATION_PAUSE = "AnimEvent_AnticipationPause";
+
     private BossState currentState = BossState.Idle;
-
     private float currentHealth;
-
-    // Hitos únicos
     private bool phase50Triggered = false;
 
-    // Estadísticas efectivas
     private float effectiveMoveSpeed;
     private float effectiveProjSpeed;
     private float effectiveBufferCooldown;
     private float effectiveExceptionRecovery;
 
-    // Desfragmentación – contador de hits cuerpo a cuerpo
     private int defragHitCount = 0;
     private float defragLastHitTime = -999f;
     private bool defragOnCooldown = false;
     private bool defragInterruptPending = false;
 
-    // Latencia Cero – temporizador fuera de rango
     private float timeOutOfRange = 0f;
     private bool latenciaOnCooldown = false;
     private bool latenciaInterruptPending = false;
 
-    // Arquitectura Distribuida
-    private Vector3 _roomCenter;
+    private Vector3 roomCenter;
     private bool architecturePhaseActive = false;
     private int activeNodeCount = 0;
     private float currentShieldReduction = 0f;
-    private readonly List<GameObject> spawnedNodes = new List<GameObject>();
 
-    // Efectos instanciados y limpiados al morir
+    private readonly List<GameObject> spawnedNodes = new List<GameObject>();
     private readonly List<GameObject> instantiatedEffects = new List<GameObject>();
 
-    // Anticipación de ataques
-    private bool _isInAnticipation = false;
-    private Coroutine _anticipationCoroutine = null;
+    private bool isInAnticipation = false;
+    private Coroutine anticipationCoroutine = null;
 
-    // Caché de componentes del jugador
     private PlayerHealth playerHealth;
     private PlayerMovement playerMovement;
 
-
-
-    #endregion
-
-    #region Animation Hashes
-
-    private static readonly int AnimID_Walking = Animator.StringToHash("Walking");
-    private static readonly int AnimID_Death = Animator.StringToHash("Death");
-    private static readonly int AnimID_ExceptionFatal = Animator.StringToHash("ExceptionFatal");
-    private static readonly int AnimID_BufferOverrunCharge = Animator.StringToHash("BufferOverrunCharge");
-    private static readonly int AnimID_BufferOverrunDash = Animator.StringToHash("BufferOverrunDash");
-    private static readonly int AnimID_Teleport = Animator.StringToHash("Teleport");
+    private static readonly int animIdWalking = Animator.StringToHash("Walking");
+    private static readonly int animIdDeath = Animator.StringToHash("Death");
+    private static readonly int animIdExceptionFatal = Animator.StringToHash("ExceptionFatal");
+    private static readonly int animIdBufferOverrunCharge = Animator.StringToHash("BufferOverrunCharge");
+    private static readonly int animIdBufferOverrunDash = Animator.StringToHash("BufferOverrunDash");
+    private static readonly int animIdTeleport = Animator.StringToHash("Teleport");
 
     #endregion
 
@@ -288,8 +284,11 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
     #endregion
 
-    #region Initialization
+    #region Initialization & Data Sync
 
+    /// <summary>
+    /// Busca y enlaza los componentes requeridos locales o del jugador objetivo si no estan referenciados.
+    /// </summary>
     private void InitializeComponents()
     {
         if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
@@ -315,6 +314,9 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         if (player == null) ReportDebug("Jugador no encontrado en la escena.", 3);
     }
 
+    /// <summary>
+    /// Asigna los valores base desde el inspector a variables internas modificables durante combate.
+    /// </summary>
     private void InitializeEffectiveStats()
     {
         effectiveMoveSpeed = moveSpeed;
@@ -323,10 +325,9 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         effectiveExceptionRecovery = exceptionShortRecovery;
     }
 
-
     #endregion
 
-    #region EnemyHealth Event Handlers
+    #region Core Health & Combat
 
     private void HandleHealthChanged(float newCurrent, float newMax)
     {
@@ -338,10 +339,7 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
     }
 
     /// <summary>
-    /// Llamado por EnemyHealth.OnDamaged cada vez que el jefe recibe daño.
-    /// Gestiona el contador del interruptor de agresión (Desfragmentación Evasiva).
-    /// Solo cuenta golpes con el jugador dentro de defragActivationRange.
-    /// Usa sqrMagnitude conforme al §3c del documento.
+    /// Cuenta los golpes del jugador dentro del rango de activacion para disparar la mecanica evasiva.
     /// </summary>
     private void HandleDamaged()
     {
@@ -360,10 +358,13 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         {
             defragInterruptPending = true;
             defragHitCount = 0;
-            ReportDebug("DESFRAGMENTACIÓN: Umbral de agresión alcanzado. Interrupción pendiente.", 1);
+            ReportDebug("DESFRAGMENTACION: Umbral de agresion alcanzado. Interrupcion pendiente.", 1);
         }
     }
 
+    /// <summary>
+    /// Limpia efectos, detiene logica de navegacion y activa estado inerte tras vaciarse la salud.
+    /// </summary>
     private void HandleEnemyDeath(GameObject enemy)
     {
         if (enemy != gameObject) return;
@@ -387,12 +388,10 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
     #endregion
 
-    #region Main AI Loop – Ciclo Base
+    #region AI Flow & Sequences
 
     /// <summary>
-    /// Corrutina principal del ciclo base.
-    /// Evalúa hitos de salud e interrupciones dinámicas al inicio de cada ciclo
-    /// y entre cada fase.
+    /// Gestiona la secuencia principal evaluando cambios de fase e interrupciones antes de cada ataque.
     /// </summary>
     private IEnumerator BossFlowSequence()
     {
@@ -400,14 +399,12 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
         while (currentHealth > 0)
         {
-            // Esperar si el jefe está aturdido
             while (enemyHealth != null && enemyHealth.IsStunned)
             {
                 StopAgent();
                 yield return null;
             }
 
-            // Hito 50 %: Arquitectura Distribuida
             if (!phase50Triggered && currentHealth <= maxHealth * 0.5f)
             {
                 phase50Triggered = true;
@@ -415,29 +412,24 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
                 if (currentHealth <= 0) yield break;
             }
 
-            // Interrupciones dinámicas al inicio del ciclo
             if (HasPendingInterrupt())
             {
                 yield return StartCoroutine(ResolveDynamicInterrupt());
                 continue;
             }
 
-            // FASE 1 – Excepción Fatal
             yield return StartCoroutine(ExecuteExcepcionFatal());
             if (currentHealth <= 0) yield break;
             if (HasPendingInterrupt()) { yield return StartCoroutine(ResolveDynamicInterrupt()); continue; }
 
-            // FASE 2 – Recuperación corta
             yield return StartCoroutine(ShortRecovery());
             if (currentHealth <= 0) yield break;
             if (HasPendingInterrupt()) { yield return StartCoroutine(ResolveDynamicInterrupt()); continue; }
 
-            // FASE 3 – Buffer Overrun
             yield return StartCoroutine(ExecuteBufferOverrun());
             if (currentHealth <= 0) yield break;
             if (HasPendingInterrupt()) { yield return StartCoroutine(ResolveDynamicInterrupt()); continue; }
 
-            // FASE 4 – Recuperación larga
             yield return StartCoroutine(LongRecovery());
             if (currentHealth <= 0) yield break;
             if (HasPendingInterrupt()) { yield return StartCoroutine(ResolveDynamicInterrupt()); continue; }
@@ -447,8 +439,7 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
     private bool HasPendingInterrupt() => defragInterruptPending || latenciaInterruptPending;
 
     /// <summary>
-    /// Ejecuta y consume la interrupción dinámica de mayor prioridad.
-    /// Desfragmentación tiene prioridad sobre Latencia Cero.
+    /// Selecciona y lanza la interrupcion pendiente respetando el orden de prioridad de las habilidades.
     /// </summary>
     private IEnumerator ResolveDynamicInterrupt()
     {
@@ -464,13 +455,8 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
-    #endregion
-
-    #region Dynamic Behavior Monitor – Corrutina Paralela
-
     /// <summary>
-    /// Monitorea el interruptor de distancia (Latencia Cero) usando sqrMagnitude
-    /// en el bucle principal
+    /// Evalua periodicamente la lejania del jugador para programar la penalizacion por distancia.
     /// </summary>
     private IEnumerator DynamicBehaviorMonitor()
     {
@@ -489,7 +475,7 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
                     {
                         latenciaInterruptPending = true;
                         timeOutOfRange = 0f;
-                        ReportDebug("LATENCIA CERO: Jugador fuera de rango > 10 s. Interrupción pendiente.", 1);
+                        ReportDebug("LATENCIA CERO: Jugador fuera de rango > 10 s. Interrupcion pendiente.", 1);
                     }
                 }
                 else
@@ -504,11 +490,14 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
     #endregion
 
-    #region Fase Base 1 – Excepción Fatal
+    #region Habilidades Ofensivas Base
 
+    /// <summary>
+    /// Ejecuta animaciones y proyecta indicadores antes de disparar multiples proyectiles balisticos.
+    /// </summary>
     private IEnumerator ExecuteExcepcionFatal()
     {
-        ReportDebug("EXCEPCIÓN FATAL: Iniciando.", 1);
+        ReportDebug("EXCEPCION FATAL: Iniciando.", 1);
         currentState = BossState.Attacking;
 
         StopAgent();
@@ -521,34 +510,34 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
         if (animController != null) animController.PlayShotAttack();
 
-        // Si el clip A_Shot tiene AnimEvent_AnticipationPause, la pausa llega aquí
-        // de forma sincronizada. Si no existe el evento, el WaitForSeconds actúa
-        // como fallback.
         float anticipationFallbackTimer = 0f;
-        while (!_isInAnticipation && anticipationFallbackTimer < exceptionFatalAnticipationDuration + 1f)
+        while (!isInAnticipation && anticipationFallbackTimer < exceptionFatalAnticipationDuration + 1f)
         {
             anticipationFallbackTimer += Time.deltaTime;
             yield return null;
         }
-        yield return new WaitUntil(() => !_isInAnticipation);
+        yield return new WaitUntil(() => !isInAnticipation);
 
         float glowOnlyTime = Mathf.Max(0f, exceptionAnticipationTime - exceptionDirPreviewTime);
         yield return new WaitForSeconds(glowOnlyTime);
 
-        ReportDebug("EXCEPCIÓN FATAL: Indicadores de dirección proyectados (0.8 s).", 1);
+        ReportDebug("EXCEPCION FATAL: Indicadores de direccion proyectados (0.8 s).", 1);
         yield return new WaitForSeconds(exceptionDirPreviewTime);
 
         FireEightDirectionProjectiles();
 
-        ReportDebug("EXCEPCIÓN FATAL: 8 proyectiles disparados.", 1);
+        ReportDebug("EXCEPCION FATAL: 8 proyectiles disparados.", 1);
         currentState = BossState.Idle;
     }
 
+    /// <summary>
+    /// Instancia e inicializa fisicas o scripts de trayectoria en un patron de 360 grados.
+    /// </summary>
     private void FireEightDirectionProjectiles()
     {
         if (exceptionProjectilePrefab == null)
         {
-            ReportDebug("EXCEPCIÓN FATAL: Falta exceptionProjectilePrefab.", 2);
+            ReportDebug("EXCEPCION FATAL: Falta exceptionProjectilePrefab.", 2);
             return;
         }
 
@@ -583,13 +572,9 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
-    #endregion
-
-    #region Fase Base 2 – Recuperación Corta
-
     private IEnumerator ShortRecovery()
     {
-        ReportDebug("RECUPERACIÓN CORTA: 1.5 s.", 1);
+        ReportDebug("RECUPERACION CORTA: 1.5 s.", 1);
         float elapsed = 0f;
         while (elapsed < effectiveExceptionRecovery)
         {
@@ -599,10 +584,9 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
-    #endregion
-
-    #region Fase Base 3 – Buffer Overrun
-
+    /// <summary>
+    /// Carga y ejecuta un recorrido directo hacia un punto, generando areas de dano al chocar.
+    /// </summary>
     private IEnumerator ExecuteBufferOverrun(bool calledByLatencia = false)
     {
         ReportDebug($"BUFFER OVERRUN: Iniciando{(calledByLatencia ? " (encadenado por Latencia Cero)" : "")}.", 1);
@@ -619,12 +603,12 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         if (animController != null) animController.PlayBufferPre();
 
         float bufferAnticipationFallback = 0f;
-        while (!_isInAnticipation && bufferAnticipationFallback < bufferOverrunAnticipationDuration + 1f)
+        while (!isInAnticipation && bufferAnticipationFallback < bufferOverrunAnticipationDuration + 1f)
         {
             bufferAnticipationFallback += Time.deltaTime;
             yield return null;
         }
-        yield return new WaitUntil(() => !_isInAnticipation);
+        yield return new WaitUntil(() => !isInAnticipation);
 
         yield return new WaitForSeconds(bufferOverrunChargeDuration);
 
@@ -633,7 +617,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         Vector3 dashTarget = CalculateBufferOverrunTarget();
         yield return StartCoroutine(DashToPositionOrHit(dashTarget, bufferOverrunDashDuration));
 
-        // Impacto
         Vector3 impactPoint = hitPoint != null ? hitPoint.position : transform.position;
         DealAreaDamage(impactPoint, bufferOverrunAttackRange, bufferOverrunDamage);
 
@@ -651,10 +634,13 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
         SpawnNecroticCluster(impactPoint);
 
-        ReportDebug("BUFFER OVERRUN: Impacto aplicado. Clúster Necrótico creado.", 1);
+        ReportDebug("BUFFER OVERRUN: Impacto aplicado. Cluster Necrotico creado.", 1);
         currentState = BossState.Idle;
     }
 
+    /// <summary>
+    /// Determina un punto vectorial frente al jefe en base a la distancia maxima de ataque y direccion del jugador.
+    /// </summary>
     private Vector3 CalculateBufferOverrunTarget()
     {
         if (player == null)
@@ -669,6 +655,9 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         return transform.position + dir * bufferOverrunDashDistance;
     }
 
+    /// <summary>
+    /// Coloca el objeto de efecto restrictivo intentando asegurar su contacto inicial con el terreno logico.
+    /// </summary>
     private void SpawnNecroticCluster(Vector3 position)
     {
         if (necroticClusterPrefab == null)
@@ -677,23 +666,19 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
             return;
         }
 
-        // Valida posición en el NavMesh
         Vector3 spawnPosition = position;
         NavMeshHit hit;
 
-        // Buscam el punto más cercano en un radio de 10 unidades
         if (NavMesh.SamplePosition(position, out hit, 10.0f, NavMesh.AllAreas))
         {
             spawnPosition = hit.position;
         }
         else
         {
-            // Si no encuentra suelo, cancela el spawn para evitar clusters flotantes
-            ReportDebug("WARNING: No se encontró suelo NavMesh cerca de la posición.", 1);
+            ReportDebug("WARNING: No se encontro suelo NavMesh cerca de la posicion.", 1);
             return;
         }
 
-        // Instancia en la posición corregida
         GameObject cluster = Instantiate(necroticClusterPrefab, spawnPosition, Quaternion.identity);
         instantiatedEffects.Add(cluster);
 
@@ -705,24 +690,23 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         else Destroy(cluster, clusterDuration);
     }
 
-    #endregion
-
-    #region Fase Base 4 – Recuperación Larga
-
     private IEnumerator LongRecovery()
     {
-        ReportDebug("RECUPERACIÓN LARGA: 3 s (colapso del clúster → larvas) + 2 s.", 1);
+        ReportDebug("RECUPERACION LARGA: 3 s (colapso del cluster) + 2 s adicionales.", 1);
         yield return new WaitForSeconds(bufferOverrunLongRecovery);
         yield return new WaitForSeconds(cycleRepeatDelay);
     }
 
     #endregion
 
-    #region Comportamiento Dinámico – Desfragmentación Evasiva
+    #region Habilidades Dinamicas y Evasivas
 
+    /// <summary>
+    /// Aplica el desplazamiento de fuga y responde con dano disperso desde una posicion distante.
+    /// </summary>
     private IEnumerator ExecuteDesfragmentacion()
     {
-        ReportDebug("DESFRAGMENTACIÓN EVASIVA: Ejecutando.", 1);
+        ReportDebug("DESFRAGMENTACION EVASIVA: Ejecutando.", 1);
         currentState = BossState.Teleporting;
         defragOnCooldown = true;
 
@@ -737,30 +721,29 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         Vector3 evasionPos = GetEvasionPosition(defragTeleportDist);
         PerformTeleport(evasionPos);
 
-        // La Fuga de Memoria se forma en la posición de llegada con un breve
-        // retraso visual para que coincida con la animación de impacto de TP.
-        yield return new WaitForSeconds(memoryLeakFormationDelay);
-        SpawnMemoryLeak(transform.position);
-
         if (memoryLeakIndicatorPrefab != null)
         {
             GameObject indicator = Instantiate(memoryLeakIndicatorPrefab, transform.position, Quaternion.identity);
             Destroy(indicator, memoryLeakFormationDelay + 0.1f);
         }
 
+        yield return new WaitForSeconds(memoryLeakFormationDelay);
+
+        SpawnMemoryLeak(transform.position);
+
         yield return new WaitForSeconds(0.25f - Mathf.Min(0.25f, memoryLeakFormationDelay));
 
         FacePlayer();
         FireReprisalShot();
 
-        ReportDebug("DESFRAGMENTACIÓN EVASIVA: Teleport y represalia completados.", 1);
+        ReportDebug("DESFRAGMENTACION EVASIVA: Teleport y represalia completados.", 1);
         currentState = BossState.Idle;
 
         StartCoroutine(DefragCooldownRoutine());
     }
 
     /// <summary>
-    /// Disparo de represalia: 3 proyectiles en arco frontal estrecho.
+    /// Proyecta una rafaga defensiva de proyectiles abarcando angulos predefinidos.
     /// </summary>
     private void FireReprisalShot()
     {
@@ -795,9 +778,12 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
     {
         yield return new WaitForSeconds(defragCooldown);
         defragOnCooldown = false;
-        ReportDebug("DESFRAGMENTACIÓN EVASIVA: Cooldown finalizado.", 1);
+        ReportDebug("DESFRAGMENTACION EVASIVA: Cooldown finalizado.", 1);
     }
 
+    /// <summary>
+    /// Escanea terreno utilizable en direccion contraria a la de contacto del jugador para asegurar un reubicamiento seguro.
+    /// </summary>
     private Vector3 GetEvasionPosition(float distance)
     {
         if (player == null)
@@ -814,10 +800,9 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
                : candidate;
     }
 
-    #endregion
-
-    #region Comportamiento Dinámico – Latencia Cero
-
+    /// <summary>
+    /// Materializa instantaneamente a la IA cerca de un punto ciego para castigar combates distantes.
+    /// </summary>
     private IEnumerator ExecuteLatenciaCero()
     {
         ReportDebug("LATENCIA CERO: Ejecutando.", 1);
@@ -835,21 +820,19 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         Vector3 blindFlank = GetPlayerBlindFlank();
         PerformTeleport(blindFlank);
 
-        // Anticipación visible: indicador de suelo + Fuga de Memoria formándose.
         if (latenciaGroundIndicatorPrefab != null)
         {
             GameObject indicator = Instantiate(latenciaGroundIndicatorPrefab, transform.position, Quaternion.identity);
             Destroy(indicator, latenciaAnticipationDuration);
         }
 
-        SpawnMemoryLeak(transform.position);
-
         if (animController != null) animController.IsWalking = false;
+
         yield return new WaitForSeconds(latenciaAnticipationDuration);
 
-        DealAreaDamage(transform.position, bufferOverrunAttackRange * 0.5f, latenciaDamage);
+        //DealAreaDamage(transform.position, bufferOverrunAttackRange * 0.5f, latenciaDamage);
+        SpawnMemoryLeak(transform.position);
 
-        // Encadenar Buffer Overrun
         yield return StartCoroutine(ExecuteBufferOverrun(calledByLatencia: true));
 
         currentState = BossState.Idle;
@@ -864,6 +847,9 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         ReportDebug("LATENCIA CERO: Cooldown finalizado.", 1);
     }
 
+    /// <summary>
+    /// Procesa de forma pseudoaleatoria los flancos de vision lateral para inyectar al modelo.
+    /// </summary>
     private Vector3 GetPlayerBlindFlank()
     {
         if (player == null) return transform.position;
@@ -882,11 +868,14 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
     #endregion
 
-    #region Hito 50 % – Arquitectura Distribuida
+    #region Hito 50 Porciento - Arquitectura Distribuida
 
+    /// <summary>
+    /// Transforma al modelo a un estado inmune e invoca entidades requeridas para debilitar la barrera gradualmente.
+    /// </summary>
     private IEnumerator ExecuteArquitecturaDistribuida()
     {
-        ReportDebug("ARQUITECTURA DISTRIBUIDA: Hito 50 % alcanzado.", 1);
+        ReportDebug("ARQUITECTURA DISTRIBUIDA: Hito 50 por ciento alcanzado.", 1);
         currentState = BossState.Phase50;
         architecturePhaseActive = true;
 
@@ -901,10 +890,9 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
             VFXHelper.StopAndDestroy(phaseTransitionVFX, phaseTransitionVFX.main.duration);
         }
 
-        // Spawn de hasta 3 Nodos Purulentos
         spawnedNodes.Clear();
         activeNodeCount = 0;
-        _roomCenter = ComputeRoomCenter();
+        roomCenter = ComputeRoomCenter();
 
         for (int i = 0; i < maxNodes; i++)
         {
@@ -955,14 +943,13 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         if (nodeHealth != null) nodeHealth.OnDeath -= OnNodeDestroyed;
     }
 
+    /// <summary>
+    /// Selecciona y valida la coordenada especifica mas lejana en un vector cuadriculado disponible para generar nodos.
+    /// </summary>
     private Vector3 GetNodeSpawnPosition(int index)
     {
-        // Calcula las esquinas de la sala usando el NavMesh para encontrar los
-        // puntos más alejados en cada dirección cardinal desde el centro de la sala.
-        // Si la sala no tiene un centro definido, usa la posición del jefe.
-        Vector3 roomCenter = _roomCenter != Vector3.zero ? _roomCenter : transform.position;
+        Vector3 currentRoomCenter = roomCenter != Vector3.zero ? roomCenter : transform.position;
 
-        // 4 direcciones de esquina; si hay menos de 4 nodos se usan las primeras N.
         Vector3[] cornerDirs = {
             new Vector3( 1f, 0f,  1f).normalized,
             new Vector3(-1f, 0f,  1f).normalized,
@@ -972,13 +959,12 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
         int dirIndex = index % cornerDirs.Length;
         Vector3 dir = cornerDirs[dirIndex];
-        Vector3 candidate = roomCenter + dir * nodeSpawnRadius;
+        Vector3 candidate = currentRoomCenter + dir * nodeSpawnRadius;
 
         NavMeshHit hit;
         if (NavMesh.SamplePosition(candidate, out hit, nodeSpawnRadius * 1.5f, NavMesh.AllAreas))
             return hit.position;
 
-        // Fallback: punto en el NavMesh más cercano al candidato
         return NavMesh.SamplePosition(transform.position + dir * nodeSpawnRadius * 0.5f,
                                        out hit, nodeSpawnRadius, NavMesh.AllAreas)
                ? hit.position
@@ -986,12 +972,10 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
     }
 
     /// <summary>
-    /// Calcula el centro de la sala usando los límites del NavMesh alcanzable
-    /// desde la posición del jefe. Se llama una sola vez al iniciar la fase.
+    /// Toma multiples puntos polares transitables desde el enemigo actual y promedia sus coordenadas centrales para reuso.
     /// </summary>
     private Vector3 ComputeRoomCenter()
     {
-        // Muestrea puntos en 8 direcciones y promedia para estimar el centro.
         Vector3 sum = transform.position;
         int count = 1;
         float probeDistance = nodeSpawnRadius * 3f;
@@ -1015,9 +999,7 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
     #endregion
 
-    #region Utility – Combate
-
-    private const string ANIM_EVENT_ANTICIPATION_PAUSE = "AnimEvent_AnticipationPause";
+    #region Status Effects & Utility
 
     public void HandleAnimEvents(string eventName)
     {
@@ -1029,20 +1011,19 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
     private void StartAnticipationPause()
     {
-        if (_anticipationCoroutine != null) StopCoroutine(_anticipationCoroutine);
-        _anticipationCoroutine = StartCoroutine(AnticipationRoutine());
+        if (anticipationCoroutine != null) StopCoroutine(anticipationCoroutine);
+        anticipationCoroutine = StartCoroutine(AnticipationRoutine());
     }
 
     private IEnumerator AnticipationRoutine()
     {
-        _isInAnticipation = true;
+        isInAnticipation = true;
 
         float duration;
         AudioClip sfx;
 
         if (currentState == BossState.Attacking)
         {
-            // Distingue Buffer Overrun (tiene animación de carga) de Excepción Fatal
             duration = bufferOverrunAnticipationDuration;
             sfx = bufferOverrunAnticipationSFX;
         }
@@ -1064,19 +1045,22 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         yield return new WaitForSeconds(duration);
 
         if (animController != null) animController.ResumeAnimation();
-        _isInAnticipation = false;
-        _anticipationCoroutine = null;
+        isInAnticipation = false;
+        anticipationCoroutine = null;
     }
 
     private void CancelAnticipation()
     {
-        if (_anticipationCoroutine != null) StopCoroutine(_anticipationCoroutine);
-        _anticipationCoroutine = null;
+        if (anticipationCoroutine != null) StopCoroutine(anticipationCoroutine);
+        anticipationCoroutine = null;
         if (animController != null) animController.ResumeAnimation();
         if (enemyVisualEffects != null) enemyVisualEffects.CancelAnticipationBlink();
-        _isInAnticipation = false;
+        isInAnticipation = false;
     }
 
+    /// <summary>
+    /// Escanea impactos sobre esferas de colision para delegar reduccion de recursos a scripts identificados.
+    /// </summary>
     private void DealAreaDamage(Vector3 center, float radius, float damage)
     {
         Collider[] hits = Physics.OverlapSphere(center, radius);
@@ -1090,6 +1074,9 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
+    /// <summary>
+    /// Analiza mitigaciones de escudos del objetivo previniendo el valor negativo de ataque transmitido a la salud.
+    /// </summary>
     private void ExecuteAttack(GameObject target, float damage)
     {
         if (target.TryGetComponent(out PlayerBlockSystem blockSystem) &&
@@ -1110,13 +1097,8 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
-    #endregion
-
-    #region Utility – Movimiento y Teleport
-
     /// <summary>
-    /// Embestida que se detiene en el primer frame en que el jugador entra en
-    /// el radio de impacto, igual que la Ola de Lodo del jefe 1.
+    /// Traza fotogramas para proyectar un traslado interrumpiendo el flujo temporal si contacta colisiones directas de adversario.
     /// </summary>
     private IEnumerator DashToPositionOrHit(Vector3 target, float duration)
     {
@@ -1126,7 +1108,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
         FaceDirection((target - start).normalized);
 
-        // Indicador de trayectoria en el suelo durante la carga
         if (bufferOverrunTrailIndicatorPrefab != null)
         {
             float dist = Vector3.Distance(start, target);
@@ -1148,7 +1129,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
             else
                 transform.position = next;
 
-            // Comprueba colisión con el jugador
             Collider[] hits = Physics.OverlapSphere(transform.position,
                                                      bufferOverrunAttackRange * 0.5f,
                                                      LayerMask.GetMask("Player"));
@@ -1163,6 +1143,9 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
+    /// <summary>
+    /// Enlaza particulas de fuga y llegada con asignacion de coordenadas directas sobre limites del NavMesh.
+    /// </summary>
     private void PerformTeleport(Vector3 target)
     {
         if (teleportVFXPrefab != null)
@@ -1193,10 +1176,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
         ReportDebug($"TELEPORT: {transform.position}", 1);
     }
-
-    #endregion
-
-    #region Utility – Spawns
 
     private void SpawnMemoryLeak(Vector3 position)
     {
@@ -1245,10 +1224,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
-    #endregion
-
-    #region Utility – Agente y Orientación
-
     private void StopAgent()
     {
         if (agent != null && agent.enabled)
@@ -1285,6 +1260,9 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
+    /// <summary>
+    /// Itera sobre indices almacenados para suprimir todo modelo no necesario despues del fin de combate.
+    /// </summary>
     private void CleanUpEffects()
     {
         for (int i = instantiatedEffects.Count - 1; i >= 0; i--)
@@ -1297,7 +1275,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
         instantiatedEffects.Clear();
 
-        // Matar larvas huérfanas que no estén registradas en instantiatedEffects.
         foreach (Larva larva in FindObjectsByType<Larva>(FindObjectsSortMode.None))
         {
             if (larva != null && larva.gameObject != null)
@@ -1309,7 +1286,7 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
     #endregion
 
-    #region Debug – Gizmos y OnGUI
+    #region Unity Debug & GUI
 
     private void OnDrawGizmos()
     {

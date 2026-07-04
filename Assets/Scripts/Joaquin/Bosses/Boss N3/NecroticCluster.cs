@@ -105,9 +105,7 @@ public class NecroticCluster : MonoBehaviour
         this.slowFraction = slowFraction;
         this.dealDamage = dealDamage;
 
-        col.radius = radius;
-        // Sincroniza la escala visual con el radio funcional desde el inicio.
-        float initialScaleXZ = radius * 2f;
+        float initialScaleXZ = radius;
         transform.localScale = new Vector3(initialScaleXZ, transform.localScale.y, initialScaleXZ);
 
         if (idleVFX != null) idleVFX.Play();
@@ -124,9 +122,8 @@ public class NecroticCluster : MonoBehaviour
         if (hasExpired) return;
 
         radius *= (1f + synergyExpansionPercent);
-        col.radius = radius;
 
-        float expandedScaleXZ = radius * 2f;
+        float expandedScaleXZ = radius;
         transform.localScale = new Vector3(expandedScaleXZ, transform.localScale.y, expandedScaleXZ);
 
         Debug.Log($"[NecroticCluster] Sinergia: radio expandido a {radius:F2} uds.");
@@ -155,10 +152,16 @@ public class NecroticCluster : MonoBehaviour
         PlayerHealth health = playerObj.GetComponent<PlayerHealth>();
         if (health == null) yield break;
 
+        // Cachea la espera por rendimiento
+        WaitForSeconds oneSecondTick = new WaitForSeconds(1f);
+
         while (playerIsInside && !hasExpired)
         {
-            health.TakeDamage(dps * Time.deltaTime, false, AttackDamageType.Melee);
-            yield return null;
+            // Aplica el daño directo
+            health.TakeDamage(dps, false, AttackDamageType.Melee);
+
+            // Pausa la corrutina por 1 segundo
+            yield return oneSecondTick;
         }
     }
 

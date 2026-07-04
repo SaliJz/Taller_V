@@ -73,9 +73,8 @@ public class MemoryLeak : MonoBehaviour
         this.duration = duration;
         this.dps = dps;
         this.radius = radius;
-        col.radius = radius;
 
-        float initialScaleXZ = radius * 2f;
+        float initialScaleXZ = radius;
         transform.localScale = new Vector3(initialScaleXZ, transform.localScale.y, initialScaleXZ);
 
         if (poolVFX != null) poolVFX.Play();
@@ -98,9 +97,8 @@ public class MemoryLeak : MonoBehaviour
         if (hasExpired) return;
 
         radius *= (1f + synergyExpansionPercent);
-        col.radius = radius;
 
-        float expandedScaleXZ = radius * 2f;
+        float expandedScaleXZ = radius;
         transform.localScale = new Vector3(expandedScaleXZ, transform.localScale.y, expandedScaleXZ);
 
         Debug.Log($"[MemoryLeak] Sinergia de larva: radio expandido a {radius:F2} uds.");
@@ -127,10 +125,16 @@ public class MemoryLeak : MonoBehaviour
         PlayerHealth health = playerObj.GetComponent<PlayerHealth>();
         if (health == null) yield break;
 
+        // Cachea la espera para evitar alocaciones de memoria innecesarias en cada iteración
+        WaitForSeconds oneSecondTick = new WaitForSeconds(1f);
+
         while (playerIsInside && !hasExpired)
         {
-            health.TakeDamage(dps * Time.deltaTime, false, AttackDamageType.Melee);
-            yield return null;
+            // Aplica el daño total directamente
+            health.TakeDamage(dps, false, AttackDamageType.Melee);
+
+            // Espera un segundo exacto antes del siguiente tick de daño
+            yield return oneSecondTick;
         }
     }
 
