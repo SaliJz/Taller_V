@@ -13,11 +13,11 @@ public class TheHostAnimCtrl : MonoBehaviour
     Animator anim;
 
     #endregion
-    
+
     #region Inspector - Buffer Settings
 
     [Tooltip("Estos valor tambien puede ser llamado desde otro script para calzar con la anticipación real del boss")]
-    [Header("Buffer Attack Settings")] 
+    [Header("Buffer Attack Settings")]
     [SerializeField] float _bufferAnticipationTime = 1f;
     [SerializeField] float _bufferDuration = 3f;
     [SerializeField] float bufferShakeIntensity = 3f;
@@ -26,7 +26,8 @@ public class TheHostAnimCtrl : MonoBehaviour
     #endregion
 
     #region  Inspector - Teleport Settings
-    [Header ("TP Settings")]
+
+    [Header("TP Settings")]
     [Tooltip("Este valor tambien puede ser llamado desde otro script para calzar con la anticipación real del boss")]
     [SerializeField] float _tpAnticipationTime = 1f;
     [SerializeField] AnimationCurve tpCurve;
@@ -34,6 +35,7 @@ public class TheHostAnimCtrl : MonoBehaviour
     #endregion
 
     #region Internal Properties
+
     bool _isWalking;
     Vector3 originalScale;
     static readonly string ANIM_BUFFER_PRE = "A_Buffer_Pre";
@@ -44,6 +46,9 @@ public class TheHostAnimCtrl : MonoBehaviour
     static readonly int ATK_BLOQ = Animator.StringToHash("AtkBloq");
 
     private Coroutine tpReescalationCoroutine;
+    private bool isAnimationPaused = false;
+    private float speedBeforePause = 1f;
+
     #endregion
 
     #region public Actions
@@ -78,22 +83,25 @@ public class TheHostAnimCtrl : MonoBehaviour
     #endregion
 
     #region Unity Lifetime
+
     private void Awake()
     {
         anim = GetComponent<Animator>();
         originalScale = transform.localScale;
     }
 
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
     private void Update()
     {
-        if(SceneManager.GetActiveScene().name == "AndreiNew")
-        testInputs();
+        if (SceneManager.GetActiveScene().name == "AndreiNew")
+            testInputs();
     }
-    #endif
+#endif
+
     #endregion
 
     #region Public Methods
+
     public void PlayBufferPre()
     {
         ReestoreScale();
@@ -124,6 +132,28 @@ public class TheHostAnimCtrl : MonoBehaviour
         ReestoreScale();
         anim.Play(ANIM_TP_IMPACT);
     }
+
+    /// <summary>
+    /// Congela el animator en su pose actual.
+    /// </summary>
+    public void PauseAnimation()
+    {
+        if (anim == null || isAnimationPaused) return;
+        speedBeforePause = anim.speed;
+        anim.speed = 0f;
+        isAnimationPaused = true;
+    }
+
+    /// <summary>
+    /// Restaura la velocidad del animator tras la pausa de anticipación.
+    /// </summary>
+    public void ResumeAnimation()
+    {
+        if (anim == null || !isAnimationPaused) return;
+        anim.speed = speedBeforePause;
+        isAnimationPaused = false;
+    }
+
     #endregion
 
     private IEnumerator TP_Rescalation()
@@ -134,7 +164,7 @@ public class TheHostAnimCtrl : MonoBehaviour
         {
             t += Time.deltaTime;
 
-            float easedT = tpCurve.Evaluate(t/_tpAnticipationTime);
+            float easedT = tpCurve.Evaluate(t / _tpAnticipationTime);
 
             transform.localScale = Vector3.Lerp(originalScale, Vector3.zero, easedT);
             yield return null;
@@ -167,7 +197,7 @@ public class TheHostAnimCtrl : MonoBehaviour
             float randomY = Random.Range(-bufferShakeIntensity, bufferShakeIntensity);
             float RandomZ = Random.Range(-bufferShakeIntensity, bufferShakeIntensity);
 
-            transform.localPosition = originalPos + new Vector3 (randomX, randomY, RandomZ);
+            transform.localPosition = originalPos + new Vector3(randomX, randomY, RandomZ);
             yield return null;
         }
 
@@ -190,14 +220,14 @@ public class TheHostAnimCtrl : MonoBehaviour
     #region Testing
     private void testInputs()
     {
-        if(Input.GetKeyDown(KeyCode.J)) PlayBufferPre();
-        if(Input.GetKeyDown(KeyCode.K)) PlayBufferAttack();
-        if(Input.GetKeyDown(KeyCode.L)) PlayShotAttack();
-        if(Input.GetKeyDown(KeyCode.O)) PlayTP_pre();
-        if(Input.GetKeyDown(KeyCode.I)) PlayTP_Impact();
+        if (Input.GetKeyDown(KeyCode.J)) PlayBufferPre();
+        if (Input.GetKeyDown(KeyCode.K)) PlayBufferAttack();
+        if (Input.GetKeyDown(KeyCode.L)) PlayShotAttack();
+        if (Input.GetKeyDown(KeyCode.O)) PlayTP_pre();
+        if (Input.GetKeyDown(KeyCode.I)) PlayTP_Impact();
         if (Input.GetKeyDown(KeyCode.Space)) IsWalking = true;
         else if (Input.GetKeyUp(KeyCode.Space)) IsWalking = false;
     }
-    #endregion
 
+    #endregion
 }

@@ -75,6 +75,9 @@ public class MemoryLeak : MonoBehaviour
         this.radius = radius;
         col.radius = radius;
 
+        float initialScaleXZ = radius * 2f;
+        transform.localScale = new Vector3(initialScaleXZ, transform.localScale.y, initialScaleXZ);
+
         if (poolVFX != null) poolVFX.Play();
         if (audioSource != null && loopSFX != null)
         {
@@ -96,7 +99,9 @@ public class MemoryLeak : MonoBehaviour
 
         radius *= (1f + synergyExpansionPercent);
         col.radius = radius;
-        transform.localScale *= (1f + synergyExpansionPercent); // reflejo visual
+
+        float expandedScaleXZ = radius * 2f;
+        transform.localScale = new Vector3(expandedScaleXZ, transform.localScale.y, expandedScaleXZ);
 
         Debug.Log($"[MemoryLeak] Sinergia de larva: radio expandido a {radius:F2} uds.");
     }

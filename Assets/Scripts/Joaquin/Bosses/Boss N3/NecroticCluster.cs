@@ -44,7 +44,10 @@ public class NecroticCluster : MonoBehaviour
     private bool slowApplied = false;
     private float savedPlayerSpeed = 0f;
     private PlayerMovement playerMovement;
+    private PlayerStatsManager playerStatsManager;
     private bool hasExpired = false;
+    private bool dealDamage = true;
+    private const string SLOW_KEY = "NecroticClusterSlow";
 
     #endregion
 
@@ -68,8 +71,9 @@ public class NecroticCluster : MonoBehaviour
         {
             playerIsInside = true;
             playerMovement = other.GetComponent<PlayerMovement>();
+            playerStatsManager = other.GetComponent<PlayerStatsManager>();
             ApplySlowToPlayer();
-            StartCoroutine(DamagePlayerRoutine(other.gameObject));
+            if (dealDamage) StartCoroutine(DamagePlayerRoutine(other.gameObject));
         }
     }
 
@@ -90,15 +94,21 @@ public class NecroticCluster : MonoBehaviour
     /// Inicializa el clúster con los parámetros del boss.
     /// </summary>
     public void Initialize(float duration, float dps, float radius,
-                           GameObject larvaPrefab, int larvaCount)
+                           GameObject larvaPrefab, int larvaCount,
+                           float slowFraction = 0.2f, bool dealDamage = true)
     {
         this.duration = duration;
         this.dps = dps;
         this.radius = radius;
         this.larvaPrefab = larvaPrefab;
         this.larvaCount = larvaCount;
+        this.slowFraction = slowFraction;
+        this.dealDamage = dealDamage;
 
         col.radius = radius;
+        // Sincroniza la escala visual con el radio funcional desde el inicio.
+        float initialScaleXZ = radius * 2f;
+        transform.localScale = new Vector3(initialScaleXZ, transform.localScale.y, initialScaleXZ);
 
         if (idleVFX != null) idleVFX.Play();
 
@@ -116,9 +126,8 @@ public class NecroticCluster : MonoBehaviour
         radius *= (1f + synergyExpansionPercent);
         col.radius = radius;
 
-        // Escala el transform visualmente para reflejar la expansión
-        transform.localScale = Vector3.one * (radius / (transform.localScale.x > 0f ? transform.localScale.x : 1f))
-                             * transform.localScale.x;
+        float expandedScaleXZ = radius * 2f;
+        transform.localScale = new Vector3(expandedScaleXZ, transform.localScale.y, expandedScaleXZ);
 
         Debug.Log($"[NecroticCluster] Sinergia: radio expandido a {radius:F2} uds.");
     }
@@ -191,11 +200,14 @@ public class NecroticCluster : MonoBehaviour
             if (pObj != null) playerTarget = pObj.transform;
         }
 
+        float angleStep = 360f / larvaCount;
+        float offsetMagnitude = radius * 0.5f;
+
         for (int i = 0; i < larvaCount; i++)
         {
             // Distribuye las larvas en círculo alrededor del clúster
-            float angle = i * (360f / larvaCount);
-            Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * (radius * 0.5f);
+            float angle = i * angleStep;
+            Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * offsetMagnitude;
 
             // Posición candidata sin offset en Y
             Vector3 candidatePos = transform.position + offset;
@@ -223,18 +235,39 @@ public class NecroticCluster : MonoBehaviour
 
     #region Player Slow Logic
 
+    /// <summary>
+    /// Aplica la ralentización
+    /// </summary>
     private void ApplySlowToPlayer()
     {
-        if (playerMovement == null || slowApplied) return;
-        savedPlayerSpeed = playerMovement.MoveSpeed;
-        playerMovement.MoveSpeed = savedPlayerSpeed * (1f - slowFraction);
+        if (slowApplied) return;
+
+        if (playerStatsManager != null)
+        {
+            playerStatsManager.ApplyNamedModifier(SLOW_KEY, StatType.MoveSpeed, -slowFraction, isPercentage: true);
+        }
+        else if (playerMovement != null)
+        {
+            savedPlayerSpeed = playerMovement.MoveSpeed;
+            playerMovement.MoveSpeed = savedPlayerSpeed * (1f - slowFraction);
+        }
+
         slowApplied = true;
     }
 
     private void RestorePlayerSpeed()
     {
-        if (!slowApplied || playerMovement == null) return;
-        playerMovement.MoveSpeed = savedPlayerSpeed;
+        if (!slowApplied) return;
+
+        if (playerStatsManager != null)
+        {
+            playerStatsManager.RemoveNamedModifier(SLOW_KEY);
+        }
+        else if (playerMovement != null && savedPlayerSpeed > 0f)
+        {
+            playerMovement.MoveSpeed = savedPlayerSpeed;
+        }
+
         slowApplied = false;
     }
 
