@@ -11265,58 +11265,6 @@ MonoBehaviour:
     FrequencyGain: 1
     Duration: 1
     m_NoiseOffsets: {x: 0, y: 0, z: 0}
---- !u!1 &1986346779
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1986346781}
-  - component: {fileID: 1986346780}
-  m_Layer: 0
-  m_Name: Occlusion Controller
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1986346780
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1986346779}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6fbe79eb776aa049a456e192d2e2478, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cam: {fileID: 0}
-  obstructionMask:
-    serializedVersion: 2
-    m_Bits: 512
-  targets:
-  - {fileID: 0}
-  fadeOpacity: 0.15
-  fadeSpeed: 3
---- !u!4 &1986346781
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1986346779}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -46.98806, y: -35.050686, z: 82.786064}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2033657828
 GameObject:
   m_ObjectHideFlags: 0
@@ -11691,6 +11639,11 @@ PrefabInstance:
       addedObject: {fileID: 1061638032}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+--- !u!4 &2043935769 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7848094727345952618, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+  m_PrefabInstance: {fileID: 2043935768}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2069978054
 GameObject:
   m_ObjectHideFlags: 0
@@ -11701,6 +11654,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2069978056}
   - component: {fileID: 2069978055}
+  - component: {fileID: 2069978057}
   m_Layer: 0
   m_Name: CameraOcclusion
   m_TagString: Untagged
@@ -11724,7 +11678,7 @@ MonoBehaviour:
   mainCamera: {fileID: 788196770}
   occlusionLayers:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 4608
   raycastRadius: 0.5
   detectionDistance: 50
   fadedAlpha: 0.3
@@ -11744,6 +11698,26 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2069978057
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2069978054}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6fbe79eb776aa049a456e192d2e2478, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cam: {fileID: 788196770}
+  obstructionMask:
+    serializedVersion: 2
+    m_Bits: 4608
+  targets:
+  - {fileID: 2043935769}
+  fadeOpacity: 0.2
+  fadeSpeed: 3
 --- !u!114 &2078819923 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6504861832178530549, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
@@ -12752,5 +12726,4 @@ SceneRoots:
   - {fileID: 1460886961}
   - {fileID: 1536295495}
   - {fileID: 1064039142}
-  - {fileID: 1986346781}
   - {fileID: 2138881683}
