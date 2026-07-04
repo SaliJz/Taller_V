@@ -74,6 +74,7 @@ public class HUDManager : MonoBehaviour
     [SerializeField] private Image ghostHealthBar;
     [SerializeField] private float ghostDecayDuration = 1f;
     [SerializeField] private float ghostDecaySpeed = 0.5f;
+    [SerializeField] private TMP_Text healthText;
 
     #endregion
 
@@ -149,7 +150,7 @@ public class HUDManager : MonoBehaviour
 
         // Inicializar overlay de pantalla
         if (screenFlashOverlay != null)
-        {
+        {   
             // Asegurarse de que el overlay esta invisible al inicio
             Color transparent = lowHealthScreenFlashColor;
             transparent.a = 0f;
@@ -253,7 +254,7 @@ public class HUDManager : MonoBehaviour
     /// </summary>
     /// <param name="currentHealth"> Vida actual del jugador </param>
     /// <param name="maxHealth"> Vida maxima del jugador </param>
-    private void UpdateHealthBar(float currentHealth, float maxHealth)
+    private void  UpdateHealthBar(float currentHealth, float maxHealth)
     {
         if (healthBar == null) return;
 
@@ -261,7 +262,11 @@ public class HUDManager : MonoBehaviour
         {
             Debug.LogWarning("[HUDManager] maxHealth invalido en UpdateHealthBar: " + maxHealth);
             healthBar.fillAmount = 0f;
-            return;
+            return;  
+        }
+        if (healthText != null)
+        {
+            healthText.text = $"{Mathf.RoundToInt(Mathf.Max(0f, currentHealth))} / {Mathf.RoundToInt(Mathf.Max(0f, maxHealth))}";
         }
 
         float healthPercentage = Mathf.Clamp01(currentHealth / maxHealth);
