@@ -6,6 +6,7 @@ public class KnightAnimCtrl : MonoBehaviour
     #region Inspector - References
 
     [SerializeField] private Animator anim;
+    [SerializeField] private EscudoController shieldCtrl;
 
     #endregion
 
@@ -89,6 +90,11 @@ public class KnightAnimCtrl : MonoBehaviour
     #endregion
 
     #region Animation Control
+
+    public void PlayInvulnerabilityVFX()
+    {
+        if (shieldCtrl != null) shieldCtrl.Escudo = true;
+    }
 
     public void PauseAnimation()
     {

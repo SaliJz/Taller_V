@@ -36,7 +36,9 @@ public class EscudoController : MonoBehaviour
             Escudo = false;
 
             if (escudoCoroutine != null)
+            {
                 StopCoroutine(escudoCoroutine);
+            }
 
             escudoCoroutine = StartCoroutine(EfectoEscudo());
         }

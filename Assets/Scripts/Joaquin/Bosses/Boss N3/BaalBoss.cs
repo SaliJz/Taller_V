@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class BaalBoss : MonoBehaviour
+public class BaalBoss : MonoBehaviour, IAnimEventHandler
 {
     #region Inspector – References
 
@@ -1026,6 +1026,10 @@ public class BaalBoss : MonoBehaviour
     #endregion
 
     #region Utility – Combate
+
+    public void HandleAnimEvents(string eventName)
+    {
+    }
 
     private void DealAreaDamage(Vector3 center, float radius, float damage)
     {
