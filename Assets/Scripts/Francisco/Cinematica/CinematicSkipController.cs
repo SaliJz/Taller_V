@@ -82,14 +82,14 @@ public class CinematicSkipController : MonoBehaviour
     {
         bool active = false;
 
-        if (GamepadPointer.Instance != null) 
+        if (GamepadPointer.Instance != null)
         {
             if (GamepadPointer.Instance.IsGamepadMode())
             {
-                if (GamepadPointer.Instance.IsSteamActive) 
+                if (GamepadPointer.Instance.IsSteamActive)
                 {
                     if (SteamInputManager.Instance.GetMoveAxis().magnitude > 0.2f ||
-                        SteamInputManager.Instance.GetAimAxis().magnitude > 0.2f) 
+                        SteamInputManager.Instance.GetAimAxis().magnitude > 0.2f)
                     {
                         active = true;
                     }
@@ -124,15 +124,28 @@ public class CinematicSkipController : MonoBehaviour
         }
     }
 
+    private bool IsPointerOverSkipButton()
+    {
+        if (skipButton == null || Mouse.current == null) return false;
+
+        RectTransform buttonRect = skipButton.GetComponent<RectTransform>();
+        Vector2 pointerPos = Mouse.current.position.ReadValue();
+
+        Canvas canvas = skipButton.GetComponentInParent<Canvas>();
+        Camera cam = (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay) ? canvas.worldCamera : null;
+
+        return RectTransformUtility.RectangleContainsScreenPoint(buttonRect, pointerPos, cam);
+    }
+
     private void CheckHoldInput()
     {
         bool isPressingSkipButton = false;
 
-        if (GamepadPointer.Instance != null && GamepadPointer.Instance.IsGamepadMode()) 
+        if (GamepadPointer.Instance != null && GamepadPointer.Instance.IsGamepadMode())
         {
             if (GamepadPointer.Instance.IsSteamActive)
             {
-                if (SteamInputManager.Instance.GetInteractPressed()) isPressingSkipButton = true; 
+                if (SteamInputManager.Instance.GetInteractPressed()) isPressingSkipButton = true;
             }
             else if (Gamepad.current != null)
             {
@@ -142,7 +155,7 @@ public class CinematicSkipController : MonoBehaviour
         else
         {
             if (Keyboard.current != null && Keyboard.current.spaceKey.isPressed) isPressingSkipButton = true;
-            if (Mouse.current != null && Mouse.current.leftButton.isPressed) isPressingSkipButton = true;
+            if (Mouse.current != null && Mouse.current.leftButton.isPressed && IsPointerOverSkipButton()) isPressingSkipButton = true;
         }
 
         if (isPressingSkipButton)

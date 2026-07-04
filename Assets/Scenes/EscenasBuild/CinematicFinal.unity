@@ -1236,6 +1236,7 @@ GameObject:
   - component: {fileID: 32357398}
   - component: {fileID: 32357397}
   - component: {fileID: 32357396}
+  - component: {fileID: 32357400}
   m_Layer: 5
   m_Name: Dialog1
   m_TagString: Untagged
@@ -1264,11 +1265,11 @@ MonoBehaviour:
   typingSoundClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
   typingVolume: 1
   charactersPerSecond: 25
-  advanceAutomatically: 1
+  advanceAutomatically: 0
   autoAdvanceDelay: 1.5
   canSkipEffect: 0
   advanceKey: 32
-  canAdvanceManually: 0
+  canAdvanceManually: 1
   dialogue:
   - Line: "\xA1Yyyyy el p\xFAblico estalla en un aplauso!"
     OnLineEnd:
@@ -1276,7 +1277,19 @@ MonoBehaviour:
         m_Calls: []
   onDialogueCompletedEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 32357400}
+        m_TargetAssemblyTypeName: TimelineDialogTrigger, Assembly-CSharp
+        m_MethodName: ReanudarTimeline
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &32357397
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1395,6 +1408,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0.026123047, y: -148.35986}
   m_SizeDelta: {x: 1920, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &32357400
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 32357395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6727f5592724d334fbb7ede628b55e6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  director: {fileID: 1796852451}
 --- !u!1 &44561489
 GameObject:
   m_ObjectHideFlags: 0
@@ -1557,6 +1583,7 @@ GameObject:
   - component: {fileID: 52948609}
   - component: {fileID: 52948608}
   - component: {fileID: 52948607}
+  - component: {fileID: 52948611}
   m_Layer: 5
   m_Name: Dialog8
   m_TagString: Untagged
@@ -1585,11 +1612,11 @@ MonoBehaviour:
   typingSoundClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
   typingVolume: 1
   charactersPerSecond: 25
-  advanceAutomatically: 1
+  advanceAutomatically: 0
   autoAdvanceDelay: 1.5
   canSkipEffect: 0
   advanceKey: 32
-  canAdvanceManually: 0
+  canAdvanceManually: 1
   dialogue:
   - Line: "Pero para tu mala suerte\u2026 ya no eres t\xFA\u2026 eres del show. Todo
       fue un pr\xE9stamo con intereses. Aunqueee\u2026"
@@ -1598,7 +1625,19 @@ MonoBehaviour:
         m_Calls: []
   onDialogueCompletedEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 32357400}
+        m_TargetAssemblyTypeName: TimelineDialogTrigger, Assembly-CSharp
+        m_MethodName: ReanudarTimeline
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &52948608
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1687,7 +1726,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &52948609
@@ -1717,6 +1756,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0.026123047, y: -148.35986}
   m_SizeDelta: {x: 1920, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &52948611
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 52948606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6727f5592724d334fbb7ede628b55e6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  director: {fileID: 1796852451}
 --- !u!1 &56323486
 GameObject:
   m_ObjectHideFlags: 0
@@ -10282,81 +10334,6 @@ RectTransform:
   m_AnchoredPosition: {x: -215.6953, y: 1319.0215}
   m_SizeDelta: {x: 2000, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &218080968
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 218080969}
-  - component: {fileID: 218080971}
-  - component: {fileID: 218080970}
-  m_Layer: 0
-  m_Name: Aleta
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &218080969
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 218080968}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 583683757}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 549.96533, y: -148.40471}
-  m_SizeDelta: {x: 666.114, y: 499.585}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &218080970
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 218080968}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: dc0e484bf79b11e4f9726a4c7336cd2c, type: 3}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &218080971
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 218080968}
-  m_CullTransparentMesh: 1
 --- !u!1 &228953058
 GameObject:
   m_ObjectHideFlags: 0
@@ -12503,6 +12480,7 @@ GameObject:
   - component: {fileID: 374289660}
   - component: {fileID: 374289659}
   - component: {fileID: 374289658}
+  - component: {fileID: 374289661}
   m_Layer: 5
   m_Name: Dialog2
   m_TagString: Untagged
@@ -12550,11 +12528,11 @@ MonoBehaviour:
   typingSoundClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
   typingVolume: 1
   charactersPerSecond: 25
-  advanceAutomatically: 1
+  advanceAutomatically: 0
   autoAdvanceDelay: 1.5
   canSkipEffect: 0
   advanceKey: 32
-  canAdvanceManually: 0
+  canAdvanceManually: 1
   dialogue:
   - Line: "\xBFEn serio cre\xEDste que derrotar al grandote te dejar\xEDa salir?"
     OnLineEnd:
@@ -12562,7 +12540,19 @@ MonoBehaviour:
         m_Calls: []
   onDialogueCompletedEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 32357400}
+        m_TargetAssemblyTypeName: TimelineDialogTrigger, Assembly-CSharp
+        m_MethodName: ReanudarTimeline
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &374289659
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12651,7 +12641,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &374289660
@@ -12662,6 +12652,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 374289656}
   m_CullTransparentMesh: 1
+--- !u!114 &374289661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 374289656}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6727f5592724d334fbb7ede628b55e6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  director: {fileID: 1796852451}
 --- !u!1 &377463647
 GameObject:
   m_ObjectHideFlags: 0
@@ -13061,81 +13064,6 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 389722806}
-  m_CullTransparentMesh: 1
---- !u!1 &397561664
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 397561665}
-  - component: {fileID: 397561667}
-  - component: {fileID: 397561666}
-  m_Layer: 0
-  m_Name: Diamantes
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &397561665
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 397561664}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 1
-  m_Children: []
-  m_Father: {fileID: 583683757}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -276.38382, y: -70.324394}
-  m_SizeDelta: {x: 812.843, y: 609.632}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &397561666
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 397561664}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: ddf8eca280576de448e6c654b2fa7375, type: 3}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &397561667
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 397561664}
   m_CullTransparentMesh: 1
 --- !u!1 &398098591
 GameObject:
@@ -21226,10 +21154,6 @@ RectTransform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 2041940748}
-  - {fileID: 1815391670}
-  - {fileID: 218080969}
-  - {fileID: 993592062}
-  - {fileID: 397561665}
   m_Father: {fileID: 2023086990}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -25056,6 +24980,7 @@ GameObject:
   - component: {fileID: 858036083}
   - component: {fileID: 858036082}
   - component: {fileID: 858036081}
+  - component: {fileID: 858036085}
   m_Layer: 5
   m_Name: Dialog5
   m_TagString: Untagged
@@ -25084,11 +25009,11 @@ MonoBehaviour:
   typingSoundClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
   typingVolume: 1
   charactersPerSecond: 25
-  advanceAutomatically: 1
+  advanceAutomatically: 0
   autoAdvanceDelay: 1.5
   canSkipEffect: 0
   advanceKey: 32
-  canAdvanceManually: 0
+  canAdvanceManually: 1
   dialogue:
   - Line: "Y \xA1Ta-daaa!\xBFQu\xE9 te parece la nueva decoraci\xF3n? \xA1A m\xED
       me vuelve loco!"
@@ -25097,7 +25022,19 @@ MonoBehaviour:
         m_Calls: []
   onDialogueCompletedEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 32357400}
+        m_TargetAssemblyTypeName: TimelineDialogTrigger, Assembly-CSharp
+        m_MethodName: ReanudarTimeline
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &858036082
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25186,7 +25123,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &858036083
@@ -25216,6 +25153,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0.026123047, y: -148.35986}
   m_SizeDelta: {x: 1920, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &858036085
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 858036080}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6727f5592724d334fbb7ede628b55e6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  director: {fileID: 1796852451}
 --- !u!1 &875298243
 GameObject:
   m_ObjectHideFlags: 0
@@ -32294,81 +32244,6 @@ SortingGroup:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_SortAtRoot: 0
---- !u!1 &993592061
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 993592062}
-  - component: {fileID: 993592064}
-  - component: {fileID: 993592063}
-  m_Layer: 0
-  m_Name: Image (6)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &993592062
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 993592061}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 583683757}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 591.94476, y: -146.78996}
-  m_SizeDelta: {x: 666.114, y: 499.585}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &993592063
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 993592061}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 0a079a8820c933a4186eaa4a96699ec6, type: 3}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &993592064
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 993592061}
-  m_CullTransparentMesh: 1
 --- !u!1 &1000943321
 GameObject:
   m_ObjectHideFlags: 0
@@ -32788,6 +32663,7 @@ GameObject:
   - component: {fileID: 1013235125}
   - component: {fileID: 1013235124}
   - component: {fileID: 1013235123}
+  - component: {fileID: 1013235127}
   m_Layer: 5
   m_Name: Dialog4
   m_TagString: Untagged
@@ -32816,11 +32692,11 @@ MonoBehaviour:
   typingSoundClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
   typingVolume: 1
   charactersPerSecond: 25
-  advanceAutomatically: 1
+  advanceAutomatically: 0
   autoAdvanceDelay: 1.5
   canSkipEffect: 0
   advanceKey: 32
-  canAdvanceManually: 0
+  canAdvanceManually: 1
   dialogue:
   - Line: El dorado resalta tus ojos, bueno donde deberian estar tus ojos
     OnLineEnd:
@@ -32828,7 +32704,19 @@ MonoBehaviour:
         m_Calls: []
   onDialogueCompletedEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 32357400}
+        m_TargetAssemblyTypeName: TimelineDialogTrigger, Assembly-CSharp
+        m_MethodName: ReanudarTimeline
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1013235124
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32917,7 +32805,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &1013235125
@@ -32947,6 +32835,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0.026123047, y: -148.35986}
   m_SizeDelta: {x: 1920, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1013235127
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1013235122}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6727f5592724d334fbb7ede628b55e6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  director: {fileID: 1796852451}
 --- !u!1 &1015787796
 GameObject:
   m_ObjectHideFlags: 0
@@ -38537,6 +38438,7 @@ GameObject:
   - component: {fileID: 1335058201}
   - component: {fileID: 1335058200}
   - component: {fileID: 1335058199}
+  - component: {fileID: 1335058203}
   m_Layer: 5
   m_Name: Dialog9
   m_TagString: Untagged
@@ -38565,11 +38467,11 @@ MonoBehaviour:
   typingSoundClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
   typingVolume: 1
   charactersPerSecond: 25
-  advanceAutomatically: 1
+  advanceAutomatically: 0
   autoAdvanceDelay: 1.5
   canSkipEffect: 0
   advanceKey: 32
-  canAdvanceManually: 0
+  canAdvanceManually: 1
   dialogue:
   - Line: "Aunqueee... si alguien golpeara al genio que puso en marcha todo este
       espect\xE1culo, \xA1puf!, se acab\xF3 el show. \xA1Qu\xE9 idea tan rid\xEDcula!"
@@ -38578,7 +38480,19 @@ MonoBehaviour:
         m_Calls: []
   onDialogueCompletedEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 32357400}
+        m_TargetAssemblyTypeName: TimelineDialogTrigger, Assembly-CSharp
+        m_MethodName: ReanudarTimeline
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1335058200
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -38667,7 +38581,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &1335058201
@@ -38697,6 +38611,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0.026123047, y: -148.35986}
   m_SizeDelta: {x: 1920, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1335058203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1335058198}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6727f5592724d334fbb7ede628b55e6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  director: {fileID: 1796852451}
 --- !u!1 &1336821509
 GameObject:
   m_ObjectHideFlags: 0
@@ -51675,81 +51602,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1807489117}
   m_CullTransparentMesh: 1
---- !u!1 &1815391669
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1815391670}
-  - component: {fileID: 1815391672}
-  - component: {fileID: 1815391671}
-  m_Layer: 0
-  m_Name: Bolsa
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1815391670
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1815391669}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.3712, y: 1.3712, z: 1.3712}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 583683757}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 116, y: -102}
-  m_SizeDelta: {x: 630.725, y: 473.044}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1815391671
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1815391669}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 3bebb513138892d44a620d4bd90c7d91, type: 3}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &1815391672
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1815391669}
-  m_CullTransparentMesh: 1
 --- !u!1 &1818939038
 GameObject:
   m_ObjectHideFlags: 0
@@ -52212,6 +52064,7 @@ GameObject:
   - component: {fileID: 1833397081}
   - component: {fileID: 1833397080}
   - component: {fileID: 1833397079}
+  - component: {fileID: 1833397083}
   m_Layer: 5
   m_Name: Dialog3
   m_TagString: Untagged
@@ -52240,11 +52093,11 @@ MonoBehaviour:
   typingSoundClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
   typingVolume: 1
   charactersPerSecond: 25
-  advanceAutomatically: 1
+  advanceAutomatically: 0
   autoAdvanceDelay: 1.5
   canSkipEffect: 0
   advanceKey: 32
-  canAdvanceManually: 0
+  canAdvanceManually: 1
   dialogue:
   - Line: "Uy\u2026 te est\xE1s desarmando un poco"
     OnLineEnd:
@@ -52252,7 +52105,19 @@ MonoBehaviour:
         m_Calls: []
   onDialogueCompletedEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 32357400}
+        m_TargetAssemblyTypeName: TimelineDialogTrigger, Assembly-CSharp
+        m_MethodName: ReanudarTimeline
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1833397080
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -52341,7 +52206,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &1833397081
@@ -52371,6 +52236,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0.026123047, y: -148.35986}
   m_SizeDelta: {x: 1920, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1833397083
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1833397078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6727f5592724d334fbb7ede628b55e6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  director: {fileID: 1796852451}
 --- !u!1 &1838150861
 GameObject:
   m_ObjectHideFlags: 0
@@ -53274,7 +53152,7 @@ MonoBehaviour:
   priority: 0
   blendDistance: 0
   weight: 1
-  sharedProfile: {fileID: 11400000, guid: e13bae60214223e4b9da6ff31f0689b1, type: 2}
+  sharedProfile: {fileID: 11400000, guid: 719c198c7181cc44f96b043842df8697, type: 2}
 --- !u!4 &1872665082
 Transform:
   m_ObjectHideFlags: 0
@@ -53324,7 +53202,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: 0.026000977, y: 431.463}
+  m_AnchoredPosition: {x: 0.025878906, y: 431.463}
   m_SizeDelta: {x: 661.373, y: 474.021}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1889564380
@@ -54982,6 +54860,7 @@ GameObject:
   - component: {fileID: 1962056667}
   - component: {fileID: 1962056666}
   - component: {fileID: 1962056665}
+  - component: {fileID: 1962056669}
   m_Layer: 5
   m_Name: Dialog6
   m_TagString: Untagged
@@ -55010,11 +54889,11 @@ MonoBehaviour:
   typingSoundClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
   typingVolume: 1
   charactersPerSecond: 25
-  advanceAutomatically: 1
+  advanceAutomatically: 0
   autoAdvanceDelay: 1.5
   canSkipEffect: 0
   advanceKey: 32
-  canAdvanceManually: 0
+  canAdvanceManually: 1
   dialogue:
   - Line: "\xA1Te presento a mi asistente favorito! Bueno... el \xFAnico."
     OnLineEnd:
@@ -55022,7 +54901,19 @@ MonoBehaviour:
         m_Calls: []
   onDialogueCompletedEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 32357400}
+        m_TargetAssemblyTypeName: TimelineDialogTrigger, Assembly-CSharp
+        m_MethodName: ReanudarTimeline
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1962056666
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -55111,7 +55002,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &1962056667
@@ -55141,6 +55032,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0.026123047, y: -148.35986}
   m_SizeDelta: {x: 1920, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1962056669
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1962056664}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6727f5592724d334fbb7ede628b55e6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  director: {fileID: 1796852451}
 --- !u!1 &1972381966
 GameObject:
   m_ObjectHideFlags: 0
@@ -56368,6 +56272,7 @@ GameObject:
   - component: {fileID: 2014036238}
   - component: {fileID: 2014036237}
   - component: {fileID: 2014036236}
+  - component: {fileID: 2014036240}
   m_Layer: 5
   m_Name: Dialog7
   m_TagString: Untagged
@@ -56396,11 +56301,11 @@ MonoBehaviour:
   typingSoundClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
   typingVolume: 1
   charactersPerSecond: 25
-  advanceAutomatically: 1
+  advanceAutomatically: 0
   autoAdvanceDelay: 1.5
   canSkipEffect: 0
   advanceKey: 32
-  canAdvanceManually: 0
+  canAdvanceManually: 1
   dialogue:
   - Line: "\xA1Oooh! Mira eso. \xBFNo es precioso? Ser\xEDa una pena que algo le
       pasara.\""
@@ -56409,7 +56314,19 @@ MonoBehaviour:
         m_Calls: []
   onDialogueCompletedEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 32357400}
+        m_TargetAssemblyTypeName: TimelineDialogTrigger, Assembly-CSharp
+        m_MethodName: ReanudarTimeline
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &2014036237
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -56498,7 +56415,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!222 &2014036238
@@ -56528,6 +56445,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0.026123047, y: -148.35986}
   m_SizeDelta: {x: 1920, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2014036240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2014036235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6727f5592724d334fbb7ede628b55e6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  director: {fileID: 1796852451}
 --- !u!1 &2016425890
 GameObject:
   m_ObjectHideFlags: 0
@@ -56997,7 +56927,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 0620f8f053bcbcf4bbc76f1caca006ad, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 2c38cb93ecdf553459933e92b53c04f0, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -61255,7 +61185,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2490535485059956393}
-  m_LocalRotation: {x: -0, y: -0, z: 0.06279644, w: 0.9980264}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -23.696589}
   m_LocalScale: {x: 20, y: 20, z: 20}
   m_ConstrainProportionsScale: 1
@@ -61266,7 +61196,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 110.42163, y: 215.90887}
+  m_AnchoredPosition: {x: 9.210083, y: 13.26001}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!95 &8900788262787537202
