@@ -17,6 +17,12 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
     [SerializeField] private GameObject temporalEffectObject;
     [SerializeField] private Image pulseGlowImage;
 
+    [Header("Estado Vacío")]
+    [Tooltip("Sprite que se muestra cuando el slot no tiene ningún ítem asignado, para indicar visualmente que está vacío.")]
+    [SerializeField] private Sprite emptySlotSprite;
+    [Tooltip("Color/alpha del icono cuando muestra el sprite de slot vacío.")]
+    [SerializeField] private Color emptySlotIconColor = new Color(1f, 1f, 1f, 0.35f);
+
     #endregion
 
     #region Inspector - Effect Settings
@@ -134,6 +140,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
         if (iconImage != null)
         {
             iconImage.sprite = item.itemIcon;
+            iconImage.color = Color.white; // deshace el tinte usado para el sprite de slot vacio
             iconImage.enabled = item.itemIcon != null;
         }
 
@@ -155,8 +162,18 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IPointerEnterH
 
         if (iconImage != null)
         {
-            iconImage.sprite = null;
-            iconImage.enabled = false;
+            if (emptySlotSprite != null)
+            {
+                // Muestra un sprite indicativo de "slot vacio" en vez de dejar el icono totalmente en blanco.
+                iconImage.sprite = emptySlotSprite;
+                iconImage.color = emptySlotIconColor;
+                iconImage.enabled = true;
+            }
+            else
+            {
+                iconImage.sprite = null;
+                iconImage.enabled = false;
+            }
         }
 
         if (!isGoldenSlot && rarityBorder != null)

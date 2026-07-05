@@ -39,6 +39,7 @@ public enum StatType
 
     CriticalDamageMultiplier,
     DashRangeMultiplier,
+    DashRangeFlatBonus,
 
     KnockbackReceived,
     DashCooldownPost,
@@ -237,11 +238,14 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.DashRangeMultiplier:
                 return statsSO.dashRangeMultiplierBase > 0f ? statsSO.dashRangeMultiplierBase : 1.0f;
 
+            case StatType.DashRangeFlatBonus:
+                return statsSO.dashRangeFlatBonusBase;
+
             case StatType.DamageTaken:
                 return statsSO.damageTakenBase;
 
             case StatType.KnockbackReceived:
-                return statsSO.knockbackReceivedBase > 0f ? statsSO.knockbackReceivedBase : 1.0f;
+                return statsSO.knockbackReceivedBase;
 
             case StatType.DashCooldownPost:
                 return statsSO.dashCooldownPostBase;
@@ -341,6 +345,7 @@ public partial class PlayerStatsManager : MonoBehaviour
         target.criticalChanceBase = sourceStats.criticalChanceBase;
         target.criticalDamageMultiplierBase = sourceStats.criticalDamageMultiplierBase;
         target.dashRangeMultiplierBase = sourceStats.dashRangeMultiplierBase;
+        target.dashRangeFlatBonusBase = sourceStats.dashRangeFlatBonusBase;
 
         target.damageTakenBase = sourceStats.damageTakenBase;
         target.knockbackReceivedBase = sourceStats.knockbackReceivedBase;
@@ -457,6 +462,7 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.CriticalChance: so.criticalChanceBase = value; break;
             case StatType.CriticalDamageMultiplier: so.criticalDamageMultiplierBase = value; break;
             case StatType.DashRangeMultiplier: so.dashRangeMultiplierBase = value; break;
+            case StatType.DashRangeFlatBonus: so.dashRangeFlatBonusBase = value; break;
 
             case StatType.DamageTaken: so.damageTakenBase = value; break;
             case StatType.KnockbackReceived: so.knockbackReceivedBase = value; break;
@@ -490,7 +496,6 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.ShieldSpeed:
             case StatType.ShieldReturnSpeed:
             case StatType.DashRangeMultiplier:
-            case StatType.KnockbackReceived:
             case StatType.MeleeComboDisplacement:
             case StatType.StaminaConsumption:
             case StatType.DashCooldownPost:
@@ -510,6 +515,14 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.HealthDrainAmount:
             case StatType.Gravity:
                 return 0f;
+
+            // Stats aditivas puras (base 0) que pueden bajar de 0 como desmejora,
+            // pero se limitan para no invertir por completo el valor original.
+            case StatType.KnockbackReceived:
+                return -0.9f; // no puede reducirse mas de un 90% del empuje recibido
+
+            case StatType.DashRangeFlatBonus:
+                return -9999f; // practicamente sin piso, PlayerMovement ya protege el resultado final
 
             default:
                 return 0f;

@@ -8,6 +8,7 @@ public class TutorialHUDAnimator : MonoBehaviour
 
     [Header("UI References")]
     [SerializeField] private RectTransform maskRect;
+    [SerializeField] private GameObject checkIcon;
     [SerializeField] private GameObject checkmarkIcon;
     [SerializeField] private TextMeshProUGUI instructionText;
 
@@ -39,6 +40,7 @@ public class TutorialHUDAnimator : MonoBehaviour
     {
         initialMaskX = maskRect.anchoredPosition.x;
         SetMaskWidth(0);
+        if (checkIcon != null) checkIcon.SetActive(true);
         if (checkmarkIcon != null) checkmarkIcon.SetActive(false);
         gameObject.SetActive(false);
         if (instructionText != null) currentInstructionText = instructionText.text;
@@ -180,6 +182,7 @@ public class TutorialHUDAnimator : MonoBehaviour
         SetMaskWidth(0);
         maskRect.anchoredPosition = new Vector2(initialMaskX, maskRect.anchoredPosition.y);
         if (checkmarkIcon != null) checkmarkIcon.SetActive(false);
+        if (checkIcon != null) checkIcon.SetActive(true);
         isAnimatingOut = false;
 
         float startTime = Time.time;
@@ -201,6 +204,7 @@ public class TutorialHUDAnimator : MonoBehaviour
     {
         isAnimatingOut = true;
         if (checkmarkIcon != null) checkmarkIcon.SetActive(false);
+        if (checkIcon != null) checkIcon.SetActive(true);
 
         float startTime = Time.time;
         float startX = maskRect.anchoredPosition.x;
@@ -220,10 +224,8 @@ public class TutorialHUDAnimator : MonoBehaviour
     private IEnumerator AnimateCheckAndOutCoroutine()
     {
         isAnimatingOut = true;
-        if (checkmarkIcon != null)
-        {
-            checkmarkIcon.SetActive(true);
-        }
+        if (checkmarkIcon != null) checkmarkIcon.SetActive(true);
+        if (checkIcon != null) checkIcon.SetActive(false);
 
         yield return new WaitForSeconds(checkDisplayTime);
 
@@ -263,6 +265,7 @@ public class TutorialHUDAnimator : MonoBehaviour
             maskRect.anchoredPosition = new Vector2(initialMaskX, maskRect.anchoredPosition.y);
             SetMaskWidth(0);
             if (checkmarkIcon != null) checkmarkIcon.SetActive(false);
+            if (checkIcon != null) checkIcon.SetActive(true);
             instructionActive = false;
         }
     }

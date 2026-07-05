@@ -358,12 +358,16 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         float dashRangeMultiplier = playerStatsManager.GetStat(StatType.DashRangeMultiplier);
         if (dashRangeMultiplier <= 0f) dashRangeMultiplier = 1f;
 
-        currentDashDistance = baseDashDistance * dashRangeMultiplier;
+        // Bonus plano (unidades absolutas) que se suma despues del multiplicador,
+        // para permitir que se aumente o reduzca el alcance de forma aditiva.
+        float dashRangeFlatBonus = playerStatsManager.GetStat(StatType.DashRangeFlatBonus);
+
+        currentDashDistance = Mathf.Max(0.1f, (baseDashDistance * dashRangeMultiplier) + dashRangeFlatBonus);
 
         float dashCooldownMod = playerStatsManager.GetStat(StatType.DashCooldownPost);
         currentDashCooldown = Mathf.Max(0.1f, baseDashCooldown + dashCooldownMod);
 
-        ReportDebug($"Dash Stats actualizados: Distancia={currentDashDistance} (base:{baseDashDistance} x {dashRangeMultiplier}), Cooldown={currentDashCooldown} (base:{baseDashCooldown} + {dashCooldownMod}s)", 1);
+        ReportDebug($"Dash Stats actualizados: Distancia={currentDashDistance} (base:{baseDashDistance} x {dashRangeMultiplier} + {dashRangeFlatBonus}), Cooldown={currentDashCooldown} (base:{baseDashCooldown} + {dashCooldownMod}s)", 1);
     }
 
     /// <summary>
@@ -381,7 +385,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         {
             gravity = newValue;
         }
-        else if (statType == StatType.DashRangeMultiplier || statType == StatType.DashCooldownPost)
+        else if (statType == StatType.DashRangeMultiplier || statType == StatType.DashCooldownPost || statType == StatType.DashRangeFlatBonus)
         {
             UpdateDashStatsFromManager();
         }
@@ -1620,7 +1624,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             Gizmos.DrawWireSphere(lastTargetCheck, 0.12f);
             Gizmos.DrawLine(lastTargetCheck, lastTargetCheck + Vector3.down * (controller.height + 0.6f));
 
-            UnityEditor.Handles.Label(lastTargetCheck + Vector3.up * 0.2f, lastTargetHit 
+            UnityEditor.Handles.Label(lastTargetCheck + Vector3.up * 0.2f, lastTargetHit
                 ? $"{lastTargetCheck} hit" : $"{lastTargetCheck} miss");
         }
 
@@ -1696,7 +1700,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
             foreach (var pt in safePoints)
             {
                 Vector3 checkPoint = pt + Vector3.up * edgeRaycastHeight;
-                bool hasGround = Physics.Raycast(checkPoint, Vector3.down, 
+                bool hasGround = Physics.Raycast(checkPoint, Vector3.down,
                     controller.height + 1f, groundLayerMask, QueryTriggerInteraction.Ignore);
 
                 Gizmos.color = hasGround ? new Color(0, 1, 0, 0.5f) : new Color(1, 0, 0, 0.8f);

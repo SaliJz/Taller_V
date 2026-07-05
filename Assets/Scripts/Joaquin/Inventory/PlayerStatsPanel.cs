@@ -101,29 +101,47 @@ public class PlayerStatsPanel : MonoBehaviour
         sb.AppendLine("<b><color=Yellow>Estadística <pos=50%>Base <pos=75%>Actual</color></b>");
         // sb.AppendLine("-------------------------------------------------");
 
-        // sb.AppendLine(FormatCustomLine("Res. Daño", baseRes, currRes, isPercentage: true));
+        // Orden y contenido alineado con el Panel Estadístico de la especificación de UI
 
-        sb.AppendLine(FormatStat("Vel. Mov.", StatType.MoveSpeed));
-        sb.AppendLine(FormatStat("Alc. Dash", StatType.DashRangeMultiplier));
+        // Resistencia (daño recibido, en %): mas alto = peor
+        sb.AppendLine(FormatStat("Resistencia", StatType.DamageTaken, inverseColors: true));
 
-        sb.AppendLine(FormatStat("Atq. Melé", StatType.MeleeAttackDamage));
-        sb.AppendLine(FormatStat("Atq. Dist.", StatType.ShieldAttackDamage));
+        sb.AppendLine(FormatStat("Daño a melé", StatType.MeleeAttackDamage));
+        sb.AppendLine(FormatStat("Daño a distancia", StatType.ShieldAttackDamage));
         sb.AppendLine(FormatStat("Vel. Melé", StatType.MeleeAttackSpeed));
-        sb.AppendLine(FormatStat("Vel. Dist.", StatType.ShieldSpeed));
+        sb.AppendLine(FormatStat("Vel. distancia", StatType.ShieldSpeed));
+        sb.AppendLine(FormatStat("Vel. Movimiento", StatType.MoveSpeed));
 
-        // sb.AppendLine(FormatStat("Emp. Melé", StatType.MeleePushForce)); 
-        sb.AppendLine(FormatStat("Emp. Dist.", StatType.ShieldPushForce));
+        // Alcance e impulso (dash): version multiplicador + version aditiva (fija)
+        //sb.AppendLine(FormatStat("Alc. impulso", StatType.DashRangeMultiplier));
+        sb.AppendLine(FormatStat("Alc. impulso (fijo)", StatType.DashRangeFlatBonus));
 
-        // sb.AppendLine(FormatStat("Daño Ext. vs Superresistencia", StatType.ToughnessDamageMultiplier)); 
+        // Cooldown del dash: mas alto = peor (tarda mas en recargar)
+        sb.AppendLine(FormatStat("Cooldown impulso", StatType.DashCooldownPost, inverseColors: true));
+
+        sb.AppendLine(FormatStat("Desplaz. por golpe", StatType.MeleeComboDisplacement));
+
+        sb.AppendLine(FormatStat("Alc. Distancia", StatType.ShieldMaxDistance));
+        sb.AppendLine(FormatStat("Alc. rebote escudo", StatType.ShieldReboundRadius));
 
         float realBaseRebounds = statsManager.GetBaseStat(StatType.ShieldMaxRebounds);
         float currentRebounds = statsManager.GetCurrentStat(StatType.ShieldMaxRebounds);
-        sb.AppendLine(FormatCustomLine("Reb. Escudo", realBaseRebounds, currentRebounds));
+        sb.AppendLine(FormatCustomLine("Rebotes del escudo", realBaseRebounds, currentRebounds));
 
-        sb.AppendLine(FormatStat("Coste Bers.", StatType.HealthDrainAmount, inverseColors: true));
-        // sb.AppendLine(FormatStat("Bonus Bers.", StatType.BerserkerBonus));
+        sb.AppendLine(FormatStat("Empuje a distancia", StatType.ShieldPushForce));
 
-        sb.AppendLine(FormatStat("Robo Vida", StatType.LifestealOnKill));
+        // Empuje recibido: Mas alto = peor (se recibe mas empuje).
+        sb.AppendLine(FormatStat("Empuje recibido", StatType.KnockbackReceived, inverseColors: true));
+
+        // Consumo de energía: mas alto = peor
+        // (Se consume mas lo que se traduce en menos duracion de la habilidad sin recibir castigo por uso).
+        sb.AppendLine(FormatStat("Consumo de energía", StatType.StaminaConsumption, inverseColors: true));
+
+        sb.AppendLine(FormatStat("Vida al matar", StatType.LifestealOnKill));
+
+        // Estadísticas adicionales que no forman parte del listado del panel visual pero
+        // siguen siendo relevantes para el jugador
+        //sb.AppendLine(FormatStat("Coste Bers.", StatType.HealthDrainAmount, inverseColors: true));
 
         statsTextDisplay.text = sb.ToString();
     }
