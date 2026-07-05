@@ -87,6 +87,44 @@ public class ShopItem : ScriptableObject
         }
     }
 
+    /// <summary>
+    /// Devuelve unicamente los efectos (beneficios/perjuicios) formateados del item, sin la
+    /// descripcion narrativa. Pensado para el Panel Comparativo de reemplazo de reliquias,
+    /// donde solo interesa la informacion funcional para poder decidir el intercambio.
+    /// </summary>
+    public string GetFunctionalStatsOnly()
+    {
+        StringBuilder sb = new StringBuilder();
+
+        if (benefits != null && benefits.Count > 0)
+        {
+            foreach (var effect in benefits)
+            {
+                sb.AppendLine(FormatStatEffect(effect, true));
+            }
+        }
+
+        if (drawbacks != null && drawbacks.Count > 0)
+        {
+            foreach (var effect in drawbacks)
+            {
+                sb.AppendLine(FormatStatEffect(effect, false));
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    public string GetFormattedDescriptionOnly()
+    {
+        StringBuilder sb = new StringBuilder();
+        if (!string.IsNullOrEmpty(description))
+        {
+            sb.AppendLine(description);
+        }
+        return sb.ToString();
+    }
+
     public string GetFormattedDescriptionAndStats()
     {
         StringBuilder sb = new StringBuilder();
@@ -187,7 +225,9 @@ public class ShopItem : ScriptableObject
             case StatType.Gravity:
                 return "Gravedad";
             case StatType.DashRangeMultiplier:
-                return "Alcance del Dash";
+                return "Alcance del Dash (Multiplicador)";
+            case StatType.DashRangeFlatBonus:
+                return "Alcance del Dash (Fijo)";
             case StatType.DashCooldownPost:
                 return "Enfriamiento del Dash";
             case StatType.KnockbackReceived:

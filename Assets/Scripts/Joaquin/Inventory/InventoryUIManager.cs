@@ -69,14 +69,28 @@ public class InventoryUIManager : MonoBehaviour
     [Tooltip("Tiempo de retraso en segundos antes de mostrar el panel de detalle al hacer hover.")]
     [SerializeField] private float detailShowDelay = 0.25f;
 
-    [Header("Panel de Confirmacion de Reemplazo")]
+    [Header("Panel de Confirmacion de Reemplazo (Panel Comparativo)")]
     [Tooltip("Panel UI para confirmar el reemplazo de items al comprar o equipar.")]
     [SerializeField] private GameObject replaceConfirmPanel;
-    [Tooltip("Texto descriptivo que indica que item se va a reemplazar.")]
+    [Tooltip("Texto descriptivo generico (fallback) que indica que item se va a reemplazar. Se usa si no se asignan los campos individuales de nombre/descripcion.")]
     [SerializeField] private TextMeshProUGUI replaceConfirmText;
-    [Tooltip("Boton para aceptar el reemplazo propuesto.")]
+    [Tooltip("Texto que muestra la categoria de la reliquia en comparacion (A MELÉ / A DISTANCIA / DASH).")]
+    [SerializeField] private TextMeshProUGUI comparativeCategoryText;
+    [Tooltip("Icono/imagen de la reliquia actualmente equipada (lado izquierdo del panel comparativo).")]
+    [SerializeField] private Image comparativeCurrentIcon;
+    [Tooltip("Nombre de la reliquia actualmente equipada.")]
+    [SerializeField] private TextMeshProUGUI comparativeCurrentName;
+    [Tooltip("Descripcion funcional de la reliquia actualmente equipada.")]
+    [SerializeField] private TextMeshProUGUI comparativeCurrentDescription;
+    [Tooltip("Icono/imagen de la nueva reliquia propuesta (lado derecho del panel comparativo).")]
+    [SerializeField] private Image comparativeNewIcon;
+    [Tooltip("Nombre de la nueva reliquia propuesta.")]
+    [SerializeField] private TextMeshProUGUI comparativeNewName;
+    [Tooltip("Descripcion funcional de la nueva reliquia propuesta.")]
+    [SerializeField] private TextMeshProUGUI comparativeNewDescription;
+    [Tooltip("Boton para aceptar el reemplazo propuesto (Sí).")]
     [SerializeField] private Button confirmReplaceButton;
-    [Tooltip("Boton para cancelar el reemplazo y mantener el item actual.")]
+    [Tooltip("Boton para cancelar el reemplazo y mantener el item actual (No).")]
     [SerializeField] private Button cancelReplaceButton;
 
     #endregion
@@ -797,12 +811,51 @@ public class InventoryUIManager : MonoBehaviour
         confirmNavIndex = 0;
         confirmPanelJustOpened = true;
         ResetConfirmButtonHighlights();
+
+        // Texto generico de respaldo (por si el prefab del panel no tiene los campos individuales asignados).
         if (replaceConfirmText != null)
         {
             replaceConfirmText.text =
                 $"Reemplazar <b>{current.itemName}</b> con <b>{newItem.itemName}</b>?\n" +
                 "El item anterior sera descartado.";
         }
+
+        // Panel Comparativo: categoria + datos funcionales de ambas reliquias, sin narrativa.
+        if (comparativeCategoryText != null)
+        {
+            comparativeCategoryText.text = GetCategoryLabel(newItem.effectCategory);
+        }
+
+        if (comparativeCurrentIcon != null)
+        {
+            comparativeCurrentIcon.sprite = current.itemIcon;
+            comparativeCurrentIcon.enabled = current.itemIcon != null;
+        }
+        if (comparativeCurrentName != null) comparativeCurrentName.text = current.itemName;
+        if (comparativeCurrentDescription != null) comparativeCurrentDescription.text = current.GetFormattedDescriptionOnly();
+
+        if (comparativeNewIcon != null)
+        {
+            comparativeNewIcon.sprite = newItem.itemIcon;
+            comparativeNewIcon.enabled = newItem.itemIcon != null;
+        }
+        if (comparativeNewName != null) comparativeNewName.text = newItem.itemName;
+        if (comparativeNewDescription != null) comparativeNewDescription.text = newItem.GetFormattedDescriptionOnly();
+    }
+
+    /// <summary>
+    /// Traduce la categoria de efecto de una reliquia mecanica a la etiqueta mostrada en el
+    /// Panel Comparativo (A MELÉ / A DISTANCIA / DASH).
+    /// </summary>
+    private string GetCategoryLabel(TypeEffect category)
+    {
+        return category switch
+        {
+            TypeEffect.Melee => "A MELÉ",
+            TypeEffect.Shield => "A DISTANCIA",
+            TypeEffect.Dash => "DASH",
+            _ => category.ToString()
+        };
     }
 
     private void OnConfirmReplace()

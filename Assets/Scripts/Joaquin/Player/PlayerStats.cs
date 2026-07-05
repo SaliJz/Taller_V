@@ -46,10 +46,14 @@ public class PlayerStats : ScriptableObject
     public float criticalChanceBase = 0f;
     public float criticalDamageMultiplierBase = 0f;
     public float dashRangeMultiplierBase = 1f;
+    [Tooltip("Bonus plano (en unidades de distancia) que se suma a la distancia final del dash, luego de aplicar el multiplicador. Base = 0 (sin bonus). Permite reliquias/gangas que aumenten o reduzcan el alcance del dash de forma aditiva en vez de porcentual.")]
+    public float dashRangeFlatBonusBase = 0f;
 
     [Header("Stats de combate")]
+    [Tooltip("Multiplicador de daño recibido, expresado en unidades de porcentaje (100 = 100%, sin cambios). Se usa junto con ApplyModifier(isPercentage: true) en PlayerStatsManager para que las reliquias/gangas puedan reducir (Resistencia +) o aumentar (Resistencia -) el daño recibido.")]
     public float damageTakenBase = 0f;
-    public float knockbackReceivedBase = 1f;
+    [Tooltip("Modificador aditivo del empuje (knockback) recibido por el jugador. Base = 0 (sin cambios respecto al empuje original). Los items pueden sumar (+) para recibir mas empuje o restar (-) para recibir menos. Se aplica como (1 + valor) sobre la fuerza original en PlayerKnockbackReceiver.")]
+    public float knockbackReceivedBase = 0f;
     public float dashCooldownPostBase = 0f;
     public float meleeComboDisplacementBase = 1f;
     public float shieldPushForceBase = 0f;

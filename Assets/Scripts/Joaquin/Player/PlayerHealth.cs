@@ -128,6 +128,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     // Cached Components
     private PlayerMovement playerMovement;
+    private PlayerKnockbackReceiver playerKnockbackReceiver;
     private PlayerMeleeAttack playerMeleeAttack;
     private PlayerShieldController playerShieldController;
     private InventoryManager inventoryManager;
@@ -206,6 +207,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         inventoryManager = FindAnyObjectByType<InventoryManager>();
 
         playerMovement = GetComponent<PlayerMovement>();
+        playerKnockbackReceiver = GetComponent<PlayerKnockbackReceiver>();
         playerMeleeAttack = GetComponent<PlayerMeleeAttack>();
         playerShieldController = GetComponent<PlayerShieldController>();
         blockSystem = GetComponent<PlayerBlockSystem>();
@@ -498,8 +500,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         Debug.Log($"[DAÑO] Daño Base Enemigo: {damageAmount} | Valor de DamageTaken en StatsManager: {damageMultiplier}");
 
-        if (damageMultiplier > 10f)
-            damageMultiplier /= 100f;
+        if (damageMultiplier > 10f) damageMultiplier /= 100f;
 
         if (damageMultiplier < 0f) damageMultiplier = 0f;
 
@@ -1214,135 +1215,17 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     #region Legacy & Experimental Features
 
-    //public float GetKnockbackResistance()
-    //{
-    //    if (statsManager == null) return 1f;
-
-    //    float resistance = statsManager.GetStat(StatType.KnockbackReceived);
-    //    return resistance > 0f ? resistance : 1f;
-    //}
-
     public void ApplyKnockback(Vector3 direction, float force, float duration)
     {
         if (isDying || playerMovement.IsDashing) return;
 
-        float knockbackResistance = statsManager != null ? statsManager.GetStat(StatType.KnockbackReceived) : 1f;
-
-        if (knockbackResistance <= 0f) knockbackResistance = 1f;
-
-        float finalForce = force * knockbackResistance;
-
-        ReportDebug($"Knockback aplicado: Fuerza base={force}, Resistencia={knockbackResistance}x, Final={finalForce}", 1);
-
-        if (playerMovement != null)
+        if (TryGetComponent<PlayerKnockbackReceiver>(out var knockbackReceiver))
         {
-            StartCoroutine(ApplyKnockbackRoutine(direction, finalForce, duration));
+            direction.y = 0f;
+
+            knockbackReceiver.ApplyKnockback(direction, force, duration);
         }
     }
-
-    private IEnumerator ApplyKnockbackRoutine(Vector3 direction, float force, float duration)
-    {
-        if (playerMovement == null) yield break;
-
-        if (combatActionManager != null)
-        {
-            combatActionManager.InterruptCombatActions();
-        }
-
-        playerMovement.SetCanMove(false);
-
-        float elapsedTime = 0f;
-        Vector3 knockbackVelocity = direction.normalized * force;
-
-        while (elapsedTime < duration)
-        {
-            float t = elapsedTime / duration;
-            float currentForce = Mathf.Lerp(force, 0f, t);
-
-            Vector3 movement = direction.normalized * currentForce * Time.deltaTime;
-
-            playerMovement.MoveCharacter(movement);
-
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-
-        if (!isStunned && !isDying)
-        {
-            playerMovement.SetCanMove(true);
-        }
-
-        ReportDebug("Knockback finalizado.", 1);
-    }
-
-    /*
-    /// <summary>
-    /// Funcion que aplica el efecto de veneno al jugador cuando es golpeado por un proyectil de Morlock.
-    /// </summary>
-    public void ApplyMorlockPoisonHit(float duration, float initialDamage, int hitThreshold)
-    {
-        if (isDying) return;
-
-        if (morlockPoisonHitCoroutine != null)
-        {
-            ReportDebug("Golpe de Morlock recibido, pero el veneno ya está activo. Omitiendo contador.", 1);
-            return;
-        }
-
-        morlockHitCounter++;
-
-        if (morlockPoisonResetCoroutine != null)
-        {
-            StopCoroutine(morlockPoisonResetCoroutine);
-        }
-
-        if (morlockHitCounter >= hitThreshold)
-        {
-            float damageIncrement = morlockHitCounter - hitThreshold;
-            float damagePerSecond = initialDamage + damageIncrement;
-
-            ApplyMorlockPoison(duration: 5f, damagePerSecond: damagePerSecond, tickInterval: 1f);
-
-            morlockHitCounter = 0;
-        }
-        else
-        {
-            morlockPoisonResetCoroutine = StartCoroutine(ResetMorlockPoisonCounter(duration));
-        }
-    }
-
-    private void ApplyMorlockPoison(float duration, float damagePerSecond, float tickInterval = 1f)
-    {
-        if (morlockPoisonHitCoroutine != null)
-        {
-            StopCoroutine(morlockPoisonHitCoroutine);
-        }
-        morlockPoisonHitCoroutine = StartCoroutine(ApplyMorlockPoisonCoroutine(duration, damagePerSecond, tickInterval));
-
-        ReportDebug($"Veneno de Morlock aplicado: {damagePerSecond} dano por segundo durante {duration} segundos.", 1);
-    }
-
-    private IEnumerator ApplyMorlockPoisonCoroutine(float duration, float damagePerSecond, float tickInterval = 1f)
-    {
-        float timeElapsed = 0f;
-        while (timeElapsed < duration)
-        {
-            if (isDying) yield break;
-            TakeDamage(damagePerSecond);
-            yield return new WaitForSeconds(tickInterval);
-            timeElapsed += tickInterval;
-        }
-        morlockPoisonHitCoroutine = null;
-        ReportDebug("Efecto de veneno de Morlock ha terminado.", 1);
-    }
-
-    private IEnumerator ResetMorlockPoisonCounter(float duration)
-    {
-        yield return new WaitForSeconds(duration);
-        morlockHitCounter = 0;
-        morlockPoisonResetCoroutine = null;
-    }
-    */
 
     #endregion
 
