@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b3d386ba5cd94485973aee1479b272e, type: 3}
   m_Name: RenderObjectsForDeath
   m_EditorClassIdentifier: 
-  m_Active: 0
+  m_Active: 1
   settings:
     passTag: RenderObjectsForDeath
     Event: 300
@@ -54,7 +54,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b00045f12942b46c698459096c89274e, type: 3}
   m_Name: DeathFade
   m_EditorClassIdentifier: 
-  m_Active: 0
+  m_Active: 1
   injectionPoint: 600
   fetchColorBuffer: 1
   requirements: 0
@@ -115,7 +115,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b3d386ba5cd94485973aee1479b272e, type: 3}
   m_Name: RenderObjectsForDeathOpaque
   m_EditorClassIdentifier: 
-  m_Active: 0
+  m_Active: 1
   settings:
     passTag: RenderObjectsForDeathOpaque
     Event: 300
@@ -197,7 +197,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: de640fe3d0db1804a85f9fc8f5cadab6, type: 3}
-  m_Name: PC_Renderer
+  m_Name: Renderer_Game
   m_EditorClassIdentifier: 
   debugShaders:
     debugReplacementPS: {fileID: 4800000, guid: cf852408f2e174538bcd9b7fda1c5ae7, type: 3}
@@ -216,11 +216,11 @@ MonoBehaviour:
   - {fileID: -6705071271239425309}
   - {fileID: -967827492275858709}
   - {fileID: -6680004132662025914}
-  - {fileID: 1213643180032312615}
+  - {fileID: 1871363823195453674}
   - {fileID: -9185687813797017180}
   - {fileID: -7935629024628756543}
   - {fileID: -4251560771192251933}
-  m_RendererFeatureMap: a40f302559322b0fe3e2182c34cdf2a2eb520a07069691f246e1892ea2db4ba327c5e6c50abad710a489fee899e18580c12fb96572fbde91e399191c016cffc4
+  m_RendererFeatureMap: a40f302559322b0fe3e2182c34cdf2a2eb520a07069691f246e1892ea2db4ba3eaf814777b6bf819a489fee899e18580c12fb96572fbde91e399191c016cffc4
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -266,7 +266,7 @@ MonoBehaviour:
   passIndex: 0
   bindDepthStencilAttachment: 0
   m_Version: 1
---- !u!114 &1213643180032312615
+--- !u!114 &1871363823195453674
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -276,13 +276,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b00045f12942b46c698459096c89274e, type: 3}
-  m_Name: TransitionEffect
+  m_Name: FullScreenFeedback
   m_EditorClassIdentifier: 
   m_Active: 1
   injectionPoint: 600
   fetchColorBuffer: 1
   requirements: 0
-  passMaterial: {fileID: 2100000, guid: 6145887b087552346860106694c91b96, type: 2}
+  passMaterial: {fileID: 2100000, guid: b9f20b8c42893074997b68cfd9002933, type: 2}
   passIndex: 0
-  bindDepthStencilAttachment: 0
+  bindDepthStencilAttachment: 1
   m_Version: 1
