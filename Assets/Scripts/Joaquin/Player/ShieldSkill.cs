@@ -66,9 +66,9 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     #region Inspector - Buff Settings
 
     [Header("Buffs por Etapa de Vida")]
-    [SerializeField] private BuffSettings youngBuffs = new BuffSettings(1.1f, 1.12f, 1.1f, 1f, 1f);
-    [SerializeField] private BuffSettings adultBuffs = new BuffSettings(1.1f, 1.12f, 1.1f, 1f, 1f);
-    [SerializeField] private BuffSettings elderBuffs = new BuffSettings(1.1f, 1.12f, 1.1f, 1f, 1f);
+    [SerializeField] private BuffSettings youngBuffs = new BuffSettings(1.25f, 1.125f, 1.125f, 6f, 1.25f);
+    [SerializeField] private BuffSettings adultBuffs = new BuffSettings(1.25f, 1.125f, 1.125f, 4f, 1.25f);
+    [SerializeField] private BuffSettings elderBuffs = new BuffSettings(1.25f, 1.125f, 1.125f, 2f, 1.25f);
 
     #endregion
 
@@ -452,7 +452,9 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeSpeed", StatType.MeleeAttackSpeed, currentBuffs.AttackSpeedMultiplier - 1.0f, true);
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldSpeed", StatType.ShieldSpeed, currentBuffs.AttackSpeedMultiplier - 1.0f, true);
 
-        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "HealthDrain", StatType.HealthDrainAmount, currentBuffs.HealthDrainAmount);
+        float baseDrain = statsManager.GetBaseStat(StatType.HealthDrainAmount);
+        float addedDrain = currentBuffs.HealthDrainAmount - baseDrain;
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "HealthDrain", StatType.HealthDrainAmount, addedDrain);
 
         UpdateMaterialState();
 
@@ -522,7 +524,9 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "MeleeSpeed", StatType.MeleeAttackSpeed, currentBuffs.AttackSpeedMultiplier - 1.0f, true);
         statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "ShieldSpeed", StatType.ShieldSpeed, currentBuffs.AttackSpeedMultiplier - 1.0f, true);
 
-        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "HealthDrain", StatType.HealthDrainAmount, currentBuffs.HealthDrainAmount);
+        float baseDrain = statsManager.GetBaseStat(StatType.HealthDrainAmount);
+        float addedDrain = currentBuffs.HealthDrainAmount - baseDrain;
+        statsManager.ApplyNamedModifier(SHIELD_SKILL_MODIFIER_KEY + "HealthDrain", StatType.HealthDrainAmount, addedDrain);
 
         Debug.Log($"[ShieldSkill] Modificadores reaplicados para etapa {lastKnownLifeStage}");
     }

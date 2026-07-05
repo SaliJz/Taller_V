@@ -63,30 +63,6 @@ public class PlayerShieldController : MonoBehaviour
 
     #endregion
 
-    #region Inspector - Configuracion por Etapa JOVEN
-
-    [Header("Configuracion por Etapa - JOVEN")]
-    [SerializeField] private int youngShieldDamage = 4;
-    [SerializeField] private float youngShieldSpeed = 32f;
-
-    #endregion
-
-    #region Inspector - Configuracion por Etapa ADULTO
-
-    [Header("Configuracion por Etapa - ADULTO")]
-    [SerializeField] private int adultShieldDamage = 6;
-    [SerializeField] private float adultShieldSpeed = 20f;
-
-    #endregion
-
-    #region Inspector - Configuracion por Etapa VIEJO
-
-    [Header("Configuracion por Etapa - VIEJO")]
-    [SerializeField] private int elderShieldDamage = 9;
-    [SerializeField] private float elderShieldSpeed = 16.66f;
-
-    #endregion
-
     #region Inspector - Empuje del Escudo (compartido por las 3 etapas)
 
     [Header("Empuje del Escudo")]
