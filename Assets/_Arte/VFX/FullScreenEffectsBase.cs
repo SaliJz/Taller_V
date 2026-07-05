@@ -12,8 +12,14 @@ public class FullScreenEffectsBase : MonoBehaviour
     [Header("Render Feature")]
     [Tooltip("Nombre exacto del FullScreenPassRenderer")]
     public string featureNombre = "FullScreenFeedback";
+
+    [Tooltip("Renderer exacto donde vive la instancia del feature que quieres controlar, si está vacio usara el primero con el que encuentre una coincidencia con el nombre")]
+    public ScriptableRendererData rendererDataObjetivo;
+
     [Tooltip("Material Original que se instanciará en le feature del PC Renderer")]
     public Material MaterialOriginal;
+
+
     private Material instanciaMaterial;
     private FullScreenPassRendererFeature feature;
 
@@ -53,12 +59,25 @@ public class FullScreenEffectsBase : MonoBehaviour
             return false;
         }
 
-        feature = SearchFeatureByName(featureNombre);
-
-        if(feature == null)
+        if (rendererDataObjetivo != null)
         {
-            Debug.LogError($"[{GetType().Name}] No se encontró el FullScreenPassFeature: '{featureNombre}' en el Render Data Activo", this);
-            return false;
+            feature = SearchInRenderData(rendererDataObjetivo, featureNombre);
+
+            if(feature == null)
+            {
+                Debug.LogError($"[{GetType().Name}] No se encontró el FullScreenPassFeature: '{featureNombre}' en el Render Data Activo", this);
+                return false;
+            }
+        }
+        else
+        {
+            feature = SearchFeatureByName(featureNombre);
+
+            if(feature == null)
+            {
+                Debug.LogError($"[{GetType().Name}] No se encontró el FullScreenPassFeature: '{featureNombre}' en el Render Data Activo", this);
+                return false;
+            }
         }
 
         instanciaMaterial = new Material (MaterialOriginal);
