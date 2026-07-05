@@ -532,7 +532,6 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.ShieldMaxRebounds:
             case StatType.ShieldMaxDistance:
                 return 1f;
-
             case StatType.MoveSpeed:
             case StatType.MeleeAttackSpeed:
             case StatType.AttackSpeed:
@@ -542,12 +541,13 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.MeleeComboDisplacement:
             case StatType.StaminaConsumption:
             case StatType.DashCooldownPost:
+                return -5f;
             case StatType.DamageTaken:
                 return 0.1f;
-
             case StatType.MeleeRadius:
             case StatType.ShieldReboundRadius:
             case StatType.ShieldPushForce:
+                return -10f;
             case StatType.LuckStack:
             case StatType.EssenceCostReduction:
             case StatType.ShopPriceReduction:
@@ -558,15 +558,10 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.HealthDrainAmount:
             case StatType.Gravity:
                 return 0f;
-
-            // Stats aditivas puras (base 0) que pueden bajar de 0 como desmejora,
-            // pero se limitan para no invertir por completo el valor original.
             case StatType.KnockbackReceived:
-                return -0.9f; // no puede reducirse mas de un 90% del empuje recibido
-
+                return -0.9f;
             case StatType.DashRangeFlatBonus:
-                return -9999f; // practicamente sin piso, PlayerMovement ya protege el resultado final
-
+                return -9999f;
             default:
                 return 0f;
         }
@@ -595,8 +590,18 @@ public partial class PlayerStatsManager : MonoBehaviour
 
         if (isPercentage && type != StatType.ShieldBlockUpgrade)
         {
-            float percentageFactor = amount / 100f;
-            modifierValue = baseStats[type] * percentageFactor;
+            float baseVal = baseStats[type];
+
+            if (baseVal == 0f)
+            {
+                modifierValue = amount;
+                Debug.LogWarning($"[PlayerStatsManager] Advertencia: Se aplicó un % a {type} (Base 0). Forzado a valor plano: {amount}");
+            }
+            else
+            {
+                float percentageFactor = amount / 100f;
+                modifierValue = baseVal * percentageFactor;
+            }
         }
 
         float prev = currentStats.TryGetValue(type, out var p) ? p : 0f;

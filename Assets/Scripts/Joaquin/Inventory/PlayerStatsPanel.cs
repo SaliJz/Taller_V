@@ -18,6 +18,14 @@ public class PlayerStatsPanel : MonoBehaviour
     private Canvas parentCanvas;
     private bool wasInventoryOpen = false;
 
+    private enum StatDisplayRule
+    {
+        RealValue,
+        DirectPercent,
+        RelativePercent,
+        BonusOnly
+    }
+
     private void Start()
     {
         parentCanvas = GetComponentInParent<Canvas>();
@@ -74,9 +82,6 @@ public class PlayerStatsPanel : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Convierte la posición 3D del jugador a coordenadas 2D del Canvas para posicionar el panel.
-    /// </summary>
     private void FollowPlayerPosition()
     {
         if (Camera.main == null || parentCanvas == null) return;
@@ -99,86 +104,98 @@ public class PlayerStatsPanel : MonoBehaviour
         StringBuilder sb = new StringBuilder();
 
         sb.AppendLine(" <b><color=Yellow>Estadística <pos=50%>Base <pos=75%>Actual</color></b>");
-        // sb.AppendLine("-------------------------------------------------");
 
-        // Orden y contenido alineado con el Panel Estadístico de la especificación de UI
+        // Porcentajes
+        sb.AppendLine(FormatStat("Resistencia", StatType.DamageTaken, StatDisplayRule.DirectPercent, inverseColors: true));
+        sb.AppendLine(FormatStat("Vel. Melé", StatType.MeleeAttackSpeed, StatDisplayRule.RelativePercent, inverseColors: true));
+        sb.AppendLine(FormatStat("Vel. distancia", StatType.ShieldSpeed, StatDisplayRule.RelativePercent, inverseColors: false));
 
-        // Resistencia (daño recibido, en %): mas alto = peor
-        sb.AppendLine(FormatStat("Resistencia", StatType.DamageTaken, inverseColors: true, isPercentage: true));
+        // Valores Reales
+        sb.AppendLine(FormatStat("Daño a melé", StatType.MeleeAttackDamage, StatDisplayRule.RealValue));
+        sb.AppendLine(FormatStat("Daño a distancia", StatType.ShieldAttackDamage, StatDisplayRule.RealValue));
+        sb.AppendLine(FormatStat("Vel. Movimiento", StatType.MoveSpeed, StatDisplayRule.RealValue));
 
-        sb.AppendLine(FormatStat("Daño a melé", StatType.MeleeAttackDamage));
-        sb.AppendLine(FormatStat("Daño a distancia", StatType.ShieldAttackDamage));
-        sb.AppendLine(FormatStat("Vel. Melé", StatType.MeleeAttackSpeed));
-        sb.AppendLine(FormatStat("Vel. distancia", StatType.ShieldSpeed));
-        sb.AppendLine(FormatStat("Vel. Movimiento", StatType.MoveSpeed));
+        // Asumiendo que el alcance de impulso usas el base del movimiento, lo tratamos como RealValue
+        sb.AppendLine(FormatStat("Alc. impulso", StatType.DashRangeFlatBonus, StatDisplayRule.RealValue));
+        sb.AppendLine(FormatStat("Cooldown impulso", StatType.DashCooldownPost, StatDisplayRule.RealValue, inverseColors: true));
+        sb.AppendLine(FormatStat("Alc. Distancia", StatType.ShieldMaxDistance, StatDisplayRule.RealValue));
+        sb.AppendLine(FormatStat("Alc. rebote escudo", StatType.ShieldReboundRadius, StatDisplayRule.RealValue));
+        sb.AppendLine(FormatStat("Rebotes del escudo", StatType.ShieldMaxRebounds, StatDisplayRule.RealValue));
 
-        // Alcance e impulso (dash): version multiplicador + version aditiva (fija)
-        //sb.AppendLine(FormatStat("Alc. impulso", StatType.DashRangeMultiplier));
-        sb.AppendLine(FormatStat("Alc. dash", StatType.DashRangeFlatBonus));
-
-        // Cooldown del dash: mas alto = peor (tarda mas en recargar)
-        sb.AppendLine(FormatStat("Cooldown dash", StatType.DashCooldownPost, inverseColors: true));
-
-        sb.AppendLine(FormatStat("Desplaz. por golpe", StatType.MeleeComboDisplacement));
-
-        sb.AppendLine(FormatStat("Alc. Distancia", StatType.ShieldMaxDistance));
-        sb.AppendLine(FormatStat("Alc. rebote escudo", StatType.ShieldReboundRadius));
-
-        float realBaseRebounds = statsManager.GetBaseStat(StatType.ShieldMaxRebounds);
-        float currentRebounds = statsManager.GetCurrentStat(StatType.ShieldMaxRebounds);
-        sb.AppendLine(FormatCustomLine("Rebotes del escudo", realBaseRebounds, currentRebounds));
-
-        sb.AppendLine(FormatStat("Empuje a distancia", StatType.ShieldPushForce));
-
-        // Empuje recibido: Mas alto = peor (se recibe mas empuje).
-        sb.AppendLine(FormatStat("Empuje recibido", StatType.KnockbackReceived, inverseColors: true));
-
-        // Consumo de energía: mas alto = peor
-        // (Se consume mas lo que se traduce en menos duracion de la habilidad sin recibir castigo por uso).
-        sb.AppendLine(FormatStat("Consumo de energía", StatType.StaminaConsumption, inverseColors: true));
-
-        sb.AppendLine(FormatStat("Vida al matar", StatType.LifestealOnKill));
-
-        // Estadísticas adicionales que no forman parte del listado del panel visual pero
-        // siguen siendo relevantes para el jugador
-        //sb.AppendLine(FormatStat("Coste Bers.", StatType.HealthDrainAmount, inverseColors: true));
+        // Solo cantidad adicional / Bonus
+        sb.AppendLine(FormatStat("Desplaz. por golpe", StatType.MeleeComboDisplacement, StatDisplayRule.BonusOnly));
+        sb.AppendLine(FormatStat("Empuje a distancia", StatType.ShieldPushForce, StatDisplayRule.BonusOnly));
+        sb.AppendLine(FormatStat("Empuje recibido", StatType.KnockbackReceived, StatDisplayRule.BonusOnly, inverseColors: true));
+        sb.AppendLine(FormatStat("Consumo de energía", StatType.HealthDrainAmount, StatDisplayRule.BonusOnly, inverseColors: true));
+        sb.AppendLine(FormatStat("Vida al matar", StatType.LifestealOnKill, StatDisplayRule.BonusOnly));
 
         statsTextDisplay.text = sb.ToString();
     }
 
     /// <summary>
-    /// Extrae automáticamente del Gestor y formatea.
+    /// Extrae del Gestor y formatea aplicando la regla de color correspondiente.
     /// </summary>
-    private string FormatStat(string statName, StatType type, bool inverseColors = false, bool isPercentage = false)
+    private string FormatStat(string statName, StatType type, StatDisplayRule rule, bool inverseColors = false)
     {
         float baseValue = statsManager.GetBaseStat(type);
         float currentValue = statsManager.GetCurrentStat(type);
-        return FormatCustomLine(statName, baseValue, currentValue, isPercentage, inverseColors);
+
+        float displayBase = baseValue;
+        float displayCurrent = currentValue;
+        bool usePercentSymbol = false;
+
+        switch (rule)
+        {
+            case StatDisplayRule.RealValue:
+                displayBase = baseValue;
+                displayCurrent = currentValue;
+                break;
+
+            case StatDisplayRule.DirectPercent:
+                displayBase = baseValue;
+                displayCurrent = currentValue;
+                usePercentSymbol = true;
+                break;
+
+            case StatDisplayRule.RelativePercent:
+                displayBase = 100f;
+                displayCurrent = baseValue > 0.001f ? (currentValue / baseValue) * 100f : 100f;
+                usePercentSymbol = true;
+                break;
+
+            case StatDisplayRule.BonusOnly:
+                displayBase = 0f;
+                displayCurrent = currentValue - baseValue;
+                break;
+        }
+
+        return FormatCustomLine(statName, displayBase, displayCurrent, usePercentSymbol, inverseColors);
     }
 
     /// <summary>
-    /// Función base de formateo estructurada en 3 columnas.
+    /// Función base de formateo estructurada en 3 columnas y control de colores (Rojo/Verde)
     /// </summary>
-    private string FormatCustomLine(string statName, float baseValue, float currentValue, bool isPercentage = false, bool inverseColors = false)
+    private string FormatCustomLine(string statName, float displayBase, float displayCurrent, bool usePercentSymbol, bool inverseColors)
     {
-        string symbol = isPercentage ? "%" : "";
-        string changedString = $"{currentValue:0.##}{symbol}";
-        float difference = currentValue - baseValue;
+        string symbol = usePercentSymbol ? "%" : "";
+        string changedString = $"{displayCurrent:0.##}{symbol}";
+
+        float difference = displayCurrent - displayBase;
 
         if (Mathf.Abs(difference) > 0.01f)
         {
             if (difference > 0)
             {
                 string color = inverseColors ? "red" : "green";
-                changedString = $"<color={color}>{currentValue:0.##}{symbol}</color>";
+                changedString = $"<color={color}>{displayCurrent:0.##}{symbol} ↑</color>";
             }
             else
             {
                 string color = inverseColors ? "green" : "red";
-                changedString = $"<color={color}>{currentValue:0.##}{symbol}</color>";
+                changedString = $"<color={color}>{displayCurrent:0.##}{symbol} ↓</color>";
             }
         }
 
-        return $" {statName} <pos=50%>{baseValue:0.##}{symbol} <pos=75%>{changedString}";
+        return $" {statName} <pos=50%>{displayBase:0.##}{symbol} <pos=75%>{changedString}";
     }
 }
