@@ -7213,6 +7213,7 @@ RectTransform:
   m_Children:
   - {fileID: 3108518931588684425}
   - {fileID: 8869464531813646361}
+  - {fileID: 6737381762940496129}
   - {fileID: 7522420573492612351}
   - {fileID: 7256323067547945321}
   - {fileID: 5903143953737941734}
@@ -7229,7 +7230,6 @@ RectTransform:
   - {fileID: 4141825443812630282}
   - {fileID: 4216154563218779146}
   - {fileID: 1948202893859430401}
-  - {fileID: 6737381762940496129}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -7339,6 +7339,7 @@ MonoBehaviour:
   ghostHealthBar: {fileID: 8129384222784625831}
   ghostDecayDuration: 1
   ghostDecaySpeed: 0.5
+  healthText: {fileID: 0}
   handAnim: {fileID: 4144427210154251071}
   gearSprite: {fileID: 707807428906523667}
   berserkerScript: {fileID: 0}
@@ -16804,6 +16805,7 @@ MonoBehaviour:
   - {fileID: 2790493699222432776, guid: 98a3939a86578da4fac8c38aa1e5b472, type: 3}
   itemAppearanceEffectPrefab: {fileID: 0}
   minimumMechanicItems: 1
+  maximumMechanicItems: 2
   shopUIPanel: {fileID: 4853790811511156568}
   uiPanelTransform: {fileID: 6893052232125983173}
   itemNameText: {fileID: 7930261680716843682}
@@ -16826,6 +16828,9 @@ MonoBehaviour:
   baseRerollCost: 10
   useVirtualCursor: 1
   purchaseCooldown: 0.5
+  debugAvailableItems: []
+  debugCurrentShopItems: []
+  debugPurchasedItems: []
 --- !u!114 &6456210848709519730
 MonoBehaviour:
   m_ObjectHideFlags: 0

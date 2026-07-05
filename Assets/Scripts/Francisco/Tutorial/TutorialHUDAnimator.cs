@@ -63,27 +63,25 @@ public class TutorialHUDAnimator : MonoBehaviour
 
     public void SetAndShowInstruction(string newText)
     {
+        if (isAnimatingOut)
+        {
+            pendingInstructionText = newText;
+            return;
+        }
+
         if (newText.Equals(currentInstructionText)) return;
 
-        bool instructionChanged = SetInstructionText(newText);
-
-        if (instructionChanged)
+        if (instructionActive)
         {
-            if (instructionActive && !isAnimatingOut)
-            {
-                pendingInstructionText = newText;
+            pendingInstructionText = newText;
 
-                if (currentAnimationCoroutine != null) StopCoroutine(currentAnimationCoroutine);
-                currentAnimationCoroutine = StartCoroutine(AnimateOutForNewInstructionCoroutine());
-            }
-            else if (isAnimatingOut)
-            {
-                pendingInstructionText = newText;
-            }
-            else
-            {
-                ShowInstruction();
-            }
+            if (currentAnimationCoroutine != null) StopCoroutine(currentAnimationCoroutine);
+            currentAnimationCoroutine = StartCoroutine(AnimateOutForNewInstructionCoroutine());
+        }
+        else
+        {
+            SetInstructionText(newText);
+            ShowInstruction();
         }
     }
 
