@@ -433,7 +433,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
                 continue;
             }
 
-            nextDrownedTime = Mathf.Min(nextDrownedTime, Time.time + 3f);
+            //nextDrownedTime = Mathf.Min(nextDrownedTime, Time.time + 3f);
             yield return ChaseAndPokeRoutine();
         }
     }
