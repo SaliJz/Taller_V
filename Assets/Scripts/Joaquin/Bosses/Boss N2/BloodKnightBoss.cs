@@ -640,7 +640,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             Vector3 target = ComputeZigzagTarget(i);
             PlaySFX(dashSFX);
 
-            yield return DashRoutine(target, timePerDash, brokenChargeDashSpeed, dealContactDamage: false, spawnCrystalOnWallHit: true);
+            Coroutine dashCoroutine = StartCoroutine(DashRoutine(target, timePerDash, brokenChargeDashSpeed, dealContactDamage: false, spawnCrystalOnWallHit: true));
 
             if (myToken != actionToken) break;
 
@@ -661,6 +661,12 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
                     }
                 }
             }
+
+            if (dashCoroutine != null)
+            {
+                yield return dashCoroutine;
+            }
+
             yield return new WaitForSeconds(brokenChargePause);
         }
 
