@@ -1556,7 +1556,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 2.5
-  m_Speed: 7
+  m_Speed: 8
   m_Acceleration: 5
   avoidancePriority: 50
   m_AngularSpeed: 360
@@ -1610,7 +1610,7 @@ MonoBehaviour:
   _mudWaveWarningTime: 0.45
   _mudWaveDamage: 15
   _mudWaveHitRadius: 5
-  _mudWaveKnockbackForce: 15
+  _mudWaveKnockbackForce: 10
   _mudWaveAnimatorSpeedMultiplier: 1.4
   _mudWaveWarningPrefab: {fileID: 4420126913089400018, guid: 58e3111c53fc3904c8e8dd1d4ed19f40, type: 3}
   _mudWaveRecoveryTime: 0.5
@@ -1628,15 +1628,15 @@ MonoBehaviour:
   _smashRockHeldFollowTarget: {fileID: 4103773840209656309}
   _smashRockScale: 7
   _smashRockHitRadius: 7
-  _smashRockTravelDuration: 0.75
+  _smashRockTravelDuration: 0.45
   _smashRockTravelCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 0
-      outSlope: 0
+      inSlope: 2
+      outSlope: 2
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
@@ -1657,10 +1657,9 @@ MonoBehaviour:
   _smashRadius: 7
   _smashDetectionRadius: 7
   _smashRadiusPrefab: {fileID: 858073966183631630, guid: 50f8bfdafefbba447b7bfe665ac766b0, type: 3}
-  _smashDelay: 2
+  _smashDelay: 0
   _smashGroundIndicator: {fileID: 0}
   _smashGroundIndicatorPrefab: {fileID: 4975376767033560840, guid: a982d5c75bea16248b26ebb1b1a3ad21, type: 3}
-  _smashTargetLockBeforeImpact: 0.5
   _smashIndicatorGroundOffset: 0.05
   _pulseExpansionDuration: 2
   _pulseWaitDuration: 1
@@ -1788,7 +1787,6 @@ MonoBehaviour:
   glowMaterial: {fileID: 0}
   glowIntensity: 2
   toughnessColor: {r: 0.92941177, g: 0.8156863, b: 0.80784315, a: 1}
-  anticipationBlinkInterval: 0.04
   anticipationBlinkColor: {r: 1, g: 0, b: 0, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5294118, g: 0, b: 0, a: 1}
