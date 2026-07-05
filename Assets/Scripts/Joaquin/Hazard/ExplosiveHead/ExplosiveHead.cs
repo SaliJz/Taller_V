@@ -22,8 +22,6 @@ public class ExplosiveHead : MonoBehaviour
     [SerializeField] private float explosionRadius = 5f;
     [Tooltip("Da�o m�ximo infligido por la explosi�n (en el centro).")]
     [SerializeField] private float explosionDamage = 40f;
-    [Tooltip("Fuerza aplicada a Rigidbodies (AddExplosionForce).")]
-    [SerializeField] private float rigidbodyKnockbackForce = 700f;
     [Tooltip("Distancia de empuje aplicada a CharacterController (sin Rigidbody).")]
     [SerializeField] private float ccKnockbackDistance = 3f;
 

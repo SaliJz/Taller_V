@@ -104,7 +104,7 @@ public class PlayerStatsPanel : MonoBehaviour
         // Orden y contenido alineado con el Panel Estadístico de la especificación de UI
 
         // Resistencia (daño recibido, en %): mas alto = peor
-        sb.AppendLine(FormatStat("Resistencia", StatType.DamageTaken, inverseColors: true));
+        sb.AppendLine(FormatStat("Resistencia", StatType.DamageTaken, inverseColors: true, isPercentage: true));
 
         sb.AppendLine(FormatStat("Daño a melé", StatType.MeleeAttackDamage));
         sb.AppendLine(FormatStat("Daño a distancia", StatType.ShieldAttackDamage));
@@ -149,11 +149,11 @@ public class PlayerStatsPanel : MonoBehaviour
     /// <summary>
     /// Extrae automáticamente del Gestor y formatea.
     /// </summary>
-    private string FormatStat(string statName, StatType type, bool inverseColors = false)
+    private string FormatStat(string statName, StatType type, bool inverseColors = false, bool isPercentage = false)
     {
         float baseValue = statsManager.GetBaseStat(type);
         float currentValue = statsManager.GetCurrentStat(type);
-        return FormatCustomLine(statName, baseValue, currentValue, false, inverseColors);
+        return FormatCustomLine(statName, baseValue, currentValue, isPercentage, inverseColors);
     }
 
     /// <summary>
