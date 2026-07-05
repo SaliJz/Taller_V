@@ -6639,7 +6639,7 @@ MonoBehaviour:
   nodePurulentosPrefab: {fileID: 5183912844809379343, guid: 256635d196c4d794a9da835b7e60ce0b, type: 3}
   phaseTransitionVFX: {fileID: 2347617527214524387}
   maxHealth: 500
-  moveSpeed: 5
+  moveSpeed: 10
   safeSpawnRadius: 3
   exceptionDamageMin: 10
   exceptionDamageMax: 0
@@ -6648,29 +6648,29 @@ MonoBehaviour:
   exceptionScaleMaxDist: 200
   exceptionAnticipationTime: 0
   exceptionDirPreviewTime: 0
-  exceptionShortRecovery: 1
-  exceptionFatalAnticipationDuration: 0.5
+  exceptionShortRecovery: 0.25
+  exceptionFatalAnticipationDuration: 5
   bufferOverrunDamage: 10
-  bufferOverrunDashDistance: 25
+  bufferOverrunDashDistance: 30
   bufferOverrunAttackRange: 5
   bufferOverrunChargeDuration: 1
   bufferOverrunDashDuration: 1
-  bufferOverrunLongRecovery: 2.5
+  bufferOverrunLongRecovery: 0.5
   cycleRepeatDelay: 0
-  bufferOverrunCooldown: 5
-  bufferOverrunAnticipationDuration: 0.6
-  clusterDuration: 5
+  bufferOverrunCooldown: 10
+  bufferOverrunAnticipationDuration: 0
+  clusterDuration: 7.5
   clusterDPS: 0
-  clusterRadius: 7.5
+  clusterRadius: 25
   clusterLarvaCount: 2
-  clusterSlowFraction: 0.2
+  clusterSlowFraction: 0.6
   clusterDealDamage: 0
   defragHitThreshold: 5
   defragHitWindow: 5
   defragActivationRange: 10
   defragTeleportDist: 10
   defragCooldown: 10
-  memoryLeakDuration: 10
+  memoryLeakDuration: 60
   memoryLeakDPS: 5
   memoryLeakRadius: 8
   memoryLeakFormationDelay: 1
