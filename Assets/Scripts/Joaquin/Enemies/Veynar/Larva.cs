@@ -269,7 +269,7 @@ public class Larva : MonoBehaviour
             ExecuteAttack(hit.gameObject, explosionDamage);
 
             // Aplicar empuje
-            ApplyKnockback(hitTransform);
+            ApplyKnockback(hitTransform, knockbackForce);
 
             ReportDebug($"Drogath atacó al jugador por {explosionDamage} de daño", 1);
 
@@ -310,43 +310,14 @@ public class Larva : MonoBehaviour
         }
     }
 
-    private void ApplyKnockback(Transform target)
+    private void ApplyKnockback(Transform target, float force)
     {
-        // Calcula la dirección del empuje desde Kronus hacia el jugador
-        Vector3 knockbackDirection = (target.position - transform.position).normalized;
-        knockbackDirection.y = 0f;
-
-        // Aplica el empuje
-        CharacterController cc = target.GetComponent<CharacterController>();
-        Rigidbody rb = target.GetComponent<Rigidbody>();
-
-        if (cc != null)
+        if (target.TryGetComponent<PlayerKnockbackReceiver>(out var knockbackReceiver))
         {
-            // Si el jugador usa CharacterController
-            StartCoroutine(ApplyKnockbackOverTime(cc, knockbackDirection * knockbackForce));
-        }
-        else if (rb != null)
-        {
-            // Si el jugador usa Rigidbody
-            rb.AddForce(knockbackDirection * knockbackForce * 10f, ForceMode.Impulse);
-        }
+            Vector3 direction = (target.position - transform.position).normalized;
+            direction.y = 0f;
 
-        ReportDebug($"Empuje aplicado al jugador en dirección {knockbackDirection}", 1);
-    }
-
-    private IEnumerator ApplyKnockbackOverTime(CharacterController cc, Vector3 knockbackVelocity)
-    {
-        float duration = 0.2f;
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            if (cc != null && cc.enabled)
-            {
-                cc.Move(knockbackVelocity * Time.deltaTime);
-            }
-            elapsed += Time.deltaTime;
-            yield return null;
+            knockbackReceiver.ApplyKnockback(direction, force);
         }
     }
 

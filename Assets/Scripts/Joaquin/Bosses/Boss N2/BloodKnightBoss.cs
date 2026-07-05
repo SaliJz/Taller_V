@@ -768,7 +768,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
                 ph.TakeDamage(scrapRamDamage);
             }
 
-            ApplySafeKnockback(hitPlayerTarget, transform.position, scrapRamKnockbackForce);
+            ApplyKnockback(hitPlayerTarget.transform, scrapRamKnockbackForce);
         }
         else if (hitWall)
         {
@@ -1208,42 +1208,14 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         return false;
     }
 
-    private void ApplySafeKnockback(GameObject target, Vector3 explosionCenter, float force)
+    private void ApplyKnockback(Transform target, float force)
     {
-        PlayerMovement playerMove = target.GetComponent<PlayerMovement>();
-        if (playerMove != null && playerMove.IsDashing) return;
-
-        Vector3 direction = (target.transform.position - explosionCenter).normalized;
-        direction.y = 0f;
-
-        CharacterController cc = target.GetComponent<CharacterController>();
-        if (cc != null)
+        if (target.TryGetComponent<PlayerKnockbackReceiver>(out var knockbackReceiver))
         {
-            StartCoroutine(KnockbackCCRoutine(cc, direction, force, 0.5f, playerMove));
-            return;
-        }
+            Vector3 direction = (target.position - transform.position).normalized;
+            direction.y = 0f;
 
-        Rigidbody rb = target.GetComponent<Rigidbody>();
-        if (rb != null && !rb.isKinematic)
-        {
-            rb.linearVelocity = Vector3.zero;
-            rb.AddForce(direction * force, ForceMode.Impulse);
-        }
-    }
-
-    private IEnumerator KnockbackCCRoutine(CharacterController cc, Vector3 direction, float force, float duration, PlayerMovement playerMove = null)
-    {
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            if (cc == null) yield break;
-            if (playerMove != null && playerMove.IsDashing) yield break;
-
-            if (cc.enabled) cc.SimpleMove(direction * force);
-
-            elapsed += Time.deltaTime;
-            yield return null;
+            knockbackReceiver.ApplyKnockback(direction, force);
         }
     }
 

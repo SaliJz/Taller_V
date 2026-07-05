@@ -535,7 +535,7 @@ public partial class AstarothController
                     hitByShockwaveEntity.Add(entity);
 
                     ExecuteAttack(entity, groundPosition, _Attack2Damage);
-                    ApplySafeKnockback(entity, groundPosition, 10f);
+                    ApplyKnockback(entity.transform, 10f);
 
                     _lastSmashHitPlayer = true;
                     _totalAttemptsLanded++;
@@ -575,9 +575,6 @@ public partial class AstarothController
         if (_animCtrl != null) _animCtrl.isWalking = false;
         if (_animCtrl != null) _animCtrl.PlayPulpo();
 
-        // Espera a que AnimEvent_AnticipationPause llegue desde A_Pulpo_Pre
-        // (frame donde los tentáculos están listos para traspasar el suelo)
-        // y que la pausa de anticipación termine.
         float pulpoAnticipationTimeout = pulsoCarnalAnticipationDuration + 2f;
         float pulpoAnticipationSafetyTimer = 0f;
         while (!_isInAnticipation && pulpoAnticipationSafetyTimer < pulpoAnticipationTimeout)
@@ -997,7 +994,7 @@ public partial class AstarothController
                 ExecuteAttack(target, transform.position, _stompDamage);
             }
 
-            ApplySafeKnockback(target, transform.position, _stompKnockbackForce);
+            ApplyKnockback(target.transform, _stompKnockbackForce);
         }
     }
 

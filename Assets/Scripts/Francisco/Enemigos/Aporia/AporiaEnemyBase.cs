@@ -436,7 +436,7 @@ public abstract class AporiaEnemyBase : MonoBehaviour
             if (t.TryGetComponent<PlayerHealth>(out var pHealth))
             {
                 pHealth.TakeDamage(attackDamage);
-                ApplyKnockback(t.transform);
+                ApplyKnockback(t.transform, knockbackForce);
             }
         }
     }
@@ -507,28 +507,14 @@ public abstract class AporiaEnemyBase : MonoBehaviour
         else { animCtrl.h = -1; animCtrl.v = 1; }
     }
 
-    protected void ApplyKnockback(Transform target)
+    protected void ApplyKnockback(Transform target, float force)
     {
-        Vector3 dir = (target.position - transform.position).normalized;
-        dir.y = 0;
-        if (target.TryGetComponent<CharacterController>(out var cc))
+        if (target.TryGetComponent<PlayerKnockbackReceiver>(out var knockbackReceiver))
         {
-            StartCoroutine(KnockbackTick(cc, dir * knockbackForce));
-        }
-    }
+            Vector3 direction = (target.position - transform.position).normalized;
+            direction.y = 0f;
 
-    private IEnumerator KnockbackTick(CharacterController cc, Vector3 force)
-    {
-        float t = 0;
-        var pm = cc.GetComponent<PlayerMovement>();
-        while (t < 0.2f)
-        {
-            if (pm == null || !pm.IsDashing)
-            {
-                cc?.Move(force * Time.deltaTime);
-            }
-            t += Time.deltaTime;
-            yield return null;
+            knockbackReceiver.ApplyKnockback(direction, force);
         }
     }
 

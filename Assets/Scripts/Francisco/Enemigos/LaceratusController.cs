@@ -653,60 +653,21 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
         {
             if (hit.CompareTag("Player"))
             {
-                PlayerMovement playerMove = hit.GetComponent<PlayerMovement>();
-
-                if (playerMove != null && playerMove.IsDashing)
-                {
-                    Debug.Log("Jitter: Grito de empuje ignorado (Jugador en Dash).");
-                    continue;
-                }
-
                 Vector3 pushDirection = (hit.transform.position - transform.position).normalized;
                 pushDirection.y = 0;
 
-                EnemyKnockbackHandler playerKnockback = hit.GetComponent<EnemyKnockbackHandler>();
-                if (playerKnockback != null)
+                if (hit.TryGetComponent<EnemyKnockbackHandler>(out var enemyKnockback))
                 {
-                    playerKnockback.TriggerKnockback(pushDirection, consecutiveHitPushDistance, 0.3f);
+                    enemyKnockback.TriggerKnockback(pushDirection, consecutiveHitPushDistance, 0.3f);
                 }
-                else
+                else if (hit.TryGetComponent<PlayerKnockbackReceiver>(out var playerKnockback))
                 {
-                    CharacterController controller = hit.GetComponent<CharacterController>();
-                    if (controller != null)
-                    {
-                        StartCoroutine(PushPlayerWithController(controller, pushDirection, playerMove));
-                    }
-                    else
-                    {
-                        Rigidbody rb = hit.GetComponent<Rigidbody>();
-                        if (rb != null)
-                        {
-                            rb.AddForce(pushDirection * consecutiveHitPushDistance * 10f, ForceMode.Impulse);
-                        }
-                    }
+                    playerKnockback.ApplyKnockback(pushDirection, consecutiveHitPushDistance * 10f, 0.3f);
                 }
 
                 Debug.Log("Jitter: Onda de empuje activada");
                 break;
             }
-        }
-    }
-
-    private IEnumerator PushPlayerWithController(CharacterController controller, Vector3 direction, PlayerMovement playerMove = null)
-    {
-        float pushSpeed = consecutiveHitPushDistance / 0.3f;
-        float elapsed = 0f;
-
-        while (elapsed < 0.3f)
-        {
-            if (controller == null) yield break;
-
-            if (playerMove != null && playerMove.IsDashing) yield break;
-
-            if (controller.enabled) controller.Move(direction * pushSpeed * Time.deltaTime);
-
-            elapsed += Time.deltaTime;
-            yield return null;
         }
     }
 

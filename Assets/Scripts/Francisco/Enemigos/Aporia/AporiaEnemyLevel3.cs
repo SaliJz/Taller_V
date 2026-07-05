@@ -125,7 +125,7 @@ public class AporiaEnemyLevel3 : AporiaEnemyBase
             if (t.TryGetComponent<PlayerHealth>(out var pHealth))
             {
                 pHealth.TakeDamage(attackDamage);
-                ApplyKnockback(t.transform);
+                ApplyKnockback(t.transform, knockbackForce);
             }
         }
 

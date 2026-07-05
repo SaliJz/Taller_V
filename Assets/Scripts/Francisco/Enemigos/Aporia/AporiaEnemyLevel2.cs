@@ -131,7 +131,7 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
             if (t.TryGetComponent<PlayerHealth>(out var pHealth))
             {
                 pHealth.TakeDamage(attackDamage);
-                ApplyKnockback(t.transform);
+                ApplyKnockback(t.transform, knockbackForce);
                 SpawnGlassArea(glassShardAttackPrefab, t.transform.position, shardAttackRadius,
                                shardAttackDamagePerSec, shardAttackDuration);
             }
@@ -244,7 +244,7 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
             if (t.TryGetComponent<PlayerHealth>(out var pHealth))
             {
                 pHealth.TakeDamage(deathExplosionDamage);
-                ApplyKnockbackWithForce(t.transform, deathExplosionKnockback);
+                ApplyKnockback(t.transform, deathExplosionKnockback);
             }
         }
     }
@@ -286,31 +286,6 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
         else
         {
             Debug.LogWarning($"[{GetType().Name}] '{name}': el prefab '{prefab.name}' no tiene componente GlassShardDamage. El shard de estela no hará daño.");
-        }
-    }
-
-    private void ApplyKnockbackWithForce(Transform target, float force)
-    {
-        Vector3 dir = (target.position - transform.position).normalized;
-        dir.y = 0;
-        if (target.TryGetComponent<CharacterController>(out var cc))
-        {
-            StartCoroutine(KnockbackTickCustom(cc, dir * force));
-        }
-    }
-
-    private IEnumerator KnockbackTickCustom(CharacterController cc, Vector3 force)
-    {
-        float t = 0;
-        var pm = cc.GetComponent<PlayerMovement>();
-        while (t < 0.25f)
-        {
-            if (pm == null || !pm.IsDashing)
-            {
-                cc?.Move(force * Time.deltaTime);
-            }
-            t += Time.deltaTime;
-            yield return null;
         }
     }
 

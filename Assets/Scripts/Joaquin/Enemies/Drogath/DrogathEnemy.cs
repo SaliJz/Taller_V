@@ -1025,7 +1025,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             ExecuteAttack(hit.gameObject, meleeDamage);
 
             // Aplicar empuje
-            ApplyKnockback(hitTransform);
+            ApplyKnockback(hitTransform, knockbackForce);
 
             ReportDebug($"Drogath golpeo al jugador por {meleeDamage} de dano tras {attackImpactDelay}s de delay", 1);
 
@@ -1055,44 +1055,14 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         }
     }
 
-    private void ApplyKnockback(Transform target)
+    private void ApplyKnockback(Transform target, float force)
     {
-        // Calcula la direccion del empuje desde Kronus hacia el jugador
-        Vector3 knockbackDirection = (target.position - transform.position).normalized;
-        knockbackDirection.y = 0f;
-
-        CharacterController cc = target.GetComponent<CharacterController>();
-        Rigidbody rb = target.GetComponent<Rigidbody>();
-
-        if (cc != null)
+        if (target.TryGetComponent<PlayerKnockbackReceiver>(out var knockbackReceiver))
         {
-            StartCoroutine(ApplyKnockbackOverTime(cc, knockbackDirection * knockbackForce));
-        }
-        else if (rb != null)
-        {
-            rb.AddForce(knockbackDirection * knockbackForce * 10f, ForceMode.Impulse);
-        }
+            Vector3 direction = (target.position - transform.position).normalized;
+            direction.y = 0f;
 
-        ReportDebug($"Empuje aplicado al jugador en direccion {knockbackDirection}", 1);
-    }
-
-    private IEnumerator ApplyKnockbackOverTime(CharacterController cc, Vector3 knockbackVelocity)
-    {
-        float duration = 0.2f;
-        float elapsed = 0f;
-        var pm = cc != null ? cc.GetComponent<PlayerMovement>() : null;
-        while (elapsed < duration)
-        {
-            if (cc != null && cc.enabled)
-            {
-                if (pm == null || !pm.IsDashing)
-                {
-                    cc.Move(knockbackVelocity * Time.deltaTime);
-                }
-            }
-
-            elapsed += Time.deltaTime;
-            yield return null;
+            knockbackReceiver.ApplyKnockback(direction, force);
         }
     }
 

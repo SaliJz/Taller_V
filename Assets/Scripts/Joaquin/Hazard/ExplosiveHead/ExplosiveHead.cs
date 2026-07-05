@@ -345,23 +345,14 @@ public class ExplosiveHead : MonoBehaviour
                 }
             }
 
-            if (collider.attachedRigidbody != null)
+            if (collider.TryGetComponent<PlayerKnockbackReceiver>(out var knockbackReceiver))
             {
-                collider.attachedRigidbody.AddExplosionForce(rigidbodyKnockbackForce, center, worldExplosionRadius, 0.5f, ForceMode.Impulse);
-            }
-            else if (collider.TryGetComponent<CharacterController>(out var cc))
-            {
-                var pm = cc.GetComponent<PlayerMovement>();
-
-                if (pm != null && pm.IsDashing)
-                {
-                    continue; // Si el jugador est� dashing, no se le aplica el knockback del explosivo.
-                }
-
                 Vector3 direction = (collider.transform.position - center).normalized;
                 direction.y = Mathf.Max(direction.y, 0.1f);
+
                 float pushStrength = ccKnockbackDistance * (1f - normalizedDistance);
-                cc.Move(direction * pushStrength);
+
+                knockbackReceiver.ApplyKnockback(direction, pushStrength);
             }
         }
     }

@@ -195,7 +195,7 @@ public partial class AstarothController
 
             hitPlayers.Add(target);
             ExecuteAttack(target, transform.position, _mudWaveDamage);
-            ApplySafeKnockback(target, transform.position, _mudWaveKnockbackForce);
+            ApplyKnockback(target.transform, _mudWaveKnockbackForce);
             hitAny = true;
         }
         return hitAny;
