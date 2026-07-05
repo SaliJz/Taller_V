@@ -155,7 +155,13 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
     private void OnTriggerEnter(Collider other)
     {
         if (shopManager != null && shopManager.InteractionMode != ShopInteractionMode.TriggerProximity)
+        {
             return;
+        }
+
+        if (PauseController.Instance != null && PauseController.IsGamePaused) return;
+
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
 
         if (other.CompareTag("Player"))
         {
@@ -178,7 +184,13 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
     private void OnTriggerStay(Collider other)
     {
         if (shopManager != null && shopManager.InteractionMode != ShopInteractionMode.TriggerProximity)
+        {
             return;
+        }
+
+        if (PauseController.Instance != null && PauseController.IsGamePaused) return;
+
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
 
         if (!other.CompareTag("Player")) return;
 

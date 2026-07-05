@@ -80,12 +80,51 @@ public partial class PlayerStatsManager : MonoBehaviour
 
     [Header("UI: Mostrar estadsticas")]
     [SerializeField] private TextMeshProUGUI statsText;
+
     [Tooltip("GameObject que contiene el panel con el TextMeshProUGUI. Si no se asigna, se intentar usar el parent del statsText.")]
     [SerializeField] private GameObject statsPanel;
+
     [Tooltip("Si est activo, se mostrar tambin el valor base entre parntesis.")]
     [SerializeField] private bool showBaseValues = true;
+
     [Tooltip("Cantidad de decimales a mostrar para los valores.")]
     [SerializeField] private int decimals = 2;
+
+    #endregion
+
+    #region Inspector - Life Stage Modifiers Settings
+
+    [Header("Modificadores de Etapa: Adulto")]
+    [Tooltip("Modificador de velocidad de movimiento (Ej: -0.05 para reducir un 5%)")]
+    [SerializeField] private float adultMoveSpeedMod = -0.05f;
+
+    [Tooltip("Modificador de velocidad de ataque a melé (Ej: -0.177 para reducir 17.7%)")]
+    [SerializeField] private float adultMeleeAttackSpeedMod = -0.177f;
+
+    [Tooltip("Modificador de daño a melé (Ej: 0.5 para aumentar un 50%)")]
+    [SerializeField] private float adultMeleeDamageMod = 0.5f;
+
+    [Tooltip("Modificador de velocidad del escudo (Ej: -0.375)")]
+    [SerializeField] private float adultShieldSpeedMod = -0.375f;
+
+    [Tooltip("Modificador de daño del escudo (Ej: 0.5)")]
+    [SerializeField] private float adultShieldDamageMod = 0.5f;
+
+    [Header("Modificadores de Etapa: Anciano (Elder)")]
+    [Tooltip("Modificador de velocidad de movimiento (Ej: -0.1 para reducir un 10%)")]
+    [SerializeField] private float elderMoveSpeedMod = -0.1f;
+
+    [Tooltip("Modificador de velocidad de ataque a melé (Ej: -0.316)")]
+    [SerializeField] private float elderMeleeAttackSpeedMod = -0.316f;
+
+    [Tooltip("Modificador de daño a melé (Ej: 1.25 para aumentar un 125%)")]
+    [SerializeField] private float elderMeleeDamageMod = 1.25f;
+
+    [Tooltip("Modificador de velocidad del escudo (Ej: -0.479)")]
+    [SerializeField] private float elderShieldSpeedMod = -0.479f;
+
+    [Tooltip("Modificador de daño del escudo (Ej: 1.25)")]
+    [SerializeField] private float elderShieldDamageMod = 1.25f;
 
     #endregion
 
@@ -136,9 +175,13 @@ public partial class PlayerStatsManager : MonoBehaviour
         if (statsPanel == null && statsText != null)
         {
             if (statsText.transform.parent != null)
+            {
                 statsPanel = statsText.transform.parent.gameObject;
+            }
             else
+            {
                 statsPanel = statsText.gameObject;
+            }
         }
 
         // Asegurarnos de que TMP permita rich text (necesario para colorear valores).
@@ -574,7 +617,7 @@ public partial class PlayerStatsManager : MonoBehaviour
 
         if (!isTemporary)
         {
-            baseStats[type] = currentStats[type];
+            //baseStats[type] = currentStats[type];
             SetStatOnSO(currentStatSO, type, currentStats[type]);
 
             return;
@@ -608,7 +651,7 @@ public partial class PlayerStatsManager : MonoBehaviour
             statVisualState[type] = 0;
         }
 
-        baseStats[type] = currentStats[type];
+        //baseStats[type] = currentStats[type];
         SetStatOnSO(currentStatSO, type, currentStats[type]);
 
         OnStatChanged?.Invoke(type, currentStats[type]);
@@ -828,14 +871,26 @@ public partial class PlayerStatsManager : MonoBehaviour
     {
         var affectedStats = new StatType[]
         {
-        StatType.MoveSpeed,
-        StatType.MeleeAttackSpeed,
-        StatType.MeleeAttackDamage,
-        StatType.ShieldSpeed,
-        StatType.ShieldAttackDamage
+            StatType.MoveSpeed,
+            StatType.MeleeAttackSpeed,
+            StatType.MeleeAttackDamage,
+            StatType.ShieldSpeed,
+            StatType.ShieldAttackDamage
         };
 
-        // Quita únicamente los modificadores de la etapa anterior
+        // Guarda todos los namedModifiers temporales
+        var tempNamedModifiers = new Dictionary<string, Dictionary<StatType, NamedModifierData>>(StringComparer.Ordinal);
+        foreach (var kvp in namedModifiers)
+        {
+            var inner = new Dictionary<StatType, NamedModifierData>();
+            foreach (var innerKvp in kvp.Value) inner[innerKvp.Key] = innerKvp.Value;
+            tempNamedModifiers[kvp.Key] = inner;
+        }
+
+        // Retira limpiamente estos modificadores de las estadísticas actuales
+        ClearAllNamedModifiers();
+
+        // Reverte solo las matemáticas de la etapa de vida anterior
         foreach (var stat in affectedStats)
         {
             if (lifeStageModifiers.ContainsKey(stat))
@@ -845,42 +900,23 @@ public partial class PlayerStatsManager : MonoBehaviour
             }
         }
 
-        var tempNamedModifiers = new Dictionary<string, Dictionary<StatType, NamedModifierData>>(StringComparer.Ordinal);
-        foreach (var kvp in namedModifiers)
-        {
-            var inner = new Dictionary<StatType, NamedModifierData>();
-            foreach (var innerKvp in kvp.Value) inner[innerKvp.Key] = innerKvp.Value;
-            tempNamedModifiers[kvp.Key] = inner;
-        }
-
-        foreach (StatType s in Enum.GetValues(typeof(StatType)))
-        {
-            if (baseStats.TryGetValue(s, out var baseVal))
-            {
-                currentStats[s] = baseVal;
-            }
-        }
-
-        // Aplica los nuevos modificadores según la etapa
         switch (newStage)
         {
             case LifeStage.Young:
                 break;
-
             case LifeStage.Adult:
-                ApplyLifeStageMod(StatType.MoveSpeed, -0.05f);
-                ApplyLifeStageMod(StatType.MeleeAttackSpeed, -0.06f);
-                ApplyLifeStageMod(StatType.MeleeAttackDamage, 0.33f);
-                ApplyLifeStageMod(StatType.ShieldSpeed, 0f);
-                ApplyLifeStageMod(StatType.ShieldAttackDamage, 0f);
+                ApplyLifeStageMod(StatType.MoveSpeed, adultMoveSpeedMod);
+                ApplyLifeStageMod(StatType.MeleeAttackSpeed, adultMeleeAttackSpeedMod);
+                ApplyLifeStageMod(StatType.MeleeAttackDamage, adultMeleeDamageMod);
+                ApplyLifeStageMod(StatType.ShieldSpeed, adultShieldSpeedMod);
+                ApplyLifeStageMod(StatType.ShieldAttackDamage, adultShieldDamageMod);
                 break;
-
             case LifeStage.Elder:
-                ApplyLifeStageMod(StatType.MoveSpeed, -0.1f);
-                ApplyLifeStageMod(StatType.MeleeAttackSpeed, -0.12f);
-                ApplyLifeStageMod(StatType.MeleeAttackDamage, 0.77f);
-                ApplyLifeStageMod(StatType.ShieldSpeed, 0f);
-                ApplyLifeStageMod(StatType.ShieldAttackDamage, 0f);
+                ApplyLifeStageMod(StatType.MoveSpeed, elderMoveSpeedMod);
+                ApplyLifeStageMod(StatType.MeleeAttackSpeed, elderMeleeAttackSpeedMod);
+                ApplyLifeStageMod(StatType.MeleeAttackDamage, elderMeleeDamageMod);
+                ApplyLifeStageMod(StatType.ShieldSpeed, elderShieldSpeedMod);
+                ApplyLifeStageMod(StatType.ShieldAttackDamage, elderShieldDamageMod);
                 break;
         }
 
@@ -901,7 +937,9 @@ public partial class PlayerStatsManager : MonoBehaviour
                 currentStats[statType] += applied;
 
                 if (!namedModifiers.ContainsKey(modifierKey))
+                {
                     namedModifiers[modifierKey] = new Dictionary<StatType, NamedModifierData>();
+                }
 
                 namedModifiers[modifierKey][statType] = new NamedModifierData
                 {
@@ -912,23 +950,12 @@ public partial class PlayerStatsManager : MonoBehaviour
             }
         }
 
-        foreach (var statType in affectedStats)
+        // Notifica de golpe todos los cambios
+        foreach (StatType s in Enum.GetValues(typeof(StatType)))
         {
-            if (currentStats.ContainsKey(statType))
+            if (currentStats.ContainsKey(s))
             {
-                OnStatChanged?.Invoke(statType, currentStats[statType]);
-            }
-        }
-
-        foreach (var kvp in namedModifiers)
-        {
-            foreach (var kv in kvp.Value)
-            {
-                var st = kv.Key;
-                if (Array.IndexOf(affectedStats, st) < 0)
-                {
-                    OnStatChanged?.Invoke(st, currentStats[st]);
-                }
+                OnStatChanged?.Invoke(s, currentStats[s]);
             }
         }
     }

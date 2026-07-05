@@ -496,17 +496,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             return damageAmount;
         }
 
-        float damageMultiplier = statsManager.GetCurrentStat(StatType.DamageTaken);
+        float resistance = statsManager.GetCurrentStat(StatType.DamageTaken) / 100f;
 
-        Debug.Log($"[DAÑO] Daño Base Enemigo: {damageAmount} | Valor de DamageTaken en StatsManager: {damageMultiplier}");
+        if (resistance <= 0f) resistance = 0.01f;
 
-        if (damageMultiplier > 10f) damageMultiplier /= 100f;
+        float finalDamage = damageAmount / resistance;
 
-        if (damageMultiplier < 0f) damageMultiplier = 0f;
-
-        float finalDamage = damageAmount * damageMultiplier;
-
-        Debug.Log($"[DAÑO] Resultado Final -> {damageAmount} x {damageMultiplier} = {finalDamage}");
+        Debug.Log($"[DAÑO] Base: {damageAmount} | Resistencia: {resistance} | Final -> {finalDamage}");
 
         return finalDamage;
     }

@@ -138,8 +138,8 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
     [SerializeField] private float cycleRepeatDelay = 2f;
     [Tooltip("Tiempo de espera para permitir nuevamente el ataque dinamico de Buffer Overrun.")]
     [SerializeField] private float bufferOverrunCooldown = 8.5f;
-    [Tooltip("Tiempo durante el cual el jefe pausa animaciones antes de iniciar la embestida.")]
-    [SerializeField] private float bufferOverrunAnticipationDuration = 0.6f;
+    //[Tooltip("Tiempo durante el cual el jefe pausa animaciones antes de iniciar la embestida.")]
+    //[SerializeField] private float bufferOverrunAnticipationDuration = 0.6f;
 
     [Header("Cluster Necrotico")]
     [Tooltip("Duracion en segundos del area antes de colapsar y generar las larvas.")]
@@ -219,6 +219,8 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
     private float effectiveProjSpeed;
     private float effectiveBufferCooldown;
     private float effectiveExceptionRecovery;
+
+    private bool bufferOverrunOnCooldown = false;
 
     private int defragHitCount = 0;
     private float defragLastHitTime = -999f;
@@ -335,7 +337,9 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         maxHealth = newMax;
 
         if (audioSource != null && damagedSFX != null)
+        {
             audioSource.PlayOneShot(damagedSFX, 0.75f);
+        }
     }
 
     /// <summary>
@@ -426,13 +430,16 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
             if (currentHealth <= 0) yield break;
             if (HasPendingInterrupt()) { yield return StartCoroutine(ResolveDynamicInterrupt()); continue; }
 
-            yield return StartCoroutine(ExecuteBufferOverrun());
-            if (currentHealth <= 0) yield break;
-            if (HasPendingInterrupt()) { yield return StartCoroutine(ResolveDynamicInterrupt()); continue; }
+            if (!bufferOverrunOnCooldown)
+            {
+                yield return StartCoroutine(ExecuteBufferOverrun());
+                if (currentHealth <= 0) yield break;
+                if (HasPendingInterrupt()) { yield return StartCoroutine(ResolveDynamicInterrupt()); continue; }
 
-            yield return StartCoroutine(LongRecovery());
-            if (currentHealth <= 0) yield break;
-            if (HasPendingInterrupt()) { yield return StartCoroutine(ResolveDynamicInterrupt()); continue; }
+                yield return StartCoroutine(LongRecovery());
+                if (currentHealth <= 0) yield break;
+                if (HasPendingInterrupt()) { yield return StartCoroutine(ResolveDynamicInterrupt()); continue; }
+            }
         }
     }
 
@@ -574,7 +581,8 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
     private IEnumerator ShortRecovery()
     {
-        ReportDebug("RECUPERACION CORTA: 1.5 s.", 1);
+        ReportDebug($"RECUPERACION CORTA: {effectiveExceptionRecovery} s.", 1);
+        
         float elapsed = 0f;
         while (elapsed < effectiveExceptionRecovery)
         {
@@ -582,6 +590,16 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
             elapsed += Time.deltaTime;
             yield return null;
         }
+    }
+
+    private IEnumerator BufferOverrunCooldownRoutine()
+    {
+        bufferOverrunOnCooldown = true;
+
+        yield return new WaitForSeconds(effectiveBufferCooldown);
+
+        bufferOverrunOnCooldown = false;
+        ReportDebug("BUFFER OVERRUN: Cooldown finalizado.", 1);
     }
 
     /// <summary>
@@ -602,13 +620,13 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
         if (animController != null) animController.PlayBufferPre();
 
-        float bufferAnticipationFallback = 0f;
-        while (!isInAnticipation && bufferAnticipationFallback < bufferOverrunAnticipationDuration + 1f)
-        {
-            bufferAnticipationFallback += Time.deltaTime;
-            yield return null;
-        }
-        yield return new WaitUntil(() => !isInAnticipation);
+        //float bufferAnticipationFallback = 0f;
+        //while (!isInAnticipation && bufferAnticipationFallback < bufferOverrunAnticipationDuration + 1f)
+        //{
+        //    bufferAnticipationFallback += Time.deltaTime;
+        //    yield return null;
+        //}
+        //yield return new WaitUntil(() => !isInAnticipation);
 
         yield return new WaitForSeconds(bufferOverrunChargeDuration);
 
@@ -635,6 +653,9 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         SpawnNecroticCluster(impactPoint);
 
         ReportDebug("BUFFER OVERRUN: Impacto aplicado. Cluster Necrotico creado.", 1);
+
+        StartCoroutine(BufferOverrunCooldownRoutine());
+
         currentState = BossState.Idle;
     }
 
@@ -1019,13 +1040,13 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
     {
         isInAnticipation = true;
 
-        float duration;
+        float duration = 0f;
         AudioClip sfx;
 
         if (currentState == BossState.Attacking)
         {
-            duration = bufferOverrunAnticipationDuration;
-            sfx = bufferOverrunAnticipationSFX;
+            duration = exceptionFatalAnticipationDuration;
+            sfx = exceptionFatalAnticipationSFX;
         }
         else if (currentState == BossState.Teleporting)
         {

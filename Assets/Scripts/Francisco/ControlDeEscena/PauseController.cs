@@ -58,11 +58,14 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
         playerControls.UI.SetCallbacks(this);
 
         if (statsManager == null)
+        {
             statsManager = FindAnyObjectByType<PlayerStatsManager>();
+        }
 
         if (pauseMusicSource == null)
+        {
             pauseMusicSource = GetComponent<AudioSource>();
-
+        }
         if (pausePanel != null) pausePanel.SetActive(false);
     }
 
@@ -106,12 +109,12 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
 
         if (pausePressed && !pauseButtonPressedLastFrame)
         {
-            if (isSettingsOpen)
-                CloseSettings();
-            else if (isPaused)
-                ResumeGame();
+            if (isSettingsOpen) CloseSettings();
+            else if (isPaused) ResumeGame();
             else if (InventoryUIManager.Instance == null || !InventoryUIManager.Instance.IsOpen)
+            {
                 PauseGame();
+            }
         }
 
         pauseButtonPressedLastFrame = pausePressed;
@@ -121,12 +124,12 @@ public class PauseController : MonoBehaviour, PlayerControlls.IUIActions
     {
         if (context.performed && canTogglePause)
         {
-            if (isSettingsOpen)
-                CloseSettings();
-            else if (isPaused)
-                ResumeGame();
+            if (isSettingsOpen) CloseSettings();
+            else if (isPaused) ResumeGame();
             else if (InventoryUIManager.Instance == null || !InventoryUIManager.Instance.IsOpen)
+            {
                 PauseGame();
+            }
         }
     }
 

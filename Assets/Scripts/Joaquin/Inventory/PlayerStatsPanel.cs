@@ -98,7 +98,7 @@ public class PlayerStatsPanel : MonoBehaviour
         if (statsManager == null || statsTextDisplay == null) return;
         StringBuilder sb = new StringBuilder();
 
-        sb.AppendLine("<b><color=Yellow>Estadística <pos=50%>Base <pos=75%>Actual</color></b>");
+        sb.AppendLine(" <b><color=Yellow>Estadística <pos=50%>Base <pos=75%>Actual</color></b>");
         // sb.AppendLine("-------------------------------------------------");
 
         // Orden y contenido alineado con el Panel Estadístico de la especificación de UI
@@ -114,10 +114,10 @@ public class PlayerStatsPanel : MonoBehaviour
 
         // Alcance e impulso (dash): version multiplicador + version aditiva (fija)
         //sb.AppendLine(FormatStat("Alc. impulso", StatType.DashRangeMultiplier));
-        sb.AppendLine(FormatStat("Alc. impulso (fijo)", StatType.DashRangeFlatBonus));
+        sb.AppendLine(FormatStat("Alc. dash", StatType.DashRangeFlatBonus));
 
         // Cooldown del dash: mas alto = peor (tarda mas en recargar)
-        sb.AppendLine(FormatStat("Cooldown impulso", StatType.DashCooldownPost, inverseColors: true));
+        sb.AppendLine(FormatStat("Cooldown dash", StatType.DashCooldownPost, inverseColors: true));
 
         sb.AppendLine(FormatStat("Desplaz. por golpe", StatType.MeleeComboDisplacement));
 
@@ -179,6 +179,6 @@ public class PlayerStatsPanel : MonoBehaviour
             }
         }
 
-        return $"{statName} <pos=50%>{baseValue:0.##}{symbol} <pos=75%>{changedString}";
+        return $" {statName} <pos=50%>{baseValue:0.##}{symbol} <pos=75%>{changedString}";
     }
 }

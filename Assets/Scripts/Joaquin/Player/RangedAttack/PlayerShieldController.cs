@@ -715,84 +715,19 @@ public class PlayerShieldController : MonoBehaviour
 
     private ShieldConfig GetShieldConfigForCurrentStage()
     {
-        const float damageReferenceStatValue = 10f;
-
         float currentDamageStat = statsManager != null ? statsManager.GetStat(StatType.ShieldAttackDamage) : fallbackshieldDamage;
-        float damagePowerFactor = (damageReferenceStatValue > 0) ? currentDamageStat / damageReferenceStatValue : 1f;
-
-        float totalDamageFactor = damageMultiplier * damagePowerFactor;
-
-        const float speedReferenceStatValue = 25f;
-
         float currentSpeedStat = statsManager != null ? statsManager.GetStat(StatType.ShieldSpeed) : fallbackshieldSpeed;
-        float speedPowerFactor = (speedReferenceStatValue > 0) ? currentSpeedStat / speedReferenceStatValue : 1f;
 
-        float totalSpeedFactor = speedMultiplier * speedPowerFactor;
-
-        if (playerHealth == null)
+        return new ShieldConfig
         {
-            return new ShieldConfig
-            {
-                damage = Mathf.RoundToInt(finalAttackDamage * damagePowerFactor),
-                speed = finalAttackSpeed * speedPowerFactor,
-                maxDistance = shieldMaxDistance,
-                canRebound = canShieldRebound,
-                maxRebounds = shieldMaxRebounds,
-                reboundRadius = shieldReboundRadius,
-                knockbackForce = basePushForce
-            };
-        }
-
-        switch (playerHealth.CurrentLifeStage)
-        {
-            case PlayerHealth.LifeStage.Young:
-                return new ShieldConfig
-                {
-                    damage = Mathf.RoundToInt(youngShieldDamage * totalDamageFactor),
-                    speed = youngShieldSpeed * totalSpeedFactor,
-                    maxDistance = shieldMaxDistance,
-                    canRebound = canShieldRebound,
-                    maxRebounds = shieldMaxRebounds,
-                    reboundRadius = shieldReboundRadius,
-                    knockbackForce = basePushForce
-                };
-
-            case PlayerHealth.LifeStage.Adult:
-                return new ShieldConfig
-                {
-                    damage = Mathf.RoundToInt(adultShieldDamage * totalDamageFactor),
-                    speed = adultShieldSpeed * totalSpeedFactor,
-                    maxDistance = shieldMaxDistance,
-                    canRebound = canShieldRebound,
-                    maxRebounds = shieldMaxRebounds,
-                    reboundRadius = shieldReboundRadius,
-                    knockbackForce = basePushForce
-                };
-
-            case PlayerHealth.LifeStage.Elder:
-                return new ShieldConfig
-                {
-                    damage = Mathf.RoundToInt(elderShieldDamage * totalDamageFactor),
-                    speed = elderShieldSpeed * totalSpeedFactor,
-                    maxDistance = shieldMaxDistance,
-                    canRebound = canShieldRebound,
-                    maxRebounds = shieldMaxRebounds,
-                    reboundRadius = shieldReboundRadius,
-                    knockbackForce = basePushForce
-                };
-
-            default:
-                return new ShieldConfig
-                {
-                    damage = Mathf.RoundToInt(finalAttackDamage * damagePowerFactor),
-                    speed = finalAttackSpeed * speedPowerFactor,
-                    maxDistance = shieldMaxDistance,
-                    canRebound = canShieldRebound,
-                    maxRebounds = shieldMaxRebounds,
-                    reboundRadius = shieldReboundRadius,
-                    knockbackForce = basePushForce
-                };
-        }
+            damage = Mathf.RoundToInt(currentDamageStat * damageMultiplier),
+            speed = currentSpeedStat * speedMultiplier,
+            maxDistance = shieldMaxDistance,
+            canRebound = canShieldRebound,
+            maxRebounds = shieldMaxRebounds,
+            reboundRadius = shieldReboundRadius,
+            knockbackForce = basePushForce
+        };
     }
 
     // Permite cambiar si el escudo puede rebotar o no

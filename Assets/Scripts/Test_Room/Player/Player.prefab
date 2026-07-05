@@ -99,7 +99,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 24
   m_fontStyle: 0
-  m_HorizontalAlignment: 2
+  m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -6199,7 +6199,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 2.8499, y: -0.5298}
-  m_SizeDelta: {x: 422.9942, y: 421.5675}
+  m_SizeDelta: {x: 420, y: 520}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5591929595122560966
 CanvasRenderer:
@@ -13083,6 +13083,16 @@ MonoBehaviour:
   statsPanel: {fileID: 7097059385777304942}
   showBaseValues: 1
   decimals: 2
+  adultMoveSpeedMod: -0.05
+  adultMeleeAttackSpeedMod: -0.177
+  adultMeleeDamageMod: 0.5
+  adultShieldSpeedMod: -0.375
+  adultShieldDamageMod: 0.5
+  elderMoveSpeedMod: -0.1
+  elderMeleeAttackSpeedMod: -0.316
+  elderMeleeDamageMod: 2
+  elderShieldSpeedMod: -0.479
+  elderShieldDamageMod: 1.25
   showDebugOnGUI: 0
   guiCustomPosition: {x: 10, y: 10}
   guiWidth: 440
@@ -14835,7 +14845,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 400, y: 400}
+  m_SizeDelta: {x: 400, y: 500}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7941123252737208253
 CanvasRenderer:

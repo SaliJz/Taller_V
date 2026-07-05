@@ -340,7 +340,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     // Calcula los valores finales de danio y velocidad de ataque aplicando los multiplicadores.
     private void CalculateStats()
     {
-        finalAttackDamage = Mathf.RoundToInt(attackDamage * damageMultiplier);
+        finalAttackDamage = Mathf.CeilToInt(attackDamage * damageMultiplier);
         finalAttackDamage = Mathf.Max(1, finalAttackDamage);
 
         finalAttackSpeed = attackSpeed * speedMultiplier;
