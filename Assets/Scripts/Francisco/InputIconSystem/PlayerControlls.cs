@@ -946,7 +946,7 @@ public partial class @PlayerControlls: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""22ee8560-3015-441e-9048-768c669b4464"",
-                    ""path"": ""<Gamepad>/leftTrigger"",
+                    ""path"": ""<Gamepad>/select"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
