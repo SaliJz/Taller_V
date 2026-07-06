@@ -810,6 +810,11 @@ public partial class AstarothController
 
         UpdateStompIndicators();
 
+        //CAMBIO EN EL INICIO DEL PULL, ELIMINAR SI LORD DISEÑO NO ESTÁ DE ACUERDO ATT:Tu marido.com
+        SetStompIndicatorsActive(true);
+        Coroutine pullCoroutine = StartCoroutine(PullPlayersToStompCenter());
+        //------------------------------------------------------
+
         float stompAnticipationTimeout = apisonadorAnticipationDuration + 2f;
         float stompAnticipationSafetyTimer = 0f;
         while (!_isInAnticipation && stompAnticipationSafetyTimer < stompAnticipationTimeout)
@@ -819,8 +824,9 @@ public partial class AstarothController
         }
         yield return new WaitUntil(() => !_isInAnticipation);
 
-        SetStompIndicatorsActive(true);
-        Coroutine pullCoroutine = StartCoroutine(PullPlayersToStompCenter());
+        ////Inicio original del pull-----------------------------------------
+        // SetStompIndicatorsActive(true);
+        // Coroutine pullCoroutine = StartCoroutine(PullPlayersToStompCenter());
 
         yield return WaitForAnimEvent(ANIM_EVENT_APISONADOR_IMPACT, 0.8f);
 
@@ -899,7 +905,7 @@ public partial class AstarothController
 
     private Vector3 GetIndicatorScaleFromRadius(float radius)
     {
-        return new Vector3(radius * 2f, 1f, radius * 2f);
+        return new Vector3(radius * 2f, 0.05f, radius * 2f);
     }
 
     private IEnumerator PullPlayersToStompCenter()
