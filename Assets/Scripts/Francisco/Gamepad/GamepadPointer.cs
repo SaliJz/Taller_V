@@ -135,7 +135,9 @@ public class GamepadPointer : MonoBehaviour
                 SteamInputManager.Instance.GetMenuUpHeld() ||
                 SteamInputManager.Instance.GetMenuDownHeld() ||
                 SteamInputManager.Instance.GetMenuLeftHeld() ||
-                SteamInputManager.Instance.GetMenuRightHeld();
+                SteamInputManager.Instance.GetMenuRightHeld() ||
+                SteamInputManager.Instance.GetInteractPressed() ||        
+                SteamInputManager.Instance.GetAdvanceDialoguePressed();
 
             isGamepadActive = isStickMoving || isButtonPressed;
         }

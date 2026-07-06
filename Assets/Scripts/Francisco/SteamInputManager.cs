@@ -1,4 +1,5 @@
 using Steamworks;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -64,12 +65,12 @@ public class SteamInputManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    private void Start()
+    private IEnumerator Start()
     {
         if (!SteamManager.Initialized)
         {
             Debug.Log("<color=green>[SteamInput] Steam no detectado. Modo Nativo Unity activo. Todo funciona igual que siempre.</color>");
-            return; 
+            yield break;
         }
 
         Debug.Log("<color=cyan>[SteamInput] Steam detectado. Activando escudo de hardware.</color>");
@@ -78,26 +79,41 @@ public class SteamInputManager : MonoBehaviour
         Application.OpenURL("steam://forceinputappid/4858720");
 #endif
 
-        string manifestPath = System.IO.Path.Combine(Application.dataPath, "..", "game_actions_4858720.vdf");
+        string manifestPath = System.IO.Path.Combine(Application.dataPath, "..", "steam_input_manifest.vdf");
         string fullPath = System.IO.Path.GetFullPath(manifestPath);
 
         bool manifestSet = SteamInput.SetInputActionManifestFilePath(fullPath);
         bool inputInitialized = SteamInput.Init(false);
 
-        SteamInput.RunFrame();
+        float timeout = 8f;
+        float elapsed = 0f;
 
-        inGameSetHandle = SteamInput.GetActionSetHandle("InGameControls");
-        menuSetHandle = SteamInput.GetActionSetHandle("MenuControls");
+        while (elapsed < timeout)
+        {
+            SteamInput.RunFrame();
+
+            inGameSetHandle = SteamInput.GetActionSetHandle("InGameControls");
+            menuSetHandle = SteamInput.GetActionSetHandle("MenuControls");
+
+            if (inGameSetHandle != default(InputActionSetHandle_t) && menuSetHandle != default(InputActionSetHandle_t))
+            {
+                Debug.Log($"<color=lime>[SteamInput] Action sets resueltos tras {elapsed:F2}s</color> | inGameSetHandle={inGameSetHandle.m_InputActionSetHandle} | menuSetHandle={menuSetHandle.m_InputActionSetHandle}");
+                break;
+            }
+
+            yield return new WaitForSecondsRealtime(0.25f);
+            elapsed += 0.25f;
+        }
 
         if (inGameSetHandle == default(InputActionSetHandle_t))
         {
-            Debug.LogError("[SteamInput] No se pudo cargar InGameControls...");
-            return;
+            Debug.LogError("[SteamInput] No se pudo cargar InGameControls tras reintentar durante 8s...");
+            yield break;
         }
 
         InputSystemUIInputModule uiInputModule = FindAnyObjectByType<InputSystemUIInputModule>();
         if (uiInputModule != null) uiInputModule.enabled = false;
-        
+
         foreach (var device in InputSystem.devices)
         {
             if (device is Gamepad)

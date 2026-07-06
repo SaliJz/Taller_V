@@ -147,7 +147,7 @@ public class CinematicSkipController : MonoBehaviour
         {
             if (GamepadPointer.Instance.IsSteamActive)
             {
-                if (SteamInputManager.Instance.GetInteractPressed()) isPressingSkipButton = true;
+                if (SteamInputManager.Instance.GetAdvanceDialoguePressed()) isPressingSkipButton = true;
             }
             else if (Gamepad.current != null)
             {
