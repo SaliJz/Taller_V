@@ -73,7 +73,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     [SerializeField] private float _stompPullDuration = 0.5f;
     [SerializeField] private float _stompPullSpeed = 12f;
     [SerializeField] private GameObject _stompPullIndicatorObject;
-    [SerializeField] private GameObject _stompPullVFXPrefab;
+    [SerializeField] private ParticleSystem _stompPullVFX;
 
     [Header("Apisonador - Impact")]
     [SerializeField] private bool _enableStompDamage = true;
@@ -89,7 +89,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
     private bool _isInAnticipation = false;
     private Coroutine _anticipationCoroutine = null;
 
-    private GameObject _activeStompPullVFX;
+    // private GameObject _activeStompPullVFX;
 
     #endregion
 
@@ -141,6 +141,7 @@ public partial class AstarothController : MonoBehaviour, IAnimEventHandler
 
     private bool _isAttackingWithWhip;
     private GameObject _activeWhipIndicator;
+    private ParticleSystem _whipImpactRocks_VFX;
 
     #endregion
 

@@ -68,6 +68,7 @@ public partial class AstarothController
         indicator.transform.localScale = new Vector3(_whipHitRadius * 2f, 0.05f, _whipHitRadius * 2f);
 
         _activeWhipIndicator = indicator;
+        _whipImpactRocks_VFX = indicator.GetComponentInChildren<ParticleSystem>();
         _instantiatedEffects.Add(indicator);
 
         StartCoroutine(FollowWhipIndicator(indicator.transform));
@@ -96,6 +97,7 @@ public partial class AstarothController
         if (_activeWhipIndicator == indicator)
         {
             _activeWhipIndicator = null;
+            _whipImpactRocks_VFX = null;
         }
 
         _instantiatedEffects.Remove(indicator);
@@ -115,6 +117,12 @@ public partial class AstarothController
     private void CheckWhipHitbox(string debugHitName)
     {
         if (_whipDamageOrigin == null) return;
+
+        if (_whipImpactRocks_VFX != null)
+        {
+            _whipImpactRocks_VFX.Stop();
+            _whipImpactRocks_VFX.Play();
+        }
 
         Collider[] hits = Physics.OverlapSphere(
             _whipDamageOrigin.position,
@@ -737,7 +745,7 @@ public partial class AstarothController
 
     private void StartStompPullVFX()
     {
-        if (_stompPullVFXPrefab == null) return;
+        if (_stompPullVFX == null) return;
 
         float verticalOffset = 0.05f;
         int groundLayer = LayerMask.GetMask("Ground");
@@ -749,26 +757,31 @@ public partial class AstarothController
             pos.y = hit.point.y + verticalOffset;
         }
 
-        _activeStompPullVFX = Instantiate(_stompPullVFXPrefab, pos, Quaternion.identity);
+        // _activeStompPullVFX = Instantiate(_stompPullVFX, pos, Quaternion.identity);
+        _stompPullVFX.transform.position = pos;
+        _stompPullVFX.Stop();
+        _stompPullVFX.Play();
     }
 
     private void StopStompPullVFX()
     {
-        if (_activeStompPullVFX == null) return;
+        if (_stompPullVFX == null) return;
 
-        ParticleSystem ps = _activeStompPullVFX.GetComponent<ParticleSystem>();
-        if (ps == null) ps = _activeStompPullVFX.GetComponentInChildren<ParticleSystem>();
+        // ParticleSystem ps = _activeStompPullVFX.GetComponent<ParticleSystem>();
+        // if (ps == null) ps = _activeStompPullVFX.GetComponentInChildren<ParticleSystem>();
 
-        if (ps != null)
-        {
-            VFXHelper.StopAndDestroy(ps);
-        }
-        else
-        {
-            Destroy(_activeStompPullVFX);
-        }
+        // if (ps != null)
+        // {
+        //     VFXHelper.StopAndDestroy(ps);
+        // }
+        // else
+        // {
+        //     Destroy(_activeStompPullVFX);
+        // }
 
-        _activeStompPullVFX = null;
+        // _activeStompPullVFX = null;
+
+        _stompPullVFX.Stop(true, ParticleSystemStopBehavior.StopEmitting);
     }
 
     private void InterruptAndPerformStomp()
@@ -816,7 +829,7 @@ public partial class AstarothController
         if (pullCoroutine != null)
         {
             StopCoroutine(pullCoroutine);
-            if (_activeStompPullVFX != null)
+            if (_stompPullVFX != null)
             {
                 StopStompPullVFX();
             }
@@ -873,9 +886,14 @@ public partial class AstarothController
             _stompImpactIndicatorObject.transform.localScale = GetIndicatorScaleFromRadius(_stompRadius);
         }
 
-        if (_activeStompPullVFX != null)
+        // if (_activeStompPullVFX != null)
+        // {
+        //     _activeStompPullVFX.transform.position = groundPosition;
+        // }
+
+        if (_stompPullVFX != null)
         {
-            _activeStompPullVFX.transform.position = groundPosition;
+            _stompPullVFX.transform.position = groundPosition;
         }
     }
 
