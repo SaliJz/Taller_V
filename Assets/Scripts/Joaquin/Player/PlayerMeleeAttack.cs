@@ -651,7 +651,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     // Espera hasta que el jugador termine de rotar y encarar la direccion del ataque antes de golpear.
     private IEnumerator WaitForRotationLock()
     {
-        float maxWait = 0.25f;
+        float maxWait = 0f;
         float start = Time.time;
         float angleThreshold = 2f;
 

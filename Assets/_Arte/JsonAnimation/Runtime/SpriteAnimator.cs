@@ -19,6 +19,8 @@ public class SpriteAnimator : MonoBehaviour
     public Action onAnimFinished;
     public Action<string> onAnimEvent;
 
+    [NonSerialized] public bool useUnscaledTime = false;
+
     private void Awake()
     {
         // DataBase = GetComponent<PlayerAnimDataBase>();
@@ -35,7 +37,9 @@ public class SpriteAnimator : MonoBehaviour
         if (paused) return;
         if (currentAnim == null) return;
 
-        timer += Time.deltaTime;
+        float dt = useUnscaledTime? Time.unscaledDeltaTime : Time.deltaTime;
+        timer += dt;
+
         float frameTime = 1f / currentAnim.frameRate;
 
         if(timer >= frameTime) 
