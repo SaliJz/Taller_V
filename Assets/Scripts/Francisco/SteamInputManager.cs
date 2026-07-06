@@ -334,9 +334,6 @@ public class SteamInputManager : MonoBehaviour
     {
         if (instance == this)
         {
-#if UNITY_EDITOR
-            Application.OpenURL("steam://forceinputappid/0");
-#endif
             instance = null;
         }
     }
