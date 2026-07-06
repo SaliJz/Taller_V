@@ -28,6 +28,7 @@ public class SteamInputManager : MonoBehaviour
     private InputDigitalActionHandle_t inventoryHandle;
     private InputDigitalActionHandle_t activateSkillHandle;
     private InputDigitalActionHandle_t defenseHandle;
+    private InputDigitalActionHandle_t advanceDialogueHandle;
     private InputDigitalActionHandle_t menuUpHandle;
     private InputDigitalActionHandle_t menuDownHandle;
     private InputDigitalActionHandle_t menuLeftHandle;
@@ -155,6 +156,7 @@ public class SteamInputManager : MonoBehaviour
         CacheDigitalState(inventoryHandle, controller);
         CacheDigitalState(activateSkillHandle, controller);
         CacheDigitalState(defenseHandle, controller);
+        CacheDigitalState(advanceDialogueHandle, controller);
         CacheDigitalState(menuUpHandle, controller);
         CacheDigitalState(menuDownHandle, controller);
         CacheDigitalState(menuLeftHandle, controller);
@@ -317,6 +319,7 @@ public class SteamInputManager : MonoBehaviour
         inventoryHandle = SteamInput.GetDigitalActionHandle("inventory");
         activateSkillHandle = SteamInput.GetDigitalActionHandle("activate_skill");
         defenseHandle = SteamInput.GetDigitalActionHandle("defense");
+        advanceDialogueHandle = SteamInput.GetDigitalActionHandle("advance_dialogue");
 
         menuUpHandle = SteamInput.GetDigitalActionHandle("menu_up");
         menuDownHandle = SteamInput.GetDigitalActionHandle("menu_down");
@@ -424,6 +427,8 @@ public class SteamInputManager : MonoBehaviour
     public bool GetInventoryPressed() => IsHeld(inventoryHandle);
     public bool GetActivateSkillPressed() => IsHeld(activateSkillHandle);
     public bool GetDefensePressed() => IsHeld(defenseHandle);
+    public bool GetAdvanceDialoguePressed() => IsHeld(advanceDialogueHandle);
+    public bool GetAdvanceDialogueJustPressed() => IsJustPressed(advanceDialogueHandle);
 
     public Vector2 GetMoveAxis()
     {

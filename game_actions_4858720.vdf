@@ -42,6 +42,7 @@
 				"activate_skill"		"#Action_ActivateSkill"
 				"defense"		"#Action_Defense"
 				"pause_menu"		"#Action_Menu"
+                                "advance_dialogue"	"#Action_AdvanceDialogue"
 			}
 		}
 		"MenuControls"
@@ -81,6 +82,7 @@
 			"Action_Defense"		"Defense"
 			"Action_Menu"		"Pause Menu"
 			"Action_ReturnToGame"		"Return To Game"
+                        "Action_AdvanceDialogue"	"Advance Dialogue"
 			"menu_up"		"Up"
 			"menu_down"		"Down"
 			"menu_left"		"Left"
@@ -685,6 +687,22 @@
 				{
 				}
 			}
+                        "right_bumper"
+                        {
+                                "activators"
+                                {
+                                        "Full_Press"
+                                        {
+                                                "bindings"
+                                                {
+                                                        "binding"		"game_action InGameControls advance_dialogue, Advance Dialogue, , "
+                                                }
+                                        }
+                                }
+                                "disabled_activators"
+                                {
+                                }
+                        }
 		}
 	}
 	"group"
