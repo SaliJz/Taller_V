@@ -375,4 +375,14 @@ public class PlayerShaderCtrl : MonoBehaviour
     }
 
     #endregion
+
+    public void ResetAllEffects()
+    {
+        StopAllCoroutines();
+        
+        SetColorID(ShineID, 0);
+        SetColorID(FlashAmountID, 0);
+        DamageVFX.SetActive(false);
+        HealVFX.SetActive(false);
+    }
 }

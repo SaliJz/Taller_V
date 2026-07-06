@@ -183,6 +183,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &95474794 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1016859423554514227, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+  m_PrefabInstance: {fileID: 1090497192}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &119976295
 GameObject:
   m_ObjectHideFlags: 0
@@ -1762,6 +1767,11 @@ MonoBehaviour:
     FrequencyGain: 1
     Duration: 1
     m_NoiseOffsets: {x: 0, y: 0, z: 0}
+--- !u!1 &432462979 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4856113541329384590, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+  m_PrefabInstance: {fileID: 1090497192}
+  m_PrefabAsset: {fileID: 0}
 --- !u!43 &432581420
 Mesh:
   m_ObjectHideFlags: 0
@@ -1927,6 +1937,11 @@ Mesh:
     offset: 0
     size: 0
     path: 
+--- !u!1 &441663067 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1372769567784369208, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+  m_PrefabInstance: {fileID: 1090497192}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &512707462
 GameObject:
   m_ObjectHideFlags: 0
@@ -3929,6 +3944,10 @@ PrefabInstance:
       propertyPath: playerBlockSystem
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 1016859423554514227, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1435208032808924163, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -3941,6 +3960,22 @@ PrefabInstance:
       propertyPath: youngReboundRadius
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 4368273045993195925, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: ObjectsToDeactivate.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4368273045993195925, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: 'ObjectsToDeactivate.Array.data[0]'
+      value: 
+      objectReference: {fileID: 95474794}
+    - target: {fileID: 4368273045993195925, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: 'ObjectsToDeactivate.Array.data[1]'
+      value: 
+      objectReference: {fileID: 441663067}
+    - target: {fileID: 4368273045993195925, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: 'ObjectsToDeactivate.Array.data[2]'
+      value: 
+      objectReference: {fileID: 432462979}
     - target: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -4453,6 +4488,10 @@ PrefabInstance:
       propertyPath: 'shopItemPrefabs.Array.data[28]'
       value: 
       objectReference: {fileID: 2790493699222432776, guid: 98a3939a86578da4fac8c38aa1e5b472, type: 3}
+    - target: {fileID: 7666400129688133076, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8371086651481551111, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -4935,7 +4974,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 467829002617673801, guid: 36e46a86b91e4d145a24c394df9997ef, type: 3}
       propertyPath: ShapeModule.radiusThickness
-      value: 1.0000
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 467829002617673801, guid: 36e46a86b91e4d145a24c394df9997ef, type: 3}
       propertyPath: InitialModule.startSize.scalar

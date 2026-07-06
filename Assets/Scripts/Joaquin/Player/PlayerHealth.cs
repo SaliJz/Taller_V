@@ -46,6 +46,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [Header("Configuracion de Muerte")]
     [SerializeField] private string sceneToLoadOnDeath = "Tuto";
     [SerializeField] private Color deathFadeColor = Color.red;
+    [SerializeField] private DeathSequenceCtrl deathSequence;
 
     #endregion
 
@@ -585,16 +586,27 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         var sm = statsManager;
         var im = inventoryManager;
 
-        if (FadeController.Instance != null)
+        if (deathSequence != null)
         {
-            StartCoroutine(FadeController.Instance.FadeOut(
-                fadeColor: deathFadeColor,
-                onComplete: () => ExecuteDeathCleanup(sm, im)));
+            deathSequence.StartSequence(() => ExecuteDeathCleanup(sm, im));
         }
         else
         {
             ExecuteDeathCleanup(sm, im);
         }
+
+        // deathSequence.deathDirector.stopped += 
+
+        // if (FadeController.Instance != null)
+        // {
+        //     StartCoroutine(FadeController.Instance.FadeOut(
+        //         fadeColor: deathFadeColor,
+        //         onComplete: () => ExecuteDeathCleanup(sm, im)));
+        // }
+        // else
+        // {
+            // ExecuteDeathCleanup(sm, im);
+        // }
     }
 
     /// <summary>
