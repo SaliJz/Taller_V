@@ -10,7 +10,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
     public enum PlayerState
     {
         idle, run, dash, distance, melee, damage,
-        block, blockfb, store, inventory, bind
+        block, blockfb, store, inventory, bind, death
     }
 
     public enum Age
@@ -194,7 +194,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
 
     #endregion
 
-    #region Public Actions
+    #region PlayAnimations Voids
 
     public void SetAgeStage(int age)
     {
@@ -285,12 +285,23 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         PlayState(PlayerState.blockfb, AnimPriority.action);
     }
 
+    public void PlayDeath()
+    {
+        isDashing = false;
+        SA.useUnscaledTime = true;
+        lastDirection = "downleft";
+        PlayState(PlayerState.death, AnimPriority.bind);
+    }
+
     #endregion
 
     #region Resolver & Callbacks
 
     protected override string ResolveFullID(string baseID, string direction)
     {
+        //Forzar animacion de muerte
+        if (baseID == "death") return "death";  
+
         //Contruccion de Prefix de edad
         string prefix = currentAge switch
         {
@@ -343,6 +354,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
             case "MeleeSlash_1": SpawnSlash(0); break;
             case "MeleeSlash_2": SpawnSlash(1); break;
             case "MeleeSlash_3": SpawnSlash(2); break;
+            case "DeactivateSprite": gameObject.SetActive(false); break;
         }
     }
 
@@ -420,6 +432,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
     // #endregion
 
     #if UNITY_EDITOR
+    #region Testing
     private void DebugInputs()
     {
         if (Input.GetKeyDown(KeyCode.H)) HasShield = !HasShield;
@@ -449,6 +462,9 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         if (Input.GetKeyDown(KeyCode.Alpha1)) nextAge = Age.young;
         if (Input.GetKeyDown(KeyCode.Alpha2)) nextAge = Age.adult;
         if (Input.GetKeyDown(KeyCode.Alpha3)) nextAge = Age.old;
+
+        if (Input.GetKeyDown(KeyCode.F1)) PlayDeath();
     }
+    #endregion 
     #endif
 }
