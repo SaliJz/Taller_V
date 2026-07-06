@@ -170,14 +170,11 @@ MonoBehaviour:
   currentReturnSpeedMultiplier: 1.2
   canRebound: 1
   reboundCount: 0
-  maxRebounds: 2
+  maxRebounds: 1
   reboundDetectionRadius: 15
   enemyLayer:
     serializedVersion: 2
     m_Bits: 67712
-  canPierce: 0
-  maxPierceTargets: 5
-  currentPierceCount: 0
   knockbackForce: 0
   sandyWallLayer:
     serializedVersion: 2
@@ -237,6 +234,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   shadowPosition: {fileID: 0}
+  setParentInParent: 0
   shadowScale: 2
   spawnYoffset: 0.02
   checkInterval: 0.05

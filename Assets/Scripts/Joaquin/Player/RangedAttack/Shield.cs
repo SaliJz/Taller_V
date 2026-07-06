@@ -43,7 +43,7 @@ public class Shield : MonoBehaviour
 
     // Multiplicador de daño según el número de golpe en la secuencia (indice 0 = impacto inicial = 100%).
     // Índice 1 = primer rebote (50%), índice 2 = segundo rebote (25%), índice 3+ = 25% (se clampea al último valor).
-    private static readonly float[] hitDamageMultipliers = { 1f, 0.5f, 0.25f };
+    private static readonly float[] hitDamageMultipliers = { 1f, 0.25f, 0.25f };
 
     #endregion
 
