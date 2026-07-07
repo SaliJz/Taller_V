@@ -87,8 +87,10 @@ public class DamageNumber : MonoBehaviour
     {
         if (damageText == null) return;
 
+        float visualDamage = Mathf.Max(1f, damage);
+
         string prefix = isCritical ? "!" : string.Empty;
-        damageText.text = $"{prefix}{Mathf.RoundToInt(damage)}";
+        damageText.text = $"{prefix}{Mathf.RoundToInt(visualDamage)}";
 
         if (isToughness)
         {

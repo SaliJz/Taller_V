@@ -4,23 +4,17 @@ using UnityEngine;
 [RequireComponent(typeof(EnemyHealth))]
 public class EntropyChargeSystem : MonoBehaviour
 {
-    #region Constants
+    #region Inspector Fields
 
-    public const int MaxCharges = 3;
+    [Header("Configuración")]
+    [SerializeField] private EntropyConfig entropyConfig; 
+    [SerializeField] private GameObject chargeVFX;
 
     #endregion
 
-    #region Inspector Fields
+    #region Constants
 
-    [Header("Damage")]
-    [Range(0f, 100f)] private float damagePercent = 5f;
-
-    [Header("Charge Settings")]
-    private float chargeDuration = 1f;
-    private float tickInterval = 0.2f;
-
-    [Header("VFX")]
-    [SerializeField] private GameObject chargeVFX;
+    public const int MaxCharges = 3;
 
     #endregion
 
@@ -29,22 +23,16 @@ public class EntropyChargeSystem : MonoBehaviour
     public event Action<int, float, float> OnChargesChanged;
     public event Action OnChargesExpired;
 
-    public float GetChargeDuration() => chargeDuration;
-
     #endregion
 
     #region Private Fields
 
     private EnemyHealth enemyHealth;
-
     private int currentCharges = 0;
     private float timeRemaining = 0f;
-    private float totalTime = 0f;
     private float tickTimer = 0f;
     private float pendingDamagePerTick = 0f;
-
     private PlayerStatsManager cachedStats;
-
     private bool isActive = false;
 
     #endregion
@@ -53,7 +41,7 @@ public class EntropyChargeSystem : MonoBehaviour
 
     public int CurrentCharges => currentCharges;
     public float TimeRemaining => timeRemaining;
-    public float TotalTime => totalTime;
+    public EntropyConfig Config => entropyConfig;
 
     #endregion
 
@@ -64,12 +52,18 @@ public class EntropyChargeSystem : MonoBehaviour
         enemyHealth = GetComponent<EnemyHealth>();
         cachedStats = FindAnyObjectByType<PlayerStatsManager>();
 
-        SetVFX(false);
+        if (entropyConfig == null)
+        {
+            entropyConfig = Resources.Load<EntropyConfig>("Configs/EntropyConfig");
+        }
+
+        if (chargeVFX != null) chargeVFX.SetActive(false);
     }
 
     private void Update()
     {
         if (!isActive) return;
+
         if (enemyHealth.IsDead)
         {
             ClearCharges();
@@ -79,17 +73,14 @@ public class EntropyChargeSystem : MonoBehaviour
         tickTimer -= Time.deltaTime;
         if (tickTimer <= 0f)
         {
-            tickTimer = tickInterval;
+            tickTimer = entropyConfig.tickInterval;
             enemyHealth.TakeDamage(pendingDamagePerTick);
         }
 
         timeRemaining -= Time.deltaTime;
         NotifyChanged();
 
-        if (timeRemaining <= 0f)
-        {
-            ExpireCharges();
-        }
+        if (timeRemaining <= 0f) ExpireCharges();
     }
 
     #endregion
@@ -104,30 +95,23 @@ public class EntropyChargeSystem : MonoBehaviour
             ? cachedStats.GetStat(StatType.AttackDamage) * cachedStats.GetStat(StatType.MeleeAttackDamage)
             : 10f;
 
-        pendingDamagePerTick = baseDamage * (damagePercent / 100f);
+        pendingDamagePerTick = baseDamage * (entropyConfig.damagePercent / 100f);
 
-        if (currentCharges < MaxCharges)
-            currentCharges++;
+        if (currentCharges < MaxCharges) currentCharges++;
 
-        float maxTotalTime = MaxCharges * chargeDuration;
-        timeRemaining = Mathf.Min(timeRemaining + chargeDuration, maxTotalTime);
+        float maxTotalTime = MaxCharges * entropyConfig.chargeDuration;
+        timeRemaining = Mathf.Min(timeRemaining + entropyConfig.chargeDuration, maxTotalTime);
 
         isActive = true;
-        tickTimer = tickInterval;
+        tickTimer = entropyConfig.tickInterval;
 
-        SetVFX(true);
+        if (chargeVFX != null) chargeVFX.SetActive(true);
         NotifyChanged();
     }
 
     public void ClearCharges()
     {
-        currentCharges = 0;
-        timeRemaining = 0f;
-        totalTime = 0f;
-        tickTimer = 0f;
-        isActive = false;
-
-        SetVFX(false);
+        ResetState();
         OnChargesExpired?.Invoke();
         NotifyChanged();
     }
@@ -138,26 +122,24 @@ public class EntropyChargeSystem : MonoBehaviour
 
     private void ExpireCharges()
     {
-        currentCharges = 0;
-        timeRemaining = 0f;
-        totalTime = 0f;
-        tickTimer = 0f;
-        isActive = false;
-
-        SetVFX(false);
+        ResetState();
         OnChargesExpired?.Invoke();
         NotifyChanged();
     }
 
-    private void SetVFX(bool active)
+    private void ResetState()
     {
-        if (chargeVFX != null)
-            chargeVFX.SetActive(active);
+        currentCharges = 0;
+        timeRemaining = 0f;
+        tickTimer = 0f;
+        isActive = false;
+
+        if (chargeVFX != null) chargeVFX.SetActive(false);
     }
 
     private void NotifyChanged()
     {
-        OnChargesChanged?.Invoke(currentCharges, timeRemaining, totalTime);
+        OnChargesChanged?.Invoke(currentCharges, timeRemaining, MaxCharges * entropyConfig.chargeDuration);
     }
 
     #endregion

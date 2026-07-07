@@ -160,7 +160,7 @@ public class DashFire : MonoBehaviour
 
     private void ApplyChargeOrDamage(GameObject enemy)
     {
-        EntropyChargeSystem chargeSystem = enemy.GetComponentInParent<EntropyChargeSystem>();
+        var chargeSystem = enemy.GetComponentInParent<EntropyChargeSystem>();
         if (chargeSystem != null)
         {
             chargeSystem.ApplyCharge();
@@ -170,8 +170,7 @@ public class DashFire : MonoBehaviour
         EnemyHealth health = enemy.GetComponentInParent<EnemyHealth>();
         if (health != null)
         {
-            float damageToApply = dps * tickInterval;
-            health.TakeDamage(damageToApply);
+            health.TakeDamage(dps * tickInterval);
         }
     }
 
