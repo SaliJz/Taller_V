@@ -14,6 +14,9 @@ public class DummyArmor : MonoBehaviour, IDamageable
     private float currentArmorHealth;
     [SerializeField, Range(0f, 1f)] private float reductionPercentage = 0.5f;
 
+    [Header("Shield Specific Settings")]
+    [SerializeField, Range(0f, 1f)] private float rangedDamageMultiplierToHealth = 0.05f;
+
     [Header("Damage Cooldown")]
     [SerializeField] private float damageCooldownTime = 0.2f;
     private float nextDamageTime = 0f;
@@ -75,7 +78,6 @@ public class DummyArmor : MonoBehaviour, IDamageable
         if (currentHealth <= 0) return;
 
         nextDamageTime = Time.time + damageCooldownTime;
-
         lastAttackDamageType = damageType;
 
         if (playerTransform != null)
@@ -84,36 +86,56 @@ public class DummyArmor : MonoBehaviour, IDamageable
             rotationCoroutine = StartCoroutine(RotateTowardsPlayer());
         }
 
-        float finalDamage = damageAmount;
+        float damageToArmor = 0f;
+        float damageToHealth = 0f;
         DamageType hitType = DamageType.Melee;
 
-        if (currentArmorHealth > 0f)
+        if (damageType == AttackDamageType.Ranged)
         {
-            finalDamage = 0f;
-            float damageToArmor = 0f;
-
-            if (damageType == AttackDamageType.Ranged)
-            {
-                float reductionFactor = (1f - reductionPercentage);
-                damageToArmor = damageAmount * reductionFactor;
-                hitType = DamageType.Shield;
-            }
-            else
-            {
-                damageToArmor = damageAmount;
-                hitType = DamageType.Shield;
-            }
-
-            currentArmorHealth -= damageToArmor;
-            currentArmorHealth = Mathf.Max(0, currentArmorHealth);
-
-            Debug.Log($"[DUMMY H&A] Daño absorbido ({damageType}). Armor restante: {currentArmorHealth:F2}. Armor rota por: {damageToArmor:F2}");
+            float reductionFactor = (1f - reductionPercentage);
+            damageToArmor = damageAmount * reductionFactor;
         }
         else
         {
-            finalDamage = damageAmount;
-            hitType = DamageType.Melee;
-            Debug.Log("[DUMMY H&A] Super Armor roto. Daño completo.");
+            damageToArmor = damageAmount; 
+        }
+
+        if (currentArmorHealth > 0f)
+        {
+            hitType = DamageType.Shield;
+
+            if (damageToArmor <= currentArmorHealth)
+            {
+                currentArmorHealth -= damageToArmor;
+                damageToHealth = 0f;
+            }
+            else
+            {
+                float excessDamage = damageToArmor - currentArmorHealth;
+                currentArmorHealth = 0f;
+
+                if (damageType == AttackDamageType.Ranged)
+                {
+                    damageToHealth = excessDamage * rangedDamageMultiplierToHealth;
+                }
+                else
+                {
+                    damageToHealth = excessDamage;
+                }
+            }
+        }
+        else
+        {
+            if (damageType == AttackDamageType.Ranged)
+            {
+                hitType = DamageType.Shield; 
+                damageToHealth = damageAmount * rangedDamageMultiplierToHealth;
+            }
+            else
+            {
+                hitType = DamageType.Melee;
+                damageToHealth = damageAmount;
+            }
         }
 
         if (animator != null)
@@ -121,10 +143,10 @@ public class DummyArmor : MonoBehaviour, IDamageable
             animator.SetTrigger(hitTriggerName);
         }
 
-        currentHealth -= finalDamage;
+        currentHealth -= damageToHealth;
         currentHealth = Mathf.Max(0, currentHealth);
 
-        Debug.Log($"[DUMMY H&A] Vida actual: {currentHealth}/{maxHealth}");
+        Debug.Log($"[DUMMY] Golpe ({damageType}). Daño aplicado a vida: {damageToHealth:F2}. Vida restante: {currentHealth}/{maxHealth}");
 
         bool isFatal = currentHealth <= 0;
         OnHitByPlayer?.Invoke(hitType, isFatal);
