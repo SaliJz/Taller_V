@@ -30,7 +30,9 @@ public class DashFiretemEffect : ItemEffectBase
         EffectID = "Tierra Ardiente";
         category = EffectCategory.Combat;
         if (string.IsNullOrEmpty(effectDescription))
+        {
             effectDescription = "Al dashear deja un circulo de tierra ardiente que se expande y quema a los enemigos que permanecen en el.";
+        }
     }
 
     public override void ApplyEffect(PlayerStatsManager statsManager)

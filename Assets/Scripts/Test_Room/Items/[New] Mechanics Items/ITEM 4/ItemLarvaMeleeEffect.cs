@@ -30,6 +30,8 @@ public class ItemLarvaMeleeEffect : ItemEffectBase
     {
         if (enemy == null) return;
 
+        if (enemy.GetComponent<Larva>() != null) return;
+
         Vector3 spawnPos = enemy.transform.position;
 
         if (damageType == requiredDamageType)
