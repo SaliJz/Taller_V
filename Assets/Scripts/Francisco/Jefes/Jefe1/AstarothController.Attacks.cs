@@ -22,13 +22,13 @@ public partial class AstarothController
 
         LookAtPlayer();
 
+        whipIndicator = CreatePersistentWhipIndicator();
+
         if (_animCtrl != null) _animCtrl.isWalking = false;
         if (_animCtrl != null) _animCtrl.PlayPrepareBaseAttack();
 
         // Espera al final del wind-up antes del primer golpe.
         yield return WaitForAnimEvent(ANIM_EVENT_WHIP_WINDUP_DONE, _whipPreAttackDelay);
-
-        whipIndicator = CreatePersistentWhipIndicator();
 
         // Golpe 1
         if (_animCtrl != null) _animCtrl.PlayAttack();
