@@ -36,6 +36,10 @@ public class ItemLarvaShieledEffect : ItemEffectBase
 
     private void HandleKilledEnemy(GameObject enemy, AttackDamageType damageType)
     {
+        if (enemy == null) return;
+
+        if (enemy.GetComponent<Larva>() != null) return;
+
         var config = damageSpawnConfigs.Find(x => x.damageType == damageType);
 
         if (config != null)

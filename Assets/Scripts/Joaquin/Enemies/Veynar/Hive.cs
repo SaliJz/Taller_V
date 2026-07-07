@@ -220,7 +220,7 @@ public class Hive : MonoBehaviour
 
         if (enemyHealth != null && !enemyHealth.IsDead)
         {
-            enemyHealth.Die();
+            enemyHealth.Die(true, AttackDamageType.Nothing);
         }
     }
 
