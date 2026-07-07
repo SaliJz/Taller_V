@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -50,7 +51,7 @@ public class HUDManager : MonoBehaviour
     #region Inspector - Low Health VFX
 
     [Header("Low Health VFX")]
-    [SerializeField] private Image screenFlashOverlay;
+    // [SerializeField] private Image screenFlashOverlay;
     [SerializeField] private Color lowHealthScreenFlashColor = new Color(1f, 0f, 0f, 0.3f);
     [SerializeField] private Color lowHealthBarFlashColor = Color.white;
     [SerializeField] private float healthBarFlashInterval = 0.5f;
@@ -126,6 +127,7 @@ public class HUDManager : MonoBehaviour
     float currentShakeIntensity;
     bool isInitialize = false;
     Coroutine currentHealingRoutine;
+    public static event Action<bool> OnLowHealthChanged;
 
     #endregion
 
@@ -149,14 +151,14 @@ public class HUDManager : MonoBehaviour
         }
 
         // Inicializar overlay de pantalla
-        if (screenFlashOverlay != null)
-        {   
-            // Asegurarse de que el overlay esta invisible al inicio
-            Color transparent = lowHealthScreenFlashColor;
-            transparent.a = 0f;
-            screenFlashOverlay.color = transparent;
-            screenFlashOverlay.raycastTarget = false; // No bloquear interacciones
-        }
+        // if (screenFlashOverlay != null)
+        // {   
+        //     // Asegurarse de que el overlay esta invisible al inicio
+        //     Color transparent = lowHealthScreenFlashColor;
+        //     transparent.a = 0f;
+        //     screenFlashOverlay.color = transparent;
+        //     screenFlashOverlay.raycastTarget = false; // No bloquear interacciones
+        // }
 
         if (handAnim != null) handAnim.onSmashImpact += ApplyLifeStageIcon;
         ShieldSkill.OnStaminaChanged += HandleStaminaChange;
@@ -225,6 +227,7 @@ public class HUDManager : MonoBehaviour
             playerAbility.OnAbilityDeactivated += StopGearRotation;
         }
         PlayerHealth.onHealling += DoHeallingUIEffect;
+        PlayerHealth.onDeathing += HandleDeathing;
     }
 
     private void OnDisable()
@@ -239,6 +242,7 @@ public class HUDManager : MonoBehaviour
         }
         ShieldSkill.OnStaminaChanged -= HandleStaminaChange;
         PlayerHealth.onHealling -= DoHeallingUIEffect;
+        PlayerHealth.onDeathing -= HandleDeathing;
 
         if (healthBarFlashCoroutine != null) StopCoroutine(healthBarFlashCoroutine);
         if (screenFlashCoroutine != null) StopCoroutine(screenFlashCoroutine);
@@ -283,6 +287,7 @@ public class HUDManager : MonoBehaviour
             // Entrar en estado de vida baja
             isLowHealth = true;
             StartLowHealthEffects();
+            OnLowHealthChanged?.Invoke(true);
         }
         else if (shouldShowLowHealthEffects && isLowHealth)
         {
@@ -294,6 +299,7 @@ public class HUDManager : MonoBehaviour
             // Salir del estado de vida baja
             isLowHealth = false;
             StopLowHealthEffects();
+            OnLowHealthChanged?.Invoke(false);
         }
     }
 
@@ -424,12 +430,13 @@ public class HUDManager : MonoBehaviour
         healthBarFlashCoroutine = StartCoroutine(HealthBarFlashRoutine());
 
         // Iniciar parpadeo de pantalla
-        if (screenFlashCoroutine != null) StopCoroutine(screenFlashCoroutine);
-        screenFlashCoroutine = StartCoroutine(ScreenFlashRoutine());
+        // if (screenFlashCoroutine != null) StopCoroutine(screenFlashCoroutine);
+        // screenFlashCoroutine = StartCoroutine(ScreenFlashRoutine());
+        
 
         // Iniciar corrutina de duracion del efecto
-        if (lowHealthEffectCoroutine != null) StopCoroutine(lowHealthEffectCoroutine);
-        lowHealthEffectCoroutine = StartCoroutine(LowHealthEffectDurationRoutine());
+        // if (lowHealthEffectCoroutine != null) StopCoroutine(lowHealthEffectCoroutine);
+        // lowHealthEffectCoroutine = StartCoroutine(LowHealthEffectDurationRoutine());
 
         ReportDebug("Efectos de vida baja activados.", 1);
     }
@@ -476,12 +483,12 @@ public class HUDManager : MonoBehaviour
         }
 
         // Asegurarse de que el overlay esta invisible
-        if (screenFlashOverlay != null)
-        {
-            Color transparent = lowHealthScreenFlashColor;
-            transparent.a = 0f;
-            screenFlashOverlay.color = transparent;
-        }
+        // if (screenFlashOverlay != null)
+        // {
+        //     Color transparent = lowHealthScreenFlashColor;
+        //     transparent.a = 0f;
+        //     screenFlashOverlay.color = transparent;
+        // }
 
         ReportDebug("Efectos de vida baja desactivados.", 1);
     }
@@ -540,46 +547,51 @@ public class HUDManager : MonoBehaviour
     /// <summary>
     /// Rutina de parpadeo de pantalla (overlay rojo).
     /// </summary>
-    private IEnumerator ScreenFlashRoutine()
+    // private IEnumerator ScreenFlashRoutine()
+    // {
+    //     // if (screenFlashOverlay == null) yield break;
+
+    //     Color visibleColor = lowHealthScreenFlashColor;
+    //     Color transparentColor = lowHealthScreenFlashColor;
+    //     transparentColor.a = 0f;
+
+    //     while (true)
+    //     {
+    //         // Fade in
+    //         float elapsed = 0f;
+    //         float fadeDuration = screenFlashInterval * 0.5f;
+
+    //         while (elapsed < fadeDuration)
+    //         {
+    //             elapsed += Time.deltaTime;
+    //             float t = elapsed / fadeDuration;
+    //             screenFlashOverlay.color = Color.Lerp(transparentColor, visibleColor, t);
+    //             yield return null;
+    //         }
+
+    //         screenFlashOverlay.color = visibleColor;
+
+    //         // Fade out
+    //         elapsed = 0f;
+
+    //         while (elapsed < fadeDuration)
+    //         {
+    //             elapsed += Time.deltaTime;
+    //             float t = elapsed / fadeDuration;
+    //             screenFlashOverlay.color = Color.Lerp(visibleColor, transparentColor, t);
+    //             yield return null;
+    //         }
+
+    //         screenFlashOverlay.color = transparentColor;
+
+    //         // Esperar antes del siguiente flash
+    //         yield return new WaitForSeconds(screenFlashInterval * 0.5f);
+    //     }
+    // }
+
+    private void HandleDeathing()
     {
-        if (screenFlashOverlay == null) yield break;
-
-        Color visibleColor = lowHealthScreenFlashColor;
-        Color transparentColor = lowHealthScreenFlashColor;
-        transparentColor.a = 0f;
-
-        while (true)
-        {
-            // Fade in
-            float elapsed = 0f;
-            float fadeDuration = screenFlashInterval * 0.5f;
-
-            while (elapsed < fadeDuration)
-            {
-                elapsed += Time.deltaTime;
-                float t = elapsed / fadeDuration;
-                screenFlashOverlay.color = Color.Lerp(transparentColor, visibleColor, t);
-                yield return null;
-            }
-
-            screenFlashOverlay.color = visibleColor;
-
-            // Fade out
-            elapsed = 0f;
-
-            while (elapsed < fadeDuration)
-            {
-                elapsed += Time.deltaTime;
-                float t = elapsed / fadeDuration;
-                screenFlashOverlay.color = Color.Lerp(visibleColor, transparentColor, t);
-                yield return null;
-            }
-
-            screenFlashOverlay.color = transparentColor;
-
-            // Esperar antes del siguiente flash
-            yield return new WaitForSeconds(screenFlashInterval * 0.5f);
-        }
+        gameObject.SetActive(false);
     }
 
     #endregion
@@ -707,8 +719,8 @@ public class HUDManager : MonoBehaviour
 
         while (true)
         {
-            float randomX = Random.Range(-currentShakeIntensity, currentShakeIntensity);
-            float randomY = Random.Range(-currentShakeIntensity, currentShakeIntensity);
+            float randomX = UnityEngine.Random.Range(-currentShakeIntensity, currentShakeIntensity);
+            float randomY = UnityEngine.Random.Range(-currentShakeIntensity, currentShakeIntensity);
 
             hud.localPosition = HUDOriginalPos + new Vector2(randomX, randomY);
             yield return null;
