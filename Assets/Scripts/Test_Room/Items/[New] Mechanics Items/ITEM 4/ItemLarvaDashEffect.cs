@@ -1,14 +1,23 @@
-using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+
+[System.Serializable]
+public class DashSpawnSettings
+{
+    public GameObject larvaPrefab;
+    public int spawnCount = 1;
+}
+
+[System.Serializable]
+public class DashLevel
+{
+    public List<DashSpawnSettings> spawns;
+}
 
 [CreateAssetMenu(fileName = "UniversalLarvaDashEffect", menuName = "Item Effects/Utility/Universal Larva Dash")]
 public class ItemLarvaDashEffect : ItemEffectBase
 {
     #region Settings
-
-    [Header("Prefabs de Larvas")]
-    public GameObject attackLarvaPrefab;
-    public GameObject curativeLarvaPrefab;
 
     [Header("Larva stats")]
     [SerializeField] private float larvaHealth = 15f;
@@ -16,6 +25,9 @@ public class ItemLarvaDashEffect : ItemEffectBase
     [Header("Larva lifecycle")]
     [SerializeField] private float resetIdleTime = 2f;
     [SerializeField] private float larvaCooldown = 1.5f;
+
+    [Header("Dash Configuration")]
+    [SerializeField] private List<DashLevel> dashLevels;
 
     #endregion
 
@@ -64,25 +76,17 @@ public class ItemLarvaDashEffect : ItemEffectBase
         nextAvailableTime = now + larvaCooldown;
         dashCount++;
 
-        Vector3 spawnPos = playerPosition;
+        int index = Mathf.Min(dashCount - 1, dashLevels.Count - 1);
 
-        switch (dashCount)
+        if (index >= 0 && index < dashLevels.Count)
         {
-            case 1:
-                SpawnLarva(curativeLarvaPrefab, spawnPos);
-                break;
-            case 2:
-                SpawnLarva(curativeLarvaPrefab, spawnPos); 
-                break;
-            case 3:
-                SpawnLarva(curativeLarvaPrefab, spawnPos); 
-                SpawnLarva(curativeLarvaPrefab, spawnPos);
-                break;
-            case 4:
-            default:
-                SpawnLarva(attackLarvaPrefab, spawnPos);   
-                SpawnLarva(attackLarvaPrefab, spawnPos);
-                break;
+            foreach (var spawn in dashLevels[index].spawns)
+            {
+                for (int i = 0; i < spawn.spawnCount; i++)
+                {
+                    SpawnLarva(spawn.larvaPrefab, playerPosition);
+                }
+            }
         }
     }
 
