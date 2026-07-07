@@ -82,14 +82,10 @@ public class PlayerMeleeAttack : MonoBehaviour
     #region Inspector – Attack Moves Settings
 
     [Header("Attack 1 (Basic)")]
-    [Tooltip("Sistema de particulas para el efecto visual del primer ataque.")]
-    [SerializeField] private ParticleSystem vfxAttack1Slash;
     [Tooltip("Duracion total en segundos de la animacion del primer ataque.")]
     [SerializeField] private float attack1Duration = 0.4f;
 
     [Header("Attack 2 (Area/Spin)")]
-    [Tooltip("Sistema de particulas para el efecto visual del segundo ataque.")]
-    [SerializeField] private ParticleSystem vfxAttack2Slash;
     [Tooltip("Tiempo durante el cual el jugador se desplaza en el segundo ataque.")]
     [SerializeField] private float attack2MovementDuration = 0.6f;
     [Tooltip("Duracion del giro sobre su propio eje en el segundo ataque.")]
@@ -100,8 +96,6 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private float attack2TargetSpinAngle = 360f;
 
     [Header("Attack 3 (Heavy/Charge)")]
-    [Tooltip("Sistema de particulas para el efecto visual del tercer ataque.")]
-    [SerializeField] private ParticleSystem vfxAttack3Slash;
     [Tooltip("Tiempo de preparacion antes de lanzar el golpe final del combo.")]
     [SerializeField] private float attack3PreChargeDuration = 0.3f;
     [Tooltip("Duracion del desplazamiento hacia adelante en el golpe final.")]
@@ -275,10 +269,6 @@ public class PlayerMeleeAttack : MonoBehaviour
             StopCoroutine(cleanupCoroutine);
             cleanupCoroutine = null;
         }
-
-        VFXHelper.SafeStop(vfxAttack1Slash, clear: true);
-        VFXHelper.SafeStop(vfxAttack2Slash, clear: true);
-        VFXHelper.SafeStop(vfxAttack3Slash, clear: true);
 
         StopAllCoroutines();
     }
@@ -489,14 +479,26 @@ public class PlayerMeleeAttack : MonoBehaviour
         {
             case 0:
                 PlayerCombatEvents.RaiseMeleeHit(transform.position, transform.forward, finalAttackDamage);
+                if (playerAudioController != null)
+                {
+                    playerAudioController.PlayMeleeSound("BasicSlash");
+                }
                 yield return StartCoroutine(ExecuteAttack1());
                 break;
             case 1:
                 PlayerCombatEvents.RaiseMeleeHit(transform.position, transform.forward, finalAttackDamage);
+                if (playerAudioController != null)
+                {
+                    playerAudioController.PlayMeleeSound("SpinSlash");
+                }
                 yield return StartCoroutine(ExecuteAttack2());
                 break;
             case 2:
                 PlayerCombatEvents.RaiseMeleeHit(transform.position, transform.forward, finalAttackDamage * attack3DamageMultiplier);
+                if (playerAudioController != null)
+                {
+                    playerAudioController.PlayMeleeSound("HeavySlash");
+                }
                 yield return StartCoroutine(ExecuteAttack3());
                 break;
         }
@@ -812,12 +814,6 @@ public class PlayerMeleeAttack : MonoBehaviour
     // Activa los efectos visuales y de sonido para el primer ataque.
     public void ActiveAttack1Slash()
     {
-        VFXHelper.SafePlay(vfxAttack1Slash);
-
-        if (playerAudioController != null)
-        {
-            playerAudioController.PlayMeleeSound("BasicSlash");
-        }
     }
 
     /// <summary>
@@ -968,12 +964,6 @@ public class PlayerMeleeAttack : MonoBehaviour
     // Activa los efectos visuales y de sonido para el segundo ataque (giro).
     public void ActiveAttack2Slash()
     {
-        VFXHelper.SafePlay(vfxAttack2Slash);
-
-        if (playerAudioController != null)
-        {
-            playerAudioController.PlayMeleeSound("SpinSlash");
-        }
     }
 
     /// <summary>
@@ -1071,12 +1061,6 @@ public class PlayerMeleeAttack : MonoBehaviour
     // Activa los efectos visuales y de sonido para el tercer ataque (pesado).
     public void ActiveAttack3Slash()
     {
-        VFXHelper.SafePlay(vfxAttack3Slash);
-
-        if (playerAudioController != null)
-        {
-            playerAudioController.PlayMeleeSound("HeavySlash");
-        }
     }
 
     #endregion
