@@ -18,11 +18,8 @@ public class DummyArmor : MonoBehaviour, IDamageable
     [SerializeField, Range(0f, 1f)] private float rangedDamageMultiplierToHealth = 0.05f;
 
     [Header("Damage Cooldown")]
-    [SerializeField] private float damageCooldownTime = 0.2f; 
-    private float nextDamageTime = 0f; 
-
-    [Header("Tutorial Balance")]
-    [SerializeField] private float gamepadDamageMultiplier = 2.5f;
+    [SerializeField] private float damageCooldownTime = 0.2f;
+    private float nextDamageTime = 0f;
 
     [Header("References")]
     [SerializeField] private DummyUIController uiController;
@@ -78,24 +75,19 @@ public class DummyArmor : MonoBehaviour, IDamageable
     public void TakeDamage(float damageAmount, bool isCritical, AttackDamageType damageType)
     {
         if (Time.time < nextDamageTime) return;
-        if (currentHealth <= 0) return; 
+        if (currentHealth <= 0) return;
 
-        if (GamepadPointer.Instance != null && GamepadPointer.Instance.IsGamepadMode())
-        {
-            damageAmount *= gamepadDamageMultiplier;
-        }
-
-        nextDamageTime = Time.time + damageCooldownTime; 
+        nextDamageTime = Time.time + damageCooldownTime;
         lastAttackDamageType = damageType;
 
-        if (playerTransform != null) 
+        if (playerTransform != null)
         {
-            if (rotationCoroutine != null) StopCoroutine(rotationCoroutine); 
+            if (rotationCoroutine != null) StopCoroutine(rotationCoroutine);
             rotationCoroutine = StartCoroutine(RotateTowardsPlayer());
         }
 
         float damageToArmor = 0f;
-        float damageToHealth = 0f; 
+        float damageToHealth = 0f;
         DamageType hitType = DamageType.Melee;
 
         if (damageType == AttackDamageType.Ranged)
