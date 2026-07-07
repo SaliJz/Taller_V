@@ -185,6 +185,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     public static event Action<PlayerHealth> OnPlayerInstantiated;
     public event Action<float> OnDamageReceived;
     public static event Action onHealling;
+    public static event Action onDeathing; //jejej
 
     #endregion
 
@@ -589,6 +590,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (deathSequence != null)
         {
             deathSequence.StartSequence(() => ExecuteDeathCleanup(sm, im));
+            onDeathing?.Invoke();
         }
         else
         {

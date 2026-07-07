@@ -36,12 +36,13 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
         onSequenceFinished = onFinished;
         deathDirector.stopped += onDeathSequenceFinished;
 
-        deathDirector.Play();
-        StartCoroutine(BlackFade());
-
         PlayerAnimCtrl anim = playerGFX.GetComponent<PlayerAnimCtrl>();
         anim.PlayDeath();
         anim.enabled = false;
+        
+        deathDirector.Play();
+        StartCoroutine(BlackFade());
+
         PlayerShaderCtrl shader = playerGFX.GetComponent<PlayerShaderCtrl>();
         shader.ResetAllEffects();
     }
@@ -135,11 +136,12 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
             StartSequence();
         }
     }
-#endif
 
     void OnDrawGizmos()
     {
         Gizmos.color = Color.yellow;
         Gizmos.DrawCube(playerGFX.transform.position, nearbyHalfExtents);
     }
+
+    #endif
 }

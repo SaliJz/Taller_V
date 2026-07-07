@@ -193,6 +193,7 @@ public class EstadoDeVida : FullScreenEffectsBase
         berserkerScript.OnAbilityDeactivated += DeactiveBerserker;
         ShieldSkill.OnStaminaChanged += BerserkerColorTransition;
         PlayerHealth.OnLifeStageChanged += Pixelizado;
+        HUDManager.OnLowHealthChanged += HandleLowHealthChange;
     }
 
     private void OnDisable()
@@ -201,6 +202,7 @@ public class EstadoDeVida : FullScreenEffectsBase
         berserkerScript.OnAbilityDeactivated -= DeactiveBerserker;
         ShieldSkill.OnStaminaChanged -= BerserkerColorTransition;
         PlayerHealth.OnLifeStageChanged -= Pixelizado;
+        HUDManager.OnLowHealthChanged -= HandleLowHealthChange;
     }
 
     #endregion
@@ -266,6 +268,11 @@ public class EstadoDeVida : FullScreenEffectsBase
     #endregion
 
     #region Metodos Vida Baja
+
+    private void HandleLowHealthChange(bool value)
+    {
+        VidaBajaActiva = value;
+    }
 
     private void HandleVidaBaja()
     {
