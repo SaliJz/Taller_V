@@ -733,8 +733,8 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             lr.positionCount = 2;
             lr.startWidth = bondLineWidth;
             lr.endWidth = bondLineWidth;
-            lr.startColor = bondLineColor;
-            lr.endColor = bondLineColor;
+            // lr.startColor = bondLineColor;
+            // lr.endColor = bondLineColor;
             lr.SetPosition(0, slotTransform != null ? slotTransform.position : transform.position + Vector3.up);
             lr.SetPosition(1, ally.transform.position + Vector3.up);
             bond.lineRenderer = lr;
@@ -1527,7 +1527,7 @@ public class DrogathEnemy : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 #endif
 
             // Vinculos activos
-            Gizmos.color = bondLineColor;
+            // Gizmos.color = bondLineColor;
             foreach (var bond in activeBonds)
             {
                 if (bond.ally == null) continue;
