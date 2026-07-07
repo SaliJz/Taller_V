@@ -382,6 +382,7 @@ public class PlayerShaderCtrl : MonoBehaviour
         
         SetColorID(ShineID, 0);
         SetColorID(FlashAmountID, 0);
+        SetOutline(0);
         DamageVFX.SetActive(false);
         HealVFX.SetActive(false);
     }

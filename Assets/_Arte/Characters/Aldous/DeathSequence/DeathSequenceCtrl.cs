@@ -33,18 +33,24 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
         HideOccludingObjects();
         HideNearbyObjects();
 
+        foreach(GameObject g in hiddenObjects)
+        {
+            g.SetActive(false);
+        }
+
         onSequenceFinished = onFinished;
         deathDirector.stopped += onDeathSequenceFinished;
+
+        PlayerShaderCtrl shader = playerGFX.GetComponent<PlayerShaderCtrl>();
+        shader.ResetAllEffects();
 
         PlayerAnimCtrl anim = playerGFX.GetComponent<PlayerAnimCtrl>();
         anim.PlayDeath();
         anim.enabled = false;
-        
+
         deathDirector.Play();
         StartCoroutine(BlackFade());
 
-        PlayerShaderCtrl shader = playerGFX.GetComponent<PlayerShaderCtrl>();
-        shader.ResetAllEffects();
     }
 
     private void onDeathSequenceFinished(PlayableDirector director)
@@ -92,9 +98,9 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
         foreach(var hit in hits)
         {
             GameObject obj = hit.collider.gameObject;
-            if (obj == playerGFX) continue;
+            // if (obj == playerGFX) continue;
 
-            obj.SetActive(false);
+            // obj.SetActive(false);
             hiddenObjects.Add(obj);
         }
     }
@@ -111,10 +117,10 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
         foreach(Collider hit in hits)
         {
             GameObject obj = hit.gameObject;
-            if (obj == playerGFX) continue;
+            // if (obj == playerGFX) continue;
             if (hiddenObjects.Contains(obj)) continue;
 
-            obj.SetActive(false);
+            // obj.SetActive(false);
             hiddenObjects.Add(obj);
         }
     }
