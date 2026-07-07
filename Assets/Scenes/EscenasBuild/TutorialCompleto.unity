@@ -27054,7 +27054,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.03, y: 0.6}
   m_AnchorMax: {x: 0.97, y: 0.97}
-  m_AnchoredPosition: {x: -208.49402, y: -721.02264}
+  m_AnchoredPosition: {x: -208.49405, y: -721.02264}
   m_SizeDelta: {x: -1517.6871, y: -146.0452}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1237997840
@@ -35179,7 +35179,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.03, y: 0.6}
   m_AnchorMax: {x: 0.97, y: 0.97}
-  m_AnchoredPosition: {x: -208.49402, y: -721.02264}
+  m_AnchoredPosition: {x: -208.49405, y: -721.02264}
   m_SizeDelta: {x: -1517.6871, y: -146.0452}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1644479563
@@ -42729,9 +42729,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4d9b44fee6938341b81f05c8bd96dc2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 35
+  maxHealth: 50
   maxArmorHealth: 50
-  reductionPercentage: 0.95
+  reductionPercentage: 0.99
+  rangedDamageMultiplierToHealth: 0.05
   damageCooldownTime: 0.2
   uiController: {fileID: 370863952}
   maxArmorValueForUI: 1
