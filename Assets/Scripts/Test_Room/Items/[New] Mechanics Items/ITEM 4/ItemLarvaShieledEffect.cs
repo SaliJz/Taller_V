@@ -1,15 +1,25 @@
+using System.Collections.Generic;
 using UnityEngine;
+
+[System.Serializable]
+public class DamageTypeSpawnSettings
+{
+    public AttackDamageType damageType;
+    public List<DashSpawnSettings> spawns;
+}
 
 [CreateAssetMenu(fileName = "UniversalLarvaShieldEffect", menuName = "Item Effects/Utility/Universal Larva Shield")]
 public class ItemLarvaShieledEffect : ItemEffectBase
 {
     #region Settings
-    [Header("Prefabs de Larvas")]
-    public GameObject attackLarvaPrefab;
-    public GameObject curativeLarvaPrefab;
+
+    [Header("Configuración de Spawns por Daño")]
+    [SerializeField] private List<DamageTypeSpawnSettings> damageSpawnConfigs;
+
     #endregion
 
     #region Life Cycle
+
     public override void ApplyEffect(PlayerStatsManager statsManager)
     {
         CombatEventsManager.OnEnemyKilledType += HandleKilledEnemy;
@@ -19,32 +29,37 @@ public class ItemLarvaShieledEffect : ItemEffectBase
     {
         CombatEventsManager.OnEnemyKilledType -= HandleKilledEnemy;
     }
+
     #endregion
 
     #region Event Handlers
+
     private void HandleKilledEnemy(GameObject enemy, AttackDamageType damageType)
     {
-        Vector3 spawnPos = enemy.transform.position;
+        var config = damageSpawnConfigs.Find(x => x.damageType == damageType);
 
-        if (damageType == AttackDamageType.Ranged)
+        if (config != null)
         {
-            for (int i = 0; i < 2; i++)
+            Vector3 spawnPos = enemy.transform.position;
+            foreach (var spawn in config.spawns)
             {
-                SpawnLarva(curativeLarvaPrefab, spawnPos, 15f);
+                for (int i = 0; i < spawn.spawnCount; i++)
+                {
+                    SpawnLarva(spawn.larvaPrefab, spawnPos, 15f);
+                }
             }
-
-            SpawnLarva(attackLarvaPrefab, spawnPos, 15f);
         }
     }
+
     #endregion
 
     #region Logic
+
     private void SpawnLarva(GameObject prefab, Vector3 position, float damageValue)
     {
         if (prefab == null) return;
 
         GameObject larva = Instantiate(prefab, position, Quaternion.identity);
-
         larva.transform.rotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
 
         if (larva.TryGetComponent<ResurrectedLarva>(out var res))
@@ -56,5 +71,6 @@ public class ItemLarvaShieledEffect : ItemEffectBase
             cur.Initialize(damageValue);
         }
     }
+
     #endregion
 }
