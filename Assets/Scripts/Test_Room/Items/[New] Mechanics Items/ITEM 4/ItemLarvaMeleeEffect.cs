@@ -6,6 +6,11 @@ public class ItemLarvaMeleeEffect : ItemEffectBase
     #region Settings
     [Header("Prefabs de Larvas")]
     public GameObject kamikazeLarvaPrefab;
+
+    [Header("Configuración Ajustable")]
+    [SerializeField] private AttackDamageType requiredDamageType = AttackDamageType.Melee;
+    [SerializeField] private int larvaCount = 4;
+    [SerializeField] private float larvaDamage = 15f;
     #endregion
 
     #region Life Cycle
@@ -23,13 +28,15 @@ public class ItemLarvaMeleeEffect : ItemEffectBase
     #region Event Handlers
     private void HandleKilledEnemy(GameObject enemy, AttackDamageType damageType)
     {
+        if (enemy == null) return;
+
         Vector3 spawnPos = enemy.transform.position;
 
-        if (damageType == AttackDamageType.Melee)
+        if (damageType == requiredDamageType)
         {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < larvaCount; i++)
             {
-                SpawnLarva(kamikazeLarvaPrefab, spawnPos, 15f);
+                SpawnLarva(kamikazeLarvaPrefab, spawnPos, larvaDamage);
             }
         }
     }
