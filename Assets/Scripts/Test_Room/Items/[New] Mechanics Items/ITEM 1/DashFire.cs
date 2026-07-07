@@ -7,7 +7,7 @@ public class DashFire : MonoBehaviour
 {
     #region Private Fields
 
-    private float damage;
+    private float dps;
     private float expandDuration;
     private float maxRadius;
     private float stayDuration;
@@ -17,11 +17,9 @@ public class DashFire : MonoBehaviour
 
     private float currentRadius = 0f;
     private float tickTimer = 0f;
-    private bool isStaying = false;
+    private bool isActiveAndTicking = false;
 
     private HashSet<Collider> overlapping = new HashSet<Collider>();
-
-    private HashSet<Collider> chargedThisTick = new HashSet<Collider>();
 
     private Transform visual;
     private CapsuleCollider capsule;
@@ -37,25 +35,22 @@ public class DashFire : MonoBehaviour
     {
         capsule = GetComponent<CapsuleCollider>();
 
-        if (transform.childCount > 0)
-            visual = transform.GetChild(0);
+        if (transform.childCount > 0) visual = transform.GetChild(0);
     }
 
     private void Update()
     {
-        if (!isStaying) return;
+        if (!isActiveAndTicking) return;
 
         tickTimer -= Time.deltaTime;
         if (tickTimer <= 0f)
         {
             tickTimer = tickInterval;
-            chargedThisTick.Clear();
-            overlapping.RemoveWhere(col => col == null);
+
+            overlapping.RemoveWhere(col => col == null || !col.gameObject.activeInHierarchy);
 
             foreach (var col in overlapping)
             {
-                if (chargedThisTick.Contains(col)) continue;
-                chargedThisTick.Add(col);
                 ApplyChargeOrDamage(col.gameObject);
             }
         }
@@ -66,8 +61,6 @@ public class DashFire : MonoBehaviour
         if ((enemyLayer.value & (1 << other.gameObject.layer)) > 0)
         {
             overlapping.Add(other);
-
-            ApplyChargeOrDamage(other.gameObject);
         }
     }
 
@@ -80,9 +73,10 @@ public class DashFire : MonoBehaviour
 
     #region Public Methods
 
-    public void Activate(Vector3 position, float expandDuration, float maxRadius,
+    public void Activate(Vector3 position, float damageAmount, float expandDuration, float maxRadius,
                           float stayDuration, float tickInterval, LayerMask enemyLayer, Action onReturn)
     {
+        this.dps = damageAmount;
         this.expandDuration = expandDuration;
         this.maxRadius = maxRadius;
         this.stayDuration = stayDuration;
@@ -104,10 +98,9 @@ public class DashFire : MonoBehaviour
         transform.position = finalPos;
 
         currentRadius = 0f;
-        tickTimer = tickInterval;
-        isStaying = false;
+        tickTimer = 0.1f;
+        isActiveAndTicking = false;
         overlapping.Clear();
-        chargedThisTick.Clear();
 
         SetSize(0f);
         gameObject.SetActive(true);
@@ -119,9 +112,8 @@ public class DashFire : MonoBehaviour
     public void ForceReturn()
     {
         if (routine != null) StopCoroutine(routine);
-        isStaying = false;
+        isActiveAndTicking = false;
         overlapping.Clear();
-        chargedThisTick.Clear();
         onReturn?.Invoke();
     }
 
@@ -131,6 +123,7 @@ public class DashFire : MonoBehaviour
 
     private IEnumerator CircleRoutine()
     {
+        isActiveAndTicking = true;
         float elapsed = 0f;
 
         while (elapsed < expandDuration)
@@ -144,14 +137,11 @@ public class DashFire : MonoBehaviour
 
         currentRadius = maxRadius;
         SetSize(currentRadius);
-        isStaying = true;
-        tickTimer = tickInterval;
 
         yield return new WaitForSeconds(stayDuration);
 
-        isStaying = false;
+        isActiveAndTicking = false;
         overlapping.Clear();
-        chargedThisTick.Clear();
         onReturn?.Invoke();
     }
 
@@ -180,7 +170,8 @@ public class DashFire : MonoBehaviour
         EnemyHealth health = enemy.GetComponentInParent<EnemyHealth>();
         if (health != null)
         {
-            health.TakeDamage(damage);
+            float damageToApply = dps * tickInterval;
+            health.TakeDamage(damageToApply);
         }
     }
 

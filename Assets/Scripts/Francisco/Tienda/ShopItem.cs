@@ -29,7 +29,10 @@ public enum ItemRarity
 public class ShopItem : ScriptableObject
 {
     [Header("Item Info")]
+    [Tooltip("Nombre del item, para mostrar en el panel de detalles del item.")]
     public string itemName;
+    [Tooltip("Descripción narrativa del item, para mostrar en el panel de detalles del item (Gangas o Reliquias) " +
+        "o en el panel comparativo de Reliquias.")]
     [TextArea] public string description;
 
     [Header("Stats")]
