@@ -3,13 +3,22 @@ using UnityEngine;
 public class HazardTest : MonoBehaviour
 {
     [SerializeField] private float damagePerSecond = 10f;
+    [SerializeField] private float damageTickRate = 1f;
+
+    private float nextDamageTime;
 
     private void OnTriggerStay(Collider other)
     {
-        PlayerHealth playerHealth = other.GetComponent<PlayerHealth>();
-        if (playerHealth != null)
+        if (Time.time >= nextDamageTime)
         {
-            playerHealth.TakeDamage(damagePerSecond * Time.deltaTime);
+            PlayerHealth playerHealth = other.GetComponent<PlayerHealth>();
+
+            if (playerHealth != null)
+            {
+                playerHealth.TakeDamage(damagePerSecond);
+
+                nextDamageTime = Time.time + damageTickRate;
+            }
         }
     }
 }

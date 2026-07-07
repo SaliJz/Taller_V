@@ -4,15 +4,28 @@ using System.Collections;
 public class AporiaNest : MonoBehaviour
 {
     #region Settings
+
     [SerializeField] private GameObject larvaPrefab;
+    [Tooltip("Duracion en segundos del tiempo de vida del area de efecto.")]
     [SerializeField] private float duration = 3f;
+    [Tooltip("Daño por segundo que el nido inflige al jugador mientras esté dentro del area de efecto.")]
     [SerializeField] private float dps = 1f;
+    [Tooltip("Intervalo en segundos para aplicar el daño al jugador mientras esté dentro del area de efecto.")]
+    [SerializeField] private float damageTickRate = 1f;
+    [Tooltip("Duracion en segundos del efecto de ralentizacion aplicado al jugador mientras esté dentro del area de efecto.")]
     [SerializeField] private float slowDuration = 1f;
+    [Tooltip("Fraccion de ralentización aplicada al jugador mientras esté dentro del area de efecto.")]
     [SerializeField] private float slowFraction = 0.2f;
+    [Tooltip("Número de larvas que se generarán al final del ciclo de vida del nido.")]
     [SerializeField] private float currentLarvaSpawnRate = 2;
+
     #endregion
 
+    // Variable para rastrear cuándo se debe aplicar el siguiente tick de daño
+    private float nextDamageTime;
+
     #region Unity Events
+
     private void OnEnable()
     {
         if (larvaPrefab == null)
@@ -27,9 +40,16 @@ public class AporiaNest : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            if (other.TryGetComponent<PlayerHealth>(out var health))
+            // Solo se ejecuta si el tiempo actual ha superado el tiempo del próximo tick
+            if (Time.time >= nextDamageTime)
             {
-                health.TakeDamage(dps * Time.deltaTime);
+                if (other.TryGetComponent<PlayerHealth>(out var health))
+                {
+                    health.TakeDamage(dps); // Se aplica el daño completo
+                }
+
+                // Calcula el tiempo para el siguiente tick de daño
+                nextDamageTime = Time.time + damageTickRate;
             }
 
             PlayerStatsManager statsManager = other.GetComponent<PlayerStatsManager>();
@@ -40,9 +60,11 @@ public class AporiaNest : MonoBehaviour
             }
         }
     }
+
     #endregion
 
     #region Logic
+
     public void SetRateSpawn(float rate) => currentLarvaSpawnRate = rate;
 
     private IEnumerator LifeCycle()
@@ -61,5 +83,6 @@ public class AporiaNest : MonoBehaviour
 
         gameObject.SetActive(false);
     }
+
     #endregion
 }
