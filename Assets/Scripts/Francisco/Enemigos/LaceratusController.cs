@@ -911,9 +911,11 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
 
     private void ExecuteAttack(GameObject target, float damageAmount)
     {
-        if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
+        if (target.TryGetComponent<PlayerHealth>(out var health))
         {
-            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(transform.position))
+            if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) 
+                && blockSystem.IsBlocking 
+                && blockSystem.CanBlockAttack(transform.position))
             {
                 float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
 
@@ -924,8 +926,10 @@ public class LaceratusController : MonoBehaviour, IAnimEventHandler
                 Debug.Log($"<color=red>[Jitter] Ataque bloqueado por el jugador.</color>");
                 return;
             }
-
-            health.TakeDamage(damageAmount, false, AttackDamageType.Melee);
+            else
+            {
+                health.TakeDamage(Mathf.Max(0, damageAmount), false, AttackDamageType.Melee);
+            }
         }
     }
 

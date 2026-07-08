@@ -295,9 +295,9 @@ public class Larva : MonoBehaviour
     {
         if (target.TryGetComponent<PlayerHealth>(out var health))
         {
-            if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) &&
-                blockSystem.IsBlocking &&
-                blockSystem.CanBlockAttack(transform.position))
+            if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) 
+                && blockSystem.IsBlocking 
+                && blockSystem.CanBlockAttack(transform.position))
             {
                 float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
 
@@ -305,6 +305,8 @@ public class Larva : MonoBehaviour
                 {
                     health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
                 }
+                Debug.Log($"<color=red>[Jitter] Ataque bloqueado por el jugador.</color>");
+                return;
             }
             else
             {
