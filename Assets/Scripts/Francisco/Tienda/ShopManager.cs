@@ -35,6 +35,7 @@ public class ShopManager : MonoBehaviour
     [Range(0f, 1f)] public float normalRarityWeight = 0.65f;
     [Range(0f, 1f)] public float rareRarityWeight = 0.25f;
     [Range(0f, 1f)] public float superRareRarityWeight = 0.1f;
+    [SerializeField] private float timeOfSpawn = 1f;
 
     [Header("Shop Prefabs")]
     public List<GameObject> shopItemPrefabs;
@@ -402,7 +403,7 @@ public class ShopManager : MonoBehaviour
 
     #region Shop Generation & Spawning
 
-    public void GenerateShopItems(List<Transform> spawnLocations, Transform parent)
+    public IEnumerator GenerateShopItems(List<Transform> spawnLocations, Transform parent)
     {
         _shopSpawnLocations = spawnLocations;
         currentShopItems = new List<ShopItem>();
@@ -412,7 +413,7 @@ public class ShopManager : MonoBehaviour
         if (spawnLocations == null || spawnLocations.Count == 0)
         {
             Debug.LogWarning("[ShopManager] No spawn locations.");
-            return;
+            yield break;
         }
 
         if (availablePrefabs.Count == 0)
@@ -486,6 +487,8 @@ public class ShopManager : MonoBehaviour
 
             ShopItem data = prefab.GetComponent<ShopItemDisplay>()?.shopItemData;
             if (data != null) currentShopItems.Add(data);
+
+            yield return new WaitForSeconds(timeOfSpawn);
         }
 
         UpdateDebugLists();
@@ -644,7 +647,7 @@ public class ShopManager : MonoBehaviour
 
         playerHealth.TakeDamage(baseRerollCost, true);
         DestroyCurrentItems();
-        GenerateShopItems(spawnLocations, parent);
+        StartCoroutine(GenerateShopItems(spawnLocations, parent));
         UpdateDebugLists();
     }
 

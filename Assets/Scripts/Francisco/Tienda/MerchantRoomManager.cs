@@ -111,7 +111,7 @@ public class MerchantRoomManager : MonoBehaviour
     {
         if (shopManager != null)
         {
-            shopManager.GenerateShopItems(spawnLocations, parent);
+            StartCoroutine(shopManager.GenerateShopItems(spawnLocations, parent));
             yield return new WaitForSeconds(0.1f);
         }
     }
