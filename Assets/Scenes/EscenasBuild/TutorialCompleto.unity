@@ -14298,6 +14298,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   destinationDoor: {fileID: 2052248977}
+  onEnter:
+    m_PersistentCalls:
+      m_Calls: []
   sequenceTransition: {fileID: 1700281059}
   preTeleportMoveDistance: 5
   playerMoveDuration: 0.5
@@ -20064,6 +20067,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   destinationDoor: {fileID: 1631814523}
+  onEnter:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 953363980}
+        m_TargetAssemblyTypeName: TutorialHUDAnimator, Assembly-CSharp
+        m_MethodName: CompleteInstruction
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   sequenceTransition: {fileID: 1329436796}
   preTeleportMoveDistance: 5
   playerMoveDuration: 0.5
@@ -21017,7 +21035,6 @@ GameObject:
   m_Component:
   - component: {fileID: 911247309}
   - component: {fileID: 911247312}
-  - component: {fileID: 911247311}
   - component: {fileID: 911247310}
   m_Layer: 0
   m_Name: BossCamera
@@ -21085,14 +21102,6 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
---- !u!81 &911247311
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 911247308}
-  m_Enabled: 1
 --- !u!20 &911247312
 Camera:
   m_ObjectHideFlags: 0
@@ -37174,6 +37183,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   destinationDoor: {fileID: 1122702828}
+  onEnter:
+    m_PersistentCalls:
+      m_Calls: []
   sequenceTransition: {fileID: 445090782}
   preTeleportMoveDistance: 5
   playerMoveDuration: 0.5
@@ -45341,7 +45353,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4d9b44fee6938341b81f05c8bd96dc2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 50
+  maxHealth: 30
   maxArmorHealth: 50
   reductionPercentage: 0.99
   rangedDamageMultiplierToHealth: 0.05
@@ -50104,6 +50116,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   destinationDoor: {fileID: 1048477922}
+  onEnter:
+    m_PersistentCalls:
+      m_Calls: []
   sequenceTransition: {fileID: 1326051384}
   preTeleportMoveDistance: 5
   playerMoveDuration: 0.5

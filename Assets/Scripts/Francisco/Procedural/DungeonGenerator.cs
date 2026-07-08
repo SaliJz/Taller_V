@@ -69,6 +69,7 @@ public class DungeonGenerator : MonoBehaviour
     [SerializeField] private RoomTransitionController roomTransitionController;
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private PlayerStatsManager statsManager;
+    [SerializeField] private PlayerCombatActionManager combatActionManager;
     private PlayerMovement playerMovement;
 
     [Header("Debug")]
@@ -154,6 +155,7 @@ public class DungeonGenerator : MonoBehaviour
         playerMovement = FindAnyObjectByType<PlayerMovement>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
         statsManager = FindAnyObjectByType<PlayerStatsManager>();
+        combatActionManager = FindAnyObjectByType<PlayerCombatActionManager>();
 
         if (AsyncMusicController.Instance != null)
         {
@@ -1262,6 +1264,11 @@ public class DungeonGenerator : MonoBehaviour
             if (playerMovement != null)
             {
                 playerMovement.SetCanMove(true);
+            }
+
+            if (combatActionManager != null)
+            {
+                combatActionManager.enabled = true;
             }
 
             IsTransitioning = false;

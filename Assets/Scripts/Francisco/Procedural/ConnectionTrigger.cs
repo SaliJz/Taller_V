@@ -10,6 +10,7 @@ public class ConnectionTrigger : MonoBehaviour
     [Header("Transition")]
     [SerializeField] private SequenceTransition transition;
 
+    private PlayerCombatActionManager combatActionManager;
     private DungeonGenerator dungeonGenerator;
     private ConnectionPoint connectionPoint;
     private bool hasTriggered = false;
@@ -18,6 +19,7 @@ public class ConnectionTrigger : MonoBehaviour
     private void Start()
     {
         dungeonGenerator = FindAnyObjectByType<DungeonGenerator>();
+        combatActionManager = FindAnyObjectByType<PlayerCombatActionManager>();
         connectionPoint = GetComponent<ConnectionPoint>();
 
         if (audioSource == null)
@@ -77,6 +79,11 @@ public class ConnectionTrigger : MonoBehaviour
         if (characterController != null)
         {
             characterController.enabled = false;
+        }
+
+        if (combatActionManager != null)
+        {
+            combatActionManager.enabled = false;
         }
 
         yield return dungeonGenerator.StartCoroutine(transition.ExecuteSequence(playerTransform));

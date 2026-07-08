@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.Events;
 
 [RequireComponent(typeof(BoxCollider))]
 public class DoorTp : MonoBehaviour
@@ -9,6 +10,7 @@ public class DoorTp : MonoBehaviour
     [Header("Dependencies")]
     [SerializeField]
     private Transform destinationDoor;
+    [SerializeField] private UnityEvent onEnter;
 
     [Header("Optional Sequence")]
     [SerializeField] private SequenceTransition sequenceTransition;
@@ -26,6 +28,7 @@ public class DoorTp : MonoBehaviour
 
     #region Private Fields
 
+    private PlayerCombatActionManager combatActionManager;
     private PlayerMovement playerMovement;
     private PlayerHealth playerHealth;
     private PlayerAnimCtrl playerAnimCtrl;
@@ -64,6 +67,7 @@ public class DoorTp : MonoBehaviour
     private void Inicilizate()
     {
         playerMovement = FindAnyObjectByType<PlayerMovement>();
+        combatActionManager = FindAnyObjectByType<PlayerCombatActionManager>();
         playerHealth = FindAnyObjectByType<PlayerHealth>();
         playerTransform = FindAnyObjectByType<PlayerMovement>()?.transform;
         playerAnimCtrl = playerTransform != null ? playerTransform.GetComponentInChildren<PlayerAnimCtrl>() : null;
@@ -101,6 +105,13 @@ public class DoorTp : MonoBehaviour
 
     private IEnumerator TransitionCoroutine()
     {
+        if (combatActionManager != null)
+        {
+            combatActionManager.enabled = false;
+        }
+
+        onEnter?.Invoke();
+
         if (sequenceTransition != null)
         {
             yield return SequenceTransitionCoroutine();
@@ -171,6 +182,10 @@ public class DoorTp : MonoBehaviour
                     {
                         playerMovement.SetCanMove(true);
                     }
+                    if (combatActionManager != null)
+                    {
+                        combatActionManager.enabled = true;
+                    }
                     isTransitioning = false;
                 }
             );
@@ -180,6 +195,10 @@ public class DoorTp : MonoBehaviour
             if (playerMovement != null)
             {
                 playerMovement.SetCanMove(true);
+            }
+            if (combatActionManager != null)
+            {
+                combatActionManager.enabled = true;
             }
             isTransitioning = false;
         }
@@ -246,6 +265,11 @@ public class DoorTp : MonoBehaviour
         if (playerMovement != null)
         {
             playerMovement.SetCanMove(true);
+        }
+
+        if (combatActionManager != null)
+        {
+            combatActionManager.enabled = true;
         }
 
         if (playerAnimCtrl != null)
