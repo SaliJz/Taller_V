@@ -2474,7 +2474,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: Presiona !MELEE  para atacar a melee. Derrota al slime
+            m_StringArgument: Presiona !MELEE  para atacar a melee. Elimina al testigo
               con golpes a melee.
             m_BoolArgument: 1
           m_CallState: 2
@@ -6150,8 +6150,8 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: '!RANGEDATTACK para atacar lanzando el escudo. Derrota
-            a los slimes.'
+          m_StringArgument: '!RANGEDATTACK para atacar lanzando el escudo. Elimina
+            a los testigos.'
           m_BoolArgument: 1
         m_CallState: 2
   onComplete:
@@ -7777,7 +7777,19 @@ MonoBehaviour:
   staticColor: {r: 0, g: 0, b: 1, a: 1}
   OnDummyKilled:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1592317313}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   requiredHits: 3
   healthStates: []
   hitCooldownTime: 0.5
@@ -21567,7 +21579,7 @@ MonoBehaviour:
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: "Mant\xE9n !DEFENSE y suelta para liberar el da\xF1o
-            acumulado. Derrota a un slime."
+            acumulado. Elimina a un testigo."
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 953363980}
@@ -22723,7 +22735,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Presiona !MELEE  para atacar a melee. Derrota al slime
+          m_StringArgument: Presiona !MELEE  para atacar a melee. Elimina al testigo
             con golpes a melee.
           m_BoolArgument: 0
         m_CallState: 2
@@ -23709,7 +23721,19 @@ MonoBehaviour:
   staticColor: {r: 0, g: 0, b: 1, a: 1}
   OnDummyKilled:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 2098520144}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   requiredHits: 3
   healthStates: []
   hitCooldownTime: 0.5
@@ -36068,6 +36092,11 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &1592317313 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2778009261814160037, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
+  m_PrefabInstance: {fileID: 1277341960}
+  m_PrefabAsset: {fileID: 0}
 --- !u!43 &1594202992
 Mesh:
   m_ObjectHideFlags: 0
@@ -48880,6 +48909,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1998683787}
     - target: {fileID: 7470225785151341199, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: timeOfSpawn
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7470225785151341199, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: itemCostText
       value: 
       objectReference: {fileID: 1998683785}
@@ -51464,6 +51497,11 @@ RectTransform:
   m_AnchoredPosition: {x: -43, y: -16.1}
   m_SizeDelta: {x: 14.540001, y: 17}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &2098520144 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2778009261814160037, guid: a28a122a880fe9649b223b84fe8f6ba4, type: 3}
+  m_PrefabInstance: {fileID: 1583746386}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2107748939
 GameObject:
   m_ObjectHideFlags: 0
