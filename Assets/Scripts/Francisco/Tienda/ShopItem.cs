@@ -163,11 +163,7 @@ public class ShopItem : ScriptableObject
         switch (statType)
         {
             case StatType.Endurance:
-            case StatType.HealthDrainAmount:
             case StatType.Gravity:
-            case StatType.DashCooldownPost:
-            case StatType.KnockbackReceived:
-            case StatType.StaminaConsumption:
                 return true;
             default:
                 return false;
@@ -183,21 +179,24 @@ public class ShopItem : ScriptableObject
             return $"<color=#A0A0A0>0.0 en {GetStatTranslation(effect.type)}</color>";
         }
 
-        bool isInverse = IsInverseStat(effect.type);
+        //bool isInverse = IsInverseStat(effect.type);
         string sign;
 
         bool shouldBePositive;
 
-        if (isInverse)
-        {
-            shouldBePositive = (isOriginalBenefit && effect.amount < 0) ||
-                              (!isOriginalBenefit && effect.amount > 0);
-        }
-        else
-        {
-            shouldBePositive = (isOriginalBenefit && effect.amount > 0) ||
-                              (!isOriginalBenefit && effect.amount < 0);
-        }
+        //if (isInverse)
+        //{
+        //    shouldBePositive = (isOriginalBenefit && effect.amount < 0) ||
+        //                      (!isOriginalBenefit && effect.amount > 0);
+        //}
+        //else
+        //{
+        //    shouldBePositive = (isOriginalBenefit && effect.amount > 0) ||
+        //                      (!isOriginalBenefit && effect.amount < 0);
+        //}
+
+        if (effect.amount < 0) shouldBePositive = false;
+        else shouldBePositive = true;
 
         sign = shouldBePositive ? "+" : "-";
 
@@ -227,27 +226,27 @@ public class ShopItem : ScriptableObject
                 return "Velocidad de Movimiento";
             case StatType.Gravity:
                 return "Gravedad";
-            case StatType.DashRangeMultiplier:
-                return "Alcance del Impulso (Multiplicador)";
+            //case StatType.DashRangeMultiplier:
+            //    return "Alcance del Impulso (Multiplicador)";
             case StatType.DashRangeFlatBonus:
-                return "Alcance del Impulso (Fijo)";
+                return "Alcance del Impulso";
             case StatType.DashCooldownPost:
                 return "Enfriamiento del Impulso";
             case StatType.KnockbackReceived:
                 return "Empuje Recibido";
             case StatType.StaminaConsumption:
-                return "Consumo de Aguante/Estamina";
+                return "Consumo de Energia";
 
             case StatType.AttackDamage:
-                return "Daño a Melee y Distancia";
+                return "Daño a Melé y Distancia";
             case StatType.AttackSpeed:
-                return "Velocidad de Ataque a Melee y Distancia";
+                return "Velocidad de Ataque a Melé y Distancia";
             case StatType.MeleeAttackDamage:
-                return "Daño a Melee";
+                return "Daño a Melé";
             case StatType.MeleeAttackSpeed:
-                return "Velocidad de Ataque a Melee";
+                return "Velocidad de Ataque a Melé";
             case StatType.MeleeRadius:
-                return "Alcance del Ataque a Melee";
+                return "Alcance del Ataque a Melé";
             case StatType.MeleeComboDisplacement:
                 return "Desplazamiento al Golpear";
             case StatType.CriticalChance:

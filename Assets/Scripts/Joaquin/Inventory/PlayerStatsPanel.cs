@@ -140,7 +140,7 @@ public class PlayerStatsPanel : MonoBehaviour
         sb.AppendLine(FormatStat("Empuje a distancia", StatType.ShieldPushForce, StatDisplayRule.BonusOnly));
         sb.AppendLine(FormatStat("Empuje recibido", StatType.KnockbackReceived, StatDisplayRule.BonusOnly, inverseColors: true));
         //sb.AppendLine(FormatStat("Consumo de vida", StatType.HealthDrainAmount, StatDisplayRule.BonusOnly, inverseColors: true));
-        sb.AppendLine(FormatStat("Consumo de aguante", StatType.StaminaConsumption, StatDisplayRule.RealValue, inverseColors: true));
+        sb.AppendLine(FormatStat("Consumo de energia", StatType.StaminaConsumption, StatDisplayRule.RealValue, inverseColors: true));
         sb.AppendLine(FormatStat("Vida al matar", StatType.LifestealOnKill, StatDisplayRule.BonusOnly));
 
         statsTextDisplay.text = sb.ToString();
