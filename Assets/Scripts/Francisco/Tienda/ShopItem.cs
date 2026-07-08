@@ -162,7 +162,7 @@ public class ShopItem : ScriptableObject
     {
         switch (statType)
         {
-            case StatType.DamageTaken:
+            case StatType.Endurance:
             case StatType.HealthDrainAmount:
             case StatType.Gravity:
             case StatType.DashCooldownPost:
@@ -203,9 +203,9 @@ public class ShopItem : ScriptableObject
 
         float displayAmount = Mathf.Abs(effect.amount);
 
-        string amountString = sign +
-                              displayAmount.ToString("F1").Replace(",", ".") +
-                              (effect.isPercentage ? "%" : "");
+        string amountString = sign 
+            + displayAmount.ToString("0.##").Replace(",", ".") 
+            + (effect.isPercentage ? "%" : "");
 
         string statName = GetStatTranslation(effect.type);
 
@@ -218,8 +218,8 @@ public class ShopItem : ScriptableObject
         {
             case StatType.MaxHealth:
                 return "Salud Máxima";
-            case StatType.DamageTaken:
-                return "Daño Recibido";
+            case StatType.Endurance:
+                return "Resistencia";
             case StatType.HealthDrainAmount:
                 return "Drenaje de Vida";
 
@@ -228,11 +228,11 @@ public class ShopItem : ScriptableObject
             case StatType.Gravity:
                 return "Gravedad";
             case StatType.DashRangeMultiplier:
-                return "Alcance del Dash (Multiplicador)";
+                return "Alcance del Impulso (Multiplicador)";
             case StatType.DashRangeFlatBonus:
-                return "Alcance del Dash (Fijo)";
+                return "Alcance del Impulso (Fijo)";
             case StatType.DashCooldownPost:
-                return "Enfriamiento del Dash";
+                return "Enfriamiento del Impulso";
             case StatType.KnockbackReceived:
                 return "Empuje Recibido";
             case StatType.StaminaConsumption:
@@ -247,7 +247,7 @@ public class ShopItem : ScriptableObject
             case StatType.MeleeAttackSpeed:
                 return "Velocidad de Ataque a Melee";
             case StatType.MeleeRadius:
-                return "Radio de Ataque Circular a Melee";
+                return "Alcance del Ataque a Melee";
             case StatType.MeleeComboDisplacement:
                 return "Desplazamiento al Golpear";
             case StatType.CriticalChance:
@@ -258,21 +258,21 @@ public class ShopItem : ScriptableObject
                 return "Robo de Vida por Eliminación";
 
             case StatType.ShieldAttackDamage:
-                return "Daño a Distancia";
+                return "Daño de Ataque a Distancia";
             case StatType.ShieldSpeed:
-                return "Velocidad de Lanzamiento del Escudo";
+                return "Velocidad de Ataque a Distancia";
             case StatType.ShieldMaxDistance:
-                return "Alcance del Escudo";
+                return "Alcance del Ataque a Distancia";
             case StatType.ShieldMaxRebounds:
-                return "Rebote del Escudo";
+                return "Rebote del Ataque a Distancia";
             case StatType.ShieldReboundRadius:
-                return "Radio de Rebote del Escudo";
+                return "Alcance del Rebote del Escudo";
             //case StatType.ShieldBlockUpgrade:
             //    return "Vida del Escudo";
             case StatType.ShieldPushForce:
-                return "Empuje del Escudo a Distancia";
+                return "Empuje del Ataque a Distancia";
             case StatType.ShieldReturnSpeed:
-                return "Velocidad de Retorno del Escudo";
+                return "Velocidad de Retorno del Ataque a Distancia";
 
             case StatType.LuckStack:
                 return "Suerte Acumulada";

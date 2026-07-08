@@ -142,7 +142,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
     // Core Combat Stats
     private float attackCooldown = 0f;
-    private int finalAttackDamage;
+    private float finalAttackDamage;
     private float finalAttackSpeed;
     private float damageMultiplier = 1f;
     private float speedMultiplier = 1f;
@@ -330,7 +330,7 @@ public class PlayerMeleeAttack : MonoBehaviour
     // Calcula los valores finales de danio y velocidad de ataque aplicando los multiplicadores.
     private void CalculateStats()
     {
-        finalAttackDamage = Mathf.CeilToInt(attackDamage * damageMultiplier);
+        finalAttackDamage = attackDamage * damageMultiplier;
         finalAttackDamage = Mathf.Max(1, finalAttackDamage);
 
         finalAttackSpeed = attackSpeed * speedMultiplier;

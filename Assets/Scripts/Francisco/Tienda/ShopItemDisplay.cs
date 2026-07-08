@@ -116,6 +116,9 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
 
     private bool VerifityShop()
     {
+        if (PauseController.Instance != null && PauseController.IsGamePaused) return false;
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return false;
+
         if (DialogManager.Instance != null && DialogManager.Instance.IsActive)
         {
             return false;
@@ -124,13 +127,6 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
         if (dialogueEndTime > 0 && (Time.unscaledTime - dialogueEndTime) < dialogueGracePeriod)
         {
             Debug.Log($"[ShopItemDisplay] Compra cancelada por seguridad. Evitando compra accidental por spam.");
-            return false;
-        }
-
-        if (InventoryUIManager.Instance != null &&
-            InventoryUIManager.Instance.IsOpen &&
-            !InventoryUIManager.Instance.IsConfirmPanelOpen)
-        {
             return false;
         }
 
@@ -160,7 +156,6 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
         }
 
         if (PauseController.Instance != null && PauseController.IsGamePaused) return;
-
         if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
 
         if (other.CompareTag("Player"))
@@ -189,7 +184,6 @@ public class ShopItemDisplay : MonoBehaviour, PlayerControlls.IInteractionsActio
         }
 
         if (PauseController.Instance != null && PauseController.IsGamePaused) return;
-
         if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
 
         if (!other.CompareTag("Player")) return;

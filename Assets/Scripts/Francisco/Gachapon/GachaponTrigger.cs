@@ -555,7 +555,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             case StatType.AttackDamage: return "Daño de Ataque Base";
             case StatType.AttackSpeed: return "Velocidad de Ataque Base";
             case StatType.ShieldBlockUpgrade: return "Mejora de Bloqueo del Escudo";
-            case StatType.DamageTaken: return "Daño Recibido";
+            case StatType.Endurance: return "Daño Recibido";
             case StatType.HealthDrainAmount: return "Drenaje de Vida";
             case StatType.LuckStack: return "Pilas de Suerte";
             case StatType.EssenceCostReduction: return "Reducción de Coste de Esencia";

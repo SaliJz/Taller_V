@@ -80,7 +80,7 @@ public class PlayerShieldController : MonoBehaviour
 
     #region Internal State
 
-    private int finalAttackDamage;
+    private float finalAttackDamage;
     private float finalAttackSpeed;
     private float damageMultiplier = 1f;
     private float speedMultiplier = 1f;
@@ -88,7 +88,7 @@ public class PlayerShieldController : MonoBehaviour
     private bool hasShield = true;
     private bool isThrowingShield = false;
 
-    private int currentShieldDamage;
+    private float currentShieldDamage;
     private float currentShieldSpeed;
 
     private Shield activeShield;
@@ -239,7 +239,7 @@ public class PlayerShieldController : MonoBehaviour
     // Metodo para recalcular las estadisticas del escudo
     private void CalculateStats()
     {
-        finalAttackDamage = Mathf.RoundToInt(shieldDamage * damageMultiplier);
+        finalAttackDamage = shieldDamage * damageMultiplier;
         finalAttackSpeed = shieldSpeed * speedMultiplier;
 
         currentShieldDamage = finalAttackDamage;

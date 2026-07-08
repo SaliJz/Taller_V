@@ -1,6 +1,7 @@
-using UnityEngine;
-using TMPro;
 using System.Text;
+using TMPro;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerStatsPanel : MonoBehaviour
 {
@@ -39,11 +40,13 @@ public class PlayerStatsPanel : MonoBehaviour
     private void OnEnable()
     {
         PlayerStatsManager.OnStatChanged += OnStatChangedHandler;
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     private void OnDisable()
     {
         PlayerStatsManager.OnStatChanged -= OnStatChangedHandler;
+        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     private void OnStatChangedHandler(StatType type, float newValue)
@@ -52,6 +55,12 @@ public class PlayerStatsPanel : MonoBehaviour
         {
             UpdateStatsPanel();
         }
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        statsManager = FindAnyObjectByType<PlayerStatsManager>();
+        if (panelRect != null && panelRect.gameObject.activeSelf) UpdateStatsPanel();
     }
 
     private void Update()
@@ -100,24 +109,28 @@ public class PlayerStatsPanel : MonoBehaviour
 
     public void UpdateStatsPanel()
     {
-        if (statsManager == null || statsTextDisplay == null) return;
+        if (statsManager == null || statsTextDisplay == null)
+        {
+            Debug.LogWarning("[PlayerStatsPanel] UpdateStatsPanel abortado: statsManager o statsTextDisplay es null.");
+            return;
+        }
         StringBuilder sb = new StringBuilder();
 
         sb.AppendLine(" <b><color=Yellow>Estadística <pos=50%>Base <pos=75%>Actual</color></b>");
 
         // Porcentajes
-        sb.AppendLine(FormatStat("Resistencia", StatType.DamageTaken, StatDisplayRule.DirectPercent, inverseColors: true));
-        sb.AppendLine(FormatStat("Vel. Melé", StatType.MeleeAttackSpeed, StatDisplayRule.RelativePercent, inverseColors: true));
-        sb.AppendLine(FormatStat("Vel. distancia", StatType.ShieldSpeed, StatDisplayRule.RelativePercent, inverseColors: false));
+        sb.AppendLine(FormatStat("Resistencia", StatType.Endurance, StatDisplayRule.DirectPercent, inverseColors: false));
+        sb.AppendLine(FormatStat("Vel. a Melé", StatType.MeleeAttackSpeed, StatDisplayRule.RelativePercent, inverseColors: false));
+        sb.AppendLine(FormatStat("Vel. a Distancia", StatType.ShieldSpeed, StatDisplayRule.RelativePercent, inverseColors: false));
 
         // Valores Reales
         sb.AppendLine(FormatStat("Daño a melé", StatType.MeleeAttackDamage, StatDisplayRule.RealValue));
         sb.AppendLine(FormatStat("Daño a distancia", StatType.ShieldAttackDamage, StatDisplayRule.RealValue));
         sb.AppendLine(FormatStat("Vel. Movimiento", StatType.MoveSpeed, StatDisplayRule.RealValue));
 
-        // Asumiendo que el alcance de impulso usas el base del movimiento, lo tratamos como RealValue
+        // Asumiendo que el alcance de impulso usa el base del movimiento, lo tratamos como RealValue
         sb.AppendLine(FormatStat("Alc. impulso", StatType.DashRangeFlatBonus, StatDisplayRule.RealValue));
-        sb.AppendLine(FormatStat("Cooldown impulso", StatType.DashCooldownPost, StatDisplayRule.RealValue, inverseColors: true));
+        sb.AppendLine(FormatStat("Enfriamiento impulso", StatType.DashCooldownPost, StatDisplayRule.RealValue, inverseColors: true));
         sb.AppendLine(FormatStat("Alc. Distancia", StatType.ShieldMaxDistance, StatDisplayRule.RealValue));
         sb.AppendLine(FormatStat("Alc. rebote escudo", StatType.ShieldReboundRadius, StatDisplayRule.RealValue));
         sb.AppendLine(FormatStat("Rebotes del escudo", StatType.ShieldMaxRebounds, StatDisplayRule.RealValue));
@@ -126,7 +139,8 @@ public class PlayerStatsPanel : MonoBehaviour
         sb.AppendLine(FormatStat("Desplaz. por golpe", StatType.MeleeComboDisplacement, StatDisplayRule.BonusOnly));
         sb.AppendLine(FormatStat("Empuje a distancia", StatType.ShieldPushForce, StatDisplayRule.BonusOnly));
         sb.AppendLine(FormatStat("Empuje recibido", StatType.KnockbackReceived, StatDisplayRule.BonusOnly, inverseColors: true));
-        sb.AppendLine(FormatStat("Consumo de energía", StatType.HealthDrainAmount, StatDisplayRule.BonusOnly, inverseColors: true));
+        //sb.AppendLine(FormatStat("Consumo de vida", StatType.HealthDrainAmount, StatDisplayRule.BonusOnly, inverseColors: true));
+        sb.AppendLine(FormatStat("Consumo de aguante", StatType.StaminaConsumption, StatDisplayRule.RealValue, inverseColors: true));
         sb.AppendLine(FormatStat("Vida al matar", StatType.LifestealOnKill, StatDisplayRule.BonusOnly));
 
         statsTextDisplay.text = sb.ToString();

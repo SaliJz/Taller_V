@@ -259,7 +259,8 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
     private void ReadSteamSkillInput()
     {
         if (SteamInputManager.Instance == null) return;
-        if (PauseController.IsGamePaused) return;
+        if (PauseController.Instance != null && PauseController.IsGamePaused) return;
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
 
         bool pressed = SteamInputManager.Instance.GetActivateSkillPressed();
 
@@ -337,7 +338,8 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
 
     public void OnActivateSkill(InputAction.CallbackContext context)
     {
-        if (PauseController.IsGamePaused) return;
+        if (PauseController.Instance != null && PauseController.IsGamePaused) return;
+        if (InventoryUIManager.Instance != null && InventoryUIManager.Instance.IsOpen) return;
 
         if (!context.started) return;
 

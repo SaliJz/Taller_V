@@ -474,7 +474,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
                 damageInvulnerabilityCoroutine = StartCoroutine(DamageInvulnerabilityRoutine());
             }
 
-            if (currentHealth <= 0) Die();
+            if (currentHealth <= 0)
+            {
+                Die();
+                return;
+            }
         }
 
         SyncCurrentHealthToSO();
@@ -499,7 +503,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             return damageAmount;
         }
 
-        float resistance = statsManager.GetCurrentStat(StatType.DamageTaken) / 100f;
+        float resistance = statsManager.GetCurrentStat(StatType.Endurance) / 100f;
 
         if (resistance <= 0f) resistance = 0.01f;
 
@@ -1044,7 +1048,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (HasAmuletOfEndurance) return;
 
         HasAmuletOfEndurance = true;
-        statsManager.ApplyNamedModifier("EnduranceAmulet_DR", StatType.DamageTaken, 0.15f);
+        statsManager.ApplyNamedModifier("EnduranceAmulet_DR", StatType.Endurance, 0.15f);
 
         ReportDebug("¡Amuleto de Endurecimiento ACTIVADO! Reducción de daño +15% aplicada.", 2);
     }

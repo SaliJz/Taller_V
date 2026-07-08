@@ -19,12 +19,12 @@ public class PlayerStats : ScriptableObject
     public float attackSpeed = 1.0f;
 
     [Header("Ataque melee")]
-    public int meleeAttackDamage = 10;
+    public float meleeAttackDamage = 10;
     public float meleeSpeed = 1f;
     public float meleeRadius = 0.8f;
 
     [Header("Ataque a distancia")]
-    public int shieldAttackDamage = 10;
+    public float shieldAttackDamage = 10;
     public float shieldSpeed = 20f;
     public float shieldMaxDistance = 30f;
     public int shieldMaxRebounds = 1;

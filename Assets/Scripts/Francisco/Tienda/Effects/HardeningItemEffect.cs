@@ -26,7 +26,7 @@ public class HardeningItemEffect : ItemEffectBase
 
     public override void ApplyEffect(PlayerStatsManager statsManager)
     {
-        statsManager.ApplyNamedModifier(DR_MODIFIER_KEY, StatType.DamageTaken, -damageReductionAmount, isPercentage: true);
+        statsManager.ApplyNamedModifier(DR_MODIFIER_KEY, StatType.Endurance, -damageReductionAmount, isPercentage: true);
         CombatEventsManager.OnEnemyKilled += HandleEnemyKilled;
 
         Debug.Log("[HardeningItemEffect] Aplicado: Reducción de Daño y vida temporal activada.");

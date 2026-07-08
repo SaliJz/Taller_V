@@ -759,12 +759,7 @@ public class ShopManager : MonoBehaviour
         {
             foreach (var drawback in item.drawbacks)
             {
-                float amount = drawback.amount;
-                if (drawback.type != StatType.DamageTaken &&
-                    drawback.type != StatType.KnockbackReceived &&
-                    drawback.type != StatType.StaminaConsumption)
-                    amount *= -1f;
-                playerStatsManager.ApplyModifier(drawback.type, amount,
+                playerStatsManager.ApplyModifier(drawback.type, drawback.amount,
                     isPercentage: drawback.isPercentage,
                     isTemporary: item.isTemporary, item.temporaryDuration,
                     isByRooms: item.isByRooms, item.temporaryRooms);
@@ -873,12 +868,7 @@ public class ShopManager : MonoBehaviour
 
         foreach (var drawback in item.drawbacks)
         {
-            float appliedAmount = drawback.amount;
-            if (drawback.type != StatType.DamageTaken &&
-                drawback.type != StatType.KnockbackReceived &&
-                drawback.type != StatType.StaminaConsumption)
-                appliedAmount *= -1f;
-            playerStatsManager.ApplyModifier(drawback.type, -appliedAmount,
+            playerStatsManager.ApplyModifier(drawback.type, -drawback.amount,
                 isPercentage: drawback.isPercentage, isTemporary: false);
         }
 

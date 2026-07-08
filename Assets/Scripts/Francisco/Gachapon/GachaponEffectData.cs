@@ -130,7 +130,7 @@ public class GachaponEffectData : ScriptableObject
             case StatType.AttackDamage: return "Daño de Ataque";
             case StatType.AttackSpeed: return "Velocidad de Ataque";
             case StatType.ShieldBlockUpgrade: return "Mejora de Bloqueo";
-            case StatType.DamageTaken: return "Daño Recibido";
+            case StatType.Endurance: return "Daño Recibido";
             case StatType.HealthDrainAmount: return "Drenaje de Vida";
             case StatType.LuckStack: return "Suerte";
             case StatType.EssenceCostReduction: return "Reducción de Coste";

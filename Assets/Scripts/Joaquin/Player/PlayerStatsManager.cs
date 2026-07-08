@@ -27,7 +27,7 @@ public enum StatType
     AttackDamage,
     AttackSpeed,
     ShieldBlockUpgrade,
-    DamageTaken,
+    Endurance,
     HealthDrainAmount,
 
     LuckStack,
@@ -71,7 +71,7 @@ public partial class PlayerStatsManager : MonoBehaviour
     #region Inspector - ScriptableObjects
 
     [Header("ScriptableObjects")]
-    [SerializeField] private PlayerStats playerStats;
+    [SerializeField] private PlayerStats baseStatsSO;
     [SerializeField] private PlayerStats currentStatSO;
 
     #endregion
@@ -164,7 +164,8 @@ public partial class PlayerStatsManager : MonoBehaviour
         }
 
         InitializeStats();
-        ResetCurrentStatsToBase();
+        LoadCurrentStatsFromSO();
+        //ResetCurrentStatsToBase();
     }
 
     private void Start()
@@ -208,17 +209,17 @@ public partial class PlayerStatsManager : MonoBehaviour
     private void Update()
     {
         // Toggle del panel con la tecla P
-        if (Input.GetKeyDown(KeyCode.P))
-        {
-            ToggleStatsPanel();
-        }
+        //if (Input.GetKeyDown(KeyCode.P))
+        //{
+        //    ToggleStatsPanel();
+        //}
 
-        bool shiftPresionado = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        //bool shiftPresionado = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
-        if (shiftPresionado && Input.GetKeyDown(KeyCode.E))
-        {
-            showDebugOnGUI = !showDebugOnGUI;
-        }
+        //if (shiftPresionado && Input.GetKeyDown(KeyCode.E))
+        //{
+        //    showDebugOnGUI = !showDebugOnGUI;
+        //}
     }
 
     #endregion
@@ -231,19 +232,22 @@ public partial class PlayerStatsManager : MonoBehaviour
     /// </summary>
     private void InitializeStats()
     {
-        if (currentStatSO == null)
+        if (baseStatsSO == null)
         {
+            Debug.LogError("[PlayerStatsManager] Faltó asignar 'playerStats' en el Inspector.");
             return;
         }
 
         foreach (StatType s in Enum.GetValues(typeof(StatType)))
         {
-            float baseValue = GetStatFromSO(currentStatSO, s);
+            float baseValue = GetStatFromSO(baseStatsSO, s);
 
             baseStats[s] = baseValue;
 
             if (!statVisualState.ContainsKey(s))
+            {
                 statVisualState[s] = 0;
+            }
         }
     }
 
@@ -284,7 +288,7 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.DashRangeFlatBonus:
                 return statsSO.dashRangeFlatBonusBase;
 
-            case StatType.DamageTaken:
+            case StatType.Endurance:
                 return statsSO.damageTakenBase;
 
             case StatType.KnockbackReceived:
@@ -312,6 +316,23 @@ public partial class PlayerStatsManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Restaura los valores afectados por los ítems al cambiar de escena, para no perderlos.
+    /// </summary>
+    private void LoadCurrentStatsFromSO()
+    {
+        if (currentStatSO == null) return;
+
+        foreach (StatType s in Enum.GetValues(typeof(StatType)))
+        {
+            float runValue = GetStatFromSO(currentStatSO, s);
+            currentStats[s] = runValue;
+
+            float delta = currentStats[s] - baseStats[s];
+            MarkVisualStateFromDelta(s, delta);
+        }
+    }
+
+    /// <summary>
     /// Funcin que reinicia las estadsticas actuales a sus valores base.
     /// Esto ocurre en cada carga de escena para la nueva instancia.
     /// </summary>
@@ -324,6 +345,8 @@ public partial class PlayerStatsManager : MonoBehaviour
             OnStatChanged?.Invoke(kvp.Key, kvp.Value);
         }
 
+        lifeStageModifiers.Clear();
+
         UpdateStatsDisplay();
     }
 
@@ -332,9 +355,9 @@ public partial class PlayerStatsManager : MonoBehaviour
     /// </summary> 
     public void ResetStatsOnDeath()
     {
-        if (playerStats != null && currentStatSO != null)
+        if (baseStatsSO != null && currentStatSO != null)
         {
-            CopyStatsToSO(playerStats, currentStatSO);
+            CopyStatsToSO(baseStatsSO, currentStatSO);
         }
 
         InitializeStats();
@@ -346,9 +369,9 @@ public partial class PlayerStatsManager : MonoBehaviour
     /// </summary>
     public void ResetRunStatsToDefaults()
     {
-        if (playerStats != null && _currentStatSO != null)
+        if (baseStatsSO != null && _currentStatSO != null)
         {
-            CopyStatsToSO(playerStats, _currentStatSO);
+            CopyStatsToSO(baseStatsSO, _currentStatSO);
 
             _currentStatSO.currentHealth = _currentStatSO.maxHealth;
 
@@ -491,11 +514,11 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.LifestealOnKill: so.lifestealOnKillAmount = value; break;
             case StatType.LuckStack: so.luckStackBase = value; break;
 
-            case StatType.MeleeAttackDamage: so.meleeAttackDamage = Mathf.RoundToInt(value); break;
+            case StatType.MeleeAttackDamage: so.meleeAttackDamage = value; break;
             case StatType.MeleeAttackSpeed: so.meleeSpeed = value; break;
             case StatType.MeleeRadius: so.meleeRadius = value; break;
 
-            case StatType.ShieldAttackDamage: so.shieldAttackDamage = Mathf.RoundToInt(value); break;
+            case StatType.ShieldAttackDamage: so.shieldAttackDamage = value; break;
             case StatType.ShieldSpeed: so.shieldSpeed = value; break;
             case StatType.ShieldMaxDistance: so.shieldMaxDistance = value; break;
             case StatType.ShieldMaxRebounds: so.shieldMaxRebounds = Mathf.RoundToInt(value); break;
@@ -507,7 +530,7 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.DashRangeMultiplier: so.dashRangeMultiplierBase = value; break;
             case StatType.DashRangeFlatBonus: so.dashRangeFlatBonusBase = value; break;
 
-            case StatType.DamageTaken: so.damageTakenBase = value; break;
+            case StatType.Endurance: so.damageTakenBase = value; break;
             case StatType.KnockbackReceived: so.knockbackReceivedBase = value; break;
             case StatType.DashCooldownPost: so.dashCooldownPostBase = value; break;
             case StatType.MeleeComboDisplacement: so.meleeComboDisplacementBase = value; break;
@@ -542,7 +565,7 @@ public partial class PlayerStatsManager : MonoBehaviour
             case StatType.StaminaConsumption:
             case StatType.DashCooldownPost:
                 return -5f;
-            case StatType.DamageTaken:
+            case StatType.Endurance:
                 return 0.1f;
             case StatType.MeleeRadius:
             case StatType.ShieldReboundRadius:
@@ -591,11 +614,14 @@ public partial class PlayerStatsManager : MonoBehaviour
         if (isPercentage && type != StatType.ShieldBlockUpgrade)
         {
             float baseVal = baseStats[type];
+            if (lifeStageModifiers.TryGetValue(type, out var stageMod))
+            {
+                baseVal += stageMod;
+            }
 
             if (baseVal == 0f)
             {
                 modifierValue = amount;
-                Debug.LogWarning($"[PlayerStatsManager] Advertencia: Se aplicó un % a {type} (Base 0). Forzado a valor plano: {amount}");
             }
             else
             {
