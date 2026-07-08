@@ -86,7 +86,16 @@ public class BaalProjectile : MonoBehaviour
 
         PlaySound(explosionClip);
         ApplyImpactAoE();
-        SpawnImpactVFX();
+
+        if(other.gameObject.TryGetComponent(out PlayerHealth health))
+        {
+            if(health.CurrentHealth > 0) SpawnImpactVFX();
+        }
+        else
+        {
+            SpawnImpactVFX();
+        }
+        
         Destroy(gameObject);
     }
 

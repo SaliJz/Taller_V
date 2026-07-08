@@ -360,6 +360,7 @@ GameObject:
   - component: {fileID: 3868696293632530206}
   - component: {fileID: 6486720461521581022}
   - component: {fileID: 8480598332749182031}
+  - component: {fileID: 3913278212945056899}
   m_Layer: 0
   m_Name: Boss3_Projectile
   m_TagString: Untagged
@@ -523,5 +524,28 @@ MonoBehaviour:
   baseLetterSpacing: 0.08
   widthSpacingMultiplier: 1.2
   minimumLetterWidth: 36
-  letterOffsetStep: {x: 0.16, y: -0.015, z: 0.08}
+  verticalFalloffPerLetter: -0.01
+  depthLagPerLetter: 0.04
   alwaysFaceMainCamera: 1
+--- !u!114 &3913278212945056899
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7913098823340033937}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0aac80912e5b0246b0c4161d40e77a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shadowPrefab: {fileID: 4558005614469577162, guid: 5486048298c515f41913b1617b0f5cc5, type: 3}
+  GroundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  shadowPosition: {fileID: 0}
+  setParentInParent: 0
+  shadowScale: 2.5
+  spawnYoffset: 0.02
+  checkInterval: 0.1
+  checkShadows: 0
