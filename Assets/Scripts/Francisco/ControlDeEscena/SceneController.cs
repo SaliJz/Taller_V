@@ -30,7 +30,7 @@ public class SceneController : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(_inputKey))
+        if ( Input.GetKeyDown(_inputKey))
         {
             OnKeyPressed.Invoke();
         }
@@ -44,7 +44,7 @@ public class SceneController : MonoBehaviour
 
         foreach (var transition in shortcutData.sceneTransitions)
         {
-            if (Input.GetKeyDown(transition.inputKey))
+            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(transition.inputKey))
             {
                 LoadSceneByName(transition.targetSceneName);
                 break; 
