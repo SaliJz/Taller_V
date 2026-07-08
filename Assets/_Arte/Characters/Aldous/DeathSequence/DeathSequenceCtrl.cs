@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Playables;
 
@@ -30,8 +29,8 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
 
     public void StartSequence(Action onFinished = null)
     {
-        HideOccludingObjects();
-        HideNearbyObjects();
+        CollectHiddenObjects();
+        // HideNearbyObjects();
 
         foreach(GameObject g in hiddenObjects)
         {
@@ -78,51 +77,101 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
         SetFloat(intensidadProp, 1);
     }
 
-    private void HideOccludingObjects()
+    private void CollectHiddenObjects()
     {
+        ParticleSystem[] allParticles = FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None);
+
         Vector3 camPos = mainCam.transform.position;
         Vector3 playerPos = playerGFX.transform.position;
 
         Vector3 direction = (playerPos - camPos).normalized;
         float distance = Vector3.Distance(camPos, playerPos);
+        Vector3 occlusionCenter = camPos + direction * (distance * 0.5f);
 
-        RaycastHit[] hits = Physics.BoxCastAll(
+        //Raycast Objetos con colision entre el jugador y la camara
+        RaycastHit[] occludingHits = Physics.BoxCastAll(
             camPos,
             boxHalfExtents,
             direction,
             mainCam.transform.rotation,
             distance,
-            occlusionMask
+            occlusionMask,
+            QueryTriggerInteraction.Collide
         );
-
-        foreach(var hit in hits)
-        {
-            GameObject obj = hit.collider.gameObject;
-            // if (obj == playerGFX) continue;
-
-            // obj.SetActive(false);
-            hiddenObjects.Add(obj);
-        }
-    }
-
-    private void HideNearbyObjects()
-    {
-        Collider[] hits = Physics.OverlapBox(
+        //Overlap box Objetos con colision cerca al jugador
+        Collider[] nearbyHits = Physics.OverlapBox(
             playerGFX.transform.position,
             nearbyHalfExtents,
             playerGFX.transform.rotation,
-            occlusionMask
+            occlusionMask,
+            QueryTriggerInteraction.Collide
         );
 
-        foreach(Collider hit in hits)
+        //Agregar objetos entre la camara y el jugador a la lista
+        foreach(var hit in occludingHits)
         {
-            GameObject obj = hit.gameObject;
-            // if (obj == playerGFX) continue;
-            if (hiddenObjects.Contains(obj)) continue;
-
-            // obj.SetActive(false);
+            GameObject obj = hit.collider.gameObject;
             hiddenObjects.Add(obj);
         }
+        //Agregar objetos cerca al jugador a la lista
+        foreach(Collider hit in nearbyHits)
+        {
+            GameObject obj = hit.gameObject;
+            if (hiddenObjects.Contains(obj)) continue;
+            hiddenObjects.Add(obj);
+        }
+        //Añadir particulas entre el jugador y la camara y cercanas al jugador a la lista
+        foreach(var ps in allParticles)
+        {
+            GameObject obj = ps.gameObject;
+
+            if (hiddenObjects.Contains(obj)) continue;
+
+            bool insideOcclusionBox = IsPointInsideOrientedBox(
+                ps.transform.position,
+                occlusionCenter,
+                mainCam.transform.rotation,
+                boxHalfExtents
+            );
+
+            bool insideNearbyBox = IsPointInsideOrientedBox(
+                ps.transform.position,
+                playerGFX.transform.position,
+                playerGFX.transform.rotation,
+                nearbyHalfExtents
+            );
+
+            if (insideNearbyBox || insideOcclusionBox) hiddenObjects.Add(obj);
+        }
+    }
+
+    // private void HideNearbyObjects()
+    // {
+    //     Collider[] hits = Physics.OverlapBox(
+    //         playerGFX.transform.position,
+    //         nearbyHalfExtents,
+    //         playerGFX.transform.rotation,
+    //         occlusionMask
+    //     );
+
+    //     foreach(Collider hit in hits)
+    //     {
+    //         GameObject obj = hit.gameObject;
+    //         // if (obj == playerGFX) continue;
+    //         if (hiddenObjects.Contains(obj)) continue;
+
+    //         // obj.SetActive(false);
+    //         hiddenObjects.Add(obj);
+    //     }
+    // }
+
+    private bool IsPointInsideOrientedBox(Vector3 point, Vector3 boxCenter, Quaternion boxOrientation, Vector3 halfExtents)
+    {
+        Vector3 localPoint = Quaternion.Inverse(boxOrientation) * (point - boxCenter);
+
+        return Mathf.Abs(localPoint.x) <= halfExtents.x
+            && Mathf.Abs(localPoint.y) <= halfExtents.y
+            && Mathf.Abs(localPoint.z) <= halfExtents.z;
     }
 
     #if UNITY_EDITOR

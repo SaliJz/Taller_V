@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using Unity.Cinemachine;
+using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -589,7 +590,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         if (deathSequence != null)
         {
-            deathSequence.StartSequence(() => ExecuteDeathCleanup(sm, im));
+            deathSequence.StartSequence(() => StartCoroutine(CleanupDelay(sm, im, 1f)));
             onDeathing?.Invoke();
         }
         else
@@ -643,6 +644,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         MerchantDialogHandler.ResetReputationState();
         SceneManager.LoadScene(sceneToLoadOnDeath);
+    }
+
+    private IEnumerator CleanupDelay(PlayerStatsManager sm, InventoryManager im, float delay)
+    {
+        yield return new WaitForSecondsRealtime(delay);
+        ExecuteDeathCleanup(sm, im);
     }
 
     public float GetCurrentHealth() { return currentHealth; }

@@ -11,7 +11,7 @@ public class FadeController : FullScreenEffectsBase
     #region Inspector Fields
 
     [Header("Configuration")]
-    public float fadeDuration = 1f;
+    public float fadeDuration = 1.3f;
 
     [Header("Global Settings")]
     public Color globalFadeColor = Color.black;
