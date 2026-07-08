@@ -1100,10 +1100,11 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
     /// </summary>
     private void ExecuteAttack(GameObject target, float damage)
     {
-        if (target.TryGetComponent(out PlayerBlockSystem blockSystem) &&
-            target.TryGetComponent(out PlayerHealth health))
+        if (target.TryGetComponent(out PlayerHealth health))
         {
-            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(transform.position))
+            if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) 
+                && blockSystem.IsBlocking 
+                && blockSystem.CanBlockAttack(transform.position))
             {
                 float remaining = blockSystem.ProcessBlockedAttack(damage);
                 if (remaining > 0f) health.TakeDamage(remaining, false, AttackDamageType.Melee);

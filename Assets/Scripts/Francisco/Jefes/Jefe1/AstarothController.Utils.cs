@@ -84,9 +84,11 @@ public partial class AstarothController
 
     private void ExecuteAttack(GameObject target, Vector3 position, float damageAmount)
     {
-        if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
+        if (target.TryGetComponent<PlayerHealth>(out var health))
         {
-            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(position))
+            if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) 
+                && blockSystem.IsBlocking 
+                && blockSystem.CanBlockAttack(position))
             {
                 float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
                 if (remainingDamage > 0f) health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);

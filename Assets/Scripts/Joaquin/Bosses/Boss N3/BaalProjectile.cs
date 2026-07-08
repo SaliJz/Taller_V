@@ -154,12 +154,13 @@ public class BaalProjectile : MonoBehaviour
         return Mathf.Lerp(damageMin, damageMax, t);
     }
 
-    private void DealDamageToPlayer(GameObject player, float damage)
+    private void DealDamageToPlayer(GameObject target, float damage)
     {
-        if (player.TryGetComponent(out PlayerBlockSystem blockSystem) &&
-            player.TryGetComponent(out PlayerHealth health))
+        if (target.TryGetComponent(out PlayerHealth health))
         {
-            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(transform.position))
+            if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) 
+                && blockSystem.IsBlocking 
+                && blockSystem.CanBlockAttack(transform.position))
             {
                 float remaining = blockSystem.ProcessBlockedAttack(damage);
                 if (remaining > 0f)
@@ -170,7 +171,7 @@ public class BaalProjectile : MonoBehaviour
             }
             health.TakeDamage(damage, false, AttackDamageType.Ranged);
         }
-        else if (player.TryGetComponent(out PlayerHealth healthOnly))
+        else if (target.TryGetComponent(out PlayerHealth healthOnly))
         {
             healthOnly.TakeDamage(damage, false, AttackDamageType.Ranged);
         }

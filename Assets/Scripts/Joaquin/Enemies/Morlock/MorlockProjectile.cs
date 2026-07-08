@@ -106,10 +106,11 @@ public class MorlockProjectile : MonoBehaviour
 
     private bool ExecuteAttack(GameObject target, float damageAmount)
     {
-        if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) &&
-            target.TryGetComponent<PlayerHealth>(out var health))
+        if (target.TryGetComponent<PlayerHealth>(out var health))
         {
-            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(this.transform.position))
+            if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) 
+                && blockSystem.IsBlocking 
+                && blockSystem.CanBlockAttack(this.transform.position))
             {
                 float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount, this.gameObject);
 

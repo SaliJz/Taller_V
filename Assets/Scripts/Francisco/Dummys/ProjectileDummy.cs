@@ -46,10 +46,11 @@ public class ProjectileDummy : MonoBehaviour
 
         if (collidedObject.CompareTag("Player"))
         {
-            if (collidedObject.TryGetComponent<PlayerHealth>(out var playerHealth) &&
-                collidedObject.TryGetComponent<PlayerBlockSystem>(out var blockSystem))
+            if (collidedObject.TryGetComponent<PlayerHealth>(out var playerHealth))
             {
-                if (blockSystem.IsBlockingState() && blockSystem.CanBlockAttack(this.transform.position))
+                if (collidedObject.TryGetComponent<PlayerBlockSystem>(out var blockSystem) 
+                    && blockSystem.IsBlockingState() 
+                    && blockSystem.CanBlockAttack(this.transform.position))
                 {
                     float remainingDamage = blockSystem.ProcessBlockedAttack(damage, this.gameObject);
 

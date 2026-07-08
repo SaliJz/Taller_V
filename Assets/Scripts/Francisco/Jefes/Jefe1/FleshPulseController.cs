@@ -107,10 +107,12 @@ public class FleshPulseController : MonoBehaviour
 
     private void ExecuteAttack(GameObject target, float damageAmount)
     {
-        if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) && target.TryGetComponent<PlayerHealth>(out var health))
+        if (target.TryGetComponent<PlayerHealth>(out var health))
         {
             // Verificar si el ataque es bloqueado
-            if (blockSystem.IsBlocking && blockSystem.CanBlockAttack(transform.position))
+            if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) 
+                && blockSystem.IsBlocking 
+                && blockSystem.CanBlockAttack(transform.position))
             {
                 float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
 
