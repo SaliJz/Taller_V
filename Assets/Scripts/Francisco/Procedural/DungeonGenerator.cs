@@ -1295,6 +1295,11 @@ public class DungeonGenerator : MonoBehaviour
                 playerMovement.SetCanMove(true);
             }
 
+            if (combatActionManager != null)
+            {
+                combatActionManager.enabled = true;
+            }
+
             IsTransitioning = false;
             yield break;
         }
@@ -1547,6 +1552,11 @@ public class DungeonGenerator : MonoBehaviour
                 if (playerMovement != null)
                 {
                     playerMovement.SetCanMove(true);
+
+                    if (combatActionManager != null)
+                    {
+                        combatActionManager.enabled = true;
+                    }
 
                     if (newRoom != null)
                     {

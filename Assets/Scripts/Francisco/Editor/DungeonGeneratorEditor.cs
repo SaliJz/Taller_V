@@ -346,6 +346,7 @@ public class DungeonGeneratorInspector : Editor
         DrawPropertyIfExists("roomTransitionController", "Room Transition Controller");
         DrawPropertyIfExists("playerHealth", "Player Health");
         DrawPropertyIfExists("statsManager", "Stats Manager");
+        DrawPropertyIfExists("combatActionManager", "Player Combat Action Manager");
         DrawPropertyIfExists("_debugCompleteRoomKey", "Tecla Completar Sala");
         EditorGUILayout.EndVertical();
     }
