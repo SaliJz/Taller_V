@@ -5953,7 +5953,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &361416063
 Transform:
   m_ObjectHideFlags: 0
@@ -9119,11 +9119,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3025709195672070487, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3025709195672070487, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3425788958060345074, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
       propertyPath: m_LocalPosition.x
@@ -9169,13 +9169,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: Jitter_LV1
       objectReference: {fileID: 0}
-    - target: {fileID: 8060677377642385979, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
-      propertyPath: m_AnchorMax.x
+    - target: {fileID: 3776010021068202972, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
+      propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8060677377642385979, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8060677377642385979, guid: a0a395e3a2799904882a94cbeb97fd51, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9335,10 +9339,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1476918748401959463, guid: 23e725f00087afe40a42b0cf25ff3671, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 1578247607738833186, guid: 23e725f00087afe40a42b0cf25ff3671, type: 3}
       propertyPath: m_LocalPosition.x
       value: 13.9
@@ -9379,25 +9379,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1643787711417254512, guid: 23e725f00087afe40a42b0cf25ff3671, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 8600994530270653680, guid: 23e725f00087afe40a42b0cf25ff3671, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8600994530270653680, guid: 23e725f00087afe40a42b0cf25ff3671, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9105253917218681239, guid: 23e725f00087afe40a42b0cf25ff3671, type: 3}
       propertyPath: m_Name
       value: Boss3_Baal
-      objectReference: {fileID: 0}
-    - target: {fileID: 9105253917218681239, guid: 23e725f00087afe40a42b0cf25ff3671, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

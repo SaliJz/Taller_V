@@ -13,6 +13,7 @@ public class PurulentNode : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private EnemyHealth enemyHealth;
+    [SerializeField] private EnemyVisualEffects enemyVisualEffects;
 
     [Header("Emergence Setup")]
     [Tooltip("Profundidad desde la que emerge el nodo.")]
@@ -46,6 +47,15 @@ public class PurulentNode : MonoBehaviour
     [Tooltip("Intervalo entre spawns de larva.")]
     [SerializeField] private float larvaInterval = 5f;
 
+    #region Inspector - Telegraphed Settings
+
+    [Header("Anticipacion de Ataque")]
+    [SerializeField] protected float anticipationPauseDuration = 0.6f;
+    [SerializeField] protected float anticipationSFXPitch = 1.0f;
+    [SerializeField] protected AudioClip anticipationSFX;
+
+    #endregion
+
     [Header("Visual")]
     [SerializeField] private ParticleSystem fireVFX;
 
@@ -63,7 +73,9 @@ public class PurulentNode : MonoBehaviour
 
     private bool isAlive = true;
     private bool isEmerged = false;
+    protected bool isInAnticipation = false;
     private Transform player;
+    protected Coroutine anticipationCoroutine = null;
     private List<Larva> activeLarvas = new List<Larva>(); // Lista de larvas generadas
 
     #endregion
@@ -73,6 +85,7 @@ public class PurulentNode : MonoBehaviour
     private void Awake()
     {
         if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
+        if (enemyVisualEffects == null) enemyVisualEffects = GetComponent<EnemyVisualEffects>();
         if (audioSource == null) audioSource = GetComponent<AudioSource>();
     }
 
@@ -141,6 +154,10 @@ public class PurulentNode : MonoBehaviour
 
             if (!isAlive) yield break;
             if (player == null) continue;
+
+            StartAnticipationPause();
+
+            yield return new WaitUntil(() => !isInAnticipation);
 
             FireProjectile();
         }
@@ -258,8 +275,54 @@ public class PurulentNode : MonoBehaviour
         }
 
         activeLarvas.Clear();
-
+        CancelAnticipation();
         StopAllCoroutines();
+    }
+
+    #endregion
+
+    #region Hit Stun & Anticipation
+
+    public void StartAnticipationPause()
+    {
+        if (!isAlive) return;
+        if (anticipationCoroutine != null) StopCoroutine(anticipationCoroutine);
+        anticipationCoroutine = StartCoroutine(AnticipationRoutine());
+    }
+
+    protected virtual IEnumerator AnticipationRoutine()
+    {
+        isInAnticipation = true;
+
+        if (audioSource != null && anticipationSFX != null)
+        {
+            audioSource.pitch = anticipationSFXPitch;
+            audioSource.PlayOneShot(anticipationSFX);
+            audioSource.pitch = 1f;
+        }
+
+        // Blink rojo de anticipacion
+        if (enemyVisualEffects != null)
+        {
+            enemyVisualEffects.PlayAnticipationBlink(anticipationPauseDuration);
+        }
+
+        yield return new WaitForSeconds(anticipationPauseDuration);
+
+        isInAnticipation = false;
+        anticipationCoroutine = null;
+    }
+
+    protected void CancelAnticipation()
+    {
+        if (anticipationCoroutine != null)
+        {
+            StopCoroutine(anticipationCoroutine);
+            anticipationCoroutine = null;
+        }
+
+        if (enemyVisualEffects != null) enemyVisualEffects.CancelAnticipationBlink();
+        isInAnticipation = false;
     }
 
     #endregion

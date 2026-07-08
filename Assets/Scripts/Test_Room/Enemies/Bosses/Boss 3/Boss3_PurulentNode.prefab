@@ -10369,8 +10369,8 @@ Transform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 3864543833156617170}
-  - {fileID: 9168933263397490063}
   - {fileID: 1701377127599754685}
+  - {fileID: 9168933263397490063}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!136 &4635811515869350624
@@ -10436,6 +10436,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyHealth: {fileID: 4183819049308804750}
+  enemyVisualEffects: {fileID: 1582909294822250493}
   emergenceDepth: 3
   emergenceDuration: 2
   navObstacle: {fileID: 8585920139361007808}
@@ -10449,6 +10450,9 @@ MonoBehaviour:
   fireInterval: 1.45
   larvaPrefab: {fileID: 2070855010256960706, guid: d77c866a58ba6f84c818e09b699bd71c, type: 3}
   larvaInterval: 8.5
+  anticipationPauseDuration: 0.6
+  anticipationSFXPitch: 1
+  anticipationSFX: {fileID: 0}
   fireVFX: {fileID: 0}
   audioSource: {fileID: 8498830364032888782}
   fireSFX: {fileID: 0}
@@ -10509,7 +10513,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 120953a634ec616478c5722a12285e45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  renderers: []
+  renderers:
+  - {fileID: 566447414600571147}
   damageNumberPrefab: {fileID: 3347622852007741979, guid: 0fe22b1b42159b843b8867448643daea, type: 3}
   damageNumberParent: {fileID: 7704264365160314057}
   audioSource: {fileID: 8498830364032888782}
@@ -10517,7 +10522,7 @@ MonoBehaviour:
   toughnessBlockSFX: {fileID: 0}
   normalHitSFX: {fileID: 0}
   criticalHitSFX: {fileID: 0}
-  useAmountFlash: 0
+  useAmountFlash: 1
   amountFlashProperty: _Amount
   amountFlashPeakValue: 1
   amountFlashRestValue: 0
@@ -10529,8 +10534,8 @@ MonoBehaviour:
   glowIntensity: 2
   toughnessColor: {r: 0.92941177, g: 0.8156863, b: 0.80784315, a: 1}
   anticipationBlinkColor: {r: 1, g: 0, b: 0, a: 1}
-  normalColor: {r: 0, g: 1, b: 0, a: 1}
-  criticalColor: {r: 0, g: 0.49019608, b: 0, a: 1}
+  normalColor: {r: 1, g: 0, b: 0, a: 1}
+  criticalColor: {r: 0.5294118, g: 0, b: 0, a: 1}
 --- !u!208 &8585920139361007808
 NavMeshObstacle:
   m_ObjectHideFlags: 0
