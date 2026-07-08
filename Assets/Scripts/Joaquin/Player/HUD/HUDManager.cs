@@ -38,6 +38,10 @@ public class HUDManager : MonoBehaviour
     [SerializeField] private GameObject interactionPromptPanel;
     [SerializeField] private TextMeshProUGUI interactionPromptText;
 
+    [Header("Prompt de Interaccion GACHAPON")]
+    [SerializeField] private GameObject interactionPromptGACHAPONPanel;
+    [SerializeField] private TextMeshProUGUI interactionPromptGACHAPONText;
+
     #endregion
 
     #region Inspector - Etapas de Vida Root Objects
@@ -644,6 +648,22 @@ public class HUDManager : MonoBehaviour
                 : "[E]";
 
             interactionPromptText.text = $"{buttonPrompt} {actionText}";
+        }
+    }
+
+    public void SetInteractionPromptGACHAPON(bool active, string actionName, string actionText)
+    {
+        if (interactionPromptGACHAPONPanel == null) return;
+
+        interactionPromptGACHAPONPanel.SetActive(active);
+
+        if (active)
+        {
+            string buttonPrompt = InputIconManager.Instance != null
+                ? InputIconManager.Instance.GetPromptForAction(actionName)
+                : "[E]";
+
+            interactionPromptGACHAPONText.text = $"{buttonPrompt} {actionText}";
         }
     }
 

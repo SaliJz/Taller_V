@@ -193,11 +193,11 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
             if (!isActivated && HUDManager.Instance != null)
             {
-                HUDManager.Instance.SetInteractionPrompt(true, "Interact", "TIRAR");
+                HUDManager.Instance.SetInteractionPromptGACHAPON(true, "Interact", "TIRAR");
             }
             else
             {
-                HUDManager.Instance.SetInteractionPrompt(false, "Interact", "TIRAR");
+                HUDManager.Instance.SetInteractionPromptGACHAPON(false, "Interact", "TIRAR");
             }
         }
     }
@@ -216,7 +216,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
             if (HUDManager.Instance != null)
             {
-                HUDManager.Instance.SetInteractionPrompt(false, "Interact", "TIRAR");
+                HUDManager.Instance.SetInteractionPromptGACHAPON(false, "Interact", "TIRAR");
             }
         }
     }
@@ -234,7 +234,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
         if (HUDManager.Instance != null)
         {
-            HUDManager.Instance.SetInteractionPrompt(false, "Interact", "TIRAR");
+            HUDManager.Instance.SetInteractionPromptGACHAPON(false, "Interact", "TIRAR");
         }
 
         if (animController != null)
@@ -296,7 +296,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             isAnimating = false;
             if (playerIsNear && HUDManager.Instance != null)
             {
-                HUDManager.Instance.SetInteractionPrompt(false, "Interact", "TIRAR");
+                HUDManager.Instance.SetInteractionPromptGACHAPON(false, "Interact", "TIRAR");
             }
         }
         else
@@ -483,7 +483,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
         if (playerIsNear && HUDManager.Instance != null)
         {
-            HUDManager.Instance.SetInteractionPrompt(true, "Interact", "TIRAR");
+            HUDManager.Instance.SetInteractionPromptGACHAPON(true, "Interact", "TIRAR");
         }
     }
 

@@ -1909,6 +1909,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1201239834943808128, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 172.8919
+      objectReference: {fileID: 0}
     - target: {fileID: 1522249548704971655, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: 'playerActionScripts.Array.data[0]'
       value: 
@@ -2024,10 +2028,6 @@ PrefabInstance:
     - target: {fileID: 3408807421962624191, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 8.300003
-      objectReference: {fileID: 0}
-    - target: {fileID: 3637197910844619800, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 115.899994
       objectReference: {fileID: 0}
     - target: {fileID: 3941580540082525420, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_AnchorMax.y
@@ -2211,7 +2211,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5503696355223287396, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 53.999985
+      value: 54
+      objectReference: {fileID: 0}
+    - target: {fileID: 5941995844965826013, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6230442105961168642, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_AnchorMax.y
@@ -2280,6 +2284,10 @@ PrefabInstance:
     - target: {fileID: 7666400129688133076, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7943425426194253766, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8371086651481551111, guid: 74bdfa43f7beb02448991bcc633c39df, type: 3}
       propertyPath: m_AnchorMax.y
@@ -4022,6 +4030,7 @@ MonoBehaviour:
   roomTransitionController: {fileID: 1755437154}
   playerHealth: {fileID: 0}
   statsManager: {fileID: 0}
+  combatActionManager: {fileID: 0}
   _debugCompleteRoomKey: 111
 --- !u!114 &1755437151
 MonoBehaviour:
