@@ -264,7 +264,7 @@ public class BossIntroDirector : MonoBehaviour
             }
 
             string scriptName = script.GetType().Name;
-            if (scriptName.Contains("Cinemachine") || scriptName.Contains("Feedback") || scriptName.Contains("Distortion"))
+            if (scriptName.Contains("Cinemachine") || scriptName.Contains("Feedback") || scriptName.Contains("Distortion") || scriptName.Contains("Billboard"))
                 continue;
 
             script.enabled = state;
