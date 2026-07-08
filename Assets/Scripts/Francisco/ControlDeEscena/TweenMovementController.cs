@@ -17,6 +17,7 @@ public class TweenMovementController : MonoBehaviour
     [SerializeField] private bool _relativeToStart = false;
 
     [Header("Events")]
+    [SerializeField] private UnityEvent OnMovementStart;
     [SerializeField] private UnityEvent OnMovementFinished;
 
     [Header("Gizmos")]
@@ -45,6 +46,8 @@ public class TweenMovementController : MonoBehaviour
     public void StartMovement()
     {
         transform.DOKill(true);
+
+        OnMovementStart?.Invoke();
 
         Vector3 currentPosition = _isLocal ? transform.localPosition : transform.position;
         Vector3 targetPosition = _relativeToStart ? currentPosition + _endPosition : _endPosition;
