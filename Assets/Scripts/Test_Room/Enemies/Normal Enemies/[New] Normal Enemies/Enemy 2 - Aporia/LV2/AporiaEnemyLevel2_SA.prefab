@@ -1770,8 +1770,8 @@ MonoBehaviour:
   healthBaseColor: {r: 1, g: 1, b: 1, a: 1}
   colorGradientIntensity: 0.3
   canGrantLifestealOnDeath: 1
-  lifestealAmountOnDeathByMelee: 2
-  lifestealAmountOnDeathByDistance: 2
+  lifestealAmountOnDeathByMelee: 2.75
+  lifestealAmountOnDeathByDistance: 2.75
   deathVFXPrefab: {fileID: 5367131650398813456, guid: f73bb891383073d42ad47b252ab02c95, type: 3}
   deathVFXSpawnPoint: {fileID: 900135171518533845}
   deathVFXOffsetFallBack: {x: 0, y: 1, z: 0}
@@ -1871,6 +1871,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97ff11c46a6ff6c49a7d20c0038b005a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  entropyConfig: {fileID: 0}
   chargeVFX: {fileID: 3263488179765485659}
 --- !u!114 &-36796862718809324
 MonoBehaviour:
