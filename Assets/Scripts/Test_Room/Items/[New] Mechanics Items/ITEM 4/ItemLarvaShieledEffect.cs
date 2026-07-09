@@ -38,7 +38,7 @@ public class ItemLarvaShieledEffect : ItemEffectBase
     {
         if (enemy == null) return;
 
-        if (enemy.GetComponent<Larva>() != null) return;
+        //if (enemy.GetComponent<Larva>() != null) return;
 
         var config = damageSpawnConfigs.Find(x => x.damageType == damageType);
 
