@@ -137,7 +137,7 @@ public class GachaponEffectData : ScriptableObject
             case StatType.ShopPriceReduction: return "Descuento en Tienda";
             case StatType.HealthPerRoomRegen: return "Regeneración por Sala";
             case StatType.CriticalChance: return "Prob. Crítico";
-            case StatType.LifestealOnKill: return "Robo de Vida";
+            case StatType.LifestealOnKill: return "Robo de Vida al Matar";
             case StatType.CriticalDamageMultiplier: return "Mult. Daño Crítico";
             case StatType.DashRangeMultiplier: return "Mult. Alcance de Dash";
             default: return statType.ToString();
