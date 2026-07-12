@@ -111,7 +111,7 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
     [Tooltip("Tiempo de formacion (escalado de 0.1 a 1) antes de salir disparados.")]
     [SerializeField] private float exceptionProjectileFormationTime = 0.5f;
     [Tooltip("Distancia hacia adelante desde el centro del jefe donde se instancian los proyectiles para evitar clipping con su modelo.")]
-    [SerializeField] private float exceptionProjectileSpawnOffset = 2.5f; // NUEVA VARIABLE
+    [SerializeField] private float exceptionProjectileSpawnOffset = 2.5f;
     [Tooltip("Distancia a partir de la cual el dano del proyectil comienza a incrementar.")]
     [SerializeField] private float exceptionScaleStartDist = 6f;
     [Tooltip("Distancia necesaria para que el proyectil alcance su valor maximo de dano.")]
