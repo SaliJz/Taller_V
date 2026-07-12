@@ -358,8 +358,6 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         float dashRangeMultiplier = playerStatsManager.GetStat(StatType.DashRangeMultiplier);
         if (dashRangeMultiplier <= 0f) dashRangeMultiplier = 1f;
 
-        // Bonus plano (unidades absolutas) que se suma despues del multiplicador,
-        // para permitir que se aumente o reduzca el alcance de forma aditiva.
         float dashRangeFlatBonus = playerStatsManager.GetStat(StatType.DashRangeFlatBonus);
 
         currentDashDistance = Mathf.Max(0.1f, (baseDashDistance * dashRangeMultiplier) + dashRangeFlatBonus);
@@ -539,6 +537,31 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
 
             controller.Move(displacement);
         }
+    }
+
+    /// <summary>
+    /// Devuelve la direccion de input cruda convertida a espacio de mundo relativo a camara,
+    /// sin pasar por canMove ni rotationLocked.
+    /// </summary>
+    public Vector3 GetRawInputWorldDirection()
+    {
+        Vector2 inputVector = currentInputVector;
+
+        if (SteamInputManager.Instance != null)
+        {
+            Vector2 steamMove = SteamInputManager.Instance.GetMoveAxis();
+            if (steamMove.sqrMagnitude > 0.0001f) inputVector = steamMove;
+        }
+
+        Vector3 cameraForward = mainCameraTransform != null ? mainCameraTransform.forward : Vector3.forward;
+        Vector3 cameraRight = mainCameraTransform != null ? mainCameraTransform.right : Vector3.right;
+
+        cameraForward.y = 0f;
+        cameraRight.y = 0f;
+        cameraForward.Normalize();
+        cameraRight.Normalize();
+
+        return cameraForward * inputVector.y + cameraRight * inputVector.x;
     }
 
     /// <summary>

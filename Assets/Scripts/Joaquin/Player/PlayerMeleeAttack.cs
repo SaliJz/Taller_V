@@ -539,94 +539,100 @@ public class PlayerMeleeAttack : MonoBehaviour
     #region Targeting & Rotation
 
     /// <summary>
-    /// Busca la direccion hacia el enemigo mas cercano dentro del rango, dando prioridad al sistema de auto-apuntado si esta activo.
+    /// Busca la direccion hacia la que debe orientarse el golpe.
     /// </summary>
-    /// <param name="enemyDir">Vector de salida con la direccion hacia el objetivo encontrado.</param>
+    /// <param name="enemyDir">Vector de salida con la direccion elegida.</param>
     private bool TryGetNearestEnemyDirection(out Vector3 enemyDir)
     {
         enemyDir = Vector3.forward;
 
-        if (autoAim != null && autoAim.EnableAutoAim)
+        bool isGamepadActive = gamepadPointer != null && gamepadPointer.IsGamepadMode();
+
+        if (isGamepadActive)
         {
-            bool isUsingGamepad = false;
-            Vector3? manualAimDirection = null;
-
-            if (gamepadPointer != null && gamepadPointer.IsGamepadMode())
+            Vector2 stickAim = gamepadPointer.GetAimDirectionValue();
+            if (stickAim.magnitude > 0.0001f)
             {
-                isUsingGamepad = true;
-
-                Vector2 stickAim = gamepadPointer.GetAimDirectionValue();
-                if (stickAim.magnitude > 0.0001f)
+                Camera camera = Camera.main;
+                if (camera != null)
                 {
-                    Camera camera = Camera.main;
-                    if (camera != null)
+                    Vector3 camForward = camera.transform.forward;
+                    camForward.y = 0f;
+                    camForward.Normalize();
+
+                    Vector3 camRight = camera.transform.right;
+                    camRight.y = 0f;
+                    camRight.Normalize();
+
+                    Vector3 targetDirection = camForward * stickAim.y + camRight * stickAim.x;
+                    if (targetDirection.sqrMagnitude > 0.0001f)
                     {
-                        Vector3 camForward = camera.transform.forward;
-                        camForward.y = 0f;
-                        camForward.Normalize();
-
-                        Vector3 camRight = camera.transform.right;
-                        camRight.y = 0f;
-                        camRight.Normalize();
-
-                        Vector3 targetDirection = camForward * stickAim.y + camRight * stickAim.x;
-                        if (targetDirection.sqrMagnitude > 0.0001f)
-                            manualAimDirection = targetDirection.normalized;
+                        enemyDir = targetDirection.normalized;
+                        return true;
                     }
                 }
             }
-
-            bool useAutoAim = isUsingGamepad;
-
-            if (!useAutoAim && !TryGetMouseWorldDirection(out _))
-            {
-                useAutoAim = true;
-            }
-
-            if (useAutoAim)
-            {
-                bool foundTarget;
-                enemyDir = autoAim.GetAimDirection(transform.position, transform.forward, manualAimDirection, out foundTarget);
-
-                if (foundTarget)
-                {
-                    ReportDebug($"Auto-aim de melee activado hacia: {autoAim.GetCurrentTarget()?.name}", 1);
-                    return true;
-                }
-            }
+        }
+        else if (TryGetMouseWorldDirection(out Vector3 mouseDir))
+        {
+            enemyDir = mouseDir;
+            return true;
         }
 
         int layerMask = LayerMask.GetMask("Enemy");
         int hitCount = Physics.OverlapSphereNonAlloc(transform.position, autoAimRange, hitBuffer, layerMask);
 
-        if (hitCount == 0) return false;
-
-        Collider nearestEnemy = null;
-        float closestDistanceSqr = Mathf.Infinity;
-        Vector3 currentPos = transform.position;
-
-        for (int i = 0; i < hitCount; i++)
+        if (hitCount > 0)
         {
-            Collider col = hitBuffer[i];
-            if (col == null) continue;
+            Collider nearestEnemy = null;
+            float closestDistanceSqr = Mathf.Infinity;
+            Vector3 currentPos = transform.position;
 
-            Vector3 dirToEnemy = col.transform.position - currentPos;
-            float dSqrToTarget = dirToEnemy.sqrMagnitude;
-
-            if (dSqrToTarget < closestDistanceSqr)
+            for (int i = 0; i < hitCount; i++)
             {
-                closestDistanceSqr = dSqrToTarget;
-                nearestEnemy = col;
+                Collider col = hitBuffer[i];
+                if (col == null) continue;
+
+                Vector3 dirToEnemy = col.transform.position - currentPos;
+                float dSqrToTarget = dirToEnemy.sqrMagnitude;
+
+                if (dSqrToTarget < closestDistanceSqr)
+                {
+                    closestDistanceSqr = dSqrToTarget;
+                    nearestEnemy = col;
+                }
+            }
+
+            if (nearestEnemy != null)
+            {
+                Vector3 direction = nearestEnemy.transform.position - currentPos;
+                direction.y = 0;
+                if (direction.sqrMagnitude > 0.001f)
+                {
+                    enemyDir = direction.normalized;
+                    return true;
+                }
             }
         }
 
-        if (nearestEnemy != null)
+        if (isGamepadActive && playerMovement != null)
         {
-            Vector3 direction = nearestEnemy.transform.position - currentPos;
-            direction.y = 0;
-            if (direction.sqrMagnitude > 0.001f)
+            Vector3 rawMoveDir = playerMovement.GetRawInputWorldDirection();
+            if (rawMoveDir.sqrMagnitude > 0.0001f)
             {
-                enemyDir = direction.normalized;
+                enemyDir = rawMoveDir.normalized;
+                return true;
+            }
+        }
+
+        if (autoAim != null && autoAim.EnableAutoAim)
+        {
+            bool foundTarget;
+            enemyDir = autoAim.GetAimDirection(transform.position, transform.forward, null, out foundTarget);
+
+            if (foundTarget)
+            {
+                ReportDebug($"Auto-aim de melee activado hacia: {autoAim.GetCurrentTarget()?.name}", 1);
                 return true;
             }
         }
