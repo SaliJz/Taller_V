@@ -303,7 +303,7 @@ public class ShieldSkill : MonoBehaviour, PlayerControlls.IAbilitiesActions, IPl
 
         if (staminaConsumptionMod <= 0f) staminaConsumptionMod = 0.1f;
 
-        currentStaminaDrainRate = baseStaminaDrainRate * staminaConsumptionMod;
+        currentStaminaDrainRate = baseStaminaDrainRate + staminaConsumptionMod;
     }
 
     private void HandleStaminaStatChanged(StatType statType, float newValue)

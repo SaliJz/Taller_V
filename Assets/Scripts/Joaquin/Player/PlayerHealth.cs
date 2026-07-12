@@ -502,13 +502,23 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             return damageAmount;
         }
 
-        float resistance = statsManager.GetCurrentStat(StatType.Endurance) / 100f;
+        float endurance = statsManager.GetCurrentStat(StatType.Endurance);
+        float finalDamage;
 
-        if (resistance <= 0f) resistance = 0.01f;
+        // Lógica de cálculo de resistencia dividida
+        if (endurance >= 100f)
+        {
+            // Para 100 o más: El daño se reduce inversamente proporcional.
+            finalDamage = damageAmount * (100f / endurance);
+        }
+        else
+        {
+            // Para menos de 100: El multiplicador sube de forma sucesiva.
+            float damageMultiplier = 2f - (endurance / 100f);
+            finalDamage = damageAmount * damageMultiplier;
+        }
 
-        float finalDamage = damageAmount / resistance;
-
-        Debug.Log($"[DAÑO] Base: {damageAmount} | Resistencia: {resistance} | Final -> {finalDamage}");
+        Debug.Log($"[DAÑO] Base: {damageAmount} | Resistencia: {endurance} | Final -> {finalDamage}");
 
         return finalDamage;
     }
