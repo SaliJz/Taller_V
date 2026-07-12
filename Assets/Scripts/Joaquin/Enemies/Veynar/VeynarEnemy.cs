@@ -369,6 +369,11 @@ public class VeynarEnemy : MonoBehaviour
 
     private void HandleEnemyDamaged()
     {
+        if (animCtrl != null && animCtrl.isInvulnerable)
+        {
+            animCtrl.PlayInvulnerabilityVFX();
+        }
+
         animCtrl?.PlayDamage();
     }
 
