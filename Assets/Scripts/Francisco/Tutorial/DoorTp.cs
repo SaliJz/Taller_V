@@ -19,6 +19,10 @@ public class DoorTp : MonoBehaviour
     [SerializeField] private float preTeleportMoveDistance = 3f;
     [SerializeField] private float playerMoveDuration = 0.5f;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip transitionStartClip;
+    [SerializeField] private float transitionStartVolume = 1f;
+
     [Header("Debug/Gizmos")]
     public float gizmoRadius = 1f;
     public Color gizmoColor = Color.cyan;
@@ -34,6 +38,7 @@ public class DoorTp : MonoBehaviour
     private PlayerAnimCtrl playerAnimCtrl;
     private Transform playerTransform;
     private bool isTransitioning = false;
+    private AudioSource audioSource;
 
     #endregion
 
@@ -46,6 +51,14 @@ public class DoorTp : MonoBehaviour
         {
             collider.isTrigger = true;
         }
+
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 0f;
     }
 
     private void Start()
@@ -60,7 +73,7 @@ public class DoorTp : MonoBehaviour
 
         if (playerMovement == null)
         {
-            Debug.LogWarning("[DoorTp] PlayerMovement no encontrado. El movimiento del jugador no será controlado durante la transición.");
+            Debug.LogWarning("[DoorTp] PlayerMovement no encontrado. El movimiento del jugador no serï¿½ controlado durante la transiciï¿½n.");
         }
     }
 
@@ -91,12 +104,34 @@ public class DoorTp : MonoBehaviour
     {
         if (destinationDoor == null || playerTransform == null)
         {
-            Debug.LogWarning("[DoorTp] No se puede iniciar la transición. Faltan dependencias.");
+            Debug.LogWarning("[DoorTp] No se puede iniciar la transiciï¿½n. Faltan dependencias.");
             return;
         }
 
+        PlayTransitionStartAudio();
         isTransitioning = true;
         StartCoroutine(TransitionCoroutine());
+    }
+
+    private void PlayTransitionStartAudio()
+    {
+        if (transitionStartClip == null)
+        {
+            return;
+        }
+
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+                audioSource.playOnAwake = false;
+                audioSource.spatialBlend = 0f;
+            }
+        }
+
+        audioSource.PlayOneShot(transitionStartClip, Mathf.Clamp01(transitionStartVolume));
     }
 
     #endregion
