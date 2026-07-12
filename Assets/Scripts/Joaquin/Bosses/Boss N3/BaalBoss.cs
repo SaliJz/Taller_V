@@ -108,6 +108,10 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
     [SerializeField] private float exceptionDamageMax = 4f;
     [Tooltip("Velocidad de traslacion de los proyectiles en el espacio.")]
     [SerializeField] private float exceptionProjectileSpeed = 15f;
+    [Tooltip("Tiempo de formacion (escalado de 0.1 a 1) antes de salir disparados.")]
+    [SerializeField] private float exceptionProjectileFormationTime = 0.5f;
+    [Tooltip("Distancia hacia adelante desde el centro del jefe donde se instancian los proyectiles para evitar clipping con su modelo.")]
+    [SerializeField] private float exceptionProjectileSpawnOffset = 2.5f; // NUEVA VARIABLE
     [Tooltip("Distancia a partir de la cual el dano del proyectil comienza a incrementar.")]
     [SerializeField] private float exceptionScaleStartDist = 6f;
     [Tooltip("Distancia necesaria para que el proyectil alcance su valor maximo de dano.")]
@@ -245,13 +249,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
     private PlayerHealth playerHealth;
     private PlayerMovement playerMovement;
 
-    private static readonly int animIdWalking = Animator.StringToHash("Walking");
-    private static readonly int animIdDeath = Animator.StringToHash("Death");
-    private static readonly int animIdExceptionFatal = Animator.StringToHash("ExceptionFatal");
-    private static readonly int animIdBufferOverrunCharge = Animator.StringToHash("BufferOverrunCharge");
-    private static readonly int animIdBufferOverrunDash = Animator.StringToHash("BufferOverrunDash");
-    private static readonly int animIdTeleport = Animator.StringToHash("Teleport");
-
     #endregion
 
     #region Unity Lifecycle
@@ -288,9 +285,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
     #region Initialization & Data Sync
 
-    /// <summary>
-    /// Busca y enlaza los componentes requeridos locales o del jugador objetivo si no estan referenciados.
-    /// </summary>
     private void InitializeComponents()
     {
         if (enemyHealth == null) enemyHealth = GetComponent<EnemyHealth>();
@@ -316,9 +310,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         if (player == null) ReportDebug("Jugador no encontrado en la escena.", 3);
     }
 
-    /// <summary>
-    /// Asigna los valores base desde el inspector a variables internas modificables durante combate.
-    /// </summary>
     private void InitializeEffectiveStats()
     {
         effectiveMoveSpeed = moveSpeed;
@@ -342,9 +333,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
-    /// <summary>
-    /// Cuenta los golpes del jugador dentro del rango de activacion para disparar la mecanica evasiva.
-    /// </summary>
     private void HandleDamaged()
     {
         if (player == null || defragOnCooldown || defragInterruptPending) return;
@@ -366,9 +354,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
-    /// <summary>
-    /// Limpia efectos, detiene logica de navegacion y activa estado inerte tras vaciarse la salud.
-    /// </summary>
     private void HandleEnemyDeath(GameObject enemy)
     {
         if (enemy != gameObject) return;
@@ -394,9 +379,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
     #region AI Flow & Sequences
 
-    /// <summary>
-    /// Gestiona la secuencia principal evaluando cambios de fase e interrupciones antes de cada ataque.
-    /// </summary>
     private IEnumerator BossFlowSequence()
     {
         yield return new WaitForSeconds(1.5f);
@@ -445,9 +427,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
     private bool HasPendingInterrupt() => defragInterruptPending || latenciaInterruptPending;
 
-    /// <summary>
-    /// Selecciona y lanza la interrupcion pendiente respetando el orden de prioridad de las habilidades.
-    /// </summary>
     private IEnumerator ResolveDynamicInterrupt()
     {
         if (defragInterruptPending)
@@ -462,9 +441,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
-    /// <summary>
-    /// Evalua periodicamente la lejania del jugador para programar la penalizacion por distancia.
-    /// </summary>
     private IEnumerator DynamicBehaviorMonitor()
     {
         float sqrActivationRange = latenciaActivationRange * latenciaActivationRange;
@@ -499,9 +475,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
     #region Habilidades Ofensivas Base
 
-    /// <summary>
-    /// Ejecuta animaciones y proyecta indicadores antes de disparar multiples proyectiles balisticos.
-    /// </summary>
     private IEnumerator ExecuteExcepcionFatal()
     {
         ReportDebug("EXCEPCION FATAL: Iniciando.", 1);
@@ -528,52 +501,78 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         float glowOnlyTime = Mathf.Max(0f, exceptionAnticipationTime - exceptionDirPreviewTime);
         yield return new WaitForSeconds(glowOnlyTime);
 
-        ReportDebug("EXCEPCION FATAL: Indicadores de direccion proyectados (0.8 s).", 1);
+        ReportDebug("EXCEPCION FATAL: Indicadores de direccion proyectados.", 1);
         yield return new WaitForSeconds(exceptionDirPreviewTime);
 
-        FireEightDirectionProjectiles();
+        yield return StartCoroutine(FireEightDirectionProjectilesRoutine());
 
-        ReportDebug("EXCEPCION FATAL: 8 proyectiles disparados.", 1);
+        ReportDebug("EXCEPCION FATAL: 8 proyectiles formados y disparados.", 1);
         currentState = BossState.Idle;
     }
 
-    /// <summary>
-    /// Instancia e inicializa fisicas o scripts de trayectoria en un patron de 360 grados.
-    /// </summary>
-    private void FireEightDirectionProjectiles()
+    private IEnumerator FireEightDirectionProjectilesRoutine()
     {
-        if (exceptionProjectilePrefab == null)
-        {
-            ReportDebug("EXCEPCION FATAL: Falta exceptionProjectilePrefab.", 2);
-            return;
-        }
-
+        Vector3[] dirs = new Vector3[8];
         for (int i = 0; i < 8; i++)
         {
-            float angle = i * 45f;
-            Vector3 dir = Quaternion.Euler(0f, angle, 0f) * Vector3.forward;
-            Vector3 spawnPos = transform.position + Vector3.up * 0.5f;
+            dirs[i] = Quaternion.Euler(0f, i * 45f, 0f) * Vector3.forward;
+        }
+        yield return StartCoroutine(SpawnAndFireProjectiles(dirs));
+    }
+
+    /// <summary>
+    /// Lógica Unificada: Instancia con offset, Escala progresivamente desde 0.1 hasta 1.0, y luego Dispara.
+    /// </summary>
+    private IEnumerator SpawnAndFireProjectiles(Vector3[] directions)
+    {
+        if (exceptionProjectilePrefab == null) yield break;
+
+        List<GameObject> projs = new List<GameObject>();
+        Vector3 originalScale = exceptionProjectilePrefab.transform.localScale;
+
+        // Instanciar en tamaño pequeño con el offset direccional
+        foreach (Vector3 dir in directions)
+        {
+            Vector3 spawnPos = transform.position + Vector3.up * 0.5f + (dir.normalized * exceptionProjectileSpawnOffset);
 
             GameObject proj = Instantiate(exceptionProjectilePrefab, spawnPos, Quaternion.LookRotation(dir));
+            proj.transform.localScale = originalScale * 0.1f;
             instantiatedEffects.Add(proj);
+            projs.Add(proj);
+        }
 
-            BaalProjectile projScript = proj.GetComponent<BaalProjectile>();
-            if (projScript != null)
+        // Animar crecimiento durante la formación
+        float elapsed = 0f;
+        while (elapsed < exceptionProjectileFormationTime)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / exceptionProjectileFormationTime;
+            Vector3 currentScale = Vector3.Lerp(originalScale * 0.1f, originalScale, t);
+
+            foreach (var p in projs)
             {
-                projScript.Initialize(
-                    dir,
-                    effectiveProjSpeed,
-                    exceptionDamageMin,
-                    exceptionDamageMax,
-                    exceptionScaleStartDist,
-                    exceptionScaleMaxDist,
-                    transform.position
-                );
+                if (p != null) p.transform.localScale = currentScale;
+            }
+            yield return null;
+        }
+
+        // Forzar el tamaño final correcto y disparar
+        for (int i = 0; i < projs.Count; i++)
+        {
+            GameObject proj = projs[i];
+            if (proj == null) continue;
+
+            proj.transform.localScale = originalScale;
+
+            BaalProjectile ps = proj.GetComponent<BaalProjectile>();
+            if (ps != null)
+            {
+                ps.Initialize(directions[i], effectiveProjSpeed, exceptionDamageMin, exceptionDamageMax, exceptionScaleStartDist, exceptionScaleMaxDist, transform.position);
             }
             else
             {
                 Rigidbody rb = proj.GetComponent<Rigidbody>();
-                if (rb != null) rb.linearVelocity = dir * effectiveProjSpeed;
+                if (rb != null) rb.linearVelocity = directions[i] * effectiveProjSpeed;
                 Destroy(proj, 3f);
             }
         }
@@ -582,7 +581,7 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
     private IEnumerator ShortRecovery()
     {
         ReportDebug($"RECUPERACION CORTA: {effectiveExceptionRecovery} s.", 1);
-        
+
         float elapsed = 0f;
         while (elapsed < effectiveExceptionRecovery)
         {
@@ -595,16 +594,11 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
     private IEnumerator BufferOverrunCooldownRoutine()
     {
         bufferOverrunOnCooldown = true;
-
         yield return new WaitForSeconds(effectiveBufferCooldown);
-
         bufferOverrunOnCooldown = false;
         ReportDebug("BUFFER OVERRUN: Cooldown finalizado.", 1);
     }
 
-    /// <summary>
-    /// Carga y ejecuta un recorrido directo hacia un punto, generando areas de dano al chocar.
-    /// </summary>
     private IEnumerator ExecuteBufferOverrun(bool calledByLatencia = false)
     {
         ReportDebug($"BUFFER OVERRUN: Iniciando{(calledByLatencia ? " (encadenado por Latencia Cero)" : "")}.", 1);
@@ -620,21 +614,43 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
         if (animController != null) animController.PlayBufferPre();
 
-        //float bufferAnticipationFallback = 0f;
-        //while (!isInAnticipation && bufferAnticipationFallback < bufferOverrunAnticipationDuration + 1f)
-        //{
-        //    bufferAnticipationFallback += Time.deltaTime;
-        //    yield return null;
-        //}
-        
         StartAnticipationPause();
         yield return new WaitUntil(() => !isInAnticipation);
 
+        Vector3 dashTarget = CalculateBufferOverrunTarget();
+        FaceDirection((dashTarget - transform.position).normalized);
+
+        GameObject warningTrail = null;
+        if (bufferOverrunTrailIndicatorPrefab != null)
+        {
+            float dist = Vector3.Distance(transform.position, dashTarget);
+            Vector3 mid = (transform.position + dashTarget) * 0.5f;
+
+            int groundLayer = LayerMask.GetMask("Ground", "Default");
+            if (Physics.Raycast(new Vector3(mid.x, transform.position.y + 5f, mid.z), Vector3.down, out RaycastHit hit, 20f, groundLayer))
+            {
+                mid.y = hit.point.y + 0.05f;
+            }
+            else
+            {
+                mid.y = transform.position.y + 0.05f;
+            }
+
+            warningTrail = Instantiate(bufferOverrunTrailIndicatorPrefab, mid, Quaternion.LookRotation((dashTarget - transform.position).normalized));
+            warningTrail.transform.localScale = new Vector3(5f, 0.05f, dist);
+            instantiatedEffects.Add(warningTrail);
+        }
+
         yield return new WaitForSeconds(bufferOverrunChargeDuration);
+
+        if (warningTrail != null)
+        {
+            instantiatedEffects.Remove(warningTrail);
+            Destroy(warningTrail);
+        }
 
         if (animController != null) animController.PlayBufferAttack();
 
-        Vector3 dashTarget = CalculateBufferOverrunTarget();
         yield return StartCoroutine(DashToPositionOrHit(dashTarget, bufferOverrunDashDuration));
 
         Vector3 impactPoint = hitPoint != null ? hitPoint.position : transform.position;
@@ -661,26 +677,32 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         currentState = BossState.Idle;
     }
 
-    /// <summary>
-    /// Determina un punto vectorial frente al jefe en base a la distancia maxima de ataque y direccion del jugador.
-    /// </summary>
     private Vector3 CalculateBufferOverrunTarget()
     {
+        Vector3 rawTarget;
+
         if (player == null)
         {
-            return transform.position + transform.forward * bufferOverrunDashDistance;
+            rawTarget = transform.position + transform.forward * bufferOverrunDashDistance;
+        }
+        else
+        {
+            Vector3 dir = player.position - transform.position;
+            dir.y = 0f;
+            dir.Normalize();
+
+            rawTarget = transform.position + dir * bufferOverrunDashDistance;
         }
 
-        Vector3 dir = player.position - transform.position;
-        dir.y = 0f;
-        dir.Normalize();
+        if (NavMesh.SamplePosition(rawTarget, out NavMeshHit hit, bufferOverrunDashDistance, NavMesh.AllAreas))
+        {
+            return hit.position;
+        }
 
-        return transform.position + dir * bufferOverrunDashDistance;
+        ReportDebug("BUFFER OVERRUN: Destino del dash fuera de NavMesh, se usara posicion sin ajustar.", 2);
+        return rawTarget;
     }
 
-    /// <summary>
-    /// Coloca el objeto de efecto restrictivo intentando asegurar su contacto inicial con el terreno logico.
-    /// </summary>
     private void SpawnNecroticCluster(Vector3 position)
     {
         if (necroticClusterPrefab == null)
@@ -708,7 +730,15 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         NecroticCluster clusterScript = cluster.GetComponent<NecroticCluster>();
         if (clusterScript != null)
         {
-            clusterScript.Initialize(clusterDuration, clusterDPS, clusterRadius, larvaPrefab, clusterLarvaCount, clusterSlowFraction, clusterDealDamage);
+            clusterScript.Initialize(
+                clusterDuration,
+                clusterDPS,
+                clusterRadius,
+                larvaPrefab,
+                clusterLarvaCount,
+                clusterSlowFraction,
+                clusterDealDamage
+                );
         }
         else Destroy(cluster, clusterDuration);
     }
@@ -724,9 +754,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
     #region Habilidades Dinamicas y Evasivas
 
-    /// <summary>
-    /// Aplica el desplazamiento de fuga y responde con dano disperso desde una posicion distante.
-    /// </summary>
     private IEnumerator ExecuteDesfragmentacion()
     {
         ReportDebug("DESFRAGMENTACION EVASIVA: Ejecutando.", 1);
@@ -757,7 +784,8 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         yield return new WaitForSeconds(0.25f - Mathf.Min(0.25f, memoryLeakFormationDelay));
 
         FacePlayer();
-        FireReprisalShot();
+
+        yield return StartCoroutine(FireReprisalShotRoutine());
 
         ReportDebug("DESFRAGMENTACION EVASIVA: Teleport y represalia completados.", 1);
         currentState = BossState.Idle;
@@ -765,36 +793,15 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         StartCoroutine(DefragCooldownRoutine());
     }
 
-    /// <summary>
-    /// Proyecta una rafaga defensiva de proyectiles abarcando angulos predefinidos.
-    /// </summary>
-    private void FireReprisalShot()
+    private IEnumerator FireReprisalShotRoutine()
     {
-        if (exceptionProjectilePrefab == null) return;
-
         float[] angles = { -15f, 0f, 15f };
-        foreach (float offset in angles)
+        Vector3[] dirs = new Vector3[3];
+        for (int i = 0; i < 3; i++)
         {
-            Vector3 dir = Quaternion.Euler(0f, offset, 0f) * transform.forward;
-            Vector3 spawnPos = transform.position + Vector3.up * 0.5f;
-            GameObject proj = Instantiate(exceptionProjectilePrefab, spawnPos, Quaternion.LookRotation(dir));
-            instantiatedEffects.Add(proj);
-
-            BaalProjectile ps = proj.GetComponent<BaalProjectile>();
-            if (ps != null)
-            {
-                ps.Initialize(dir, effectiveProjSpeed,
-                              exceptionDamageMin, exceptionDamageMax,
-                              exceptionScaleStartDist, exceptionScaleMaxDist,
-                              transform.position);
-            }
-            else
-            {
-                Rigidbody rb = proj.GetComponent<Rigidbody>();
-                if (rb != null) rb.linearVelocity = dir * effectiveProjSpeed;
-                Destroy(proj, 3f);
-            }
+            dirs[i] = Quaternion.Euler(0f, angles[i], 0f) * transform.forward;
         }
+        yield return StartCoroutine(SpawnAndFireProjectiles(dirs));
     }
 
     private IEnumerator DefragCooldownRoutine()
@@ -804,9 +811,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         ReportDebug("DESFRAGMENTACION EVASIVA: Cooldown finalizado.", 1);
     }
 
-    /// <summary>
-    /// Escanea terreno utilizable en direccion contraria a la de contacto del jugador para asegurar un reubicamiento seguro.
-    /// </summary>
     private Vector3 GetEvasionPosition(float distance)
     {
         if (player == null)
@@ -823,9 +827,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
                : candidate;
     }
 
-    /// <summary>
-    /// Materializa instantaneamente a la IA cerca de un punto ciego para castigar combates distantes.
-    /// </summary>
     private IEnumerator ExecuteLatenciaCero()
     {
         ReportDebug("LATENCIA CERO: Ejecutando.", 1);
@@ -853,7 +854,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
         yield return new WaitForSeconds(latenciaAnticipationDuration);
 
-        //DealAreaDamage(transform.position, bufferOverrunAttackRange * 0.5f, latenciaDamage);
         SpawnMemoryLeak(transform.position);
 
         yield return StartCoroutine(ExecuteBufferOverrun(calledByLatencia: true));
@@ -870,9 +870,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         ReportDebug("LATENCIA CERO: Cooldown finalizado.", 1);
     }
 
-    /// <summary>
-    /// Procesa de forma pseudoaleatoria los flancos de vision lateral para inyectar al modelo.
-    /// </summary>
     private Vector3 GetPlayerBlindFlank()
     {
         if (player == null) return transform.position;
@@ -893,9 +890,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
     #region Hito 50 Porciento - Arquitectura Distribuida
 
-    /// <summary>
-    /// Transforma al modelo a un estado inmune e invoca entidades requeridas para debilitar la barrera gradualmente.
-    /// </summary>
     private IEnumerator ExecuteArquitecturaDistribuida()
     {
         ReportDebug("ARQUITECTURA DISTRIBUIDA: Hito 50 por ciento alcanzado.", 1);
@@ -966,9 +960,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         if (nodeHealth != null) nodeHealth.OnDeath -= OnNodeDestroyed;
     }
 
-    /// <summary>
-    /// Selecciona y valida la coordenada especifica mas lejana en un vector cuadriculado disponible para generar nodos.
-    /// </summary>
     private Vector3 GetNodeSpawnPosition(int index)
     {
         Vector3 currentRoomCenter = roomCenter != Vector3.zero ? roomCenter : transform.position;
@@ -994,9 +985,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
                : candidate;
     }
 
-    /// <summary>
-    /// Toma multiples puntos polares transitables desde el enemigo actual y promedia sus coordenadas centrales para reuso.
-    /// </summary>
     private Vector3 ComputeRoomCenter()
     {
         Vector3 sum = transform.position;
@@ -1081,9 +1069,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         isInAnticipation = false;
     }
 
-    /// <summary>
-    /// Escanea impactos sobre esferas de colision para delegar reduccion de recursos a scripts identificados.
-    /// </summary>
     private void DealAreaDamage(Vector3 center, float radius, float damage)
     {
         Collider[] hits = Physics.OverlapSphere(center, radius);
@@ -1097,15 +1082,12 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
-    /// <summary>
-    /// Analiza mitigaciones de escudos del objetivo previniendo el valor negativo de ataque transmitido a la salud.
-    /// </summary>
     private void ExecuteAttack(GameObject target, float damage)
     {
         if (target.TryGetComponent(out PlayerHealth health))
         {
-            if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) 
-                && blockSystem.IsBlocking 
+            if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem)
+                && blockSystem.IsBlocking
                 && blockSystem.CanBlockAttack(transform.position))
             {
                 float remaining = blockSystem.ProcessBlockedAttack(damage);
@@ -1121,9 +1103,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
-    /// <summary>
-    /// Traza fotogramas para proyectar un traslado interrumpiendo el flujo temporal si contacta colisiones directas de adversario.
-    /// </summary>
     private IEnumerator DashToPositionOrHit(Vector3 target, float duration)
     {
         Vector3 start = transform.position;
@@ -1132,26 +1111,19 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
 
         FaceDirection((target - start).normalized);
 
-        if (bufferOverrunTrailIndicatorPrefab != null)
-        {
-            float dist = Vector3.Distance(start, target);
-            Vector3 mid = (start + target) * 0.5f;
-            mid.y = start.y;
-            GameObject trail = Instantiate(bufferOverrunTrailIndicatorPrefab, mid,
-                                           Quaternion.LookRotation((target - start).normalized));
-            trail.transform.localScale = new Vector3(5f, 0.05f, dist);
-            Destroy(trail, duration + 0.1f);
-        }
+        bool agentControlled = agent != null && agent.enabled;
 
         while (elapsed < duration && !hitPlayer)
         {
             Vector3 next = Vector3.Lerp(start, target, elapsed / duration);
 
             NavMeshHit navHit;
-            if (NavMesh.SamplePosition(next, out navHit, 2f, NavMesh.AllAreas))
-                agent.Warp(navHit.position);
-            else
-                transform.position = next;
+            Vector3 movePos = NavMesh.SamplePosition(next, out navHit, 2f, NavMesh.AllAreas)
+                ? navHit.position
+                : next;
+
+            if (agentControlled) agent.Warp(movePos);
+            else transform.position = movePos;
 
             Collider[] hits = Physics.OverlapSphere(transform.position,
                                                      bufferOverrunAttackRange * 0.5f,
@@ -1167,9 +1139,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
-    /// <summary>
-    /// Enlaza particulas de fuga y llegada con asignacion de coordenadas directas sobre limites del NavMesh.
-    /// </summary>
     private void PerformTeleport(Vector3 target)
     {
         if (teleportVFXPrefab != null)
@@ -1179,11 +1148,23 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
 
         NavMeshHit hit;
-        if (NavMesh.SamplePosition(target, out hit, 3f, NavMesh.AllAreas))
+        Vector3 finalPos = NavMesh.SamplePosition(target, out hit, 3f, NavMesh.AllAreas)
+            ? hit.position
+            : target;
+
+        if (!hit.hit)
         {
-            agent.Warp(hit.position);
+            ReportDebug("TELEPORT: Destino fuera de NavMesh, se usara posicion sin ajustar.", 2);
         }
-        else transform.position = target;
+
+        if (agent != null && agent.enabled)
+        {
+            agent.Warp(finalPos);
+        }
+        else
+        {
+            transform.position = finalPos;
+        }
 
         if (teleportVFXPrefab != null)
         {
@@ -1284,9 +1265,6 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         }
     }
 
-    /// <summary>
-    /// Itera sobre indices almacenados para suprimir todo modelo no necesario despues del fin de combate.
-    /// </summary>
     private void CleanUpEffects()
     {
         for (int i = instantiatedEffects.Count - 1; i >= 0; i--)
