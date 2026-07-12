@@ -54,9 +54,18 @@ public class EspejoController : MonoBehaviour
     private static readonly int MaskAplha_PROP = Shader.PropertyToID("_Mask_Alpha");
     private Material materialInstance;
 
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip sonidoLevantarse;
+
     private void Awake()
     {
         meshRenderer = GetComponent<MeshRenderer>();
+
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+        }
 
         if (MainCamera == null)
         {
@@ -99,6 +108,7 @@ public class EspejoController : MonoBehaviour
         AplicarMaterial();
         ActivarNivel();
         ActualizarMaskAplhaCoroutine();
+        ReproducirSonidoLevantarse();
     }
 
     private void AplicarMaterial()
@@ -226,6 +236,13 @@ public class EspejoController : MonoBehaviour
             materialInstance.SetFloat(MaskAplha_PROP, value);
         }
     } 
+
+    private void ReproducirSonidoLevantarse()
+    {
+        if (audioSource == null || sonidoLevantarse == null) return;
+
+        audioSource.PlayOneShot(sonidoLevantarse);
+    }
 
     public void ActivarNivel1() => estadoActual = EstadoEspejo.Nivel1;
     public void ActivarNivel2() => estadoActual = EstadoEspejo.Nivel2;
