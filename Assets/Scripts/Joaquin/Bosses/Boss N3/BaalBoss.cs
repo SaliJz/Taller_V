@@ -626,7 +626,9 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         //    bufferAnticipationFallback += Time.deltaTime;
         //    yield return null;
         //}
-        //yield return new WaitUntil(() => !isInAnticipation);
+        
+        StartAnticipationPause();
+        yield return new WaitUntil(() => !isInAnticipation);
 
         yield return new WaitForSeconds(bufferOverrunChargeDuration);
 

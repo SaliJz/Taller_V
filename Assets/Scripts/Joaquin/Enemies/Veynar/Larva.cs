@@ -11,11 +11,16 @@ public class Larva : MonoBehaviour
     [SerializeField] private float lifeTime = 10f;
     [SerializeField] private float knockbackForce = 0.5f;
 
-    [Header("Detección / Movimiento")]
+    [Header("Movimiento / Deteccion")]
     [SerializeField] private LayerMask playerLayer;
     [SerializeField] private float stoppingBuffer = 0.5f;
-    [SerializeField] private float attackRange = 5f;
-    [SerializeField] private float attackCooldown = 0.5f;
+    [SerializeField] private float attackTriggerDistance = 5f;
+    [SerializeField] private float damageRadius = 3f;
+
+    [Header("Ataque / Salto")]
+    [SerializeField] private float warningDuration = 0.6f;
+    [SerializeField] private float jumpDuration = 0.5f;
+    [SerializeField] private float jumpHeight = 2f;
 
     [Header("Agent tuning")]
     [SerializeField] private float destinationUpdateInterval = 0.18f;
@@ -39,30 +44,27 @@ public class Larva : MonoBehaviour
 
     private NavMeshAgent agent;
     private Transform player;
-    private PlayerHealth playerHealth;
     private EnemyHealth enemyHealth;
+    private EnemyVisualEffects enemyVisualEffects;
 
     private float moveSoundTimer;
     private float moveSoundRate = 0.4f;
     private bool hasExploded = false;
+    private bool isAttacking = false;
 
     private float lifeTimer = 0f;
-    private float lastAttackTime = -999f;
     private float lastDestinationTime = -999f;
     private bool initialized = false;
 
     private void Start()
     {
-        // Si al iniciar no tiene player y la opción está activa, lo busca.
-        if (player == null && autoSearchPlayer)
-        {
-            FindPlayerFallback();
-        }
+        if (player == null && autoSearchPlayer) FindPlayerFallback();
     }
 
     private void Awake()
     {
         enemyHealth = GetComponent<EnemyHealth>();
+        enemyVisualEffects = GetComponent<EnemyVisualEffects>();
 
         if (audioSource == null) audioSource = GetComponent<AudioSource>();
 
@@ -77,9 +79,7 @@ public class Larva : MonoBehaviour
 
     private void Update()
     {
-        if (!initialized) return;
-        if (player == null || enemyHealth == null || enemyHealth.IsDead) return;
-
+        if (!initialized || player == null || enemyHealth == null || enemyHealth.IsDead || isAttacking) return;
         HandleMovementAudio();
     }
 
@@ -93,11 +93,6 @@ public class Larva : MonoBehaviour
         if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
     }
 
-    private void OnDestroy()
-    {
-        if (enemyHealth != null) enemyHealth.OnDeath -= HandleEnemyDeath;
-    }
-
     private void HandleEnemyDeath(GameObject enemy)
     {
         if (enemy != gameObject) return;
@@ -107,12 +102,14 @@ public class Larva : MonoBehaviour
             audioSource.PlayOneShot(deathSFX);
         }
 
+        if (enemyVisualEffects != null) enemyVisualEffects.CancelAnticipationBlink();
+
         StopAllCoroutines();
-        
+
         if (agent != null && agent.isOnNavMesh)
         {
             agent.isStopped = true;
-            agent.ResetPath();
+            agent.enabled = false;
         }
     }
 
@@ -137,16 +134,12 @@ public class Larva : MonoBehaviour
     private void ConfigureAgentFromParams()
     {
         if (agent == null) return;
-
         agent.speed = speed;
         agent.acceleration = Mathf.Max(minAcceleration, speed * accelMultiplier);
         agent.angularSpeed = angularSpeed;
         agent.updatePosition = true;
         agent.updateRotation = true;
-
-        // El agente se detiene justo antes del rango de ataque
-        agent.stoppingDistance = attackRange + stoppingBuffer;
-
+        agent.stoppingDistance = attackTriggerDistance + stoppingBuffer;
         agent.obstacleAvoidanceType = ObstacleAvoidanceType.MedQualityObstacleAvoidance;
         agent.autoRepath = true;
         agent.enabled = true;
@@ -154,16 +147,11 @@ public class Larva : MonoBehaviour
 
     public void Initialize(Transform playerTransform)
     {
-        if (!autoSearchPlayer)
-        {
-            player = playerTransform ?? GameObject.FindGameObjectWithTag("Player")?.transform;
-            playerHealth = player ? player.GetComponent<PlayerHealth>() : null;
-        }
+        if (!autoSearchPlayer) player = playerTransform ?? GameObject.FindGameObjectWithTag("Player")?.transform;
 
         if (agent == null) agent = GetComponent<NavMeshAgent>();
         if (agent != null && !agent.isOnNavMesh)
         {
-            ReportDebug("NavMeshAgent no está en el NavMesh. Intentando colocar...", 2);
             if (NavMesh.SamplePosition(transform.position, out var hit, 2f, NavMesh.AllAreas))
             {
                 transform.position = hit.position;
@@ -171,7 +159,6 @@ public class Larva : MonoBehaviour
             }
             else
             {
-                ReportDebug("No se pudo colocar en el NavMesh. Destruyendo larva.", 3);
                 Die();
                 return;
             }
@@ -180,9 +167,9 @@ public class Larva : MonoBehaviour
         if (agent != null) ConfigureAgentFromParams();
         StopAllCoroutines();
         lifeTimer = 0f;
-        lastAttackTime = -999f;
         lastDestinationTime = -999f;
         hasExploded = false;
+        isAttacking = false;
 
         StartCoroutine(LifeCycle());
         initialized = true;
@@ -191,12 +178,7 @@ public class Larva : MonoBehaviour
     private void FindPlayerFallback()
     {
         GameObject p = GameObject.FindGameObjectWithTag("Player");
-        if (p != null)
-        {
-            player = p.transform;
-            playerHealth = p.GetComponent<PlayerHealth>();
-            ReportDebug("Player encontrado mediante auto-búsqueda.", 1);
-        }
+        if (p != null) player = p.transform;
     }
 
     private IEnumerator LifeCycle()
@@ -207,17 +189,12 @@ public class Larva : MonoBehaviour
 
             lifeTimer += Time.deltaTime;
 
-            if (player == null)
-            {
-                player = GameObject.FindGameObjectWithTag("Player")?.transform;
-                playerHealth = player ? player.GetComponent<PlayerHealth>() : null;
-            }
+            if (player == null) player = GameObject.FindGameObjectWithTag("Player")?.transform;
 
-            if (player != null && agent != null && agent.isOnNavMesh)
+            if (player != null && agent != null && agent.isOnNavMesh && !isAttacking)
             {
                 float distance = Vector3.Distance(transform.position, player.position);
 
-                // Si está lejos, perseguir
                 if (distance > agent.stoppingDistance)
                 {
                     if (agent.isStopped) agent.isStopped = false;
@@ -228,25 +205,54 @@ public class Larva : MonoBehaviour
                         lastDestinationTime = Time.time;
                     }
                 }
-                // Si está cerca (dentro del rango de 5m), detenerse y atacar
                 else
                 {
                     agent.ResetPath();
                     agent.isStopped = true;
-                    TryAttack(); // Esto llamará a Die()
+                    StartCoroutine(AttackSequence());
                 }
             }
             yield return null;
         }
-
-        // Morir si se acaba el tiempo
         Die();
     }
 
-    private void TryAttack()
+    private IEnumerator AttackSequence()
     {
-        if (player == null || enemyHealth == null || enemyHealth.IsDead) return;
-        if (Time.time < lastAttackTime + attackCooldown) return;
+        isAttacking = true;
+
+        Collider myCollider = GetComponent<Collider>();
+        if (myCollider != null) myCollider.enabled = false;
+
+        if (enemyVisualEffects != null)
+        {
+            enemyVisualEffects.PlayAnticipationBlink(warningDuration);
+        }
+        yield return new WaitForSeconds(warningDuration);
+
+        if (player == null || enemyHealth.IsDead) yield break;
+
+        Vector3 startPos = transform.position;
+        Vector3 targetPos = player.position;
+        float timePassed = 0f;
+
+        while (timePassed < jumpDuration)
+        {
+            timePassed += Time.deltaTime;
+            float t = timePassed / jumpDuration;
+
+            float currentHeight = Mathf.Sin(Mathf.PI * t) * jumpHeight;
+            transform.position = Vector3.Lerp(startPos, targetPos, t) + new Vector3(0, currentHeight, 0);
+
+            yield return null;
+        }
+
+        ExecuteExplosion();
+    }
+
+    private void ExecuteExplosion()
+    {
+        if (enemyHealth == null || enemyHealth.IsDead) return;
 
         hasExploded = true;
 
@@ -255,39 +261,14 @@ public class Larva : MonoBehaviour
             audioSource.PlayOneShot(attackExplosionSFX);
         }
 
-        bool damageApplied = false;
-
-        if (damageApplied) return;
-
-        Collider[] hitPlayer = Physics.OverlapSphere(transform.position, attackRange, playerLayer);
+        Collider[] hitPlayer = Physics.OverlapSphere(transform.position, damageRadius, playerLayer);
 
         foreach (var hit in hitPlayer)
         {
-            var hitTransform = hit.transform;
-
-            // Ejecutar ataque
             ExecuteAttack(hit.gameObject, explosionDamage);
-
-            // Aplicar empuje
-            ApplyKnockback(hitTransform, knockbackForce);
-
-            ReportDebug($"Drogath atacó al jugador por {explosionDamage} de daño", 1);
-
-            damageApplied = true;
+            ApplyKnockback(hit.transform, knockbackForce);
         }
 
-        if (damageApplied)
-        {
-            ReportDebug($"[Larva] Impacto kamikaze a {player.name}: daño={explosionDamage}", 1);
-        }
-        else
-        {
-            ReportDebug($"[Larva] No se pudo aplicar daño a {player.name}.", 2);
-        }
-
-        lastAttackTime = Time.time;
-
-        // Comportamiento Kamikaze: Morir al impactar
         Die();
     }
 
@@ -295,18 +276,12 @@ public class Larva : MonoBehaviour
     {
         if (target.TryGetComponent<PlayerHealth>(out var health))
         {
-            if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem) 
-                && blockSystem.IsBlocking 
+            if (target.TryGetComponent<PlayerBlockSystem>(out var blockSystem)
+                && blockSystem.IsBlocking
                 && blockSystem.CanBlockAttack(transform.position))
             {
                 float remainingDamage = blockSystem.ProcessBlockedAttack(damageAmount);
-
-                if (remainingDamage > 0f)
-                {
-                    health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
-                }
-                Debug.Log($"<color=red>[Jitter] Ataque bloqueado por el jugador.</color>");
-                return;
+                if (remainingDamage > 0f) health.TakeDamage(remainingDamage, false, AttackDamageType.Melee);
             }
             else
             {
@@ -321,53 +296,28 @@ public class Larva : MonoBehaviour
         {
             Vector3 direction = (target.position - transform.position).normalized;
             direction.y = 0f;
+            direction.Normalize();
+
+            if (direction == Vector3.zero)
+            {
+                direction = transform.forward;
+            }
 
             knockbackReceiver.ApplyKnockback(direction, force);
         }
     }
 
-    /// <summary>
-    /// Inicia la secuencia de muerte de la larva.
-    /// </summary>
     public void Die()
     {
-        if (enemyHealth != null && !enemyHealth.IsDead)
-        {
-            Destroy(gameObject);
-        }
+        if (enemyHealth != null && !enemyHealth.IsDead) Destroy(gameObject);
     }
 
     private void OnDrawGizmos()
     {
         if (!drawGizmos) return;
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, attackRange);
+        Gizmos.DrawWireSphere(transform.position, damageRadius);
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, attackRange + stoppingBuffer);
-    }
-
-    [System.Diagnostics.Conditional("UNITY_EDITOR")]
-    /// <summary> 
-    /// Función de depuración para reportar mensajes en la consola de Unity. 
-    /// </summary> 
-    /// <param name="message">Mensaje a reportar.</param>
-    /// <param name="reportPriorityLevel">Nivel de prioridad: Debug, Warning, Error.</param>
-    private static void ReportDebug(string message, int reportPriorityLevel)
-    {
-        switch (reportPriorityLevel)
-        {
-            case 1:
-                Debug.Log($"[Larva] {message}");
-                break;
-            case 2:
-                Debug.LogWarning($"[Larva] {message}");
-                break;
-            case 3:
-                Debug.LogError($"[Larva] {message}");
-                break;
-            default:
-                Debug.Log($"[Larva] {message}");
-                break;
-        }
+        Gizmos.DrawWireSphere(transform.position, attackTriggerDistance);
     }
 }

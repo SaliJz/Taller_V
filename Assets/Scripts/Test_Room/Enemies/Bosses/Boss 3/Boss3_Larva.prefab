@@ -381,8 +381,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   stoppingBuffer: 0.5
-  attackRange: 1.5
-  attackCooldown: 0.5
+  attackTriggerDistance: 5
+  damageRadius: 3
+  warningDuration: 0.5
+  jumpDuration: 0.5
+  jumpHeight: 2
   destinationUpdateInterval: 0.18
   accelMultiplier: 3
   minAcceleration: 8
@@ -468,7 +471,6 @@ MonoBehaviour:
   glowMaterial: {fileID: 2100000, guid: a895dece90d884a4daa6cbf31c41dd4d, type: 2}
   glowIntensity: 2
   toughnessColor: {r: 0.92941177, g: 0.8156863, b: 0.80784315, a: 1}
-  anticipationBlinkInterval: 0.04
   anticipationBlinkColor: {r: 1, g: 0, b: 0, a: 1}
   normalColor: {r: 1, g: 0, b: 0, a: 1}
   criticalColor: {r: 0.5294118, g: 0, b: 0, a: 1}

@@ -11,11 +11,16 @@ public class ResurrectedDevilLarva : MonoBehaviour
     [SerializeField] private float lifetime = 5f;
     [SerializeField] private float baseDamage = 10f;
     [SerializeField] private float explosionRadius = 1.2f;
-    [SerializeField] private Renderer larvaRenderer;
+    [SerializeField] private float attackTriggerDistance = 4f;
 
     [Header("Rotation")]
     [SerializeField] private float rotationSpeed = 8f;
     [SerializeField] private float rotationOffset = 0f;
+
+    [Header("Dash")]
+    [SerializeField] private float warningDuration = 0.6f;
+    [SerializeField] private float dashDuration = 0.3f;
+    [SerializeField] private float dashDistance = 4f;
 
     #endregion
 
@@ -24,7 +29,9 @@ public class ResurrectedDevilLarva : MonoBehaviour
     private Transform playerTarget;
     private NavMeshAgent agent;
     private bool isExploding = false;
+    private bool isAttacking = false;
     private EnemyHealth health;
+    private EnemyVisualEffects enemyVisualEffects;
 
     #endregion
 
@@ -34,6 +41,7 @@ public class ResurrectedDevilLarva : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         health = GetComponent<EnemyHealth>();
+        enemyVisualEffects = GetComponent<EnemyVisualEffects>();
     }
 
     private void Start()
@@ -58,12 +66,14 @@ public class ResurrectedDevilLarva : MonoBehaviour
 
     private void Update()
     {
-        if (isExploding || (health != null && health.IsDead) || playerTarget == null || agent == null || !agent.enabled) return;
+        if (isExploding || isAttacking || (health != null && health.IsDead) || playerTarget == null || agent == null || !agent.enabled) return;
 
         agent.SetDestination(playerTarget.position);
 
-        if (Vector3.Distance(transform.position, playerTarget.position) <= explosionRadius)
-            DealDamageAndDie();
+        if (Vector3.Distance(transform.position, playerTarget.position) <= attackTriggerDistance)
+        {
+            StartCoroutine(AttackSequence());
+        }
 
         RotateTowardsMovement();
     }
@@ -82,11 +92,75 @@ public class ResurrectedDevilLarva : MonoBehaviour
 
     #endregion
 
+    #region Attack Sequence
+
+    private IEnumerator AttackSequence()
+    {
+        isAttacking = true;
+
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.velocity = Vector3.zero;
+        }
+
+        if (enemyVisualEffects != null)
+        {
+            enemyVisualEffects.PlayAnticipationBlink(warningDuration);
+        }
+
+        float warningTimer = 0f;
+        while (warningTimer < warningDuration)
+        {
+            if (playerTarget != null)
+            {
+                Vector3 dirToPlayer = (playerTarget.position - transform.position).normalized;
+                dirToPlayer.y = 0f;
+
+                if (dirToPlayer != Vector3.zero)
+                {
+                    Quaternion targetRot = Quaternion.LookRotation(dirToPlayer) * Quaternion.Euler(0f, rotationOffset, 0f);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * rotationSpeed);
+                }
+            }
+            warningTimer += Time.deltaTime;
+            yield return null;
+        }
+
+        if (playerTarget == null || (health != null && health.IsDead)) yield break;
+
+        Vector3 startPos = transform.position;
+        Vector3 directionToPlayer = (playerTarget.position - transform.position).normalized;
+        directionToPlayer.y = 0f;
+
+        if (directionToPlayer == Vector3.zero) directionToPlayer = transform.forward;
+
+        Vector3 targetPos = transform.position + (directionToPlayer * dashDistance);
+        targetPos.y = startPos.y;
+
+        Quaternion finalDashRotation = Quaternion.LookRotation(directionToPlayer) * Quaternion.Euler(0f, rotationOffset, 0f);
+        transform.rotation = finalDashRotation;
+
+        float timePassed = 0f;
+        while (timePassed < dashDuration)
+        {
+            timePassed += Time.deltaTime;
+            float t = timePassed / dashDuration;
+            transform.position = Vector3.Lerp(startPos, targetPos, t);
+            yield return null;
+        }
+
+        DealDamageAndDie();
+    }
+
+    #endregion
+
     #region Death
 
     private void HandleDeath(GameObject obj)
     {
         isExploding = true;
+        if (enemyVisualEffects != null) enemyVisualEffects.CancelAnticipationBlink();
         StopAllCoroutines();
         if (agent) agent.enabled = false;
     }
@@ -106,7 +180,9 @@ public class ResurrectedDevilLarva : MonoBehaviour
         foreach (var hitCollider in hitColliders)
         {
             if (hitCollider.CompareTag("Player") && hitCollider.TryGetComponent<PlayerHealth>(out var pHealth))
+            {
                 pHealth.TakeDamage(baseDamage);
+            }
         }
 
         if (agent) agent.enabled = false;
@@ -121,6 +197,9 @@ public class ResurrectedDevilLarva : MonoBehaviour
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, explosionRadius);
+
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, attackTriggerDistance);
 
         if (playerTarget != null)
         {

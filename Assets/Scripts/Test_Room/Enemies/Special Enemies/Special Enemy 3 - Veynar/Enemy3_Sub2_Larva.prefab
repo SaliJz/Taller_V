@@ -563,13 +563,16 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   stoppingBuffer: 0.5
-  attackRange: 0.5
-  attackCooldown: 0.125
+  attackTriggerDistance: 5
+  damageRadius: 3
+  warningDuration: 0.5
+  jumpDuration: 0.5
+  jumpHeight: 2
   destinationUpdateInterval: 0.18
   accelMultiplier: 3
   minAcceleration: 8
   angularSpeed: 360
-  audioSource: {fileID: 0}
+  audioSource: {fileID: 1249595950714450606}
   moveSFX: {fileID: 0}
   attackExplosionSFX: {fileID: 0}
   deathSFX: {fileID: 0}
@@ -669,7 +672,7 @@ MonoBehaviour:
   raycastStepDistance: 0.25
   collisionLayers:
     serializedVersion: 2
-    m_Bits: 640
+    m_Bits: 393856
 --- !u!114 &7897724344876720646
 MonoBehaviour:
   m_ObjectHideFlags: 0
