@@ -30314,6 +30314,122 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1259201020}
   m_CullTransparentMesh: 1
+--- !u!1 &1259429196 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1015981274638048707, guid: 82803c981cc9b064fb9dc7cafd13f074, type: 3}
+  m_PrefabInstance: {fileID: 1984186497}
+  m_PrefabAsset: {fileID: 0}
+--- !u!82 &1259429197
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1259429196}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &1259429198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1259429196}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85f4732df967a044a910283ee5b89a86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  jugador: {fileID: 0}
+  distanciaMaxima: 7.1
 --- !u!1 &1262398233
 GameObject:
   m_ObjectHideFlags: 0
@@ -32133,7 +32249,7 @@ MonoBehaviour:
   playerGizmoColor: {r: 0, g: 1, b: 0, a: 1}
   platformGizmoColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   gizmoSphereSize: 0.3
-  sequenceClip: {fileID: 0}
+  sequenceClip: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
   sequenceVolume: 1
   loopSequenceClip: 1
 --- !u!64 &1333076142
@@ -45676,7 +45792,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
-  distanciaMaxima: 20
+  distanciaMaxima: 11.4
 --- !u!1 &1874748261
 GameObject:
   m_ObjectHideFlags: 0
@@ -49090,6 +49206,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6791011144649953655, guid: 82803c981cc9b064fb9dc7cafd13f074, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1673754364}
+    - targetCorrespondingSourceObject: {fileID: 1015981274638048707, guid: 82803c981cc9b064fb9dc7cafd13f074, type: 3}
+      insertIndex: 2
+      addedObject: {fileID: 1259429198}
+    - targetCorrespondingSourceObject: {fileID: 1015981274638048707, guid: 82803c981cc9b064fb9dc7cafd13f074, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1259429197}
     - targetCorrespondingSourceObject: {fileID: 3031638465364299704, guid: 82803c981cc9b064fb9dc7cafd13f074, type: 3}
       insertIndex: 1
       addedObject: {fileID: 1873338936}
