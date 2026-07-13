@@ -8,9 +8,7 @@ using static PlayerHealth;
 
 #region Enums
 
-/// <summary>
-/// Enumeracin de los diferentes tipos de estadsticas del jugador.
-/// </summary>
+
 public enum StatType
 {
     MaxHealth,
@@ -208,18 +206,7 @@ public partial class PlayerStatsManager : MonoBehaviour
 
     private void Update()
     {
-        // Toggle del panel con la tecla P
-        //if (Input.GetKeyDown(KeyCode.P))
-        //{
-        //    ToggleStatsPanel();
-        //}
-
-        //bool shiftPresionado = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-
-        //if (shiftPresionado && Input.GetKeyDown(KeyCode.E))
-        //{
-        //    showDebugOnGUI = !showDebugOnGUI;
-        //}
+       
     }
 
     #endregion

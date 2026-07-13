@@ -1813,6 +1813,14 @@ PrefabInstance:
       propertyPath: MainCamera
       value: 
       objectReference: {fileID: 238635375}
+    - target: {fileID: 4047647040947986490, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: DefaultVelocity.x
+      value: 1.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4047647040947986490, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: DefaultVelocity.y
+      value: -10
+      objectReference: {fileID: 0}
     - target: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -4238,6 +4246,9 @@ MonoBehaviour:
   playerGizmoColor: {r: 0, g: 1, b: 0, a: 1}
   platformGizmoColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   gizmoSphereSize: 0.3
+  sequenceClip: {fileID: 0}
+  sequenceVolume: 1
+  loopSequenceClip: 1
 --- !u!4 &1770771155
 Transform:
   m_ObjectHideFlags: 0

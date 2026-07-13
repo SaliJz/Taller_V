@@ -2696,6 +2696,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5297418818780259138, guid: 57c41634b7de73d45a4a3eef6b0ee34d, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3536821855271302122}
+    - targetCorrespondingSourceObject: {fileID: 7365666712189195562, guid: 57c41634b7de73d45a4a3eef6b0ee34d, type: 3}
+      insertIndex: 2
+      addedObject: {fileID: 899876424036310616}
+    - targetCorrespondingSourceObject: {fileID: 7365666712189195562, guid: 57c41634b7de73d45a4a3eef6b0ee34d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7864565335304847767}
   m_SourcePrefab: {fileID: 100100000, guid: 57c41634b7de73d45a4a3eef6b0ee34d, type: 3}
 --- !u!1 &282866465602628492 stripped
 GameObject:
@@ -2958,6 +2964,122 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 6145467420062639381, guid: 405167bea3035334998265aa45073227, type: 3}
+--- !u!1 &6426478318040104668 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7365666712189195562, guid: 57c41634b7de73d45a4a3eef6b0ee34d, type: 3}
+  m_PrefabInstance: {fileID: 4546231140938378230}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &899876424036310616
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6426478318040104668}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85f4732df967a044a910283ee5b89a86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  jugador: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+  distanciaMaxima: 20
+--- !u!82 &7864565335304847767
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6426478318040104668}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 1
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &7349374237220177976 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6550852674317312974, guid: 57c41634b7de73d45a4a3eef6b0ee34d, type: 3}
