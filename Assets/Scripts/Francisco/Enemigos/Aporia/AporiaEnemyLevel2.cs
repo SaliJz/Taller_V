@@ -132,8 +132,11 @@ public class AporiaEnemyLevel2 : AporiaEnemyBase
             {
                 pHealth.TakeDamage(attackDamage);
                 ApplyKnockback(t.transform, knockbackForce);
-                SpawnGlassArea(glassShardAttackPrefab, t.transform.position, shardAttackRadius,
+                if(pHealth.CurrentHealth > 0)
+                {
+                    SpawnGlassArea(glassShardAttackPrefab, t.transform.position, shardAttackRadius,
                                shardAttackDamagePerSec, shardAttackDuration);
+                }
             }
         }
     }

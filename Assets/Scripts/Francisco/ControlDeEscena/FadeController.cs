@@ -11,7 +11,8 @@ public class FadeController : FullScreenEffectsBase
     #region Inspector Fields
 
     [Header("Configuration")]
-    public float fadeDuration = 1.3f;
+    public float fadeOutDuration = 1.3f;
+    public float fadeInDuration = 3f;
 
     [Header("Global Settings")]
     public Color globalFadeColor = Color.black;
@@ -81,7 +82,7 @@ public class FadeController : FullScreenEffectsBase
 
         float timer = 0f;
 
-        while (timer < fadeDuration)
+        while (timer < fadeOutDuration)
         {
             if (respectPause && Time.timeScale == 0f)
             {
@@ -91,7 +92,7 @@ public class FadeController : FullScreenEffectsBase
 
             timer += Time.unscaledDeltaTime;
 
-            float t = timer / fadeDuration;
+            float t = timer / fadeOutDuration;
 
             SetFloat(ProgressProp, Mathf.Lerp(1f, 0f, t));
 
@@ -121,7 +122,7 @@ public class FadeController : FullScreenEffectsBase
 
         float timer = 0f;
 
-        while (timer < fadeDuration)
+        while (timer < fadeInDuration)
         {
             if (respectPause && Time.timeScale == 0f)
             {
@@ -131,7 +132,7 @@ public class FadeController : FullScreenEffectsBase
 
             timer += Time.unscaledDeltaTime;
 
-            float t = timer / fadeDuration;
+            float t = timer / fadeInDuration;
 
             SetFloat(ProgressProp, Mathf.Lerp(0f, 1f, t));
 

@@ -141,6 +141,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
     [SerializeField] private SolidLightWall solidLightWallPrefab;
     [SerializeField] private SoulHand soulHandPrefab;
     [SerializeField] private GameObject staticFailureWarningPrefab;
+     [SerializeField] private GameObject staticFailureVFX;
     [SerializeField] private GameObject frontBlockVFXPrefab;
     [SerializeField] private GameObject impactStunVFXPrefab;
 
@@ -568,6 +569,7 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
             state = BossState.StaticFailureRelease;
 
             DealAoEDamage(attackOrigin.position, staticFailureAoERadius, staticFailureDamage);
+            SpawnStaticImpactVFX(attackOrigin.position, staticFailureAoERadius);
             PlaySFX(staticImpactSFX);
             ShakeCamera(2f, 0.25f);
 
@@ -612,6 +614,22 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         var vfx = Instantiate(frontBlockVFXPrefab, spawnPos, Quaternion.identity);
         spawnedObjects.Add(vfx);
         Destroy(vfx, 1.5f);
+    }
+
+     private void SpawnStaticImpactVFX(Vector3 pos, float radius)
+    {
+        if (staticFailureVFX == null) return;
+
+        var vfx = Instantiate(staticFailureVFX, pos, Quaternion.identity);
+
+        ParticleSystem ps = staticFailureVFX.GetComponent<ParticleSystem>();
+        if (ps != null)
+        {
+            var shape = ps.shape;
+            shape.radius = radius;
+        }
+
+        spawnedObjects.Add(vfx);
     }
 
     #endregion

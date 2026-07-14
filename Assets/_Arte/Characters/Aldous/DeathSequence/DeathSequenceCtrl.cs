@@ -80,6 +80,7 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
     private void CollectHiddenObjects()
     {
         ParticleSystem[] allParticles = FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None);
+        DamageNumber[] allDamageNumber = FindObjectsByType<DamageNumber>(FindObjectsSortMode.None);
 
         Vector3 camPos = mainCam.transform.position;
         Vector3 playerPos = playerGFX.transform.position;
@@ -142,6 +143,13 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
             );
 
             if (insideNearbyBox || insideOcclusionBox) hiddenObjects.Add(obj);
+        }
+        ///Desactivar numeros flotantes de daño
+        foreach(var dn in allDamageNumber)
+        {
+            GameObject obj = dn.gameObject;
+            if (hiddenObjects.Contains(obj)) continue;
+            hiddenObjects.Add(obj);
         }
     }
 
