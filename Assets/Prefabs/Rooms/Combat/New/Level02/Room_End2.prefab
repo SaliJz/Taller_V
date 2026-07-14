@@ -185,7 +185,8 @@ MonoBehaviour:
   spawnAreas: []
   specificSpawnPoints: []
   animatedDoors:
-  - {fileID: 2505332445910861743}
+  - {fileID: 4858270463061645778}
+  - {fileID: 4858270463061645778}
   doorColliders:
   - activateOnOpen:
     - {fileID: 4503466205189225646}
@@ -716,11 +717,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 1425320012502727441, guid: bf294b80d20917844beb33aa6408f34b, type: 3}
   m_PrefabInstance: {fileID: 1614528376242610265}
   m_PrefabAsset: {fileID: 0}
---- !u!95 &2505332445910861743 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 3792962812469159926, guid: bf294b80d20917844beb33aa6408f34b, type: 3}
-  m_PrefabInstance: {fileID: 1614528376242610265}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &4503466205189225646 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2889186318632164599, guid: bf294b80d20917844beb33aa6408f34b, type: 3}
@@ -1005,6 +1001,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tumba-Salida
       objectReference: {fileID: 0}
+    - target: {fileID: 2027144747224933947, guid: 24d5f2eed0465c8489e578bb427ecfbe, type: 3}
+      propertyPath: fadeEvents.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2700486734333905576, guid: 24d5f2eed0465c8489e578bb427ecfbe, type: 3}
       propertyPath: m_LocalPosition.x
       value: -229
@@ -1099,6 +1099,11 @@ PrefabInstance:
 --- !u!4 &4731459255883055581 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3795726476149201693, guid: 24d5f2eed0465c8489e578bb427ecfbe, type: 3}
+  m_PrefabInstance: {fileID: 8432044728346729152}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &4858270463061645778 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 3920576163407201042, guid: 24d5f2eed0465c8489e578bb427ecfbe, type: 3}
   m_PrefabInstance: {fileID: 8432044728346729152}
   m_PrefabAsset: {fileID: 0}
 --- !u!114 &7576595440769694971 stripped

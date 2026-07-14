@@ -61,7 +61,8 @@ MonoBehaviour:
   spawnAreas: []
   specificSpawnPoints: []
   animatedDoors:
-  - {fileID: 7642565111925118659}
+  - {fileID: 86247015655639502}
+  - {fileID: 86247015655639502}
   doorColliders:
   - activateOnOpen:
     - {fileID: 8553712594024115650}
@@ -500,6 +501,30 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4269500003855852017}
     m_Modifications:
+    - target: {fileID: 3120767858009269251, guid: bbf67d2e1527eb64fae40d7d06cb8ee4, type: 3}
+      propertyPath: fadeEvents.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3120767858009269251, guid: bbf67d2e1527eb64fae40d7d06cb8ee4, type: 3}
+      propertyPath: animationEvents.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3120767858009269251, guid: bbf67d2e1527eb64fae40d7d06cb8ee4, type: 3}
+      propertyPath: animationEvents.Array.data[0].value
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3120767858009269251, guid: bbf67d2e1527eb64fae40d7d06cb8ee4, type: 3}
+      propertyPath: animationEvents.Array.data[0].animator
+      value: 
+      objectReference: {fileID: 86247015655639502}
+    - target: {fileID: 3120767858009269251, guid: bbf67d2e1527eb64fae40d7d06cb8ee4, type: 3}
+      propertyPath: animationEvents.Array.data[0].paramName
+      value: Open
+      objectReference: {fileID: 0}
+    - target: {fileID: 3120767858009269251, guid: bbf67d2e1527eb64fae40d7d06cb8ee4, type: 3}
+      propertyPath: animationEvents.Array.data[0].timeTrigger
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5968152182326583588, guid: bbf67d2e1527eb64fae40d7d06cb8ee4, type: 3}
       propertyPath: m_LocalPosition.x
       value: -29.75
@@ -549,6 +574,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: bbf67d2e1527eb64fae40d7d06cb8ee4, type: 3}
+--- !u!95 &86247015655639502 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 4742949177572618582, guid: bbf67d2e1527eb64fae40d7d06cb8ee4, type: 3}
+  m_PrefabInstance: {fileID: 4674804660239202456}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1311423647560866236 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5968152182326583588, guid: bbf67d2e1527eb64fae40d7d06cb8ee4, type: 3}
@@ -878,11 +908,6 @@ GameObject:
 --- !u!1 &5578648294928697892 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1425320012502727441, guid: bf294b80d20917844beb33aa6408f34b, type: 3}
-  m_PrefabInstance: {fileID: 6821994587614785845}
-  m_PrefabAsset: {fileID: 0}
---- !u!95 &7642565111925118659 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 3792962812469159926, guid: bf294b80d20917844beb33aa6408f34b, type: 3}
   m_PrefabInstance: {fileID: 6821994587614785845}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &8553712594024115650 stripped

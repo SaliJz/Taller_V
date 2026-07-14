@@ -62,7 +62,8 @@ MonoBehaviour:
   spawnAreas: []
   specificSpawnPoints: []
   animatedDoors:
-  - {fileID: 7642565111925118659}
+  - {fileID: 1689714325805892088}
+  - {fileID: 1689714325805892088}
   doorColliders:
   - activateOnOpen:
     - {fileID: 8553712594024115650}
@@ -552,6 +553,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tumba-Salida
       objectReference: {fileID: 0}
+    - target: {fileID: 2027144747224933947, guid: 24d5f2eed0465c8489e578bb427ecfbe, type: 3}
+      propertyPath: fadeEvents.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2027144747224933947, guid: 24d5f2eed0465c8489e578bb427ecfbe, type: 3}
+      propertyPath: fadeEvents.Array.data[0].timeTrigger
+      value: 1.6
+      objectReference: {fileID: 0}
     - target: {fileID: 2700486734333905576, guid: 24d5f2eed0465c8489e578bb427ecfbe, type: 3}
       propertyPath: m_LocalPosition.x
       value: -229
@@ -646,6 +655,11 @@ PrefabInstance:
 --- !u!4 &1564609560808233463 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3795726476149201693, guid: 24d5f2eed0465c8489e578bb427ecfbe, type: 3}
+  m_PrefabInstance: {fileID: 2385708259199451882}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &1689714325805892088 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 3920576163407201042, guid: 24d5f2eed0465c8489e578bb427ecfbe, type: 3}
   m_PrefabInstance: {fileID: 2385708259199451882}
   m_PrefabAsset: {fileID: 0}
 --- !u!114 &4411944809617990865 stripped
@@ -978,11 +992,6 @@ GameObject:
 --- !u!1 &5578648294928697892 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1425320012502727441, guid: bf294b80d20917844beb33aa6408f34b, type: 3}
-  m_PrefabInstance: {fileID: 6821994587614785845}
-  m_PrefabAsset: {fileID: 0}
---- !u!95 &7642565111925118659 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 3792962812469159926, guid: bf294b80d20917844beb33aa6408f34b, type: 3}
   m_PrefabInstance: {fileID: 6821994587614785845}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &8553712594024115650 stripped
