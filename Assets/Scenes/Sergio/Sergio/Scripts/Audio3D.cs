@@ -8,6 +8,11 @@ public class Audio3D : MonoBehaviour
 
     private AudioSource source;
 
+    void Awake()
+    {
+        jugador = GameObject.FindGameObjectWithTag("Player")?.transform;
+    }
+
     private void Start()
     {
         source = GetComponent<AudioSource>();
