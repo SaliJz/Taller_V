@@ -29,6 +29,22 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
 
     public void StartSequence(Action onFinished = null)
     {
+        StartCoroutine(DeathSequence(onFinished));
+    }
+
+    private void onDeathSequenceFinished(PlayableDirector director)
+    {
+        deathDirector.stopped -= onDeathSequenceFinished;
+        Time.timeScale = 1;
+        onSequenceFinished?.Invoke();
+        onSequenceFinished = null;
+    }
+
+    private IEnumerator DeathSequence(Action onFinished = null)
+    {
+        Time.timeScale = 0.2f;
+        yield return StartCoroutine(BlackFade());
+        
         CollectHiddenObjects();
         // HideNearbyObjects();
 
@@ -48,16 +64,6 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
         anim.enabled = false;
 
         deathDirector.Play();
-        StartCoroutine(BlackFade());
-
-    }
-
-    private void onDeathSequenceFinished(PlayableDirector director)
-    {
-        deathDirector.stopped -= onDeathSequenceFinished;
-        Time.timeScale = 1;
-        onSequenceFinished?.Invoke();
-        onSequenceFinished = null;
     }
 
     private IEnumerator BlackFade(float duration = 0.2f)
