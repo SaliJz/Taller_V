@@ -15,6 +15,9 @@ public class RoomTransitionTrigger : MonoBehaviour
     [SerializeField] private PlayerMeleeAttack playerMeleeAttack;
     [SerializeField] private PlayerShieldController playerShieldController;
 
+    [Header("Sequence")]
+    [SerializeField] private SequenceTransition sequenceTransition;
+
     #endregion
 
     #region Private State
@@ -78,6 +81,11 @@ public class RoomTransitionTrigger : MonoBehaviour
         {
             playerAnimator.SetFloat("Speed", 0f);
             playerAnimator.Play("Idle");
+        }
+
+        if (sequenceTransition != null)
+        {
+            yield return StartCoroutine(sequenceTransition.ExecuteSequence(playerGameObject.transform));
         }
 
         yield return StartCoroutine(FadeController.Instance.FadeOut());
