@@ -618,26 +618,18 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
         yield return new WaitUntil(() => !isInAnticipation);
 
         Vector3 dashTarget = CalculateBufferOverrunTarget();
-        FaceDirection((dashTarget - transform.position).normalized);
+        Vector3 dashDir = (dashTarget - transform.position).normalized;
+        FaceDirection(dashDir);
 
         GameObject warningTrail = null;
         if (bufferOverrunTrailIndicatorPrefab != null)
         {
             float dist = Vector3.Distance(transform.position, dashTarget);
-            Vector3 mid = (transform.position + dashTarget) * 0.5f;
+            Vector3 warningPosition = GetGroundPosition(transform.position + dashDir * (dist * 0.5f));
 
-            int groundLayer = LayerMask.GetMask("Ground", "Default");
-            if (Physics.Raycast(new Vector3(mid.x, transform.position.y + 5f, mid.z), Vector3.down, out RaycastHit hit, 20f, groundLayer))
-            {
-                mid.y = hit.point.y + 0.05f;
-            }
-            else
-            {
-                mid.y = transform.position.y + 0.05f;
-            }
+            warningTrail = Instantiate(bufferOverrunTrailIndicatorPrefab, warningPosition, Quaternion.LookRotation(dashDir));
 
-            warningTrail = Instantiate(bufferOverrunTrailIndicatorPrefab, mid, Quaternion.LookRotation((dashTarget - transform.position).normalized));
-            warningTrail.transform.localScale = new Vector3(5f, 0.05f, dist);
+            warningTrail.transform.localScale = new Vector3(5f * 2f, 0.05f, dist);
             instantiatedEffects.Add(warningTrail);
         }
 
@@ -1011,6 +1003,17 @@ public class BaalBoss : MonoBehaviour, IAnimEventHandler
     #endregion
 
     #region Status Effects & Utility
+
+    private Vector3 GetGroundPosition(Vector3 rayOrigin)
+    {
+        int groundLayer = LayerMask.GetMask("Ground", "Default");
+        if (Physics.Raycast(rayOrigin + Vector3.up * 2f, Vector3.down, out RaycastHit hit, 30f, groundLayer))
+        {
+            return hit.point + Vector3.up * 0.05f;
+        }
+
+        return new Vector3(rayOrigin.x, transform.position.y + 0.05f, rayOrigin.z);
+    }
 
     public void HandleAnimEvents(string eventName)
     {

@@ -93,6 +93,8 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
     [SerializeField] private int scrapRamMineBurst = 5;
     [SerializeField] private float scrapRamActiveDist = 15f;
     [SerializeField] private float scrapRamNoDamageWindow = 10f;
+    [Tooltip("Prefab del indicador proyectado en el suelo para previsualizar la embestida Scrap Ram.")]
+    [SerializeField] private GameObject scrapRamWarningPrefab;
 
     #endregion
 
@@ -715,7 +717,25 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
         pendingAnticipationSFX = scrapRamAnticipationSFX;
         if (knightAnimCtrl != null) knightAnimCtrl.PlayScrapRam();
 
+        GameObject warningTrail = null;
+        if (scrapRamWarningPrefab != null)
+        {
+            float maxDashDistance = scrapRamSpeed * scrapRamDuration;
+            Vector3 dashDir = transform.forward;
+            Vector3 warningPosition = GetGroundPosition(transform.position + dashDir * (maxDashDistance * 0.5f));
+
+            warningTrail = Instantiate(scrapRamWarningPrefab, warningPosition, Quaternion.LookRotation(dashDir));
+            warningTrail.transform.localScale = new Vector3(5f * 2f, 0.05f, maxDashDistance);
+            spawnedObjects.Add(warningTrail);
+        }
+
         yield return new WaitUntil(() => attackExecuteTriggered || isDead || state != BossState.ScrapRam || myToken != actionToken);
+
+        if (warningTrail != null)
+        {
+            spawnedObjects.Remove(warningTrail);
+            Destroy(warningTrail);
+        }
 
         if (isDead || state != BossState.ScrapRam || myToken != actionToken)
         {
@@ -738,8 +758,10 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
 
             transform.position += transform.forward * scrapRamSpeed * Time.deltaTime;
 
-            Vector3 ramHitCenter = attackOrigin != null ? attackOrigin.position
+            Vector3 ramHitCenter = attackOrigin != null 
+                ? attackOrigin.position
                 : transform.position + transform.forward * 0.8f;
+
             Collider[] playerHits = Physics.OverlapSphere(ramHitCenter, 1.2f, playerLayer);
 
             foreach (var c in playerHits)
@@ -1080,6 +1102,16 @@ public class BloodKnightBoss : MonoBehaviour, IDamageBlocker, IAnimEventHandler
     #endregion
 
     #region Movement & Tracking Utils
+
+    private Vector3 GetGroundPosition(Vector3 rayOrigin)
+    {
+        if (Physics.Raycast(rayOrigin + Vector3.up * 2f, Vector3.down, out RaycastHit hit, 30f, groundLayerMask))
+        {
+            return hit.point + Vector3.up * 0.05f;
+        }
+
+        return new Vector3(rayOrigin.x, transform.position.y + 0.05f, rayOrigin.z);
+    }
 
     private IEnumerator DashRoutine(Vector3 target, float duration, float speed, bool dealContactDamage, bool spawnCrystalOnWallHit)
     {
