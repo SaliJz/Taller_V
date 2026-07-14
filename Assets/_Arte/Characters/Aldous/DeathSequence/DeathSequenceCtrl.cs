@@ -42,7 +42,6 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
 
     private IEnumerator DeathSequence(Action onFinished = null)
     {
-        Time.timeScale = 0.2f;
         yield return StartCoroutine(BlackFade());
         
         CollectHiddenObjects();
@@ -66,10 +65,10 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
         deathDirector.Play();
     }
 
-    private IEnumerator BlackFade(float duration = 0.2f)
+    private IEnumerator BlackFade(float duration = 0.5f)
     {
         float elapsed = 0f;
-        Time.timeScale = 0f;
+        Time.timeScale = 0.2f;
 
         while (elapsed < duration)
         {
@@ -80,6 +79,7 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
             yield return null;
         }
 
+        Time.timeScale = 0f;
         SetFloat(intensidadProp, 1);
     }
 

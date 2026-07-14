@@ -13,7 +13,7 @@ public class FadeController : FullScreenEffectsBase
     [Header("Configuration")]
     public float fadeOutDuration = 1.3f;
     // public float fadeInDuration = 2f;
-    public float fadeInTimer = 2f;
+    // public float fadeInTimer = 2f;
 
 
     [Header("Global Settings")]
@@ -124,7 +124,7 @@ public class FadeController : FullScreenEffectsBase
 
         float timer = 0f;
 
-        while (timer < fadeInTimer)
+        while (timer < fadeOutDuration)
         {
             if (respectPause && Time.timeScale == 0f)
             {
@@ -134,7 +134,7 @@ public class FadeController : FullScreenEffectsBase
 
             timer += Time.unscaledDeltaTime;
 
-            float t = timer / fadeInTimer;
+            float t = timer / fadeOutDuration;
 
             SetFloat(ProgressProp, Mathf.Lerp(0f, 1f, t));
 
