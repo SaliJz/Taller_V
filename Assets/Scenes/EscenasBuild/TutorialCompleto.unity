@@ -2933,8 +2933,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: Presiona !MELEE  para atacar a melee. Elimina al testigo
-              con golpes a melee.
+            m_StringArgument: Elimina al testigo usando !MELEE
             m_BoolArgument: 1
           m_CallState: 2
   isRunning: 0
@@ -6784,8 +6783,15 @@ MonoBehaviour:
   blockStartDialog:
   - CharacterName: Diablo
     ProfileImage: {fileID: 0}
-    Text: "\xA1Oh mira! Visitas completamente inesperadas. Quiz\xE1 podr\xEDas intentar
-      usar ese pobre escudo que tienes como arma... Seh, solo l\xE1nzalo.\r\n"
+    Text: "\xA1Uy, visitas totalmente inesperadas! :0\n"
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: Diablo
+    ProfileImage: {fileID: 0}
+    Text: "Haz que ese escudo te sirva de algo, peque\xF1o"
     WaitForInput: 1
     AutoAdvanceDelay: 0
     VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
@@ -25242,8 +25248,15 @@ MonoBehaviour:
   dialogue1_Intro:
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
-    Text: "Oh, este es terco. Tu escudito normal no servir\xE1. Sobrec\xE1rgalo para
-      entrar en Modo Berserker y llamar su atenci\xF3n. Apl\xE1stalo\u2026 de cerquita."
+    Text: "Oh, este es terco. Tu escudito normal no servir\xE1."
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: DIABLO
+    ProfileImage: {fileID: 0}
+    Text: "Sobrec\xE1rgalo para llamar su atenci\xF3n >:)"
     WaitForInput: 1
     AutoAdvanceDelay: 0
     VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
@@ -25252,26 +25265,7 @@ MonoBehaviour:
   dialogue2_Contract:
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
-    Text: "Magn\xEDfico. Envuelve tus golpes con tu aura demon\xEDaca. La superresistencia
-      es vulnerable a ella."
-    WaitForInput: 1
-    AutoAdvanceDelay: 0
-    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
-    VoicePitch: 1
-    VoiceFrequency: 2
-  - CharacterName: DIABLO
-    ProfileImage: {fileID: 0}
-    Text: Pero no te relajes. Solo tienes cinco segundos por contrato,  antes de
-      que empieces a consumir tu propia esencia vital.
-    WaitForInput: 1
-    AutoAdvanceDelay: 0
-    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
-    VoicePitch: 1
-    VoiceFrequency: 2
-  - CharacterName: DIABLO
-    ProfileImage: {fileID: 0}
-    Text: "Vamos. Recuerda todo de una vez y convi\xE9rtete en uno de mis guerreros,
-      Aldous."
+    Text: Magnifico! Ahora veamos si su Apatia es tan fuerte contra tus golpes
     WaitForInput: 1
     AutoAdvanceDelay: 0
     VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
@@ -25280,7 +25274,7 @@ MonoBehaviour:
   dialogue3_DiabloLaugh:
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
-    Text: "\u201C\xA1Mujajajajaja!\u201D\r"
+    Text: XDDDD
     WaitForInput: 1
     AutoAdvanceDelay: 0
     VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
@@ -25289,8 +25283,24 @@ MonoBehaviour:
   dialogue4_Success:
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
-    Text: "Buen chico. Sigamos con el pr\xF3ximo acto de esta tortura, que el tiempo
-      (tu tiempo) es oro."
+    Text: Buen chico.
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: DIABLO
+    ProfileImage: {fileID: 0}
+    Text: "Me preparar\xE9 para tu martirio, asi que mi \"amigo\" se encargar\xE1
+      de ti ahora y yo te esperar\xE9 en mi patio de juegos :3"
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: DIABLO
+    ProfileImage: {fileID: 0}
+    Text: "\xA1Adios, mi granito de arena!"
     WaitForInput: 1
     AutoAdvanceDelay: 0
     VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
@@ -25299,20 +25309,20 @@ MonoBehaviour:
   dialogue_OnPlayerDamaged:
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
-    Text: "\xA1Uuuy, mira c\xF3mo te desmoronas! El poder no es gratis, amiguito.
-      Tu energ\xEDa se acab\xF3 y ahora te est\xE1s comiendo tu propio tiempo de
-      vida."
+    Text: "\xA1Mira como te caes a pedazos! \xBFAcaso \"Sobrecarga\" no te decia
+      algo?"
     WaitForInput: 1
-    AutoAdvanceDelay: 0
+    AutoAdvanceDelay: 0.5
     VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
     VoicePitch: 1
     VoiceFrequency: 2
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
-    Text: "Apaga el escudo con el mismo bot\xF3n que lo encendiste, a menos que quieras
-      morir en el tutorial. :p"
+    Text: "Tu ENERG\xCDA se acab\xF3 y ahora te est\xE1s comiendo tu propia vida.
+      Apaga eso de una vez...                                                                 
+      \nA menos que quieras morir en el tutorial :p"
     WaitForInput: 1
-    AutoAdvanceDelay: 0
+    AutoAdvanceDelay: 0.3
     VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
     VoicePitch: 1
     VoiceFrequency: 2
@@ -25328,7 +25338,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: 'Presiona !SKILL para activar tu Habilidad Especial. '
+          m_StringArgument: Presiona !SKILL para activar tu Sobrecarga
           m_BoolArgument: 1
         m_CallState: 2
       - m_Target: {fileID: 1821268776}
@@ -25396,8 +25406,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Presiona !MELEE  para atacar a melee. Elimina al testigo
-            con golpes a melee.
+          m_StringArgument: Elimina al testigo usando !MELEE
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 1821268779}
@@ -25543,7 +25552,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: 'Presiona !SKILL para desactivar tu Habilidad Especial. '
+          m_StringArgument: Presiona !SKILL para desactivar la Sobrecarga.
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 1821268776}
@@ -33550,8 +33559,7 @@ MonoBehaviour:
     dialogueLines:
     - CharacterName: "M\xC4LGOR"
       ProfileImage: {fileID: 0}
-      Text: "\"Sabia elecci\xF3n. Antes de que saltes al vac\xEDo, escucha: tu mente
-        es fr\xE1gil aqu\xED.\""
+      Text: "Esa esencia ahora est\xE1 dentro tuyo, buscala."
       WaitForInput: 1
       AutoAdvanceDelay: 0.03
       VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
@@ -33633,7 +33641,7 @@ MonoBehaviour:
     dialogueLines:
     - CharacterName: "M\xC4LGOR"
       ProfileImage: {fileID: 0}
-      Text: "Mira en tu interior. Ver\xE1s tres espacios dorados principales..."
+      Text: "Ver\xE1s tres espacios dorados principales."
       WaitForInput: 1
       AutoAdvanceDelay: 0.03
       VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
@@ -33666,7 +33674,7 @@ MonoBehaviour:
     dialogueLines:
     - CharacterName: "M\xC4LGOR"
       ProfileImage: {fileID: 0}
-      Text: ...uno para tus golpes cercanos
+      Text: "El de ARRIBA que mejora tus ataques MEL\xC9"
       WaitForInput: 1
       AutoAdvanceDelay: 0.03
       VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
@@ -33723,7 +33731,7 @@ MonoBehaviour:
     dialogueLines:
     - CharacterName: "M\xC4LGOR"
       ProfileImage: {fileID: 0}
-      Text: ...otro para tus ataques lejanos
+      Text: El de en MEDIO mejora tus ATAQUES A DISTANCIA.
       WaitForInput: 1
       AutoAdvanceDelay: 0.03
       VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
@@ -33780,7 +33788,7 @@ MonoBehaviour:
     dialogueLines:
     - CharacterName: "M\xC4LGOR"
       ProfileImage: {fileID: 0}
-      Text: "...y el \xFAltimo para tu impulso"
+      Text: "Y el \xDALTIMO, tu IMPULSO."
       WaitForInput: 1
       AutoAdvanceDelay: 0.03
       VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
@@ -33837,7 +33845,7 @@ MonoBehaviour:
     dialogueLines:
     - CharacterName: "M\xC4LGOR"
       ProfileImage: {fileID: 0}
-      Text: Que son para mis preciadas reliquias
+      Text: Solo puedes llevar una de cada de estas RELIQUIAS a la vez.
       WaitForInput: 1
       AutoAdvanceDelay: 0.03
       VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
@@ -33858,7 +33866,7 @@ MonoBehaviour:
     dialogueLines:
     - CharacterName: "M\xC4LGOR"
       ProfileImage: {fileID: 0}
-      Text: El resto del espacio es para tus gangas.
+      Text: "El resto de espacio es para mejoras m\xE1s peque\xF1as, mis GANGAS."
       WaitForInput: 1
       AutoAdvanceDelay: 0.03
       VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
@@ -33898,61 +33906,6 @@ MonoBehaviour:
     OnStepAfter:
       m_PersistentCalls:
         m_Calls: []
-  - stepLabel: PASO 9
-    type: 0
-    dialogueLines:
-    - CharacterName: "M\xC4LGOR"
-      ProfileImage: {fileID: 0}
-      Text: "Gr\xE1bate esto: cada casilla dorada tiene su propia esencia: mel\xE9,
-        distancia e impulso. "
-      WaitForInput: 1
-      AutoAdvanceDelay: 0.03
-      VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
-      VoicePitch: 1
-      VoiceFrequency: 2
-    - CharacterName: "M\xC4LGOR"
-      ProfileImage: {fileID: 0}
-      Text: "Si obtienes una reliquia de una esencia que ya posees, esta reemplazar\xE1
-        a la reliquia anterior. Elige con cuidado. "
-      WaitForInput: 1
-      AutoAdvanceDelay: 0.03
-      VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
-      VoicePitch: 1
-      VoiceFrequency: 2
-    actionToWait: {fileID: 0}
-    steamAction: 0
-    requiredPresses: 0
-    maxTimeBetweenPresses: 0
-    OnStepBefore:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 1237997838}
-          m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-          m_MethodName: SetActive
-          m_Mode: 6
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
-    OnStepAfter:
-      m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 1821268773}
-          m_TargetAssemblyTypeName: PlayerMovement, Assembly-CSharp
-          m_MethodName: set_enabled
-          m_Mode: 6
-          m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
   - stepLabel: PASO 10
     type: 1
     dialogueLines: []
@@ -33987,6 +33940,18 @@ MonoBehaviour:
             m_StringArgument: Para cerrar inventario, usa !INVENTORY
             m_BoolArgument: 0
           m_CallState: 2
+        - m_Target: {fileID: 1558881526}
+          m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+          m_MethodName: SetActive
+          m_Mode: 6
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Para cerrar inventario, usa !INVENTORY
+            m_BoolArgument: 0
+          m_CallState: 2
     OnStepAfter:
       m_PersistentCalls:
         m_Calls:
@@ -34007,8 +33972,8 @@ MonoBehaviour:
     dialogueLines:
     - CharacterName: "M\xC4LGOR"
       ProfileImage: {fileID: 0}
-      Text: "Ahora l\xE1nzate al abismo y entra al primer Infierno. Veremos cu\xE1nto
-        duras."
+      Text: "Ahora cruza el espejo y empieza tu aventura, aunque sepas que ser\xE1s
+        el chiste de ese tipo."
       WaitForInput: 1
       AutoAdvanceDelay: 0.03
       VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
@@ -44825,7 +44790,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!64 &1687806120
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -51318,7 +51283,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.03, y: 0.6}
   m_AnchorMax: {x: 0.97, y: 0.97}
-  m_AnchoredPosition: {x: 0, y: 54}
+  m_AnchoredPosition: {x: 0, y: 53.999985}
   m_SizeDelta: {x: 0, y: -108}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1859179701
@@ -54410,7 +54375,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.26415092, g: 0.26415092, b: 0.26415092, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -54965,8 +54930,7 @@ MonoBehaviour:
   Sala1_IntroDialog:
   - CharacterName: "M\xC4LGOR"
     ProfileImage: {fileID: 0}
-    Text: "Ac\xE9rcate, peque\xF1a alma. Otra m\xE1s buscando burlar las leyes naturales
-      a trav\xE9s de los infiernos."
+    Text: "Ac\xE9rcate, peque\xF1o."
     WaitForInput: 1
     AutoAdvanceDelay: 0.03
     VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
@@ -58420,20 +58384,35 @@ MonoBehaviour:
   Sala1_IntroDialog:
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
-    Text: "\xA1Y ah\xED est\xE1! De la nada. Literalmente. Para que este show no
-      sea aburrido, te hice esa cosa (tu escudo) para que puedas moverte. T\xF3malo
-      como la \xFAnica cortes\xEDa que tendr\xE1s de m\xED :)"
+    Text: "\xA1Y ah\xED est\xE1! De la nada... Literalmente."
     WaitForInput: 1
-    AutoAdvanceDelay: 0
+    AutoAdvanceDelay: 0.3
     VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
     VoicePitch: 1
     VoiceFrequency: 2
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
-    Text: "Por cierto, \xBFves ese brillo dorado? Gr\xE1batelo. Esa luz te indicar\xE1
-      la ruta principal o los caminos que puedes tomar en cualquier nivel."
+    Text: Antes de que empiece el espectaculo, te hice ese cuerpo para que puedas
+      moverte por aqui. :)
     WaitForInput: 1
-    AutoAdvanceDelay: 0
+    AutoAdvanceDelay: 0.3
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: DIABLO
+    ProfileImage: {fileID: 0}
+    Text: "Y no te preocupes con perderte. Aqui y en mis infiernos, el BRILLO DORADO
+      es lo unico que debes seguir, \xBFQued\xF3 claro?"
+    WaitForInput: 1
+    AutoAdvanceDelay: 0.3
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: DIABLO
+    ProfileImage: {fileID: 0}
+    Text: "Camina por favor, a\xFAn tengo toda la eternidad para burlarme de ti\njejeje"
+    WaitForInput: 1
+    AutoAdvanceDelay: 0.3
     VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
     VoicePitch: 1
     VoiceFrequency: 2
@@ -58449,7 +58428,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Para moverte, usa !MOVE    y sigue el camino.
+          m_StringArgument: Para moverte, usa !MOVE    y sigue el [dorado].
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 1821268767}
@@ -58925,8 +58904,15 @@ MonoBehaviour:
   Sala1_IntroDialog:
   - CharacterName: DIABLO
     ProfileImage: {fileID: 0}
-    Text: "Ah, casi lo olvido. Puedes impulsarte para cruzar agujeros. Te advierto
-      que si te caes, me voy a re\xEDr un mont\xF3n."
+    Text: "Y puedes usar el \xA1IMPULSO! para cruzar agujeros."
+    WaitForInput: 1
+    AutoAdvanceDelay: 0
+    VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: DIABLO
+    ProfileImage: {fileID: 0}
+    Text: Cuidado con caerte, no prometo no reirme ;D
     WaitForInput: 1
     AutoAdvanceDelay: 0
     VoiceClip: {fileID: 8300000, guid: 8d968318300e23d419dcb07531cf69a3, type: 3}
@@ -58944,7 +58930,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: 'Dashea con !DASH para pasar entre plataformas. '
+          m_StringArgument: Impulsate con !DASH para salir de aqui.
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 4071468}
@@ -60798,9 +60784,34 @@ MonoBehaviour:
   malgorShopUnlockLines:
   - CharacterName: "M\xC4LGOR"
     ProfileImage: {fileID: 0}
-    Text: "Toma una de mis mercanc\xEDas: gangas o reliquias. Por cortes\xEDa, no
-      te cobrar\xE9 nada; en esta zona las reglas son flexibles. Adentro, pagar\xE1s
-      con tu esencia vital."
+    Text: "Me presento, soy el que todo lo ha visto, M\xE4lgor."
+    WaitForInput: 1
+    AutoAdvanceDelay: 0.03
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: "M\xC4LGOR"
+    ProfileImage: {fileID: 0}
+    Text: Estoy aqui para dejar de ser espectador en el infinito de las situaciones,
+      para ser parte de algo por una vez en mi indefinida existencia.
+    WaitForInput: 1
+    AutoAdvanceDelay: 0.03
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: "M\xC4LGOR"
+    ProfileImage: {fileID: 0}
+    Text: "Te dar\xE9 mercanc\xEDas, aqui y en los infiernos del llamado Diablo."
+    WaitForInput: 1
+    AutoAdvanceDelay: 0.03
+    VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
+    VoicePitch: 1
+    VoiceFrequency: 2
+  - CharacterName: "M\xC4LGOR"
+    ProfileImage: {fileID: 0}
+    Text: "Aqui escojeras solo un objeto y ser\xE1 gratuito. Pero dentro de los infiernos
+      te cobrar\xE9 con tu TIEMPO DE VIDA, esa barra en la esquina inferior izquierda,
+      all\xED podr\xE1s elegir cuantos objetos quieras."
     WaitForInput: 1
     AutoAdvanceDelay: 0.03
     VoiceClip: {fileID: 8300000, guid: 74a1d3a7afa680241b89bac49426b703, type: 3}
