@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using UnityEngine.Events;
+using UnityEngine.Audio;
 
 [RequireComponent(typeof(BoxCollider))]
 public class DoorTp : MonoBehaviour
@@ -22,6 +23,7 @@ public class DoorTp : MonoBehaviour
     [Header("Audio")]
     [SerializeField] private AudioClip transitionStartClip;
     [SerializeField] private float transitionStartVolume = 1f;
+    [SerializeField] private AudioMixerGroup outputAudioMixerGroup;
 
     [Header("Debug/Gizmos")]
     public float gizmoRadius = 1f;
@@ -57,6 +59,12 @@ public class DoorTp : MonoBehaviour
         {
             audioSource = gameObject.AddComponent<AudioSource>();
         }
+
+        if (outputAudioMixerGroup != null)
+        {
+            audioSource.outputAudioMixerGroup = outputAudioMixerGroup;
+        }
+
         audioSource.playOnAwake = false;
         audioSource.spatialBlend = 0f;
     }
