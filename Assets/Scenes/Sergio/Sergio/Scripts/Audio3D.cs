@@ -10,7 +10,7 @@ public class Audio3D : MonoBehaviour
 
     void Awake()
     {
-        jugador = GameObject.FindGameObjectWithTag("Player")?.transform;
+        if (jugador == null) jugador = GameObject.FindGameObjectWithTag("Player")?.transform;
     }
 
     private void Start()
@@ -20,6 +20,8 @@ public class Audio3D : MonoBehaviour
 
     private void Update()
     {
+        if (jugador != null) return;
+
         float distancia = Vector3.Distance(transform.position, jugador.position);
 
         source.volume = Mathf.Clamp01(1f - (distancia / distanciaMaxima));
