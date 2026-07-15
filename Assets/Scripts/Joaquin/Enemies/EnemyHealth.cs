@@ -86,6 +86,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     private EnemyVisualEffects enemyVisualEffects;
     private Transform playerTransform;
     private Renderer enemyRenderer;
+    private Collider enemyCollider;
 
     private Color originalColor;
     private AttackDamageType lastDamageType;
@@ -187,25 +188,32 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private void Awake()
     {
-        enemyVisualEffects = GetComponent<EnemyVisualEffects>();
-
+        if (enemyVisualEffects == null) enemyVisualEffects = GetComponent<EnemyVisualEffects>();
         if (enemyVisualEffects == null)
         {
             ReportDebug("Componente EnemyVisualEffects no encontrado en el enemigo.", 2);
         }
 
         toughnessSystem = GetComponent<EnemyToughness>();
-
-        if (toughnessSystem != null)
+        if (toughnessSystem == null)
         {
-            ReportDebug("Sistema de dureza detectado.", 1);
+            ReportDebug("Componente EnemyToughness no encontrado en el enemigo.", 2);
         }
 
         enemyRenderer = GetComponentInChildren<Renderer>();
-
+        if (enemyRenderer == null)
+        {
+            ReportDebug("Renderer no encontrado en el enemigo o sus hijos.", 2);
+        }
         if (enemyRenderer != null && enemyRenderer.material.HasProperty("_Color"))
         {
             originalColor = enemyRenderer.material.color;
+        }
+
+        if (enemyCollider == null) enemyCollider = GetComponent<Collider>();
+        if (enemyCollider == null)
+        {
+            ReportDebug("Collider no encontrado en el enemigo.", 2);
         }
 
         vulnerableLayerIndex = gameObject.layer;
@@ -457,9 +465,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         currentHealth = 0;
         CurrentHealth = 0;
 
-        onDeathEvent?.Invoke();
+        if (enemyCollider != null) enemyCollider.enabled = false;
 
+        onDeathEvent?.Invoke();
         OnDeath?.Invoke(gameObject);
+
         if (auraManager != null)
         {
             auraManager.HandleDeathEffect(transform, maxHealth);
