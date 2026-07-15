@@ -1,8 +1,7 @@
 using UnityEngine;
-
 public class CurativeLarva : BaseLarva
 {
-    #region Settings
+    #region 
 
     [Header("Healing")]
     [SerializeField] private float baseHealAmount = 15f;
@@ -12,6 +11,9 @@ public class CurativeLarva : BaseLarva
     [Header("Detection & Grace Time")]
     [SerializeField] private float detectionRadius = 8f;
     [SerializeField] private float loseTargetGraceTime = 1.5f;
+
+    [Header("Spawn Protection")]
+    [SerializeField] private float healActivationDelay = 0.5f;
 
     #endregion
 
@@ -23,6 +25,7 @@ public class CurativeLarva : BaseLarva
     private bool hasHealed = false;
 
     private float graceTimer = 0f;
+    private float spawnTime;
 
     #endregion
 
@@ -42,10 +45,12 @@ public class CurativeLarva : BaseLarva
         base.Awake();
 
         playerHealth = FindAnyObjectByType<PlayerHealth>();
+
         if (playerHealth != null) playerTransform = playerHealth.transform;
 
         if (agent != null) agent.stoppingDistance = stopDistance;
         if (calculatedHealAmount == 0) calculatedHealAmount = baseHealAmount;
+        spawnTime = Time.time;
     }
 
     protected override bool HasTarget()
@@ -81,7 +86,7 @@ public class CurativeLarva : BaseLarva
                     if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
                     {
                         agent.ResetPath();
-                        agent.speed = wanderSpeed; 
+                        agent.speed = wanderSpeed;
                     }
                 }
             }
@@ -97,8 +102,7 @@ public class CurativeLarva : BaseLarva
             agent.speed = moveSpeed;
             agent.SetDestination(playerTransform.position);
         }
-
-        if (Vector3.Distance(transform.position, playerTransform.position) <= healingRadius)
+        if (CanHeal() && Vector3.Distance(transform.position, playerTransform.position) <= healingRadius)
             HealAndDie();
     }
 
@@ -116,7 +120,7 @@ public class CurativeLarva : BaseLarva
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!hasHealed && other.CompareTag("Player"))
+        if (!hasHealed && CanHeal() && other.CompareTag("Player"))
             HealAndDie();
     }
 
@@ -124,6 +128,10 @@ public class CurativeLarva : BaseLarva
 
     #region Healing
 
+    private bool CanHeal()
+    {
+        return Time.time - spawnTime >= healActivationDelay;
+    }
     private void HealAndDie()
     {
         if (hasHealed) return;
