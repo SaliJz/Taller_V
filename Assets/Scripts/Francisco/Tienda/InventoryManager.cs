@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class InventoryManager : MonoBehaviour
@@ -34,6 +36,8 @@ public class InventoryManager : MonoBehaviour
     private PlayerHealth playerHealth;
     private int messageIndex = 0;
     private Coroutine hideMessageCoroutine;
+
+    public static event Action OnInventoryChanged;
 
     #endregion
 
@@ -132,18 +136,19 @@ public class InventoryManager : MonoBehaviour
             HandleEffectReplacement(item);
         }
 
-        // Determinar si es un ítem mecánico o normal
+        // Determinar si es un ï¿½tem mecï¿½nico o normal
         bool isMechanic = InventoryUIManager.Instance != null && InventoryUIManager.Instance.GetMechanicSlotIndex(item) >= 0;
 
         if (isMechanic)
         {
             CurrentRunItems.Add(item);
             UpdateInventoryUI();
+            NotifyInventoryChanged();
             return true;
         }
         else
         {
-            // Si es normal, cuenta cuantos normales se tiene, sin sumar los mecánicos
+            // Si es normal, cuenta cuantos normales se tiene, sin sumar los mecï¿½nicos
             int normalItemsCount = CurrentRunItems.Count(i =>
                 InventoryUIManager.Instance == null || InventoryUIManager.Instance.GetMechanicSlotIndex(i) < 0);
 
@@ -151,10 +156,10 @@ public class InventoryManager : MonoBehaviour
             {
                 CurrentRunItems.Add(item);
                 UpdateInventoryUI();
+                NotifyInventoryChanged();
                 return true;
             }
         }
-
         ShowInventoryFullMessage();
         return false;
     }
@@ -197,6 +202,7 @@ public class InventoryManager : MonoBehaviour
     public void ClearInventory()
     {
         ResetRunItems();
+        NotifyInventoryChanged();
         UpdateInventoryUI();
     }
 
@@ -253,6 +259,7 @@ public class InventoryManager : MonoBehaviour
         // Se remueve de la lista original
         CurrentRunItems.Remove(relicToRemove);
         UpdateInventoryUI();
+        NotifyInventoryChanged();
 
         ShowWarningMessage($"Pacto cumplido: Se ha quitado la reliquia '{relicToRemove.itemName}'.");
         return true;
@@ -266,7 +273,7 @@ public class InventoryManager : MonoBehaviour
     {
         if (itemDisplayTexts == null) return;
 
-        // Filtro para que a los textos de la UI solo vayan los ítems normales
+        // Filtro para que a los textos de la UI solo vayan los ï¿½tems normales
         List<ShopItem> normalItems = CurrentRunItems.Where(i =>
             InventoryUIManager.Instance == null || InventoryUIManager.Instance.GetMechanicSlotIndex(i) < 0
         ).ToList();
@@ -333,6 +340,55 @@ public class InventoryManager : MonoBehaviour
         {
             inventoryFullText.gameObject.SetActive(false);
         }
+    }
+
+    #endregion
+
+    #region VFX-Melee confimation
+
+    public void NotifyInventoryChanged()
+    {
+        OnInventoryChanged?.Invoke();
+    }
+
+    public bool hasMeleeUpgradeItem()
+    {
+        return currentRunItems.Any(item => item.benefits != null && 
+                item.benefits.Any(b => (b.type == StatType.MeleeAttackDamage || b.type == StatType.MeleeAttackSpeed ||
+                b.type == StatType.AttackDamage || b.type == StatType.AttackSpeed) && b.amount > 0));
+    }
+
+    public bool hasDashUpgradeItem()
+    {
+        return currentRunItems.Any(item => item.benefits != null && 
+                item.benefits.Any(b => (b.type == StatType.DashRangeMultiplier || b.type == StatType.DashCooldownPost ||
+                b.type == StatType.DashRangeFlatBonus) && b.amount > 0) || item.effectCategory == TypeEffect.Dash);
+    }
+
+    public bool hasMeleeDisplacement()
+    {
+        return currentRunItems.Any(item => item.benefits != null &&
+                item.benefits.Any(b => b.type == StatType.MeleeComboDisplacement && b.amount > 0));
+    }
+
+    public PlayerVfxCtrl.MecanicUpgrades? getActiveMeleeMecanic()
+    {
+        foreach (var item in currentRunItems)
+        {
+            if (item.behavioralEffects == null) continue;
+
+            foreach(var effect in item.behavioralEffects)
+            {
+                if (effect == null || effect.typeEffect != TypeEffect.Melee) continue;
+
+                if (Enum.TryParse<PlayerVfxCtrl.MecanicUpgrades>(effect.EffectID, true, out var mecanic))
+                {
+                    return mecanic;
+                }
+            }
+        }
+
+        return null;
     }
 
     #endregion

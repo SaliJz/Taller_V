@@ -8,7 +8,6 @@ public class PlayerVfxCtrl : MonoBehaviour
     {
         public string id; //Nombre del set
         public Material[] materials;
-        public int priority;
     }
 
     public enum MecanicUpgrades
@@ -17,6 +16,7 @@ public class PlayerVfxCtrl : MonoBehaviour
     }
 
     [SerializeField] private S_VFX_AfterImagesSpawner afterImagesSpawner;
+    [SerializeField] private InventoryManager inventoryManager;
 
     #region Inspector - Slashes
 
@@ -43,9 +43,14 @@ public class PlayerVfxCtrl : MonoBehaviour
 
     #endregion
 
+    #region Inspector - Melee Displacement
+
     [Header("Melee Displacemente")]
+    [SerializeField] private GameObject meleeDisplacement_AfterImage;
     [SerializeField] private float meleeDisplacement_SpawnInterval;
     [SerializeField] private float meleeDisplacement_lifetime;
+
+    #endregion
 
 
     private bool _isMeleeUpgraded = false;
@@ -57,7 +62,6 @@ public class PlayerVfxCtrl : MonoBehaviour
 
     private GameObject currentDashAfterImage;
     private float currentDashSpawninterval;
-    private bool isDashing = false;
 
     private void Awake()
     {
@@ -67,12 +71,26 @@ public class PlayerVfxCtrl : MonoBehaviour
             slashesRenderers[i] = slashesVFX[i].GetComponent<ParticleSystemRenderer>();
         }
 
+        inventoryManager = FindAnyObjectByType<InventoryManager>();
+
         isDashUpgraded = false;
     }
 
+    #if UNITY_EDITOR
     void Update()
     {
         testinput();
+    }
+#endif
+
+    private void OnEnable()
+    {
+        InventoryManager.OnInventoryChanged += RefreshAllUpgradesStates;
+    }
+
+    private void OnDisable()
+    {
+        InventoryManager.OnInventoryChanged -= RefreshAllUpgradesStates;
     }
 
     #region Melee Upgraded
@@ -88,6 +106,17 @@ public class PlayerVfxCtrl : MonoBehaviour
     }
 
     #endregion
+
+    private void RefreshAllUpgradesStates()
+    {
+        isMeleeUpgraded = inventoryManager.hasMeleeUpgradeItem();
+        isDashUpgraded = inventoryManager.hasDashUpgradeItem();
+        _hasMeleeDisplacement = inventoryManager.hasMeleeDisplacement();
+
+        var mecanic = inventoryManager.getActiveMeleeMecanic();
+        if (mecanic.HasValue) SetActiveMecanic(mecanic);
+        else ClearActiveMecanic(); 
+    }
 
     #region Melee - Mecanics VFX
 
@@ -205,11 +234,37 @@ public class PlayerVfxCtrl : MonoBehaviour
 
     #endregion
 
+    #region Melee Displacement
+
+    public void StartMeleeDisplacementEffect()
+    {
+        if (afterImagesSpawner == null) return;
+
+        afterImagesSpawner.afterImagePrefab = meleeDisplacement_AfterImage;
+        afterImagesSpawner.spawnInterval = meleeDisplacement_SpawnInterval;
+        afterImagesSpawner.lifetime = meleeDisplacement_lifetime;
+        afterImagesSpawner.enabled = true;
+    }
+
+    public void StopMeleeDisplacementffect()
+    {
+        if (afterImagesSpawner == null) return;
+        afterImagesSpawner.enabled = false;    
+    }
+
+    #endregion
+
+    #if UNITY_EDITOR
     void testinput()
     {
         if (Input.GetKeyDown(KeyCode.L)) isDashUpgraded = !isDashUpgraded;
         if (Input.GetKeyDown(KeyCode.O)) isMeleeUpgraded = !isMeleeUpgraded;
-        if (Input.GetKeyDown(KeyCode.I)) SetActiveMecanic(MecanicUpgrades.larva);
+        if (Input.GetKeyDown(KeyCode.Keypad1)) SetActiveMecanic(MecanicUpgrades.larva);
+        if (Input.GetKeyDown(KeyCode.Keypad2)) SetActiveMecanic(MecanicUpgrades.intento);
+        if (Input.GetKeyDown(KeyCode.Keypad3)) SetActiveMecanic(MecanicUpgrades.entropia);
+        if (Input.GetKeyDown(KeyCode.Keypad4)) SetActiveMecanic(MecanicUpgrades.vision);
         if (Input.GetKeyDown(KeyCode.RightShift)) ClearActiveMecanic();
     }
+
+    #endif
 }

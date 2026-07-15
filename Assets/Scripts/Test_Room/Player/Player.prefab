@@ -13075,6 +13075,7 @@ MonoBehaviour:
   playerAudioController: {fileID: 0}
   playerShieldSkill: {fileID: 0}
   playerAnimCtrl: {fileID: 0}
+  playerVfxCtrl: {fileID: 0}
   autoAim: {fileID: 0}
   hitPoint: {fileID: 7029900753368981312}
   hitRadius: 0
@@ -13761,6 +13762,10 @@ GameObject:
   - component: {fileID: 7606585880973531162}
   - component: {fileID: 1316164134403741312}
   - component: {fileID: 232689516789519019}
+  - component: {fileID: 8853559579925097162}
+  - component: {fileID: 5274499565019495919}
+  - component: {fileID: 7943791709409641301}
+  - component: {fileID: 2840060420374979258}
   m_Layer: 8
   m_Name: GFX
   m_TagString: Untagged
@@ -13915,7 +13920,7 @@ MonoBehaviour:
   currentDirection: down
   currentPriority: 0
   shaderCtrl: {fileID: 1469489433089181258}
-  vfxCtrl: {fileID: 0}
+  vfxCtrl: {fileID: 7943791709409641301}
   currentAge: 1
   nextAge: 0
   HasShield: 1
@@ -14071,6 +14076,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   afterImagesSpawner: {fileID: 232689516789519019}
+  inventoryManager: {fileID: 0}
   slashesVFX:
   - {fileID: 4808434133164891259}
   - {fileID: 989940172330294396}
@@ -14081,19 +14087,31 @@ MonoBehaviour:
     - {fileID: 2100000, guid: 75a784442d5bacb478810d86b795ab6e, type: 2}
     - {fileID: 2100000, guid: f723ec675c922c8478e263b8a857a73a, type: 2}
     - {fileID: 2100000, guid: 21a921b8cf98de14db986b2c506938f2, type: 2}
-    priority: 0
   - id: Upgraded
     materials:
     - {fileID: 2100000, guid: 7c71a43703472af43a26640ade491d2b, type: 2}
     - {fileID: 2100000, guid: 3e71cefa145092440b5cfe1f1504dbc8, type: 2}
     - {fileID: 2100000, guid: b683270c2814af64e9e0d099b3ba632f, type: 2}
-    priority: 0
   - id: larva
     materials:
     - {fileID: 2100000, guid: f26cf74a125d1f440b9c3f8fea466e03, type: 2}
     - {fileID: 2100000, guid: d5708383e9c73b345890a8a69b61f757, type: 2}
     - {fileID: 2100000, guid: ba58337e341cf1941bf09f1ad17a507a, type: 2}
-    priority: 0
+  - id: intento
+    materials:
+    - {fileID: 2100000, guid: 7bd8fc401de8b854ebf4e07c5ae90210, type: 2}
+    - {fileID: 2100000, guid: ec8d406771b764d47b0d9f44f2dcc7af, type: 2}
+    - {fileID: 2100000, guid: 934c722bfba00ad48a9b332d9c16439a, type: 2}
+  - id: entropia
+    materials:
+    - {fileID: 2100000, guid: 80bfb7548194f1344af3694b4cdc063b, type: 2}
+    - {fileID: 2100000, guid: 90b4832a08726814e9b1bac059c2d514, type: 2}
+    - {fileID: 2100000, guid: 753d9e28ec38e0f48b05d6fa4a67cea0, type: 2}
+  - id: vision
+    materials:
+    - {fileID: 2100000, guid: 56acce90770a695439f513b4d5e70044, type: 2}
+    - {fileID: 2100000, guid: 5696be2407b1bfc469a2556e5183076c, type: 2}
+    - {fileID: 2100000, guid: 077b6b8f96ac05f4dbdd4c7af856f801, type: 2}
   defaultSetID: Normal
   upgradedSetID: Upgraded
   dash_normal_AfterImage: {fileID: 1529516632308541924, guid: 5813d161b87a73e46926413d2ef586b9, type: 3}
@@ -14101,9 +14119,134 @@ MonoBehaviour:
   dash_SpawnInterval: 0.04
   dash_upgraded_spawnInverval: 0.07
   dash_lifetime: 0.3
+  meleeDisplacement_AfterImage: {fileID: 0}
   meleeDisplacement_SpawnInterval: 0
   meleeDisplacement_lifetime: 0
 --- !u!114 &232689516789519019
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6991594973495407509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 631f69a0b012e70499d0a7a477953f60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sourceRenderer: {fileID: 853946800129297378}
+  afterImagePrefab: {fileID: 0}
+  spawnInterval: 0.05
+  lifetime: 0.2
+  startColor: {r: 1, g: 0.8, b: 0.2, a: 0.7}
+  endColor: {r: 1, g: 1, b: 1, a: 0}
+--- !u!114 &8853559579925097162
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6991594973495407509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6add13dfffbf85547afe9db480f59697, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  afterImagesSpawner: {fileID: 5274499565019495919}
+  inventoryManager: {fileID: 0}
+  slashesVFX:
+  - {fileID: 4808434133164891259}
+  - {fileID: 989940172330294396}
+  - {fileID: 4902573202959294327}
+  slashMaterialSets:
+  - id: Normal
+    materials:
+    - {fileID: 2100000, guid: 75a784442d5bacb478810d86b795ab6e, type: 2}
+    - {fileID: 2100000, guid: f723ec675c922c8478e263b8a857a73a, type: 2}
+    - {fileID: 2100000, guid: 21a921b8cf98de14db986b2c506938f2, type: 2}
+  - id: Upgraded
+    materials:
+    - {fileID: 2100000, guid: 7c71a43703472af43a26640ade491d2b, type: 2}
+    - {fileID: 2100000, guid: 3e71cefa145092440b5cfe1f1504dbc8, type: 2}
+    - {fileID: 2100000, guid: b683270c2814af64e9e0d099b3ba632f, type: 2}
+  - id: larva
+    materials:
+    - {fileID: 2100000, guid: f26cf74a125d1f440b9c3f8fea466e03, type: 2}
+    - {fileID: 2100000, guid: d5708383e9c73b345890a8a69b61f757, type: 2}
+    - {fileID: 2100000, guid: ba58337e341cf1941bf09f1ad17a507a, type: 2}
+  defaultSetID: Normal
+  upgradedSetID: Upgraded
+  dash_normal_AfterImage: {fileID: 1529516632308541924, guid: 5813d161b87a73e46926413d2ef586b9, type: 3}
+  dash_upgraded_AfterImage: {fileID: 4791112577931823704, guid: 9db76e67641cddd4e9684f7e5a0e72a4, type: 3}
+  dash_SpawnInterval: 0.04
+  dash_upgraded_spawnInverval: 0.07
+  dash_lifetime: 0.3
+  meleeDisplacement_AfterImage: {fileID: 0}
+  meleeDisplacement_SpawnInterval: 0
+  meleeDisplacement_lifetime: 0
+--- !u!114 &5274499565019495919
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6991594973495407509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 631f69a0b012e70499d0a7a477953f60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sourceRenderer: {fileID: 853946800129297378}
+  afterImagePrefab: {fileID: 0}
+  spawnInterval: 0.05
+  lifetime: 0.2
+  startColor: {r: 1, g: 0.8, b: 0.2, a: 0.7}
+  endColor: {r: 1, g: 1, b: 1, a: 0}
+--- !u!114 &7943791709409641301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6991594973495407509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6add13dfffbf85547afe9db480f59697, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  afterImagesSpawner: {fileID: 2840060420374979258}
+  inventoryManager: {fileID: 0}
+  slashesVFX:
+  - {fileID: 4808434133164891259}
+  - {fileID: 989940172330294396}
+  - {fileID: 4902573202959294327}
+  slashMaterialSets:
+  - id: Normal
+    materials:
+    - {fileID: 2100000, guid: 75a784442d5bacb478810d86b795ab6e, type: 2}
+    - {fileID: 2100000, guid: f723ec675c922c8478e263b8a857a73a, type: 2}
+    - {fileID: 2100000, guid: 21a921b8cf98de14db986b2c506938f2, type: 2}
+  - id: Upgraded
+    materials:
+    - {fileID: 2100000, guid: 7c71a43703472af43a26640ade491d2b, type: 2}
+    - {fileID: 2100000, guid: 3e71cefa145092440b5cfe1f1504dbc8, type: 2}
+    - {fileID: 2100000, guid: b683270c2814af64e9e0d099b3ba632f, type: 2}
+  - id: larva
+    materials:
+    - {fileID: 2100000, guid: f26cf74a125d1f440b9c3f8fea466e03, type: 2}
+    - {fileID: 2100000, guid: d5708383e9c73b345890a8a69b61f757, type: 2}
+    - {fileID: 2100000, guid: ba58337e341cf1941bf09f1ad17a507a, type: 2}
+  defaultSetID: Normal
+  upgradedSetID: Upgraded
+  dash_normal_AfterImage: {fileID: 1529516632308541924, guid: 5813d161b87a73e46926413d2ef586b9, type: 3}
+  dash_upgraded_AfterImage: {fileID: 4791112577931823704, guid: 9db76e67641cddd4e9684f7e5a0e72a4, type: 3}
+  dash_SpawnInterval: 0.04
+  dash_upgraded_spawnInverval: 0.07
+  dash_lifetime: 0.3
+  meleeDisplacement_AfterImage: {fileID: 0}
+  meleeDisplacement_SpawnInterval: 0
+  meleeDisplacement_lifetime: 0
+--- !u!114 &2840060420374979258
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

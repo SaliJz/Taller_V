@@ -34,7 +34,7 @@ public class PetraMeleeEffect : ItemEffectBase
 
     private void OnEnable()
     {
-        EffectID = "Sedimentos de Petra Melee";
+        // EffectID = "Sedimentos de Petra Melee";
         category = EffectCategory.Combat;
     }
 

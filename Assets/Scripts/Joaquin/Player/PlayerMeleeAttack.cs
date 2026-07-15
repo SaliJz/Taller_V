@@ -25,6 +25,8 @@ public class PlayerMeleeAttack : MonoBehaviour
     [SerializeField] private ShieldSkill playerShieldSkill;
     [Tooltip("Controlador de animaciones del jugador.")]
     [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
+    [Tooltip("Controlador de VFX del jugador")]
+    [SerializeField] private PlayerVfxCtrl playerVfxCtrl;
     [Tooltip("Componente de auto-apuntado para dirigir los ataques hacia los enemigos cercanos.")]
     [SerializeField] private AutoAim autoAim;
 
@@ -168,6 +170,10 @@ public class PlayerMeleeAttack : MonoBehaviour
     private Coroutine cleanupCoroutine;
     private Coroutine showGizmoRoutine = null;
 
+    //Confirmacion de mejora del desplazamiento melee
+    private bool _hasMeleeDisplacement = false;
+    public bool HsMeleeDisplacement => _hasMeleeDisplacement;
+
     #endregion
 
     #region Public Properties & Events
@@ -201,6 +207,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         playerMovement = GetComponent<PlayerMovement>();
         playerShieldSkill = GetComponent<ShieldSkill>();
         playerAnimCtrl = GetComponentInChildren<PlayerAnimCtrl>();
+        playerVfxCtrl = GetComponentInChildren<PlayerVfxCtrl>();
         playerAudioController = GetComponent<PlayerAudioController>();
         gamepadPointer = FindAnyObjectByType<GamepadPointer>();
         autoAim = GetComponent<AutoAim>();
@@ -211,6 +218,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         if (playerShieldController == null) ReportDebug("PlayerShieldController no se encuentra en el objeto.", 3);
         if (playerMovement == null) ReportDebug("PlayerMovement no se encuentra en el objeto. Lock de rotacion no funcionara.", 2);
         if (playerAnimCtrl == null) ReportDebug("PlayerAnimCtrl no se encuentra en los hijos del objeto.", 2);
+        if (playerVfxCtrl == null) ReportDebug("PlayerVfxCtrl no se encuentra en los hijos del objeto", 2);
         if (playerAudioController == null) ReportDebug("PlayerAudioController no se encuentra en el objeto.", 3);
         if (gamepadPointer == null) ReportDebug("GamepadPointer no se encuentra en la escena. La deteccion de dispositivo activo para el ataque podria fallar.", 2);
     }
@@ -283,6 +291,8 @@ public class PlayerMeleeAttack : MonoBehaviour
         float displacementMod = statsManager != null ? statsManager.GetStat(StatType.MeleeComboDisplacement) : 0f;
 
         if (displacementMod == 0f) displacementMod = 1f;
+
+        _hasMeleeDisplacement = displacementMod > 1f;
 
         for (int i = 0; i < baseComboMovementForces.Length; i++)
         {
@@ -386,6 +396,8 @@ public class PlayerMeleeAttack : MonoBehaviour
         StopAllCoroutines();
 
         isAttacking = false;
+
+        playerVfxCtrl?.StopMeleeDisplacementffect();
 
         // Resetear combo para que no guarde el estado intermedio
         comboCount = 0;
@@ -767,6 +779,9 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         float accumulated = 0f;
 
+        bool spawningAfterImages = _hasMeleeDisplacement && safeDistance > 0.001f;
+        if (spawningAfterImages) playerVfxCtrl?.StartMeleeDisplacementEffect();
+
         while (elapsedTime < duration)
         {
             elapsedTime += Time.deltaTime;
@@ -807,6 +822,8 @@ public class PlayerMeleeAttack : MonoBehaviour
 
             yield return null;
         }
+
+        if (spawningAfterImages) playerVfxCtrl?.StopMeleeDisplacementffect();
 
         // Mantener lock
         float lockDuration = comboLockDurations[0] / currentSpeedFactor;
@@ -858,6 +875,9 @@ public class PlayerMeleeAttack : MonoBehaviour
         Vector3 attackMoveVelocity = (forward * safeDistance) / Mathf.Max(0.0001f, movementDuration);
         float accumulated = 0f;
 
+        bool spawningAfterImages = _hasMeleeDisplacement && safeDistance > 0.001f;
+        if (spawningAfterImages) playerVfxCtrl?.StartMeleeDisplacementEffect();
+
         while (elapsedTime < movementDuration)
         {
             elapsedTime += Time.deltaTime;
@@ -896,6 +916,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
             yield return null;
         }
+
 
         if (playerMovement != null)
         {
@@ -958,6 +979,8 @@ public class PlayerMeleeAttack : MonoBehaviour
             ReportDebug("ExecuteAttack2: spinDuration o targetSpinAngle invalidos, se omite giro.", 1);
         }
 
+        if (spawningAfterImages) playerVfxCtrl?.StopMeleeDisplacementffect();
+
         float lockDuration = comboLockDurations[1] / currentSpeedFactor;
         attackCooldown = lockDuration;
 
@@ -1017,6 +1040,9 @@ public class PlayerMeleeAttack : MonoBehaviour
         Vector3 attackMoveVelocity = (forward * safeDistance) / Mathf.Max(0.0001f, chargeDuration);
         float accumulated = 0f;
 
+        bool spawningAfterImages = _hasMeleeDisplacement && safeDistance > 0.001f;
+        if (spawningAfterImages) playerVfxCtrl?.StartMeleeDisplacementEffect();
+
         while (chargeElapsed < chargeDuration)
         {
             chargeElapsed += Time.deltaTime;
@@ -1056,6 +1082,8 @@ public class PlayerMeleeAttack : MonoBehaviour
             PerformHitDetectionWithTracking();
             yield return null;
         }
+
+        if (spawningAfterImages) playerVfxCtrl?.StopMeleeDisplacementffect();
 
         float lockDuration = comboLockDurations[2] / currentSpeedFactor;
         attackCooldown = lockDuration;
