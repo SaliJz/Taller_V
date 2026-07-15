@@ -62,6 +62,9 @@ public class InventoryUIManager : MonoBehaviour
     [SerializeField] private Image detailIcon;
 
     [Header("Panel de Detalle - Posicionamiento (Hover)")]
+    [Tooltip("Si esta activo, el panel de detalle se reposiciona dinamicamente siguiendo al cursor (raton) o al slot enfocado (mando) durante el hover. " +
+        "Si esta desactivado, el panel solo se activa/desactiva y actualiza su informacion (nombre, descripcion, icono), sin modificar su posicion en pantalla.")]
+    [SerializeField] private bool allowDetailPanelHoverPositioning = true;
     [Tooltip("Desplazamiento del panel respecto a la posicion del cursor del raton.")]
     [SerializeField] private Vector2 detailMouseOffset = new Vector2(12f, -12f);
     [Tooltip("Desplazamiento del panel respecto al centro del slot al usar mando.")]
@@ -945,7 +948,7 @@ public class InventoryUIManager : MonoBehaviour
             return;
         }
 
-        detailPanelIsGamepadMode = slotRect != null;
+        detailPanelIsGamepadMode = allowDetailPanelHoverPositioning && slotRect != null;
 
         if (detailPanelIsGamepadMode)
         {
@@ -960,7 +963,7 @@ public class InventoryUIManager : MonoBehaviour
         if (detailPanel.activeSelf)
         {
             detailShowPending = false;
-            UpdateDetailPanelPosition();
+            if (allowDetailPanelHoverPositioning) UpdateDetailPanelPosition();
             return;
         }
 
@@ -971,9 +974,13 @@ public class InventoryUIManager : MonoBehaviour
         {
             detailShowPending = false;
             detailPanel.SetActive(true);
-            Canvas.ForceUpdateCanvases();
-            if (detailPanelRect != null) LayoutRebuilder.ForceRebuildLayoutImmediate(detailPanelRect);
-            UpdateDetailPanelPosition();
+
+            if (allowDetailPanelHoverPositioning)
+            {
+                Canvas.ForceUpdateCanvases();
+                if (detailPanelRect != null) LayoutRebuilder.ForceRebuildLayoutImmediate(detailPanelRect);
+                UpdateDetailPanelPosition();
+            }
         }
     }
 
@@ -1013,14 +1020,18 @@ public class InventoryUIManager : MonoBehaviour
             {
                 detailShowPending = false;
                 detailPanel.SetActive(true);
-                Canvas.ForceUpdateCanvases();
-                if (detailPanelRect != null) LayoutRebuilder.ForceRebuildLayoutImmediate(detailPanelRect);
-                UpdateDetailPanelPosition();
+
+                if (allowDetailPanelHoverPositioning)
+                {
+                    Canvas.ForceUpdateCanvases();
+                    if (detailPanelRect != null) LayoutRebuilder.ForceRebuildLayoutImmediate(detailPanelRect);
+                    UpdateDetailPanelPosition();
+                }
             }
             return;
         }
 
-        if (detailPanel.activeSelf)
+        if (allowDetailPanelHoverPositioning && detailPanel.activeSelf)
         {
             UpdateDetailPanelPosition();
         }
