@@ -7484,7 +7484,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -7583,46 +7583,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
-  distanciaInicioFade: 10
-  distanciaMaxima: 25
-  curvaVolumen:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  velocidadFade: 5
---- !u!114 &262173077
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 262173070}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85f4732df967a044a910283ee5b89a86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  jugador: {fileID: 0}
   distanciaInicioFade: 10
   distanciaMaxima: 25
   curvaVolumen:
@@ -7830,7 +7790,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -7929,48 +7889,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
-  distanciaInicioFade: 10
-  distanciaMaxima: 25
-  curvaVolumen:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  velocidadFade: 5
---- !u!114 &285558051
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 285558044}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85f4732df967a044a910283ee5b89a86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  jugador: {fileID: 0}
-  distanciaInicioFade: 10
-  distanciaMaxima: 25
+  distanciaInicioFade: 5.76
+  distanciaMaxima: 9.6
   curvaVolumen:
     serializedVersion: 2
     m_Curve:
@@ -9158,11 +9078,11 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -9258,7 +9178,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
   distanciaInicioFade: 10
-  distanciaMaxima: 25
+  distanciaMaxima: 13.6
   curvaVolumen:
     serializedVersion: 2
     m_Curve:
@@ -9300,11 +9220,11 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -9400,7 +9320,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
   distanciaInicioFade: 10
-  distanciaMaxima: 25
+  distanciaMaxima: 10.1
   curvaVolumen:
     serializedVersion: 2
     m_Curve:
@@ -23158,11 +23078,11 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -23258,7 +23178,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
   distanciaInicioFade: 10
-  distanciaMaxima: 25
+  distanciaMaxima: 17.5
   curvaVolumen:
     serializedVersion: 2
     m_Curve:
@@ -27600,7 +27520,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -27686,46 +27606,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &1047424626
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1047424620}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85f4732df967a044a910283ee5b89a86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  jugador: {fileID: 1821268768}
-  distanciaInicioFade: 10
-  distanciaMaxima: 20
-  curvaVolumen:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  velocidadFade: 5
 --- !u!114 &1047424631
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27739,46 +27619,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
-  distanciaInicioFade: 10
-  distanciaMaxima: 25
-  curvaVolumen:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  velocidadFade: 5
---- !u!114 &1047424632
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1047424620}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85f4732df967a044a910283ee5b89a86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  jugador: {fileID: 0}
   distanciaInicioFade: 10
   distanciaMaxima: 25
   curvaVolumen:
@@ -29236,11 +29076,11 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -29336,7 +29176,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
   distanciaInicioFade: 10
-  distanciaMaxima: 25
+  distanciaMaxima: 12.7
   curvaVolumen:
     serializedVersion: 2
     m_Curve:
@@ -29378,7 +29218,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -29464,46 +29304,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &1106298919
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1106298913}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85f4732df967a044a910283ee5b89a86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  jugador: {fileID: 1821268768}
-  distanciaInicioFade: 10
-  distanciaMaxima: 14.5
-  curvaVolumen:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  velocidadFade: 5
 --- !u!114 &1106298924
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29516,9 +29316,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85f4732df967a044a910283ee5b89a86, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  jugador: {fileID: 0}
+  jugador: {fileID: 1821268768}
   distanciaInicioFade: 10
-  distanciaMaxima: 25
+  distanciaMaxima: 13.7
   curvaVolumen:
     serializedVersion: 2
     m_Curve:
@@ -30654,11 +30454,11 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -30754,7 +30554,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
   distanciaInicioFade: 10
-  distanciaMaxima: 25
+  distanciaMaxima: 12
   curvaVolumen:
     serializedVersion: 2
     m_Curve:
@@ -34472,11 +34272,11 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -34558,46 +34358,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &1259429198
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1259429196}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85f4732df967a044a910283ee5b89a86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  jugador: {fileID: 1821268768}
-  distanciaInicioFade: 10
-  distanciaMaxima: 7.1
-  curvaVolumen:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  velocidadFade: 5
 --- !u!114 &1259429203
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34612,7 +34372,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
   distanciaInicioFade: 10
-  distanciaMaxima: 25
+  distanciaMaxima: 12.6
   curvaVolumen:
     serializedVersion: 2
     m_Curve:
@@ -38092,11 +37852,11 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -38192,7 +37952,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
   distanciaInicioFade: 10
-  distanciaMaxima: 25
+  distanciaMaxima: 14.1
   curvaVolumen:
     serializedVersion: 2
     m_Curve:
@@ -38853,7 +38613,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -38939,46 +38699,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &1439756641
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1439756635}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85f4732df967a044a910283ee5b89a86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  jugador: {fileID: 1821268768}
-  distanciaInicioFade: 10
-  distanciaMaxima: 9.7
-  curvaVolumen:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  velocidadFade: 5
 --- !u!114 &1439756646
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -38992,48 +38712,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
-  distanciaInicioFade: 10
-  distanciaMaxima: 25
-  curvaVolumen:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  velocidadFade: 5
---- !u!114 &1439756647
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1439756635}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85f4732df967a044a910283ee5b89a86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  jugador: {fileID: 0}
-  distanciaInicioFade: 10
-  distanciaMaxima: 25
+  distanciaInicioFade: 7.27
+  distanciaMaxima: 9.29
   curvaVolumen:
     serializedVersion: 2
     m_Curve:
@@ -42268,7 +41948,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -42367,46 +42047,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
-  distanciaInicioFade: 10
-  distanciaMaxima: 25
-  curvaVolumen:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  velocidadFade: 5
---- !u!114 &1602672138
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1602672131}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85f4732df967a044a910283ee5b89a86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  jugador: {fileID: 0}
   distanciaInicioFade: 10
   distanciaMaxima: 25
   curvaVolumen:
@@ -43618,7 +43258,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -48844,6 +48484,14 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4047647040947986490, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: DefaultVelocity.x
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4047647040947986490, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
+      propertyPath: DefaultVelocity.y
+      value: -1
+      objectReference: {fileID: 0}
     - target: {fileID: 4792795074512361542, guid: dc67a90a68decf646a9036aa197df7ad, type: 3}
       propertyPath: m_LocalPosition.x
       value: -208.2
@@ -50233,10 +49881,7 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 876017864}
     - targetCorrespondingSourceObject: {fileID: 7892954307368917607, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
-      insertIndex: 1
-      addedObject: {fileID: 1106298919}
-    - targetCorrespondingSourceObject: {fileID: 7892954307368917607, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
-      insertIndex: 3
+      insertIndex: 2
       addedObject: {fileID: 1106298924}
     - targetCorrespondingSourceObject: {fileID: 7892954307368917607, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
       insertIndex: -1
@@ -50245,17 +49890,11 @@ PrefabInstance:
       insertIndex: 1
       addedObject: {fileID: 262173076}
     - targetCorrespondingSourceObject: {fileID: 3222687783910445389, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
-      insertIndex: 3
-      addedObject: {fileID: 262173077}
-    - targetCorrespondingSourceObject: {fileID: 3222687783910445389, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 262173075}
     - targetCorrespondingSourceObject: {fileID: 3901225141097340677, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
       insertIndex: 1
       addedObject: {fileID: 1602672137}
-    - targetCorrespondingSourceObject: {fileID: 3901225141097340677, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
-      insertIndex: 3
-      addedObject: {fileID: 1602672138}
     - targetCorrespondingSourceObject: {fileID: 3901225141097340677, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1602672136}
@@ -50272,32 +49911,17 @@ PrefabInstance:
       insertIndex: 1
       addedObject: {fileID: 1047424631}
     - targetCorrespondingSourceObject: {fileID: 3043921866925680192, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
-      insertIndex: 2
-      addedObject: {fileID: 1047424626}
-    - targetCorrespondingSourceObject: {fileID: 3043921866925680192, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
-      insertIndex: 4
-      addedObject: {fileID: 1047424632}
-    - targetCorrespondingSourceObject: {fileID: 3043921866925680192, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1047424625}
     - targetCorrespondingSourceObject: {fileID: 3933376333048322371, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
       insertIndex: 1
       addedObject: {fileID: 1439756646}
     - targetCorrespondingSourceObject: {fileID: 3933376333048322371, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
-      insertIndex: 3
-      addedObject: {fileID: 1439756647}
-    - targetCorrespondingSourceObject: {fileID: 3933376333048322371, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
-      insertIndex: 4
-      addedObject: {fileID: 1439756641}
-    - targetCorrespondingSourceObject: {fileID: 3933376333048322371, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1439756640}
     - targetCorrespondingSourceObject: {fileID: 3790614634890276556, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
       insertIndex: 1
       addedObject: {fileID: 285558050}
-    - targetCorrespondingSourceObject: {fileID: 3790614634890276556, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
-      insertIndex: 3
-      addedObject: {fileID: 285558051}
     - targetCorrespondingSourceObject: {fileID: 3790614634890276556, guid: 53d24e007f9461e41ba902139715c0d2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 285558049}
@@ -51493,11 +51117,11 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -51579,46 +51203,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &1873338936
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1873338930}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85f4732df967a044a910283ee5b89a86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  jugador: {fileID: 1821268768}
-  distanciaInicioFade: 10
-  distanciaMaxima: 11.4
-  curvaVolumen:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  velocidadFade: 5
 --- !u!114 &1873338941
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -51633,7 +51217,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
   distanciaInicioFade: 10
-  distanciaMaxima: 25
+  distanciaMaxima: 12.9
   curvaVolumen:
     serializedVersion: 2
     m_Curve:
@@ -55423,9 +55007,6 @@ PrefabInstance:
       insertIndex: 1
       addedObject: {fileID: 1259429203}
     - targetCorrespondingSourceObject: {fileID: 1015981274638048707, guid: 82803c981cc9b064fb9dc7cafd13f074, type: 3}
-      insertIndex: 3
-      addedObject: {fileID: 1259429198}
-    - targetCorrespondingSourceObject: {fileID: 1015981274638048707, guid: 82803c981cc9b064fb9dc7cafd13f074, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1259429197}
     - targetCorrespondingSourceObject: {fileID: 2659228981266193411, guid: 82803c981cc9b064fb9dc7cafd13f074, type: 3}
@@ -55455,9 +55036,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3031638465364299704, guid: 82803c981cc9b064fb9dc7cafd13f074, type: 3}
       insertIndex: 1
       addedObject: {fileID: 1873338941}
-    - targetCorrespondingSourceObject: {fileID: 3031638465364299704, guid: 82803c981cc9b064fb9dc7cafd13f074, type: 3}
-      insertIndex: 2
-      addedObject: {fileID: 1873338936}
     - targetCorrespondingSourceObject: {fileID: 3031638465364299704, guid: 82803c981cc9b064fb9dc7cafd13f074, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1873338935}
@@ -59565,11 +59143,11 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 3987152970524823778, guid: c5a3a2098d00d4248a7815055a1afb22, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 7d1b05c743defa0458c418ee7f4de6f5, type: 3}
+  m_Resource: {fileID: 8300000, guid: de5cd4b12f3a8b04cb05da1d5acc133e, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -59665,7 +59243,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   jugador: {fileID: 1821268768}
   distanciaInicioFade: 10
-  distanciaMaxima: 25
+  distanciaMaxima: 11.9
   curvaVolumen:
     serializedVersion: 2
     m_Curve:
