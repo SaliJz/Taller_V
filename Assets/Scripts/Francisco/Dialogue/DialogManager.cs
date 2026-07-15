@@ -5,6 +5,8 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.InputSystem;
 using UnityEngine.Events;
+using System.Timers;
+using Unity.VisualScripting;
 
 public class DialogManager : MonoBehaviour
 {
@@ -32,7 +34,7 @@ public class DialogManager : MonoBehaviour
     [SerializeField] private GameObject dialogPanel;
     [SerializeField] private TextMeshProUGUI nameText;
     [SerializeField] private TextMeshProUGUI lineText;
-    [SerializeField] private Image profileImage;
+    [SerializeField] private GameObject backgroundPanel;
 
     [Header("Input Setup")]
     [SerializeField] private InputActionAsset inputActions;
@@ -70,6 +72,9 @@ public class DialogManager : MonoBehaviour
     private UnityEvent onDialogFinishedEvent;
     private bool isMerchantFlow = false;
 
+    private RectTransform bcTransform;
+    private Image bcImage;
+
     #endregion
 
     #region Input Integration & Unity Methods
@@ -87,6 +92,9 @@ public class DialogManager : MonoBehaviour
             advanceDialogueAction.performed += OnAdvanceDialogue;
             advanceDialogueAction.Enable();
         }
+
+        bcTransform = backgroundPanel.GetComponent<RectTransform>();
+        bcImage = backgroundPanel.GetComponent<Image>();
     }
 
     private void OnDisable()
@@ -173,27 +181,77 @@ public class DialogManager : MonoBehaviour
             EndDialog();
         }
     }
+    public IEnumerator DialogStrech(bool Activating,float duration = 0.25f)
+    {
+        float startSize = Activating? 0f: 1f;
+        bcTransform.localScale = new Vector3 (bcTransform.localScale.x, startSize, bcTransform.localScale.z);
+
+        float endSize = Activating? 1f: 0f;
+
+        float elapse = 0f;
+
+        while (elapse < duration)
+        {
+            elapse += Time.deltaTime;
+            float t = elapse/duration;
+            
+            Vector3 targetScale = new Vector3(bcTransform.localScale.x, Mathf.Lerp(startSize, endSize, t), bcTransform.localScale.z);
+
+            bcTransform.localScale = targetScale;
+            yield return null;
+        }
+
+        bcTransform.localScale = Vector3.one;
+    }
 
     public void StartDialog(DialogLine[] lines, UnityEvent onFinished = null, bool isMerchant = false)
     {
         if (isDialogActive) return;
 
-        isMerchantFlow = isMerchant;
         StopAllCoroutines();
-        LockPlayerControl(true);
-        DisablePlayerScripts(true);
+        StartCoroutine(StartDialogRoutine(lines, onFinished, isMerchant));
+        
+    }
 
+    public IEnumerator StartDialogRoutine(DialogLine[] lines, UnityEvent onFinished, bool isMerchant)
+    {
+        isMerchantFlow = isMerchant;
         onDialogFinishedEvent = onFinished;
 
-        if (dialogPanel != null)
-        {
-            dialogPanel.SetActive(true);
-        }
         dialogQueue.Clear();
         foreach (DialogLine line in lines)
         {
             dialogQueue.Enqueue(line);
         }
+
+        if (dialogPanel != null)
+        {
+            dialogPanel.SetActive(true);
+        }
+
+        LockPlayerControl(true);
+        DisablePlayerScripts(true);
+
+        DialogLine fisrtline = dialogQueue.Peek();
+        nameText.text = fisrtline.CharacterName;
+
+        if (backgroundPanel != null)
+        {
+            if (fisrtline.ProfileImage != null)
+            {
+                bcImage.sprite = fisrtline.ProfileImage;
+                bcImage.enabled = true;
+            }
+            else
+            {
+                bcImage.enabled = false;
+            }
+        }
+
+        lineText.text = "";
+        lineText.maxVisibleCharacters = 0;
+
+        yield return DialogStrech(true);
 
         isDialogActive = true;
 
@@ -220,16 +278,16 @@ public class DialogManager : MonoBehaviour
         isTyping = true;
 
         nameText.text = line.CharacterName;
-        if (profileImage != null)
+        if (backgroundPanel != null)
         {
             if (line.ProfileImage != null)
             {
-                profileImage.sprite = line.ProfileImage;
-                profileImage.enabled = true;
+                bcImage.sprite = line.ProfileImage;
+                bcImage.enabled = true;
             }
             else
             {
-                profileImage.enabled = false;
+                bcImage.enabled = false;
             }
         }
 
@@ -328,10 +386,10 @@ public class DialogManager : MonoBehaviour
             nameText.text = characterName;
         }
 
-        if (profileSprite != null && profileImage != null)
+        if (profileSprite != null && backgroundPanel != null)
         {
-            profileImage.sprite = profileSprite;
-            profileImage.enabled = true;
+            bcImage.sprite = profileSprite;
+            bcImage.enabled = true;
         }
 
         StopAllCoroutines();
@@ -350,13 +408,43 @@ public class DialogManager : MonoBehaviour
 
     private void EndDialog()
     {
-        if (isMerchantFlow) return;
+        StartCoroutine(EndDialogRoutine());
+        // if (isMerchantFlow) return;
+
+        // isDialogActive = false;
+        // isMerchantFlow = false;
+
+        // UnityEvent tempEvent = onDialogFinishedEvent;
+        // onDialogFinishedEvent = null;
+
+        // if (voiceAudioSource != null && voiceAudioSource.isPlaying)
+        // {
+        //     voiceAudioSource.Stop();
+        // }
+
+        // if (dialogPanel != null)
+        // {
+        //     dialogPanel.SetActive(false);
+        // }
+        // LockPlayerControl(false);
+        // DisablePlayerScripts(false);
+
+        // OnAnyDialogEnded?.Invoke();
+
+        // tempEvent?.Invoke();
+    }
+
+    private IEnumerator EndDialogRoutine()
+    {
+        if (isMerchantFlow) yield return null;
 
         isDialogActive = false;
         isMerchantFlow = false;
 
         UnityEvent tempEvent = onDialogFinishedEvent;
         onDialogFinishedEvent = null;
+
+        yield return DialogStrech(false);
 
         if (voiceAudioSource != null && voiceAudioSource.isPlaying)
         {
