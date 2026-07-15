@@ -2547,6 +2547,7 @@ MonoBehaviour:
   resultUIPanel: {fileID: 1987924100384140248}
   nameTMP: {fileID: 6731550400429118304}
   effectsTMP: {fileID: 8120929300598588027}
+  effectsFont: {fileID: 11400000, guid: ff596c8b51adc4f4380969cce6c8de40, type: 2}
   onFinish:
     m_PersistentCalls:
       m_Calls:
@@ -3090,7 +3091,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: -1
   m_TargetDisplay: 0
 --- !u!114 &6656228424070621952
 MonoBehaviour:
@@ -3563,10 +3564,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 4208713548622230838}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0}
-  m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0.125, y: 2}
-  m_SizeDelta: {x: 7.25, y: 4}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: -0.07499981, y: 0}
+  m_SizeDelta: {x: -1.15, y: -1.8}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5497728677013193418
 CanvasRenderer:
@@ -7582,6 +7583,7 @@ MonoBehaviour:
   spawnAreas:
   - {fileID: 2323673405599987265}
   - {fileID: 1069819388721534579}
+  specificSpawnPoints: []
   animatedDoors:
   - {fileID: 3279443159990572267}
   - {fileID: 3279443159990572267}

@@ -182,7 +182,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: -1
   m_TargetDisplay: 0
 --- !u!114 &8458814974336159128
 MonoBehaviour:
@@ -744,6 +744,7 @@ MonoBehaviour:
   resultUIPanel: {fileID: 3787140900632356235}
   nameTMP: {fileID: 4927596343708736140}
   effectsTMP: {fileID: 9010846811562418960}
+  effectsFont: {fileID: 11400000, guid: ff596c8b51adc4f4380969cce6c8de40, type: 2}
   onFinish:
     m_PersistentCalls:
       m_Calls:
@@ -2177,10 +2178,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 6694977523906749131}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0}
-  m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0.125, y: 2}
-  m_SizeDelta: {x: 7.25, y: 4}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: -0.07499981, y: 0}
+  m_SizeDelta: {x: -1.15, y: -1.8}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4531691502808025244
 CanvasRenderer:

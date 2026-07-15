@@ -116,30 +116,68 @@ public class GachaponEffectData : ScriptableObject
     {
         switch (statType)
         {
-            case StatType.MaxHealth: return "Vida Máxima";
-            case StatType.MoveSpeed: return "Velocidad de Movimiento";
-            case StatType.Gravity: return "Gravedad";
-            case StatType.MeleeAttackDamage: return "Daño Cuerpo a Cuerpo";
-            case StatType.MeleeAttackSpeed: return "Velocidad de Ataque C2C";
-            case StatType.MeleeRadius: return "Radio de Ataque C2C";
-            case StatType.ShieldAttackDamage: return "Daño de Escudo";
-            case StatType.ShieldSpeed: return "Velocidad del Escudo";
-            case StatType.ShieldMaxDistance: return "Distancia del Escudo";
-            case StatType.ShieldMaxRebounds: return "Rebotes del Escudo";
-            case StatType.ShieldReboundRadius: return "Radio de Rebote";
-            case StatType.AttackDamage: return "Daño de Ataque";
-            case StatType.AttackSpeed: return "Velocidad de Ataque";
-            case StatType.ShieldBlockUpgrade: return "Mejora de Bloqueo";
-            case StatType.Endurance: return "Daño Recibido";
-            case StatType.HealthDrainAmount: return "Drenaje de Vida";
-            case StatType.LuckStack: return "Suerte";
-            case StatType.EssenceCostReduction: return "Reducción de Coste";
-            case StatType.ShopPriceReduction: return "Descuento en Tienda";
-            case StatType.HealthPerRoomRegen: return "Regeneración por Sala";
-            case StatType.CriticalChance: return "Prob. Crítico";
-            case StatType.LifestealOnKill: return "Robo de Vida al Matar";
-            case StatType.CriticalDamageMultiplier: return "Mult. Daño Crítico";
-            case StatType.DashRangeMultiplier: return "Mult. Alcance de Dash";
+            case StatType.MaxHealth:
+                return "Salud Máxima";
+            case StatType.Endurance:
+                return "Resistencia";
+            case StatType.HealthDrainAmount:
+                return "Drenaje de Vida";
+
+            case StatType.MoveSpeed:
+                return "Velocidad de Movimiento";
+            case StatType.Gravity:
+                return "Gravedad";
+            case StatType.DashRangeFlatBonus:
+                return "Alcance del Impulso";
+            case StatType.DashCooldownPost:
+                return "Enfriamiento del Impulso";
+            case StatType.KnockbackReceived:
+                return "Empuje Recibido";
+            case StatType.StaminaConsumption:
+                return "Consumo de Energia";
+
+            case StatType.AttackDamage:
+                return "Daño a Melé y Distancia";
+            case StatType.AttackSpeed:
+                return "Velocidad de Ataque a Melé y Distancia";
+            case StatType.MeleeAttackDamage:
+                return "Daño a Melé";
+            case StatType.MeleeAttackSpeed:
+                return "Velocidad de Ataque a Melé";
+            case StatType.MeleeRadius:
+                return "Alcance del Ataque a Melé";
+            case StatType.MeleeComboDisplacement:
+                return "Desplazamiento al Golpear";
+            case StatType.CriticalChance:
+                return "Probabilidad de Crítico";
+            case StatType.CriticalDamageMultiplier:
+                return "Multiplicador de Daño Crítico";
+            case StatType.LifestealOnKill:
+                return "Robo de Vida por Eliminación";
+
+            case StatType.ShieldAttackDamage:
+                return "Daño de Ataque a Distancia";
+            case StatType.ShieldSpeed:
+                return "Velocidad de Ataque a Distancia";
+            case StatType.ShieldMaxDistance:
+                return "Alcance del Ataque a Distancia";
+            case StatType.ShieldMaxRebounds:
+                return "Rebote del Ataque a Distancia";
+            case StatType.ShieldReboundRadius:
+                return "Alcance del Rebote del Escudo";
+            case StatType.ShieldPushForce:
+                return "Empuje del Ataque a Distancia";
+            case StatType.ShieldReturnSpeed:
+                return "Velocidad de Retorno del Ataque a Distancia";
+
+            case StatType.LuckStack:
+                return "Suerte Acumulada";
+            case StatType.EssenceCostReduction:
+                return "Reducción de Costo de Esencia";
+            case StatType.ShopPriceReduction:
+                return "Reducción de Precio en Tienda";
+            case StatType.HealthPerRoomRegen:
+                return "Regeneración por Sala";
             default: return statType.ToString();
         }
     }

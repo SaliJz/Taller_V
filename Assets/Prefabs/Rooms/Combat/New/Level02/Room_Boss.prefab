@@ -414,6 +414,8 @@ MonoBehaviour:
   suavizadoMovimiento: 8
   suavizadoRotacion: 5
   maskAlphaSpeed: 1
+  audioSource: {fileID: 0}
+  sonidoLevantarse: {fileID: 0}
 --- !u!114 &3797425077880776331
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -433,6 +435,9 @@ MonoBehaviour:
   _startOnAwake: 1
   _faceDirection: 0
   _relativeToStart: 1
+  OnMovementStart:
+    m_PersistentCalls:
+      m_Calls: []
   OnMovementFinished:
     m_PersistentCalls:
       m_Calls:
@@ -1612,6 +1617,9 @@ MonoBehaviour:
   playerGizmoColor: {r: 0, g: 1, b: 0, a: 1}
   platformGizmoColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   gizmoSphereSize: 0.3
+  sequenceClip: {fileID: 0}
+  sequenceVolume: 1
+  loopSequenceClip: 1
 --- !u!114 &3595758170833030277
 MonoBehaviour:
   m_ObjectHideFlags: 0

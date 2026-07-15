@@ -29,6 +29,7 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
     [SerializeField] private GameObject resultUIPanel;
     [SerializeField] private TextMeshProUGUI nameTMP;
     [SerializeField] private TextMeshProUGUI effectsTMP;
+    [SerializeField] private TMP_FontAsset effectsFont;
 
     [Header("Purchase Cooldown")]
     [SerializeField] private UnityEvent onFinish;
@@ -61,13 +62,13 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
     public AnimationCurve sinkCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     [Header("Rarity Colors")]
-    public List<RarityColorMapping> rarityColorMappings = new List<RarityColorMapping>
-    {
-        new RarityColorMapping { rarity = EffectRarity.Comun, color = new Color(0.5f, 0.5f, 0.5f, 1f) },
-        new RarityColorMapping { rarity = EffectRarity.Raro, color = Color.blue },
-        new RarityColorMapping { rarity = EffectRarity.Epico, color = new Color(1f, 0f, 1f, 1f) },
-        new RarityColorMapping { rarity = EffectRarity.Legendario, color = Color.yellow }
-    };
+    private List<RarityColorMapping> rarityColorMappings = new List<RarityColorMapping>
+{
+    new RarityColorMapping { rarity = EffectRarity.Comun, color = new Color(0.85f, 0.85f, 0.85f, 1f) },     
+    new RarityColorMapping { rarity = EffectRarity.Raro, color = new Color(0.55f, 0.8f, 1f, 1f) },         
+    new RarityColorMapping { rarity = EffectRarity.Epico, color = new Color(0.9f, 0.55f, 1f, 1f) },         
+    new RarityColorMapping { rarity = EffectRarity.Legendario, color = new Color(1f, 0.85f, 0.4f, 1f) }      
+};
     private Dictionary<object, Color> rarityColorsMap = new Dictionary<object, Color>();
 
     private Material originalMaterialInstance;
@@ -132,6 +133,11 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
 
         if (cubeRenderer != null) originalMaterialInstance = cubeRenderer.material;
         initialPosition = transform.position;
+
+        if (effectsTMP != null && effectsFont != null)
+        {
+            effectsTMP.font = effectsFont;
+        }
 
         foreach (var mapping in rarityColorMappings)
         {
@@ -494,10 +500,6 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             resultUIPanel.SetActive(show);
             if (show)
             {
-                if (nameTMP != null)
-                {
-                    nameTMP.text = name;
-                }
                 if (effectsTMP != null)
                 {
                     effectsTMP.text = effects;
@@ -506,65 +508,108 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         }
     }
 
-    private string FormatModifiers(GachaponEffectData effectData, EffectRarity obtainedRarity)
+        private string FormatModifiers(GachaponEffectData effectData, EffectRarity obtainedRarity)
     {
-        string description = $"<color=yellow>Rareza: {obtainedRarity}</color>\n\n";
+        string rarityHex = rarityColorsMap.TryGetValue(obtainedRarity, out Color rarityColor)
+            ? UnityEngine.ColorUtility.ToHtmlStringRGB(rarityColor)
+            : "FFFFFF";
+
+        string description = $"<size=160%><color=#{rarityHex}>{obtainedRarity}</color></size>\n\n";
 
         if (effectData.HasAdvantage)
         {
-            description += "<b><color=green>VENTAJA:</color></b>\n";
             var advantages = effectData.GetAdvantageModifiersForRarity(obtainedRarity);
             foreach (var (statType, value, duration, isPercentage, durationType) in advantages)
             {
                 string statName = TranslateStatType(statType);
                 string durationText = TranslateDurationType(durationType, duration);
-                description += $"- {statName}: {value}{(isPercentage ? "%" : "")} ({durationText})\n";
+                string durationSuffix = string.IsNullOrEmpty(durationText) ? "" : $" ({durationText})";
+                string sign = value > 0 ? "+" : "";
+                description += $"<color=green><size=100%>{statName}</size><size=40%>\n\n</size><size=140%>{sign}{value}{(isPercentage ? "%" : "")}</size>{durationSuffix}</color>\n\n";
             }
         }
 
         if (effectData.HasDisadvantage)
         {
-            description += "\n<b><color=red>DESVENTAJA:</color></b>\n";
             var disadvantages = effectData.GetDisadvantageModifiersForRarity(obtainedRarity);
             foreach (var (statType, value, duration, isPercentage, durationType) in disadvantages)
             {
                 string statName = TranslateStatType(statType);
                 string durationText = TranslateDurationType(durationType, duration);
-                description += $"- {statName}: {value}{(isPercentage ? "%" : "")} ({durationText})\n";
+                string durationSuffix = string.IsNullOrEmpty(durationText) ? "" : $" ({durationText})";
+                description += $"<color=red><size=100%>{statName}</size><size=40%>\n\n</size><size=140%>{value}{(isPercentage ? "%" : "")}</size>{durationSuffix}</color>\n\n";
             }
         }
 
-        return description;
+        return description.TrimEnd('\n');
     }
 
     private string TranslateStatType(StatType statType)
     {
         switch (statType)
         {
-            case StatType.MaxHealth: return "Vida Máxima";
-            case StatType.MoveSpeed: return "Velocidad de Movimiento";
-            case StatType.Gravity: return "Gravedad";
-            case StatType.MeleeAttackDamage: return "Daño Ataque Cuerpo a Cuerpo";
-            case StatType.MeleeAttackSpeed: return "Velocidad Ataque Cuerpo a Cuerpo";
-            case StatType.MeleeRadius: return "Radio de Ataque Cuerpo a Cuerpo";
-            case StatType.ShieldAttackDamage: return "Daño Ataque Escudo";
-            case StatType.ShieldSpeed: return "Velocidad del Escudo";
-            case StatType.ShieldMaxDistance: return "Distancia Máxima del Escudo";
-            case StatType.ShieldMaxRebounds: return "Rebotes Máximos del Escudo";
-            case StatType.ShieldReboundRadius: return "Radio de Rebote del Escudo";
-            case StatType.AttackDamage: return "Daño de Ataque Base";
-            case StatType.AttackSpeed: return "Velocidad de Ataque Base";
-            case StatType.ShieldBlockUpgrade: return "Mejora de Bloqueo del Escudo";
-            case StatType.Endurance: return "Daño Recibido";
-            case StatType.HealthDrainAmount: return "Drenaje de Vida";
-            case StatType.LuckStack: return "Pilas de Suerte";
-            case StatType.EssenceCostReduction: return "Reducción de Coste de Esencia";
-            case StatType.ShopPriceReduction: return "Reducción de Precio en Tienda";
-            case StatType.HealthPerRoomRegen: return "Regeneración de Vida por Sala";
-            case StatType.CriticalChance: return "Probabilidad de Crítico";
-            case StatType.LifestealOnKill: return "Robo de Vida al Matar";
-            case StatType.CriticalDamageMultiplier: return "Multiplicador de Daño Crítico";
-            case StatType.DashRangeMultiplier: return "Multiplicador de Alcance de Dash";
+            case StatType.MaxHealth:
+                return "Salud Máxima";
+            case StatType.Endurance:
+                return "Resistencia";
+            case StatType.HealthDrainAmount:
+                return "Drenaje de Vida";
+
+            case StatType.MoveSpeed:
+                return "Velocidad de Movimiento";
+            case StatType.Gravity:
+                return "Gravedad";
+            case StatType.DashRangeFlatBonus:
+                return "Alcance del Impulso";
+            case StatType.DashCooldownPost:
+                return "Enfriamiento del Impulso";
+            case StatType.KnockbackReceived:
+                return "Empuje Recibido";
+            case StatType.StaminaConsumption:
+                return "Consumo de Energia";
+
+            case StatType.AttackDamage:
+                return "Daño a Melé y Distancia";
+            case StatType.AttackSpeed:
+                return "Velocidad de Ataque a Melé y Distancia";
+            case StatType.MeleeAttackDamage:
+                return "Daño a Melé";
+            case StatType.MeleeAttackSpeed:
+                return "Velocidad de Ataque a Melé";
+            case StatType.MeleeRadius:
+                return "Alcance del Ataque a Melé";
+            case StatType.MeleeComboDisplacement:
+                return "Desplazamiento al Golpear";
+            case StatType.CriticalChance:
+                return "Probabilidad de Crítico";
+            case StatType.CriticalDamageMultiplier:
+                return "Multiplicador de Daño Crítico";
+            case StatType.LifestealOnKill:
+                return "Robo de Vida por Eliminación";
+
+            case StatType.ShieldAttackDamage:
+                return "Daño de Ataque a Distancia";
+            case StatType.ShieldSpeed:
+                return "Velocidad de Ataque a Distancia";
+            case StatType.ShieldMaxDistance:
+                return "Alcance del Ataque a Distancia";
+            case StatType.ShieldMaxRebounds:
+                return "Rebote del Ataque a Distancia";
+            case StatType.ShieldReboundRadius:
+                return "Alcance del Rebote del Escudo";
+            case StatType.ShieldPushForce:
+                return "Empuje del Ataque a Distancia";
+            case StatType.ShieldReturnSpeed:
+                return "Velocidad de Retorno del Ataque a Distancia";
+
+            case StatType.LuckStack:
+                return "Suerte Acumulada";
+            case StatType.EssenceCostReduction:
+                return "Reducción de Costo de Esencia";
+            case StatType.ShopPriceReduction:
+                return "Reducción de Precio en Tienda";
+            case StatType.HealthPerRoomRegen:
+                return "Regeneración por Sala";
             default: return statType.ToString();
         }
     }
@@ -574,11 +619,11 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
         switch (durationType)
         {
             case EffectDurationType.Permanent:
-                return "Permanente";
+                return "";
             case EffectDurationType.Rounds:
-                return $"por {Mathf.CeilToInt(durationValue)} Sala(s)";
+                return $"{Mathf.CeilToInt(durationValue)} Sala(s)";
             case EffectDurationType.Time:
-                return $"por {durationValue:F1} Segundos";
+                return $"{durationValue:F1}s";
             default:
                 return durationType.ToString();
         }
