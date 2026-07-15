@@ -16,6 +16,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
     [SerializeField] private Transform mainCameraTransform;
     [Tooltip("Controlador de las animaciones del jugador.")]
     [SerializeField] private PlayerAnimCtrl playerAnimCtrl;
+    [Tooltip("Controlador de los VFX del jugador")]
+    [SerializeField] private PlayerVfxCtrl playerVfxCtrl;
     [Tooltip("Maneja la vida y danio del jugador.")]
     [SerializeField] private PlayerHealth playerHealth;
     [Tooltip("Controlador para los sonidos del jugador (pasos, dash, etc).")]
@@ -215,6 +217,7 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         controller = GetComponent<CharacterController>();
         playerStatsManager = GetComponent<PlayerStatsManager>();
         playerAnimCtrl = GetComponentInChildren<PlayerAnimCtrl>();
+        playerVfxCtrl = GetComponentInChildren<PlayerVfxCtrl>();
         playerHealth = GetComponent<PlayerHealth>();
         playerAudioController = GetComponent<PlayerAudioController>();
 
@@ -791,7 +794,9 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         }
 
         if (dashDustVFX != null) PlayDashVFX(true);
-        if (afterimagePrefab != null) StartCoroutine(AfterimageRoutine());
+
+        playerVfxCtrl?.StartDashEffect();
+        // if (afterimagePrefab != null) StartCoroutine(AfterimageRoutine());
 
         yield return StartCoroutine(PerformDash(targetDashPosition, dashDuration));
 
@@ -846,6 +851,8 @@ public class PlayerMovement : MonoBehaviour, PlayerControlls.IMovementActions
         if (playerHealth != null) playerHealth.IsInvulnerable = false;
 
         IsDashing = false;
+
+        playerVfxCtrl?.StopDashEffect();
 
         playerAnimCtrl?.EndDash();
 

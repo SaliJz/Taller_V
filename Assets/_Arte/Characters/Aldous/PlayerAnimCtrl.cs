@@ -20,6 +20,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
 
     [Header("Referencias")]
     [SerializeField] PlayerShaderCtrl shaderCtrl;
+    [SerializeField] PlayerVfxCtrl vfxCtrl;
     // [SerializeField] LayerMask groundMask;
 
     [Header("Player Custom Status")]
@@ -259,7 +260,7 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
         damageActive = false;
         currentPriority = AnimPriority.none;
 
-        if(!VFX_Dash.isStopped) VFX_Dash.Stop();
+        if(VFX_Dash != null && !VFX_Dash.isStopped) VFX_Dash.Stop();
 
         PlayState(PlayerState.idle, AnimPriority.locomotion);
     }
@@ -351,33 +352,14 @@ public class PlayerAnimCtrl : BaseAnimCtrl<PlayerAnimCtrl.PlayerState>
     {
         switch (ev)
         {
-            case "MeleeSlash_1": SpawnSlash(0); break;
-            case "MeleeSlash_2": SpawnSlash(1); break;
-            case "MeleeSlash_3": SpawnSlash(2); break;
+            case "MeleeSlash_1": vfxCtrl?.SpawnSlash(0); break;
+            case "MeleeSlash_2": vfxCtrl?.SpawnSlash(1); break;
+            case "MeleeSlash_3": vfxCtrl?.SpawnSlash(2); break;
             case "DeactivateSprite": gameObject.SetActive(false); break;
         }
     }
 
-    private void SpawnSlash(int index)
-    {
-        Debug.Log($"index: {index}");
-
-        GameObject[] currentSlashes;
-
-        if (currentAge == Age.young) currentSlashes = VFX_meleeBegin;
-        else if (currentAge == Age.adult) currentSlashes = VFX_meleeMid;
-        else currentSlashes = VFX_meleeLate;
-
-        GameObject prefab = currentSlashes[index];
-        prefab.SetActive(false);
-        prefab.SetActive(true);
-
-        if (debug) Debug.LogWarning($"SLASH: {index + 1} INSTATIATED");
-
-        //melee1 = 0
-        //melee2 = 1
-        //melee3 = 2
-    }
+    
     #endregion
 
 

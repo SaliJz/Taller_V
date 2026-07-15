@@ -2326,6 +2326,8 @@ GameObject:
   - component: {fileID: 664404010}
   - component: {fileID: 664404009}
   - component: {fileID: 664404017}
+  - component: {fileID: 664404019}
+  - component: {fileID: 664404018}
   m_Layer: 8
   m_Name: AldousAnimation
   m_TagString: Player
@@ -2572,6 +2574,36 @@ MonoBehaviour:
   spawnYoffset: 0.02
   checkInterval: 0.1
   checkShadows: 0
+--- !u!114 &664404018
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 664404008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 631f69a0b012e70499d0a7a477953f60, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sourceRenderer: {fileID: 664404015}
+  afterImagePrefab: {fileID: 4791112577931823704, guid: 9db76e67641cddd4e9684f7e5a0e72a4, type: 3}
+  spawnInterval: 0.05
+  lifetime: 0.2
+  startColor: {r: 1, g: 0.91517913, b: 0, a: 0.7}
+  endColor: {r: 1, g: 1, b: 1, a: 0}
+--- !u!114 &664404019
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 664404008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6add13dfffbf85547afe9db480f59697, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &728235579
 GameObject:
   m_ObjectHideFlags: 0
@@ -6065,6 +6097,14 @@ PrefabInstance:
       propertyPath: playerGFX
       value: 
       objectReference: {fileID: 664404008}
+    - target: {fileID: 2749671891584592526, guid: 6ef2994c9aabc4e419c091f91d25d2f2, type: 3}
+      propertyPath: m_SceneBindings.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2749671891584592526, guid: 6ef2994c9aabc4e419c091f91d25d2f2, type: 3}
+      propertyPath: m_SceneBindings.Array.data[4].key
+      value: 
+      objectReference: {fileID: 4954938999113386610, guid: 607c12f18ce0b25479a20c8406f91d55, type: 2}
     - target: {fileID: 3886530149005621062, guid: 6ef2994c9aabc4e419c091f91d25d2f2, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

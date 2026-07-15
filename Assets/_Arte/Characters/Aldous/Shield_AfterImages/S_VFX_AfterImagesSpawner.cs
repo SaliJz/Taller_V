@@ -5,9 +5,9 @@ public class S_VFX_AfterImagesSpawner : MonoBehaviour
     [SerializeField] SpriteRenderer sourceRenderer;
 
     [Header("Spawn Settings")]   
-    [SerializeField] GameObject afterImagePrefab;
-    [SerializeField] float spawnInterval = 0.05f;
-    [SerializeField] float lifetime = 0.2f;
+    [SerializeField] public GameObject afterImagePrefab;
+    [SerializeField] public float spawnInterval = 0.05f;
+    [SerializeField] public float lifetime = 0.2f;
 
     [Header("Color")]
     [SerializeField] Color startColor = new Color(1f, 0.8f, 0.2f, 0.7f);
@@ -26,9 +26,14 @@ public class S_VFX_AfterImagesSpawner : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        timer = spawnInterval;
+    }
+
     void SpawnAfterImage()
     {
-        
+        if (afterImagePrefab == null) return;
         // GameObject obj = Instantiate(afterImagePrefab, transform.position, transform.rotation);
         GameObject obj = Instantiate(afterImagePrefab);
         obj.name = "AfterImage";
@@ -45,6 +50,8 @@ public class S_VFX_AfterImagesSpawner : MonoBehaviour
         r.sortingOrder = sourceRenderer.sortingOrder - 1;
 
         S_AfterImagePrefab afterImage = obj.GetComponent<S_AfterImagePrefab>();
-        afterImage.Initialize(startColor, endColor, lifetime);
+        if (afterImage != null) afterImage.Initialize(startColor, endColor, lifetime);
+        else Destroy(obj, lifetime);
+        
     }
 }

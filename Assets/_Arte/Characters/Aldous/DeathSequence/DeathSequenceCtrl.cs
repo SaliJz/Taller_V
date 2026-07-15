@@ -209,7 +209,7 @@ public class DeathSequenceCtrl : FullScreenEffectsBase
     void OnDrawGizmos()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawCube(playerGFX.transform.position, nearbyHalfExtents);
+        Gizmos.DrawWireCube(playerGFX.transform.position, nearbyHalfExtents);
     }
 
     #endif
