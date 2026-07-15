@@ -409,34 +409,11 @@ public class DialogManager : MonoBehaviour
     private void EndDialog()
     {
         StartCoroutine(EndDialogRoutine());
-        // if (isMerchantFlow) return;
-
-        // isDialogActive = false;
-        // isMerchantFlow = false;
-
-        // UnityEvent tempEvent = onDialogFinishedEvent;
-        // onDialogFinishedEvent = null;
-
-        // if (voiceAudioSource != null && voiceAudioSource.isPlaying)
-        // {
-        //     voiceAudioSource.Stop();
-        // }
-
-        // if (dialogPanel != null)
-        // {
-        //     dialogPanel.SetActive(false);
-        // }
-        // LockPlayerControl(false);
-        // DisablePlayerScripts(false);
-
-        // OnAnyDialogEnded?.Invoke();
-
-        // tempEvent?.Invoke();
     }
 
     private IEnumerator EndDialogRoutine()
     {
-        if (isMerchantFlow) yield return null;
+        if (isMerchantFlow) yield break;
 
         isDialogActive = false;
         isMerchantFlow = false;
