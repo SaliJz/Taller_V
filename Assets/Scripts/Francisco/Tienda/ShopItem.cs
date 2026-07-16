@@ -72,7 +72,7 @@ public class ShopItem : ScriptableObject
     public Material outlineNormal;
     public Material outlineRaro;
     public Material outlineSuperRaro;
-
+    
     [Header("Comportamientos/Efectos Eventuales")]
     public List<ItemEffectBase> behavioralEffects;
 

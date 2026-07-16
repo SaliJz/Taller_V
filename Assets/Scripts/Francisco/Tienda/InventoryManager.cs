@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class InventoryManager : MonoBehaviour
@@ -371,6 +370,19 @@ public class InventoryManager : MonoBehaviour
                 item.benefits.Any(b => b.type == StatType.MeleeComboDisplacement && b.amount > 0));
     }
 
+    public bool hasShieldUpgradeItem()
+    {
+        return currentRunItems.Any(item => item.benefits != null &&
+                item.benefits.Any(b => (b.type == StatType.ShieldAttackDamage || b.type == StatType.ShieldMaxDistance || 
+                b.type == StatType.ShieldReturnSpeed || b.type == StatType.ShieldSpeed) && b.amount > 0));
+    }
+
+    public bool hasShieldBounceItem()
+    {
+        return currentRunItems.Any(item => item.benefits != null &&
+                item.benefits.Any(b => (b.type == StatType.ShieldMaxRebounds || b.type == StatType.ShieldReboundRadius) && b.amount > 0));
+    }
+
     public PlayerVfxCtrl.MecanicUpgrades? getActiveMeleeMecanic()
     {
         foreach (var item in currentRunItems)
@@ -384,6 +396,26 @@ public class InventoryManager : MonoBehaviour
                 if (Enum.TryParse<PlayerVfxCtrl.MecanicUpgrades>(effect.EffectID, true, out var mecanic))
                 {
                     return mecanic;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public PlayerVfxCtrl.MecanicUpgrades? getActiveShieldMecanic()
+    {
+        foreach (var item in currentRunItems)
+        {
+            if (item.behavioralEffects == null) continue;
+
+            foreach (var effect in item.behavioralEffects)
+            {
+                if (effect == null || effect.typeEffect != TypeEffect.Shield) continue;
+
+                if (Enum.TryParse<PlayerVfxCtrl.MecanicUpgrades>(effect.EffectID, true, out var mecanic))
+                {
+                    return mecanic;   
                 }
             }
         }

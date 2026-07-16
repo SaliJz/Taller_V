@@ -44,7 +44,7 @@ public class PetraShieldEffect : ItemEffectBase
 
     private void OnEnable()
     {
-        EffectID = "Sedimentos de Petra Shield";
+        // EffectID = "Sedimentos de Petra Shield";
         category = EffectCategory.Combat;
     }
 

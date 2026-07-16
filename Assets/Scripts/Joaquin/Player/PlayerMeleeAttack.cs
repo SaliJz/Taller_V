@@ -823,7 +823,6 @@ public class PlayerMeleeAttack : MonoBehaviour
             yield return null;
         }
 
-        if (spawningAfterImages) playerVfxCtrl?.StopMeleeDisplacementffect();
 
         // Mantener lock
         float lockDuration = comboLockDurations[0] / currentSpeedFactor;
@@ -832,6 +831,7 @@ public class PlayerMeleeAttack : MonoBehaviour
         float scaledAttack1Duration = attack1Duration / currentSpeedFactor;
         float remainingTime = Mathf.Max(0f, lockDuration - scaledAttack1Duration);
         if (remainingTime > 0) yield return new WaitForSeconds(remainingTime);
+        if (spawningAfterImages) playerVfxCtrl?.StopMeleeDisplacementffect();
     }
 
     // Activa los efectos visuales y de sonido para el primer ataque.
@@ -979,7 +979,6 @@ public class PlayerMeleeAttack : MonoBehaviour
             ReportDebug("ExecuteAttack2: spinDuration o targetSpinAngle invalidos, se omite giro.", 1);
         }
 
-        if (spawningAfterImages) playerVfxCtrl?.StopMeleeDisplacementffect();
 
         float lockDuration = comboLockDurations[1] / currentSpeedFactor;
         attackCooldown = lockDuration;
@@ -988,6 +987,7 @@ public class PlayerMeleeAttack : MonoBehaviour
 
         float remainingTime = Mathf.Max(0f, lockDuration - totalAttackDuration);
         if (remainingTime > 0) yield return new WaitForSeconds(remainingTime);
+        if (spawningAfterImages) playerVfxCtrl?.StopMeleeDisplacementffect();
     }
 
     // Activa los efectos visuales y de sonido para el segundo ataque (giro).
@@ -1083,13 +1083,13 @@ public class PlayerMeleeAttack : MonoBehaviour
             yield return null;
         }
 
-        if (spawningAfterImages) playerVfxCtrl?.StopMeleeDisplacementffect();
 
         float lockDuration = comboLockDurations[2] / currentSpeedFactor;
         attackCooldown = lockDuration;
 
         float remainingTime = Mathf.Max(0f, lockDuration - (preChargeDuration + chargeDuration));
         if (remainingTime > 0f) yield return new WaitForSeconds(remainingTime);
+        if (spawningAfterImages) playerVfxCtrl?.StopMeleeDisplacementffect();
     }
 
     // Activa los efectos visuales y de sonido para el tercer ataque (pesado).

@@ -79,6 +79,12 @@ public class ShopManager : MonoBehaviour
     [Header("Purchase Cooldown")]
     [SerializeField] private float purchaseCooldown = 0.5f;
 
+    [Header("Purchase Panel Mecanic Item Sprites")]
+    [SerializeField] private Image MecPanelImage;
+    [SerializeField] private Sprite MecMeleeSprite;
+    [SerializeField] private Sprite MecShieldSprite;
+    [SerializeField] private Sprite MecDashSprite;
+
     [Header("=== DEBUG ===")]
     [SerializeField] private List<ShopItem> debugAvailableItems = new();
     [SerializeField] private List<ShopItem> debugCurrentShopItems = new();
@@ -924,12 +930,31 @@ public class ShopManager : MonoBehaviour
             }
             else
             {
-                costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: Aquí es gratis";
+                costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: Aquï¿½ es gratis";
             }
         }
         else
         {
-            costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: Aquí es gratis";
+            costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: Aquï¿½ es gratis";
+        }
+
+        if(itemData.behavioralEffects != null && itemData.behavioralEffects.Count > 0)
+        {
+            MecPanelImage.enabled = true;
+
+            Sprite mecItem = itemData.effectCategory switch
+            {
+                TypeEffect.Dash => MecDashSprite,
+                TypeEffect.Melee => MecMeleeSprite,
+                TypeEffect.Shield => MecShieldSprite,
+                _ => null
+            };
+
+            MecPanelImage.sprite = mecItem;
+        }
+        else
+        {
+            MecPanelImage.enabled = false;
         }
 
         itemNameText.text = nameWithColor;

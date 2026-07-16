@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -155,6 +156,8 @@ public class Shield : MonoBehaviour
     private bool isBerserkerMode = false;
 
     private float storedToughnessBonus = 0f;
+
+    public static event Action OnShieldBounce;
 
     #endregion
 
@@ -428,6 +431,8 @@ public class Shield : MonoBehaviour
         bool hasHitAnyEnemy = false;
         bool hasHitHealthThisFrame = false;
         bool hasHitToughnessThisFrame = false;
+
+        OnShieldBounce?.Invoke();
 
         foreach (Collider enemy in hitEnemies)
         {
