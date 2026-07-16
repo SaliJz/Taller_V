@@ -159,6 +159,7 @@ public class InventoryManager : MonoBehaviour
                 return true;
             }
         }
+
         ShowInventoryFullMessage();
         return false;
     }

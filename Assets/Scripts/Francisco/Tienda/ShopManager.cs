@@ -701,8 +701,8 @@ public class ShopManager : MonoBehaviour
         if ((isRestrictedScene || item.isAmulet) && _amuletPurchasedInRun)
         {
             string msg = isRestrictedScene
-                ? "You can only buy one item per visit in this zone."
-                : "You can only buy one amulet per run.";
+                ? "En esta zona solo puedes comprar un artículo por visita."
+                : "Solo puedes comprar un amuleto por partida.";
             inventoryManager.ShowWarningMessage(msg);
             return false;
         }
@@ -710,7 +710,7 @@ public class ShopManager : MonoBehaviour
         float currentHealth = playerHealth.GetCurrentHealth();
         if (finalCost > 0 && currentHealth <= finalCost)
         {
-            inventoryManager.ShowWarningMessage("Not enough health to purchase. You must survive!");
+            inventoryManager.ShowWarningMessage("No tienes suficiente vida para comprar. ¡Debes sobrevivir!");
             return false;
         }
 
@@ -719,7 +719,7 @@ public class ShopManager : MonoBehaviour
         {
             if (!_pendingPurchaseWarning.ContainsKey(item))
             {
-                inventoryManager.ShowWarningMessage("Warning! This purchase will leave you with very low health. Press again to confirm.");
+                inventoryManager.ShowWarningMessage("¡Atención! Esta compra te dejará con muy pocos puntos de salud. Pulsa de nuevo para confirmar.");
                 _pendingPurchaseWarning.Add(item, true);
                 return false;
             }
