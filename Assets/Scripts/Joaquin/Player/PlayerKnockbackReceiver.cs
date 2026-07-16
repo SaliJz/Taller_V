@@ -57,6 +57,10 @@ public class PlayerKnockbackReceiver : MonoBehaviour
     private IEnumerator KnockbackRoutine(Vector3 velocity, float duration)
     {
         float elapsed = 0f;
+
+        float originalStepOffset = cc != null ? cc.stepOffset : 0.3f;
+        if (cc != null) cc.stepOffset = 0.01f;
+
         while (elapsed < duration)
         {
             // Valida por si el jugador tira un dash a mitad del empuje
@@ -64,11 +68,19 @@ public class PlayerKnockbackReceiver : MonoBehaviour
 
             if (cc != null && cc.enabled)
             {
-                cc.Move(velocity * Time.deltaTime);
+                Vector3 moveVector = velocity;
+                if (!cc.isGrounded)
+                {
+                    moveVector.y = -5f; // Fuerza de agarre al suelo
+                }
+
+                cc.Move(moveVector * Time.deltaTime);
             }
 
             elapsed += Time.deltaTime;
             yield return null;
         }
+
+        if (cc != null) cc.stepOffset = originalStepOffset;
     }
 }

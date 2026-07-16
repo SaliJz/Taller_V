@@ -221,8 +221,8 @@ public class Larva : MonoBehaviour
     {
         isAttacking = true;
 
-        Collider myCollider = GetComponent<Collider>();
-        if (myCollider != null) myCollider.enabled = false;
+        Collider collider = GetComponent<Collider>();
+        if (collider != null) collider.isTrigger = true;
 
         if (enemyVisualEffects != null)
         {
@@ -248,6 +248,11 @@ public class Larva : MonoBehaviour
         }
 
         ExecuteExplosion();
+
+        if (!hasExploded && enemyHealth != null && !enemyHealth.IsDead)
+        {
+            collider.isTrigger = false;
+        }
     }
 
     private void ExecuteExplosion()
