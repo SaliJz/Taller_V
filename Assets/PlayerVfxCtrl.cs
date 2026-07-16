@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerVfxCtrl : MonoBehaviour
@@ -29,7 +28,7 @@ public class PlayerVfxCtrl : MonoBehaviour
     [SerializeField] private string defaultSetID = "Normal";
     [SerializeField] private string upgradedSetID = "Upgraded";
 
-    private string currentSetID;
+    private string currentMeleeSetID;
 
     #endregion
 
@@ -55,7 +54,7 @@ public class PlayerVfxCtrl : MonoBehaviour
 
     #region Inspector - Distance
     [Header ("Shield Upgrades")]
-    [SerializeField] private TrailRenderer shieldTrailRend;
+    // [SerializeField] private TrailRenderer shieldTrailRend;
     [SerializeField] private List <SlashMaterialSet> ShieldTrailMaterials = new();
     [SerializeField] private GameObject ShieldUpgradeAfterImage;
     [SerializeField] private float shield_spawninterval;
@@ -65,6 +64,8 @@ public class PlayerVfxCtrl : MonoBehaviour
 
     private GameObject shield;
     private S_VFX_AfterImagesSpawner shieldSpawner;
+
+    private string currentShieldSetID;
 
     #endregion
 
@@ -89,9 +90,9 @@ public class PlayerVfxCtrl : MonoBehaviour
             slashesRenderers[i] = slashesVFX[i].GetComponent<ParticleSystemRenderer>();
         }
 
-        shield = FindAnyObjectByType<Shield>().gameObject;
-        shieldSpawner = shield.GetComponentInChildren<S_VFX_AfterImagesSpawner>();
-        shieldTrailRend = shield.GetComponentInChildren<TrailRenderer>();
+        // shield = FindAnyObjectByType<Shield>().gameObject;
+        // shieldSpawner = shield.GetComponentInChildren<S_VFX_AfterImagesSpawner>();
+        // shieldTrailRend = shield.GetComponentInChildren<TrailRenderer>();
 
         inventoryManager = FindAnyObjectByType<InventoryManager>();
 
@@ -109,6 +110,7 @@ public class PlayerVfxCtrl : MonoBehaviour
     {
         InventoryManager.OnInventoryChanged += RefreshAllUpgradesStates;
         Shield.OnShieldBounce += StartBounceShieldEffect;
+        Shield.OnShieldThrown += HandleShieldThrown;
 
         RefreshAllUpgradesStates();
     }
@@ -117,6 +119,7 @@ public class PlayerVfxCtrl : MonoBehaviour
     {
         InventoryManager.OnInventoryChanged -= RefreshAllUpgradesStates;
         Shield.OnShieldBounce -= StartBounceShieldEffect;
+        Shield.OnShieldThrown -= HandleShieldThrown;
     }
 
     #region Melee Upgraded
@@ -136,7 +139,7 @@ public class PlayerVfxCtrl : MonoBehaviour
     private void RefreshAllUpgradesStates()
     {
         if (inventoryManager == null) return;
-        
+
         isMeleeUpgraded = inventoryManager.hasMeleeUpgradeItem();
         isDashUpgraded = inventoryManager.hasDashUpgradeItem();
         hasMeleeDisplacement = inventoryManager.hasMeleeDisplacement();
@@ -144,13 +147,16 @@ public class PlayerVfxCtrl : MonoBehaviour
         _isShieldBounceUpgraded = inventoryManager.hasShieldBounceItem();
         
 
-        var meleeMecanic = inventoryManager.getActiveMeleeMecanic();
-        if (meleeMecanic.HasValue) SetActiveMeleeMecanic(meleeMecanic);
-        else ClearActiveMecanics(); 
+        // var meleeMecanic = inventoryManager.getActiveMeleeMecanic();
+        // if (meleeMecanic.HasValue) SetActiveMeleeMecanic(meleeMecanic);
 
-        var shieldMecanic = inventoryManager.getActiveShieldMecanic();
-        if (shieldMecanic.HasValue) SetActiveMeleeMecanic(shieldMecanic);
-        else ClearActiveMecanics();
+        // var shieldMecanic = inventoryManager.getActiveShieldMecanic();
+        // if (shieldMecanic.HasValue) SetActiveMeleeMecanic(shieldMecanic);
+
+        activeMeleeMecanic = inventoryManager.getActiveMeleeMecanic();
+        activeShieldMecanic = inventoryManager.getActiveShieldMecanic();
+
+        RefreshSlashMaterials();
     }
 
     #region Melee - Mecanics VFX
@@ -174,44 +180,18 @@ public class PlayerVfxCtrl : MonoBehaviour
 
     public void RefreshSlashMaterials()
     {
-        string targetID;
-
-        if (activeMeleeMecanic.HasValue)
-        {
-            targetID = activeMeleeMecanic.Value.ToString();
-        }
-        else if (_isMeleeUpgraded)
-        {
-            targetID = upgradedSetID;
-        }
-        else
-        {
-            targetID = defaultSetID;
-        }
-
+        string targetID = ResolveTargetID(activeMeleeMecanic, _isMeleeUpgraded);
         ApplySetByID(targetID);
     }
 
     public void ApplySetByID(string ID)
     {
-        if (currentSetID == ID) return;
+        if (currentMeleeSetID == ID) return;
 
-        SlashMaterialSet set = slashMaterialSets.Find(s => s.id == ID);
+        var set = ResolverSet(slashMaterialSets, ID, slashesRenderers.Length);
+        if (set == null) return;
 
-        if (set == null)
-        {
-            Debug.LogError($"[{name}] No se encontró set de material para id: {ID}");
-            return;
-        }
-
-        if (set.materials == null || set.materials.Length != slashesRenderers.Length)
-        {
-            Debug.LogError($"[{name}] El set {ID} no coincide en tamaño con SlashesRenderers. Esperando {slashesRenderers.Length} | Recibido {set.materials?.Length ?? 0}");
-            return;
-        }
-
-        currentSetID = ID;
-
+        currentMeleeSetID = ID;
         for (int i = 0; i < slashesRenderers.Length; i++)
         {
             if (slashesRenderers[i] != null) slashesRenderers[i].material = set.materials[i];
@@ -294,6 +274,31 @@ public class PlayerVfxCtrl : MonoBehaviour
 
     #region Shield Methods
 
+    private void HandleShieldThrown(GameObject thrownShield)
+    {
+        shield = thrownShield.transform.GetChild(0).gameObject;
+        TrailRenderer trail = thrownShield.GetComponentInChildren<TrailRenderer>();
+        S_VFX_AfterImagesSpawner spawner = thrownShield.GetComponentInChildren<S_VFX_AfterImagesSpawner>();
+
+        if (spawner != null)
+        {
+            spawner.enabled = _isShieldUpgraded;
+            if (_isShieldUpgraded)
+            {
+                spawner.spawnInterval = shield_spawninterval;
+                spawner.lifetime = shield_lifetime;
+                spawner.afterImagePrefab = ShieldUpgradeAfterImage;
+            }
+            // Debug.LogError($"[{name}] SPAWNER [{spawner.name}] INICIADO BRO");
+        }
+        if (trail != null) 
+        {
+            string targetID = ResolveTargetID(activeShieldMecanic, false);
+            ApplyShieldSetByID(trail, targetID);
+            // Debug.LogError($"{name} SI CAMBIÉ EL MATERIAL AH");
+        }
+    }
+
     public bool IsShieldUpgraded
     {
         get => _isShieldUpgraded;
@@ -302,50 +307,19 @@ public class PlayerVfxCtrl : MonoBehaviour
             _isShieldUpgraded = value;
 
             bool active = _isShieldUpgraded? true: false;
-            shieldSpawner.enabled = active;
+            // shieldSpawner.enabled = active;
         }
     }
 
-    public void ApplyShieldSetByID(string ID)
+    public void ApplyShieldSetByID(TrailRenderer trailRend, string ID)
     {
-        if (currentSetID == ID) return;
+        if (currentShieldSetID == ID) return;
 
-        SlashMaterialSet set = ShieldTrailMaterials.Find(s => s.id == ID);
+        var set = ResolverSet(ShieldTrailMaterials, ID, trailRend.materials.Length);
+        if (set == null) return;
 
-        if (set == null)
-        {
-            Debug.LogError($"[{name}] No se encontró set de material para id: {ID}");
-            return;
-        }
-
-        if (set.materials == null || set.materials.Length != shieldTrailRend.materials.Length)
-        {
-            Debug.LogError($"[{name}] El set {ID} no coincide en tamaño con SlashesRenderers. Esperando {shieldTrailRend.materials.Length} | Recibido {set.materials?.Length ?? 0}");
-            return;
-        }
-
-        currentSetID = ID;
-
-        for (int i = 0; i < shieldTrailRend.materials.Length; i++)
-        {
-            if (shieldTrailRend.materials[i] != null) shieldTrailRend.materials[i] = set.materials[i];
-        }
-    }
-
-    public void RefreshShieldTrailMaterials()
-    {
-        string targetID;
-
-        if (activeShieldMecanic.HasValue)
-        {
-            targetID = activeShieldMecanic.Value.ToString();
-        }
-        else
-        {
-            targetID = defaultSetID;
-        }
-
-        ApplyShieldSetByID(targetID);
+        currentShieldSetID = ID;
+        trailRend.materials = set.materials;
     }
 
     public void StartBounceShieldEffect()
@@ -358,7 +332,37 @@ public class PlayerVfxCtrl : MonoBehaviour
         afterImage.transform.localScale = shield.transform.localScale;
     }
 
-    
+
+    #endregion
+
+    #region Resolvers
+    private string ResolveTargetID (MecanicUpgrades? mecanic, bool IsUpgraded)
+    {
+        if (mecanic.HasValue) return mecanic.Value.ToString();
+        if (IsUpgraded) return upgradedSetID;
+        return defaultSetID;
+    }
+
+    private SlashMaterialSet ResolverSet (List<SlashMaterialSet> sets, string id, int expectedLenght)
+    {
+        SlashMaterialSet set = sets.Find(s => s.id == id );
+
+        if (set == null)
+        {
+            Debug.LogError($"[{name}] No se encontró set de materiales: {id}");
+            return null;
+        }
+
+        if (set.materials == null || set.materials.Length != expectedLenght)
+        {
+            Debug.LogError($"[{name}] El set {id} no coincide con el tamaño esperado. Esperando {expectedLenght} | Recibido {set.materials?.Length ?? 0}");
+            return null;
+        }
+
+        return set;
+
+
+    }
 
     #endregion
 

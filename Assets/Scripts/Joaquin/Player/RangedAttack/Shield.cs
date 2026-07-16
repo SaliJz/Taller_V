@@ -158,6 +158,7 @@ public class Shield : MonoBehaviour
     private float storedToughnessBonus = 0f;
 
     public static event Action OnShieldBounce;
+    public static event Action<GameObject> OnShieldThrown;
 
     #endregion
 
@@ -373,6 +374,8 @@ public class Shield : MonoBehaviour
         }
 
         PlayTrailVFX(true);
+
+        OnShieldThrown?.Invoke(this.gameObject);
 
         ReportDebug($"Escudo lanzado en modo {lifeStage}: Dano={damage}, Rebote={canRebound}, ReturnSpeed={currentReturnSpeedMultiplier}x", 1);
     }

@@ -14112,12 +14112,33 @@ MonoBehaviour:
   upgradedSetID: Upgraded
   dash_normal_AfterImage: {fileID: 1529516632308541924, guid: 5813d161b87a73e46926413d2ef586b9, type: 3}
   dash_upgraded_AfterImage: {fileID: 4791112577931823704, guid: 9db76e67641cddd4e9684f7e5a0e72a4, type: 3}
-  dash_SpawnInterval: 0.04
+  dash_SpawnInterval: 0.05
   dash_upgraded_spawnInverval: 0.07
   dash_lifetime: 0.3
   meleeDisplacement_AfterImage: {fileID: 4791112577931823704, guid: b5259e1fad75b514a8ba2e8e02aabb94, type: 3}
-  meleeDisplacement_SpawnInterval: 0.01
+  meleeDisplacement_SpawnInterval: 0.03
   meleeDisplacement_lifetime: 0.25
+  ShieldTrailMaterials:
+  - id: Normal
+    materials:
+    - {fileID: 2100000, guid: 136c92d776b2e8f4987f42954ba5c60b, type: 2}
+  - id: intento
+    materials:
+    - {fileID: 2100000, guid: 3f5727aadb0d23f49a7c9a06ccbf1dbd, type: 2}
+  - id: entropia
+    materials:
+    - {fileID: 2100000, guid: 522a4df72c2eb734cb2555719251aab5, type: 2}
+  - id: larva
+    materials:
+    - {fileID: 2100000, guid: 8a312c3cb1d252d43a1c7dda8a666b17, type: 2}
+  - id: vision
+    materials:
+    - {fileID: 2100000, guid: e3e9955a3d8444b4089d8fc8b668cb62, type: 2}
+  ShieldUpgradeAfterImage: {fileID: 4288463191799180, guid: 59035ba29f5af9c46be28e21b85deb98, type: 3}
+  shield_spawninterval: 0.08
+  shield_lifetime: 0.2
+  ShieldBounceAfterImage: {fileID: 4288463191799180, guid: 52edb026066545c4ea3c4a1424b4cd13, type: 3}
+  bounceshield_lifeitime: 0.2
 --- !u!114 &232689516789519019
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -5,18 +5,24 @@ public class S_AfterImagePrefab : MonoBehaviour
     [Header("General Settings")]
     [SerializeField] float lifetime;
     [SerializeField] bool stepUpdate = false;
-
-    SpriteRenderer r;
-    Color startColor;
-    Color endColor;
-    float timer;
+    [SerializeField] bool spawnerIsNeeded = false;
+    
+    [SerializeField] Color startColor;
+    [SerializeField] Color endColor;
 
     [Header("Growth Settings")]
     [SerializeField] bool growOverLifetime = false;
     [SerializeField] float growthScale = 2f;
     [SerializeField] AnimationCurve growthCurve;
 
+    float timer;
+    SpriteRenderer r;
     Vector3 originalScale;
+
+    void Start()
+    {
+        if (spawnerIsNeeded) Initialize(startColor, endColor, lifetime);
+    }
 
     public void Initialize(Color start, Color end, float lifetime)
     {

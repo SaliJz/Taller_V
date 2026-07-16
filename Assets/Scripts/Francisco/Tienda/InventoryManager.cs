@@ -381,7 +381,8 @@ public class InventoryManager : MonoBehaviour
     public bool hasShieldBounceItem()
     {
         return currentRunItems.Any(item => item.benefits != null &&
-                item.benefits.Any(b => (b.type == StatType.ShieldMaxRebounds || b.type == StatType.ShieldReboundRadius) && b.amount > 0));
+                item.benefits.Any(b => (b.type == StatType.ShieldMaxRebounds || b.type == StatType.ShieldReboundRadius ||
+                b.type == StatType.ShieldPushForce) && b.amount > 0));
     }
 
     public PlayerVfxCtrl.MecanicUpgrades? getActiveMeleeMecanic()
