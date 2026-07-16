@@ -507,14 +507,16 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             }
         }
     }
-
-        private string FormatModifiers(GachaponEffectData effectData, EffectRarity obtainedRarity)
+    
+    private string FormatModifiers(GachaponEffectData effectData, EffectRarity obtainedRarity)
     {
         string rarityHex = rarityColorsMap.TryGetValue(obtainedRarity, out Color rarityColor)
             ? UnityEngine.ColorUtility.ToHtmlStringRGB(rarityColor)
             : "FFFFFF";
 
-        string description = $"<size=160%><color=#{rarityHex}>{obtainedRarity}</color></size>\n\n";
+        string translatedRarity = TranslateRarity(obtainedRarity);
+
+        string description = $"<size=160%><color=#{rarityHex}>{translatedRarity}</color></size>\n\n";
 
         if (effectData.HasAdvantage)
         {
@@ -611,6 +613,23 @@ public class GachaponTrigger : MonoBehaviour, PlayerControlls.IInteractionsActio
             case StatType.HealthPerRoomRegen:
                 return "Regeneración por Sala";
             default: return statType.ToString();
+        }
+    }
+
+    private string TranslateRarity(EffectRarity rarity)
+    {
+        switch (rarity)
+        {
+            case EffectRarity.Comun:
+                return "Común";
+            case EffectRarity.Epico:
+                return "Épico";
+            case EffectRarity.Raro:
+                return "Raro";
+            case EffectRarity.Legendario:
+                return "Legendario";
+            default:
+                return rarity.ToString();
         }
     }
 
