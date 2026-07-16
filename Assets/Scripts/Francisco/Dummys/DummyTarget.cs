@@ -46,6 +46,10 @@ public class DummyTarget : MonoBehaviour, IDamageable
     protected Transform playerTransform;
     protected Quaternion initialRotation;
 
+    [Header("Audio")] // Nuevo Header para organizar los campos de audio
+    [SerializeField] private AudioClip hitSound; // AudioClip para el sonido de golpe
+    private AudioSource audioSource; // Componente AudioSource
+
     #endregion
 
     #region INITIALIZATION
@@ -81,6 +85,12 @@ public class DummyTarget : MonoBehaviour, IDamageable
         {
             playerTransform = playerObj.transform;
         }
+
+        // Inicializar AudioSource
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
+        }
     }
     #endregion
 
@@ -101,6 +111,12 @@ public class DummyTarget : MonoBehaviour, IDamageable
             dummyAnimCtrl?.PlayHit();
         }
 
+        // Reproducir sonido de golpe
+        if (audioSource != null && hitSound != null)
+        {
+            audioSource.PlayOneShot(hitSound);
+        }
+
         if (colorChangeCoroutine != null)
         {
             StopCoroutine(colorChangeCoroutine);
@@ -115,7 +131,7 @@ public class DummyTarget : MonoBehaviour, IDamageable
 
         ShowNextLineCyclic();
 
-        Debug.Log($"Maniqu� golpeado. Da�o: {damageAmount} (Cr�tico: {isCritical}). Nueva l�nea de di�logo.");
+        Debug.Log($"Maniquí golpeado. Daño: {damageAmount} (Crítico: {isCritical}). Nueva línea de diálogo.");
     }
 
     protected IEnumerator HitCooldown()
@@ -128,7 +144,7 @@ public class DummyTarget : MonoBehaviour, IDamageable
     {
         if (dialogueLines == null || dialogueLines.Length == 0)
         {
-            if (logText != null) logText.text = "No hay l�neas de di�logo configuradas.";
+            if (logText != null) logText.text = "No hay líneas de diálogo configuradas.";
             return;
         }
 
