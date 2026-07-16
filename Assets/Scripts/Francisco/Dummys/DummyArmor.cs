@@ -41,6 +41,11 @@ public class DummyArmor : MonoBehaviour, IDamageable
 
     private AttackDamageType lastAttackDamageType;
 
+    // Nuevas variables para el audio - Asegurado como SerializeField para el Inspector
+    [Header("Audio")]
+    [SerializeField] private AudioClip damageSound;
+    private AudioSource audioSource;
+
     public float CurrentHealth => currentHealth;
     public float MaxHealth => maxHealth;
     public float CurrentArmorHealth => currentArmorHealth;
@@ -66,6 +71,12 @@ public class DummyArmor : MonoBehaviour, IDamageable
         if (playerObj != null)
         {
             playerTransform = playerObj.transform;
+        }
+
+        // Inicializar AudioSource
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
         }
 
         UpdateHealthUI();
@@ -143,10 +154,17 @@ public class DummyArmor : MonoBehaviour, IDamageable
             animator.SetTrigger(hitTriggerName);
         }
 
+        float previousHealth = currentHealth; // Guardar la vida antes de aplicar el daño
         currentHealth -= damageToHealth;
         currentHealth = Mathf.Max(0, currentHealth);
 
-        Debug.Log($"[DUMMY] Golpe ({damageType}). Da�o aplicado a vida: {damageToHealth:F2}. Vida restante: {currentHealth}/{maxHealth}");
+        // Reproducir sonido de daño si la vida ha disminuido
+        if (currentHealth < previousHealth && audioSource != null && damageSound != null)
+        {
+            audioSource.PlayOneShot(damageSound);
+        }
+
+        Debug.Log($"[DUMMY] Golpe ({damageType}). Daño aplicado a vida: {damageToHealth:F2}. Vida restante: {currentHealth}/{maxHealth}");
 
         bool isFatal = currentHealth <= 0;
         OnHitByPlayer?.Invoke(hitType, isFatal);

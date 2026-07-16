@@ -90,6 +90,7 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
     public DialogLine[] DefeatedSequenceDialog;
 
     public AudioClip infernalSound;
+    public AudioClip damageSound; // Nuevo AudioClip para el sonido de da√±o
     private AudioSource audioSource;
 
     private bool isFirstHit = true;
@@ -226,14 +227,20 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
                 rotationCoroutine = StartCoroutine(RotateTowardsPlayer());
             }
 
-            Debug.Log($"[TutorialCombatDummy] {gameObject.name} es invulnerable. Hit visual sin daÒo real.", this);
+            Debug.Log($"[TutorialCombatDummy] {gameObject.name} es invulnerable. Hit visual sin da√±o real.", this);
             return;
         }
 
         if (dummyLogic == DummyLogicType.RequiredHitCount && requiredDamageType != type)
         {
-            Debug.Log($"Dummy de Contador ignorÛ daÒo de {type}. Requiere: {requiredDamageType}");
+            Debug.Log($"Dummy de Contador ignor√≥ da√±o de {type}. Requiere: {requiredDamageType}");
             return;
+        }
+
+        // Reproducir sonido de da√±o
+        if (audioSource != null && damageSound != null)
+        {
+            audioSource.PlayOneShot(damageSound);
         }
 
         if (dummyAnimator != null)
@@ -297,7 +304,7 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
         currentHealth -= damageAmount;
         currentHealth = Mathf.Max(0, currentHealth);
 
-        Debug.Log($"[HEALTH STATE] DaÒo: {damageAmount:F2} | Vida Anterior: {healthBefore:F2} | Vida Actual: {currentHealth:F2}", this);
+        Debug.Log($"[HEALTH STATE] Da√±o: {damageAmount:F2} | Vida Anterior: {healthBefore:F2} | Vida Actual: {currentHealth:F2}", this);
 
         CheckHealthState();
 
@@ -328,7 +335,7 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
         if (newState.HasValue && (forceUpdate || !currentState.HasValue || currentState.Value.stateColor != newState.Value.stateColor))
         {
             currentState = newState;
-            Debug.Log($"Dummy cambiÛ a estado: {newState.Value.stateName} ({currentHealthRatio * 100:F0}%)");
+            Debug.Log($"Dummy cambi√≥ a estado: {newState.Value.stateName} ({currentHealthRatio * 100:F0}%)");
 
             foreach (var rend in renderers)
             {
@@ -389,12 +396,11 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
                 if (rend.material.HasProperty("_Color"))
                 {
                     rend.material.color = targetColor;
+                    originalColor = targetColor;
                 }
             }
 
-            originalColor = targetColor;
-
-            Debug.Log($"[TutorialCombatDummy] {gameObject.name} cambiÛ a estado {currentStateAura} con color {targetColor}");
+            Debug.Log($"[TutorialCombatDummy] {gameObject.name} cambi√≥ a estado {currentStateAura} con color {targetColor}");
             return;
         }
 
@@ -419,7 +425,7 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
             originalColor = targetColorSpecific;
         }
 
-        Debug.Log($"[TutorialCombatDummy] {gameObject.name} cambiÛ a estado {currentStateAura} con color {targetColorSpecific}");
+        Debug.Log($"[TutorialCombatDummy] {gameObject.name} cambi√≥ a estado {currentStateAura} con color {targetColorSpecific}");
     }
 
     #endregion
@@ -443,37 +449,19 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
             yield break;
         }
 
-        Quaternion targetRotation = Quaternion.LookRotation(direction);
-        targetRotation *= Quaternion.Euler(0, rotationYOffset, 0);
-
-        float elapsedTime = 0f;
-        float maxRotationTime = 0.4f;  
-
-        while (Quaternion.Angle(transformToRotate.rotation, targetRotation) > 1.0f && elapsedTime < maxRotationTime)
+        Quaternion targetRotation = Quaternion.LookRotation(direction) * Quaternion.Euler(0, rotationYOffset, 0);
+        while (Quaternion.Angle(transformToRotate.rotation, targetRotation) > 0.1f)
         {
-            transformToRotate.rotation = Quaternion.Slerp(
-                transformToRotate.rotation,
-                targetRotation,
-                Time.deltaTime * rotationSpeed
-            );
-            elapsedTime += Time.deltaTime;
+            transformToRotate.rotation = Quaternion.Slerp(transformToRotate.rotation, targetRotation, Time.deltaTime * rotationSpeed);
             yield return null;
         }
-
         transformToRotate.rotation = targetRotation;
         rotationCoroutine = null;
     }
 
-    private IEnumerator HitCooldown()
-    {
-        canBeHit = false;
-        yield return new WaitForSeconds(hitCooldownTime);
-        canBeHit = true;
-    }
-
     private IEnumerator FlashColor()
     {
-        Color flashBaseColor = originalColor;
+        if (renderers.Length == 0) yield break;
 
         foreach (var rend in renderers)
         {
@@ -489,15 +477,22 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
         {
             if (rend.material.HasProperty("_Color"))
             {
-                rend.material.color = flashBaseColor;
+                rend.material.color = originalColor;
             }
         }
         colorChangeCoroutine = null;
     }
 
+    private IEnumerator HitCooldown()
+    {
+        canBeHit = false;
+        yield return new WaitForSeconds(hitCooldownTime);
+        canBeHit = true;
+    }
+
     #endregion
 
-    #region DEATH FLOW
+    #region DEATH LOGIC
 
     private void Die()
     {
@@ -546,7 +541,7 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
     {
         if (DialogManager.Instance == null)
         {
-            Debug.LogError("DialogManager no est· en la escena.");
+            Debug.LogError("DialogManager no est√° en la escena.");
             yield break;
         }
 
@@ -576,7 +571,7 @@ public class TutorialCombatDummy : MonoBehaviour, IDamageable
     {
         if (DialogManager.Instance == null)
         {
-            Debug.LogError("DialogManager no est· en la escena.");
+            Debug.LogError("DialogManager no est√° en la escena.");
             yield break;
         }
 
