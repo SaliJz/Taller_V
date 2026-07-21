@@ -930,12 +930,12 @@ public class ShopManager : MonoBehaviour
             }
             else
             {
-                costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: Aqu� es gratis";
+                costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo:  Aquí es gratis";
             }
         }
         else
         {
-            costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo: Aqu� es gratis";
+            costText = finalCost > 0 ? $"Costo: {Mathf.RoundToInt(finalCost)} HP" : "Costo:  Aquí es gratis";
         }
 
         if(itemData.behavioralEffects != null && itemData.behavioralEffects.Count > 0)
